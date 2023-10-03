@@ -35,8 +35,6 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     private const string RequestAdapterParamType = "IRequestAdapter";
     private const string RequestAdapterParamName = "reqAdapter";
     private const string BuilderInstanceName = "builder";
-    private const string JsonNoIndentParamType = "bool";
-    private const string JsonNoIndentParamName = "jsonNoIndent";
     private const string InvocationContextParamName = "invocationContext";
     private const string CommandVariableName = "command";
     private const string ExecCommandsVariableName = "execCommands";
@@ -305,10 +303,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         {
             // Add output type param
             var outputOptionName = "outputOption";
-            writer.WriteLine($"var {outputOptionName} = new Option<{OutputFormatParamType}>(\"--{OutputFormatParamName}\", () => FormatterType.JSON){{");
-            writer.IncreaseIndent();
-            writer.WriteLine("IsRequired = true");
-            writer.CloseBlock("};");
+            writer.WriteLine($"var {outputOptionName} = new Option<{OutputFormatParamType}>(\"--{OutputFormatParamName}\", () => FormatterType.PRETTY_JSON);");
             writer.WriteLine($"{CommandVariableName}.AddOption({outputOptionName});");
             parameters.Add((OutputFormatParamType, OutputFormatParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputOptionName})");
@@ -319,21 +314,6 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"{CommandVariableName}.AddOption({outputFilterQueryOptionName});");
             parameters.Add((OutputFilterQueryParamType, OutputFilterQueryParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputFilterQueryOptionName})");
-
-            // Add JSON no-indent option
-            var jsonNoIndentOptionName = $"{JsonNoIndentParamName}Option";
-            writer.WriteLine($"var {jsonNoIndentOptionName} = new Option<bool>(\"--{NormalizeToOption(JsonNoIndentParamName)}\", r => {{");
-            writer.IncreaseIndent();
-            writer.WriteLine("if (bool.TryParse(r.Tokens.Select(t => t.Value).LastOrDefault(), out var value)) {");
-            writer.IncreaseIndent();
-            writer.WriteLine("return value;");
-            writer.CloseBlock();
-            writer.WriteLine("return true;");
-            writer.DecreaseIndent();
-            writer.WriteLine("}, description: \"Disable indentation for the JSON output formatter.\");");
-            writer.WriteLine($"{CommandVariableName}.AddOption({jsonNoIndentOptionName});");
-            parameters.Add((JsonNoIndentParamType, JsonNoIndentParamName, null));
-            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({jsonNoIndentOptionName})");
 
             // Add --all option
             if (isPageable)
@@ -357,21 +337,15 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         {
             var formatterVar = "formatter";
 
-            var formatterOptionsVar = "formatterOptions";
             if (originalMethod.PagingInformation != null)
             {
-                writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
                 writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
             }
             if (originalMethod.ReturnType is CodeType type &&
                 conventions.GetTypeString(type, originalMethod) is { } typeString && !typeString.Equals("Stream", StringComparison.Ordinal))
             {
                 var formatterTypeVal = "FormatterType.TEXT";
-                if (conventions.IsPrimitiveType(typeString))
-                {
-                    formatterOptionsVar = "null";
-                }
-                else
+                if (!conventions.IsPrimitiveType(typeString))
                 {
                     if (originalMethod.PagingInformation != null)
                     {
@@ -383,12 +357,6 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                     formatterTypeVal = OutputFormatParamName;
                     string canFilterExpr = $"(response != Stream.Null)";
                     writer.WriteLine($"response = {canFilterExpr} ? await {OutputFilterParamName}.FilterOutputAsync(response, {OutputFilterQueryParamName}, {CancellationTokenParamName}) : response;");
-                    if (originalMethod.PagingInformation == null)
-                    {
-                        writer.Write("var ");
-                    }
-                    writer.Write($"{formatterOptionsVar} = {OutputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{JsonNoIndentParamName}));", originalMethod.PagingInformation != null);
-                    writer.WriteLine();
 
                     if (originalMethod.PagingInformation != null)
                     {
@@ -404,7 +372,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                     writer.WriteLine($"var {formatterVar} = {OutputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
                 }
 
-                writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {CancellationTokenParamName});");
+                writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {CancellationTokenParamName});");
             }
             else
             {
@@ -664,7 +632,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
 
                 // Check for null model
                 // Add logging with reason for skipped execution here
-                writer.StartBlock("if (model is null)");
+                writer.StartBlock("if (model is null) {");
                 writer.WriteLine("Console.Error.WriteLine(\"No model data to send.\");");
                 writer.WriteLine("return;");
                 writer.CloseBlock();
@@ -678,7 +646,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                 requestBodyParam.Name = "stream";
                 // Check for file existence
                 // Add logging with reason for skipped execution here
-                writer.StartBlock($"if ({pName} is null || !{pName}.Exists)");
+                writer.StartBlock($"if ({pName} is null || !{pName}.Exists) {{");
                 writer.WriteLine("Console.Error.WriteLine(\"No available file to send.\");");
                 writer.WriteLine("return;");
                 writer.CloseBlock();
