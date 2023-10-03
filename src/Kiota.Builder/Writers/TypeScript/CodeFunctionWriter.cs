@@ -248,7 +248,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             if (conventions.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
             if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
             {
-                var factoryMethod = definitionClass.GetImmediateParentOfType<CodeFile>()?.FindChildByName<CodeFunction>(resultName) ?? 
+                var factoryMethod = definitionClass.GetImmediateParentOfType<CodeFile>()?.FindChildByName<CodeFunction>(resultName) ??
                                     definitionClass.GetImmediateParentOfType<CodeNamespace>()?.FindChildByName<CodeFunction>(resultName);
                 if (factoryMethod != null)
                 {

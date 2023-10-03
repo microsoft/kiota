@@ -41,12 +41,6 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                         $"{x.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name}.{x.Declaration?.Name.ToLowerInvariant()}")
                     .Select(static x => x.OrderBy(static x => x.Parent?.Name).First()));
 
-            var array = filteredUsing.ToArray();
-            if (!array.Any())
-            {
-                throw new InvalidOperationException($"File missing imports {cf.Name}, name space: {ns.Name}");
-            }
-
             _codeUsingWriter.WriteCodeElement(filteredUsing, ns, writer);
         }
     }

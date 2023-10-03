@@ -197,7 +197,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         if (!functions.Any())
             return;
-        
+
         functions.Insert(0, codeInterface);
         codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
     }
