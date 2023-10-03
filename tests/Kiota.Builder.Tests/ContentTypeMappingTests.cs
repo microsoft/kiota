@@ -139,7 +139,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ?
                                             new GenerationConfiguration().StructuredMimeTypes :
-                                            new(StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+                                            new() { acceptedContentType }
             }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -234,7 +234,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ?
                                             new GenerationConfiguration().StructuredMimeTypes :
-                                            new(StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+                                            new() { acceptedContentType }
             }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);

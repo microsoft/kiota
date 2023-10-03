@@ -62,12 +62,24 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClearCache)}"], out var clearCache) && clearCache;
         configObject.Generation.ExcludeBackwardCompatible = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludeBackwardCompatible)}"], out var excludeBackwardCompatible) && excludeBackwardCompatible;
         configObject.Generation.MaxDegreeOfParallelism = int.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.MaxDegreeOfParallelism)}"], out var maxDegreeOfParallelism) ? maxDegreeOfParallelism : configObject.Generation.MaxDegreeOfParallelism;
-        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadHashSet(configObject.Generation.StructuredMimeTypes);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadEnumerable(configObject.Generation.StructuredMimeTypes);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Serializers)}").LoadHashSet(configObject.Generation.Serializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Deserializers)}").LoadHashSet(configObject.Generation.Deserializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludePatterns)}").LoadHashSet(configObject.Generation.IncludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludePatterns)}").LoadHashSet(configObject.Generation.ExcludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.DisabledValidationRules)}").LoadHashSet(configObject.Generation.DisabledValidationRules);
+    }
+    private static void LoadEnumerable(this IConfigurationSection section, List<string> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        if (section is null) return;
+        var children = section.GetChildren();
+        if (children.Any() && list.Any()) list.Clear();
+        foreach (var item in children)
+        {
+            if (section[item.Key] is string value && !string.IsNullOrEmpty(value))
+                list.Add(value);
+        }
     }
     private static void LoadHashSet(this IConfigurationSection section, HashSet<string> hashSet)
     {

@@ -105,15 +105,19 @@ public class GenerationConfiguration : ICloneable
     {
         get; set;
     }
-    public HashSet<string> StructuredMimeTypes
+    internal StructuredMimeTypesCollection OrderedStructuredMimeTypes
     {
         get; set;
-    } = new(4, StringComparer.OrdinalIgnoreCase) {
-        "application/json",
-        "text/plain",
-        "application/x-www-form-urlencoded",
-        "multipart/form-data",
+    } = new StructuredMimeTypesCollection {
+        "application/json;q=1",
+        "text/plain;q=0.9",
+        "application/x-www-form-urlencoded;q=0.2",
+        "multipart/form-data;q=0.1",
     };
+    public List<string> StructuredMimeTypes
+    {
+        get => OrderedStructuredMimeTypes.ToList(); set => OrderedStructuredMimeTypes = new StructuredMimeTypesCollection(value);
+    }
     public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public bool ClearCache
@@ -139,7 +143,7 @@ public class GenerationConfiguration : ICloneable
             Serializers = new(Serializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             Deserializers = new(Deserializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             CleanOutput = CleanOutput,
-            StructuredMimeTypes = new(StructuredMimeTypes ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            StructuredMimeTypes = new List<string>(StructuredMimeTypes ?? Enumerable.Empty<string>()),
             IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
@@ -164,7 +168,7 @@ public class GenerationConfiguration : ICloneable
         if (languageInfo.StructuredMimeTypes.Any() &&
             comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
             !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
-            StructuredMimeTypes = new(languageInfo.StructuredMimeTypes, StringComparer.OrdinalIgnoreCase);
+            StructuredMimeTypes = new List<string>(languageInfo.StructuredMimeTypes);
     }
 }
 #pragma warning restore CA1056

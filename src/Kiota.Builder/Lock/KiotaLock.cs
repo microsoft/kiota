@@ -70,7 +70,9 @@ public class KiotaLock
     /// <summary>
     /// The structured mime types used for this client.
     /// </summary>
-    public HashSet<string> StructuredMimeTypes { get; set; } = new();
+#pragma warning disable CA1002
+    public List<string> StructuredMimeTypes { get; set; } = new();
+#pragma warning restore CA1002
     /// <summary>
     /// The path patterns for API endpoints to include for this client.
     /// </summary>

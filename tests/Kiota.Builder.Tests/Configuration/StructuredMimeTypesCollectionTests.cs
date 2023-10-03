@@ -19,9 +19,9 @@ public sealed class StructuredMimeTypesCollectionTests
         var mimeTypes = new StructuredMimeTypesCollection(new[] { "application/json", "application/xml;q=0.8" });
         Assert.Equal("application/json;q=1", mimeTypes.First(), StringComparer.OrdinalIgnoreCase);
         Assert.Equal("application/xml;q=0.8", mimeTypes.Last(), StringComparer.OrdinalIgnoreCase);
-        Assert.True(mimeTypes.Contains("application/json"));
-        Assert.True(mimeTypes.Contains("application/xml"));
-        Assert.False(mimeTypes.Contains("application/atom+xml"));
+        Assert.Contains("application/json", mimeTypes);
+        Assert.Contains("application/xml", mimeTypes);
+        Assert.DoesNotContain("application/atom+xml", mimeTypes);
         Assert.Null(mimeTypes.GetPriority("application/atom+xml"));
         Assert.Equal(1, mimeTypes.GetPriority("application/json"));
         Assert.Equal(0.8f, mimeTypes.GetPriority("application/xml"));
