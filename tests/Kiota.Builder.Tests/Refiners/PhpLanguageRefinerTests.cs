@@ -235,4 +235,31 @@ public class PhpLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal(2, modelClass.Usings.Count());
     }
+
+    [Fact]
+    public async Task RenamesComposedTypeWrapperWhenSimilarClassExistsInNamespace()
+    {
+        var model = new CodeClass
+        {
+            Name = "Union",
+            Kind = CodeClassKind.Model
+        };
+        var parent = new CodeClass
+        {
+            Name = "Parent"
+        };
+        root.AddClass(model, parent);
+        
+        var composedType = new CodeUnionType { Name = "Union" };
+        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int"});
+        
+        var composedProperty = parent.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = composedType
+        }).First();
+        
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
+    }
 }
