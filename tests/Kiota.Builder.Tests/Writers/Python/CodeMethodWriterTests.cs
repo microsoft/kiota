@@ -1707,6 +1707,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "pictureSize"
         };
+        root.AddEnum(codeEnum);
         parentClass.Kind = CodeClassKind.Model;
         parentClass.AddProperty(new CodeProperty
         {
@@ -1724,10 +1725,21 @@ public class CodeMethodWriterTests : IDisposable
 
             }
         });
+        var nUsing = new CodeUsing
+        {
+            Name = codeEnum.Name,
+            Declaration = new()
+            {
+                Name = codeEnum.Name,
+                TypeDefinition = codeEnum,
+            }
+        };
+        parentClass.StartBlock.AddUsings(nUsing);
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("def __init__()", result);
         Assert.DoesNotContain("super().__init__()", result);
+        Assert.Contains($"from .{codeEnum.Name.ToSnakeCase()} import {codeEnum.Name.ToFirstCharacterUpperCase()}", result);
         Assert.Contains("has a description", result);
         Assert.Contains($"{propName}: Optional[{codeEnum.Name.ToFirstCharacterUpperCase()}] = {codeEnum.Name.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains($"some_property: Optional[str] = None", result);

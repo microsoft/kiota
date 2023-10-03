@@ -381,6 +381,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var defaultValue = propWithDefault.DefaultValue;
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
+                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
                 defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
             conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
@@ -408,6 +409,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var defaultValue = propWithDefault.DefaultValue;
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
+                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
                 defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
