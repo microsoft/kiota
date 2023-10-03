@@ -366,7 +366,7 @@ public static class KiotaHost
 
         var structuredMimeTypesOption = new Option<List<string>>(
             "--structured-mime-types",
-            () => defaultConfiguration.StructuredMimeTypes.ToList(),
+            () => defaultConfiguration.StructuredMimeTypes,
         "The MIME types to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
