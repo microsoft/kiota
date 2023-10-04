@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `--json-no-indent` option in favor of `RAW_JSON` output format which does the same job. (CLI)
 
 ### Changed
-
+- Fix class name casings when reference in the errorMappings in PHP.
 - Fixed imports for enum type properties with default values in Python. [#3367](https://github.com/microsoft/kiota/issues/3367)
 - Updated constructor for request builders in Python to set passed path parameters. [#3352](https://github.com/microsoft/kiota/issues/3352)
 - Fixed inherited type definition generation where some cases would not generate properly. [#2745](https://github.com/microsoft/kiota/issues/2745)

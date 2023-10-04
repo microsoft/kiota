@@ -719,7 +719,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent(2);
             errorMappings.ToList().ForEach(errorMapping =>
             {
-                writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'],");
+                writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'],");
             });
             writer.DecreaseIndent();
             writer.WriteLine("];");
