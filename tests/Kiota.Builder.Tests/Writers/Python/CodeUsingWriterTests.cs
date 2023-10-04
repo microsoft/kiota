@@ -31,7 +31,7 @@ public class CodeUsingWriterTests
         }).First();
         var us = new CodeUsing
         {
-            Name = "bar",
+            Name = "Bar",
             Alias = "baz",
             Declaration = new CodeType
             {
@@ -43,6 +43,28 @@ public class CodeUsingWriterTests
         usingWriter.WriteInternalImports(codeClass, writer);
         var result = tw.ToString();
         Assert.Contains("from .bar import Bar as baz", result);
+    }
+    [Fact]
+    public void WritesRefinedNames()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeClass = root.AddClass(new CodeClass
+        {
+            Name = "BarBaz",
+        }).First();
+        var us = new CodeUsing
+        {
+            Name = "BarBaz",
+            Declaration = new CodeType
+            {
+                Name = "BarBaz",
+                TypeDefinition = codeClass,
+            },
+        };
+        codeClass.AddUsing(us);
+        usingWriter.WriteInternalImports(codeClass, writer);
+        var result = tw.ToString();
+        Assert.Contains("from .bar_baz import BarBaz", result);
     }
     [Fact]
     public void DoesntAliasRegularSymbols()

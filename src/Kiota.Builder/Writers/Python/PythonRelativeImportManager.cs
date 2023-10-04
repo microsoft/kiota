@@ -32,10 +32,10 @@ public class PythonRelativeImportManager : RelativeImportManager
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
             typeDef.GetImmediateParentOfType<CodeNamespace>());
         if (string.IsNullOrEmpty(importPath))
-            importPath += codeUsing.Name.ToSnakeCase();
+            importPath += codeUsing.Name.ToSnakeCase(); // TODO: review the logic happening for those imports
         else
             importPath += codeUsing.Declaration?.Name.ToSnakeCase();
-        return (importSymbol, codeUsing.Alias, importPath);
+        return (importSymbol.ToFirstCharacterUpperCase(), codeUsing.Alias, importPath);
     }
     protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
     {

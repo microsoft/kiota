@@ -35,7 +35,7 @@ public class CodeEnumWriterTests : IDisposable
     [Fact]
     public void WritesEnum()
     {
-        const string optionName = "option1";
+        const string optionName = "Option1";
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
         writer.Write(currentEnum);
         var result = tw.ToString();

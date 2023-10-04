@@ -32,7 +32,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         ns = root.AddNamespace("graphtests.models");
         parentClass = new()
         {
-            Name = "parentClass"
+            Name = "ParentClass"
         };
         ns.AddClass(parentClass);
     }
@@ -81,11 +81,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         var declaration = parentClass.StartBlock;
         declaration.AddImplements(new CodeType
         {
-            Name = "someInterface"
+            Name = "SomeInterface"
         });
         declaration.AddImplements(new CodeType
         {
-            Name = "secondInterface"
+            Name = "SecondInterface"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
@@ -98,7 +98,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         var declaration = parentClass.StartBlock;
         var interfaceDef = new CodeInterface
         {
-            Name = "someInterface",
+            Name = "SomeInterface",
         };
         ns.AddInterface(interfaceDef);
         var nUsing = new CodeUsing
@@ -106,14 +106,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
             Name = "graph",
             Declaration = new()
             {
-                Name = "someInterface",
+                Name = "SomeInterface",
                 TypeDefinition = interfaceDef,
             }
         };
         declaration.AddUsings(nUsing);
         declaration.Inherits = new()
         {
-            Name = "someInterface"
+            Name = "SomeInterface"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();

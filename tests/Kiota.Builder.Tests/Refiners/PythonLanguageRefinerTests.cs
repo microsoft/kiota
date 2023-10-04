@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 using Xunit;
@@ -101,7 +102,7 @@ public class PythonLanguageRefinerTests
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
-        Assert.Equal(input + "_", model.Options.First().Name);// we need to escape this in python
+        Assert.Equal(input.ToFirstCharacterUpperCase() + "_", model.Options.First().Name);// we need to escape this in python
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
@@ -167,7 +168,7 @@ public class PythonLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("other_prop"));
-        Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
+        Assert.Contains(model.Methods, x => x.Name.Equals("other_method"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
     }
     [Fact]
