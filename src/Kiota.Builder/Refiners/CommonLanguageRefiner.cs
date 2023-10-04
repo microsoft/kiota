@@ -479,7 +479,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            if (@namespace.FindChildByName<CodeClass>(codeComposedType.Name, false) is not null)
+            var existingClass = @namespace.FindChildByName<CodeClass>(codeComposedType.Name, false);
+            if (existingClass != null && existingClass.OriginalComposedType == null)
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = @namespace.AddClass(new CodeClass
             {

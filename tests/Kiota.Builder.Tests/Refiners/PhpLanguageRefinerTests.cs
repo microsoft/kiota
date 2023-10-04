@@ -253,13 +253,41 @@ public class PhpLanguageRefinerTests
         var composedType = new CodeUnionType { Name = "Union" };
         composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" });
 
-        var composedProperty = parent.AddProperty(new CodeProperty
+        parent.AddProperty(new CodeProperty
         {
             Name = "property",
             Type = composedType
-        }).First();
+        });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
     }
+
+    [Fact]
+    public async Task DoesNotCreateDuplicateComposedTypeWrapperIfOneAlreadyExists()
+    {
+        var composedType = new CodeUnionType { Name = "Union" };
+        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" });
+
+        var parent = new CodeClass
+        {
+            Name = "Parent"
+        };
+        parent.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = composedType
+        });
+        parent.AddProperty(new CodeProperty
+        {
+            Name = "property2",
+            Type = composedType
+        });
+        root.AddClass(parent);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        Assert.True(root.FindChildByName<CodeClass>("Union", false) is CodeClass unionTypeWrapper && unionTypeWrapper.OriginalComposedType != null);
+        Assert.True(root.FindChildByName<CodeClass>("UnionWrapper", false) is null);
+    }
+
 }
