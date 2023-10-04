@@ -259,10 +259,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2834"
       },
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2964"
-      },
-      {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },
