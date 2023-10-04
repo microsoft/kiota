@@ -2356,6 +2356,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "ModelA"
         }).First();
+        var returnType3 = root.AddClass(new CodeClass { Name = "Component" }).First();
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
         {
@@ -2368,18 +2369,21 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.PathParameters,
             Type = new CodeType { Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }
         });
-        var getMethod = new CodeMethod { Name = "getAsync", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Get, ReturnType = new CodeType { TypeDefinition = returnType1 } };
+        var getMethod = new CodeMethod { Name = "getAsync", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Get, ReturnType = new CodeType { TypeDefinition = returnType1, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } };
         var deleteMethod = new CodeMethod { Name = "deleteAsync", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Delete, ReturnType = new CodeType { TypeDefinition = returnType2 } };
-        parentClass.AddMethod(getMethod, deleteMethod);
+        var testMethod = new CodeMethod { Name = "testMethod", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Post, ReturnType = new CodeType { TypeDefinition = returnType3, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } };
+        parentClass.AddMethod(getMethod, deleteMethod, testMethod);
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         _codeMethodWriter.WriteCodeElement(getMethod, languageWriter);
         _codeMethodWriter.WriteCodeElement(deleteMethod, languageWriter);
+        _codeMethodWriter.WriteCodeElement(testMethod, languageWriter);
         var result = stringWriter.ToString();
 
-        Assert.Contains("return $this->requestAdapter->sendAsync($requestInfo, [\\Microsoft\\Graph\\Models\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
+        Assert.Contains("return $this->requestAdapter->sendCollectionAsync($requestInfo, [\\Microsoft\\Graph\\Models\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
         Assert.Contains("return $this->requestAdapter->sendAsync($requestInfo, [\\Microsoft\\Graph\\Models\\Security\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
+        Assert.Contains("return $this->requestAdapter->sendCollectionAsync($requestInfo, [Component::class, 'createFromDiscriminatorValue'], null);", result);
     }
 
 }

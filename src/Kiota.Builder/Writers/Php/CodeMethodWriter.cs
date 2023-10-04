@@ -705,7 +705,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             joinedParams = string.Join(", ", callParams);
         }
 
-        var returnTypeName = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        var returnTypeName = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
         writer.WriteLine("try {");
         writer.IncreaseIndent();

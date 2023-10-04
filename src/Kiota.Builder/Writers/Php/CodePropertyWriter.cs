@@ -12,17 +12,17 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
-        var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
+        var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
         var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                WriteRequestBuilderBody(codeElement, writer, returnType, propertyAccess, propertyName);
+                WriteRequestBuilderBody(codeElement, writer, propertyType, propertyAccess, propertyName);
                 break;
             default:
                 WritePropertyDocComment(codeElement, writer);
-                writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
+                writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{propertyType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
                 break;
         }
         writer.WriteLine("");
