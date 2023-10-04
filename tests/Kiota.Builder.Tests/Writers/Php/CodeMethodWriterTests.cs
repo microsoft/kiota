@@ -2342,4 +2342,44 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->top = $top;", result);
     }
 
+    [Fact]
+    public async Task WritesFullyQualifiedNameWhenSimilarTypeAlreadyExists()
+    {
+        setup();
+        var modelNamespace = root.AddNamespace("Models");
+        var nestedModelNamespace = modelNamespace.AddNamespace("Models\\Security");
+        var returnType1 = modelNamespace.AddClass(new CodeClass
+        {
+            Name = "ModelA"
+        }).First();
+        var returnType2 = nestedModelNamespace.AddClass(new CodeClass
+        {
+            Name = "ModelA"
+        }).First();
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" }
+        }, new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType { Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }
+        });
+        var getMethod = new CodeMethod { Name = "getAsync", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Get, ReturnType = new CodeType { TypeDefinition = returnType1 } };
+        var deleteMethod = new CodeMethod { Name = "deleteAsync", Kind = CodeMethodKind.RequestExecutor, HttpMethod = HttpMethod.Delete, ReturnType = new CodeType { TypeDefinition = returnType2 } };
+        parentClass.AddMethod(getMethod, deleteMethod);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        _codeMethodWriter.WriteCodeElement(getMethod, languageWriter);
+        _codeMethodWriter.WriteCodeElement(deleteMethod, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("return $this->requestAdapter->sendAsync($requestInfo, [\\Microsoft\\Graph\\Models\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
+        Assert.Contains("return $this->requestAdapter->sendAsync($requestInfo, [\\Microsoft\\Graph\\Models\\Security\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
+    }
+
 }
