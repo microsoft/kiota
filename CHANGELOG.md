@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.7.0] - 2023-10-05
+
+### Added
+
 - Added support for tracing in Python. [#1872](https://github.com/microsoft/kiota/issues/1872)
 - Added auto-generated comment for TypeScript generation. [#3244](https://github.com/microsoft/kiota/issues/3244)
 - Added a new switch to exclude all assets generated only for backward compatibility. [#2952](https://github.com/microsoft/kiota/issues/2952)
@@ -1088,3 +1094,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
