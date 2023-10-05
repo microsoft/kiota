@@ -144,7 +144,7 @@
       },
       {
         "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2956"
+        "Rationale": "https://github.com/microsoft/kiota/issues/3029"
       },
       {
         "Language": "python",
@@ -238,7 +238,7 @@
       },
       {
         "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2964"
+        "Rationale": "https://github.com/microsoft/kiota/issues/3029"
       },
       {
         "Language": "java",
@@ -257,10 +257,6 @@
       {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2834"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2964"
       },
       {
         "Language": "java",

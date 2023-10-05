@@ -48,13 +48,17 @@ public class PhpConventionService : CommonLanguageConventionService
             throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
         if (code is CodeType currentType)
         {
+            if (includeCollectionInformation && code.IsCollection)
+            {
+                return "array";
+            }
             var typeName = TranslateType(currentType);
             if (!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement) && currentType.TypeDefinition is not null)
             {
                 return $"\\{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ReplaceDotsWithSlashInNamespaces()}\\{typeName.ToFirstCharacterUpperCase()}";
             }
         }
-        return code is { IsCollection: true } ? "array" : TranslateType(code);
+        return TranslateType(code);
     }
 
     public override string TranslateType(CodeType type)
