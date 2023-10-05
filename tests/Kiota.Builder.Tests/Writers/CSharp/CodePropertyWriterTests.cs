@@ -42,6 +42,7 @@ public class CodePropertyWriterTests : IDisposable
                 Name = TypeName,
                 TypeDefinition = derivedClass
             },
+            SerializationName = "propertyName",
         };
         parentClass.AddProperty(property, new()
         {
