@@ -7,7 +7,7 @@ on:
     types: [opened, labeled, reopened]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
+  GH_TOKEN: ${{ secrets.ISSUES_TOKEN }}
 
 jobs:
   assign_one_project:
