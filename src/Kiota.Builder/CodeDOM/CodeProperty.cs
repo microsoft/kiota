@@ -105,7 +105,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         get => !string.IsNullOrEmpty(SerializationName);
     }
     /// <inheritdoc/>
-    public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
+    public string WireName => IsNameEscaped ? SerializationName : Name;
     public CodeProperty? OriginalPropertyFromBaseType
     {
         get; set;
