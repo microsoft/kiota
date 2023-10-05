@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log a message to stderr if a request is skipped due to missing data. (CLI) [#2210](https://github.com/microsoft/kiota/issues/2210)
 - Fixes code file generation in typescript [#3419](https://github.com/microsoft/kiota/issues/3419)
 - Writes fully qualified name of custom types when a type with a similar name exists in the class in PHP.
+- Rename composed type wrapper when class already exists in the namespace. [#2964](https://github.com/microsoft/kiota/issues/2964)
 
 ## [1.6.1] - 2023-09-11
 
