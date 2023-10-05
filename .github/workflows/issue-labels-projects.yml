@@ -15,65 +15,38 @@ jobs:
     name: Assign to One Project
     steps:
       - name: Set Java project info
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 25 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'Java')
         shell: pwsh
-        env:
-          project_nb: "25"
-          org: "microsoftgraph"
       - name: Set Go project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 26 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'Go')
         shell: pwsh
-        env:
-          project_nb: "26"
-          org: "microsoftgraph"
       - name: Set Ruby project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 38 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'Ruby')
         shell: pwsh
-        env:
-          project_nb: "38"
-          org: "microsoftgraph"
       - name: Set PHP project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 33 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'PHP')
         shell: pwsh
-        env:
-          project_nb: "33"
-          org: "microsoftgraph"
       - name: Set Python project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 34 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'Python')
         shell: pwsh
-        env:
-          project_nb: "34"
-          org: "microsoftgraph"
       - name: Set TypeScript project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 21 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'TypeScript')
         shell: pwsh
-        env:
-          project_nb: "21"
-          org: "microsoftgraph"
       - name: Set CSharp project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 28 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'CSharp')
         shell: pwsh
-        env:
-          project_nb: "28"
-          org: "microsoftgraph"
       - name: Set Generator project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 220 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'generator')
         shell: pwsh
-        env:
-          project_nb: "220"
-          org: "microsoft"
       - name: Set CLI project
-        run: gh project item-add $Env:PROJECT_NB --owner "$Env:ORG" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 23 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'CLI')
         shell: pwsh
-        env:
-          project_nb: "23"
-          org: "microsoftgraph"
