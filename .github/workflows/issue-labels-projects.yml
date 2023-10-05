@@ -43,7 +43,7 @@ jobs:
         if: contains(github.event.issue.labels.*.name, 'CSharp')
         shell: pwsh
       - name: Set Generator project
-        run: gh project item-add 220 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        run: gh project item-add 220 --owner "microsoft" --url "${{ github.event.issue.html_url}}"
         if: contains(github.event.issue.labels.*.name, 'generator')
         shell: pwsh
       - name: Set CLI project
