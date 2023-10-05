@@ -303,7 +303,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         {
             // Add output type param
             var outputOptionName = "outputOption";
-            writer.WriteLine($"var {outputOptionName} = new Option<{OutputFormatParamType}>(\"--{OutputFormatParamName}\", () => FormatterType.PRETTY_JSON);");
+            writer.WriteLine($"var {outputOptionName} = new Option<{OutputFormatParamType}>(\"--{OutputFormatParamName}\", () => FormatterType.JSON);");
             writer.WriteLine($"{CommandVariableName}.AddOption({outputOptionName});");
             parameters.Add((OutputFormatParamType, OutputFormatParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputOptionName})");
