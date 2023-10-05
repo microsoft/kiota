@@ -7,55 +7,64 @@ on:
     types: [opened, labeled, reopened]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
 
 jobs:
   assign_one_project:
     runs-on: ubuntu-latest
     name: Assign to One Project
     steps:
-    - name: Assign Java issues to Java project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Java')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/7'
-    - name: Assign Go issues to Go project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Go')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/8'
-    - name: Assign Ruby issues to Ruby project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Ruby')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/6'
-    - name: Assign PHP issues to PHP project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'PHP')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/4'
-    - name: Assign Python issues to Python project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Python')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/3'
-    - name: Assign TypeScript issues to TypeScript project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'TypeScript')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/2'
-    - name: Assign CSharp issues to CSharp project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'CSharp')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/5'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'generator')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/9'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'CLI')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/10'
+      - name: Set Java project info
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'Java')
+        env:
+          project_nb: "25"
+          org: "microsoftgraph"
+      - name: Set Go project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'Go')
+        env:
+          project_nb: "26"
+          org: "microsoftgraph"
+      - name: Set Ruby project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'Ruby')
+        env:
+          project_nb: "38"
+          org: "microsoftgraph"
+      - name: Set PHP project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'PHP')
+        env:
+          project_nb: "33"
+          org: "microsoftgraph"
+      - name: Set Python project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'Python')
+        env:
+          project_nb: "34"
+          org: "microsoftgraph"
+      - name: Set TypeScript project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'TypeScript')
+        env:
+          project_nb: "21"
+          org: "microsoftgraph"
+      - name: Set CSharp project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'CSharp')
+        env:
+          project_nb: "28"
+          org: "microsoftgraph"
+      - name: Set Generator project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'generator')
+        env:
+          project_nb: "220"
+          org: "microsoft"
+      - name: Set CLI project
+        run: gh project item-add $PROJECT_NB --owner $ORG --url ${{ github.event.issue.html_url}}
+        if: contains(github.event.issue.labels.*.name, 'CLI')
+        env:
+          project_nb: "23"
+          org: "microsoftgraph"
