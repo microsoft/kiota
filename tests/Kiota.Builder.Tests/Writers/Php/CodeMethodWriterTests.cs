@@ -799,7 +799,7 @@ public class CodeMethodWriterTests : IDisposable
         },
         new object[]
         {
-            new CodeProperty { Name = "DOB", Type = new CodeType { Name = "DateTimeOffset" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            new CodeProperty { Name = "DOB", Type = new CodeType { Name = "DateTimeOffset" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom, SerializationName = "dOB" },
             "'dOB' => fn(ParseNode $n) => $o->setDOB($n->getDateTimeValue()),"
         },
         new object[]
