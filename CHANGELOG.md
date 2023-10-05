@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
 - Fixed a bug where the hints would miss quotes for paths and always use the API manifest. [#3342](https://github.com/microsoft/kiota/issues/3342)
 - Fixed a bug where inline composed types for components schemas would have the wrong name. [#3067](https://github.com/microsoft/kiota/issues/3067)
+- Fixed a bug where the casing of properties serialization name would be normalized. [kiota-serialization-json-dotnet#131](https://github.com/microsoft/kiota-serialization-json-dotnet/issues/131)
 - Changed parameter order in with_url method body to match the signature of RequestBuilder constructor in Python. [#3328](https://github.com/microsoft/kiota/issues/3328)
 - Removed redundant undefined qualifier in TypeScript for properties. [#3244](https://github.com/microsoft/kiota/issues/3244)
 - The default status code response is now used as 4XX and 5XX when those class responses are not provided in the description. [#3245](https://github.com/microsoft/kiota/issues/3245)
