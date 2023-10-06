@@ -47,6 +47,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 false);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}", new HashSet<Type> { typeof(CodeEnumOption) });
             AddQueryParameterFactoryMethod(generatedCode);
+            AddPrimaryErrorMessage(generatedCode, "getMessage", () => new CodeType{IsExternal = true, IsNullable = false, Name = "string"});
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddRequestConfigurationConstructors(generatedCode);
