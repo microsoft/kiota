@@ -18,7 +18,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
         switch (codeElement.Kind)
         {
             case CodePropertyKind.ErrorMessageOverride:
-                throw new InvalidOperationException("Error message overrides are implemented with methods in Java.");
+                throw new InvalidOperationException("Error message overrides are implemented with methods in PHP.");
             case CodePropertyKind.RequestBuilder:
                 WriteRequestBuilderBody(codeElement, writer, propertyType, propertyAccess, propertyName);
                 break;

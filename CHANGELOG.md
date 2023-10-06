@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
+
 ### Changed
 
 ## [1.7.0] - 2023-10-05
