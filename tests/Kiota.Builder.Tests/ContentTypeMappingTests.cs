@@ -248,9 +248,12 @@ public sealed class ContentTypeMappingTests : IDisposable
         Assert.Equal(parameterType, executor.Parameters.OfKind(CodeParameterKind.RequestBody).Type.Name);
     }
     [Theory]
-    [InlineData("application/json, text/plain", "application/json", "application/json;q=1")]
-    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml;q=1,application/json;q=0.8")]
-    public void GeneratesTheRightAcceptHeaderBasedOnContentAndStatus(string contentMediaTypes, string structuredMimeTypes, string expectedAcceptHeader)
+    [InlineData("application/json, text/plain", "application/json", "application/json;q=1", "text/plain;q=1")]
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml;q=1,application/json;q=0.8", "text/plain;q=1")]
+    [InlineData("*/*", "application/json;q=0.8", "*/*", "application/json;q=0.8")]
+    [InlineData("application/json, */*", "application/json;q=0.8", "application/json;q=0.8", "*/*")]
+    [InlineData("application/png, application/jpg", "application/json;q=0.8", "application/png, application/jpg", "application/json;q=0.8")]
+    public void GeneratesTheRightAcceptHeaderBasedOnContentAndStatus(string contentMediaTypes, string structuredMimeTypes, string expectedAcceptHeader, string unexpectedMimeTypes)
     {
         var document = new OpenApiDocument
         {
@@ -333,5 +336,7 @@ public sealed class ContentTypeMappingTests : IDisposable
         Assert.NotNull(generator);
         foreach (var header in expectedAcceptHeader.Split(','))
             Assert.Contains(header.Trim(), generator.AcceptedResponseTypes);
+        foreach (var header in unexpectedMimeTypes.Split(','))
+            Assert.DoesNotContain(header.Trim(), generator.AcceptedResponseTypes);
     }
 }

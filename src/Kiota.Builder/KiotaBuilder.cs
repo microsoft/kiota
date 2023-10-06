@@ -1420,10 +1420,12 @@ public partial class KiotaBuilder
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
-            if (schema != null)
+            var mediaTypes = schema switch
             {
-                generatorMethod.AcceptedResponseTypes.AddRange(config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)));
-            }
+                null => operation.Responses.Values.SelectMany(static x => x.Content).Select(static x => x.Key),
+                _ => config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
+            };
+            generatorMethod.AcceptedResponseTypes.AddRange(mediaTypes);
             if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
