@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Kiota.Builder.Comparers;
+namespace Kiota.Builder;
 
 public abstract class BaseStringComparisonComparer<T> : IComparer<T>
 {

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Comparers;
+using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Writers;
 

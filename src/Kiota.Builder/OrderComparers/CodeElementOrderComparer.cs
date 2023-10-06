@@ -2,7 +2,7 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder.Comparers;
+namespace Kiota.Builder.OrderComparers;
 public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement>
 {
     public override int Compare(CodeElement? x, CodeElement? y)

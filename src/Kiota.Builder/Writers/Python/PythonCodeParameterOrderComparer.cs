@@ -1,5 +1,5 @@
 ﻿using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Comparers;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Python;
 public class PythonCodeParameterOrderComparer : BaseCodeParameterOrderComparer

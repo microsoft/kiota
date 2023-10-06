@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.Comparers;
+using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;

@@ -1,4 +1,4 @@
-﻿using Kiota.Builder.Comparers;
+﻿using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.CodeRenderers;
