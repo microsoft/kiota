@@ -1421,10 +1421,8 @@ public partial class KiotaBuilder
                 Deprecation = deprecationInformation,
             };
             if (schema != null)
-            {//TODO compare schemas by openapi reference and by reference
-                var mediaTypes = config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => x.Value.Schema == schema).Select(static x => x.Key));
-                foreach (var mediaType in mediaTypes)
-                    generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            {
+                generatorMethod.AcceptedResponseTypes.AddRange(config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)));
             }
             if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
@@ -1437,6 +1435,7 @@ public partial class KiotaBuilder
             logger.LogWarning(ex, "Could not create method for {Operation} in {Path} because the schema was invalid", operation.OperationId, currentNode.Path);
         }
     }
+    private static readonly OpenApiSchemaReferenceComparer schemaReferenceComparer = new();
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x =>
     {
         var codeName = x.Name.SanitizeParameterNameForCodeSymbols();

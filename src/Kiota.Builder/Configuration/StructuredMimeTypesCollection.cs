@@ -102,6 +102,8 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
                         .Select(x => _mimeTypes.TryGetValue(x, out var result) ? NormalizeMimeType(x, result) : null)
-                        .OfType<string>();
+                        .OfType<string>()
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Order(StringComparer.OrdinalIgnoreCase);
     }
 }

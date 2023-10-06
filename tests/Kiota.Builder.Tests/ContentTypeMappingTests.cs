@@ -249,7 +249,8 @@ public sealed class ContentTypeMappingTests : IDisposable
     }
     [Theory]
     [InlineData("application/json, text/plain", "application/json", "application/json;q=1")]
-    public void GeneratesTheRightAcceptHeaderBasedOnContentAndStatus(string acceptHeader, string structuredMimeTypes, string expectedAcceptHeader)
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml;q=1,application/json;q=0.8")]
+    public void GeneratesTheRightAcceptHeaderBasedOnContentAndStatus(string contentMediaTypes, string structuredMimeTypes, string expectedAcceptHeader)
     {
         var document = new OpenApiDocument
         {
@@ -263,7 +264,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
-                                    Content = acceptHeader.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                    Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
                                                 Type = "object",
                                                 Properties = new Dictionary<string, OpenApiSchema> {
@@ -320,7 +321,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
-                StructuredMimeTypes = new() { structuredMimeTypes }
+                StructuredMimeTypes = structuredMimeTypes.Split(',').Select(x => x.Trim()).ToList()
             }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);

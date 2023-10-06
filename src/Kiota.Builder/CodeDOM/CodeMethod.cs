@@ -126,7 +126,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
 #pragma warning disable CA2227
-    public HashSet<string> AcceptedResponseTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning disable CA1002
+    public List<string> AcceptedResponseTypes { get; set; } = new();
+#pragma warning restore CA1002
 #pragma warning restore CA2227
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
@@ -303,7 +305,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = new(errorMappings),
-            AcceptedResponseTypes = new(AcceptedResponseTypes, StringComparer.OrdinalIgnoreCase),
+            AcceptedResponseTypes = new(AcceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Deprecation = Deprecation,
