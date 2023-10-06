@@ -508,7 +508,7 @@ public class CodeMethodWriterTests : IDisposable
         setup();
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
-        method.AcceptedResponseTypes = new() { "application/json" };
+        method.AcceptedResponseTypes.Add("application/json");
         AddRequestProperties();
         AddRequestBodyParameters();
         writer.Write(method);

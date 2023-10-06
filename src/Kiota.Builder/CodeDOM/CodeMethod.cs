@@ -125,11 +125,11 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-#pragma warning disable CA2227
 #pragma warning disable CA1002
-    public List<string> AcceptedResponseTypes { get; set; } = new();
+    public List<string> AcceptedResponseTypes { get; private set; } = new();
 #pragma warning restore CA1002
-#pragma warning restore CA2227
+    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
+    public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;
