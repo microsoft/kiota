@@ -7,55 +7,46 @@ on:
     types: [opened, labeled, reopened]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ secrets.ISSUES_TOKEN }}
 
 jobs:
   assign_one_project:
     runs-on: ubuntu-latest
     name: Assign to One Project
     steps:
-    - name: Assign Java issues to Java project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Java')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/7'
-    - name: Assign Go issues to Go project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Go')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/8'
-    - name: Assign Ruby issues to Ruby project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Ruby')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/6'
-    - name: Assign PHP issues to PHP project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'PHP')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/4'
-    - name: Assign Python issues to Python project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Python')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/3'
-    - name: Assign TypeScript issues to TypeScript project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'TypeScript')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/2'
-    - name: Assign CSharp issues to CSharp project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'CSharp')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/5'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'generator')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/9'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'CLI')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/10'
+      - name: Set Java project info
+        run: gh project item-add 25 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'Java')
+        shell: pwsh
+      - name: Set Go project
+        run: gh project item-add 26 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'Go')
+        shell: pwsh
+      - name: Set Ruby project
+        run: gh project item-add 38 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'Ruby')
+        shell: pwsh
+      - name: Set PHP project
+        run: gh project item-add 33 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'PHP')
+        shell: pwsh
+      - name: Set Python project
+        run: gh project item-add 34 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'Python')
+        shell: pwsh
+      - name: Set TypeScript project
+        run: gh project item-add 21 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'TypeScript')
+        shell: pwsh
+      - name: Set CSharp project
+        run: gh project item-add 28 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'CSharp')
+        shell: pwsh
+      - name: Set Generator project
+        run: gh project item-add 220 --owner "microsoft" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'generator')
+        shell: pwsh
+      - name: Set CLI project
+        run: gh project item-add 23 --owner "microsoftgraph" --url "${{ github.event.issue.html_url}}"
+        if: contains(github.event.issue.labels.*.name, 'CLI')
+        shell: pwsh

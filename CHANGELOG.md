@@ -8,14 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added support for tracing in PHP. [#1871](https://github.com/microsoft/kiota/issues/1871)
+
+### Changed
+
+## [1.7.0] - 2023-10-05
+
+### Added
+
 - Added support for tracing in Python. [#1872](https://github.com/microsoft/kiota/issues/1872)
 - Added auto-generated comment for TypeScript generation. [#3244](https://github.com/microsoft/kiota/issues/3244)
 - Added a new switch to exclude all assets generated only for backward compatibility. [#2952](https://github.com/microsoft/kiota/issues/2952)
-- Remove `--json-no-indent` option in favor of `RAW_JSON` output format which does the same job. (CLI)
+- Added support for tracing (OpenTelemetry) in PHP. [#1871](https://github.com/microsoft/kiota/issues/1871)
 
 ### Changed
-- Fix class name casings when reference in the errorMappings in PHP.
+
+- Fixed class name casings when reference in the errorMappings in PHP.
+- Removed `--json-no-indent` option in favor of `RAW_JSON` output format which does the same job. (CLI)
 - Fixed imports for enum type properties with default values in Python. [#3367](https://github.com/microsoft/kiota/issues/3367)
 - Updated constructor for request builders in Python to set passed path parameters. [#3352](https://github.com/microsoft/kiota/issues/3352)
 - Fixed inherited type definition generation where some cases would not generate properly. [#2745](https://github.com/microsoft/kiota/issues/2745)
@@ -23,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
 - Fixed a bug where the hints would miss quotes for paths and always use the API manifest. [#3342](https://github.com/microsoft/kiota/issues/3342)
 - Fixed a bug where inline composed types for components schemas would have the wrong name. [#3067](https://github.com/microsoft/kiota/issues/3067)
+- Fixed a bug where the casing of properties serialization name would be normalized. [kiota-serialization-json-dotnet#131](https://github.com/microsoft/kiota-serialization-json-dotnet/issues/131)
 - Changed parameter order in with_url method body to match the signature of RequestBuilder constructor in Python. [#3328](https://github.com/microsoft/kiota/issues/3328)
 - Removed redundant undefined qualifier in TypeScript for properties. [#3244](https://github.com/microsoft/kiota/issues/3244)
 - The default status code response is now used as 4XX and 5XX when those class responses are not provided in the description. [#3245](https://github.com/microsoft/kiota/issues/3245)
@@ -1085,3 +1094,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
