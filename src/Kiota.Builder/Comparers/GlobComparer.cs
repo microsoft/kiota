@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DotNet.Globbing;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.Comparers;
 
 internal class GlobComparer : IEqualityComparer<Glob>
 {

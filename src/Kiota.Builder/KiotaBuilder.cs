@@ -15,6 +15,7 @@ using DotNet.Globbing;
 using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Comparers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;

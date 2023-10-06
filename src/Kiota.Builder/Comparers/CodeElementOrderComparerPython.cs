@@ -1,6 +1,6 @@
 ﻿using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.Comparers;
 public class CodeElementOrderComparerPython : CodeElementOrderComparer
 {
     protected override int GetTypeFactor(CodeElement element)

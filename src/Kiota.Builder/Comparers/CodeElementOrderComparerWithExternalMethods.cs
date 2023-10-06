@@ -1,6 +1,6 @@
 ﻿using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.Comparers;
 public class CodeElementOrderComparerWithExternalMethods : CodeElementOrderComparer
 {
     protected override int GetTypeFactor(CodeElement element)

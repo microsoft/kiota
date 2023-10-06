@@ -1,7 +1,7 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.Comparers;
 public class BaseCodeParameterOrderComparer : BaseStringComparisonComparer<CodeParameter>
 {
     public override int Compare(CodeParameter? x, CodeParameter? y)

@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Configuration;
+﻿using Kiota.Builder.Comparers;
+using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.CodeRenderers;
 public class PythonCodeRenderer : CodeRenderer
