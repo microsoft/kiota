@@ -95,15 +95,28 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
         else
             return false;
     }
-    public IEnumerable<string> GetMatchingMimeTypes(IEnumerable<string> searchTypes)
+    public IEnumerable<string> GetAcceptedTypes(IEnumerable<string> searchTypes)
     {
         ArgumentNullException.ThrowIfNull(searchTypes);
         return searchTypes.Select(GetKeyAndPriority)
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Select(x => _mimeTypes.TryGetValue(x, out var result) ? NormalizeMimeType(x, result) : null)
                         .OfType<string>()
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Order(StringComparer.OrdinalIgnoreCase);
+    }
+    public IEnumerable<string> GetContentTypes(IEnumerable<string> searchTypes)
+    {
+        ArgumentNullException.ThrowIfNull(searchTypes);
+        return searchTypes.Select(GetKeyAndPriority)
+                        .OfType<KeyValuePair<string, float>>()
+                        .Select(static x => x.Key)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
+                        .OfType<KeyValuePair<string, float>>()
+                        .OrderByDescending(static x => x.Value)
+                        .ThenByDescending(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                        .Select(static x => x.Key);
     }
 }

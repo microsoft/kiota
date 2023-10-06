@@ -40,13 +40,24 @@ public sealed class StructuredMimeTypesCollectionTests
     [InlineData("application/json, application/xml, application/yaml", "application/json", "application/json;q=1")]
     [InlineData("application/json, application/xml, application/yaml", "application/json,text/plain", "application/json;q=1")]
     [InlineData("application/json, application/xml, application/yaml;q=0.8", "application/json,text/plain,application/yaml", "application/json;q=1,application/yaml;q=0.8")]
-    public void Matches(string configuredTypes, string declaredTypes, string expectedTypes)
+    public void MatchesAccept(string configuredTypes, string declaredTypes, string expectedTypes)
     {
         var mimeTypes = new StructuredMimeTypesCollection(configuredTypes.Split(',').Select(static x => x.Trim()));
-        var result = mimeTypes.GetMatchingMimeTypes(declaredTypes.Split(',').Select(static x => x.Trim()));
+        var result = mimeTypes.GetAcceptedTypes(declaredTypes.Split(',').Select(static x => x.Trim()));
         var deserializedExpectedTypes = expectedTypes.Split(',').Select(static x => x.Trim());
         foreach (var expectedType in deserializedExpectedTypes)
             Assert.Contains(expectedType, result);
     }
-
+    [Theory]
+    [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/json", "application/json")]
+    [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/json,text/plain", "application/json")]
+    [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/json,text/plain,application/yaml", "application/json")]
+    public void MatchesContentType(string configuredTypes, string declaredTypes, string expectedTypes)
+    {
+        var mimeTypes = new StructuredMimeTypesCollection(configuredTypes.Split(',').Select(static x => x.Trim()));
+        var result = mimeTypes.GetContentTypes(declaredTypes.Split(',').Select(static x => x.Trim()));
+        var deserializedExpectedTypes = expectedTypes.Split(',').Select(static x => x.Trim());
+        foreach (var expectedType in deserializedExpectedTypes)
+            Assert.Contains(expectedType, result);
+    }
 }

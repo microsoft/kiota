@@ -1423,7 +1423,7 @@ public partial class KiotaBuilder
             var mediaTypes = schema switch
             {
                 null => operation.Responses.Values.SelectMany(static x => x.Content).Select(static x => x.Key),
-                _ => config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
+                _ => config.OrderedStructuredMimeTypes.GetAcceptedTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
             };
             generatorMethod.AcceptedResponseTypes.AddRange(mediaTypes);
             if (config.Language == GenerationLanguage.CLI)
@@ -1553,7 +1553,7 @@ public partial class KiotaBuilder
                 },
                 Deprecation = requestBodySchema.GetDeprecationInformation(),
             });
-            method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
+            method.RequestBodyContentType = config.OrderedStructuredMimeTypes.GetContentTypes(operation.RequestBody.Content.Where(x => schemaReferenceComparer.Equals(x.Value.Schema, requestBodySchema)).Select(static x => x.Key)).First();
         }
         else if (operation.RequestBody?.Content?.Any() ?? false)
         {
@@ -1574,6 +1574,11 @@ public partial class KiotaBuilder
                 },
             };
             method.AddParameter(nParam);
+            var contentTypes = operation.RequestBody.Content.Select(static x => x.Key).ToArray();
+            if (contentTypes.Length == 1)
+                method.RequestBodyContentType = contentTypes[0];
+            else
+                method.RequestBodyContentType = contentTypes[0]; //TODO we need to add a parameter
         }
         method.AddParameter(new CodeParameter
         {

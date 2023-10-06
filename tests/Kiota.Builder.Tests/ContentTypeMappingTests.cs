@@ -9,7 +9,6 @@ using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Moq;
-using SharpYaml.Tokens;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
@@ -338,5 +337,95 @@ public sealed class ContentTypeMappingTests : IDisposable
             Assert.Contains(header.Trim(), generator.AcceptedResponseTypes);
         foreach (var header in unexpectedMimeTypes.Split(','))
             Assert.DoesNotContain(header.Trim(), generator.AcceptedResponseTypes);
+    }
+    [Theory]
+    [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml", "text/plain")]
+    // [InlineData("*/*", "application/json;q=0.8", "*/*", "application/json")]
+    [InlineData("application/json, */*", "application/json;q=0.8", "application/json", "*/*")]
+    // [InlineData("application/png, application/jpg", "application/json;q=0.8", "application/png, application/jpg", "application/json")]
+    public void GeneratesTheRightContentTypeHeaderBasedOnContentAndStatus(string contentMediaTypes, string structuredMimeTypes, string expectedContentTypeHeader, string unexpectedMimeTypes)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                        Schema = new OpenApiSchema {
+                                            Type = "object",
+                                            Properties = new Dictionary<string, OpenApiSchema> {
+                                                {
+                                                    "id", new OpenApiSchema {
+                                                        Type = "string",
+                                                    }
+                                                }
+                                            },
+                                            Reference = new OpenApiReference
+                                            {
+                                                Id = "myobject",
+                                                Type = ReferenceType.Schema
+                                            },
+                                            UnresolvedReference = false
+                                        }
+                                    }
+                                }).ToDictionary(x => x.Key, x => x.value)
+                            },
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", new OpenApiSchema {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema> {
+                                {
+                                    "id", new OpenApiSchema {
+                                        Type = "string",
+                                    }
+                                }
+                            },
+                            Reference = new OpenApiReference
+                            {
+                                Id = "myobject",
+                                Type = ReferenceType.Schema
+                            },
+                            UnresolvedReference = false
+                        }
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = structuredMimeTypes.Split(',').Select(x => x.Trim()).ToList()
+            }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(static x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var generator = rbClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestGenerator));
+        Assert.NotNull(generator);
+        foreach (var header in expectedContentTypeHeader.Split(','))
+            Assert.Contains(header.Trim(), generator.RequestBodyContentType);
+        foreach (var header in unexpectedMimeTypes.Split(','))
+            Assert.DoesNotContain(header.Trim(), generator.RequestBodyContentType);
     }
 }
