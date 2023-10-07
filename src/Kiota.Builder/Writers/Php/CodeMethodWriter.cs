@@ -37,7 +37,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         switch (codeElement.Kind)
         {
             case CodeMethodKind.ErrorMessageOverride:
-                WriteErrorMessageOverride(parentClass, codeElement, writer, inherits);
+                WriteErrorMessageOverride(parentClass, writer);
                 break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
@@ -81,7 +81,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.WriteLine();
     }
 
-    private void WriteErrorMessageOverride(CodeClass parentClass, CodeMethod method, LanguageWriter writer, bool inherits)
+    private void WriteErrorMessageOverride(CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()", pathSegment: "->") is { } primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
