@@ -85,7 +85,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()", pathSegment: "->") is { } primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
-            var withoutMessage = primaryMessageCodePath.TrimEnd("->getMessage()".ToCharArray())+"()";
+            var withoutMessage = primaryMessageCodePath.TrimEnd("->getMessage()".ToCharArray()) + "()";
             var primaryErrorVariableName = "$primaryError";
             writer.WriteLine($"{primaryErrorVariableName} = $this->{withoutMessage};");
             writer.WriteLine($"if ({primaryErrorVariableName} !== null) {{");
