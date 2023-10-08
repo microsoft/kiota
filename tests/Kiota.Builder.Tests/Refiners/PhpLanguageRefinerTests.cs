@@ -140,13 +140,13 @@ public class PhpLanguageRefinerTests
         );
         model.AddMethod(new
             CodeMethod
+        {
+            ReturnType = new CodeType
             {
-                ReturnType = new CodeType
-                {
-                    Name = "string"
-                },
-                Kind = CodeMethodKind.ErrorMessageOverride
-            });
+                Name = "string"
+            },
+            Kind = CodeMethodKind.ErrorMessageOverride
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
 
         var declaration = model.StartBlock;
