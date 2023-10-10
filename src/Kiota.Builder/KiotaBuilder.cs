@@ -1575,10 +1575,21 @@ public partial class KiotaBuilder
             };
             method.AddParameter(nParam);
             var contentTypes = operation.RequestBody.Content.Select(static x => x.Key).ToArray();
-            if (contentTypes.Length == 1)
+            if (contentTypes.Length == 1 && !"*/*".Equals(contentTypes[0], StringComparison.OrdinalIgnoreCase))
                 method.RequestBodyContentType = contentTypes[0];
             else
-                method.RequestBodyContentType = contentTypes[0]; //TODO we need to add a parameter
+                method.AddParameter(new CodeParameter
+                {
+                    Kind = CodeParameterKind.RequestBodyContentType,
+                    Name = "contentType",
+                    Optional = false,
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                        IsExternal = true,
+                        IsNullable = false,
+                    },
+                });
         }
         method.AddParameter(new CodeParameter
         {

@@ -341,9 +341,9 @@ public sealed class ContentTypeMappingTests : IDisposable
     [Theory]
     [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
     [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml", "text/plain")]
-    // [InlineData("*/*", "application/json;q=0.8", "*/*", "application/json")]
+    [InlineData("*/*", "application/json;q=0.8", "", "application/json")]
     [InlineData("application/json, */*", "application/json;q=0.8", "application/json", "*/*")]
-    // [InlineData("application/png, application/jpg", "application/json;q=0.8", "application/png, application/jpg", "application/json")]
+    [InlineData("application/png, application/jpg", "application/json;q=0.8", "", "application/json")]
     public void GeneratesTheRightContentTypeHeaderBasedOnContentAndStatus(string contentMediaTypes, string structuredMimeTypes, string expectedContentTypeHeader, string unexpectedMimeTypes)
     {
         var document = new OpenApiDocument
@@ -423,8 +423,14 @@ public sealed class ContentTypeMappingTests : IDisposable
         Assert.NotNull(rbClass);
         var generator = rbClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestGenerator));
         Assert.NotNull(generator);
-        foreach (var header in expectedContentTypeHeader.Split(','))
-            Assert.Contains(header.Trim(), generator.RequestBodyContentType);
+        if (string.IsNullOrEmpty(expectedContentTypeHeader))
+        {
+            Assert.Empty(generator.RequestBodyContentType);
+            Assert.NotNull(generator.Parameters.OfKind(CodeParameterKind.RequestBodyContentType));
+        }
+        else
+            foreach (var header in expectedContentTypeHeader.Split(','))
+                Assert.Contains(header.Trim(), generator.RequestBodyContentType);
         foreach (var header in unexpectedMimeTypes.Split(','))
             Assert.DoesNotContain(header.Trim(), generator.RequestBodyContentType);
     }
