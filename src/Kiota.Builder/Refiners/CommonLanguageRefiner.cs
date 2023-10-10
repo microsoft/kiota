@@ -1309,7 +1309,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.QueryParameters) &&
-            currentClass.Properties.Any(static x => x.IsNameEscaped))
+            currentClass.Properties.Any(static x => x.IsNameEscaped && !x.SerializationName.Equals(x.Name, StringComparison.Ordinal)))
         {
             var method = currentClass.AddMethod(new CodeMethod
             {

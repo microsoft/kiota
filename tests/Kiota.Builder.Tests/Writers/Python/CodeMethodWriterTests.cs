@@ -25,7 +25,7 @@ public class CodeMethodWriterTests : IDisposable
     private const string ReturnTypeName = "Somecustomtype";
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
-    private const string ParamName = "paramName";
+    private const string ParamName = "param_name";
     public CodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
@@ -42,11 +42,11 @@ public class CodeMethodWriterTests : IDisposable
         {
             baseClass = root.AddClass(new CodeClass
             {
-                Name = "someParentClass",
+                Name = "SomeParentClass",
             }).First();
             baseClass.AddProperty(new CodeProperty
             {
-                Name = "definedInParent",
+                Name = "defined_in_parent",
                 Type = new CodeType
                 {
                     Name = "string"
@@ -56,20 +56,20 @@ public class CodeMethodWriterTests : IDisposable
         }
         parentClass = new CodeClass
         {
-            Name = "parentClass"
+            Name = "ParentClass"
         };
         if (withInheritance)
         {
             parentClass.StartBlock.Inherits = new CodeType
             {
-                Name = "someParentClass",
+                Name = "SomeParentClass",
                 TypeDefinition = baseClass
             };
         }
         root.AddClass(parentClass);
         childClass = new CodeClass
         {
-            Name = "childClass"
+            Name = "ChildClass"
         };
         root.AddClass(childClass);
         var returnTypeClassDef = new CodeClass
@@ -106,16 +106,16 @@ public class CodeMethodWriterTests : IDisposable
     {
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "requestAdapter",
+            Name = "request_adapter",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "requestAdapter"
+                Name = "RequestAdapter"
             },
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "pathParameters",
+            Name = "path_parameters",
             Kind = CodePropertyKind.PathParameters,
             Type = new CodeType
             {
@@ -124,7 +124,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "urlTemplate",
+            Name = "url_template",
             Kind = CodePropertyKind.UrlTemplate,
             Type = new CodeType
             {
@@ -136,7 +136,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "additionalData",
+            Name = "additional_data",
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType
             {
@@ -145,7 +145,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyString",
+            Name = "dummy_string",
             Type = new CodeType
             {
                 Name = "string"
@@ -153,7 +153,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyInteger",
+            Name = "dummy_integer",
             Type = new CodeType
             {
                 Name = "integer"
@@ -161,7 +161,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyBoolean",
+            Name = "dummy_boolean",
             Type = new CodeType
             {
                 Name = "boolean"
@@ -169,7 +169,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyFloat",
+            Name = "dummy_float",
             Type = new CodeType
             {
                 Name = "decimal"
@@ -177,7 +177,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyTimespan",
+            Name = "dummy_timespan",
             Type = new CodeType
             {
                 Name = "datetime.timedelta"
@@ -185,7 +185,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyDateTime",
+            Name = "dummy_date_time",
             Type = new CodeType
             {
                 Name = "datetime.datetime"
@@ -193,7 +193,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyTime",
+            Name = "dummy_time",
             Type = new CodeType
             {
                 Name = "datetime.time"
@@ -201,7 +201,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyDate",
+            Name = "dummy_date",
             Type = new CodeType
             {
                 Name = "datetime.date"
@@ -209,7 +209,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyGuid",
+            Name = "dummy_guid",
             Type = new CodeType
             {
                 Name = "UUID"
@@ -217,15 +217,15 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyClass",
+            Name = "dummy_class",
             Type = new CodeType
             {
-                Name = "dummyClass"
+                Name = "DummyClass"
             },
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyStream",
+            Name = "dummy_stream",
             Type = new CodeType
             {
                 Name = "binary"
@@ -233,7 +233,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyColl",
+            Name = "dummy_coll",
             Type = new CodeType
             {
                 Name = "guid",
@@ -242,7 +242,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyComplexColl",
+            Name = "dummy_complex_coll",
             Type = new CodeType
             {
                 Name = "Complex",
@@ -255,7 +255,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "dummyEnumCollection",
+            Name = "dummy_enum_collection",
             Type = new CodeType
             {
                 Name = "SomeEnum",
@@ -267,7 +267,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "definedInParent",
+            Name = "defined_in_parent",
             Type = new CodeType
             {
                 Name = "string"
@@ -349,19 +349,19 @@ public class CodeMethodWriterTests : IDisposable
         unionTypeWrapper.OriginalComposedType.AddType(sType);
         unionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "ComplexType1Value",
+            Name = "complex_type1_value",
             Type = cType1,
             Kind = CodePropertyKind.Custom
         });
         unionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "ComplexType2Value",
+            Name = "complex_type2_value",
             Type = cType2,
             Kind = CodePropertyKind.Custom
         });
         unionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "StringValue",
+            Name = "string_value",
             Type = sType,
             Kind = CodePropertyKind.Custom
         });
@@ -457,25 +457,25 @@ public class CodeMethodWriterTests : IDisposable
         intersectionTypeWrapper.OriginalComposedType.AddType(sType);
         intersectionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "ComplexType1Value",
+            Name = "complex_type1_value",
             Type = cType1,
             Kind = CodePropertyKind.Custom
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "ComplexType2Value",
+            Name = "complex_type2_value",
             Type = cType2,
             Kind = CodePropertyKind.Custom
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "ComplexType3Value",
+            Name = "complex_type3_value",
             Type = cType3,
             Kind = CodePropertyKind.Custom
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "StringValue",
+            Name = "string_value",
             Type = sType,
             Kind = CodePropertyKind.Custom
         });
@@ -728,7 +728,7 @@ public class CodeMethodWriterTests : IDisposable
         var wrapper = AddUnionTypeWrapper();
         var deserializationMethod = wrapper.AddMethod(new CodeMethod
         {
-            Name = "GetFieldDeserializers",
+            Name = "get_field_deserializers",
             Kind = CodeMethodKind.Deserializer,
             IsAsync = false,
             ReturnType = new CodeType
@@ -1028,7 +1028,7 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Factory;
         method.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1073,7 +1073,7 @@ public class CodeMethodWriterTests : IDisposable
         AddCodeUsings();
         method.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1114,7 +1114,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         factoryMethod.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1155,7 +1155,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         factoryMethod.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1229,7 +1229,7 @@ public class CodeMethodWriterTests : IDisposable
         parentClass.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
         method.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1265,7 +1265,7 @@ public class CodeMethodWriterTests : IDisposable
         parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         method.AddParameter(new CodeParameter
         {
-            Name = "parseNode",
+            Name = "parse_node",
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType
             {
@@ -1363,17 +1363,19 @@ public class CodeMethodWriterTests : IDisposable
         setup();
         parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("@property", result);
-        Assert.Contains("return self.backing_store.get(\"some_property\")", result);
+        Assert.Contains("return self.backingStore.get(\"some_property\")", result);
     }
     [Fact]
     public void WritesGetterNullBackingStore()
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
@@ -1403,6 +1405,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
         var result = tw.ToString();
@@ -1417,13 +1420,14 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("self.backing_store[\"some_property\"] = value", result);
+        Assert.Contains("self.backingStore[\"someProperty\"] = value", result);
     }
     [Fact]
     public void WritesGetterToField()
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
@@ -1445,6 +1449,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
         var result = tw.ToString();
@@ -1497,7 +1502,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.AddParameter(new CodeParameter
         {
-            Name = "rawUrl",
+            Name = "raw_url",
             Kind = CodeParameterKind.RawUrl,
             Type = new CodeType
             {
@@ -1508,7 +1513,7 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}", result);
+        Assert.Contains($"return {parentClass.Name}", result);
         Assert.Contains("request_adapter, raw_url", result);
     }
     [Fact]
@@ -1568,11 +1573,11 @@ public class CodeMethodWriterTests : IDisposable
         // AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
-            Name = "requestAdapter",
+            Name = "request_adapter",
             Kind = CodeParameterKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "requestAdapter"
+                Name = "RequestAdapter"
             },
         });
         writer.Write(method);
@@ -1610,16 +1615,16 @@ public class CodeMethodWriterTests : IDisposable
         // AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
-            Name = "requestAdapter",
+            Name = "request_adapter",
             Kind = CodeParameterKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "requestAdapter"
+                Name = "RequestAdapter"
             },
         });
         method.AddParameter(new CodeParameter
         {
-            Name = "pathParameters",
+            Name = "path_parameters",
             Kind = CodeParameterKind.PathParameters,
             Type = new CodeType
             {
@@ -1655,6 +1660,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
         var defaultValue = "someVal";
@@ -1687,6 +1693,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Constructor;
         parentClass.Kind = CodeClassKind.Model;
         writer.Write(method);
@@ -1700,12 +1707,13 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.AddAccessedProperty();
+        method.AccessedProperty.Name = "some_property";
         method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "1024x1024";
         var propName = "size";
         var codeEnum = new CodeEnum
         {
-            Name = "pictureSize"
+            Name = "PictureSize"
         };
         root.AddEnum(codeEnum);
         parentClass.Kind = CodeClassKind.Model;
@@ -1741,7 +1749,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super().__init__()", result);
         Assert.Contains($"from .{codeEnum.Name.ToSnakeCase()} import {codeEnum.Name.ToFirstCharacterUpperCase()}", result);
         Assert.Contains("has a description", result);
-        Assert.Contains($"{propName}: Optional[{codeEnum.Name.ToFirstCharacterUpperCase()}] = {codeEnum.Name.ToFirstCharacterUpperCase()}({defaultValue})", result);
+        Assert.Contains($"{propName}: Optional[{codeEnum.Name}] = {codeEnum.Name}({defaultValue})", result);
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
@@ -1851,7 +1859,7 @@ public class CodeMethodWriterTests : IDisposable
         method.BaseUrl = "https://graph.microsoft.com/v1.0";
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "pathParameters",
+            Name = "path_parameters",
             Kind = CodePropertyKind.PathParameters,
             Type = new CodeType
             {
@@ -1934,7 +1942,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         var backingStoreParam = new CodeParameter
         {
-            Name = "backingStore",
+            Name = "backing_store",
             Kind = CodeParameterKind.BackingStore,
             Type = new CodeType
             {
@@ -1979,7 +1987,7 @@ public class CodeMethodWriterTests : IDisposable
         },
         new CodeProperty
         {
-            Name = "select-from",
+            Name = "select_from",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "select%2Dfrom",
             Type = new CodeType
@@ -2000,7 +2008,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter
         {
             Kind = CodeParameterKind.QueryParametersMapperParameter,
-            Name = "originalName",
+            Name = "original_name",
             Type = new CodeType
             {
                 Name = "string",
@@ -2027,7 +2035,8 @@ public class CodeMethodWriterTests : IDisposable
         method.IsAsync = false;
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "startDateTime",
+            Name = "start_date_time",
+            SerializationName = "startDateTime",
             Kind = CodePropertyKind.QueryParameter,
             Type = new CodeType
             {
@@ -2037,7 +2046,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter
         {
             Kind = CodeParameterKind.QueryParametersMapperParameter,
-            Name = "originalName",
+            Name = "original_name",
             Type = new CodeType
             {
                 Name = "string",

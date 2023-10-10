@@ -36,7 +36,7 @@ public class CodeUsingWriter
                     if ("-".Equals(codeUsing.Key, StringComparison.OrdinalIgnoreCase))
                         writer.WriteLine($"import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
                     else
-                        writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
+                        writer.WriteLine($"from {codeUsing.Key} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
                 }
             writer.WriteLine();
         }
@@ -105,7 +105,7 @@ public class CodeUsingWriter
             writer.WriteLine("if TYPE_CHECKING:");
             writer.IncreaseIndent();
             foreach (var codeUsing in internalImportSymbolsAndPaths)
-                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
+                writer.WriteLine($"from {codeUsing.Key} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
             writer.DecreaseIndent();
             writer.WriteLine();
 
@@ -139,7 +139,7 @@ public class CodeUsingWriter
         if (importSymbolsAndPaths.Any())
         {
             foreach (var codeUsing in importSymbolsAndPaths)
-                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
+                writer.WriteLine($"from {codeUsing.Key} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
             writer.WriteLine();
         }
     }

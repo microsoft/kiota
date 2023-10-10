@@ -23,8 +23,8 @@ public class PythonRelativeImportManager : RelativeImportManager
             return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
         var (importSymbol, typeDef) = codeUsing.Declaration?.TypeDefinition is CodeElement td ? td switch
         {
-            CodeFunction f => (f.Name.ToFirstCharacterLowerCase(), td),
-            _ => (td.Name.ToFirstCharacterUpperCase(), td),
+            CodeFunction f => (f.Name, td),
+            _ => (td.Name, td),
         } : (codeUsing.Name, null);
 
         if (typeDef == null)
@@ -32,10 +32,10 @@ public class PythonRelativeImportManager : RelativeImportManager
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
             typeDef.GetImmediateParentOfType<CodeNamespace>());
         if (string.IsNullOrEmpty(importPath))
-            importPath += codeUsing.Name;
+            importPath += codeUsing.Name.ToSnakeCase(); // TODO: review the logic happening for those imports
         else
-            importPath += codeUsing.Declaration?.Name.ToFirstCharacterLowerCase();
-        return (importSymbol, codeUsing.Alias, importPath);
+            importPath += codeUsing.Declaration?.Name.ToSnakeCase();
+        return (importSymbol.ToFirstCharacterUpperCase(), codeUsing.Alias, importPath);
     }
     protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
     {
@@ -53,7 +53,7 @@ public class PythonRelativeImportManager : RelativeImportManager
     protected static new string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("", Enumerable.Repeat(".", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "." : string.Empty);
     protected static new string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
-        var segments = remainingSegments.Select(static x => x.ToFirstCharacterLowerCase()).ToArray();
+        var segments = remainingSegments.Select(static x => x.ToSnakeCase()).ToArray();
         if (segments.Any())
             return segments.Aggregate(static (x, y) => $"{x}.{y}") + '.';
         return string.Empty;
