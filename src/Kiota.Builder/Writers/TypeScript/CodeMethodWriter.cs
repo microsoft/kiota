@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>

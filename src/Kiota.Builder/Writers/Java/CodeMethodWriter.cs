@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Java;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>

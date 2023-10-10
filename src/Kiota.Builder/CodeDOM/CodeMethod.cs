@@ -2,8 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.CodeDOM;
 

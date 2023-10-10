@@ -3,10 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.CodeRenderers;
