@@ -30,7 +30,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                                     codeClass.IsOfKind(CodeClassKind.Model);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, config);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
 
         WriteMethodPhpDocs(codeElement, writer);
         WriteMethodsAndParameters(codeElement, writer, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));

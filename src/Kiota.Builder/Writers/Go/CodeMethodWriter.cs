@@ -24,7 +24,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         writer.IncreaseIndent();
         var requestOptionsParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-        var requestParams = new RequestParams(requestBodyParam, requestOptionsParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestOptionsParam, requestContentType);
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:

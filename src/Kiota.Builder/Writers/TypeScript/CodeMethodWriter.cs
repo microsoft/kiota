@@ -31,7 +31,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestConfigParam, requestContentType);
         WriteDefensiveStatements(codeElement, writer);
         switch (codeElement.Kind)
         {

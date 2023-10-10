@@ -25,7 +25,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var configParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, configParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, configParam, requestContentType);
         AddNullChecks(codeElement, writer);
         switch (codeElement.Kind)
         {

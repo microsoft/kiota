@@ -22,7 +22,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var inherits = parentClass.StartBlock.Inherits != null;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, config);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
         WriteMethodPrototype(codeElement, writer);
         AddNullChecks(codeElement, writer);
         switch (codeElement.Kind)

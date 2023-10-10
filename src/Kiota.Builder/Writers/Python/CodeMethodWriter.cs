@@ -36,7 +36,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestConfigParam, requestContentType);
         if (!codeElement.IsOfKind(CodeMethodKind.Setter) &&
         !(codeElement.IsOfKind(CodeMethodKind.Constructor) && parentClass.IsOfKind(CodeClassKind.RequestBuilder)))
             foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name))
