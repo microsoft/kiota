@@ -610,14 +610,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         writer.WriteLine($"{RequestInfoVarName} = RequestInformation()");
+        UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
             currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             writer.WriteLines($"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
         writer.WriteLine($"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = [\"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"]");
-        UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
+            writer.WriteLine($"{RequestInfoVarName}.try_add_request_header(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");

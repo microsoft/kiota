@@ -936,7 +936,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
-        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
@@ -963,7 +963,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
-        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
@@ -991,7 +991,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
-        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);

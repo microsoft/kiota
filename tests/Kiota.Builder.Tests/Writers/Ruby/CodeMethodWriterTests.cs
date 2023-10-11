@@ -517,7 +517,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info.path_parameters", result);
         Assert.Contains("request_info.url_template", result);
         Assert.Contains("http_method = :GET", result);
-        Assert.Contains("request_info.headers.add('Accept', 'application/json')", result);
+        Assert.Contains("request_info.headers.try_add('Accept', 'application/json')", result);
         Assert.Contains("set_query_string_parameters_from_raw_object", result);
         Assert.Contains("add_headers_from_raw_object", result);
         Assert.Contains("add_request_options", result);

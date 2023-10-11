@@ -555,8 +555,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLines($"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                             $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};");
         writer.WriteLine($"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()};");
-        WriteAcceptHeaderDef(codeElement, writer);
         WriteRequestConfiguration(requestParams, writer);
+        WriteAcceptHeaderDef(codeElement, writer);
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
@@ -599,7 +599,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
     {
         if (codeMethod.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}->addHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
+            writer.WriteLine($"{RequestInfoVarName}->headers->tryAdd('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false)
     {
