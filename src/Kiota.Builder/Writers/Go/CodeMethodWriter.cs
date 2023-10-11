@@ -860,8 +860,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         {
             var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
             var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
+            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, {requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
+            }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
             {
                 if (bodyType.IsCollection)
