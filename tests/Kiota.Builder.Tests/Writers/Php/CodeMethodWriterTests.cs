@@ -295,6 +295,31 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WriteErrorMessageOverride()
+    {
+        setup();
+        var error401 = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+        error401.AddProperty(new CodeProperty { Type = new CodeType { Name = "string" }, Name = "code", Kind = CodePropertyKind.Custom });
+        error401.AddProperty(new CodeProperty { Type = new CodeType { Name = "string" }, Name = "message", IsPrimaryErrorMessage = true, Kind = CodePropertyKind.Custom });
+
+        var codeMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType { Name = "string" },
+            SimpleName = "getPrimaryErrorMessage",
+        };
+        error401.AddMethod(codeMethod);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("return $primaryError->getMessage() ?? '';", result);
+    }
+    [Fact]
     public async void WritesRequestExecutorForEnumTypes()
     {
         setup();
