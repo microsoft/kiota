@@ -3895,7 +3895,7 @@ paths:
                         [OperationType.Get] = new OpenApiOperation
                         {
                             Parameters = new List<OpenApiParameter> {
-                                new OpenApiParameter {
+                                new() {
                                     Name = "query",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
@@ -3923,6 +3923,65 @@ paths:
         Assert.NotNull(property);
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [Theory]
+    public void MapsEnumQueryParameterType(GenerationLanguage generationLanguage)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter> {
+                                new() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string",
+                                        Enum = new List<IOpenApiAny> {
+                                            new OpenApiString("value1"),
+                                            new OpenApiString("value2")
+                                        }
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = generationLanguage }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var backwardCompatibleProperty = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(backwardCompatibleProperty);
+        if (generationLanguage is GenerationLanguage.CSharp)
+        {
+            Assert.Equal("string", backwardCompatibleProperty.Type.Name);
+            Assert.True(backwardCompatibleProperty.Type.AllTypes.First().IsExternal);
+            Assert.True(backwardCompatibleProperty.Deprecation.IsDeprecated);
+            var property = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("queryAsGetQueryQueryParameterType", StringComparison.OrdinalIgnoreCase));
+            Assert.NotNull(property);
+            Assert.Equal("GetQueryQueryParameterType", property.Type.Name);
+        }
+        else
+        {
+            Assert.Equal("GetQueryQueryParameterType", backwardCompatibleProperty.Type.Name);
+            Assert.False(backwardCompatibleProperty.Deprecation.IsDeprecated);
+        }
     }
     [InlineData(true)]
     [InlineData(false)]
