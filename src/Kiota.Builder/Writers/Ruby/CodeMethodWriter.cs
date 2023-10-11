@@ -302,7 +302,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             if (requestParams.requestBody != null)
             {
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
+                {
+                    if (requestParams.requestContentType is not null)
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
+                    else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\")");
+                }
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                     writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
