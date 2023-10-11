@@ -563,7 +563,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, {conventions.GetParameterName(requestParams.requestContentType)});");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{codeElement.RequestBodyContentType}\");");
+            }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
