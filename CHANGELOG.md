@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
 - Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
+- Added support for multiple content type request bodies. [#3377](https://github.com/microsoft/kiota/issues/3377)
+- Added support for multiple content type responses. [#3377](https://github.com/microsoft/kiota/issues/3377)
 
 ### Changed
 
@@ -21,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
 - Changes to the configuration of RequestInformation are preserved instead of being overwritten. [#3401](https://github.com/microsoft/kiota/pull/3401).
 - Fix bug where import statements in typescript wasn't using import type notation for types that are erased at runtime. [#3190](https://github.com/microsoft/kiota/issues/3190)
+- The structured content type generation parameter now supports prioritization with `q=value` syntax. [#3377](https://github.com/microsoft/kiota/issues/3377)
 
 ## [1.7.0] - 2023-10-05
 
