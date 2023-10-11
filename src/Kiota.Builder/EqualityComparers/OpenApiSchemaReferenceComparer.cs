@@ -14,7 +14,8 @@ internal class OpenApiSchemaReferenceComparer : IEqualityComparer<OpenApiSchema>
             (null, null) => true,
             (null, _) => false,
             (_, null) => false,
-            _ when x.Reference is not null && y.Reference is not null => x.Reference.Id.Equals(y.Reference.Id, StringComparison.OrdinalIgnoreCase),
+            _ when x.Reference is not null && !string.IsNullOrEmpty(x.Reference.Id) && y.Reference is not null && !string.IsNullOrEmpty(y.Reference.Id) =>
+                    x.Reference.Id.Equals(y.Reference.Id, StringComparison.OrdinalIgnoreCase),
             _ => x == y,
         };
     }
