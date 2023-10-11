@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed bug where base64url types would not be generated properly in Java.
+
 ## [1.7.0] - 2023-10-05
 
 ### Added
