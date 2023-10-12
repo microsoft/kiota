@@ -2314,7 +2314,7 @@ public partial class KiotaBuilder
             var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
             var enumName = schema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
-                enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.ToFirstCharacterUpperCase()}QueryParameterType";
+                enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
             if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType
