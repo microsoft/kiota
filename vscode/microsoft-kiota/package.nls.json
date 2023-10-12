@@ -20,5 +20,13 @@
   "kiota.openApiExplorer.filterDescription.title": "Filter API description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Open documentation page",
   "kiota.openApiExplorer.openManifestPath.title": "Open API manifest",
-  "kiota.openApiExplorer.pasteManifest.title": "Paste API manifest"
+  "kiota.openApiExplorer.pasteManifest.title": "Paste API manifest",
+  "kiota.generate.backingStore.description": "Enables backing store for models",
+  "kiota.generate.excludeBackwardCompatible.description": "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients",
+  "kiota.cleanOutput.description": "Removes all files from the output directory before generating the code files",
+  "kiota.generate.disableValidationRules.description": "The OpenAPI description validation rules to disable: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Clears any cached data",
+  "kiota.generate.serializer.description": "The fully qualified class names for serializers",
+  "kiota.generate.deserializer.description": "The fully qualified class names for deserializers",
+  "kiota.generate.structuredMimeTypes.description": "The MIME types and preference to use for structured data model generation. As per RFC9110 Accept header notation."
 }

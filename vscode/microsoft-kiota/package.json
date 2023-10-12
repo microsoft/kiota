@@ -23,6 +23,65 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "configuration": {
+      "title": "Kiota",
+      "properties": {
+        "kiota.generate.backingStore.enabled": {
+          "type":"boolean",
+          "default": false,
+          "description": "%kiota.generate.backingStore.description%"
+        },
+        "kiota.generate.excludeBackwardCompatible.enabled": {
+          "type":"boolean",
+          "default": false,
+          "description": "%kiota.generate.excludeBackwardCompatible.description%"
+        },
+        "kiota.cleanOutput.enabled": {
+          "type":"boolean",
+          "default": false,
+          "description": "%kiota.cleanOutput.description%"
+        },
+        "kiota.generate.disableValidationRules": {
+          "type":"array",
+          "default": [],
+          "description": "%kiota.generate.disableValidationRules.description%"
+        },
+        "kiota.clearCache.enabled": {
+          "type":"boolean",
+          "default": false,
+          "description": "%kiota.clearCache.description%"
+        },
+        "kiota.generate.serializer.CSharp": {
+          "type":"array",
+          "default": [
+            "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Multipart.MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.CSharp": {
+          "type":"array",
+          "default": [
+            "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+            "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+            "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.structuredMimeTypes": {
+          "type":"array",
+          "default": [
+            "application/json;q=1",
+            "application/x-www-form-urlencoded;q=0.2",
+            "multipart/form-data;q=0.1",
+            "text/plain;q=0.9"
+          ],
+          "description": "%kiota.generate.structuredMimeTypes.description%"
+        }
+      }
+    },
     "viewsWelcome": [
       {
         "view": "kiota.openApiExplorer",
