@@ -87,6 +87,7 @@ public class CodeEnumWriterTests : IDisposable
     [InlineData("$", "Dollar")]
     [InlineData("double", "Double")]
     [InlineData("string", "String")]
+    [InlineData("Invalid lorem’s", "InvalidLoremS")]
     public void WritesEnumWithSanitizedName(string symbol, string expected)
     {
         currentEnum.Flags = true;
