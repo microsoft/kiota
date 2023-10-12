@@ -1425,7 +1425,7 @@ public partial class KiotaBuilder
                 null => operation.Responses.Values.SelectMany(static x => x.Content).Select(static x => x.Key),
                 _ => config.OrderedStructuredMimeTypes.GetAcceptedTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
             };
-            generatorMethod.AcceptedResponseTypes.AddRange(mediaTypes);
+            generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
             if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);

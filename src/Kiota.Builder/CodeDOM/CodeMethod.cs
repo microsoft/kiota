@@ -125,9 +125,13 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-#pragma warning disable CA1002
-    public List<string> AcceptedResponseTypes { get; private set; } = new();
-#pragma warning restore CA1002
+    public IList<string> AcceptedResponseTypes { get; private set; } = new List<string>();
+    public void AddAcceptedResponsesTypes(IEnumerable<string> types)
+    {
+        if (types == null) return;
+        if (AcceptedResponseTypes is List<string> list)
+            list.AddRange(types);
+    }
     public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
     public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
@@ -305,7 +309,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = new(errorMappings),
-            AcceptedResponseTypes = new(AcceptedResponseTypes),
+            AcceptedResponseTypes = new List<string>(AcceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Deprecation = Deprecation,
