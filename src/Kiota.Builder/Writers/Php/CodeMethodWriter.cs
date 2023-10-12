@@ -599,7 +599,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
     {
         if (codeMethod.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}->headers->tryAdd('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
+            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false)
     {
