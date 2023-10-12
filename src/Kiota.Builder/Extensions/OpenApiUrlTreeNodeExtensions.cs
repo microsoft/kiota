@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
@@ -13,7 +14,7 @@ public static class OpenApiUrlTreeNodeExtensions
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
     private static readonly char[] namespaceNameSplitCharacters = new[] { '.', '-', '$' }; //$ref from OData
-    public static string GetNamespaceFromPath(this string currentPath, string prefix) =>
+    internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
                     (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
@@ -26,6 +27,7 @@ public static class OpenApiUrlTreeNodeExtensions
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
                             ?.Select(static x => x.CleanupSymbolName())
+                            ?.Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
                             ?.Aggregate(string.Empty,
                                 static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                     string.Empty)
