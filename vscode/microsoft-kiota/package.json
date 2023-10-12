@@ -70,6 +70,109 @@
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
+        "kiota.generate.serializer.Go": {
+          "type":"array",
+          "default": [
+            "github.com/microsoft/kiota-serialization-form-go/FormSerializationWriterFactory",
+            "github.com/microsoft/kiota-serialization-json-go/JsonSerializationWriterFactory",
+            "github.com/microsoft/kiota-serialization-text-go/TextSerializationWriterFactory",
+            "github.com/microsoft/kiota-serialization-multipart-go/MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Go": {
+          "type":"array",
+          "default": [
+            "github.com/microsoft/kiota-serialization-form-go/FormParseNodeFactory",
+            "github.com/microsoft/kiota-serialization-json-go/JsonParseNodeFactory",
+            "github.com/microsoft/kiota-serialization-text-go/TextParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.serializer.Java": {
+          "type":"array",
+          "default": [
+            "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
+            "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
+            "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
+            "com.microsoft.kiota.serialization.MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Java": {
+          "type":"array",
+          "default": [
+            "com.microsoft.kiota.serialization.TextParseNodeFactory",
+            "com.microsoft.kiota.serialization.JsonParseNodeFactory",
+            "com.microsoft.kiota.serialization.TextParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.serializer.PHP": {
+          "type":"array",
+          "default": [
+            "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+            "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.PHP": {
+          "type":"array",
+          "default": [
+            "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+            "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.serializer.Python": {
+          "type":"array",
+          "default": [
+            "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
+            "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Python": {
+          "type":"array",
+          "default": [
+            "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
+            "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.serializer.Ruby": {
+          "type":"array",
+          "default": [
+            "microsoft_kiota_serialization/json_serialization_writer_factory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Ruby": {
+          "type":"array",
+          "default": [
+            "microsoft_kiota_serialization/json_parse_node_factory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
+        "kiota.generate.serializer.TypeScript": {
+          "type":"array",
+          "default": [
+            "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
+            "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+            "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
+            "@microsoft/kiota-serialization-multipart.MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.TypeScript": {
+          "type":"array",
+          "default": [
+            "@microsoft/kiota-serialization-form.FormParseNodeFactory",
+            "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+            "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
         "kiota.generate.structuredMimeTypes": {
           "type":"array",
           "default": [
