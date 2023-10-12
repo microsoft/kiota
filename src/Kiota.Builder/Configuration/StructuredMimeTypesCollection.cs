@@ -72,6 +72,7 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
         _mimeTypes.Clear();
     }
 
+    /// <inheritdoc/>
     public void CopyTo(string[] array, int arrayIndex)
     {
         _mimeTypes.OrderByDescending(static x => x.Value).Select(NormalizeMimeType).ToArray().CopyTo(array, arrayIndex);
@@ -84,7 +85,7 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
     {
         return $"{key};q={value}";
     }
-
+    ///<inheritdoc/>
     public bool Remove(string item)
     {
         if (GetKeyAndPriority(item) is { } result && _mimeTypes.ContainsKey(result.Key))
