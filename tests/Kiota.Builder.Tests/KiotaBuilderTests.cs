@@ -3924,6 +3924,52 @@ paths:
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
+    [Fact]
+    public void MapsQueryParameterArrayTypes()
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter> {
+                                new() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "array",
+                                        Items = new OpenApiSchema {
+                                            Type = "integer",
+                                            Format = "int64"
+                                        }
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("int64", property.Type.Name);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, property.Type.CollectionKind);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Java)]
     [Theory]
