@@ -37,13 +37,16 @@ export interface KiotaOpenApiNode {
     isOperation?: boolean;
     documentationUrl?: string;
 }
+interface CacheClearableConfiguration {
+    clearCache: boolean;
+}
 
-export interface KiotaShowConfiguration {
+export interface KiotaShowConfiguration extends CacheClearableConfiguration {
     includeFilters: string[];
     excludeFilters: string[];
     descriptionPath: string;
 }
-export interface KiotaGetManifestDetailsConfiguration {
+export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConfiguration {
     manifestPath: string;
     apiIdentifier: string;
 }

@@ -41,7 +41,7 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  const openApiTreeProvider = new OpenApiTreeProvider(context);
+  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
@@ -224,7 +224,8 @@ export async function activate(
         
         languagesInformation = await getLanguageInformationForDescription(
           context,
-          openApiTreeProvider.descriptionUrl
+          openApiTreeProvider.descriptionUrl,
+          settings.clearCache
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
@@ -249,7 +250,8 @@ export async function activate(
           cancellable: false,
           title: vscode.l10n.t("Searching...")
         }, (progress, _) => {
-          return searchDescription(context, x);
+          const settings = getExtensionSettings(extensionId);
+          return searchDescription(context, x, settings.clearCache);
         }));
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
@@ -374,7 +376,6 @@ async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvide
       );
       return;
     }
-
     const logs = await openApiTreeProvider.loadManifestFromContent(clipBoardContent, apiIdentifier);
     await exportLogsAndShowErrors(logs);
   });

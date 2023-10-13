@@ -88,18 +88,20 @@ internal class Server : IServer
         var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
         return await new KiotaBuilder(logger, config, httpClient).GenerateClientAsync(cancellationToken);
     }
-    public async Task<SearchOperationResult> SearchAsync(string searchTerm, CancellationToken cancellationToken)
+    public async Task<SearchOperationResult> SearchAsync(string searchTerm, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaSearcher>();
         var configuration = Configuration.Search;
+        configuration.ClearCache = clearCache;
         var searchService = new KiotaSearcher(logger, configuration, httpClient, null, (_) => Task.FromResult(false));
         var results = await searchService.SearchAsync(searchTerm, string.Empty, cancellationToken);
         return new(logger.LogEntries, results);
     }
-    public async Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, CancellationToken cancellationToken)
+    public async Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
+        configuration.ClearCache = clearCache;
         configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
         var builder = new KiotaBuilder(logger, configuration, httpClient);
         var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken: cancellationToken);
@@ -107,10 +109,11 @@ internal class Server : IServer
                             manifestResult?.Item1,
                             manifestResult?.Item2.ToArray());
     }
-    public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
+    public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
+        configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
         var builder = new KiotaBuilder(logger, configuration, httpClient);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
@@ -182,15 +185,16 @@ internal class Server : IServer
     {
         return Configuration.Languages;
     }
-    public Task<LanguagesInformation> InfoForDescriptionAsync(string descriptionPath, CancellationToken cancellationToken)
+    public Task<LanguagesInformation> InfoForDescriptionAsync(string descriptionPath, bool clearCache, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(descriptionPath);
-        return InfoInternalAsync(descriptionPath, cancellationToken);
+        return InfoInternalAsync(descriptionPath, clearCache, cancellationToken);
     }
-    private async Task<LanguagesInformation> InfoInternalAsync(string descriptionPath, CancellationToken cancellationToken)
+    private async Task<LanguagesInformation> InfoInternalAsync(string descriptionPath, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
+        configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
         var builder = new KiotaBuilder(logger, configuration, httpClient);
         var result = await builder.GetLanguagesInformationAsync(cancellationToken);
