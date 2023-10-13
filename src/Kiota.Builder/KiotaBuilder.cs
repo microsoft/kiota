@@ -1808,7 +1808,7 @@ public partial class KiotaBuilder
         }
         return existingDeclaration;
     }
-    private CodeEnum? AddEnumDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
+    private static CodeEnum? AddEnumDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
     {
         if (schema.IsEnum())
         {
