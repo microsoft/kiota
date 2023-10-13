@@ -26,6 +26,11 @@
     "configuration": {
       "title": "Kiota",
       "properties": {
+        "kiota.generate.includeAdditionalData.enabled": {
+          "type":"boolean",
+          "default": true,
+          "description": "%kiota.generate.includeAdditionalData.description%"
+        },
         "kiota.generate.backingStore.enabled": {
           "type":"boolean",
           "default": false,
@@ -41,10 +46,10 @@
           "default": false,
           "description": "%kiota.cleanOutput.description%"
         },
-        "kiota.generate.disableValidationRules": {
+        "kiota.generate.disabledValidationRules": {
           "type":"array",
           "default": [],
-          "description": "%kiota.generate.disableValidationRules.description%"
+          "description": "%kiota.generate.disabledValidationRules.description%"
         },
         "kiota.clearCache.enabled": {
           "type":"boolean",
