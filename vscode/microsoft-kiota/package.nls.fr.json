@@ -20,5 +20,14 @@
   "kiota.openApiExplorer.filterDescription.title": "Filtrer la description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Ouvrir la page de documentation",
   "kiota.openApiExplorer.openManifestPath.title": "Ouvrir un manifeste d'API",
-  "kiota.openApiExplorer.pasteManifest.title": "Coller un manifeste d'API"
+  "kiota.openApiExplorer.pasteManifest.title": "Coller un manifeste d'API",
+  "kiota.generate.backingStore.description": "Active le stockage d'informations déporté pour les modèles.",
+  "kiota.generate.excludeBackwardCompatible.description": "Exclue les éléments de compatibilité et obsolètes du résultat. Devrait être activé pour tout nouveau client.",
+  "kiota.cleanOutput.description": "Supprime tous les fichiers du répertoire de destination avant de générer les nouveaux fichiers.",
+  "kiota.generate.disabledValidationRules.description": "Les règles de validation OpenAPI à désactiver : \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Supprime toute donnée en cache.",
+  "kiota.generate.serializer.description": "Le nom complet des classes de sérialisation.",
+  "kiota.generate.deserializer.description": "Le nom complet des classes de désérialisation.",
+  "kiota.generate.structuredMimeTypes.description": "Les types MIME et ordre de préférence à utiliser pour la génération de modèles structurés. Suit la convention décrite dans la RFC 9110 pour l'entête Accept.",
+  "kiota.generate.includeAdditionalData.description": "Incluera la propriété 'AdditionalData' pour les modèles générés."
 }
