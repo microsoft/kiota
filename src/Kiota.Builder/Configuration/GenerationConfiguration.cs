@@ -29,10 +29,10 @@ public class GenerationConfiguration : ICloneable
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
-
+    internal const string ModelsNamespaceSegmentName = "models";
     public string ModelsNamespaceName
     {
-        get => $"{ClientNamespaceName}{NamespaceNameSeparator}models";
+        get => $"{ClientNamespaceName}{NamespaceNameSeparator}{ModelsNamespaceSegmentName}";
     }
     public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
     public string? ApiRootUrl
