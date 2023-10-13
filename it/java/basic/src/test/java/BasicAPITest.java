@@ -22,10 +22,11 @@ public class BasicAPITest {
         );
 
         Assertions.assertNotNull(exception.getCause());
-        Assertions.assertTrue(exception.getCause() instanceof com.microsoft.kiota.ApiException);
-        var error = (com.microsoft.kiota.ApiException) exception.getCause();
+        Assertions.assertTrue(exception.getCause() instanceof apisdk.models.Error);
+        var error = (apisdk.models.Error) exception.getCause();
 
-        Assertions.assertEquals(423, error.getResponseStatusCode());
+        Assertions.assertEquals("my-sample-id", error.getId());
+        Assertions.assertEquals(123, error.getCode());
     }
 
 }
