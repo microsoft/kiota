@@ -36,7 +36,7 @@
     "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.27",
     "@microsoft/kiota-serialization-form": "^1.0.0-preview.16",
     "@microsoft/kiota-serialization-json": "^1.0.0-preview.28",
-    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.6",
+    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.7",
     "@microsoft/kiota-serialization-text": "^1.0.0-preview.25",
     "express": "^4.18.2",
     "node-fetch": "^2.7.0"
