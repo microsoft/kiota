@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
+- Added settings in the vscode extension for: backingStore, additionalData, excludeBackwardCompatible, cleanOutput, clearCache, serializers, deserializers, disabledValidationRules, structuredMimeTypes. [#3355](https://github.com/microsoft/kiota/issues/3355)
 - Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
 
 ### Changed
