@@ -9,10 +9,10 @@ internal interface IServer
 {
     LanguagesInformation Info();
     string GetVersion();
-    Task<List<LogEntry>> UpdateAsync(string output, CancellationToken cancellationToken);
+    Task<List<LogEntry>> UpdateAsync(string output, bool cleanOutput, bool clearCache, CancellationToken cancellationToken);
     Task<SearchOperationResult> SearchAsync(string searchTerm, CancellationToken cancellationToken);
     Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken);
     Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, CancellationToken cancellationToken);
-    Task<List<LogEntry>> GenerateAsync(string descriptionPath, string output, GenerationLanguage language, string[] includeFilters, string[] excludeFilters, string clientClassName, string clientNamespaceName, CancellationToken cancellationToken);
+    Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, CancellationToken cancellationToken);
     Task<LanguagesInformation> InfoForDescriptionAsync(string descriptionPath, CancellationToken cancellationToken);
 }
