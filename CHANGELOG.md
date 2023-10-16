@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where base64url types would not be generated properly in Java.
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
+- Changes to the configuration of RequestInformation are preserved instead of being overwritten. [#3401](https://github.com/microsoft/kiota/pull/3401).
 
 ## [1.7.0] - 2023-10-05
 
@@ -74,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flattens the models namespaces in Ruby to avoid circular dependencies.
 - Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
 - Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)
-- RequestExecuters call overload methods reducing code generation size for Java. [#3150](https://github.com/microsoft/kiota/issues/3150)  
+- RequestExecuters call overload methods reducing code generation size for Java. [#3150](https://github.com/microsoft/kiota/issues/3150)
 - Remove URISyntaxException from Java generated RequestExecutors and RequestGenerators. [#3149](https://github.com/microsoft/kiota/issues/3149)
 - Adds 'Generated' annotation to generated Enums and Classes for Java. [#3106](https://github.com/microsoft/kiota/issues/3106)
 - Fixes uuid conversion to string value in PathParameters in Go. [#3106](https://github.com/microsoft/kiota/issues/3176)
@@ -234,15 +235,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2023-04-05
 
 ### Added
- 
+
 - Added Visual Studio Code preview extension. [#2333](https://github.com/microsoft/kiota/issues/2333)
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
 - Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)
 
 ### Changed
 
-- Fixed a bug where UUID type is not correctly passed to deserialization method due to snake casing of primitive type names. 
-- Fixed a bug where unescaped query parameters are not correctly matched to the original name due to python convention of snake casing parameter names. 
+- Fixed a bug where UUID type is not correctly passed to deserialization method due to snake casing of primitive type names.
+- Fixed a bug where unescaped query parameters are not correctly matched to the original name due to python convention of snake casing parameter names.
 - Fixed a bug where date types annotations and guid's were not correctly translated in Python
 - Fixed the extension of downloaded files when using the default path. [#2316](https://github.com/microsoft/kiota/issues/2316)
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
@@ -1100,4 +1101,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
