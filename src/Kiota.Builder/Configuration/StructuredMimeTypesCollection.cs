@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Kiota.Builder.Configuration;
 
-internal partial class StructuredMimeTypesCollection : ICollection<string>
+public partial class StructuredMimeTypesCollection : ICollection<string>
 {
     [GeneratedRegex(@"(?<mime>[^;]+);?q?=?(?<priority>[\d.]+)?", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
     private static partial Regex mimeTypesRegex();
@@ -48,11 +48,11 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
     {
         return GetEnumerator();
     }
-    public bool Contains(string mimeType)
+    public bool Contains(string item)
     {
-        if (string.IsNullOrEmpty(mimeType))
+        if (string.IsNullOrEmpty(item))
             return false;
-        return _mimeTypes.ContainsKey(mimeType);
+        return _mimeTypes.ContainsKey(item);
     }
     public float? GetPriority(string mimeType)
     {

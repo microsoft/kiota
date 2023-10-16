@@ -323,7 +323,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
-                StructuredMimeTypes = structuredMimeTypes.Split(',').Select(x => x.Trim()).ToList()
+                StructuredMimeTypes = new(structuredMimeTypes.Split(',').Select(x => x.Trim()))
             }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -413,7 +413,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
-                StructuredMimeTypes = structuredMimeTypes.Split(',').Select(x => x.Trim()).ToList()
+                StructuredMimeTypes = new(structuredMimeTypes.Split(',').Select(x => x.Trim()))
             }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);

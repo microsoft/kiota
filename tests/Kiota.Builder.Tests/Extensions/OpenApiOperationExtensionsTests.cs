@@ -50,9 +50,9 @@ public class OpenApiOperationExtensionsTests
             }
         };
         var defaultConfiguration = new GenerationConfiguration();
-        Assert.NotNull(operation.GetResponseSchema(defaultConfiguration.OrderedStructuredMimeTypes));
-        Assert.Null(operation2.GetResponseSchema(defaultConfiguration.OrderedStructuredMimeTypes));
-        Assert.Null(operation3.GetResponseSchema(defaultConfiguration.OrderedStructuredMimeTypes));
+        Assert.NotNull(operation.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
+        Assert.Null(operation2.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
+        Assert.Null(operation3.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
     }
     [Fact]
     public void Defensive()
