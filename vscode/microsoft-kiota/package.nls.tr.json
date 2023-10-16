@@ -18,5 +18,16 @@
   "kiota.openApiExplorer.welcome": "Seçili bir API açıklaması yok.\n[Ara](command:kiota.searchApiDescription)\n[Aç](command:kiota.openApiExplorer.openDescription)\n[Kilit dosyasını seç](command:kiota.searchLock)",
   "kiota.searchLock.title": "Kilit dosyası arayın",
   "kiota.openApiExplorer.filterDescription.title": "API açıklaması filtrele",
-  "kiota.openApiExplorer.openDocumentationPage.title": "API belgelerini aç"
+  "kiota.openApiExplorer.openDocumentationPage.title": "API belgelerini aç",
+  "kiota.openApiExplorer.openManifestPath.title": "API manifestini aç",
+  "kiota.openApiExplorer.pasteManifest.title": "API manifestini yapıştır",
+  "kiota.generate.backingStore.description": "Enables backing store for models",
+  "kiota.generate.excludeBackwardCompatible.description": "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients",
+  "kiota.cleanOutput.description": "Kod dosyalarını oluşturmadan önce çıktı dizinindeki tüm dosyaları kaldırır",
+  "kiota.generate.disabledValidationRules.description": "OpenAPI açıklama doğrulama kuralları olarak belirlenir: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Önbelleğe alınmış tüm verileri temizler",
+  "kiota.generate.serializer.description": "Serileştiriciler için tam nitelikli sınıf adları",
+  "kiota.generate.deserializer.description": "Seri durumdan çıkarma işlemleri için tam nitelikli sınıf adları",
+  "kiota.generate.structuredMimeTypes.description": "Yapılandırılmış veri modeli oluşturmak için kullanılacak MIME türleri ve tercihi. RFC9110'a göre Başlık gösterimini kabul et.",
+  "kiota.generate.includeAdditionalData.description": "Modeller için 'AdditionalData' özelliğini içerecektir"
 }
