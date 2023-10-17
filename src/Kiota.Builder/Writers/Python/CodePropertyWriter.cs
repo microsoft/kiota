@@ -42,6 +42,25 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                 writer.WriteLine();
                 break;
+            case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
+                writer.WriteLine("@property");
+                writer.StartBlock($"def {codeElement.Name}(self) -> {codeElement.Type.Name}:");
+                conventions.WriteLongDescription(codeElement.Documentation, writer);
+                if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(),
+                        static x => x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
+                    !string.IsNullOrEmpty(primaryMessageCodePath))
+                {
+                    var pathWithoutMessage = primaryMessageCodePath.TrimEnd(".message".ToCharArray());
+                    writer.StartBlock($"if self.{pathWithoutMessage} is not None:");
+                    writer.WriteLine(
+                        $"return '' if self.{primaryMessageCodePath} is None else self.{primaryMessageCodePath}");
+                    writer.DecreaseIndent();
+                    writer.WriteLine("return ''");
+                }
+                else
+                    writer.WriteLine("return super().message");
+                writer.DecreaseIndent();
+                break;
         }
     }
 }
