@@ -128,6 +128,11 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
+            AddPrimaryErrorMessage(generatedCode,
+                "primary_message",
+                () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
+                true
+            );
         }, cancellationToken);
     }
 

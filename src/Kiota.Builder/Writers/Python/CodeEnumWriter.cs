@@ -2,7 +2,6 @@
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionService>
