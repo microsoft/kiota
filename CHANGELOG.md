@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
 - Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
+- Support for primary error message in Python [#3277](https://github.com/microsoft/kiota/issues/3277)
 
 ### Changed
 
