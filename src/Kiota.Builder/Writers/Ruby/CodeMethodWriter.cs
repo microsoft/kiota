@@ -281,13 +281,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         writer.WriteLine("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()");
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
-                                $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
-        writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"request_info.headers.add('Accept', '{string.Join(", ", codeElement.AcceptedResponseTypes)}')");
         if (requestParams.requestConfiguration != null)
         {
             var queryString = requestParams.QueryParameters;
@@ -313,6 +306,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                     writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
         }
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+            writer.WriteLines($"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
+                                $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
+        writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
+        if (codeElement.AcceptedResponseTypes.Any())
+            writer.WriteLine($"request_info.headers.try_add('Accept', '{string.Join(", ", codeElement.AcceptedResponseTypes)}')");
         writer.WriteLine("return request_info");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";

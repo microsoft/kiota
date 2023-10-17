@@ -1192,7 +1192,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("urlTemplate =", result);
         Assert.Contains("pathParameters =", result);
         Assert.Contains("httpMethod = HttpMethod.GET", result);
-        Assert.Contains("requestInfo.headers.add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("if (c != null)", result);
         Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
         Assert.Contains("c.accept(requestConfig)", result);
@@ -1220,7 +1220,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("urlTemplate =", result);
         Assert.Contains("pathParameters =", result);
         Assert.Contains("httpMethod = HttpMethod.GET", result);
-        Assert.Contains("requestInfo.headers.add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("if (c != null)", result);
         Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
         Assert.Contains("c.accept(requestConfig)", result);
@@ -1247,7 +1247,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("urlTemplate =", result);
         Assert.Contains("pathParameters =", result);
         Assert.Contains("httpMethod = HttpMethod.GET", result);
-        Assert.Contains("requestInfo.headers.add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("if (c != null)", result);
         Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
         Assert.Contains("c.accept(requestConfig)", result);

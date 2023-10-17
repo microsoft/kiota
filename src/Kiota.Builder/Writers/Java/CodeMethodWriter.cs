@@ -541,26 +541,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation();");
-        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()};");
-        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
-                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.headers.add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
 
-        if (requestParams.requestBody != null &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-        {
-            var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name}[0])" : string.Empty;
-            var collectionPostfix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
-            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
-            else
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{collectionPostfix}({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
-        }
         if (requestParams.requestConfiguration != null)
         {
             writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
@@ -578,6 +559,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                              $"{RequestInfoVarName}.addRequestOptions({RequestConfigVarName}.options);");
 
             writer.CloseBlock();
+        }
+
+        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()};");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
+            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
+                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
+        if (codeElement.AcceptedResponseTypes.Any())
+            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+
+        if (requestParams.requestBody != null &&
+            currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
+        {
+            var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name}[0])" : string.Empty;
+            var collectionPostfix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
+            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
+            else
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{collectionPostfix}({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");

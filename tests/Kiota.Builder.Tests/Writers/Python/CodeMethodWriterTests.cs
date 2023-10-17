@@ -673,7 +673,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
-        Assert.Contains("request_info.headers[\"Accept\"] = [\"application/json, text/plain\"]", result);
+        Assert.Contains("request_info.try_add_request_header(\"Accept\", \"application/json, text/plain\")", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);
@@ -698,7 +698,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
-        Assert.Contains("request_info.headers[\"Accept\"] = [\"application/json, text/plain\"]", result);
+        Assert.Contains("request_info.try_add_request_header(\"Accept\", \"application/json, text/plain\")", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);

@@ -819,33 +819,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty)
-            writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
-                        $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
-        writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.Headers.Add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
-        if (requestParams.requestBody != null)
-        {
-            var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
-            var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
-            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-            {
-                if (bodyType.IsCollection)
-                {
-                    var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
-                    WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
-                    bodyParamReference = "cast";
-                }
-                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
-                writer.WriteBlock("if err != nil {", "}", "return nil, err");
-            }
-            else
-                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
-        }
+
         if (requestParams.requestConfiguration != null)
         {
             var headers = requestParams.Headers;
@@ -874,6 +848,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             }
             writer.CloseBlock();
         }
+
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty)
+            writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
+                        $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
+        writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
+        if (codeElement.AcceptedResponseTypes.Any())
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
+        if (requestParams.requestBody != null)
+        {
+            var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
+            var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
+            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
+            {
+                if (bodyType.IsCollection)
+                {
+                    var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
+                    WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
+                    bodyParamReference = "cast";
+                }
+                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                writer.WriteBlock("if err != nil {", "}", "return nil, err");
+            }
+            else
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+        }
+
         writer.WriteLine($"return {RequestInfoVarName}, nil");
     }
     private const string BaseRequestBuilderVarName = "BaseRequestBuilder";
