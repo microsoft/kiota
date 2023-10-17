@@ -218,6 +218,7 @@ public static class StringExtensions
         {'=', "Equal"},
         {'>', "GreaterThan"},
         {'?', "QuestionMark"},
+        {'~', "Tilda" },
     };
 
     /// <summary>
