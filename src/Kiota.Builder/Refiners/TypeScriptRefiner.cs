@@ -466,6 +466,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         Name = AbstractionsPackageName,
                                         IsExternal = true,
                                     },
+                                    IsErasable = true, // the import is used only for the type, not for the value
                                 })},
     {"DateOnly", (string.Empty, new CodeUsing {
                             Name = "DateOnly",
@@ -473,6 +474,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
+                            IsErasable = true, // the import is used only for the type, not for the value
                         })},
     {"TimeOnly", (string.Empty, new CodeUsing {
                             Name = "TimeOnly",
@@ -480,6 +482,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
+                            IsErasable = true, // the import is used only for the type, not for the value
                         })},
     {"Guid", (string.Empty, new CodeUsing {
                             Name = "Guid",
@@ -487,6 +490,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 Name = GuidPackageName,
                                 IsExternal = true,
                             },
+                            IsErasable = true, // the import is used only for the type, not for the value
                         })},
     };
 
