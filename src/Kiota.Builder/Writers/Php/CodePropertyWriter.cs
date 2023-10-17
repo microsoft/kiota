@@ -17,6 +17,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
         var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
         switch (codeElement.Kind)
         {
+            case CodePropertyKind.ErrorMessageOverride:
+                throw new InvalidOperationException("Error message overrides are implemented with methods in PHP.");
             case CodePropertyKind.RequestBuilder:
                 WriteRequestBuilderBody(codeElement, writer, propertyType, propertyAccess, propertyName);
                 break;

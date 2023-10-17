@@ -23,16 +23,16 @@ public class PythonConventionService : CommonLanguageConventionService
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
-            $"self.{pathParametersProperty.Name.ToSnakeCase()}" :
+            $"self.{pathParametersProperty.Name}" :
             urlTemplateVarName;
-        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToSnakeCase()}"))}";
+        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
-            writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name.ToSnakeCase()}, {urlTemplateParams}{pathParametersSuffix})");
+            writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name}, {urlTemplateParams}{pathParametersSuffix})");
     }
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
-        writer.WriteLine($"{TempDictionaryVarName} = get_path_parameters({pathParametersReference.ToSnakeCase()})");
+        writer.WriteLine($"{TempDictionaryVarName} = get_path_parameters({pathParametersReference})");
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
@@ -53,7 +53,7 @@ public class PythonConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(parameter);
         ArgumentNullException.ThrowIfNull(targetElement);
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None" : string.Empty)}{defaultValueSuffix}";
+        return $"{parameter.Name}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None" : string.Empty)}{defaultValueSuffix}";
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
@@ -81,7 +81,7 @@ public class PythonConventionService : CommonLanguageConventionService
             var alias = GetTypeAlias(currentType, targetElement);
             var typeName = string.IsNullOrEmpty(alias) ? TranslateType(currentType) : alias;
             if (TypeExistInSameClassAsTarget(code, targetElement) && targetElement.Parent != null)
-                typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
+                typeName = targetElement.Parent.Name;
             if (code.ActionOf && writer != null)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
             return $"{collectionPrefix}{typeName}{collectionSuffix}";
@@ -109,7 +109,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
             "object" or "str" or "int" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => typeName.ToLowerInvariant(),
-            _ => !string.IsNullOrEmpty(typeName) ? typeName.ToFirstCharacterUpperCase() : "object",
+            _ => !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
 

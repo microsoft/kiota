@@ -36,6 +36,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
         switch (codeElement.Kind)
         {
+            case CodeMethodKind.ErrorMessageOverride:
+                WriteErrorMessageOverride(parentClass, writer);
+                break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 break;
@@ -78,6 +81,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.WriteLine();
     }
 
+    private void WriteErrorMessageOverride(CodeClass parentClass, LanguageWriter writer)
+    {
+        if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()", pathSegment: "->") is { } primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
+        {
+            var withoutMessage = primaryMessageCodePath.TrimEnd("->getMessage()".ToCharArray()) + "()";
+            var primaryErrorVariableName = "$primaryError";
+            writer.WriteLine($"{primaryErrorVariableName} = $this->{withoutMessage};");
+            writer.WriteLine($"if ({primaryErrorVariableName} !== null) {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"return {primaryErrorVariableName}->getMessage() ?? '';");
+            writer.CloseBlock();
+            writer.WriteLine("return '';");
+        }
+        else
+        {
+            writer.WriteLine("return parent::getMessage();");
+        }
+    }
     private const string UrlTemplateTempVarName = "$urlTplParams";
     private const string RawUrlParameterKey = "request-raw-url";
     private static readonly Dictionary<CodeParameterKind, CodePropertyKind> propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()

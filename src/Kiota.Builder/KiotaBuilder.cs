@@ -1223,7 +1223,7 @@ public partial class KiotaBuilder
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
-    private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204", "205" };
+    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat(new[] { FourXXError, FiveXXError }), StringComparer.OrdinalIgnoreCase);
     private const string FourXXError = "4XX";
@@ -1793,34 +1793,48 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
-            if (schema.IsEnum())
-            {
-                var schemaDescription = schema.Description.CleanupDescription();
-                OpenApiEnumFlagsExtension? enumFlagsExtension = null;
-                if (schema.Extensions.TryGetValue(OpenApiEnumFlagsExtension.Name, out var rawExtension) &&
-                    rawExtension is OpenApiEnumFlagsExtension flagsExtension)
-                {
-                    enumFlagsExtension = flagsExtension;
-                }
-                var newEnum = new CodeEnum
-                {
-                    Name = declarationName,
-                    Flags = enumFlagsExtension?.IsFlags ?? false,
-                    Documentation = new()
-                    {
-                        Description = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?
-                                            schemaDescription : // if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
-                                            currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
-                    },
-                    Deprecation = schema.GetDeprecationInformation(),
-                };
-                SetEnumOptions(schema, newEnum);
-                return currentNamespace.AddEnum(newEnum).First();
-            }
+            if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
+                return enumDeclaration;
 
             return AddModelClass(currentNode, schema, declarationName, currentNamespace, inheritsFrom);
         }
         return existingDeclaration;
+    }
+    private CodeEnum? AddEnumDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
+    {
+        if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeEnum existingDeclaration) // we can find it in the components
+        {
+            return AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace);
+        }
+        return existingDeclaration;
+    }
+    private static CodeEnum? AddEnumDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
+    {
+        if (schema.IsEnum())
+        {
+            var schemaDescription = schema.Description.CleanupDescription();
+            OpenApiEnumFlagsExtension? enumFlagsExtension = null;
+            if (schema.Extensions.TryGetValue(OpenApiEnumFlagsExtension.Name, out var rawExtension) &&
+                rawExtension is OpenApiEnumFlagsExtension flagsExtension)
+            {
+                enumFlagsExtension = flagsExtension;
+            }
+            var newEnum = new CodeEnum
+            {
+                Name = declarationName,
+                Flags = enumFlagsExtension?.IsFlags ?? false,
+                Documentation = new()
+                {
+                    Description = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?
+                                        schemaDescription : // if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
+                                        currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
+                },
+                Deprecation = schema.GetDeprecationInformation(),
+            };
+            SetEnumOptions(schema, newEnum);
+            return currentNamespace.AddEnum(newEnum).First();
+        }
+        return default;
     }
     private static void SetEnumOptions(OpenApiSchema schema, CodeEnum target)
     {
@@ -2278,16 +2292,39 @@ public partial class KiotaBuilder
                 },
             }).First();
             foreach (var parameter in parameters)
-                AddPropertyForQueryParameter(parameter, parameterClass);
+                AddPropertyForQueryParameter(node, operationType, parameter, parameterClass);
 
             return parameterClass;
         }
 
         return null;
     }
-    private void AddPropertyForQueryParameter(OpenApiParameter parameter, CodeClass parameterClass)
+    private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiParameter parameter, CodeClass parameterClass)
     {
-        var resultType = GetPrimitiveType(parameter.Schema) ?? new CodeType()
+        CodeType? resultType = default;
+        var addBackwardCompatibleParameter = false;
+        if (parameter.Schema.IsEnum())
+        {
+            var schema = parameter.Schema;
+            var codeNamespace = schema.IsReferencedSchema() switch
+            {
+                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
+                false => parameterClass.GetImmediateParentOfType<CodeNamespace>(), // Inline schema, i.e. specific to the Operation
+            };
+            var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
+            var enumName = schema.GetSchemaName().CleanupSymbolName();
+            if (string.IsNullOrEmpty(enumName))
+                enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
+            if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
+            {
+                resultType = new CodeType
+                {
+                    TypeDefinition = enumDeclaration,
+                };
+                addBackwardCompatibleParameter = true;
+            }
+        }
+        resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
             // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
@@ -2314,7 +2351,20 @@ public partial class KiotaBuilder
 
         if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
         {
-            parameterClass.AddProperty(prop);
+            if (addBackwardCompatibleParameter && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go)
+            { //TODO remove for v2
+                var modernProp = (CodeProperty)prop.Clone();
+                modernProp.Name = $"{prop.Name}As{modernProp.Type.Name.ToFirstCharacterUpperCase()}";
+                modernProp.SerializationName = prop.WireName;
+                prop.Deprecation = new($"This property is deprecated, use {modernProp.Name} instead", IsDeprecated: true);
+                prop.Type = GetDefaultQueryParameterType();
+                prop.Type.CollectionKind = modernProp.Type.CollectionKind;
+                parameterClass.AddProperty(modernProp, prop);
+            }
+            else
+            {
+                parameterClass.AddProperty(prop);
+            }
         }
         else
         {

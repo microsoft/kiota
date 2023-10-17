@@ -133,19 +133,29 @@ public class PhpLanguageRefinerTests
             {
                 Type = new CodeType
                 {
-                    Name = "integer"
+                    Name = "string"
                 },
                 Name = "message",
             }
         );
+        model.AddMethod(new
+            CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodeMethodKind.ErrorMessageOverride
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
 
         var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
-        Assert.Equal("ApiException", declaration.Inherits.Name);
+        Assert.Equal("ApiException", declaration.Inherits!.Name);
         Assert.Contains("escapedMessage", model.Properties.Select(x => x.Name));
         Assert.Contains("escapedCode", model.Properties.Select(x => x.Name));
+        Assert.Contains("getPrimaryErrorMessage", model.Methods.Select(x => x?.Name));
     }
 
     [Fact]

@@ -276,6 +276,63 @@ components:
         Assert.True(enumDef.Flags);
     }
     [Fact]
+    public async Task DoesntConflictOnModelsNamespace()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /models:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+  /models/inner:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: directoryObject
+      type: object
+      properties:
+        deletedDateTime:
+          type: string
+          pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+          format: date-time
+          nullable: true");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false));
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("ModelsRequestRequestBuilder", false));
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.modelsRequests");
+        Assert.NotNull(requestBuilderNS);
+        Assert.NotNull(requestBuilderNS.FindChildByName<CodeClass>("ModelsRequestBuilder", false));
+        Assert.Null(requestBuilderNS.FindChildByName<CodeClass>("DirectoryObject", false));
+        var innerRequestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.modelsRequests.inner");
+        Assert.NotNull(innerRequestBuilderNS);
+        Assert.NotNull(innerRequestBuilderNS.FindChildByName<CodeClass>("InnerRequestBuilder", false));
+
+    }
+    [Fact]
     public async Task NamesComponentsInlineSchemasProperly()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
@@ -3895,7 +3952,7 @@ paths:
                         [OperationType.Get] = new OpenApiOperation
                         {
                             Parameters = new List<OpenApiParameter> {
-                                new OpenApiParameter {
+                                new() {
                                     Name = "query",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
@@ -3923,6 +3980,111 @@ paths:
         Assert.NotNull(property);
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [Fact]
+    public void MapsQueryParameterArrayTypes()
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter> {
+                                new() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "array",
+                                        Items = new OpenApiSchema {
+                                            Type = "integer",
+                                            Format = "int64"
+                                        }
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("int64", property.Type.Name);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, property.Type.CollectionKind);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [Theory]
+    public void MapsEnumQueryParameterType(GenerationLanguage generationLanguage)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter> {
+                                new() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string",
+                                        Enum = new List<IOpenApiAny> {
+                                            new OpenApiString("value1"),
+                                            new OpenApiString("value2")
+                                        }
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = generationLanguage }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var backwardCompatibleProperty = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(backwardCompatibleProperty);
+        if (generationLanguage is GenerationLanguage.CSharp)
+        {
+            Assert.Equal("string", backwardCompatibleProperty.Type.Name);
+            Assert.True(backwardCompatibleProperty.Type.AllTypes.First().IsExternal);
+            Assert.True(backwardCompatibleProperty.Deprecation.IsDeprecated);
+            var property = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("queryAsGetQueryQueryParameterType", StringComparison.OrdinalIgnoreCase));
+            Assert.NotNull(property);
+            Assert.Equal("GetQueryQueryParameterType", property.Type.Name);
+        }
+        else
+        {
+            Assert.Equal("GetQueryQueryParameterType", backwardCompatibleProperty.Type.Name);
+            Assert.False(backwardCompatibleProperty.Deprecation.IsDeprecated);
+        }
     }
     [InlineData(true)]
     [InlineData(false)]

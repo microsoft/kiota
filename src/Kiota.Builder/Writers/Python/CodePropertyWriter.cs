@@ -25,7 +25,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
         {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@property");
-                writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
+                writer.WriteLine($"def {codeElement.Name}(self) -> {returnType}:");
                 writer.IncreaseIndent();
                 conventions.WriteLongDescription(codeElement.Documentation, writer);
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Type.Name, writer);
@@ -33,13 +33,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.CloseBlock(string.Empty);
                 break;
             case CodePropertyKind.QueryParameters:
-                returnType = $"{codeElement.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{codeElement.Type.Name.ToFirstCharacterUpperCase()}";
+                returnType = $"{codeElement.Parent?.Parent?.Name}.{codeElement.Type.Name}";
                 goto case CodePropertyKind.Headers;
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
             case CodePropertyKind.QueryParameter:
                 conventions.WriteInLineDescription(codeElement.Documentation.Description, writer);
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                 writer.WriteLine();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:

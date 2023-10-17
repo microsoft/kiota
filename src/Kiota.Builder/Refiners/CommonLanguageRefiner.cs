@@ -725,7 +725,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Distinct();
             var methodsParametersTypes = methods
                                 .SelectMany(static x => x.Parameters)
-                                .Where(static x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.RequestConfiguration))
+                                .Where(static x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.RequestConfiguration, CodeParameterKind.QueryParameter))
                                 .Select(static x => x.Type)
                                 .Distinct();
             var indexerTypes = currentClassChildren
@@ -1309,7 +1309,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.QueryParameters) &&
-            currentClass.Properties.Any(static x => x.IsNameEscaped))
+            currentClass.Properties.Any(static x => x.IsNameEscaped && !x.SerializationName.Equals(x.Name, StringComparison.Ordinal)))
         {
             var method = currentClass.AddMethod(new CodeMethod
             {

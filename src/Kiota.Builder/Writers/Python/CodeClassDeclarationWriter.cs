@@ -35,13 +35,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
             }
         }
 
-        var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(static x => x.Name.ToFirstCharacterUpperCase()).Aggregate((x, y) => x + ", " + y)}";
+        var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(static x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         var derivation = codeElement.Inherits is CodeType inheritType &&
                         conventions.GetTypeString(inheritType, codeElement) is string inheritSymbol &&
                         !string.IsNullOrEmpty(inheritSymbol) ?
                             inheritSymbol :
                             abcClass;
-        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
+        writer.WriteLine($"class {codeElement.Name}({derivation}):");
         writer.IncreaseIndent();
         if (codeElement.Parent is CodeClass parent)
         {

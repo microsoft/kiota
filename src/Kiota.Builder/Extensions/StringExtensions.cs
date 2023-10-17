@@ -149,7 +149,7 @@ public static class StringExtensions
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private const string CleanupGroupName = "followingLetter";
     public static string CleanupSymbolName(this string? original)
     {

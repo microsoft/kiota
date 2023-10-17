@@ -16,7 +16,7 @@ public class CodePropertyWriterTests : IDisposable
     private readonly CodeProperty property;
     private readonly CodeClass parentClass;
     private readonly CodeNamespace ns;
-    private const string PropertyName = "propertyName";
+    private const string PropertyName = "property_name";
     private const string TypeName = "Somecustomtype";
     public CodePropertyWriterTests()
     {
@@ -24,7 +24,7 @@ public class CodePropertyWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        ns = root.AddNamespace("graphtests.models");
+        ns = root.AddNamespace("Graphtests.models");
         parentClass = new CodeClass
         {
             Name = "parentClass"
@@ -56,7 +56,7 @@ public class CodePropertyWriterTests : IDisposable
         parentClass.StartBlock.AddUsings(nUsing);
         parentClass.AddProperty(property, new()
         {
-            Name = "pathParameters",
+            Name = "path_parameters",
             Kind = CodePropertyKind.PathParameters,
             Type = new CodeType
             {
@@ -64,7 +64,7 @@ public class CodePropertyWriterTests : IDisposable
             },
         }, new()
         {
-            Name = "requestAdapter",
+            Name = "request_adapter",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType
             {
