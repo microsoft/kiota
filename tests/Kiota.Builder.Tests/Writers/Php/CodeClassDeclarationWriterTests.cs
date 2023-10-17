@@ -160,6 +160,9 @@ public class CodeClassDeclarationWriterTests : IDisposable
     public async void AddsImportsToRequestConfigClasses()
     {
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
+        var modelsNamespace = root.AddNamespace("Models");
+        var eventStatus = new CodeEnum { Name = "EventStatus" };
+        modelsNamespace.AddEnum(eventStatus);
         queryParamClass.AddProperty(new[]
         {
             new CodeProperty
@@ -201,6 +204,20 @@ public class CodeClassDeclarationWriterTests : IDisposable
                     Name = "dateonly"
                 },
             },
+            new CodeProperty
+            {
+                Name = "status",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new()
+                {
+                    Description = "Filter by status",
+                },
+                Type = new CodeType
+                {
+                    Name = "EventStatus",
+                    TypeDefinition = eventStatus
+                },
+            }
         });
         root.AddClass(queryParamClass);
         parentClass.Kind = CodeClassKind.RequestConfiguration;
@@ -219,6 +236,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
 
         Assert.Contains("use DateTime;", result);
         Assert.Contains("use Microsoft\\Kiota\\Abstractions\\Types\\Date;", result);
+        Assert.Contains("use Microsoft\\Graph\\Models\\EventStatus;", result);
 
     }
 }
