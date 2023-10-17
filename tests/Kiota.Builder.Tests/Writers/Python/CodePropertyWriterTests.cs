@@ -130,10 +130,10 @@ public class CodePropertyWriterTests : IDisposable
         };
         cls.AddProperty(new CodeProperty { Name = "message", Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
         property.Type.Name = "str";
-        parentClass.AddProperty(new CodeProperty { Name = "error", Type = new CodeType {IsExternal = false, Name = "MainError", TypeDefinition = cls} });
+        parentClass.AddProperty(new CodeProperty { Name = "error", Type = new CodeType { IsExternal = false, Name = "MainError", TypeDefinition = cls } });
         parentClass.IsErrorDefinition = true;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("'' if self.error.message is None else self.error.message", result);
+        Assert.Contains("return '' if self.error.message is None else self.error.message", result);
     }
 }

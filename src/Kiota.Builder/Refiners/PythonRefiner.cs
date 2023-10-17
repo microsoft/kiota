@@ -169,7 +169,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
     };
-    
+
     private static void CorrectCommonNames(CodeElement currentElement)
     {
         if (currentElement is CodeMethod m &&
