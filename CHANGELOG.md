@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where base64url types would not be generated properly in Java.
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
+- Fix bug where import statements in typescript wasn't using import type notation for types that are erased at runtime. [#3190](https://github.com/microsoft/kiota/issues/3190)
 
 ## [1.7.0] - 2023-10-05
 
