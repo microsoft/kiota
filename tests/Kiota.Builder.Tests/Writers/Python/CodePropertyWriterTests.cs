@@ -109,4 +109,31 @@ public class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("= None", result);
     }
+
+    [Fact]
+    public void WritePrimaryErrorMessagePropertyOption1()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("super().message", result);
+    }
+    [Fact]
+    public void WritePrimaryErrorMessagePropertyOption2()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        var cls = new CodeClass
+        {
+            Name = "MainError",
+            Documentation = new CodeDocumentation { Description = "Some documentation" }
+        };
+        cls.AddProperty(new CodeProperty { Name = "message", Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
+        property.Type.Name = "str";
+        parentClass.AddProperty(new CodeProperty { Name = "error", Type = new CodeType {IsExternal = false, Name = "MainError", TypeDefinition = cls} });
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("'' if self.error.message is None else self.error.message", result);
+    }
 }
