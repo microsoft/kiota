@@ -30,7 +30,7 @@ lazy-object-proxy==1.9.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.6.0
+mypy==1.6.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
