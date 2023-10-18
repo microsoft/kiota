@@ -256,7 +256,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.2",
+    "@types/adm-zip": "^0.5.3",
     "@types/mocha": "^10.0.2",
     "@types/node": "20.x",
     "@types/vscode": "^1.83.0",
