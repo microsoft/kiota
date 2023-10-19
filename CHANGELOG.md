@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
+- Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
 - Fixed missing imports for method parameters that are query parameters.
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
