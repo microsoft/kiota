@@ -162,7 +162,7 @@ internal class Server : IServer
         if (deserializers is not null && deserializers.Any())
             configuration.Deserializers = deserializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (structuredMimeTypes is not null && structuredMimeTypes.Any())
-            configuration.StructuredMimeTypes = structuredMimeTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            configuration.StructuredMimeTypes = new(structuredMimeTypes);
         if (!string.IsNullOrEmpty(clientClassName))
             configuration.ClientClassName = clientClassName;
         if (!string.IsNullOrEmpty(clientNamespaceName))
