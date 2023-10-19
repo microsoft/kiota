@@ -30,7 +30,7 @@ lazy-object-proxy==1.9.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.6.0
+mypy==1.6.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -58,7 +58,7 @@ tomlkit==0.12.1 ; python_version >= '3.7'
 
 typing-extensions==4.8.0 ; python_version >= '3.7'
 
-urllib3==2.0.6 ; python_version >= '3.7'
+urllib3==2.0.7 ; python_version >= '3.7'
 
 wrapt==1.15.0 ; python_version < '3.11'
 
@@ -98,9 +98,9 @@ httpx[http2]==0.25.0
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==0.8.7
+microsoft-kiota-abstractions==0.9.0
 
-microsoft-kiota-authentication-azure==0.3.0
+microsoft-kiota-authentication-azure==0.3.2
 
 microsoft-kiota-http==0.6.1
 

@@ -941,6 +941,56 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyKnownRequestBodyType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
+        {
+            Name = new PhpConventionService().StreamTypeName,
+            IsExternal = true,
+        };
+        method.RequestBodyContentType = "application/json";
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("application/json", result, StringComparison.OrdinalIgnoreCase);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyUnknownRequestBodyType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
+        {
+            Name = new PhpConventionService().StreamTypeName,
+            IsExternal = true,
+        };
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestContentType",
+            Type = new CodeType()
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+            Kind = CodeParameterKind.RequestBodyContentType,
+        });
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(", $requestContentType", result, StringComparison.OrdinalIgnoreCase);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesIntersectionDeSerializerBody()
     {
         setup();

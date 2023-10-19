@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Lock;
@@ -70,7 +71,9 @@ public class KiotaLock
     /// <summary>
     /// The structured mime types used for this client.
     /// </summary>
-    public HashSet<string> StructuredMimeTypes { get; set; } = new();
+#pragma warning disable CA1002
+    public List<string> StructuredMimeTypes { get; set; } = new();
+#pragma warning restore CA1002
     /// <summary>
     /// The path patterns for API endpoints to include for this client.
     /// </summary>
@@ -100,7 +103,7 @@ public class KiotaLock
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.Serializers = Serializers;
         config.Deserializers = Deserializers;
-        config.StructuredMimeTypes = StructuredMimeTypes;
+        config.StructuredMimeTypes = new(StructuredMimeTypes);
         config.IncludePatterns = IncludePatterns;
         config.ExcludePatterns = ExcludePatterns;
         config.OpenAPIFilePath = DescriptionLocation;
@@ -127,7 +130,7 @@ public class KiotaLock
         IncludeAdditionalData = config.IncludeAdditionalData;
         Serializers = config.Serializers;
         Deserializers = config.Deserializers;
-        StructuredMimeTypes = config.StructuredMimeTypes;
+        StructuredMimeTypes = config.StructuredMimeTypes.ToList();
         IncludePatterns = config.IncludePatterns;
         ExcludePatterns = config.ExcludePatterns;
         DescriptionLocation = config.OpenAPIFilePath;

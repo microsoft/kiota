@@ -85,7 +85,7 @@ public class JavaConventionService : CommonLanguageConventionService
         {
             "Int64" => "Long",
             "sbyte" => "Short",
-            "decimal" => "BigDecimal",
+            "decimal" or "Decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" or "base64" or "base64url" or "Base64url" => "byte[]",
             "Guid" => "UUID",

@@ -60,13 +60,26 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.IncludeAdditionalData = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludeAdditionalData)}"], out var includeAdditionalData) && includeAdditionalData;
         configObject.Generation.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.CleanOutput)}"], out var cleanOutput) && cleanOutput;
         configObject.Generation.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClearCache)}"], out var clearCache) && clearCache;
+        configObject.Generation.ExcludeBackwardCompatible = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludeBackwardCompatible)}"], out var excludeBackwardCompatible) && excludeBackwardCompatible;
         configObject.Generation.MaxDegreeOfParallelism = int.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.MaxDegreeOfParallelism)}"], out var maxDegreeOfParallelism) ? maxDegreeOfParallelism : configObject.Generation.MaxDegreeOfParallelism;
-        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadHashSet(configObject.Generation.StructuredMimeTypes);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadCollection(configObject.Generation.StructuredMimeTypes);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Serializers)}").LoadHashSet(configObject.Generation.Serializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Deserializers)}").LoadHashSet(configObject.Generation.Deserializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludePatterns)}").LoadHashSet(configObject.Generation.IncludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludePatterns)}").LoadHashSet(configObject.Generation.ExcludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.DisabledValidationRules)}").LoadHashSet(configObject.Generation.DisabledValidationRules);
+    }
+    private static void LoadCollection(this IConfigurationSection section, ICollection<string> collection)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+        if (section is null) return;
+        var children = section.GetChildren();
+        if (children.Any() && collection.Any()) collection.Clear();
+        foreach (var item in children)
+        {
+            if (section[item.Key] is string value && !string.IsNullOrEmpty(value))
+                collection.Add(value);
+        }
     }
     private static void LoadHashSet(this IConfigurationSection section, HashSet<string> hashSet)
     {

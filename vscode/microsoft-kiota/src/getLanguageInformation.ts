@@ -26,14 +26,15 @@ function getLanguageInformationInternal(context: vscode.ExtensionContext): Promi
   });
 };
 
-export function getLanguageInformationForDescription(context: vscode.ExtensionContext, descriptionUrl: string): Promise<LanguagesInformation | undefined> {
+export function getLanguageInformationForDescription(context: vscode.ExtensionContext, descriptionUrl: string, clearCache: boolean): Promise<LanguagesInformation | undefined> {
   return connectToKiota<LanguagesInformation>(context, async (connection) => {
-    const request = new rpc.RequestType1<string, LanguagesInformation, void>(
+    const request = new rpc.RequestType2<string, boolean, LanguagesInformation, void>(
         "InfoForDescription"
     );
     return await connection.sendRequest(
         request,
-        descriptionUrl
+        descriptionUrl,
+        clearCache
     );
   });
 };

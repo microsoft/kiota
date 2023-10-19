@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Ruby;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionService>
@@ -21,7 +21,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var inherits = parentClass.StartBlock.Inherits != null;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, config);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
         WriteMethodPrototype(codeElement, writer);
         AddNullChecks(codeElement, writer);
         switch (codeElement.Kind)
@@ -301,7 +302,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             if (requestParams.requestBody != null)
             {
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
+                {
+                    if (requestParams.requestContentType is not null)
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
+                    else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\")");
+                }
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                     writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
@@ -311,8 +317,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLines($"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
         writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"request_info.headers.try_add('Accept', '{string.Join(", ", codeElement.AcceptedResponseTypes)}')");
+        if (codeElement.ShouldAddAcceptHeader)
+            writer.WriteLine($"request_info.headers.try_add('Accept', '{codeElement.AcceptHeaderValue}')");
         writer.WriteLine("return request_info");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";

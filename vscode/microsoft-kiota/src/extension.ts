@@ -21,6 +21,7 @@ import { getLanguageInformation, getLanguageInformationForDescription } from "./
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
 import { ApiManifest } from "./apiManifest";
+import { getExtensionSettings } from "./extensionSettings";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -40,7 +41,7 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  const openApiTreeProvider = new OpenApiTreeProvider(context);
+  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
@@ -180,6 +181,7 @@ export async function activate(
           typeof config.language === "string"
             ? parseGenerationLanguage(config.language)
             : KiotaGenerationLanguage.CSharp;
+        const settings = getExtensionSettings(extensionId);
         const result = await vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
           cancellable: false,
@@ -198,7 +200,16 @@ export async function activate(
               : "ApiClient",
             typeof config.clientNamespaceName === "string"
               ? config.clientNamespaceName
-              : "ApiSdk"
+              : "ApiSdk",
+            settings.backingStore,
+            settings.clearCache,
+            settings.cleanOutput,
+            settings.excludeBackwardCompatible,
+            settings.disableValidationRules,
+            settings.languagesSerializationConfiguration[language].serializers,
+            settings.languagesSerializationConfiguration[language].deserializers,
+            settings.structuredMimeTypes,
+            settings.includeAdditionalData
           );
           const duration = performance.now() - start;
           const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -213,7 +224,8 @@ export async function activate(
         
         languagesInformation = await getLanguageInformationForDescription(
           context,
-          openApiTreeProvider.descriptionUrl
+          openApiTreeProvider.descriptionUrl,
+          settings.clearCache
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
@@ -238,7 +250,8 @@ export async function activate(
           cancellable: false,
           title: vscode.l10n.t("Searching...")
         }, (progress, _) => {
-          return searchDescription(context, x);
+          const settings = getExtensionSettings(extensionId);
+          return searchDescription(context, x, settings.clearCache);
         }));
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
@@ -317,7 +330,8 @@ export async function activate(
           cancellable: false,
           title: vscode.l10n.t("Updating clients...")
         }, (progress, _) => {
-          return updateClients(context);
+          const settings = getExtensionSettings(extensionId);
+          return updateClients(context, settings.cleanOutput, settings.clearCache);
         });
         if (res) {
           await exportLogsAndShowErrors(res);
@@ -362,7 +376,6 @@ async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvide
       );
       return;
     }
-
     const logs = await openApiTreeProvider.loadManifestFromContent(clipBoardContent, apiIdentifier);
     await exportLogsAndShowErrors(logs);
   });

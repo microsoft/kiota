@@ -20,5 +20,14 @@
   "kiota.openApiExplorer.filterDescription.title": "قم بتصفية وصف API",
   "kiota.openApiExplorer.openDocumentationPage.title": "افتح صفحة الوثائق",
   "kiota.openApiExplorer.openManifestPath.title": "افتح بيان واجهة برمجة التطبيقات",
-  "kiota.openApiExplorer.pasteManifest.title": "الصق بيان واجهة برمجة التطبيقات"
+  "kiota.openApiExplorer.pasteManifest.title": "الصق بيان واجهة برمجة التطبيقات",
+  "kiota.generate.backingStore.description": "تمكين مخزن الدعم للنماذج",
+  "kiota.generate.excludeBackwardCompatible.description": "يستبعد الأصول المتوافقة مع الإصدارات السابقة والمتقادمة من النتيجة التي تم إنشاؤها. ينبغي أن تستخدم للعملاء الجدد",
+  "kiota.cleanOutput.description": "يزيل كافة الملفات من دليل الإخراج قبل إنشاء ملفات التعليمات البرمجية",
+  "kiota.generate.disabledValidationRules.description": "قواعد التحقق من صحة وصف OpenAPI إلى \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "يمسح أي بيانات مخزنة مؤقتًا",
+  "kiota.generate.serializer.description": "أسماء الفئات المؤهلة بالكامل للمتسلسلات",
+  "kiota.generate.deserializer.description": "أسماء الفئات المؤهلة بالكامل لإلغاء التسلسل",
+  "kiota.generate.structuredMimeTypes.description": "أنواع MIME والتفضيلات المستخدمة لإنشاء نماذج البيانات المنظمة. وفقًا لـ RFC9110، قم بقبول تدوين الرأس.",
+  "kiota.generate.includeAdditionalData.description": "سيتم تضمين خاصية 'Additional Data' للنماذج"
 }

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -124,9 +125,15 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-#pragma warning disable CA2227
-    public HashSet<string> AcceptedResponseTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-#pragma warning restore CA2227
+    public IList<string> AcceptedResponseTypes { get; private set; } = new List<string>();
+    public void AddAcceptedResponsesTypes(IEnumerable<string> types)
+    {
+        if (types == null) return;
+        if (AcceptedResponseTypes is List<string> list)
+            list.AddRange(types);
+    }
+    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
+    public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;
@@ -302,7 +309,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = new(errorMappings),
-            AcceptedResponseTypes = new(AcceptedResponseTypes, StringComparer.OrdinalIgnoreCase),
+            AcceptedResponseTypes = new List<string>(AcceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Deprecation = Deprecation,

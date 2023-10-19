@@ -2,6 +2,7 @@
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Python;
 
@@ -9,7 +10,7 @@ using Moq;
 
 using Xunit;
 
-namespace Kiota.Builder.Tests.CodeDOM;
+namespace Kiota.Builder.Tests.OrderComparers;
 public class CodeParameterOrderComparerTests
 {
     [Fact]

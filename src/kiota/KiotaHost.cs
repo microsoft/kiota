@@ -367,7 +367,7 @@ public static class KiotaHost
         var structuredMimeTypesOption = new Option<List<string>>(
             "--structured-mime-types",
             () => defaultConfiguration.StructuredMimeTypes.ToList(),
-        "The MIME types to use for structured data model generation. Accepts multiple values.");
+        "The MIME types with optional priorities as defined in RFC9110 Accept header to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);

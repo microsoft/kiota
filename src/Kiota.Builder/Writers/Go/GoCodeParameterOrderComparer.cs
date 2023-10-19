@@ -1,4 +1,5 @@
 ﻿using Kiota.Builder.CodeDOM;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Go;
 
@@ -16,11 +17,12 @@ public class GoCodeParameterOrderComparer : BaseCodeParameterOrderComparer
             CodeParameterKind.Path => 4,
             CodeParameterKind.RequestConfiguration => 5,
             CodeParameterKind.RequestBody => 6,
-            CodeParameterKind.Serializer => 7,
-            CodeParameterKind.BackingStore => 8,
-            CodeParameterKind.SetterValue => 9,
-            CodeParameterKind.ParseNode => 10,
-            CodeParameterKind.Custom => 11,
+            CodeParameterKind.RequestBodyContentType => 7,
+            CodeParameterKind.Serializer => 8,
+            CodeParameterKind.BackingStore => 9,
+            CodeParameterKind.SetterValue => 10,
+            CodeParameterKind.ParseNode => 11,
+            CodeParameterKind.Custom => 12,
             _ => 13,
         };
     }

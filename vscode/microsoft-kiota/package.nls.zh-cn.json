@@ -20,5 +20,14 @@
   "kiota.openApiExplorer.filterDescription.title": "筛选API描述",
   "kiota.openApiExplorer.openDocumentationPage.title": "打开文档页",
   "kiota.openApiExplorer.openManifestPath.title": "打开API清单",
-  "kiota.openApiExplorer.pasteManifest.title": "粘贴API清单"
+  "kiota.openApiExplorer.pasteManifest.title": "粘贴API清单",
+  "kiota.generate.backingStore.description": "启用模型后备存储",
+  "kiota.generate.excludeBackwardCompatible.description": "从生成的结果中排除向后兼容和过时的资产。应该用于新客户端",
+  "kiota.cleanOutput.description": "在生成代码文件之前从输出目录中删除所有文件",
+  "kiota.generate.disabledValidationRules.description": "验证 OpenAPI 规则: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "清除所有缓存数据",
+  "kiota.generate.serializer.description": "合格的序列化器类名",
+  "kiota.generate.deserializer.description": "合格的反序列化器类名",
+  "kiota.generate.structuredMimeTypes.description": "用于生成结构化数据模型的 MIME 类型和首选项。根据符合 RFC9110 标题符号。",
+  "kiota.generate.includeAdditionalData.description": "将包含模型的“AdditionalData”属性"
 }

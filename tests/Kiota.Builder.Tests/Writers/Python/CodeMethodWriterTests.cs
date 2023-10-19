@@ -707,6 +707,56 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return request_info", result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyKnownRequestBodyType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters(false);
+        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
+        {
+            Name = new PythonConventionService().StreamTypeName,
+            IsExternal = true,
+        };
+        method.RequestBodyContentType = "application/json";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_stream_content", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("application/json", result, StringComparison.OrdinalIgnoreCase);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyUnknownRequestBodyType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters(false);
+        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
+        {
+            Name = new PythonConventionService().StreamTypeName,
+            IsExternal = true,
+        };
+        method.AddParameter(new CodeParameter
+        {
+            Name = "request_content_type",
+            Type = new CodeType()
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+            Kind = CodeParameterKind.RequestBodyContentType,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_stream_content", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(", request_content_type", result, StringComparison.OrdinalIgnoreCase);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesInheritedDeSerializerBody()
     {
         setup(true);
