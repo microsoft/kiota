@@ -19,6 +19,15 @@
   "kiota.searchLock.title": "Buscar un archivo lock",
   "kiota.openApiExplorer.filterDescription.title": "Filtrar descripción de API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Abrir documentación",
-  "kiota.openApiExplorer.openManifestPath.title": "Ouvrir un manifeste d'API",
-  "kiota.openApiExplorer.pasteManifest.title": "Coller un manifeste d'API"
+  "kiota.openApiExplorer.openManifestPath.title": "Abrir manifesto de OpenAPI",
+  "kiota.openApiExplorer.pasteManifest.title": "Pegar manifesto de OpenAPI",
+  "kiota.generate.backingStore.description": "Habilita almacenamiento de respaldo para los modelos.",
+  "kiota.generate.excludeBackwardCompatible.description": "Excluye activos obsoletos y compatibles con anteriores versiones del resultado generado. Debe ser usado para nuevos clientes.",
+  "kiota.cleanOutput.description": "Remueve todos los archivos del directorio producido antes de generar los archivos de código.",
+  "kiota.generate.disabledValidationRules.description": "Las reglas a disabilitar durante la validación. Utilice las siguientes llaves para seleccionar cuáles reglas desabilitar: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Elimina datos en memoria cache",
+  "kiota.generate.serializer.description": "Los nombres de clase completamente calificados para serializadores",
+  "kiota.generate.deserializer.description": "Los nombres de clase completamente calificados para deserializadores",
+  "kiota.generate.structuredMimeTypes.description": "Las preferencias y tipos MIME para usar en la generación de modelos de data estructurados. De acuerdo con RFC9110, acepte notación de encabezado.",
+  "kiota.generate.includeAdditionalData.description": "Incluirá la propiedad 'AdditionalData' para modelos."
 }

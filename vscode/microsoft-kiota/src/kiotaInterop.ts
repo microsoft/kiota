@@ -37,13 +37,16 @@ export interface KiotaOpenApiNode {
     isOperation?: boolean;
     documentationUrl?: string;
 }
+interface CacheClearableConfiguration {
+    clearCache: boolean;
+}
 
-export interface KiotaShowConfiguration {
+export interface KiotaShowConfiguration extends CacheClearableConfiguration {
     includeFilters: string[];
     excludeFilters: string[];
     descriptionPath: string;
 }
-export interface KiotaGetManifestDetailsConfiguration {
+export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConfiguration {
     manifestPath: string;
     apiIdentifier: string;
 }
@@ -214,21 +217,40 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
-
 export interface LockFile {
-    descriptionHash: string;
-    descriptionLocation: string;
-    language: string;
-    lockFileVersion: string;
-    kiotaVersion: string;
     clientClassName: string;
     clientNamespaceName: string;
-    usesBackingStore: boolean;
-    includeAdditionalData: boolean;
-    serializers: string[];
+    descriptionHash: string;
+    descriptionLocation: string;
     deserializers: string[];
-    structuredMimeTypes: string[];
-    includePatterns: string[];
-    excludePatterns: string[];
     disabledValidationRules: string[];
+    excludeBackwardCompatible: boolean;
+    excludePatterns: string[];
+    includeAdditionalData: boolean;
+    includePatterns: string[];
+    kiotaVersion: string;
+    language: string;
+    lockFileVersion: string;
+    serializers: string[];
+    structuredMimeTypes: string[];
+    usesBackingStore: boolean;
+}
+
+export interface GenerationConfiguration {
+    cleanOutput: boolean;
+    clearCache: boolean;
+    clientClassName: string;
+    clientNamespaceName: string;
+    deserializers: string[];
+    disabledValidationRules: string[];
+    excludeBackwardCompatible: boolean;
+    excludePatterns: string[];
+    includeAdditionalData: boolean;
+    includePatterns: string[];
+    language: KiotaGenerationLanguage;
+    openAPIFilePath: string;
+    outputPath: string;
+    serializers: string[];
+    structuredMimeTypes: string[];
+    usesBackingStore: boolean;
 }
