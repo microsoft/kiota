@@ -85,6 +85,7 @@ public class CodeEnumWriterTests : IDisposable
     [InlineData("\\", "BackSlash")]
     [InlineData("?", "QuestionMark")]
     [InlineData("$", "Dollar")]
+    [InlineData("~", "Tilde")]
     [InlineData("double", "Double")]
     [InlineData("string", "String")]
     [InlineData("Invalid lorem’s", "InvalidLoremS")]
