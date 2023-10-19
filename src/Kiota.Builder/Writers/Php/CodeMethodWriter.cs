@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 namespace Kiota.Builder.Writers.Php;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionService>
 {
@@ -29,7 +30,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                                     codeClass.IsOfKind(CodeClassKind.Model);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, config);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
 
         WriteMethodPhpDocs(codeElement, writer);
         WriteMethodsAndParameters(codeElement, writer, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
@@ -561,7 +563,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, {conventions.GetParameterName(requestParams.requestContentType)});");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{codeElement.RequestBodyContentType}\");");
+            }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
@@ -598,8 +605,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
     {
-        if (codeMethod.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
+        if (codeMethod.ShouldAddAcceptHeader)
+            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{codeMethod.AcceptHeaderValue}\");");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false)
     {

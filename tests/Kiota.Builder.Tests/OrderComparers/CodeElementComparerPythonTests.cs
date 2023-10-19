@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.OrderComparers;
 using Xunit;
 
-namespace Kiota.Builder.Tests.CodeDOM;
+namespace Kiota.Builder.Tests.OrderComparers;
 public class CodeElementComparerPythonTests
 {
     [Fact]

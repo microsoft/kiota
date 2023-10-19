@@ -1,7 +1,6 @@
 ﻿
-using System;
-using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Validations;
@@ -9,7 +8,7 @@ using Microsoft.OpenApi.Validations;
 namespace Kiota.Builder.Validation;
 public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
 {
-    private static readonly HashSet<string> validContentTypes = new(StringComparer.OrdinalIgnoreCase) {
+    private static readonly StructuredMimeTypesCollection validContentTypes = new() {
         "application/x-www-form-urlencoded",
     };
     public UrlFormEncodedComplex() : base(static (context, operation) =>

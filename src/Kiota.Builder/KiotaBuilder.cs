@@ -16,6 +16,7 @@ using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
@@ -1419,11 +1420,12 @@ public partial class KiotaBuilder
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
-            if (schema != null)
+            var mediaTypes = schema switch
             {
-                var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
-                generatorMethod.AcceptedResponseTypes.Add(mediaType);
-            }
+                null => operation.Responses.Values.SelectMany(static x => x.Content).Select(static x => x.Key),
+                _ => config.StructuredMimeTypes.GetAcceptedTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
+            };
+            generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
             if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
@@ -1435,6 +1437,7 @@ public partial class KiotaBuilder
             logger.LogWarning(ex, "Could not create method for {Operation} in {Path} because the schema was invalid", operation.OperationId, currentNode.Path);
         }
     }
+    private static readonly OpenApiSchemaReferenceComparer schemaReferenceComparer = new();
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x =>
     {
         var codeName = x.Name.SanitizeParameterNameForCodeSymbols();
@@ -1526,7 +1529,7 @@ public partial class KiotaBuilder
                 var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
                 foreach (var encodingEntry in mediaType.Encoding
                                                         .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
-                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0])))
+                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType)))
                 {
                     if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
                         propertyType.TypeDefinition is not null)
@@ -1550,7 +1553,7 @@ public partial class KiotaBuilder
                 },
                 Deprecation = requestBodySchema.GetDeprecationInformation(),
             });
-            method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
+            method.RequestBodyContentType = config.StructuredMimeTypes.GetContentTypes(operation.RequestBody.Content.Where(x => schemaReferenceComparer.Equals(x.Value.Schema, requestBodySchema)).Select(static x => x.Key)).First();
         }
         else if (operation.RequestBody?.Content?.Any() ?? false)
         {
@@ -1571,6 +1574,22 @@ public partial class KiotaBuilder
                 },
             };
             method.AddParameter(nParam);
+            var contentTypes = operation.RequestBody.Content.Select(static x => x.Key).ToArray();
+            if (contentTypes.Length == 1 && !"*/*".Equals(contentTypes[0], StringComparison.OrdinalIgnoreCase))
+                method.RequestBodyContentType = contentTypes[0];
+            else
+                method.AddParameter(new CodeParameter
+                {
+                    Kind = CodeParameterKind.RequestBodyContentType,
+                    Name = "contentType",
+                    Optional = false,
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                        IsExternal = true,
+                        IsNullable = false,
+                    },
+                });
         }
         method.AddParameter(new CodeParameter
         {

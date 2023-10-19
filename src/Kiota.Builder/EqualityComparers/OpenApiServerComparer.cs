@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.EqualityComparers;
 
 internal sealed partial class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
 {

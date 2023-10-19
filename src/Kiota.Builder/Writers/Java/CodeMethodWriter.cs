@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Java;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
@@ -24,7 +25,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var configParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, configParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, configParam, requestContentType);
         AddNullChecks(codeElement, writer);
         switch (codeElement.Kind)
         {
@@ -566,8 +568,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+        if (codeElement.ShouldAddAcceptHeader)
+            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
 
         if (requestParams.requestBody != null &&
             currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
@@ -575,7 +577,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name}[0])" : string.Empty;
             var collectionPostfix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+            }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
                 writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
             else

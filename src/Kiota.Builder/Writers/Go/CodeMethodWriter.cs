@@ -24,7 +24,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         writer.IncreaseIndent();
         var requestOptionsParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-        var requestParams = new RequestParams(requestBodyParam, requestOptionsParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestOptionsParam, requestContentType);
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
@@ -819,7 +820,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
-
         if (requestParams.requestConfiguration != null)
         {
             var headers = requestParams.Headers;
@@ -854,14 +854,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
                         $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
         writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
+        if (codeElement.ShouldAddAcceptHeader)
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
         if (requestParams.requestBody != null)
         {
             var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
             var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
+            if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, {requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
+            }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
             {
                 if (bodyType.IsCollection)
