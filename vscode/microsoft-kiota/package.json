@@ -257,9 +257,9 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.3",
-    "@types/mocha": "^10.0.2",
+    "@types/mocha": "^10.0.3",
     "@types/node": "20.x",
-    "@types/vscode": "^1.83.0",
+    "@types/vscode": "^1.83.1",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",
     "@vscode/test-electron": "^2.3.5",
