@@ -5,12 +5,14 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Writers;
 
 namespace kiota.Handlers;
 internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
@@ -132,8 +134,10 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
             }
             else
             {
-                var jsonOutput = System.Text.Json.JsonSerializer.Serialize(languageInformation);
-                DisplayInfo(jsonOutput);
+                using TextWriter sWriter = new StringWriter();
+                OpenApiJsonWriter writer = new(sWriter);
+                languageInformation.SerializeAsV3(writer);
+                DisplayInfo(sWriter.ToString()!);
             }
         }
         else
