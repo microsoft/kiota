@@ -181,6 +181,24 @@ elseif ($language -eq "python") {
         pylint integration_test --disable=W --rcfile=.pylintrc
         mypy integration_test
     } -ErrorAction Stop
+
+    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
+        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+        Push-Location $itTestPath
+
+        $itTestPathSources = Join-Path -Path $testPath -ChildPath "integration_test" -AdditionalChildPath "client"
+        $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "client"
+        if (Test-Path $itTestPathDest) {
+            Remove-Item $itTestPathDest -Force -Recurse
+        }
+        Copy-Item -Path $itTestPathSources -Destination $itTestPathDest -Recurse
+
+        Invoke-Call -ScriptBlock {
+            pytest
+        } -ErrorAction Stop
+
+        Pop-Location
+    }
 }
 Pop-Location
 
