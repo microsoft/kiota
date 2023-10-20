@@ -102,7 +102,7 @@ microsoft-kiota-abstractions==0.9.0
 
 microsoft-kiota-authentication-azure==0.3.2
 
-microsoft-kiota-http==0.6.1
+microsoft-kiota-http==0.6.2
 
 microsoft-kiota-serialization-json==0.4.2
 
