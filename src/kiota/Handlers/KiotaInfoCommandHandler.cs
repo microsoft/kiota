@@ -132,7 +132,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
             }
             else
             {
-                var jsonOutput = "[" + string.Join(",", languageInformation.Dependencies.Select(d => "{\"" + d.Name + "\":\"" + d.Version + "\"}")) + "]";
+                var jsonOutput = System.Text.Json.JsonSerializer.Serialize(languageInformation);
                 DisplayInfo(jsonOutput);
             }
         }
