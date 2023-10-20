@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed bug in java where underscores were removed from property names, setters and getters, but not paths in java. Underscores are now maintained throughout to preserve consistency with dotnet. 
 - Fixed missing imports for method parameters that are query parameters.
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
