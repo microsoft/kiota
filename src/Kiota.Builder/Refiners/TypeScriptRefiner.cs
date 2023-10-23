@@ -10,6 +10,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
+    public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
@@ -66,7 +67,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                 },
                 static (_, s) => s.ToCamelCase(UnderscoreArray),
-                _configuration.UsesBackingStore,
+                false,
                 false,
                 string.Empty,
                 string.Empty);
@@ -393,7 +394,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
             currentProperty.Type.Name = "RequestAdapter";
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-            currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+        {
+            currentProperty.Type.Name = "boolean";
+            currentProperty.Name = BackingStoreEnabledKey;
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "RequestOption[]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
