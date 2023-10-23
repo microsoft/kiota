@@ -29,6 +29,7 @@
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
   <PropertyGroup>
     <!-- the source generators emmit warnings -->
