@@ -599,7 +599,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        var hideModifier = inherits && code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.Factory) ? "new " : string.Empty;
+        var hideModifier = (inherits, code.Kind) switch
+        {
+            (true, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "override ",
+            (false, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "virtual ",
+            (true, CodeMethodKind.Factory) => "new ",
+            _ => string.Empty
+        };
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
