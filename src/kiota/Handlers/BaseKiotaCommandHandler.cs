@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -14,6 +15,9 @@ using Kiota.Builder.Logging;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Logging.Debug;
+using Microsoft.Extensions.Options;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace kiota.Handlers;
@@ -111,19 +115,22 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
 #if DEBUG
         logLevel = logLevel > LogLevel.Debug ? LogLevel.Debug : logLevel;
 #endif
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
-            var fileLogger = new FileLogLoggerProvider(logFileAbsoluteRootPath, logLevel);
-            disposables.Add(fileLogger);
-            builder
-                .AddConsole()
+        var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
+        var fileLogger = new FileLogLoggerProvider(logFileAbsoluteRootPath, logLevel);
+        var loggerFactory = new LoggerFactory(
+            new ILoggerProvider[] {
+                new ConsoleLoggerProvider(new StaticOptionsMonitor<ConsoleLoggerOptions>(new ConsoleLoggerOptions())),
 #if DEBUG
-                .AddDebug()
+                new DebugLoggerProvider(),
 #endif
-                .AddProvider(fileLogger)
-                .SetMinimumLevel(logLevel);
-        });
+                fileLogger,
+            },
+            new LoggerFilterOptions
+            {
+                MinLevel = logLevel,
+            }
+        );
+        disposables.Add(fileLogger);
         var logger = loggerFactory.CreateLogger<T>();
         return (loggerFactory, logger);
     }
@@ -333,5 +340,24 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             return;
         foreach (var disposable in disposables)
             disposable.Dispose();
+    }
+    private class StaticOptionsMonitor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> : IOptionsMonitor<T>
+    {
+        private readonly T _value;
+        public StaticOptionsMonitor(T value)
+        {
+            _value = value;
+        }
+        public T CurrentValue => _value;
+
+        public T Get(string? name)
+        {
+            return _value;
+        }
+
+        public IDisposable? OnChange(Action<T, string?> listener)
+        {
+            return null;
+        }
     }
 }
