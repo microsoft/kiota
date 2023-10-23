@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed missing imports for method parameters that are query parameters.
-- Replaces the use of "new" by "override" and "virtual" in CSharp.
+- Replaces the use of "new" by "override" and "virtual" in CSharp models.
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
