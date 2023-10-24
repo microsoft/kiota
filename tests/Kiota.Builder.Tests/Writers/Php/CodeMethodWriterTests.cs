@@ -287,9 +287,7 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
-        Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
-        Assert.Contains("catch(Exception $ex)", result);
         Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
     }
@@ -380,11 +378,10 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
 
+        Assert.Contains("@throws Exception", result);
         Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
-        Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
-        Assert.Contains("catch(Exception $ex)", result);
         Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, PhoneNumberPrefix::class, $errorMappings);", result);
     }

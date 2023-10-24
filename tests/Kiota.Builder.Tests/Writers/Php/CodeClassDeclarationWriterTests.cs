@@ -134,8 +134,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(dec, writer);
         var result = tw.ToString();
 
-        Assert.Contains("use Http\\Promise\\Promise;", result);
-        Assert.Contains("use Http\\Promise\\RejectedPromise;", result);
+        Assert.Contains(@"use Http\Promise\Promise;", result);
         Assert.Contains("use Exception;", result);
     }
 
