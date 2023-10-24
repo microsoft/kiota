@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
@@ -50,7 +50,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var returnTypeWithoutCollectionInformation = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfig = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, requestConfig);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestConfig, requestContentType);
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
@@ -89,7 +90,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                requestParams = new RequestParams(requestBodyParam, null);
+                requestParams = new RequestParams(requestBodyParam, null, null);
                 WriteCommandBuilderBody(codeElement, parentClass, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Factory:
@@ -375,7 +376,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                             .Methods
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name;
-        var parametersList = new CodeParameter?[] { requestParams.requestBody, requestParams.requestConfiguration }
+        var parametersList = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
                             .Select(static x => x?.Name).Where(static x => x != null).Aggregate(static (x, y) => $"{x}, {y}");
         writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
         var errorMappingVarName = "default";
@@ -433,13 +434,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.CloseBlock();
         }
 
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+        if (codeElement.ShouldAddAcceptHeader)
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name});");
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+            }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
@@ -593,7 +599,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        var hideModifier = inherits && code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.Factory) ? "new " : string.Empty;
+        var hideModifier = (inherits, code.Kind) switch
+        {
+            (true, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "override ",
+            (false, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "virtual ",
+            (true, CodeMethodKind.Factory) => "new ",
+            _ => string.Empty
+        };
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);

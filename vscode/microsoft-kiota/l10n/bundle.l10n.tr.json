@@ -1,4 +1,5 @@
 {
+  "Client will be upgraded from version {0} to {1}, upgrade your dependencies": "İstemci {0} sürümünden {1}'e yükseltilecek, bağımlılıklarınızı yükseltecek",
   "No description found, select a description first": "Açıklama bulunamadı, önce bir açıklama seçin",
   "No endpoints selected, select endpoints first": "Seçilen endpoint yok, önce endpointleri seçin",
   "No workspace folder found, open a folder first": "Çalışma alanı klasörü bulunamadı, önce bir klasör açın",
@@ -30,5 +31,12 @@
   "Pick a lock file": "Bir kilit dosyası seçin",
   "Open a lock file": "Bir kilit dosyası açın",
   "Filter the API description": "API açıklamasını filtreleyin",
-  "Enter a filter": "Filtre girin"
+  "Enter a filter": "Filtre girin",
+  "Searching...": "Araştırıcı...",
+  "A path or URL to an API manifest": "API manifestinin yolu veya URLsi",
+  "Open an API manifest": "API manifestini açın",
+  "Invalid URL, please check the documentation for the supported URLs": "Geçersiz URL, lütfen desteklenen URL'ler için dokümanları kontrol edin",
+  "No content found in the clipboard": "Panoda içerik bulunamadı",
+  "Invalid content found in the clipboard": "Panoda geçersiz içerik bulundu",
+  "Select an API manifest key": "Bir API manifest anahtarı seçin"
 }

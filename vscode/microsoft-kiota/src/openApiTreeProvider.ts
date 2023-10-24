@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import { connectToKiota, KiotaGetManifestDetailsConfiguration, KiotaLogEntry, KiotaManifestResult, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResult, LockFile } from './kiotaInterop';
+import { ExtensionSettings } from './extensionSettings';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
@@ -11,6 +12,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private apiTitle?: string;
     constructor(
         private readonly context: vscode.ExtensionContext,
+        private readonly settingsGetter:() => ExtensionSettings,
         private _descriptionUrl?: string,
         public includeFilters: string[] = [],
         public excludeFilters: string[] = []) {
@@ -30,7 +32,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this._descriptionUrl = this._lockFile.descriptionLocation;
         this.includeFilters = this._lockFile.includePatterns;
         this.excludeFilters = this._lockFile.excludePatterns;
-        await this.loadNodes();
+        const settings = this.settingsGetter();
+        await this.loadNodes(settings.clearCache);
         if (this.rawRootNode) {
             this.refreshView();
         }
@@ -81,7 +84,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        await this.loadNodes();
+        const settings = this.settingsGetter();
+        await this.loadNodes(settings.clearCache);
         this.refreshView();
     }
     public get descriptionUrl(): string {
@@ -173,22 +177,24 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return this._filterText;
     }
     private async loadNodesFromManifest(manifestPath: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
+        const settings = this.settingsGetter();
         const result = await connectToKiota(this.context, async (connection) => {
             const request = new rpc.RequestType<KiotaGetManifestDetailsConfiguration, KiotaManifestResult, void>('GetManifestDetails');
             return await connection.sendRequest(request, {
                 manifestPath,
-                apiIdentifier: apiIdentifier ?? ''
+                apiIdentifier: apiIdentifier ?? '',
+                clearCache: settings.clearCache
             });
         });
         if (result) {
             this._descriptionUrl = result.apiDescriptionPath;
             this.includeFilters = result.selectedPaths ?? [];
-            await this.loadNodes();
+            await this.loadNodes(settings.clearCache);
             return result.logs;
         }
         return [];
     }
-    private async loadNodes(): Promise<void> {
+    private async loadNodes(clearCache: boolean): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
@@ -197,7 +203,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             return await connection.sendRequest(request, {
                 includeFilters: this.includeFilters,
                 excludeFilters: this.excludeFilters,
-                descriptionPath: this.descriptionUrl
+                descriptionPath: this.descriptionUrl,
+                clearCache
             });
         });
         if(result) {

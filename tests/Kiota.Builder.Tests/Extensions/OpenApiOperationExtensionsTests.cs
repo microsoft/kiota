@@ -58,8 +58,7 @@ public class OpenApiOperationExtensionsTests
     public void Defensive()
     {
         var source = new Dictionary<string, OpenApiMediaType>();
-        Assert.Empty(source.GetValidSchemas(new HashSet<string> { "application/json" }));
-        Assert.Throws<ArgumentNullException>(() => source.GetValidSchemas(new HashSet<string>()));
+        Assert.Empty(source.GetValidSchemas(new() { "application/json" }));
         Assert.Throws<ArgumentNullException>(() => source.GetValidSchemas(null));
     }
 }

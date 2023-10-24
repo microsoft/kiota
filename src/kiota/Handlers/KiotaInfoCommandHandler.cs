@@ -5,12 +5,14 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Writers;
 
 namespace kiota.Handlers;
 internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
@@ -39,6 +41,10 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<bool> JsonOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -47,6 +53,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
         string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
+        bool json = context.ParseResult.GetValueForOption(JsonOption);
         GenerationLanguage? language = context.ParseResult.GetValueForOption(GenerationLanguage);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
@@ -94,7 +101,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                     return 1;
 #endif
                 }
-            ShowLanguageInformation(language.Value, instructions);
+            ShowLanguageInformation(language.Value, instructions, json);
             return 0;
         }
     }
@@ -112,15 +119,25 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         var layout = new StackLayoutView { view };
         console.Append(layout);
     }
-    private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource)
+    private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource, bool json)
     {
         if (informationSource.TryGetValue(language.ToString(), out var languageInformation))
         {
-            DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
-                        "After generating code for this language, you need to install the following packages:");
-            foreach (var dependency in languageInformation.Dependencies)
+            if (!json)
             {
-                DisplayInfo(string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version));
+                DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
+                            "After generating code for this language, you need to install the following packages:");
+                foreach (var dependency in languageInformation.Dependencies)
+                {
+                    DisplayInfo(string.Format(dependency.Name, dependency.Version));
+                }
+            }
+            else
+            {
+                using TextWriter sWriter = new StringWriter();
+                OpenApiJsonWriter writer = new(sWriter);
+                languageInformation.SerializeAsV3(writer);
+                DisplayInfo(sWriter.ToString()!);
             }
         }
         else

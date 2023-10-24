@@ -101,6 +101,7 @@ public static class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
+        var jsonOption = new Option<bool>("--json", "Generate a plain and machine-parsable json output.");
         languageOption.AddAlias("-l");
         AddEnumValidator(languageOption, "language");
         var infoCommand = new Command("info", "Displays information about the languages supported by kiota and dependencies to add in your project.") {
@@ -111,6 +112,7 @@ public static class KiotaHost
             clearCacheOption,
             searchTermOption,
             languageOption,
+            jsonOption,
         };
         infoCommand.Handler = new KiotaInfoCommandHandler
         {
@@ -121,6 +123,7 @@ public static class KiotaHost
             ClearCacheOption = clearCacheOption,
             SearchTermOption = searchTermOption,
             GenerationLanguage = languageOption,
+            JsonOption = jsonOption,
         };
         return infoCommand;
     }
@@ -367,7 +370,7 @@ public static class KiotaHost
         var structuredMimeTypesOption = new Option<List<string>>(
             "--structured-mime-types",
             () => defaultConfiguration.StructuredMimeTypes.ToList(),
-        "The MIME types to use for structured data model generation. Accepts multiple values.");
+        "The MIME types with optional priorities as defined in RFC9110 Accept header to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);

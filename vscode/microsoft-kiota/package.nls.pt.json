@@ -20,5 +20,14 @@
   "kiota.openApiExplorer.filterDescription.title": "Filtrar descrição da API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Abrir página de documentação",
   "kiota.openApiExplorer.openManifestPath.title": "Abrir manifesto da API",
-  "kiota.openApiExplorer.pasteManifest.title": "Colar manifesto da API"
+  "kiota.openApiExplorer.pasteManifest.title": "Colar manifesto da API",
+  "kiota.generate.backingStore.description": "Habilita armazenamento de apoio para os modelos",
+  "kiota.generate.excludeBackwardCompatible.description": "Exclui retrocompatibilidade e ativos obsoletos do resultado gerado. Deve ser usado para novos clientes",
+  "kiota.cleanOutput.description": "Remove todos os arquivos do diretório de saída antes de gerar os arquivos de código",
+  "kiota.generate.disabledValidationRules.description": "As regras a serem desativadas durante a validação. Use as seguintes chaves para selecionar qual(is) regra(s) desativar: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Limpa qualquer dado em memória",
+  "kiota.generate.serializer.description": "O nome totalmente qualificado da classe para serializadores",
+  "kiota.generate.deserializer.description": "O nome totalmente qualificado da classe para desserializadores",
+  "kiota.generate.structuredMimeTypes.description": "As preferências e os tipos MIME a serem usados para a geração de modelos de dados estruturados. De acordo com a notação do cabeçalho Accept do RFC9110..",
+  "kiota.generate.includeAdditionalData.description": "Será incluído a propriedade 'AdditionalData' para modelos"
 }

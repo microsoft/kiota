@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
@@ -30,7 +30,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
-        var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
+        var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
+        var requestParams = new RequestParams(requestBodyParam, requestConfigParam, requestContentType);
         WriteDefensiveStatements(codeElement, writer);
         switch (codeElement.Kind)
         {
@@ -365,12 +366,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty)};",
                                 $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty)};");
         writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()};");
-        if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.tryAddRequestHeaders(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+        if (codeElement.ShouldAddAcceptHeader)
+            writer.WriteLine($"{RequestInfoVarName}.tryAddRequestHeaders(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
         if (requestParams.requestBody != null)
         {
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
+            {
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name.ToFirstCharacterLowerCase()});");
+                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+            }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             {
                 ComposeContentInRequestGeneratorBody(requestParams.requestBody, requestAdapterProperty, codeElement.RequestBodyContentType, writer);

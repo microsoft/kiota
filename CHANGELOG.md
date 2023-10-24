@@ -10,20 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
+- Added settings in the vscode extension for: backingStore, additionalData, excludeBackwardCompatible, cleanOutput, clearCache, serializers, deserializers, disabledValidationRules, structuredMimeTypes. [#3355](https://github.com/microsoft/kiota/issues/3355)
 - Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
+- Added support for multiple content type request bodies. [#3377](https://github.com/microsoft/kiota/issues/3377)
+- Added support for multiple content type responses. [#3377](https://github.com/microsoft/kiota/issues/3377)
 - Support for primary error message in Python [#3277](https://github.com/microsoft/kiota/issues/3277)
+- Added a json output for the `kiota info` command
 
 ### Changed
 
 - Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
 - Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
 - Fixed missing imports for method parameters that are query parameters.
+- Replaces the use of "new" by "override" and "virtual" in CSharp models.
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
 - Changes to the configuration of RequestInformation are preserved instead of being overwritten. [#3401](https://github.com/microsoft/kiota/pull/3401).
 - Fix bug where import statements in typescript wasn't using import type notation for types that are erased at runtime. [#3190](https://github.com/microsoft/kiota/issues/3190)
+- The structured content type generation parameter now supports prioritization with `q=value` syntax. [#3377](https://github.com/microsoft/kiota/issues/3377)
+- Fixed bug where `Tilde` char convert to Enum member name properly in C#. [#3500](https://github.com/microsoft/kiota/issues/3500)
+- Restore backing store feature for typescript. [#2613](https://github.com/microsoft/kiota/issues/2613)
 
 ## [1.7.0] - 2023-10-05
 

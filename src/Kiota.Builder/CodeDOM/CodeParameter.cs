@@ -46,6 +46,10 @@ public enum CodeParameterKind
     /// Configuration for the request to be sent with the headers, query parameters, and middleware options
     /// </summary>
     RequestConfiguration,
+    /// <summary>
+    /// The content type of the request body when it couldn't be inferred from the description.
+    /// </summary>
+    RequestBodyContentType,
 }
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement, IDeprecableElement
