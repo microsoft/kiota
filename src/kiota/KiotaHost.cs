@@ -101,7 +101,7 @@ public static class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
-        var jsonOption = new Option<bool>("--json", "The target language for the dependencies instructions.");
+        var jsonOption = new Option<bool>("--json", "Generate a plain and machine-parsable json output.");
         languageOption.AddAlias("-l");
         AddEnumValidator(languageOption, "language");
         var infoCommand = new Command("info", "Displays information about the languages supported by kiota and dependencies to add in your project.") {
