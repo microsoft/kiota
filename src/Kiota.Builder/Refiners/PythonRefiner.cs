@@ -74,6 +74,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
                     CodePropertyKind.RequestBuilder,
+                    CodePropertyKind.BackingStore
                 },
                 static s => s.ToFirstCharacterLowerCase().ToSnakeCase());
             AddParentClassToErrorClasses(
@@ -190,6 +191,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             (p.IsOfKind(CodePropertyKind.RequestAdapter) ||
             p.IsOfKind(CodePropertyKind.PathParameters) ||
             p.IsOfKind(CodePropertyKind.QueryParameters) ||
+            p.IsOfKind(CodePropertyKind.Custom) ||
             p.IsOfKind(CodePropertyKind.UrlTemplate)) &&
             currentElement.Parent is CodeClass parentClassP)
         {
