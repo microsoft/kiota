@@ -22,12 +22,16 @@ public class LockManagementServiceTests
     public async Task Identity()
     {
         var lockManagementService = new LockManagementService();
+        var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");
         var lockFile = new KiotaLock
         {
-            DescriptionLocation = "D:/description.yml",
+            ClientClassName = "foo",
+            ClientNamespaceName = "bar",
+            DescriptionLocation = descriptionPath,
         };
         var path = Path.GetTempPath();
         await lockManagementService.WriteLockFileAsync(path, lockFile);
+        lockFile.DescriptionLocation = Path.GetFullPath(descriptionPath); // expected since we write the relative path but read to the full path
         var result = await lockManagementService.GetLockFromDirectoryAsync(path);
         Assert.Equal(lockFile, result, new KiotaLockComparer());
     }
@@ -46,6 +50,6 @@ public class LockManagementServiceTests
         var outputDirectory = Path.Combine(tmpPath, "output");
         Directory.CreateDirectory(outputDirectory);
         await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile);
-        Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal($"..{Path.DirectorySeparatorChar}information{Path.DirectorySeparatorChar}description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
     }
 }

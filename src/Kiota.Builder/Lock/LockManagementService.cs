@@ -82,11 +82,8 @@ public class LockManagementService : ILockManagementService
     private static string GetRelativeDescriptionPath(string descriptionPath, string lockFilePath)
     {
         if (IsDescriptionLocal(descriptionPath) &&
-            Uri.TryCreate(descriptionPath, UriKind.RelativeOrAbsolute, out var descriptionUri) &&
-            Uri.TryCreate(lockFilePath, UriKind.RelativeOrAbsolute, out var lockFileUri) &&
-            descriptionUri.IsAbsoluteUri &&
-            lockFileUri.IsAbsoluteUri)
-            return lockFileUri.MakeRelativeUri(descriptionUri).ToString();
+            Path.GetDirectoryName(lockFilePath) is string lockFileDirectoryPath)
+            return Path.GetRelativePath(lockFileDirectoryPath, descriptionPath);
         return descriptionPath;
     }
     /// <inheritdoc/>
