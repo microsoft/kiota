@@ -618,7 +618,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
         writer.WriteLine($"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.try_add_request_header(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
+            writer.WriteLine($"{RequestInfoVarName}.headers.try_add(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");
@@ -824,7 +824,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             writer.StartBlock($"if {requestParams.requestConfiguration.Name}:");
             var headers = requestParams.Headers?.Name ?? "headers";
-            writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name}.{headers})");
+            writer.WriteLine($"{RequestInfoVarName}.headers.add_all({requestParams.requestConfiguration.Name}.{headers})");
             var queryString = requestParams.QueryParameters;
             if (queryString != null)
                 writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name})");
