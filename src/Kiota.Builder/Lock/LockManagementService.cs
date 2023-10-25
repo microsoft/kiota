@@ -31,13 +31,18 @@ public class LockManagementService : ILockManagementService
     }
     private static async Task<KiotaLock?> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken)
     {
-        var lockFile = Path.Combine(directoryPath, LockFileName);
-        if (File.Exists(lockFile))
+        var lockFilePath = Path.Combine(directoryPath, LockFileName);
+        if (File.Exists(lockFilePath))
         {
 #pragma warning disable CA2007
-            await using var fileStream = File.OpenRead(lockFile);
+            await using var fileStream = File.OpenRead(lockFilePath);
 #pragma warning restore CA2007
-            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken).ConfigureAwait(false);
+            var result = await GetLockFromStreamInternalAsync(fileStream, cancellationToken).ConfigureAwait(false);
+            if (result is not null && IsDescriptionLocal(result.DescriptionLocation) && !Path.IsPathRooted(result.DescriptionLocation))
+            {
+                result.DescriptionLocation = Path.GetFullPath(Path.Combine(directoryPath, result.DescriptionLocation));
+            }
+            return result;
         }
         return null;
     }
@@ -70,7 +75,19 @@ public class LockManagementService : ILockManagementService
 #pragma warning disable CA2007
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
 #pragma warning restore CA2007
+        lockInfo.DescriptionLocation = GetRelativeDescriptionPath(lockInfo.DescriptionLocation, lockFilePath);
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken).ConfigureAwait(false);
+    }
+    private static bool IsDescriptionLocal(string descriptionPath) => !descriptionPath.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+    private static string GetRelativeDescriptionPath(string descriptionPath, string lockFilePath)
+    {
+        if (IsDescriptionLocal(descriptionPath) &&
+            Uri.TryCreate(descriptionPath, UriKind.RelativeOrAbsolute, out var descriptionUri) &&
+            Uri.TryCreate(lockFilePath, UriKind.RelativeOrAbsolute, out var lockFileUri) &&
+            descriptionUri.IsAbsoluteUri &&
+            lockFileUri.IsAbsoluteUri)
+            return lockFileUri.MakeRelativeUri(descriptionUri).ToString();
+        return descriptionPath;
     }
     /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
