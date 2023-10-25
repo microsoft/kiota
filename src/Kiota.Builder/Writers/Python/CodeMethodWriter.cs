@@ -824,7 +824,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             writer.StartBlock($"if {requestParams.requestConfiguration.Name}:");
             var headers = requestParams.Headers?.Name ?? "headers";
-            writer.WriteLine($"{RequestInfoVarName}.headers.add({requestParams.requestConfiguration.Name}.{headers})");
+            writer.WriteLine($"{RequestInfoVarName}.headers.add_all({requestParams.requestConfiguration.Name}.{headers})");
             var queryString = requestParams.QueryParameters;
             if (queryString != null)
                 writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name})");
