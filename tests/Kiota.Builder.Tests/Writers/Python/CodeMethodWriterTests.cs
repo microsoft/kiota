@@ -6,7 +6,6 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
-
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
@@ -695,6 +694,8 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
         Assert.Contains("request_info.http_method = Method", result);
+        Assert.Contains("if c:", result);
+        Assert.Contains("request_info.headers.add_all(c.h)", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json, text/plain\")", result);
