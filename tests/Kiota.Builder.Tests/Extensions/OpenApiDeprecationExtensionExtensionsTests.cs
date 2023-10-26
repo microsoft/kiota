@@ -125,6 +125,31 @@ public class OpenApiDeprecationExtensionExtensions
         Assert.Null(deprecationInformation.Description);
     }
     [Fact]
+    public void GetsDeprecationOnOperationWithNullResponseContentTypeInstance()
+    {
+        var operation = new OpenApiOperation
+        {
+            Deprecated = false,
+            Responses = new OpenApiResponses
+            {
+                {
+                    "200", new OpenApiResponse
+                    {
+                        Content = new Dictionary<string, OpenApiMediaType>()
+                        {
+                            { "application/json", null
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        var deprecationInformation = operation.GetDeprecationInformation();
+        Assert.NotNull(deprecationInformation);
+        Assert.False(deprecationInformation.IsDeprecated);
+        Assert.Null(deprecationInformation.Description);
+    }
+    [Fact]
     public void GetsDeprecationOnOperationWithDeprecatedInlineResponseSchema()
     {
         var operation = new OpenApiOperation
@@ -243,6 +268,26 @@ public class OpenApiDeprecationExtensionExtensions
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
         Assert.Equal("description", deprecationInformation.Description);
+    }
+    [Fact]
+    public void GetsDeprecationOnOperationWithNullRequestBodyContentTypeInstance()
+    {
+        var operation = new OpenApiOperation
+        {
+            Deprecated = false,
+            RequestBody = new OpenApiRequestBody
+            {
+                Content = new Dictionary<string, OpenApiMediaType>()
+                {
+                    { "application/json", null
+                    }
+                }
+            }
+        };
+        var deprecationInformation = operation.GetDeprecationInformation();
+        Assert.NotNull(deprecationInformation);
+        Assert.False(deprecationInformation.IsDeprecated);
+        Assert.Null(deprecationInformation.Description);
     }
     [Fact]
     public void GetsNoDeprecationOnOperationWithDeprecatedReferenceRequestSchema()
