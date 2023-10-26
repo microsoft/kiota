@@ -422,7 +422,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
         if (requestParams.requestConfiguration != null)
         {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{");
+            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{"); // TODO for v2, since we're moving to generics, this whole block can be moved to request information avoiding duplication
             var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
             writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
                             $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");

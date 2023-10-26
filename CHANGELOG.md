@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - The lock file now contains the relative path to the description in case of local path. [#3151](https://github.com/microsoft/kiota/issues/3151)
+- Fixes a bug where query parameters would be missing in CSharp for ebc clients. [#3583](https://github.com/microsoft/kiota/issues/3583)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
