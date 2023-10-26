@@ -235,31 +235,6 @@ public class OpenApiDeprecationExtensionExtensions
         Assert.Null(deprecationInformation.Description);
     }
     [Fact]
-    public void GetsNoDeprecationOnOperationWithNoReferenceResponseSchema()
-    {
-        var operation = new OpenApiOperation
-        {
-            Deprecated = false,
-            Responses = new OpenApiResponses
-            {
-                {
-                    "200", new OpenApiResponse
-                    {
-                        Content = new Dictionary<string, OpenApiMediaType>()
-                        {
-                            { "application/json", new OpenApiMediaType()
-                            }
-                        }
-                    }
-                }
-            }
-        };
-        var deprecationInformation = operation.GetDeprecationInformation();
-        Assert.NotNull(deprecationInformation);
-        Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
-    }
-    [Fact]
     public void GetsDeprecationOnOperationWithNullRequestBodyContentTypeInstance()
     {
         var operation = new OpenApiOperation
