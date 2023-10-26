@@ -37,13 +37,14 @@ internal static class OpenApiDeprecationExtensionExtensions
                                 .Select(static x => x?.Schema)
                                 .OfType<OpenApiSchema>()
                                 .Where(static x => !x.IsReferencedSchema())
-                                .Select(static x => x!.GetDeprecationInformation())
+                                .Select(static x => x.GetDeprecationInformation())
                                 .FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation responseDeprecationInformation)
             return responseDeprecationInformation;
         else if (operation.RequestBody?.Content.Values
                                             .Select(static x => x?.Schema)
-                                            .Where(static x => x != null && !x.IsReferencedSchema())
-                                            .Select(static x => x!.GetDeprecationInformation())
+                                            .OfType<OpenApiSchema>()
+                                            .Where(static x => !x.IsReferencedSchema())
+                                            .Select(static x => x.GetDeprecationInformation())
                                             .FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation requestDeprecationInformation)
             return requestDeprecationInformation;
         return new(null, null, null, null, operation.Deprecated);
