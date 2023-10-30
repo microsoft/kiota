@@ -182,6 +182,18 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 param.Name = param.Name.ToFirstCharacterLowerCase().ToSnakeCase();
             }
+            if (parentClassM.IsOfKind(CodeClassKind.Model))
+            {
+                foreach (var prop in parentClassM.Properties)
+                {
+                    if (string.IsNullOrEmpty(prop.SerializationName))
+                    {
+                        prop.SerializationName = prop.Name;
+                    }
+
+                    parentClassM.RenameChildElement(prop.Name, prop.Name.ToFirstCharacterLowerCase().ToSnakeCase());
+                }
+            }
         }
         else if (currentElement is CodeClass c)
         {
@@ -191,7 +203,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             (p.IsOfKind(CodePropertyKind.RequestAdapter) ||
             p.IsOfKind(CodePropertyKind.PathParameters) ||
             p.IsOfKind(CodePropertyKind.QueryParameters) ||
-            p.IsOfKind(CodePropertyKind.Custom) ||
             p.IsOfKind(CodePropertyKind.UrlTemplate)) &&
             currentElement.Parent is CodeClass parentClassP)
         {
