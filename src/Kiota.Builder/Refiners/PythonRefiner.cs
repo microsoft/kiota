@@ -183,10 +183,17 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 param.Name = param.Name.ToFirstCharacterLowerCase().ToSnakeCase();
             }
             if (parentClassM.IsOfKind(CodeClassKind.Model))
+            {
                 foreach (var prop in parentClassM.Properties)
                 {
-                    prop.Name = prop.Name.ToFirstCharacterLowerCase().ToSnakeCase();
+                    if (string.IsNullOrEmpty(prop.SerializationName))
+                    {
+                        prop.SerializationName = prop.Name;
+                    }
+
+                    parentClassM.RenameChildElement(prop.Name, prop.Name.ToFirstCharacterLowerCase().ToSnakeCase());
                 }
+            }
         }
         else if (currentElement is CodeClass c)
         {
