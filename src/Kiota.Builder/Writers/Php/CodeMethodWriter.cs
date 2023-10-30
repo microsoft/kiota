@@ -777,7 +777,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var methodCall = $"{GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});";
         if (methodName.Contains("sendPrimitive", StringComparison.OrdinalIgnoreCase))
         {
-            writer.WriteLines($"/** @var Promise<{GetDocCommentReturnType(codeElement)}|null> $result",
+            writer.WriteLines($"/** @var Promise<{GetDocCommentReturnType(codeElement)}|null> $result */",
                 $"$result = {methodCall}",
                 "return $result;"
                 );
