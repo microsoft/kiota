@@ -278,7 +278,7 @@ public class PythonLanguageRefinerTests
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            Kind = CodeClassKind.Model
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         model.AddProperty(new CodeProperty
         {
