@@ -773,8 +773,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             ? $", '{returnTypeName}'"
             : returnEnumType;
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("Request adapter property not found");
-        writer.WriteLine(
-            $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+
+        var methodCall = $"{GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});";
+        if (methodName.Contains("sendPrimitive", StringComparison.OrdinalIgnoreCase))
+        {
+            writer.WriteLines($"/** @var Promise<{GetDocCommentReturnType(codeElement)}|null> $result",
+                $"$result = {methodCall}",
+                "return $result;"
+                );
+        }
+        else writer.WriteLines(
+            $"return {methodCall}");
     }
 
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
