@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
 - Fixed missing imports for method parameters that are query parameters.
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
+- Fixed a bug in validation rules where form data would wrongfully warn for arrays. [#3569](https://github.com/microsoft/kiota/issues/3569)
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - The lock file now contains the relative path to the description in case of local path. [#3151](https://github.com/microsoft/kiota/issues/3151)
 - Fixes a bug where query parameters would be missing in CSharp for ebc clients. [#3583](https://github.com/microsoft/kiota/issues/3583)
