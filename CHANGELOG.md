@@ -19,9 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Include the type which a promise resolves to in PHPDocs for PHP. [#3542](https://github.com/microsoft/kiota/issues/3542)
 - Added null check for null content type instances when getting deprecation information [#3588](https://github.com/microsoft/kiota/issues/3588)
 - Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
-- Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
+- Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525)
 - Fixed missing imports for method parameters that are query parameters.
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
 - Fixed a bug in validation rules where form data would wrongfully warn for arrays. [#3569](https://github.com/microsoft/kiota/issues/3569)
