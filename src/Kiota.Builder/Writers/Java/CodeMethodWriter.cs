@@ -525,17 +525,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
         var methodName = parentClass
-                                            .Methods
-                                            .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
-                                            ?.Name
-                                            ?.ToFirstCharacterLowerCase();
-        var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
-        var requestInfoParameters = paramsList.Where(x => x != null)
-                                            .Select(x => x!.Name)
+                                .Methods
+                                .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
+                                ?.Name
+                                ?.ToFirstCharacterLowerCase();
+        var paramsList = new List<CodeParameter?> { requestParams.requestBody, requestParams.requestConfiguration };
+        if (requestParams.requestContentType is not null)
+            paramsList.Insert(1, requestParams.requestContentType);
+        var requestInfoParameters = paramsList.OfType<CodeParameter>()
+                                            .Select(static x => x.Name)
                                             .ToList();
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
-        requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
-        var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
+        requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "null"));
+        var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
         writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)

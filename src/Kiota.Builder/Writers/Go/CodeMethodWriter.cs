@@ -793,10 +793,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             ?.Name
                                             ?.ToFirstCharacterUpperCase();
         var paramsList = new List<CodeParameter?> { codeElement.Parameters.OfKind(CodeParameterKind.Cancellation), requestParams.requestBody, requestParams.requestConfiguration };
+        if (requestParams.requestContentType is not null)
+            paramsList.Insert(2, requestParams.requestContentType);
         if (parametersPad > 0)
-            paramsList.AddRange(Enumerable.Range(0, parametersPad).Select<int, CodeParameter?>(x => null));
-        var requestInfoParameters = paramsList.Where(static x => x != null)
-                                            .Select(static x => x!.Name)
+            paramsList.AddRange(Enumerable.Range(0, parametersPad).Select<int, CodeParameter?>(static x => null));
+        var requestInfoParameters = paramsList.OfType<CodeParameter>()
+                                            .Select(static x => x.Name)
                                             .ToList();
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "nil"));
