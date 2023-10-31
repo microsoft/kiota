@@ -315,6 +315,7 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.Contains("writeStringValue", result);
         Assert.Contains("writeCollectionOfPrimitiveValues", result);
         Assert.Contains("writeCollectionOfObjectValues", result);
+        Assert.Contains("serializeSomeComplexType", result);
         Assert.Contains("writeEnumValue", result);
         Assert.Contains($"writer.writeAdditionalData", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
