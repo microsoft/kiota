@@ -726,14 +726,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .FirstOrDefault(x =>
                 x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
         var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-            .Where(static x => x?.Name != null)
-            .Select(static x => x!);
-        var callParams = requestInfoParameters.Select(conventions.GetParameterName);
+        var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
+            .OfType<CodeParameter>()
+            .Select(conventions.GetParameterName)
+            .ToArray();
         var joinedParams = string.Empty;
         if (requestInfoParameters.Any())
         {
-            joinedParams = string.Join(", ", callParams);
+            joinedParams = string.Join(", ", requestInfoParameters);
         }
 
         var returnTypeName = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
