@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Set serialization name for path parameters for use with url templating in Python.
 - Added null check for null content type instances when getting deprecation information [#3588](https://github.com/microsoft/kiota/issues/3588)
 - Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
 - Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
