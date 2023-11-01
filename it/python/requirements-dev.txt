@@ -100,7 +100,7 @@ hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
 microsoft-kiota-abstractions==1.0.0
 
-microsoft-kiota-authentication-azure==0.3.2
+microsoft-kiota-authentication-azure==1.0.0
 
 microsoft-kiota-http==0.6.3
 
