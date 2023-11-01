@@ -106,7 +106,7 @@ microsoft-kiota-http==0.6.3
 
 microsoft-kiota-serialization-json==0.4.2
 
-microsoft-kiota-serialization-text==0.3.0
+microsoft-kiota-serialization-text==1.0.0
 
 msal==1.24.1
 
