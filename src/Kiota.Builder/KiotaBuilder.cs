@@ -1614,7 +1614,7 @@ public partial class KiotaBuilder
         referenceId = referenceId.Trim(NsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(NsNameSeparator);
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
-        return $"{modelsNamespace?.Name}{namespaceSuffix}";
+        return $"{modelsNamespace?.Name}{namespaceSuffix.Split(NsNameSeparator).Select(static x => x.CleanupSymbolName()).Aggregate(static (x, y) => $"{x}{NsNameSeparator}{y}")}";
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {

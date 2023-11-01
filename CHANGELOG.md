@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525)
 - Fixed missing imports for method parameters that are query parameters.
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
+- Fixed a bug where namespaces segment names might contain special characters. [#3599](https://github.com/microsoft/kiota/issues/3599)
 - Fixed a bug in validation rules where form data would wrongfully warn for arrays. [#3569](https://github.com/microsoft/kiota/issues/3569)
 - Fixed a bug where content type parameter would be missing for TypeScript, Java, PHP, Python, Ruby and Go. [#3610](https://github.com/microsoft/kiota/issues/3610)
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
