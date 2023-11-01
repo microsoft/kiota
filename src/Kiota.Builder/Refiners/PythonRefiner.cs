@@ -180,6 +180,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             foreach (var param in m.Parameters)
             {
+                if (param.SerializationName != null)
+                    param.SerializationName = param.Name;
                 param.Name = param.Name.ToFirstCharacterLowerCase().ToSnakeCase();
             }
             if (parentClassM.IsOfKind(CodeClassKind.Model))
