@@ -392,7 +392,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
         {
-            writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.NamePrefix}{backingStore.Name}\");");
+            writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\");");
             writer.StartBlock("if(value == null) {");
             writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                 $"this.set{codeElement.AccessedProperty?.Name.ToFirstCharacterUpperCase()}(value);");

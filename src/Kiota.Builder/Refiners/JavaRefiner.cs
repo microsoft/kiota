@@ -220,7 +220,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "java.util", "Collection", "Map"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             SerializationNamespaceName, "Parsable"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeMethod @method && @method.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) && (@method.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false),
             SerializationNamespaceName, "AdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),
