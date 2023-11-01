@@ -266,8 +266,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {
-        if (propType.TypeDefinition?.Parent is not CodeNamespace parentNameSpace) return string.Empty;
-        var serializationFunction = parentNameSpace.FindChildByName<CodeFunction>(propertySerializerName);
+        if (propType.TypeDefinition?.GetImmediateParentOfType<CodeFile>() is not CodeFile parentFile ||
+            parentFile.FindChildByName<CodeFunction>(propertySerializerName, false) is not CodeFunction serializationFunction)
+            return string.Empty;
         return conventions.GetTypeString(new CodeType { TypeDefinition = serializationFunction }, codeFunction, false);
     }
 }

@@ -562,14 +562,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name;
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
-        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-                                        .Where(static x => x != null)
-                                        .Select(static x => x!.Name)
+        var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
+                                        .OfType<CodeParameter>()
+                                        .Select(static x => x.Name)
                                         .ToArray();
-        if (requestInfoParameters.Any() && requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") is string parameters)
+        if (requestInfoParameters.Any())
         {
             writer.IncreaseIndent();
-            writer.WriteLine(parameters);
+            writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");

@@ -259,7 +259,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer)
     {
         var methodDescription = codeMethod.Documentation.Description;
-
+        var methodThrows = codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
         var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim());
         if (!hasMethodDescription && !codeMethod.Parameters.Any())
         {
@@ -276,13 +276,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var nullableSuffix = (codeMethod.ReturnType.IsNullable ? "|null" : "");
             returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
-                ? "@return Promise"
+                ? $"@return Promise<{returnDocString}|null>"
                 : $"@return {returnDocString}{nullableSuffix}";
         }
         else returnDocString = String.Empty;
+
+        var throwsArray = methodThrows ? new[] { "@throws Exception" } : Array.Empty<string>();
         conventions.WriteLongDescription(codeMethod.Documentation,
             writer,
-            parametersWithOrWithoutDescription.Union(new[] { returnDocString })
+            parametersWithOrWithoutDescription.Union(new[] { returnDocString }).Union(throwsArray)
             );
 
     }
@@ -294,6 +296,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             CodeMethodKind.Deserializer => "array<string, callable(ParseNode): void>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(codeMethod.AccessedProperty.Type)}>",
+            CodeMethodKind.RequestExecutor when codeMethod.ReturnType.IsCollection => $"array<{conventions.TranslateType(codeMethod.ReturnType)}>",
             _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
         };
     }
@@ -723,20 +726,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .FirstOrDefault(x =>
                 x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
         var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-            .Where(static x => x?.Name != null)
-            .Select(static x => x!);
-        var callParams = requestInfoParameters.Select(conventions.GetParameterName);
+        var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
+            .OfType<CodeParameter>()
+            .Select(conventions.GetParameterName)
+            .ToArray();
         var joinedParams = string.Empty;
         if (requestInfoParameters.Any())
         {
-            joinedParams = string.Join(", ", callParams);
+            joinedParams = string.Join(", ", requestInfoParameters);
         }
 
         var returnTypeName = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
-        writer.WriteLine("try {");
-        writer.IncreaseIndent();
         var errorMappings = codeElement.ErrorMappings;
         var hasErrorMappings = false;
         var errorMappingsVarName = "$errorMappings";
@@ -772,15 +773,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             ? $", '{returnTypeName}'"
             : returnEnumType;
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("Request adapter property not found");
-        writer.WriteLine(
-            $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
 
-        writer.DecreaseIndent();
-        writer.WriteLine("} catch(Exception $ex) {");
-        writer.IncreaseIndent();
-        writer.WriteLine("return new RejectedPromise($ex);");
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        var methodCall = $"{GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});";
+        if (methodName.Contains("sendPrimitive", StringComparison.OrdinalIgnoreCase))
+        {
+            writer.WriteLines($"/** @var Promise<{GetDocCommentReturnType(codeElement)}|null> $result */",
+                $"$result = {methodCall}",
+                "return $result;"
+                );
+        }
+        else writer.WriteLines(
+            $"return {methodCall}");
     }
 
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)

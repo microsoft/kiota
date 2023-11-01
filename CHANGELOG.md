@@ -19,17 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Set serialization name for path parameters for use with url templating in Python.
+- Set serialization name for path parameters for use with url templating in Python. [#3612](https://github.com/microsoft/kiota/issues/3612)
+- Include the type which a promise resolves to in PHPDocs for PHP. [#3542](https://github.com/microsoft/kiota/issues/3542)
 - Added null check for null content type instances when getting deprecation information [#3588](https://github.com/microsoft/kiota/issues/3588)
 - Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
-- Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525
+- Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525)
 - Fixed missing imports for method parameters that are query parameters.
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
 - Fixed a bug in validation rules where form data would wrongfully warn for arrays. [#3569](https://github.com/microsoft/kiota/issues/3569)
+- Fixed a bug where content type parameter would be missing for TypeScript, Java, PHP, Python, Ruby and Go. [#3610](https://github.com/microsoft/kiota/issues/3610)
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
 - The lock file now contains the relative path to the description in case of local path. [#3151](https://github.com/microsoft/kiota/issues/3151)
 - Fixes a bug where query parameters would be missing in CSharp for ebc clients. [#3583](https://github.com/microsoft/kiota/issues/3583)
 - Fixed bug where base64url and decimal types would not be generated properly in Java.
+- Fixed a bug where object properties would not be serialized in TypeScript. [#3596](https://github.com/microsoft/kiota/issues/3596)
 - Fixed bug where symbol name cleanup would not work on forward single quotes characters [#3426](https://github.com/microsoft/kiota/issues/3426).
 - Fixed a bug where a "models" API path segment in the description would derail generation. [#3400](https://github.com/microsoft/kiota/issues/3400)
 - Changes to the configuration of RequestInformation are preserved instead of being overwritten. [#3401](https://github.com/microsoft/kiota/pull/3401).
