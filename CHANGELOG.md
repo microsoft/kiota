@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.8.1] - 2023-11-02
+
+### Added
+
+### Changed
+
 - Fixed a bug where query parameter enum reusable types would be trimmed. [#3637](https://github.com/microsoft/kiota/issues/3637)
 
 ## [1.8.0] - 2023-11-02
@@ -1136,4 +1142,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
