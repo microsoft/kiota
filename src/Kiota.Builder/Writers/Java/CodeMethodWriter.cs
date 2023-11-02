@@ -373,14 +373,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        if (parentClass.GetBackingStoreProperty() is CodeProperty backingStore)
-            writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name}\", value);");
-        else
+        if (parentClass.GetBackingStoreProperty() is not CodeProperty backingStore || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
         {
             string value = "PeriodAndDuration".Equals(codeElement.AccessedProperty?.Type?.Name, StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.ofPeriodAndDuration(value);" : "value;";
             writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name} = {value}");
-
         }
+        else
+            writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name}\", value);");
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {

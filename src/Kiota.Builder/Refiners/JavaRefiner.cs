@@ -80,11 +80,21 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
-                    CodePropertyKind.BackingStore,
                 },
                 static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
                 true,
+                "get",
+                "set",
+                string.Empty
+            );
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.BackingStore
+                },
+                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
+                _configuration.UsesBackingStore,
+                false,
                 "get",
                 "set",
                 string.Empty
@@ -99,6 +109,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.BackingStore));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             var defaultConfiguration = new GenerationConfiguration();
