@@ -47,6 +47,7 @@ public class ApicurioSearchProvider : ISearchProvider
             _authenticatedAuthenticationProvider :
             new AnonymousAuthenticationProvider();
         using var requestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
+        // TODO: the default should be "disabled" when providing a real URL this should work out of the box
         requestAdapter.BaseUrl = _configuration.ApiBaseUrl.AbsoluteUri;
         var apicurioClient = new ApicurioClient(requestAdapter);
 
