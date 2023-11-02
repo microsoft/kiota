@@ -146,6 +146,51 @@ paths:
         Assert.NotNull(constructor);
         Assert.Equal("https://api.funtranslations.com", constructor.BaseUrl);
     }
+    [Fact]
+    public async Task HandlesSpecialCharactersInPathSegment()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://api.funtranslations.com
+paths:
+  /my-api:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specialized-Complex.StorageAccount'
+components:
+  schemas:
+    Specialized-Complex.StorageAccount:
+      type: object
+      properties:
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json" }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        Assert.Null(codeModel.FindNamespaceByName("ApiSdk.my-api"));
+        Assert.NotNull(codeModel.FindNamespaceByName("ApiSdk.MyApi"));
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var specializedNS = modelsNS.FindNamespaceByName("ApiSdk.models.SpecializedComplex");
+        Assert.NotNull(specializedNS);
+        Assert.Null(modelsNS.FindNamespaceByName("ApiSdk.models.Specialized-Complex"));
+        Assert.NotNull(specializedNS.FindChildByName<CodeClass>("StorageAccount", false));
+    }
     private readonly HttpClient _httpClient = new();
     [Fact]
     public async Task ParsesEnumDescriptions()
@@ -4083,6 +4128,69 @@ paths:
         else
         {
             Assert.Equal("GetQueryQueryParameterType", backwardCompatibleProperty.Type.Name);
+            Assert.False(backwardCompatibleProperty.Deprecation.IsDeprecated);
+        }
+    }
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public async Task AddsQueryParameterTypesAsModels(bool ecb)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://api.funtranslations.com
+paths:
+  /enumeration:
+    get:
+      parameters:
+        - name: InternalExternal
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/InternalExternal'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    InternalExternal:
+      enum: [All, Internal, External]
+      type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json", Language = GenerationLanguage.CSharp, ExcludeBackwardCompatible = ecb }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+
+        var queryParameters = codeModel.FindChildByName<CodeClass>("enumerationRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var backwardCompatibleProperty = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("InternalExternal", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(backwardCompatibleProperty);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.Models");
+        var enumType = modelsNS.FindChildByName<CodeEnum>("InternalExternal", false);
+        Assert.NotNull(enumType);
+        if (!ecb)
+        {
+            Assert.Equal("string", backwardCompatibleProperty.Type.Name);
+            Assert.True(backwardCompatibleProperty.Type.AllTypes.First().IsExternal);
+            Assert.True(backwardCompatibleProperty.Deprecation.IsDeprecated);
+            var property = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("InternalExternalAsInternalExternal", StringComparison.OrdinalIgnoreCase));
+            Assert.NotNull(property);
+            Assert.Equal("InternalExternal", property.Type.Name);
+        }
+        else
+        {
+            Assert.Equal("InternalExternal", backwardCompatibleProperty.Type.Name);
             Assert.False(backwardCompatibleProperty.Deprecation.IsDeprecated);
         }
     }

@@ -24,9 +24,9 @@ public class DocumentCachingProviderTests
         Assert.Throws<ArgumentNullException>(() => new DocumentCachingProvider(null, mockLogger));
 
         var provider = new DocumentCachingProvider(client, mockLogger);
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(null, null, null));
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(new Uri("https://localhost"), null, null));
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(null, null, null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), null, null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null));
     }
     private const string ResponsePayload = @"{
   ""headers"": {

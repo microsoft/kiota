@@ -1589,6 +1589,10 @@ public partial class KiotaBuilder
                         IsExternal = true,
                         IsNullable = false,
                     },
+                    Documentation = new()
+                    {
+                        Description = "The request body content type."
+                    }
                 });
         }
         method.AddParameter(new CodeParameter
@@ -1614,7 +1618,7 @@ public partial class KiotaBuilder
         referenceId = referenceId.Trim(NsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(NsNameSeparator);
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
-        return $"{modelsNamespace?.Name}{namespaceSuffix}";
+        return $"{modelsNamespace?.Name}{string.Join(NsNameSeparator, namespaceSuffix.Split(NsNameSeparator).Select(static x => x.CleanupSymbolName()))}";
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
@@ -2079,6 +2083,12 @@ public partial class KiotaBuilder
                                 .SelectMany(static x => x.Parameters)
                                 .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
                                 .SelectMany(static x => x.Type.AllTypes))
+                        .Union(requestExecutors.SelectMany(static x => x.Parameters)
+                                .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                .SelectMany(static x => x.Type.AllTypes.Select(static y => y.TypeDefinition))
+                                .OfType<CodeClass>()
+                                .Select(static x => x.Properties.FirstOrDefault(static y => y.Kind is CodePropertyKind.QueryParameters)?.Type)
+                                .OfType<CodeType>())
                         .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)))
                         .Where(static x => x.TypeDefinition != null)
                         .Select(static x => x.TypeDefinition!)

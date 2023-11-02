@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.8.1] - 2023-11-02
+
+### Added
+
+### Changed
+
+- Fixed a bug where query parameter enum reusable types would be trimmed. [#3637](https://github.com/microsoft/kiota/issues/3637)
+
+## [1.8.0] - 2023-11-02
+
+### Added
+
+- 📢📢📢 Python generation is now stable! 🚀🚀🚀
+- 📢📢📢 PHP generation is now stable! 🚀🚀🚀
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
 - Added settings in the vscode extension for: backingStore, additionalData, excludeBackwardCompatible, cleanOutput, clearCache, serializers, deserializers, disabledValidationRules, structuredMimeTypes. [#3355](https://github.com/microsoft/kiota/issues/3355)
 - Support for primary error message in PHP [#3276](https://github.com/microsoft/kiota/issues/3276)
@@ -19,12 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Set serialization name for path parameters for use with url templating in Python. [#3612](https://github.com/microsoft/kiota/issues/3612)
 - Include the type which a promise resolves to in PHPDocs for PHP. [#3542](https://github.com/microsoft/kiota/issues/3542)
 - Added null check for null content type instances when getting deprecation information [#3588](https://github.com/microsoft/kiota/issues/3588)
 - Aligns header management in Python with other languages. [#3430](https://github.com/microsoft/kiota/issues/3430)
 - Fixed parameters that are in camelcase to snakecase in Python. [#3525](https://github.com/microsoft/kiota/issues/3525)
 - Fixed missing imports for method parameters that are query parameters.
 - Replaces the use of "new" by "override" and "virtual" in CSharp models.
+- Fixed a bug where namespaces segment names might contain special characters. [#3599](https://github.com/microsoft/kiota/issues/3599)
 - Fixed a bug in validation rules where form data would wrongfully warn for arrays. [#3569](https://github.com/microsoft/kiota/issues/3569)
 - Fixed a bug where content type parameter would be missing for TypeScript, Java, PHP, Python, Ruby and Go. [#3610](https://github.com/microsoft/kiota/issues/3610)
 - Fixed query parameters type mapping for arrays. [#3354](https://github.com/microsoft/kiota/issues/3354)
@@ -39,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The structured content type generation parameter now supports prioritization with `q=value` syntax. [#3377](https://github.com/microsoft/kiota/issues/3377)
 - Fixed bug where `Tilde` char convert to Enum member name properly in C#. [#3500](https://github.com/microsoft/kiota/issues/3500)
 - Restore backing store feature for typescript. [#2613](https://github.com/microsoft/kiota/issues/2613)
+- Fixed default code documentation for RequestBodyContentType method parameter.
 
 ## [1.7.0] - 2023-10-05
 
@@ -1123,3 +1142,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+
