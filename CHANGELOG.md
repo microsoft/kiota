@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.8.0] - 2023-11-02
+
+### Added
+
 - 📢📢📢 Python generation is now stable! 🚀🚀🚀
 - 📢📢📢 PHP generation is now stable! 🚀🚀🚀
 - Added support for enum query parameter types. [#2490](https://github.com/microsoft/kiota/issues/2490)
@@ -1128,3 +1134,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
