@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The structured content type generation parameter now supports prioritization with `q=value` syntax. [#3377](https://github.com/microsoft/kiota/issues/3377)
 - Fixed bug where `Tilde` char convert to Enum member name properly in C#. [#3500](https://github.com/microsoft/kiota/issues/3500)
 - Restore backing store feature for typescript. [#2613](https://github.com/microsoft/kiota/issues/2613)
+- Fixed default code documentation for RequestBodyContentType method parameter.
 
 ## [1.7.0] - 2023-10-05
 
