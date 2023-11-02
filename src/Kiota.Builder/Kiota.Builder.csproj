@@ -15,7 +15,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.8.0</VersionPrefix>
+    <VersionPrefix>1.9.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -53,8 +53,7 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="NeoSmart.AsyncLock" Version="3.2.1" />
     <PackageReference Include="YamlDotNet" Version="13.7.1" />
-    <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer"
-      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="*.g.cs" />
