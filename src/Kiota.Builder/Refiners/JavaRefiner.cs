@@ -194,7 +194,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void AddEnumSetImport(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.Properties.Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags))
+            currentClass.Methods.Any(x => x.AccessedProperty?.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags))
         {
             var nUsing = new CodeUsing
             {
