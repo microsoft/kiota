@@ -93,7 +93,7 @@ internal class Server : IServer
         var logger = new ForwardedLogger<KiotaSearcher>();
         var configuration = Configuration.Search;
         configuration.ClearCache = clearCache;
-        var searchService = new KiotaSearcher(logger, configuration, httpClient, null, (_) => Task.FromResult(false));
+        var searchService = new KiotaSearcher(logger, configuration, httpClient, null, (_) => Task.FromResult(false), null);
         var results = await searchService.SearchAsync(searchTerm, string.Empty, cancellationToken);
         return new(logger.LogEntries, results);
     }

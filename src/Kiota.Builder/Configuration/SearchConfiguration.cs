@@ -7,12 +7,15 @@ public class SearchConfiguration : SearchConfigurationBase, ICloneable
     public Uri APIsGuruListUrl { get; set; } = new("https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/list.json");
     public GitHubConfiguration GitHub { get; set; } = new();
 
+    public ApicurioConfiguration Apicurio { get; set; } = new();
+
     public object Clone()
     {
         return new SearchConfiguration
         {
             APIsGuruListUrl = new(APIsGuruListUrl.ToString(), UriKind.RelativeOrAbsolute),
             GitHub = (GitHubConfiguration)GitHub.Clone(),
+            Apicurio = (ApicurioConfiguration)Apicurio.Clone(),
             ClearCache = ClearCache
         };
     }
@@ -33,6 +36,19 @@ public class GitHubConfiguration : ICloneable
             ApiBaseUrl = new(ApiBaseUrl.ToString(), UriKind.RelativeOrAbsolute),
             BlockListUrl = new(BlockListUrl.ToString(), UriKind.RelativeOrAbsolute),
             AppManagement = new(AppManagement.ToString(), UriKind.RelativeOrAbsolute)
+        };
+    }
+}
+
+public class ApicurioConfiguration : ICloneable
+{
+    public Uri ApiBaseUrl { get; set; } = new("http://localhost:8080/apis/registry/v2");
+
+    public object Clone()
+    {
+        return new ApicurioConfiguration
+        {
+            ApiBaseUrl = new(ApiBaseUrl.ToString(), UriKind.RelativeOrAbsolute),
         };
     }
 }
