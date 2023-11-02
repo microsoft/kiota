@@ -426,7 +426,7 @@
     "@types/adm-zip": "^0.5.3",
     "@types/mocha": "^10.0.3",
     "@types/node": "20.x",
-    "@types/vscode": "^1.83.1",
+    "@types/vscode": "^1.83.2",
     "@typescript-eslint/eslint-plugin": "^6.9.1",
     "@typescript-eslint/parser": "^6.9.1",
     "@vscode/test-electron": "^2.3.6",
@@ -439,7 +439,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.8.5",
+    "@vscode/extension-telemetry": "^0.9.0",
     "@vscode/l10n": "^0.0.16",
     "adm-zip": "^0.5.10",
     "is-online": "^10.0.0",
