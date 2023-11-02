@@ -1589,7 +1589,7 @@ public partial class KiotaBuilder
                         IsExternal = true,
                         IsNullable = false,
                     },
-                    Documentation = new ()
+                    Documentation = new()
                     {
                         Description = "The request body content type."
                     }
