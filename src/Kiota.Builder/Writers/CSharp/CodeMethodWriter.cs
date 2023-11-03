@@ -422,7 +422,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
         if (requestParams.requestConfiguration != null)
         {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{");
+            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{"); // TODO for v2, since we're moving to generics, this whole block can be moved to request information avoiding duplication
             var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
             writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
                             $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
@@ -599,7 +599,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        var hideModifier = inherits && code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.Factory) ? "new " : string.Empty;
+        var hideModifier = (inherits, code.Kind) switch
+        {
+            (true, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "override ",
+            (false, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "virtual ",
+            (true, CodeMethodKind.Factory) => "new ",
+            _ => string.Empty
+        };
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);

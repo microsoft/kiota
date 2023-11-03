@@ -170,11 +170,11 @@ public abstract class LanguageWriter
             Writers[typeof(T)] = writer;
     }
     private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
-    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false)
+    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false, bool excludeBackwardCompatible = false)
     {
         return language switch
         {
-            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),

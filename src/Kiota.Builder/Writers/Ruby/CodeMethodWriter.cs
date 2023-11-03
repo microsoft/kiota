@@ -251,9 +251,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             ?.Name
                                             ?.ToSnakeCase();
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
-        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-            .Where(static x => x != null)
-            .Select(static x => x!.Name.ToSnakeCase())
+        var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
+            .OfType<CodeParameter>()
+            .Select(static x => x.Name.ToSnakeCase())
             .ToArray();
         if (requestInfoParameters.Any())
         {

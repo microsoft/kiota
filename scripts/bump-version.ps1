@@ -1,3 +1,8 @@
+param(
+    [ValidateSet("minor", "major", "patch")]
+    [string]$kind = "minor"
+)
+
 $indentContentScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "indent-xml-content.ps1"
 . $indentContentScriptPath
 
@@ -5,8 +10,18 @@ $mainCSProjpath = Join-Path -Path $PSScriptRoot -ChildPath "../src/kiota/kiota.c
 $mainCsprojContent = [xml](Get-Content -Path $mainCSProjpath)
 $version = $mainCsprojContent.Project.PropertyGroup[0].VersionPrefix
 $versionParts = $version.Split(".")
-$versionParts[1] = [int]$versionParts[1] + 1
-$versionParts[2] = 0
+if ($kind -eq "major") {
+    $versionParts[0] = [int]$versionParts[0] + 1
+    $versionParts[1] = 0
+    $versionParts[2] = 0
+}
+elseif ($kind -eq "minor") {
+    $versionParts[1] = [int]$versionParts[1] + 1
+    $versionParts[2] = 0
+}
+elseif ($kind -eq "patch") {
+    $versionParts[2] = [int]$versionParts[2] + 1
+}
 $version = $versionParts -join "."
 $mainCsprojContent.Project.PropertyGroup[0].VersionPrefix = $version
 Format-XMLIndent -Content $mainCsprojContent | Set-Content -Path $mainCSProjpath -Encoding utf8

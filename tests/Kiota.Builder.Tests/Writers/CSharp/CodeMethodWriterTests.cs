@@ -26,7 +26,7 @@ public class CodeMethodWriterTests : IDisposable
     private const string ParamName = "paramName";
     public CodeMethodWriterTests()
     {
-        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, excludeBackwardCompatible: true);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();

@@ -297,13 +297,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-                                        .Select(x => x?.Name).Where(x => x != null)
+        var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
+                                        .OfType<CodeParameter>()
+                                        .Select(static x => x.Name)
                                         .ToArray();
-        if (requestInfoParameters.Any() && requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") is string requestInfoParametersString)
+        if (requestInfoParameters.Any())
         {
             writer.IncreaseIndent();
-            writer.WriteLine(requestInfoParametersString);
+            writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));
             writer.DecreaseIndent();
         }
         writer.WriteLine(");");
