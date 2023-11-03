@@ -688,17 +688,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private string GetFinalReturnType(CodeMethod code, string returnType)
     {
-        var voidType = code.IsAsync ? "Void" : "void";
         if (code.ReturnType is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
             returnType = $"EnumSet<{returnType}>";
-        var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
-        var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-        var reType = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? voidType : returnType;
+        var reType = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? "void" : returnType;
         var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             reType;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var finalReturnType = isConstructor ? string.Empty : $"{returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
+        var finalReturnType = isConstructor ? string.Empty : $"{collectionCorrectedReturnType}";
         return finalReturnType.Trim();
     }
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
@@ -729,11 +726,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     {
         var returnVoid = baseReturnType.Equals("void", StringComparison.OrdinalIgnoreCase);
         // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
-        var returnRemark = returnVoid ? string.Empty : (code.IsAsync switch
-        {
-            true => $"@return a CompletableFuture of {baseReturnType}",
-            false => $"@return a {finalReturnType}",
-        });
+        var returnRemark = returnVoid ? string.Empty : $"@return a {finalReturnType}";
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
