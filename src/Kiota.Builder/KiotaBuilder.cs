@@ -1314,6 +1314,17 @@ public partial class KiotaBuilder
                     return (modelType, obsoleteComposedType);
                 }
             }
+            else
+            {
+                string returnType;
+                if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+                    returnType = VoidType;
+                else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+                    returnType = "string";
+                else
+                    returnType = "binary";
+                return (new CodeType { Name = returnType, IsExternal = true, }, null);
+            }
             return (modelType, null);
         }
         else
