@@ -1314,7 +1314,7 @@ public partial class KiotaBuilder
                     return (modelType, obsoleteComposedType);
                 }
             }
-            else
+            else if (modelType is null)
             {
                 string returnType;
                 if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))

@@ -83,7 +83,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     }
     private static string NormalizeMimeType(string key, float value)
     {
-        return $"{key};q={value}";
+        return FormattableString.Invariant($"{key};q={value}");
     }
     ///<inheritdoc/>
     public bool Remove(string item)
