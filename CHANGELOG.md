@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed generating any-type schemas [#3536](https://github.com/microsoft/kiota/issues/3536)
+- Fixed float to string convertation with invariant culture. 
+
 ## [1.8.1] - 2023-11-02
 
 ### Added
