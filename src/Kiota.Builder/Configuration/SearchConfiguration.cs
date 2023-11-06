@@ -69,6 +69,9 @@ public class ApicurioConfiguration : ICloneable
         {
             ApiBaseUrl = (ApiBaseUrl != null) ? new(ApiBaseUrl.ToString(), UriKind.RelativeOrAbsolute) : null,
             UIBaseUrl = (UIBaseUrl != null) ? new(UIBaseUrl.ToString(), UriKind.RelativeOrAbsolute) : null,
+            ArtifactsLimit = ArtifactsLimit,
+            VersionsLimit = VersionsLimit,
+            SearchBy = SearchBy
         };
     }
 }

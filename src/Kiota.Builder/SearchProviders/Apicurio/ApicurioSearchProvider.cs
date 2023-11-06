@@ -83,7 +83,9 @@ public class ApicurioSearchProvider : ISearchProvider
                 var uiUrl = new Uri(_configuration.UIBaseUrl + "/artifacts/" + groupId + "/" + x.Id);
                 var restUrl = new Uri(_configuration.ApiBaseUrl + "/groups/" + groupId + "/artifacts/" + x.Id);
 
-                if (version != null)
+                Console.WriteLine("FOUND SOMETHING: " + groupId + " - version: " + version);
+
+                if (!string.IsNullOrEmpty(version))
                 {
                     var versionMetadata = await apicurioClient.Groups[groupId].Artifacts[x.Id].Versions[version!].Meta.GetAsync().ConfigureAwait(false);
 
@@ -129,6 +131,10 @@ public class ApicurioSearchProvider : ISearchProvider
         catch (HttpRequestException)
         {
             _logger.LogWarning("Error connecting to Apicurio Registry at the URL {String}", _configuration.ApiBaseUrl);
+            return EMPTY_RESULT;
+        }
+        catch (ApiSdk.Models.Error)
+        {
             return EMPTY_RESULT;
         }
 
