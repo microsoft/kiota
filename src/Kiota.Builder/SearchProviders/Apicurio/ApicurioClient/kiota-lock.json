@@ -1,5 +1,5 @@
 {
-  "descriptionHash": "5EC58EDC07776795859A9C8A5861F425EC1658F1559FFAC137ABB219A7C8BB58E1675A7BCD20DC981E6C5140790C082ABF8E2679D0B4027C613B1E1C13D0255A",
+  "descriptionHash": "D5B27A71189D0DED59490DB1BB5139C2978BCFDBC33290DB09A0A7F6F64B7D47E674D63EF48F305DC29A5DFF15B57000D1C2BB276A9617C2F28590B92138CFB5",
   "descriptionLocation": "https://raw.githubusercontent.com/Apicurio/apicurio-registry/main/common/src/main/resources/META-INF/openapi.json",
   "lockFileVersion": "1.0.0",
   "kiotaVersion": "1.8.1",
@@ -27,7 +27,9 @@
     "multipart/form-data;q=0.1"
   ],
   "includePatterns": [
-    "/search/**"
+    "/search/*",
+    "/groups/**/artifacts/**/versions#GET",
+    "/groups/**/artifacts/**/versions/**/meta#GET"
   ],
   "excludePatterns": [],
   "disabledValidationRules": []

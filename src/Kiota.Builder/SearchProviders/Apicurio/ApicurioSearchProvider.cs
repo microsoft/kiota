@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +20,8 @@ public class ApicurioSearchProvider : ISearchProvider
     private readonly IAuthenticationProvider? _authenticatedAuthenticationProvider;
     private readonly ApicurioConfiguration _configuration;
 
+    private readonly static IDictionary<string, SearchResult> EMPTY_RESULT = new Dictionary<string, SearchResult>();
+
     public string ProviderKey => "apicurio";
 
     public HashSet<string> KeysToExclude
@@ -43,50 +43,98 @@ public class ApicurioSearchProvider : ISearchProvider
 
     public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
+        if (_configuration.ApiBaseUrl == null)
+        {
+            _logger.LogInformation("Apicurio provider not configured, skipping.");
+            return EMPTY_RESULT;
+        }
+
         var authenticationProvider = _authenticatedAuthenticationProvider != null ?
             _authenticatedAuthenticationProvider :
             new AnonymousAuthenticationProvider();
         using var requestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
-        // TODO: the default should be "disabled" when providing a real URL this should work out of the box
         requestAdapter.BaseUrl = _configuration.ApiBaseUrl.AbsoluteUri;
         var apicurioClient = new ApicurioClient(requestAdapter);
 
-        ArtifactSearchResults? results;
+        IDictionary<string, SearchResult> result;
         try
         {
-
-            // TODO search also for versions
-            results = await apicurioClient.Search.Artifacts.GetAsync(config =>
+            ArtifactSearchResults? searchResults = await apicurioClient.Search.Artifacts.GetAsync(config =>
             {
-                config.QueryParameters.Limit = 100;
+                config.QueryParameters.Limit = _configuration.ArtifactsLimit;
                 config.QueryParameters.Offset = 0;
-                config.QueryParameters.Labels = new string[] { term };
+                switch (_configuration.SearchBy)
+                {
+                    case ApicurioConfiguration.ApicurioSearchBy.LABEL:
+                        config.QueryParameters.Labels = new string[] { term };
+                        break;
+                    case ApicurioConfiguration.ApicurioSearchBy.PROPERTY:
+                        config.QueryParameters.Properties = new string[] { term };
+                        break;
+                }
             }, cancellationToken).ConfigureAwait(false);
+
+            if (searchResults == null || searchResults!.Artifacts == null)
+                return EMPTY_RESULT;
+
+            var dictionaries = searchResults!.Artifacts!.Select(async x =>
+            {
+                var groupId = (x.GroupId != null) ? x.GroupId : "default";
+                var uiUrl = new Uri(_configuration.UIBaseUrl + "/artifacts/" + groupId + "/" + x.Id);
+                var restUrl = new Uri(_configuration.ApiBaseUrl + "/groups/" + groupId + "/artifacts/" + x.Id);
+
+                if (version != null)
+                {
+                    var versionMetadata = await apicurioClient.Groups[groupId].Artifacts[x.Id].Versions[version!].Meta.GetAsync().ConfigureAwait(false);
+
+                    if (versionMetadata == null || versionMetadata!.Version == null)
+                    {
+                        return EMPTY_RESULT;
+                    }
+
+                    return new Dictionary<string, SearchResult>()
+                    {
+                        [x.Id!] = new SearchResult(x.Name ?? x.Id!,
+                            x.Description ?? string.Empty,
+                            uiUrl,
+                            restUrl,
+                            new List<string>(1) { versionMetadata!.Version! })
+                    };
+                }
+                else
+                {
+                    var versions = await apicurioClient.Groups[groupId].Artifacts[x.Id].Versions.GetAsync(config =>
+                    {
+                        config.QueryParameters.Limit = _configuration.VersionsLimit;
+                        config.QueryParameters.Offset = 0;
+                    }, cancellationToken).ConfigureAwait(false);
+
+                    if (versions == null || versions.Versions == null)
+                        return EMPTY_RESULT;
+
+                    return new Dictionary<string, SearchResult>()
+                    {
+                        [x.Id!] = new SearchResult(x.Name ?? x.Id!,
+                            x.Description ?? string.Empty,
+                            uiUrl,
+                            restUrl,
+                            versions.Versions!.Select(static v => v.Version!).ToList())
+                    };
+                }
+            });
+
+            var x = await Task.WhenAll(dictionaries).ConfigureAwait(false);
+            result = x.SelectMany(static dict => dict).ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
         }
         catch (HttpRequestException)
         {
             _logger.LogWarning("Error connecting to Apicurio Registry at the URL {String}", _configuration.ApiBaseUrl);
-            return new Dictionary<string, SearchResult>();
+            return EMPTY_RESULT;
         }
 
-        if (results == null)
-            return new Dictionary<string, SearchResult>();
+        if (result == null)
+            return EMPTY_RESULT;
 
-        return results.Artifacts!.Select(x =>
-        {
-            var groupId = (x.GroupId != null) ? x.GroupId : "default";
-            // TODO: FIXME this is wrong
-            var baseUrl = new Uri(_configuration.ApiBaseUrl.AbsoluteUri.Replace("apis\\/registry\\/v2\\/", string.Empty, StringComparison.OrdinalIgnoreCase) + "/ui/artifacts/" + groupId + "/" + x.Id);
-
-            return new Tuple<string, SearchResult>(term,
-                new SearchResult(x.Name ?? string.Empty,
-                    x.Description ?? string.Empty,
-                    baseUrl,
-                    new Uri(_configuration.ApiBaseUrl + "/groups/" + groupId + "/artifacts/" + x.Id),
-                    new()));
-        }).DistinctBy(static x => x.Item1, StringComparer.OrdinalIgnoreCase)
-                                .ToDictionary(static x => x.Item1,
-                                            static x => x.Item2,
-                                            StringComparer.OrdinalIgnoreCase);
+        return result;
     }
 }

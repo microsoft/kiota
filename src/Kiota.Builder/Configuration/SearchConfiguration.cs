@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Kiota.Builder.Configuration;
 
@@ -6,7 +7,6 @@ public class SearchConfiguration : SearchConfigurationBase, ICloneable
 {
     public Uri APIsGuruListUrl { get; set; } = new("https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/list.json");
     public GitHubConfiguration GitHub { get; set; } = new();
-
     public ApicurioConfiguration Apicurio { get; set; } = new();
 
     public object Clone()
@@ -42,13 +42,33 @@ public class GitHubConfiguration : ICloneable
 
 public class ApicurioConfiguration : ICloneable
 {
-    public Uri ApiBaseUrl { get; set; } = new("http://localhost:8080/apis/registry/v2");
+    public enum ApicurioSearchBy
+    {
+        LABEL,
+        PROPERTY
+    }
+
+    public Uri? ApiBaseUrl
+    {
+        get; set;
+    }
+
+    public Uri? UIBaseUrl
+    {
+        get; set;
+    }
+
+    public int ArtifactsLimit { get; set; } = 10;
+    public int VersionsLimit { get; set; } = 100;
+
+    public ApicurioSearchBy SearchBy { get; set; } = ApicurioSearchBy.LABEL;
 
     public object Clone()
     {
         return new ApicurioConfiguration
         {
-            ApiBaseUrl = new(ApiBaseUrl.ToString(), UriKind.RelativeOrAbsolute),
+            ApiBaseUrl = (ApiBaseUrl != null) ? new(ApiBaseUrl.ToString(), UriKind.RelativeOrAbsolute) : null,
+            UIBaseUrl = (UIBaseUrl != null) ? new(UIBaseUrl.ToString(), UriKind.RelativeOrAbsolute) : null,
         };
     }
 }
