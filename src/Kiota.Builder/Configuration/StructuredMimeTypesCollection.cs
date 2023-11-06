@@ -3,19 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace Kiota.Builder.Configuration;
 
 public partial class StructuredMimeTypesCollection : ICollection<string>
 {
-    [GeneratedRegex(@"(?<mime>[^;]+);?q?=?(?<priority>[\d.]+)?", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
-    private static partial Regex mimeTypesRegex();
-    private readonly static Regex mimeTypesRegexInstance = mimeTypesRegex();
     private readonly Dictionary<string, float> _mimeTypes;
-
     public int Count => _mimeTypes.Count;
-
     public bool IsReadOnly => false;
     public StructuredMimeTypesCollection() : this(Array.Empty<string>()) { }
     public StructuredMimeTypesCollection(IEnumerable<string> mimeTypes)
@@ -25,20 +21,28 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                                 .OfType<KeyValuePair<string, float>>()
                                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
+    private static Func<string, bool> isPriorityParameterName = static x => x.Equals("q", StringComparison.OrdinalIgnoreCase);
     private static KeyValuePair<string, float>? GetKeyAndPriority(string rawFormat)
     {
         if (string.IsNullOrEmpty(rawFormat))
             return null;
-        var match = mimeTypesRegexInstance.Match(rawFormat);
-        if (match.Success)
+        if (MediaTypeHeaderValue.TryParse(rawFormat, out var parsedFormat) && parsedFormat.MediaType is not null)
         {
-            var priority = match.Groups["priority"].Success && float.TryParse(match.Groups["priority"].Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
-            return new KeyValuePair<string, float>(match.Groups["mime"].Value, priority);
+            var priority = parsedFormat.Parameters.FirstOrDefault(static x => isPriorityParameterName(x.Name)) is { } priorityParameter && float.TryParse(priorityParameter.Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
+            return new KeyValuePair<string, float>(formatMediaType(parsedFormat), priority);
         }
         else
         {
             return null;
         }
+    }
+    private static string formatMediaType(MediaTypeHeaderValue value)
+    {
+        var additionalParameters = string.Join(";", value.Parameters.Where(static x => !isPriorityParameterName(x.Name)).Select(static x => $"{x.Name}={x.Value}"));
+        var mediaType = string.IsNullOrEmpty(value.MediaType) ? "*/*" : value.MediaType;
+        return string.IsNullOrEmpty(additionalParameters) ?
+                    mediaType :
+                    $"{mediaType};{additionalParameters}";
     }
     public IEnumerator<string> GetEnumerator()
     {
