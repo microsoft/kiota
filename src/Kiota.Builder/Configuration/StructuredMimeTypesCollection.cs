@@ -58,7 +58,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     {
         if (string.IsNullOrEmpty(mimeType))
             return null;
-        return _mimeTypes.TryGetValue(mimeType, out var priority) ? priority : null;
+        return TryGetMimeType(mimeType, out var priority) ? priority : null;
     }
 
     public void Add(string item)
@@ -103,7 +103,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? NormalizeMimeType(x, result) : null)
+                        .Select(x => TryGetMimeType(x, out var result) ? NormalizeMimeType(x, result) : null)
                         .OfType<string>()
                         .Order(StringComparer.OrdinalIgnoreCase);
     }
@@ -114,10 +114,25 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
+                        .Select(x => TryGetMimeType(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
                         .OfType<KeyValuePair<string, float>>()
                         .OrderByDescending(static x => x.Value)
                         .ThenByDescending(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                         .Select(static x => x.Key);
+    }
+    [GeneratedRegex(@"[^/+]+\+", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
+    private static partial Regex vendorStripRegex();
+    private readonly static Regex vendorStripRegexInstance = vendorStripRegex();
+    private bool TryGetMimeType(string mimeType, out float result)
+    {
+        if (string.IsNullOrEmpty(mimeType))
+        {
+            result = default;
+            return false;
+        }
+
+        return _mimeTypes.TryGetValue(mimeType, out result) ||
+            mimeType.Contains('+', StringComparison.OrdinalIgnoreCase) &&
+            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(mimeType, string.Empty), out result);
     }
 }
