@@ -42,6 +42,7 @@ public sealed class StructuredMimeTypesCollectionTests
     [InlineData("application/json, application/xml, application/yaml;q=0.8", "application/json,text/plain,application/yaml", "application/json;q=1,application/yaml;q=0.8")]
     [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/github+json", "application/github+json;q=1")]
     [InlineData("application/vnd.topicus.keyhub+json;version=67, application/yaml;q=0.8", "application/vnd.topicus.keyhub+json;version=67", "application/vnd.topicus.keyhub+json;version=67;q=1")]
+    [InlineData("application/vnd.topicus.keyhub+json, application/yaml;q=0.8", "application/vnd.topicus.keyhub+json;version=67", "application/vnd.topicus.keyhub+json;version=67;q=1")]
     public void MatchesAccept(string configuredTypes, string declaredTypes, string expectedTypes)
     {
         var mimeTypes = new StructuredMimeTypesCollection(configuredTypes.Split(',').Select(static x => x.Trim()));
