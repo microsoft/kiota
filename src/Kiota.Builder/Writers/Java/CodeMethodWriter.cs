@@ -509,16 +509,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     {
         if (conventions.PrimitiveTypes.Contains(returnType))
             if (isCollection)
-                return "sendPrimitiveCollectionAsync";
+                return "sendPrimitiveCollection";
             else
-                return "sendPrimitiveAsync";
+                return "sendPrimitive";
         else if (isEnum)
             if (isCollection)
-                return "sendEnumCollectionAsync";
+                return "sendEnumCollection";
             else
-                return "sendEnumAsync";
-        else if (isCollection) return "sendCollectionAsync";
-        return "sendAsync";
+                return "sendEnum";
+        else if (isCollection) return "sendCollection";
+        return "send";
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
@@ -734,8 +734,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-        if (!returnVoid || code.IsAsync) //Nullable/Nonnull annotations for returns are a part of Method Documentation
-            writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
+        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
+            writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
