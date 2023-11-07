@@ -8,13 +8,9 @@ using Kiota.Builder.OrderComparers;
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
 {
-    /// <summary>
-    /// Flag to avoid pushing a breaking change, remove it and remove the condition that depends on it with V2
-    /// </summary>
-    private readonly bool IsRequestConfigurationGeneric;
-    public CodeMethodWriter(CSharpConventionService conventionService, bool isRequestConfigurationGeneric = false) : base(conventionService)
+    public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
-        IsRequestConfigurationGeneric = isRequestConfigurationGeneric;
+
     }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
@@ -392,7 +388,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
-        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass returnTypeClass
+        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass
                                 ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
@@ -421,11 +417,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{"); // TODO for v2, since we're moving to generics, this whole block can be moved to request information avoiding duplication
             var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
             writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
-                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null || IsRequestConfigurationGeneric)
-                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.QueryParameters);");
-            writer.WriteLines($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.Options);",
+                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});",
+                            $"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.QueryParameters);",
+                            $"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.Options);",
                             $"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.Headers);");
             writer.CloseBlock();
         }
