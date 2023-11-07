@@ -930,13 +930,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
@@ -954,13 +949,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         Assert.Contains("async Task<double?>", result);//verify we only have one nullable marker
@@ -979,13 +969,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);

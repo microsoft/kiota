@@ -402,7 +402,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("return collectionResult?.ToList();");
     }
     private const string RequestInfoVarName = "requestInfo";
-    private const string RequestConfigVarName = "requestConfig";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -413,16 +412,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null)
-        {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{"); // TODO for v2, since we're moving to generics, this whole block can be moved to request information avoiding duplication
-            var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
-            writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
-                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});",
-                            $"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.QueryParameters);",
-                            $"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.Options);",
-                            $"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.Headers);");
-            writer.CloseBlock();
-        }
+            writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
