@@ -43,6 +43,7 @@ public sealed class StructuredMimeTypesCollectionTests
     [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/github+json", "application/github+json;q=1")]
     [InlineData("application/vnd.topicus.keyhub+json;version=67, application/yaml;q=0.8", "application/vnd.topicus.keyhub+json;version=67", "application/vnd.topicus.keyhub+json;version=67;q=1")]
     [InlineData("application/vnd.topicus.keyhub+json, application/yaml;q=0.8", "application/vnd.topicus.keyhub+json;version=67", "application/vnd.topicus.keyhub+json;version=67;q=1")]
+    [InlineData("application/vnd.topicus.keyhub+json;version=67", "application/vnd.topicus.keyhub+json;version=67,application/vnd.topicus.keyhub+json;version=67,application/vnd.topicus.keyhub+xml;version=67", "application/vnd.topicus.keyhub+json;version=67;q=1")]
     public void MatchesAccept(string configuredTypes, string declaredTypes, string expectedTypes)
     {
         var mimeTypes = new StructuredMimeTypesCollection(configuredTypes.Split(',').Select(static x => x.Trim()));
@@ -50,6 +51,7 @@ public sealed class StructuredMimeTypesCollectionTests
         var deserializedExpectedTypes = expectedTypes.Split(',').Select(static x => x.Trim());
         foreach (var expectedType in deserializedExpectedTypes)
             Assert.Contains(expectedType, result);
+        Assert.Equal(result.Distinct(StringComparer.OrdinalIgnoreCase).Count(), result.Count());
     }
     [Theory]
     [InlineData("application/json, application/xml;q=0.9, application/yaml;q=0.8", "application/json", "application/json")]
