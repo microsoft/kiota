@@ -83,11 +83,9 @@ public class ApicurioSearchProvider : ISearchProvider
                 var uiUrl = new Uri(_configuration.UIBaseUrl + "/artifacts/" + groupId + "/" + x.Id);
                 var restUrl = new Uri(_configuration.ApiBaseUrl + "/groups/" + groupId + "/artifacts/" + x.Id);
 
-                Console.WriteLine("FOUND SOMETHING: " + groupId + " - version: " + version);
-
                 if (!string.IsNullOrEmpty(version))
                 {
-                    var versionMetadata = await apicurioClient.Groups[groupId].Artifacts[x.Id].Versions[version!].Meta.GetAsync().ConfigureAwait(false);
+                    var versionMetadata = await apicurioClient.Groups[groupId].Artifacts[x.Id].Versions[version!].Meta.GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     if (versionMetadata == null || versionMetadata!.Version == null)
                     {
