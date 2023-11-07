@@ -929,10 +929,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
@@ -956,10 +953,7 @@ public class CodeMethodWriterTests : IDisposable
         method.ReturnType = new CodeType { Name = "double", IsNullable = true, IsExternal = true };//use a nullable value type
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters", result);
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
@@ -984,10 +978,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
