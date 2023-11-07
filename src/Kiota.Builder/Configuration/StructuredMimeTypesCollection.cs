@@ -3,19 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace Kiota.Builder.Configuration;
 
 public partial class StructuredMimeTypesCollection : ICollection<string>
 {
-    [GeneratedRegex(@"(?<mime>[^;]+);?q?=?(?<priority>[\d.]+)?", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
-    private static partial Regex mimeTypesRegex();
-    private readonly static Regex mimeTypesRegexInstance = mimeTypesRegex();
     private readonly Dictionary<string, float> _mimeTypes;
-
     public int Count => _mimeTypes.Count;
-
     public bool IsReadOnly => false;
     public StructuredMimeTypesCollection() : this(Array.Empty<string>()) { }
     public StructuredMimeTypesCollection(IEnumerable<string> mimeTypes)
@@ -25,20 +21,28 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                                 .OfType<KeyValuePair<string, float>>()
                                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
+    private static Func<string, bool> isPriorityParameterName = static x => x.Equals("q", StringComparison.OrdinalIgnoreCase);
     private static KeyValuePair<string, float>? GetKeyAndPriority(string rawFormat)
     {
         if (string.IsNullOrEmpty(rawFormat))
             return null;
-        var match = mimeTypesRegexInstance.Match(rawFormat);
-        if (match.Success)
+        if (MediaTypeHeaderValue.TryParse(rawFormat, out var parsedFormat) && parsedFormat.MediaType is not null)
         {
-            var priority = match.Groups["priority"].Success && float.TryParse(match.Groups["priority"].Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
-            return new KeyValuePair<string, float>(match.Groups["mime"].Value, priority);
+            var priority = parsedFormat.Parameters.FirstOrDefault(static x => isPriorityParameterName(x.Name)) is { } priorityParameter && float.TryParse(priorityParameter.Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
+            return new KeyValuePair<string, float>(formatMediaType(parsedFormat), priority);
         }
         else
         {
             return null;
         }
+    }
+    private static string formatMediaType(MediaTypeHeaderValue value)
+    {
+        var additionalParameters = string.Join(";", value.Parameters.Where(static x => !isPriorityParameterName(x.Name)).Select(static x => $"{x.Name}={x.Value}"));
+        var mediaType = string.IsNullOrEmpty(value.MediaType) ? "*/*" : value.MediaType;
+        return string.IsNullOrEmpty(additionalParameters) ?
+                    mediaType :
+                    $"{mediaType};{additionalParameters}";
     }
     public IEnumerator<string> GetEnumerator()
     {
@@ -58,7 +62,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     {
         if (string.IsNullOrEmpty(mimeType))
             return null;
-        return _mimeTypes.TryGetValue(mimeType, out var priority) ? priority : null;
+        return TryGetMimeType(mimeType, out var priority) ? priority : null;
     }
 
     public void Add(string item)
@@ -83,7 +87,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     }
     private static string NormalizeMimeType(string key, float value)
     {
-        return $"{key};q={value}";
+        return FormattableString.Invariant($"{key};q={value}");
     }
     ///<inheritdoc/>
     public bool Remove(string item)
@@ -103,7 +107,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? NormalizeMimeType(x, result) : null)
+                        .Select(x => TryGetMimeType(x, out var result) ? NormalizeMimeType(x, result) : null)
                         .OfType<string>()
                         .Order(StringComparer.OrdinalIgnoreCase);
     }
@@ -114,10 +118,25 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                         .OfType<KeyValuePair<string, float>>()
                         .Select(static x => x.Key)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
+                        .Select(x => TryGetMimeType(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
                         .OfType<KeyValuePair<string, float>>()
                         .OrderByDescending(static x => x.Value)
                         .ThenByDescending(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                         .Select(static x => x.Key);
+    }
+    [GeneratedRegex(@"[^/+]+\+", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
+    private static partial Regex vendorStripRegex();
+    private readonly static Regex vendorStripRegexInstance = vendorStripRegex();
+    private bool TryGetMimeType(string mimeType, out float result)
+    {
+        if (string.IsNullOrEmpty(mimeType))
+        {
+            result = default;
+            return false;
+        }
+
+        return _mimeTypes.TryGetValue(mimeType, out result) ||
+            mimeType.Contains('+', StringComparison.OrdinalIgnoreCase) &&
+            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(mimeType, string.Empty), out result);
     }
 }

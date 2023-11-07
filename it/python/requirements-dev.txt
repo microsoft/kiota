@@ -94,7 +94,7 @@ hpack==4.0.0 ; python_full_version >= '3.6.1'
 
 httpcore==0.18.0 ; python_version >= '3.7'
 
-httpx[http2]==0.25.0
+httpx[http2]==0.25.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
@@ -108,7 +108,7 @@ microsoft-kiota-serialization-json==1.0.0
 
 microsoft-kiota-serialization-text==1.0.0
 
-msal==1.24.1
+msal==1.25.0
 
 msal-extensions==1.0.0
 
