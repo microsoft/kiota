@@ -862,8 +862,8 @@ servers:
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
-        Assert.Contains("application/json;q=1", configuration.StructuredMimeTypes);
-        Assert.Contains("application/xml;q=1", configuration.StructuredMimeTypes);
+        Assert.Contains("application/json", configuration.StructuredMimeTypes);
+        Assert.Contains("application/xml", configuration.StructuredMimeTypes);
         _tempFiles.Add(tempFilePath);
     }
     [Fact]
