@@ -8,7 +8,11 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Go;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
 {
-    public CodeMethodWriter(GoConventionService conventionService) : base(conventionService) { }
+    private readonly bool ExcludeBackwardCompatible;
+    public CodeMethodWriter(GoConventionService conventionService, bool excludeBackwardCompatible) : base(conventionService)
+    {
+        ExcludeBackwardCompatible = excludeBackwardCompatible;
+    }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -815,6 +819,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         );
     }
     private const string RequestInfoVarName = "requestInfo";
+    private static void WriteLegacyRequestConfiguration(RequestParams requestParams, LanguageWriter writer)
+    {//TODO remove for v2
+        if (requestParams.requestConfiguration is null) return;
+        writer.StartBlock($"if {requestParams.requestConfiguration.Name} != nil {{");
+
+        if (requestParams.QueryParameters is { } queryString)
+        {
+            var queryStringName = $"{requestParams.requestConfiguration.Name}.{queryString.Name.ToFirstCharacterUpperCase()}";
+            writer.StartBlock($"if {queryStringName} != nil {{");
+            writer.WriteLine($"requestInfo.AddQueryParameters(*({queryStringName}))");
+            writer.CloseBlock();
+        }
+        if (requestParams.Headers is { } headers)
+        {
+            var headersName = $"{requestParams.requestConfiguration.Name}.{headers.Name.ToFirstCharacterUpperCase()}";
+            writer.WriteLine($"{RequestInfoVarName}.Headers.AddAll({headersName})");
+        }
+        if (requestParams.Options is { } options)
+        {
+            var optionsName = $"{requestParams.requestConfiguration.Name}.{options.Name.ToFirstCharacterUpperCase()}";
+            writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({optionsName})");
+        }
+        writer.CloseBlock();
+    }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -824,34 +852,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
-        if (requestParams.requestConfiguration != null)
-        {
-            var headers = requestParams.Headers;
-            var queryString = requestParams.QueryParameters;
-            var options = requestParams.Options;
-            writer.WriteLine($"if {requestParams.requestConfiguration.Name} != nil {{");
-            writer.IncreaseIndent();
 
-            if (queryString != null)
-            {
-                var queryStringName = $"{requestParams.requestConfiguration.Name}.{queryString.Name.ToFirstCharacterUpperCase()}";
-                writer.WriteLine($"if {queryStringName} != nil {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"requestInfo.AddQueryParameters(*({queryStringName}))");
-                writer.CloseBlock();
-            }
-            if (headers != null)
-            {
-                var headersName = $"{requestParams.requestConfiguration.Name}.{headers.Name.ToFirstCharacterUpperCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.Headers.AddAll({headersName})");
-            }
-            if (options != null)
-            {
-                var optionsName = $"{requestParams.requestConfiguration.Name}.{options.Name.ToFirstCharacterUpperCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({optionsName})");
-            }
-            writer.CloseBlock();
-        }
+        if (ExcludeBackwardCompatible && requestParams.requestConfiguration is not null)
+            writer.WriteLine($"{conventions.AbstractionsHash}.ConfigureRequestInformation({RequestInfoVarName}, {requestParams.requestConfiguration.Name})");
+        else
+            WriteLegacyRequestConfiguration(requestParams, writer);
 
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");

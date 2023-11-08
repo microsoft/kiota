@@ -69,9 +69,12 @@ public class GoConventionService : CommonLanguageConventionService
                 CodeTypeBase.CodeTypeCollectionKind.Array or CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
+            var genericTypeParameters = currentType.GenericTypeParameterValues.Any() ?
+                            $"[{string.Join(",", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, true, false, true)))}]" :
+                            string.Empty;
             if (currentType.ActionOf)
-                return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}) (err error)";
-            return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
+                return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}{genericTypeParameters}) (err error)";
+            return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}{genericTypeParameters}";
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");

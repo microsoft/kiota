@@ -1575,7 +1575,7 @@ public class CodeMethodWriterTests : IDisposable
     public void Defensive()
     {
         setup();
-        var codeMethodWriter = new CodeMethodWriter(new GoConventionService());
+        var codeMethodWriter = new CodeMethodWriter(new GoConventionService(), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;

@@ -1425,7 +1425,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
-    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false)
+    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&
             currentClass.Parent is CodeClass parentClass)
@@ -1442,6 +1442,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Any())
             {
                 parentClass.AddUsing(configurationParameterTypeUsing);
+                if (usingForDefaultGenericParameter != null)
+                    parentClass.AddUsing(usingForDefaultGenericParameter);
                 var configurationParameterType = new CodeType
                 {
                     Name = configurationParameterTypeUsing.Name,
@@ -1461,7 +1463,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam, keepRequestConfigurationClass, addDeprecation));
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam, keepRequestConfigurationClass, addDeprecation, usingForDefaultGenericParameter));
     }
     private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
     {
