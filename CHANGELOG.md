@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.8.2] - 2023-11-08
+
+### Added
+
+### Changed
+
 - Fixed generating any-type schemas [#3536](https://github.com/microsoft/kiota/issues/3536)
 - Fixed float to string conversion with invariant culture.
 - Fixed a bug where structured error mime types would not be filtered and prioritized through the configuration. [#3669](https://github.com/microsoft/kiota/issues/3669)
@@ -1148,5 +1154,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
