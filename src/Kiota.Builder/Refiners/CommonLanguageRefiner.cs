@@ -676,25 +676,25 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             nestedClasses.AddRange(innerClasses);
             nestedClasses.AddRange(nestedQueryParameters);
 
-            foreach (var innerClass in nestedClasses)
+            foreach (var nestedClass in nestedClasses)
             {
-                var originalClassName = innerClass.Name;
+                if (nestedClass.Parent is not CodeClass parentClass) return;
 
                 if (nameFactory != default)
-                    innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
-                else if (prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
-                    innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
+                    parentClass.RenameChildElement(nestedClass.Name, nameFactory(currentClass.Name, nestedClass.Name));
+                else if (prefixClassNameWithParentName && !nestedClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+                    parentClass.RenameChildElement(nestedClass.Name, $"{currentClass.Name}{nestedClass.Name}");
 
-                if (addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
+                if (addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(nestedClass.Name, false) == null)
                 { // the query parameters class is already a child of the request executor method parent class
-                    parentNamespace.AddClass(innerClass);
-                    currentClass.RemoveChildElementByName(originalClassName);
+                    parentNamespace.AddClass(nestedClass);
+                    currentClass.RemoveChildElementByName(nestedClass.Name);
                 }
-                else if (!addToParentNamespace && innerClass.Parent == null && currentClass.FindChildByName<CodeClass>(innerClass.Name, false) == null) //failsafe
-                    currentClass.AddInnerClass(innerClass);
+                else if (!addToParentNamespace && nestedClass.Parent == null && currentClass.FindChildByName<CodeClass>(nestedClass.Name, false) == null) //failsafe
+                    currentClass.AddInnerClass(nestedClass);
 
                 if (!string.IsNullOrEmpty(queryParametersBaseClassName))
-                    innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
+                    nestedClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
         CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
