@@ -818,10 +818,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("url template params property cannot be null");
 
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
+        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
         if (requestParams.requestConfiguration != null)
         {
             var headers = requestParams.Headers;
@@ -851,11 +853,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.CloseBlock();
         }
 
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty)
-            writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
-                        $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
-        writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
         if (requestParams.requestBody != null)
