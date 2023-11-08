@@ -87,7 +87,10 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     }
     private static string NormalizeMimeType(string key, float value)
     {
-        return FormattableString.Invariant($"{key};q={value}");
+        if (value == 1)
+            return key;
+        else
+            return string.Create(CultureInfo.InvariantCulture, $"{key};q={value}");
     }
     ///<inheritdoc/>
     public bool Remove(string item)
@@ -135,8 +138,12 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
             return false;
         }
 
-        return _mimeTypes.TryGetValue(mimeType, out result) ||
+        return _mimeTypes.TryGetValue(mimeType, out result) || // vendor and parameters
             mimeType.Contains('+', StringComparison.OrdinalIgnoreCase) &&
-            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(mimeType, string.Empty), out result);
+            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(mimeType, string.Empty), out result) || // no vendor with parameters
+            mimeType.Contains(';', StringComparison.OrdinalIgnoreCase) &&
+            mimeType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0] is string noParametersMimeType &&
+            (_mimeTypes.TryGetValue(noParametersMimeType, out result) || // vendor without parameters
+            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(noParametersMimeType, string.Empty), out result)); // no vendor without parameters
     }
 }

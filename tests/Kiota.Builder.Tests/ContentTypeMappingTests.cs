@@ -247,8 +247,8 @@ public sealed class ContentTypeMappingTests : IDisposable
         Assert.Equal(parameterType, executor.Parameters.OfKind(CodeParameterKind.RequestBody).Type.Name);
     }
     [Theory]
-    [InlineData("application/json, text/plain", "application/json", "application/json;q=1", "text/plain;q=1")]
-    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml;q=1,application/json;q=0.8", "text/plain;q=1")]
+    [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml", "application/yaml,application/json;q=0.8", "text/plain")]
     [InlineData("*/*", "application/json;q=0.8", "*/*", "application/json;q=0.8")]
     [InlineData("application/json, */*", "application/json;q=0.8", "application/json;q=0.8", "*/*")]
     [InlineData("application/png, application/jpg", "application/json;q=0.8", "application/png, application/jpg", "application/json;q=0.8")]
@@ -340,7 +340,7 @@ public sealed class ContentTypeMappingTests : IDisposable
     }
     [Theory]
     [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
-    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml;q=1", "application/yaml", "text/plain")]
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml", "application/yaml", "text/plain")]
     [InlineData("*/*", "application/json;q=0.8", "", "application/json")]
     [InlineData("application/json, */*", "application/json;q=0.8", "application/json", "*/*")]
     [InlineData("application/png, application/jpg", "application/json;q=0.8", "", "application/json")]
