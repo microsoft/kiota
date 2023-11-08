@@ -522,7 +522,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         return "send";
     }
     private const string RequestInfoVarName = "requestInfo";
-    private const string RequestConfigVarName = "requestConfig";
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
         if (codeElement.Kind is CodeMethodKind.RequestExecutor && codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) && prefix.Trim().Equals("return", StringComparison.OrdinalIgnoreCase))
@@ -553,20 +552,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
 
         if (requestParams.requestConfiguration != null)
         {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{");
-            var requestConfigTypeName = requestParams.requestConfiguration.Type.Name;
-            writer.WriteLines($"final {requestConfigTypeName} {RequestConfigVarName} = new {requestConfigTypeName}();",
-                        $"{requestParams.requestConfiguration.Name}.accept({RequestConfigVarName});");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null)
-            {
-                var queryStringName = $"{RequestConfigVarName}.{queryString.Name}";
-                writer.WriteLine($"{RequestInfoVarName}.addQueryParameters({queryStringName});");
-            }
-            writer.WriteLines($"{RequestInfoVarName}.headers.putAll({RequestConfigVarName}.headers);",
-                             $"{RequestInfoVarName}.addRequestOptions({RequestConfigVarName}.options);");
-
-            writer.CloseBlock();
+            var queryStringName = requestParams.QueryParameters is null ? string.Empty : $", x -> x.{requestParams.QueryParameters.Name}";
+            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}, {requestParams.requestConfiguration.Type.Name}::new{queryStringName});");
         }
 
         if (codeElement.ShouldAddAcceptHeader)
