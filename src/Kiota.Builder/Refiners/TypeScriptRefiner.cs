@@ -507,7 +507,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = codeClass.Name,
                 Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters) ? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
             };
-            targetNS.RemoveChildElement(codeClass);
+            if (codeClass.Parent is CodeClass parentClass)
+                parentClass.RemoveChildElement(codeClass);
+            else
+                targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
 
             var props = codeClass.Properties.ToArray();
