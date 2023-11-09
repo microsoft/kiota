@@ -600,7 +600,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                             var querySegments = suffix.Split(',');
                             urlTemplateStringBuilder.Append(prefix + "\"");
 
-                            queryBuilder.Append("+ \"{?\" + string.Join(',',\"");
+                            queryBuilder.Append("+ \"{?\" + string.Join(\",\",\"");
                             foreach (var queryItem in querySegments)
                             {
                                 queryBuilder.Append(queryItem);
@@ -626,7 +626,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     thirdParameterName = $", {pathParametersProperty.DefaultValue}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, string.Join('/',{urlTemplateStringBuilder}){queryBuilder}{thirdParameterName})";
+                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, string.Join(\"/\",{urlTemplateStringBuilder}){queryBuilder}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
