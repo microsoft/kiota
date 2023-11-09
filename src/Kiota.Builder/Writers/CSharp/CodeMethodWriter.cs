@@ -578,11 +578,45 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 var thirdParameterName = string.Empty;
                 var segments = urlTemplateProperty.DefaultValue.Split('/');
                 var urlTemplateStringBuilder = new StringBuilder();
+                var queryBuilder = new StringBuilder();
                 for (int i = 0; i < segments.Length; i++)
                 {
-                    urlTemplateStringBuilder.Append(segments[i]);
                     if (i != segments.Length - 1)
-                        urlTemplateStringBuilder.Append("\"+\"/\"+\"");
+                    {
+                        urlTemplateStringBuilder.Append(segments[i]);
+                        urlTemplateStringBuilder.Append("\", \"");
+                    }
+                    else// its the last segment
+                    {
+                        if (!segments[i].Contains("{?", StringComparison.OrdinalIgnoreCase))
+                        {
+                            urlTemplateStringBuilder.Append(segments[i]);
+                        }
+                        else
+                        {
+                            var prefixIndex = segments[i].IndexOf("{?", StringComparison.OrdinalIgnoreCase);
+                            var prefix = segments[i].Substring(0, prefixIndex);
+                            var suffix = segments[i].Substring(prefixIndex).Trim('{', '}', '?', '\"');
+                            var querySegments = suffix.Split(',');
+                            urlTemplateStringBuilder.Append(prefix + "\"");
+
+                            queryBuilder.Append("+ \"{?\" + string.Join(',',\"");
+                            foreach (var queryItem in querySegments)
+                            {
+                                queryBuilder.Append(queryItem);
+
+
+                                if (queryItem == querySegments.Last())
+                                    queryBuilder.Append("\")");
+                                else
+                                    queryBuilder.Append("\", \"");
+                            }
+                            queryBuilder.Append("+ \"}\"");
+
+                        }
+
+                    }
+
                 }
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     thirdParameterName = $", {pathParametersParameter.Name}";
@@ -592,7 +626,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     thirdParameterName = $", {pathParametersProperty.DefaultValue}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateStringBuilder}{thirdParameterName})";
+                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, string.Join('/',{urlTemplateStringBuilder}){queryBuilder}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
