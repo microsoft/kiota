@@ -205,39 +205,36 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        List<String> elementNames = codeClass.Methods
+        var elementNames = codeClass.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
             .Select(static x => x.Type?.Name)
-            .Where(static x => !string.IsNullOrEmpty(x))
             .OfType<string>()
-            .ToList();
+            .ToArray();
 
         if (!elementNames.Any())
             return;
 
-        List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
-            .Where(static x => x != null)
+        var configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
             .OfType<CodeInterface>()
-            .ToList();
+            .ToArray();
 
-        List<string> queryParamClassNames = configClasses.Where(x => x != null)
+        var queryParamClassNames = configClasses
             .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type.Name)
-            .Where(static x => !string.IsNullOrEmpty(x))
             .OfType<string>()
-            .ToList();
+            .ToArray();
 
-        List<CodeInterface> queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
-            .Where(static x => x != null)
+        var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
             .OfType<CodeInterface>()
-            .ToList();
+            .ToArray();
 
-        List<CodeElement> elements = new List<CodeElement> { codeClass };
-        elements.AddRange(queryParamClasses);
-        elements.AddRange(configClasses);
+        var elements = new CodeElement[] { codeClass }
+                            .Union(queryParamClasses)
+                            .Union(configClasses)
+                            .ToArray();
 
-        codeNamespace.TryAddCodeFile(codeClass.Name, elements.ToArray());
+        codeNamespace.TryAddCodeFile(codeClass.Name, elements);
     }
 
     private static void CorrectCodeFileUsing(CodeElement currentElement)
@@ -246,7 +243,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
         {
             // correct the using values
-            // eliminate the using refering the elements in the same file
+            // eliminate the using referring the elements in the same file
 
             HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var element in codeFile.GetChildElements(true))
