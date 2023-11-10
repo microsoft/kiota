@@ -351,24 +351,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty)}, {GetPropertyCall(urlTemplateParamsProperty)});");
         if (requestParams.requestConfiguration != null)
         {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name}) {{");
-            if (requestParams.Headers is { } headers)
-                writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({requestParams.requestConfiguration.Name}.{headers.Name});");
-            if (requestParams.QueryParameters is { } queryString)
+            var parentBlock = currentClass.Parent switch
             {
-                var parentBlock = currentClass.Parent switch
-                {
-                    CodeNamespace codeNamespace => codeNamespace,
-                    CodeFile codeFile => (IBlock)codeFile,
-                    _ => throw new InvalidOperationException("unsupported parent type"),
-                };
-                var queryParametersConstant = parentBlock.FindChildByName<CodeConstant>($"{currentClass.Name.ToFirstCharacterLowerCase()}{codeElement.HttpMethod.Value.ToString().ToFirstCharacterUpperCase()}QueryParametersMapper");
-                var queryParametersConstantName = queryParametersConstant is null ? ", undefined" : $", {queryParametersConstant.Name}";
-                writer.WriteLines($"{RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.requestConfiguration.Name}.{queryString.Name}{queryParametersConstantName});");
-            }
-            if (requestParams.Options is { } options)
-                writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({requestParams.requestConfiguration.Name}.{options.Name});");
-            writer.CloseBlock();
+                CodeNamespace codeNamespace => codeNamespace,
+                CodeFile codeFile => (IBlock)codeFile,
+                _ => throw new InvalidOperationException("unsupported parent type"),
+            };
+            var queryParametersConstant = parentBlock.FindChildByName<CodeConstant>($"{currentClass.Name.ToFirstCharacterLowerCase()}{codeElement.HttpMethod.Value.ToString().ToFirstCharacterUpperCase()}QueryParametersMapper");
+            var queryParametersConstantName = queryParametersConstant is null ? ", undefined" : $", {queryParametersConstant.Name}";
+            writer.WriteLines($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}{queryParametersConstantName});");
         }
 
         if (codeElement.ShouldAddAcceptHeader)

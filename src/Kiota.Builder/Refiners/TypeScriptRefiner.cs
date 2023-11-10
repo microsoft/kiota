@@ -26,7 +26,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = "BaseRequestBuilder",
                 Declaration = new CodeType
                 {
-                    Name = "@microsoft/kiota-abstractions",
+                    Name = AbstractionsPackageName,
                     IsExternal = true
                 }
             });
@@ -39,6 +39,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    IsErasable = true,
+                    Declaration = new CodeType
+                    {
+                        Name = AbstractionsPackageName,
+                        IsExternal = true,
+                    }
+                },
+                new CodeType
+                {
+                    Name = "object",
+                    IsExternal = true,
+                });
             AddInnerClasses(generatedCode,
                 true,
                 string.Empty,
@@ -209,34 +225,27 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
-            .Select(static x => x.Type?.Name)
+            .Select(static x => x.Type)
+            .OfType<CodeType>()
+            .Select(static x => x.GenericTypeParameterValues.FirstOrDefault()?.Name)
             .OfType<string>()
             .ToArray();
 
         if (!elementNames.Any())
             return;
 
-        var configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
+        var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
             .OfType<CodeInterface>()
             .ToArray();
 
-        var queryParamClassNames = configClasses
-            .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type.Name)
-            .OfType<string>()
-            .ToArray();
-        var queryParametersMapperConstants = queryParamClassNames
+        var queryParametersMapperConstants = elementNames
             .Select(static x => $"{x.ToFirstCharacterLowerCase()}Mapper")
             .Select(x => codeNamespace.FindChildByName<CodeConstant>(x, false))
             .OfType<CodeConstant>()
             .ToArray();
 
-        var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
-            .OfType<CodeInterface>()
-            .ToArray();
-
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParamClasses)
-                            .Union(configClasses)
                             .Union(queryParametersMapperConstants)
                             .ToArray();
 
@@ -501,25 +510,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         })},
     };
 
-    private static void ReplaceRequestConfigurationsQueryParamsWithInterfaces(CodeElement currentElement)
+    private static void ReplaceRequestQueryParamsWithInterfaces(CodeElement currentElement)
     {
         if (currentElement is CodeClass codeClass &&
-            codeClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.RequestConfiguration) &&
+            codeClass.IsOfKind(CodeClassKind.QueryParameters) &&
+            codeClass.Parent is CodeClass parentClass &&
             codeClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace targetNS &&
             targetNS.FindChildByName<CodeInterface>(codeClass.Name, false) is null)
         {
             var insertValue = new CodeInterface
             {
                 Name = codeClass.Name,
-                Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters) ? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
+                Kind = CodeInterfaceKind.QueryParameters,
             };
-            if (codeClass.Parent is CodeClass parentClass)
-                parentClass.RemoveChildElement(codeClass);
-            else
-                targetNS.RemoveChildElement(codeClass);
+            parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-            if (insertValue.Kind is CodeInterfaceKind.QueryParameters)
-                targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
+            targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
@@ -527,7 +533,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);
         }
-        CrawlTree(currentElement, static x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
+        CrawlTree(currentElement, static x => ReplaceRequestQueryParamsWithInterfaces(x));
     }
     private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string ModelSerializerPrefix = "serialize";
@@ -543,7 +549,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
         AddDeserializerUsingToDiscriminatorFactory(generatedCode);
-        ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
+        ReplaceRequestQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
     }
 
