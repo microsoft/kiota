@@ -345,8 +345,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("path parameters cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template cannot be null");
 
-        writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation();");
+        writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty)}, {GetPropertyCall(urlTemplateParamsProperty)});");
         if (requestParams.requestConfiguration != null)
         {
             writer.StartBlock($"if ({requestParams.requestConfiguration.Name}) {{");
@@ -368,11 +370,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({requestParams.requestConfiguration.Name}.{options.Name});");
             writer.CloseBlock();
         }
-        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty)};",
-                                $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty)};");
-        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()};");
+
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.tryAddRequestHeaders(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
         if (requestParams.requestBody != null)
