@@ -33,7 +33,8 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
             CodeIndexer => 5,
             CodeMethod => 6,
             CodeClass => 7,
-            BlockEnd => 8,
+            CodeConstant => 8,
+            BlockEnd => 9,
             _ => 0,
         };
     }

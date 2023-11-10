@@ -155,6 +155,9 @@ public abstract class LanguageWriter
                 case CodeFileDeclaration cfd:
                     ((ICodeElementWriter<CodeFileDeclaration>)elementWriter).WriteCodeElement(cfd, this);
                     break;
+                case CodeConstant codeConstant:
+                    ((ICodeElementWriter<CodeConstant>)elementWriter).WriteCodeElement(codeConstant, this);
+                    break;
             }
         else if (code is not CodeClass &&
                 code is not BlockDeclaration &&

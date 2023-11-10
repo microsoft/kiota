@@ -224,6 +224,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type.Name)
             .OfType<string>()
             .ToArray();
+        var queryParametersMapperConstants = queryParamClassNames
+            .Select(static x => $"{x.ToFirstCharacterLowerCase()}Mapper")
+            .Select(x => codeNamespace.FindChildByName<CodeConstant>(x, false))
+            .OfType<CodeConstant>()
+            .ToArray();
 
         var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
             .OfType<CodeInterface>()
@@ -232,6 +237,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParamClasses)
                             .Union(configClasses)
+                            .Union(queryParametersMapperConstants)
                             .ToArray();
 
         codeNamespace.TryAddCodeFile(codeClass.Name, elements);
@@ -512,6 +518,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             else
                 targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
+            if (insertValue.Kind is CodeInterfaceKind.QueryParameters)
+                targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);

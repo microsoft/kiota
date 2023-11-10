@@ -53,7 +53,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
     {
-        if (codeClasses == null || codeClasses.Any(x => x == null))
+        if (codeClasses == null || Array.Exists(codeClasses, static x => x == null))
             throw new ArgumentNullException(nameof(codeClasses));
         if (!codeClasses.Any())
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
@@ -70,6 +70,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
     public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
+    public IEnumerable<CodeConstant> Constants => InnerChildElements.Values.OfType<CodeConstant>();
     public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
@@ -132,7 +133,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
     {
-        if (enumDeclarations == null || enumDeclarations.Any(x => x == null))
+        if (enumDeclarations == null || Array.Exists(enumDeclarations, static x => x == null))
             throw new ArgumentNullException(nameof(enumDeclarations));
         if (!enumDeclarations.Any())
             throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
@@ -149,7 +150,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
 
     public IEnumerable<CodeFunction> AddFunction(params CodeFunction[] globalFunctions)
     {
-        if (globalFunctions == null || globalFunctions.Any(x => x == null))
+        if (globalFunctions == null || Array.Exists(globalFunctions, static x => x == null))
             throw new ArgumentNullException(nameof(globalFunctions));
         if (!globalFunctions.Any())
             throw new ArgumentOutOfRangeException(nameof(globalFunctions));
@@ -157,7 +158,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public IEnumerable<CodeInterface> AddInterface(params CodeInterface[] interfaces)
     {
-        if (interfaces == null || interfaces.Any(x => x == null))
+        if (interfaces == null || Array.Exists(interfaces, static x => x == null))
             throw new ArgumentNullException(nameof(interfaces));
         if (!interfaces.Any())
             throw new ArgumentOutOfRangeException(nameof(interfaces));
@@ -191,5 +192,13 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             UpwardsMovesCount = upMoves,
             DownwardsSegments = importNamespaceSegments.Skip(deeperMostSegmentIndex)
         };
+    }
+    internal IEnumerable<CodeConstant> AddConstant(params CodeConstant[] codeConstants)
+    {
+        if (codeConstants == null || Array.Exists(codeConstants, static x => x == null))
+            throw new ArgumentNullException(nameof(codeConstants));
+        if (!codeConstants.Any())
+            throw new ArgumentOutOfRangeException(nameof(codeConstants));
+        return AddRange(codeConstants);
     }
 }

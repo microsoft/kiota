@@ -349,16 +349,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation();");
         if (requestParams.requestConfiguration != null)
         {
-            writer.WriteLine($"if ({requestParams.requestConfiguration.Name}) {{");
-            writer.IncreaseIndent();
-            var headers = requestParams.Headers;
-            if (headers != null)
+            writer.StartBlock($"if ({requestParams.requestConfiguration.Name}) {{");
+            if (requestParams.Headers is { } headers)
                 writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({requestParams.requestConfiguration.Name}.{headers.Name});");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.requestConfiguration.Name}.{queryString.Name});");
-            var options = requestParams.Options;
-            if (options != null)
+            if (requestParams.QueryParameters is { } queryString)
+            {
+                var parentBlock = currentClass.Parent switch
+                {
+                    CodeNamespace codeNamespace => codeNamespace,
+                    CodeFile codeFile => (IBlock)codeFile,
+                    _ => throw new InvalidOperationException("unsupported parent type"),
+                };
+                var queryParametersConstant = parentBlock.FindChildByName<CodeConstant>($"{currentClass.Name.ToFirstCharacterLowerCase()}{codeElement.HttpMethod.Value.ToString().ToFirstCharacterUpperCase()}QueryParametersMapper");
+                var queryParametersConstantName = queryParametersConstant is null ? ", undefined" : $", {queryParametersConstant.Name}";
+                writer.WriteLines($"{RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.requestConfiguration.Name}.{queryString.Name}{queryParametersConstantName});");
+            }
+            if (requestParams.Options is { } options)
                 writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({requestParams.requestConfiguration.Name}.{options.Name});");
             writer.CloseBlock();
         }
