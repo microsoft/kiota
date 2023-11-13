@@ -503,7 +503,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             }
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
-        writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
+        var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
+        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
