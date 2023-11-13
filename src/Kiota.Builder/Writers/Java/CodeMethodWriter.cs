@@ -524,6 +524,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private const string RequestConfigVarName = "requestConfig";
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
+        if (codeElement.Kind is CodeMethodKind.RequestExecutor && codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) && prefix.Trim().Equals("return", StringComparison.OrdinalIgnoreCase))
+            prefix = string.Empty;
         var methodName = parentClass
                                 .Methods
                                 .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
