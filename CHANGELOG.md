@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.8.2] - 2023-11-08
+
+### Added
+
+### Changed
+
+- Fixed generating any-type schemas [#3536](https://github.com/microsoft/kiota/issues/3536)
+- Fixed float to string conversion with invariant culture.
+- Fixed a bug where structured error mime types would not be filtered and prioritized through the configuration. [#3669](https://github.com/microsoft/kiota/issues/3669)
+- Fixed a bug where vendor mime types would be ignored. [#3666](https://github.com/microsoft/kiota/issues/3666)
+- Fixed a bug where additional parameter would be stripped from accept header. [#3667](https://github.com/microsoft/kiota/issues/3667), [#3667](https://github.com/microsoft/kiota/issues/3668)
+- Generation for Java no longer utilizes Async api components. [Kiota-Java #175](https://github.com/microsoft/kiota-java/issues/175)
+
 ## [1.8.1] - 2023-11-02
 
 ### Added
@@ -1145,5 +1158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 

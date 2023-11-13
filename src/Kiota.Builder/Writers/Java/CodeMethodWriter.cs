@@ -502,27 +502,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             }
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
-        writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
+        var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
+        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
         if (conventions.PrimitiveTypes.Contains(returnType))
             if (isCollection)
-                return "sendPrimitiveCollectionAsync";
+                return "sendPrimitiveCollection";
             else
-                return "sendPrimitiveAsync";
+                return "sendPrimitive";
         else if (isEnum)
             if (isCollection)
-                return "sendEnumCollectionAsync";
+                return "sendEnumCollection";
             else
-                return "sendEnumAsync";
-        else if (isCollection) return "sendCollectionAsync";
-        return "sendAsync";
+                return "sendEnum";
+        else if (isCollection) return "sendCollection";
+        return "send";
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
+        if (codeElement.Kind is CodeMethodKind.RequestExecutor && codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) && prefix.Trim().Equals("return", StringComparison.OrdinalIgnoreCase))
+            prefix = string.Empty;
         var methodName = parentClass
                                 .Methods
                                 .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
@@ -685,17 +688,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private string GetFinalReturnType(CodeMethod code, string returnType)
     {
-        var voidType = code.IsAsync ? "Void" : "void";
         if (code.ReturnType is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
             returnType = $"EnumSet<{returnType}>";
-        var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
-        var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-        var reType = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? voidType : returnType;
+        var reType = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? "void" : returnType;
         var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             reType;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var finalReturnType = isConstructor ? string.Empty : $"{returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
+        var finalReturnType = isConstructor ? string.Empty : $"{collectionCorrectedReturnType}";
         return finalReturnType.Trim();
     }
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
@@ -726,11 +726,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     {
         var returnVoid = baseReturnType.Equals("void", StringComparison.OrdinalIgnoreCase);
         // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
-        var returnRemark = returnVoid ? string.Empty : (code.IsAsync switch
-        {
-            true => $"@return a CompletableFuture of {baseReturnType}",
-            false => $"@return a {finalReturnType}",
-        });
+        var returnRemark = returnVoid ? string.Empty : $"@return a {finalReturnType}";
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
@@ -738,8 +734,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-        if (!returnVoid || code.IsAsync) //Nullable/Nonnull annotations for returns are a part of Method Documentation
-            writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
+        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
+            writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {

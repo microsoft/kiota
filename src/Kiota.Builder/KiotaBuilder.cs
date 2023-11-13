@@ -1314,6 +1314,17 @@ public partial class KiotaBuilder
                     return (modelType, obsoleteComposedType);
                 }
             }
+            else if (modelType is null)
+            {
+                string returnType;
+                if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+                    returnType = VoidType;
+                else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+                    returnType = "string";
+                else
+                    returnType = "binary";
+                return (new CodeType { Name = returnType, IsExternal = true, }, null);
+            }
             return (modelType, null);
         }
         else
@@ -1422,7 +1433,16 @@ public partial class KiotaBuilder
             };
             var mediaTypes = schema switch
             {
-                null => operation.Responses.Values.SelectMany(static x => x.Content).Select(static x => x.Key),
+                null => operation.Responses
+                                .Where(static x => !errorStatusCodes.Contains(x.Key))
+                                .SelectMany(static x => x.Value.Content)
+                                .Select(static x => x.Key) //get the successful non structured media types first, with a default 1 priority
+                                .Union(config.StructuredMimeTypes.GetAcceptedTypes(
+                                                            operation.Responses
+                                                            .Where(static x => errorStatusCodes.Contains(x.Key)) // get any structured error ones, with the priority from the configuration
+                                                            .SelectMany(static x => x.Value.Content) // we can safely ignore unstructured ones as they won't be used in error mappings anyway and the body won't be read
+                                                            .Select(static x => x.Key)))
+                        .Distinct(StringComparer.OrdinalIgnoreCase),
                 _ => config.StructuredMimeTypes.GetAcceptedTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
             };
             generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
