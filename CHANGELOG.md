@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes bug where import statements for additionalDataHolder and enumSet are missing when BackingStore is enabled in java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
+- Fixes bug where getBackingStore method body was malformed for java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
+- Fixes bug where serialize method will not write additional data when backingStore is enabled for java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
+
 ## [1.8.1] - 2023-11-02
 
 ### Added
@@ -18,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where query parameter enum reusable types would be trimmed. [#3637](https://github.com/microsoft/kiota/issues/3637)
-- Fixes bug where import statements for additionalDataHolder and enumSet are missing when BackingStore is enabled in java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
-- Fixes bug where getBackingStore method body was malformed for java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
-- Fixes bug where serialize method will not write additional data when backingStore is enabled for java. [#3643](https://github.com/microsoft/kiota/pull/3643)  
 
 ## [1.8.0] - 2023-11-02
 

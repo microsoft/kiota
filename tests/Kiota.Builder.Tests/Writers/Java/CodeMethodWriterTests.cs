@@ -1503,6 +1503,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("writeEnumValue", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("writeAdditionalData(this.getAdditionalData());", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
