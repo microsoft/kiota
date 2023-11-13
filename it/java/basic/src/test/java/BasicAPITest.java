@@ -21,9 +21,8 @@ public class BasicAPITest {
                 () -> client.api().v1().topics().get()
         );
 
-        Assertions.assertNotNull(exception.getCause());
-        Assertions.assertTrue(exception.getCause() instanceof apisdk.models.Error);
-        var error = (apisdk.models.Error) exception.getCause();
+        Assertions.assertTrue(exception instanceof apisdk.models.Error);
+        var error = (apisdk.models.Error) exception;
 
         Assertions.assertEquals("my-sample-id", error.getId());
         Assertions.assertEquals(123, error.getCode());
