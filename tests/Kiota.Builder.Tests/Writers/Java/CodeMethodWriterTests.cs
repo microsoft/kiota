@@ -604,7 +604,8 @@ public class CodeMethodWriterTests : IDisposable
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("CompletableFuture<Void>", result);
+        Assert.Contains("void", result);
+        Assert.DoesNotContain("@jakarta.annotation", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -652,7 +653,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"401\", Error401::createFromDiscriminatorValue);", result);
-        Assert.Contains("sendAsync", result);
+        Assert.Contains("send", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1174,7 +1175,7 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("sendCollectionAsync", result);
+        Assert.Contains("sendCollection", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1507,35 +1508,6 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesMethodAsyncDescription()
-    {
-        setup();
-        method.Documentation.Description = MethodDescription;
-        var parameter = new CodeParameter
-        {
-            Documentation = new()
-            {
-                Description = ParamDescription,
-            },
-            Name = ParamName,
-            Type = new CodeType
-            {
-                Name = "String"
-            }
-        };
-        method.AddParameter(parameter);
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("/**", result);
-        Assert.Contains(MethodDescription, result);
-        Assert.Contains("@param ", result);
-        Assert.Contains(ParamName, result);
-        Assert.Contains(ParamDescription, result);
-        Assert.Contains("@return a CompletableFuture of", result);
-        Assert.Contains("*/", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
     public void WritesMethodSyncDescription()
     {
         setup();
@@ -1604,24 +1576,13 @@ public class CodeMethodWriterTests : IDisposable
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
-    private const string TaskPrefix = "CompletableFuture<";
     [Fact]
     public void WritesReturnType()
     {
         setup();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"{TaskPrefix}{ReturnTypeName}> {MethodName}", result);// async default
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void DoesNotAddAsyncInformationOnSyncMethods()
-    {
-        setup();
-        method.IsAsync = false;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain(TaskPrefix, result);
+        Assert.Contains($"{ReturnTypeName} {MethodName}", result);// async default
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

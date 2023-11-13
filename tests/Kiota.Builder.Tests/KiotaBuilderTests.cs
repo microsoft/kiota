@@ -862,8 +862,8 @@ servers:
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
-        Assert.Contains("application/json;q=1", configuration.StructuredMimeTypes);
-        Assert.Contains("application/xml;q=1", configuration.StructuredMimeTypes);
+        Assert.Contains("application/json", configuration.StructuredMimeTypes);
+        Assert.Contains("application/xml", configuration.StructuredMimeTypes);
         _tempFiles.Add(tempFilePath);
     }
     [Fact]
@@ -7154,5 +7154,143 @@ components:
         Assert.Equal(2, resultClass.Properties.Count());
         Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
         Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task AnyTypeResponse()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: The Jira Cloud platform REST API
+externalDocs:
+  description: Find out more about Atlassian products and services.
+  url: http://www.atlassian.com
+paths:
+  /issueLink:
+    post:
+      tags:
+        - Issue links
+      summary: Create issue link
+      operationId: linkIssues
+      parameters: []
+      requestBody:
+        description: The issue link request.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkIssueRequestJsonBean'
+        required: true
+      responses:
+        '201':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema: {}
+        '400':
+          description: no desc.
+        '401':
+          description: no desc.
+        '404':
+          description: no desc.
+      deprecated: false
+components:
+  schemas:
+    Comment:
+      type: object
+      properties:
+        body:
+          description: >-
+            The comment text in [Atlassian Document
+            Format](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/).
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        id:
+          type: string
+          readOnly: true
+        jsdAuthorCanSeeRequest:
+          type: boolean
+          readOnly: true
+        jsdPublic:
+          type: boolean
+          readOnly: true
+        renderedBody:
+          type: string
+          readOnly: true
+        self:
+          type: string
+          description: The URL of the comment.
+          readOnly: true
+        updated:
+          type: string
+          description: The date and time at which the comment was updated last.
+          format: date-time
+          readOnly: true
+      additionalProperties: true
+      description: A comment.
+    IssueLinkType:
+      type: object
+      properties:
+        id:
+          type: string
+        inward:
+          type: string
+        name:
+          type: string
+        outward:
+          type: string
+        self:
+          type: string
+          format: uri
+          readOnly: true
+      additionalProperties: false
+    LinkIssueRequestJsonBean:
+      required:
+        - inwardIssue
+        - outwardIssue
+        - type
+      type: object
+      properties:
+        comment:
+          $ref: '#/components/schemas/Comment'
+        inwardIssue:
+          $ref: '#/components/schemas/LinkedIssue'
+        outwardIssue:
+          $ref: '#/components/schemas/LinkedIssue'
+        type:
+          $ref: '#/components/schemas/IssueLinkType'
+      additionalProperties: false
+    LinkedIssue:
+      type: object
+      properties:
+        fields:
+          description: The fields associated with the issue.
+          readOnly: true
+        id:
+          type: string
+          description: The ID of an issue. Required if `key` isn't provided.
+        key:
+          type: string
+          description: The key of an issue. Required if `id` isn't provided.
+        self:
+          type: string
+          description: The URL of the issue.
+          format: uri
+          readOnly: true
+      additionalProperties: false
+      description: The ID or key of a linked issue.");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("issueLinkRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var linkIssueRequestJsonBeanClass = codeModel.FindChildByName<CodeClass>("LinkIssueRequestJsonBean");
+        Assert.NotNull(linkIssueRequestJsonBeanClass);
     }
 }

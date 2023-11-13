@@ -1,11 +1,11 @@
 import apisdk.ApiClient;
+import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class BasicAPITest {
@@ -17,13 +17,12 @@ public class BasicAPITest {
         var client = new ApiClient(adapter);
 
         var exception = Assertions.assertThrows(
-                ExecutionException.class,
-                () -> client.api().v1().topics().get().get(1, TimeUnit.SECONDS)
+                ApiException.class,
+                () -> client.api().v1().topics().get()
         );
 
-        Assertions.assertNotNull(exception.getCause());
-        Assertions.assertTrue(exception.getCause() instanceof apisdk.models.Error);
-        var error = (apisdk.models.Error) exception.getCause();
+        Assertions.assertTrue(exception instanceof apisdk.models.Error);
+        var error = (apisdk.models.Error) exception;
 
         Assertions.assertEquals("my-sample-id", error.getId());
         Assertions.assertEquals(123, error.getCode());
