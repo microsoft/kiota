@@ -1,11 +1,11 @@
 import apisdk.ApiClient;
+import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class BasicAPITest {
@@ -17,7 +17,7 @@ public class BasicAPITest {
         var client = new ApiClient(adapter);
 
         var exception = Assertions.assertThrows(
-                ExecutionException.class,
+                ApiException.class,
                 () -> client.api().v1().topics().get()
         );
 
