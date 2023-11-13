@@ -35,7 +35,7 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
-        var nullAnnotation = parameter.Type.IsNullable ? $"@jakarta.annotation.{nullKeyword} " : string.Empty;
+        var nullAnnotation = parameter.Type.IsNullable || parameter.IsOfKind(CodeParameterKind.RequestBodyContentType) ? $"@jakarta.annotation.{nullKeyword} " : string.Empty;
         var parameterType = GetTypeString(parameter.Type, targetElement);
         if (parameter.Type is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
             parameterType = $"EnumSet<{parameterType}>";
