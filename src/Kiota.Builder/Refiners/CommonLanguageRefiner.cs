@@ -662,7 +662,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>()
+                                    .Distinct();
 
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
             var nestedQueryParameters = innerClasses
@@ -670,7 +671,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>()
+                                    .Distinct();
 
             var nestedClasses = new List<CodeClass>();
             nestedClasses.AddRange(innerClasses);
