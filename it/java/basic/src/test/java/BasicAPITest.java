@@ -18,7 +18,7 @@ public class BasicAPITest {
 
         var exception = Assertions.assertThrows(
                 ExecutionException.class,
-                () -> client.api().v1().topics().get().get(1, TimeUnit.SECONDS)
+                () -> client.api().v1().topics().get()
         );
 
         Assertions.assertNotNull(exception.getCause());
