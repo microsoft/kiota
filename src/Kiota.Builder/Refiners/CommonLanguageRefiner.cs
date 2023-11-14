@@ -680,7 +680,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             foreach (var nestedClass in nestedClasses)
             {
-                if (nestedClass.Parent is not CodeClass parentClass) return;
+                if (nestedClass.Parent is not CodeClass parentClass) continue;
 
                 if (nameFactory != default)
                     parentClass.RenameChildElement(nestedClass.Name, nameFactory(currentClass.Name, nestedClass.Name));
@@ -692,7 +692,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     parentNamespace.AddClass(nestedClass);
                     currentClass.RemoveChildElementByName(nestedClass.Name);
                 }
-                else if (!addToParentNamespace && nestedClass.Parent == null && currentClass.FindChildByName<CodeClass>(nestedClass.Name, false) == null) //failsafe
+                else if (!addToParentNamespace && currentClass.FindChildByName<CodeClass>(nestedClass.Name, false) == null) //failsafe
                     currentClass.AddInnerClass(nestedClass);
 
                 if (!string.IsNullOrEmpty(queryParametersBaseClassName))
