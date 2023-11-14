@@ -1676,7 +1676,7 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("this.getBackingStore().get(\"someProperty\")", result);
+        Assert.Contains("this.backingStore.get(\"someProperty\")", result);
     }
     [Fact]
     public void WritesGetterToBackingStoreWithNonnullProperty()
@@ -1706,7 +1706,7 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("this.getBackingStore().set(\"someProperty\", value)", result);
+        Assert.Contains("this.backingStore.set(\"someProperty\", value)", result);
     }
     [Fact]
     public void WritesGetterToField()
