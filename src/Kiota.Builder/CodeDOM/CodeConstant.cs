@@ -4,18 +4,13 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
-public class CodeConstant : CodeTerminal, IKindableElement<CodeConstantKind>
+public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
 {
-    public CodeConstantKind Kind
-    {
-        get; set;
-    }
     public CodeInterface? OriginalInterface
     {
         get;
         set;
     }
-    public bool IsOfKind(params CodeConstantKind[] kinds) => kinds?.Contains(Kind) ?? false;
     public static CodeConstant FromQueryParametersMapping(CodeInterface source)
     {
         ArgumentNullException.ThrowIfNull(source);

@@ -15,7 +15,7 @@ public interface IProprietableBlock : ICodeElement
 /// <summary>
 /// Represents a block of code that can have properties and methods
 /// </summary>
-public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlock<TBlockDeclaration, BlockEnd>, IDocumentedElement, IProprietableBlock, IKindableElement<TBlockKind> where TBlockKind : Enum where TBlockDeclaration : ProprietableBlockDeclaration, new()
+public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlock<TBlockDeclaration, BlockEnd>, IDocumentedElement, IProprietableBlock where TBlockKind : Enum where TBlockDeclaration : ProprietableBlockDeclaration, new()
 {
     private string name = string.Empty;
     /// <summary>
