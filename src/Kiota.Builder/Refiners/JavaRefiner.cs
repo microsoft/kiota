@@ -80,11 +80,21 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
-                    CodePropertyKind.BackingStore,
                 },
                 static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
                 true,
+                "get",
+                "set",
+                string.Empty
+            );
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.BackingStore
+                },
+                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
+                _configuration.UsesBackingStore,
+                false,
                 "get",
                 "set",
                 string.Empty
@@ -99,6 +109,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.BackingStore));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             var defaultConfiguration = new GenerationConfiguration();
@@ -194,7 +205,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void AddEnumSetImport(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.Properties.Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags))
+            currentClass.Methods.Any(x => x.AccessedProperty?.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags))
         {
             var nUsing = new CodeUsing
             {
@@ -220,7 +231,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "java.util", "Collection", "Map"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             SerializationNamespaceName, "Parsable"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeMethod @method && @method.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) && (@method.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false),
             SerializationNamespaceName, "AdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),

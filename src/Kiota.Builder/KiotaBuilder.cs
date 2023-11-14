@@ -1607,7 +1607,7 @@ public partial class KiotaBuilder
                     {
                         Name = "string",
                         IsExternal = true,
-                        IsNullable = false,
+                        IsNullable = true,
                     },
                     Documentation = new()
                     {
