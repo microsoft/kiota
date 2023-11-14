@@ -605,9 +605,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else
             WriteSerializerBodyForInheritedModel(method, inherits, parentClass, writer);
 
-        if (parentClass.Methods.Any(x => x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false) ||
-        parentClass.Properties.Any(x => x?.IsOfKind(CodePropertyKind.AdditionalData) ?? false))
-            writer.WriteLine($"writer.writeAdditionalData(this.get{CodePropertyKind.AdditionalData.ToString().ToFirstCharacterUpperCase()}());");
+        if (parentClass.GetPropertyOfKindFromAccessorOrDirect(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
+            writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
     }
     private void WriteSerializerBodyForUnionModel(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {

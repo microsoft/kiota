@@ -318,7 +318,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         else
             WriteSerializerBodyForInheritedModel(inherits, parentClass, writer);
 
-        if ((parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) ?? parentClass.GetMethodByAccessedPropertyOfKind(CodePropertyKind.AdditionalData)) is CodeProperty additionalDataProperty)
+        if (parentClass.GetPropertyOfKindFromAccessorOrDirect(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
         {
             var shouldDeclareErrorVar = !inherits;
             writer.StartBlock();
