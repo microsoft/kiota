@@ -359,7 +359,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             };
             var queryParametersConstant = parentBlock.FindChildByName<CodeConstant>($"{currentClass.Name.ToFirstCharacterLowerCase()}{codeElement.HttpMethod.Value.ToString().ToFirstCharacterUpperCase()}QueryParametersMapper");
             var queryParametersConstantName = queryParametersConstant is null ? ", undefined" : $", {queryParametersConstant.Name}";
-            writer.WriteLines($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}{queryParametersConstantName});");
+            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}{queryParametersConstantName});");
         }
 
         if (codeElement.ShouldAddAcceptHeader)
