@@ -137,11 +137,10 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
 
     public IEnumerable<T?> FindChildrenByName<T>(IEnumerable<string> childrenName, bool findInChildElements = true) where T : ICodeElement
     {
-        if (childrenName == null)
-            throw new ArgumentNullException(nameof(childrenName));
+        ArgumentNullException.ThrowIfNull(childrenName);
 
         return childrenName.Where(static x => !string.IsNullOrEmpty(x))
-            .Select(x => this.FindChildByName<T>(x, findInChildElements));
+            .Select(x => FindChildByName<T>(x, findInChildElements));
     }
 
     public T? FindChildByName<T>(string childName, bool findInChildElements = true) where T : ICodeElement

@@ -469,7 +469,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
+    private static CodeType ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         ArgumentNullException.ThrowIfNull(codeComposedType);

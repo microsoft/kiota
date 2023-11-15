@@ -6,11 +6,11 @@ using System.Linq;
 namespace Kiota.Builder.CodeDOM;
 public class DiscriminatorInformation : CodeElement, ICloneable
 {
-    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, CodeType> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Gets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
+    public IOrderedEnumerable<KeyValuePair<string, CodeType>> DiscriminatorMappings
     {
         get
         {
@@ -29,7 +29,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         get; set;
     } = string.Empty;
 
-    public void AddDiscriminatorMapping(string key, CodeTypeBase type)
+    public void AddDiscriminatorMapping(string key, CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(key);

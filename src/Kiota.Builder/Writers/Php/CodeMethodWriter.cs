@@ -969,7 +969,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.CloseBlock(decreaseIndent: false);
     }
 
-    private void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer, CodeMethod method, string? varName = default)
+    private void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeType>> discriminatorMappings, LanguageWriter writer, CodeMethod method, string? varName = default)
     {
         if (string.IsNullOrEmpty(varName))
             varName = DiscriminatorMappingVarName;

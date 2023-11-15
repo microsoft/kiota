@@ -1649,7 +1649,7 @@ public partial class KiotaBuilder
             TypeDefinition = codeDeclaration,
         };
     }
-    private CodeTypeBase CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
+    private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
     {
         var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf);
         CodeElement? codeDeclaration = null;
@@ -1974,7 +1974,7 @@ public partial class KiotaBuilder
         AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
         return newClass;
     }
-    private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass)
+    private IEnumerable<KeyValuePair<string, CodeType>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass)
     {
         return schema.GetDiscriminatorMappings(inheritanceIndex)
                 .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
@@ -2119,7 +2119,7 @@ public partial class KiotaBuilder
     {
         openApiDocument?.InitializeInheritanceIndex(inheritanceIndex);
     }
-    internal static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, Func<string, string> refineMethodName)
+    internal static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeType>> discriminatorMappings, Func<string, string> refineMethodName)
     {
         var factoryMethod = new CodeMethod
         {
@@ -2150,7 +2150,7 @@ public partial class KiotaBuilder
         newClass.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
         newClass.AddMethod(factoryMethod);
     }
-    private CodeTypeBase? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiSchema currentSchema)
+    private CodeType? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiSchema currentSchema)
     {
         var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
         if (openApiDocument == null || !openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema))
