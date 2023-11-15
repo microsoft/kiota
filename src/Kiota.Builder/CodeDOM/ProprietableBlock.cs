@@ -63,6 +63,9 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     public CodeProperty? GetMethodByAccessedPropertyOfKind(params CodePropertyKind[] kind) =>
         Methods.FirstOrDefault(x => x.AccessedProperty?.IsOfKind(kind) ?? false)?.AccessedProperty;
 
+    public CodeProperty? GetPropertyOfKindFromAccessorOrDirect(params CodePropertyKind[] kind) =>
+        GetPropertyOfKind(kind) ?? GetMethodByAccessedPropertyOfKind(kind);
+
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeProperty> UnorderedProperties => InnerChildElements.Values.OfType<CodeProperty>();
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);

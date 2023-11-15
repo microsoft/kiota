@@ -373,14 +373,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        if (parentClass.GetBackingStoreProperty() is CodeProperty backingStore)
-            writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name}\", value);");
-        else
+        if (parentClass.GetBackingStoreProperty() is not CodeProperty backingStore || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
         {
             string value = "PeriodAndDuration".Equals(codeElement.AccessedProperty?.Type?.Name, StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.ofPeriodAndDuration(value);" : "value;";
             writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name} = {value}");
-
         }
+        else
+            writer.WriteLine($"this.{backingStore.Name}.set(\"{codeElement.AccessedProperty?.Name}\", value);");
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
@@ -392,7 +391,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
         {
-            writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.NamePrefix}{backingStore.Name}\");");
+            writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\");");
             writer.StartBlock("if(value == null) {");
             writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                 $"this.set{codeElement.AccessedProperty?.Name.ToFirstCharacterUpperCase()}(value);");
@@ -400,7 +399,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLine("return value;");
         }
         else
-            writer.WriteLine($"return this.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name}\");");
+            writer.WriteLine($"return this.{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\");");
 
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
@@ -589,9 +588,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else
             WriteSerializerBodyForInheritedModel(method, inherits, parentClass, writer);
 
-        var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
-
-        if (additionalDataProperty != null)
+        if (parentClass.GetPropertyOfKindFromAccessorOrDirect(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
     }
     private void WriteSerializerBodyForUnionModel(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
