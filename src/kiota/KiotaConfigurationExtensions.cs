@@ -69,7 +69,7 @@ internal static class KiotaConfigurationExtensions
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludePatterns)}").LoadHashSet(configObject.Generation.ExcludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.DisabledValidationRules)}").LoadHashSet(configObject.Generation.DisabledValidationRules);
     }
-    private static void LoadCollection(this IConfigurationSection section, ICollection<string> collection)
+    private static void LoadCollection(this IConfigurationSection section, StructuredMimeTypesCollection collection)
     {
         ArgumentNullException.ThrowIfNull(collection);
         if (section is null) return;
