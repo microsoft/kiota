@@ -107,7 +107,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
                                                                     .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (structuredMimeTypes.Count != 0)
-            Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split([' ']))
+            Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
