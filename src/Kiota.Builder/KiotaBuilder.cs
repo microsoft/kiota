@@ -97,7 +97,7 @@ public partial class KiotaBuilder
         try
         {
             logger.LogDebug("Api manifest path: {ApiManifestPath}", config.ApiManifestPath);
-            var pathParts = config.ApiManifestPath.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+            var pathParts = config.ApiManifestPath.Split(manifestPathSeparator, StringSplitOptions.RemoveEmptyEntries);
             var manifestPath = pathParts[0];
             var apiIdentifier = pathParts.Length > 1 ? pathParts[1] : string.Empty;
             var manifestManagementService = new ManifestManagementService();
@@ -2212,6 +2212,7 @@ public partial class KiotaBuilder
     internal const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
+    private static readonly char[] manifestPathSeparator = ['#'];
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore, Func<string, string> refineMethodName)
     {
         var serializationPropsType = $"IDictionary<string, Action<{ParseNodeInterface}>>";

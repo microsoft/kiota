@@ -98,7 +98,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
             );
             cancellationToken.ThrowIfCancellationRequested();
-            AddSerializationModulesImport(generatedCode, new[] { "Microsoft\\Kiota\\Abstractions\\ApiClientBuilder" }, null, '\\');
+            AddSerializationModulesImport(generatedCode, ["Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"], null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
@@ -301,7 +301,7 @@ public class PhpRefiner : CommonLanguageRefiner
             foreach (var usingElement in duplicatedSymbolsUsings)
             {
                 var replacement = string.Join("\\", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
-                    .Split(new[] { '\\', '.' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Split(importPathSeparators, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
                 usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";
@@ -340,6 +340,8 @@ public class PhpRefiner : CommonLanguageRefiner
         { CodePropertyKind.Options, CodeParameterKind.Options },
         { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
     };
+    private static readonly char[] importPathSeparators = ['\\', '.'];
+
     private static void AddRequestConfigurationConstructors(CodeElement codeElement)
     {
         if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters))

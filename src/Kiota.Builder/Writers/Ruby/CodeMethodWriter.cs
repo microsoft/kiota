@@ -159,7 +159,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             {
                 var prefix = parentClass.Usings.FirstOrDefault(x => x.IsExternal && x.Name.Equals(serializationClassName, StringComparison.OrdinalIgnoreCase))?.Declaration?.Name;
                 if (!string.IsNullOrEmpty(prefix))
-                    prefix = $"{prefix.ToCamelCase(new char[] { '_' }).ToFirstCharacterUpperCase()}::";
+                    prefix = $"{prefix.ToCamelCase(['_']).ToFirstCharacterUpperCase()}::";
                 writer.WriteLine($"MicrosoftKiotaAbstractions::ApiClientBuilder.{methodName}({prefix}{serializationClassName})");
             }
     }

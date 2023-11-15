@@ -110,9 +110,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new(StringComparer.OrdinalIgnoreCase) {
                     "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
-                                        new[] { "microsoft_kiota_abstractions.ApiClientBuilder",
-                                                "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
-                                        new[] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
+                                        ["microsoft_kiota_abstractions.ApiClientBuilder",
+                                                "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" ],
+                                        ["microsoft_kiota_abstractions.ParseNodeFactoryRegistry"]);
             AddQueryParameterMapperMethod(
                 generatedCode
             );
