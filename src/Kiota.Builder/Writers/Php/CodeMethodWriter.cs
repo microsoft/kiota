@@ -247,7 +247,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         var parameters = currentMethod.Parameters.Where(x => x.IsOfKind(parameterKind)).ToList();
         var properties = parentClass.GetPropertiesOfKind(propertyKind).ToList();
-        if (parameters.Any() && parameters.Count.Equals(properties.Count))
+        if (parameters.Count != 0 && parameters.Count.Equals(properties.Count))
         {
             for (var i = 0; i < parameters.Count; i++)
             {
@@ -368,7 +368,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                                             .Where(static x => x.Getter != null)
                                             .Where(static x => x.Type is CodeType { TypeDefinition: CodeClass } && !x.Type.IsCollection)
                                             .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             if (includeElse)
             {
@@ -384,7 +384,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 writer.CloseBlock();
             }
         }
-        else if (otherProps.Any())
+        else if (otherProps.Length != 0)
         {
             writer.CloseBlock(decreaseIndent: false);
         }
@@ -407,7 +407,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Any())
+        if (otherProps.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
     }
 
@@ -627,7 +627,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.WriteLines(
             $"return {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [")}");
         writer.IncreaseIndent();
-        if (codeProperties.Any())
+        if (codeProperties.Length != 0)
         {
             codeProperties
                 .Where(static x => !x.ExistsInBaseType && x.Setter != null)
@@ -665,7 +665,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
             .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             var propertiesNames = complexProperties
                 .Where(static x => x.Getter != null)
@@ -704,7 +704,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherPropGetters.Any())
+        if (otherPropGetters.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
         writer.WriteLine($"return [];");
     }
@@ -731,7 +731,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .Select(conventions.GetParameterName)
             .ToArray();
         var joinedParams = string.Empty;
-        if (requestInfoParameters.Any())
+        if (requestInfoParameters.Length != 0)
         {
             joinedParams = string.Join(", ", requestInfoParameters);
         }
@@ -901,7 +901,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                                         .Select(static x => new Tuple<CodeProperty, CodeType>(x, (CodeType)x.Type))
                                         .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
                                         .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             if (includeElse)
                 writer.StartBlock("} else {");
@@ -910,7 +910,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (includeElse)
                 writer.CloseBlock();
         }
-        else if (otherProps.Any())
+        else if (otherProps.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
     }
 
@@ -941,7 +941,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Any())
+        if (otherProps.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
     }
 
@@ -965,7 +965,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Any())
+        if (otherProps.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
     }
 

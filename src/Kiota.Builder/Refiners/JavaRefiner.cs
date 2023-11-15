@@ -419,7 +419,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     .Select(static x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
                                     .OfType<CodeMethod>()
                                     .ToArray();
-                if (executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                if (executorMethodsToAdd.Length != 0 || generatorMethodsToAdd.Length != 0)
                     currentClass.AddMethod(executorMethodsToAdd
                                             .Union(generatorMethodsToAdd)
                                             .ToArray());

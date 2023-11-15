@@ -12,7 +12,7 @@ internal static class OpenApiDocumentExtensions
     {
         ArgumentNullException.ThrowIfNull(inheritanceIndex);
         ArgumentNullException.ThrowIfNull(openApiDocument);
-        if (!inheritanceIndex.Any() && openApiDocument.Components?.Schemas != null)
+        if (inheritanceIndex.IsEmpty && openApiDocument.Components?.Schemas != null)
         {
             Parallel.ForEach(openApiDocument.Components.Schemas, entry =>
             {

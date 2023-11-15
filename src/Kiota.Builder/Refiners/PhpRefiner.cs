@@ -391,7 +391,7 @@ public class PhpRefiner : CommonLanguageRefiner
                         Type = x.Type
                     })
                     .ToArray();
-                if (constructorParams.Any())
+                if (constructorParams.Length != 0)
                 {
                     constructor.AddParameter(constructorParams);
                 }
@@ -431,7 +431,7 @@ public class PhpRefiner : CommonLanguageRefiner
                                             Optional = true,
                                             Type = (CodeTypeBase)x.Type.Clone()
                                         }).ToArray();
-                    if (properties.Any())
+                    if (properties.Length != 0)
                     {
                         queryParamFactoryMethod.AddParameter(properties);
                     }

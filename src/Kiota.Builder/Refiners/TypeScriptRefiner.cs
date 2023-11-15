@@ -212,9 +212,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        if (!functions.Any())
+        if (functions.Count == 0)
             return;
-
         functions.Insert(0, codeInterface);
         codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
     }
@@ -231,7 +230,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<string>()
             .ToArray();
 
-        if (!elementNames.Any())
+        if (elementNames.Length == 0)
             return;
 
         var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)

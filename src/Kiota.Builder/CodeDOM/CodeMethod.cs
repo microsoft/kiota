@@ -188,7 +188,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private readonly Dictionary<string, CodeParameter> pathQueryAndHeaderParameters = new(StringComparer.OrdinalIgnoreCase);
     public void AddPathQueryOrHeaderParameter(params CodeParameter[] parameters)
     {
-        if (parameters == null || !parameters.Any()) return;
+        if (parameters == null || parameters.Length == 0) return;
         foreach (var parameter in parameters.OrderByDescending(static x => x.Kind)) //guarantees that path parameters are added first and other are deduplicated
         {
             EnsureElementsAreChildren(parameter);
@@ -321,9 +321,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 
     public void AddParameter(params CodeParameter[] methodParameters)
     {
-        if (methodParameters == null || methodParameters.Any(x => x == null))
+        if (methodParameters == null || methodParameters.Any(static x => x == null))
             throw new ArgumentNullException(nameof(methodParameters));
-        if (!methodParameters.Any())
+        if (methodParameters.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(methodParameters));
         EnsureElementsAreChildren(methodParameters);
         methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));

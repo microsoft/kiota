@@ -255,7 +255,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             .OfType<CodeParameter>()
             .Select(static x => x.Name.ToSnakeCase())
             .ToArray();
-        if (requestInfoParameters.Any())
+        if (requestInfoParameters.Length != 0)
         {
             writer.IncreaseIndent();
             writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));
@@ -360,7 +360,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
         var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
-        if (isDescriptionPresent || parametersWithDescription.Any())
+        if (isDescriptionPresent || parametersWithDescription.Length != 0)
         {
             writer.WriteLine(conventions.DocCommentStart);
             if (isDescriptionPresent)

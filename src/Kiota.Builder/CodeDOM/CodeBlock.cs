@@ -95,7 +95,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
                                                 .Any())
                 {
                     // allows for methods overload
-                    var methodOverloadNameSuffix = currentMethodParameterNames.Any() ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
+                    var methodOverloadNameSuffix = currentMethodParameterNames.Count != 0 ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
                     if (InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element) is T result2)
                         return result2;
                 }
@@ -121,7 +121,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
     {
         ArgumentException.ThrowIfNullOrEmpty(childName);
 
-        if (InnerChildElements.Any())
+        if (!InnerChildElements.IsEmpty)
         {
             var result = new List<T>();
             var immediateResult = this.FindChildByName<T>(childName, false);
@@ -148,7 +148,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
     {
         ArgumentException.ThrowIfNullOrEmpty(childName);
 
-        if (!InnerChildElements.Any())
+        if (InnerChildElements.IsEmpty)
             return default;
 
         if (InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)

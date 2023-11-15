@@ -156,7 +156,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void UpdateReferencesToDisambiguatedClasses(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix)
     {
-        if (!classesToUpdate.Any()) return;
+        if (classesToUpdate.Count == 0) return;
         if (currentElement is CodeProperty currentProperty &&
             currentProperty.Type is CodeType propertyType &&
             propertyType.TypeDefinition is CodeClass propertyTypeClass &&

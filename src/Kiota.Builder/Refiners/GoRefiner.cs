@@ -470,7 +470,7 @@ public class GoRefiner : CommonLanguageRefiner
                                                                 pType.TypeDefinition != null &&
                                                                 currentNamespace.IsParentOf(pType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()))
                                                     .ToArray();
-            if (propertiesToRemove.Any())
+            if (propertiesToRemove.Length != 0)
             {
                 currentClass.RemoveChildElement(propertiesToRemove);
                 var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();

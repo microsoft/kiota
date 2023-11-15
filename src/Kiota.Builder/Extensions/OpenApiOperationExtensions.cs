@@ -41,11 +41,11 @@ public static class OpenApiOperationExtensions
     }
     internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
     {
-        if (!(structuredMimeTypes?.Any() ?? false))
+        if (structuredMimeTypes.Count == 0)
             throw new ArgumentNullException(nameof(structuredMimeTypes));
         return source?
                             .Where(static c => !string.IsNullOrEmpty(c.Key))
-                            .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries).First(), c.Value))
+                            .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries)[0], c.Value))
                             .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
                             .Select(static co => co.Value.Schema)
                             .Where(static s => s is not null) ??

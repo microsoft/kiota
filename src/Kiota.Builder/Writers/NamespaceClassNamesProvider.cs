@@ -21,7 +21,7 @@ public static class NamespaceClassNamesProvider
         var inheritanceBranches = codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model))
                                                 .Select(static x => x.GetInheritanceTree(true))
                                                 .ToList();
-        var maxDepth = inheritanceBranches.Any() ? inheritanceBranches.Max(static x => x.Count) : 0;
+        var maxDepth = inheritanceBranches.Count != 0 ? inheritanceBranches.Max(static x => x.Count) : 0;
         for (var depth = 0; depth < maxDepth; depth++)
             foreach (var name in inheritanceBranches
                                                 .Where(x => x.Count > depth)

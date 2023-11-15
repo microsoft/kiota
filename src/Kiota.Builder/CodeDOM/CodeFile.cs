@@ -12,7 +12,7 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
     {
         if (elements == null || elements.Any(static x => x == null))
             throw new ArgumentNullException(nameof(elements));
-        if (!elements.Any())
+        if (elements.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(elements));
 
         return AddRange(elements);

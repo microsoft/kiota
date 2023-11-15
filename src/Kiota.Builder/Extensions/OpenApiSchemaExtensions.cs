@@ -152,7 +152,7 @@ public static class OpenApiSchemaExtensions
                                         .Union(schema.OneOf ?? Enumerable.Empty<OpenApiSchema>())
                                         .SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas))
                                         .ToList();// this to list is important otherwise the any marks the schemas as visited and add range doesn't find anything
-            if (subSchemaReferences.Any())
+            if (subSchemaReferences.Count != 0)
                 result.AddRange(subSchemaReferences);
             return result.Distinct();
         }

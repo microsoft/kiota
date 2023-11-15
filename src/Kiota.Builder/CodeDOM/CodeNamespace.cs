@@ -55,7 +55,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (codeClasses == null || Array.Exists(codeClasses, static x => x == null))
             throw new ArgumentNullException(nameof(codeClasses));
-        if (!codeClasses.Any())
+        if (codeClasses.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
         return AddRange(codeClasses);
     }
@@ -135,7 +135,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (enumDeclarations == null || Array.Exists(enumDeclarations, static x => x == null))
             throw new ArgumentNullException(nameof(enumDeclarations));
-        if (!enumDeclarations.Any())
+        if (enumDeclarations.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
         return AddRange(enumDeclarations);
     }
@@ -152,7 +152,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (globalFunctions == null || Array.Exists(globalFunctions, static x => x == null))
             throw new ArgumentNullException(nameof(globalFunctions));
-        if (!globalFunctions.Any())
+        if (globalFunctions.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(globalFunctions));
         return AddRange(globalFunctions);
     }
@@ -160,7 +160,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (interfaces == null || Array.Exists(interfaces, static x => x == null))
             throw new ArgumentNullException(nameof(interfaces));
-        if (!interfaces.Any())
+        if (interfaces.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(interfaces));
         return AddRange(interfaces);
     }
@@ -197,7 +197,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (codeConstants == null || Array.Exists(codeConstants, static x => x == null))
             throw new ArgumentNullException(nameof(codeConstants));
-        if (!codeConstants.Any())
+        if (codeConstants.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(codeConstants));
         return AddRange(codeConstants);
     }

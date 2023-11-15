@@ -558,7 +558,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var builderMethods = (td.Methods
                 .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)))
             .ToArray();
-        if (!builderMethods.Any())
+        if (builderMethods.Length == 0)
         {
             writer.WriteLine($"return new(new(0), new(0));");
             return;
@@ -764,7 +764,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var methods = new List<CodeMethod>();
         methods.AddRange(builderMethods);
         methods.AddRange(includedSubCommands);
-        if (!methods.Any()) return;
+        if (methods.Count == 0) return;
         var executablesCount = methods.Count(static m => m.OriginalMethod?.HttpMethod is not null);
 
         if (executablesCount > 0)

@@ -74,7 +74,7 @@ internal static class KiotaConfigurationExtensions
         ArgumentNullException.ThrowIfNull(collection);
         if (section is null) return;
         var children = section.GetChildren();
-        if (children.Any() && collection.Any()) collection.Clear();
+        if (children.Any() && collection.Count != 0) collection.Clear();
         foreach (var item in children)
         {
             if (section[item.Key] is string value && !string.IsNullOrEmpty(value))
@@ -86,7 +86,7 @@ internal static class KiotaConfigurationExtensions
         ArgumentNullException.ThrowIfNull(hashSet);
         if (section is null) return;
         var children = section.GetChildren();
-        if (children.Any() && hashSet.Any()) hashSet.Clear();
+        if (children.Any() && hashSet.Count != 0) hashSet.Clear();
         foreach (var item in children)
         {
             if (section[item.Key] is string value && !string.IsNullOrEmpty(value))

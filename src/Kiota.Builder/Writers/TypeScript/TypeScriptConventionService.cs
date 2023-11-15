@@ -48,7 +48,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             varName = TempDictionaryVarName;
             writer.WriteLine($"const {varName} = getPathParameters({pathParametersReference});");
         }
-        if (parameters.Any())
+        if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
                 $"{varName}[\"{p.Item2}\"] = {p.Item3}"
             ).ToArray());
@@ -81,7 +81,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (code is CodeType currentType)
         {
             var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
-            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             return $"{typeName}{collectionSuffix}{genericParameters}";
@@ -148,7 +148,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
         var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
-        if (documentedElement.Documentation.DescriptionAvailable || documentedElement.Documentation.ExternalDocumentationAvailable || remarks.Any())
+        if (documentedElement.Documentation.DescriptionAvailable || documentedElement.Documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentedElement.Documentation.DescriptionAvailable)

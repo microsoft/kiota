@@ -33,7 +33,7 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                                 .OrderBy(static x => x.Item2.Count(static y => y == '/'))
                                 .ThenBy(static x => x)
                                 .ToList();
-            if (importSegments.Any())
+            if (importSegments.Count != 0)
             {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();

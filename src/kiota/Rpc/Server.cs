@@ -119,7 +119,7 @@ internal class Server : IServer
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
         configuration.ExcludePatterns = excludeFilters.ToHashSet(StringComparer.Ordinal);
-        var filteredTreeNode = configuration.IncludePatterns.Any() || configuration.ExcludePatterns.Any() ?
+        var filteredTreeNode = configuration.IncludePatterns.Count != 0 || configuration.ExcludePatterns.Count != 0 ?
                             await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
@@ -155,13 +155,13 @@ internal class Server : IServer
         configuration.ClearCache = clearCache;
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
-        if (disabledValidationRules is not null && disabledValidationRules.Any())
+        if (disabledValidationRules is not null && disabledValidationRules.Length != 0)
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (serializers is not null && serializers.Any())
+        if (serializers is not null && serializers.Length != 0)
             configuration.Serializers = serializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (deserializers is not null && deserializers.Any())
+        if (deserializers is not null && deserializers.Length != 0)
             configuration.Deserializers = deserializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (structuredMimeTypes is not null && structuredMimeTypes.Any())
+        if (structuredMimeTypes is not null && structuredMimeTypes.Length != 0)
             configuration.StructuredMimeTypes = new(structuredMimeTypes);
         if (!string.IsNullOrEmpty(clientClassName))
             configuration.ClientClassName = clientClassName;
@@ -210,14 +210,14 @@ internal class Server : IServer
                                             NormalizeOperationNodePath(node, x.Key),
                                             x.Key.ToString().ToUpperInvariant(),
                                             Array.Empty<PathItem>(),
-                                            !filteredPaths.Any() || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
+                                            filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
                                             x.Value.ExternalDocs?.Url)) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
                             .ToArray();
-        return new PathItem(node.Path, node.Segment, children, !filteredPaths.Any() || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
+        return new PathItem(node.Path, node.Segment, children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
     }
     protected static string GetAbsolutePath(string source)
     {

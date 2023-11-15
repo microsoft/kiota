@@ -161,7 +161,7 @@ public class GenerationConfiguration : ICloneable
             ClientNamespaceName.Equals(defaultConfiguration.ClientNamespaceName, StringComparison.Ordinal) &&
             !ClientNamespaceName.Equals(languageInfo.ClientNamespaceName, StringComparison.Ordinal))
             ClientNamespaceName = languageInfo.ClientNamespaceName;
-        if (languageInfo.StructuredMimeTypes.Any() &&
+        if (languageInfo.StructuredMimeTypes.Count != 0 &&
             comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
             !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);

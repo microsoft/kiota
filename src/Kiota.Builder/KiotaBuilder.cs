@@ -146,7 +146,7 @@ public partial class KiotaBuilder
             if (manifestDetails is not null)
             {
                 inputPath = manifestDetails.Item1;
-                if (!config.IncludePatterns.Any())
+                if (config.IncludePatterns.Count == 0)
                     config.IncludePatterns = manifestDetails.Item2.ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
             StopLogAndReset(sw, $"step {++stepId} - getting the manifest - took");
@@ -326,28 +326,28 @@ public partial class KiotaBuilder
     {
         var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
         var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
-        if (!includePatterns.Any() && !excludePatterns.Any()) return;
+        if (includePatterns.Count == 0 && excludePatterns.Count == 0) return;
 
-        var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
-        var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
-        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
+        var nonOperationIncludePatterns = includePatterns.Where(static x => x.Value.Count == 0).Select(static x => x.Key).ToList();
+        var nonOperationExcludePatterns = excludePatterns.Where(static x => x.Value.Count == 0).Select(static x => x.Key).ToList();
+        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Count != 0).ToList();
 
-        if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
-            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
-                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))) &&
+        if (nonOperationIncludePatterns.Count != 0 || nonOperationExcludePatterns.Count != 0)
+            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Count != 0 && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
+                                nonOperationExcludePatterns.Count != 0 && nonOperationExcludePatterns.Any(y => y.IsMatch(x))) &&
                                 !operationIncludePatterns.Any(y => y.Key.IsMatch(x))) // so we don't trim paths that are going to be filtered by operation
             .ToList()
             .ForEach(x => doc.Paths.Remove(x));
 
-        var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Any()).ToList();
+        var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Count != 0).ToList();
 
-        if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
+        if (operationIncludePatterns.Count != 0 || operationExcludePatterns.Count != 0)
         {
             foreach (var path in doc.Paths.Where(x => !nonOperationIncludePatterns.Any(y => y.IsMatch(x.Key))))
             {
                 var pathString = path.Key;
-                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
-                                        operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Count != 0 && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
+                                        operationExcludePatterns.Count != 0 && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
                 .ToList()
                 .ForEach(x => path.Value.Operations.Remove(x));
             }
@@ -2168,7 +2168,7 @@ public partial class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (CollectAllProperties(schema) is var properties && properties.Any())
+        if (CollectAllProperties(schema) is var properties && properties.Count != 0)
         {
             var propertiesToAdd = properties
                     .Select(x =>
@@ -2188,7 +2188,7 @@ public partial class KiotaBuilder
                     })
                     .OfType<CodeProperty>()
                     .ToArray();
-            if (propertiesToAdd.Any())
+            if (propertiesToAdd.Length != 0)
                 model.AddProperty(propertiesToAdd);
         }
     }
@@ -2327,7 +2327,7 @@ public partial class KiotaBuilder
     private CodeClass? CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(static p => p.In == ParameterLocation.Query).ToArray();
-        if (parameters.Any())
+        if (parameters.Length != 0)
         {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
             {

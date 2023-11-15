@@ -162,7 +162,7 @@ public static class StringExtensions
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-        if (result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+        if (result.Length != 0 && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
             result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
                                                                     .Value
                                                                     .Select(static x => SpelledOutNumbers[x])

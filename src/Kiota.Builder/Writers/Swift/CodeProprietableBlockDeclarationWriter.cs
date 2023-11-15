@@ -22,7 +22,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
                                 .OrderBy(static x => x.Count(static y => y == '.'))
                                 .ThenBy(x => x)
                                 .ToList();
-            if (importSegments.Any())
+            if (importSegments.Count != 0)
             {
                 importSegments.ForEach(x => writer.WriteLine($"import {x}"));
                 writer.WriteLine(string.Empty);
