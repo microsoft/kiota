@@ -111,7 +111,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         ["microsoft_kiota_abstractions.ApiClientBuilder",
-                                                "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" ],
+                                            "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry"],
                                         ["microsoft_kiota_abstractions.ParseNodeFactoryRegistry"]);
             AddQueryParameterMapperMethod(
                 generatedCode
