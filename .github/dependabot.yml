@@ -7,6 +7,10 @@ updates:
   open-pull-requests-limit: 10
   labels:
     - generator
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
@@ -19,39 +23,67 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: gomod
   directory: "/it/go"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: composer
   directory: "/it/php"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: pip
   directory: "/it/python"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: bundler
   directory: "/it/ruby"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: npm
   directory: "/it/typescript"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    kiota-dependencies:
+      patterns:
+        - "*kiota*"
 
 - package-ecosystem: npm
   directory: "/vscode/microsoft-kiota"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  groups:
+    eslint:
+      patterns:
+        - "*eslint*"
