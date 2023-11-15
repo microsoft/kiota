@@ -633,13 +633,19 @@ public class TypeScriptLanguageRefinerTests
     public async Task ReplaceRequestConfigsQueryParams()
     {
         var testNS = CodeNamespace.InitRootNamespace();
-        var requestConfig = testNS.AddClass(new CodeClass
+        var requestBuilder = testNS.AddClass(new CodeClass
+        {
+            Name = "requestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+
+        var requestConfig = requestBuilder.AddInnerClass(new CodeClass
         {
             Name = "requestConfig",
             Kind = CodeClassKind.RequestConfiguration
         }).First();
 
-        var queryParam = testNS.AddClass(new CodeClass
+        var queryParam = requestBuilder.AddInnerClass(new CodeClass
         {
             Name = "queryParams",
             Kind = CodeClassKind.QueryParameters
@@ -649,11 +655,12 @@ public class TypeScriptLanguageRefinerTests
         queryParam.AddProperty(new CodeProperty { Name = "stringProp", Type = new CodeType { Name = "string" } });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
-        Assert.Contains(testNS.Interfaces, x => x.Name == "requestConfig");
-        Assert.Contains(testNS.Interfaces, x => x.Name == "queryParams");
-        Assert.False(testNS.Classes.Any());
-        Assert.DoesNotContain(testNS.Classes, x => x.Name == "requestConfig");
-        Assert.DoesNotContain(testNS.Classes, x => x.Name == "queryParams");
+        Assert.DoesNotContain(testNS.Interfaces, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(testNS.Interfaces, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
+        Assert.NotEmpty(testNS.Classes);
+        Assert.Empty(requestBuilder.InnerClasses);
+        Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
     }
 
 

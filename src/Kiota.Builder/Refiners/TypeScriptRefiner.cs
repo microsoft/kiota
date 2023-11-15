@@ -26,7 +26,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = "BaseRequestBuilder",
                 Declaration = new CodeType
                 {
-                    Name = "@microsoft/kiota-abstractions",
+                    Name = AbstractionsPackageName,
                     IsExternal = true
                 }
             });
@@ -39,6 +39,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    IsErasable = true,
+                    Declaration = new CodeType
+                    {
+                        Name = AbstractionsPackageName,
+                        IsExternal = true,
+                    }
+                },
+                new CodeType
+                {
+                    Name = "object",
+                    IsExternal = true,
+                });
             AddInnerClasses(generatedCode,
                 true,
                 string.Empty,
@@ -205,39 +221,35 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        List<String> elementNames = codeClass.Methods
+        var elementNames = codeClass.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
-            .Select(static x => x.Type?.Name)
-            .Where(static x => !string.IsNullOrEmpty(x))
+            .Select(static x => x.Type)
+            .OfType<CodeType>()
+            .Select(static x => x.GenericTypeParameterValues.FirstOrDefault()?.Name)
             .OfType<string>()
-            .ToList();
+            .ToArray();
 
         if (!elementNames.Any())
             return;
 
-        List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
-            .Where(static x => x != null)
+        var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
             .OfType<CodeInterface>()
-            .ToList();
+            .ToArray();
 
-        List<string> queryParamClassNames = configClasses.Where(x => x != null)
-            .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type.Name)
-            .Where(static x => !string.IsNullOrEmpty(x))
-            .OfType<string>()
-            .ToList();
+        var queryParametersMapperConstants = elementNames
+            .Select(static x => $"{x.ToFirstCharacterLowerCase()}Mapper")
+            .Select(x => codeNamespace.FindChildByName<CodeConstant>(x, false))
+            .OfType<CodeConstant>()
+            .ToArray();
 
-        List<CodeInterface> queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
-            .Where(static x => x != null)
-            .OfType<CodeInterface>()
-            .ToList();
+        var elements = new CodeElement[] { codeClass }
+                            .Union(queryParamClasses)
+                            .Union(queryParametersMapperConstants)
+                            .ToArray();
 
-        List<CodeElement> elements = new List<CodeElement> { codeClass };
-        elements.AddRange(queryParamClasses);
-        elements.AddRange(configClasses);
-
-        codeNamespace.TryAddCodeFile(codeClass.Name, elements.ToArray());
+        codeNamespace.TryAddCodeFile(codeClass.Name, elements);
     }
 
     private static void CorrectCodeFileUsing(CodeElement currentElement)
@@ -246,7 +258,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
         {
             // correct the using values
-            // eliminate the using refering the elements in the same file
+            // eliminate the using referring the elements in the same file
 
             HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var element in codeFile.GetChildElements(true))
@@ -498,20 +510,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         })},
     };
 
-    private static void ReplaceRequestConfigurationsQueryParamsWithInterfaces(CodeElement currentElement)
+    private static void ReplaceRequestQueryParamsWithInterfaces(CodeElement currentElement)
     {
         if (currentElement is CodeClass codeClass &&
-            codeClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.RequestConfiguration) &&
+            codeClass.IsOfKind(CodeClassKind.QueryParameters) &&
+            codeClass.Parent is CodeClass parentClass &&
             codeClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace targetNS &&
             targetNS.FindChildByName<CodeInterface>(codeClass.Name, false) is null)
         {
             var insertValue = new CodeInterface
             {
                 Name = codeClass.Name,
-                Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters) ? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
+                Kind = CodeInterfaceKind.QueryParameters,
             };
-            targetNS.RemoveChildElement(codeClass);
+            parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
+            targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
@@ -519,7 +533,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);
         }
-        CrawlTree(currentElement, static x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
+        CrawlTree(currentElement, static x => ReplaceRequestQueryParamsWithInterfaces(x));
     }
     private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string ModelSerializerPrefix = "serialize";
@@ -535,7 +549,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
         AddDeserializerUsingToDiscriminatorFactory(generatedCode);
-        ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
+        ReplaceRequestQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
     }
 

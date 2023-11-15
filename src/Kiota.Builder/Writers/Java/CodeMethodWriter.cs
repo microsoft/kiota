@@ -521,7 +521,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         return "send";
     }
     private const string RequestInfoVarName = "requestInfo";
-    private const string RequestConfigVarName = "requestConfig";
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
         if (codeElement.Kind is CodeMethodKind.RequestExecutor && codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) && prefix.Trim().Equals("return", StringComparison.OrdinalIgnoreCase))
@@ -545,33 +544,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("url template params property cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
-        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation();");
+        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "null")});");
 
         if (requestParams.requestConfiguration != null)
         {
-            writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
-            writer.IncreaseIndent();
-            var requestConfigTypeName = requestParams.requestConfiguration.Type.Name;
-            writer.WriteLines($"final {requestConfigTypeName} {RequestConfigVarName} = new {requestConfigTypeName}();",
-                        $"{requestParams.requestConfiguration.Name}.accept({RequestConfigVarName});");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null)
-            {
-                var queryStringName = $"{RequestConfigVarName}.{queryString.Name}";
-                writer.WriteLine($"{RequestInfoVarName}.addQueryParameters({queryStringName});");
-            }
-            writer.WriteLines($"{RequestInfoVarName}.headers.putAll({RequestConfigVarName}.headers);",
-                             $"{RequestInfoVarName}.addRequestOptions({RequestConfigVarName}.options);");
-
-            writer.CloseBlock();
+            var queryStringName = requestParams.QueryParameters is null ? string.Empty : $", x -> x.{requestParams.QueryParameters.Name}";
+            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}, {requestParams.requestConfiguration.Type.Name}::new{queryStringName});");
         }
 
-        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()};");
-        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
-                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
 

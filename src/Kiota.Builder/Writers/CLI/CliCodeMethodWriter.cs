@@ -41,7 +41,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     private const string NonExecCommandsVariableName = "nonExecCommands";
     private const string IndexerReturn = "Tuple";
 
-    public CliCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
+    public CliCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
     }
 

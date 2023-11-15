@@ -8,13 +8,9 @@ using Kiota.Builder.OrderComparers;
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
 {
-    /// <summary>
-    /// Flag to avoid pushing a breaking change, remove it and remove the condition that depends on it with V2
-    /// </summary>
-    private readonly bool IsRequestConfigurationGeneric;
-    public CodeMethodWriter(CSharpConventionService conventionService, bool isRequestConfigurationGeneric = false) : base(conventionService)
+    public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
-        IsRequestConfigurationGeneric = isRequestConfigurationGeneric;
+
     }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
@@ -392,7 +388,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
-        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass returnTypeClass
+        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass
                                 ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
@@ -406,33 +402,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("return collectionResult?.ToList();");
     }
     private const string RequestInfoVarName = "requestInfo";
-    private const string RequestConfigVarName = "requestConfig";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("path parameters property cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        writer.StartBlock($"var {RequestInfoVarName} = new RequestInformation {{");
-        writer.WriteLine($"HttpMethod = Method.{operationName?.ToUpperInvariant()},");
-        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"UrlTemplate = {GetPropertyCall(urlTemplateProperty, "string.Empty")},",
-                            $"PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
-        writer.CloseBlock("};");
+        writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null)
-        {
-            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{"); // TODO for v2, since we're moving to generics, this whole block can be moved to request information avoiding duplication
-            var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
-            writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
-                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null || IsRequestConfigurationGeneric)
-                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.QueryParameters);");
-            writer.WriteLines($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.Options);",
-                            $"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.Headers);");
-            writer.CloseBlock();
-        }
+            writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");

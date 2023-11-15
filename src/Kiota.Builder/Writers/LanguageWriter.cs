@@ -155,6 +155,9 @@ public abstract class LanguageWriter
                 case CodeFileDeclaration cfd:
                     ((ICodeElementWriter<CodeFileDeclaration>)elementWriter).WriteCodeElement(cfd, this);
                     break;
+                case CodeConstant codeConstant:
+                    ((ICodeElementWriter<CodeConstant>)elementWriter).WriteCodeElement(codeConstant, this);
+                    break;
             }
         else if (code is not CodeClass &&
                 code is not BlockDeclaration &&
@@ -174,13 +177,13 @@ public abstract class LanguageWriter
     {
         return language switch
         {
-            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
+            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
-            GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
             GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),

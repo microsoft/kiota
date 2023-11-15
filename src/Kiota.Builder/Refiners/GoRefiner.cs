@@ -44,6 +44,31 @@ public class GoRefiner : CommonLanguageRefiner
                 string.Empty,
                 false,
                 MergeOverLappedStrings);
+            if (_configuration.ExcludeBackwardCompatible) //TODO remove condition for v2
+                RemoveRequestConfigurationClasses(generatedCode,
+                    new CodeUsing
+                    {
+                        Name = "RequestConfiguration",
+                        Declaration = new CodeType
+                        {
+                            Name = AbstractionsNamespaceName,
+                            IsExternal = true
+                        }
+                    },
+                    new CodeType
+                    {
+                        Name = "DefaultQueryParameters",
+                        IsExternal = true,
+                    },
+                    usingForDefaultGenericParameter: new CodeUsing
+                    {
+                        Name = "DefaultQueryParameters",
+                        Declaration = new CodeType
+                        {
+                            Name = AbstractionsNamespaceName,
+                            IsExternal = true
+                        }
+                    });
             RenameCancellationParameter(generatedCode);
             RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();

@@ -15,12 +15,12 @@ public class GoLanguageRefinerTests
     [Fact]
     public async Task AddsInnerClasses()
     {
-        var model = root.AddClass(new CodeClass
+        var requestBuilder = root.AddClass(new CodeClass
         {
             Name = "model",
             Kind = CodeClassKind.RequestBuilder
         }).First();
-        var method = model.AddMethod(new CodeMethod
+        var method = requestBuilder.AddMethod(new CodeMethod
         {
             Name = "method1",
             ReturnType = new CodeType
@@ -28,6 +28,10 @@ public class GoLanguageRefinerTests
                 Name = "string",
                 IsExternal = true
             }
+        }).First();
+        var customTypeDefinition = requestBuilder.AddInnerClass(new CodeClass
+        {
+            Name = "SomeCustomType"
         }).First();
         var parameter = new CodeParameter
         {
@@ -37,15 +41,12 @@ public class GoLanguageRefinerTests
             {
                 Name = "SomeCustomType",
                 ActionOf = true,
-                TypeDefinition = new CodeClass
-                {
-                    Name = "SomeCustomType"
-                }
+                TypeDefinition = customTypeDefinition
             }
         };
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal(2, model.GetChildElements(true).Count());
+        Assert.Equal(2, requestBuilder.GetChildElements(true).Count());
     }
     [Theory(Skip = "Fixing this test is a breaking change - https://github.com/microsoft/kiota/issues/2877")]
     [InlineData("break")]

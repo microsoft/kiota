@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests.Writers.Go;
 public class GoWriterTests
 {
     [Fact]
-    public void Instanciates()
+    public void Instantiates()
     {
         var writer = new GoWriter("./", "graph");
         Assert.NotNull(writer);

@@ -662,7 +662,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>()
+                                    .Distinct();
 
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
             var nestedQueryParameters = innerClasses
@@ -670,31 +671,32 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>()
+                                    .Distinct();
 
             var nestedClasses = new List<CodeClass>();
             nestedClasses.AddRange(innerClasses);
             nestedClasses.AddRange(nestedQueryParameters);
 
-            foreach (var innerClass in nestedClasses)
+            foreach (var nestedClass in nestedClasses)
             {
-                var originalClassName = innerClass.Name;
+                if (nestedClass.Parent is not CodeClass parentClass) continue;
 
                 if (nameFactory != default)
-                    innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
-                else if (prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
-                    innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
+                    parentClass.RenameChildElement(nestedClass.Name, nameFactory(currentClass.Name, nestedClass.Name));
+                else if (prefixClassNameWithParentName && !nestedClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+                    parentClass.RenameChildElement(nestedClass.Name, $"{currentClass.Name}{nestedClass.Name}");
 
-                if (addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
+                if (addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(nestedClass.Name, false) == null)
                 { // the query parameters class is already a child of the request executor method parent class
-                    parentNamespace.AddClass(innerClass);
-                    currentClass.RemoveChildElementByName(originalClassName);
+                    parentNamespace.AddClass(nestedClass);
+                    currentClass.RemoveChildElementByName(nestedClass.Name);
                 }
-                else if (!addToParentNamespace && innerClass.Parent == null && currentClass.FindChildByName<CodeClass>(innerClass.Name, false) == null) //failsafe
-                    currentClass.AddInnerClass(innerClass);
+                else if (!addToParentNamespace && currentClass.FindChildByName<CodeClass>(nestedClass.Name, false) == null) //failsafe
+                    currentClass.AddInnerClass(nestedClass);
 
                 if (!string.IsNullOrEmpty(queryParametersBaseClassName))
-                    innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
+                    nestedClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
         CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
@@ -1425,12 +1427,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
-    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null)
+    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&
             currentClass.Parent is CodeClass parentClass)
         {
-            parentClass.RemoveChildElement(currentClass);
+            if (addDeprecation && keepRequestConfigurationClass)
+                currentClass.Deprecation = new DeprecationInformation("This class is deprecated. Please use the generic RequestConfiguration class generated by the generator.");
+            else if (!keepRequestConfigurationClass)
+                parentClass.RemoveChildElement(currentClass);
             var configurationParameters = parentClass.Methods
                                                     .SelectMany(static x => x.Parameters)
                                                     .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration) && x.Type is CodeType type && type.TypeDefinition == currentClass)
@@ -1439,22 +1444,34 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Any())
             {
                 parentClass.AddUsing(configurationParameterTypeUsing);
+                if (usingForDefaultGenericParameter != null)
+                    parentClass.AddUsing(usingForDefaultGenericParameter);
                 var configurationParameterType = new CodeType
                 {
                     Name = configurationParameterTypeUsing.Name,
                     IsExternal = true,
                 };
+                if (addDeprecation && keepRequestConfigurationClass)
+                {
+                    currentClass.RemovePropertiesOfKind(CodePropertyKind.Headers, CodePropertyKind.Options, CodePropertyKind.QueryParameters);
+                    currentClass.StartBlock.Inherits = GetGenericTypeForRequestConfiguration(configurationParameterType, genericTypeParamValue);
+                }
                 foreach (var configurationParameter in configurationParameters)
                 {
-                    var newType = (CodeType)configurationParameterType.Clone();
+                    var newType = GetGenericTypeForRequestConfiguration(configurationParameterType, genericTypeParamValue);
                     newType.ActionOf = configurationParameter.Type.ActionOf;
-                    newType.GenericTypeParameterValues.Add(genericTypeParamValue);
                     configurationParameter.Type = newType;
                 }
             }
         }
 
-        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam));
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam, keepRequestConfigurationClass, addDeprecation, usingForDefaultGenericParameter));
+    }
+    private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
+    {
+        var newType = (CodeType)configurationParameterType.Clone();
+        newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+        return newType;
     }
     internal static void AddPrimaryErrorMessage(CodeElement currentElement, string name, Func<CodeType> type, bool asProperty = false)
     {

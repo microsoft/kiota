@@ -3,7 +3,7 @@
 namespace Kiota.Builder.Writers.Go;
 public class GoWriter : LanguageWriter
 {
-    public GoWriter(string rootPath, string clientNamespaceName)
+    public GoWriter(string rootPath, string clientNamespaceName, bool excludeBackwardCompatible = false)
     {
         PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new GoConventionService();
@@ -12,7 +12,7 @@ public class GoWriter : LanguageWriter
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, excludeBackwardCompatible));
         AddOrReplaceCodeElementWriter(new CodeFileBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodeFileDeclarationWriter(conventionService));
     }

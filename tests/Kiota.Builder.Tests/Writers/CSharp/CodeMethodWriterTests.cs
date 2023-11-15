@@ -26,7 +26,7 @@ public class CodeMethodWriterTests : IDisposable
     private const string ParamName = "paramName";
     public CodeMethodWriterTests()
     {
-        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, excludeBackwardCompatible: true);
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
@@ -929,17 +929,9 @@ public class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
@@ -956,17 +948,9 @@ public class CodeMethodWriterTests : IDisposable
         method.ReturnType = new CodeType { Name = "double", IsNullable = true, IsExternal = true };//use a nullable value type
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         Assert.Contains("async Task<double?>", result);//verify we only have one nullable marker
@@ -984,17 +968,9 @@ public class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation", result);
-        Assert.Contains("HttpMethod = Method.GET", result);
-        Assert.Contains("UrlTemplate = ", result);
-        Assert.Contains("PathParameters = ", result);
-        Assert.Contains("if (config != null)", result);
-        Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters)", result);
         Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
+        Assert.Contains("requestInfo.Configure(config)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);

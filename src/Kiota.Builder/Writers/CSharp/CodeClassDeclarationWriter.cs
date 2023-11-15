@@ -29,9 +29,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
             writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");
         }
 
-        var derivedTypes = new string?[] { codeElement.Inherits?.Name }
+        var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })
                                         .Union(codeElement.Implements.Select(static x => x.Name))
-                                        .Where(static x => x != null)
+                                        .OfType<string>()
                                         .Select(static x => x.ToFirstCharacterUpperCase())
                                         .ToArray();
         var derivation = derivedTypes.Any() ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
