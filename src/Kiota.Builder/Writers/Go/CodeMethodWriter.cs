@@ -549,7 +549,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .OrderBy(static x => x.Name))
         {
             var defaultValueReference = propWithDefault.DefaultValue;
-            if (defaultValueReference.StartsWith("\"", StringComparison.OrdinalIgnoreCase))
+            if (defaultValueReference.StartsWith('"'))
             {
                 defaultValueReference = $"{propWithDefault.Name.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;

@@ -137,7 +137,7 @@ public static class StringExtensions
     public static string ReplaceDoubleQuoteWithSingleQuote(this string? current)
     {
         if (string.IsNullOrEmpty(current)) return string.Empty;
-        return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
+        return current.StartsWith('"') ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
     }
 
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
@@ -229,7 +229,7 @@ public static class StringExtensions
     private static string NormalizeSymbolsBeforeCleanup(string original)
     {
         var result = original;
-        if (result.StartsWith("-", StringComparison.OrdinalIgnoreCase))
+        if (result.StartsWith('-'))
         {
             result = string.Concat("minus_", result.AsSpan(1));
         }

@@ -101,7 +101,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             if (rawUrlParam != null)
                 rawUrlParam.Type.IsNullable = false;
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
-                .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                .Where(x => x.Type.Name.StartsWith('I'))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }
