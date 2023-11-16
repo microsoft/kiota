@@ -333,7 +333,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 x.Optional = false;
                 x.Type.IsNullable = true;
-                if (x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase))
+                if (x.Type.Name.StartsWith('I'))
                     x.Type.Name = x.Type.Name[1..];
             });
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
@@ -344,7 +344,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
         {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
-                .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
+                .Where(x => x.Type.Name.StartsWith('I'))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters))
@@ -419,7 +419,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     .Select(static x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
                                     .OfType<CodeMethod>()
                                     .ToArray();
-                if (executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                if (executorMethodsToAdd.Length != 0 || generatorMethodsToAdd.Length != 0)
                     currentClass.AddMethod(executorMethodsToAdd
                                             .Union(generatorMethodsToAdd)
                                             .ToArray());

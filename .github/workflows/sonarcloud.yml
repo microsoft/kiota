@@ -52,14 +52,12 @@ jobs:
         with:
           distribution: "adopt"
           java-version: 17
-      - name: Setup .NET 5 # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 5.0.x
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 7.0.x
+        with: # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
+          dotnet-version: |
+            5.x
+            8.x
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis

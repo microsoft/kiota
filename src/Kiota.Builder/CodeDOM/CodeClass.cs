@@ -50,7 +50,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if (indexers == null || Array.Exists(indexers, static x => x == null))
             throw new ArgumentNullException(nameof(indexers));
-        if (!indexers.Any())
+        if (indexers.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(indexers));
 
         foreach (var value in indexers)
@@ -74,7 +74,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if (properties == null || properties.Any(static x => x == null))
             throw new ArgumentNullException(nameof(properties));
-        if (!properties.Any())
+        if (properties.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(properties));
 
         return properties.Select(property =>
@@ -185,15 +185,15 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if (codeClasses == null || codeClasses.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeClasses));
-        if (!codeClasses.Any())
+        if (codeClasses.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
         return AddRange(codeClasses);
     }
     public IEnumerable<CodeInterface> AddInnerInterface(params CodeInterface[] codeInterfaces)
     {
-        if (codeInterfaces == null || codeInterfaces.Any(x => x == null))
+        if (codeInterfaces == null || codeInterfaces.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeInterfaces));
-        if (!codeInterfaces.Any())
+        if (codeInterfaces.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
         return AddRange(codeInterfaces);
     }

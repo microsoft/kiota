@@ -11,11 +11,11 @@ public class FileLogLogger : ILogger, IDisposable
     private readonly LogLevel _logLevel;
     private readonly string _categoryName;
     internal const string LogFileName = ".kiota.log";
-    private readonly Object writeLock = new();
+    private readonly object writeLock = new();
     public FileLogLogger(string logFileDirectoryAbsolutePath, LogLevel logLevel, string categoryName)
     {
         _logLevel = logLevel;
-        _categoryName = categoryName?.Split(new char[] { '.', ' ' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+        _categoryName = categoryName?.Split(categoryNameSeparators, StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
         if (_logLevel == LogLevel.None || string.IsNullOrEmpty(logFileDirectoryAbsolutePath))
             _logStream = new StreamWriter(Stream.Null);
         else
@@ -55,6 +55,7 @@ public class FileLogLogger : ILogger, IDisposable
         return logLevel != LogLevel.None && logLevel >= _logLevel;
     }
     private bool wroteAnything;
+    private static readonly char[] categoryNameSeparators = ['.', ' '];
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (formatter is null) return;

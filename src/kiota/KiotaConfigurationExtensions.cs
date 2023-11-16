@@ -69,12 +69,12 @@ internal static class KiotaConfigurationExtensions
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludePatterns)}").LoadHashSet(configObject.Generation.ExcludePatterns);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.DisabledValidationRules)}").LoadHashSet(configObject.Generation.DisabledValidationRules);
     }
-    private static void LoadCollection(this IConfigurationSection section, ICollection<string> collection)
+    private static void LoadCollection(this IConfigurationSection section, StructuredMimeTypesCollection collection)
     {
         ArgumentNullException.ThrowIfNull(collection);
         if (section is null) return;
         var children = section.GetChildren();
-        if (children.Any() && collection.Any()) collection.Clear();
+        if (children.Any() && collection.Count != 0) collection.Clear();
         foreach (var item in children)
         {
             if (section[item.Key] is string value && !string.IsNullOrEmpty(value))
@@ -86,7 +86,7 @@ internal static class KiotaConfigurationExtensions
         ArgumentNullException.ThrowIfNull(hashSet);
         if (section is null) return;
         var children = section.GetChildren();
-        if (children.Any() && hashSet.Any()) hashSet.Clear();
+        if (children.Any() && hashSet.Count != 0) hashSet.Clear();
         foreach (var item in children)
         {
             if (section[item.Key] is string value && !string.IsNullOrEmpty(value))

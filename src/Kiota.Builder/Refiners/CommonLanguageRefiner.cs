@@ -136,7 +136,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
-        if (!(propertyKindsToReplace?.Any() ?? true)) return;
+        if (propertyKindsToReplace is null || propertyKindsToReplace.Count == 0) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
             propertyKindsToReplace!.Contains(currentProperty.Kind) &&
@@ -160,7 +160,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
-        if (!(propertyKindsToAddAccessors?.Any() ?? true)) return;
+        if (propertyKindsToAddAccessors is null || propertyKindsToAddAccessors.Count == 0) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
             propertyKindsToAddAccessors!.Contains(currentProperty.Kind) &&
@@ -399,7 +399,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
                         .SelectMany(usingSelector)
                         .ToArray();
-        if (usingsToAdd.Any())
+        if (usingsToAdd.Length != 0)
         {
             var parentBlock = current.GetImmediateParentOfType<IBlock>();
             var targetBlock = parentBlock.Parent is CodeClass parentClassParent ? parentClassParent : parentBlock;
@@ -469,7 +469,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
+    private static CodeType ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         ArgumentNullException.ThrowIfNull(codeComposedType);
@@ -763,7 +763,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .ToArray();
 
 
-            if (usingsToAdd.Any())
+            if (usingsToAdd.Length != 0)
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
@@ -1377,7 +1377,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                         mappingClass.StartBlock.InheritsFrom(currentClass))
                                             .Select(x => x.Key)
                                             .ToArray();
-            if (keysToRemove.Any())
+            if (keysToRemove.Length != 0)
                 currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
         }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
@@ -1441,7 +1441,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                     .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration) && x.Type is CodeType type && type.TypeDefinition == currentClass)
                                                     .ToArray();
             var genericTypeParamValue = currentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.QueryParameters)?.Type as CodeType ?? defaultValueForGenericTypeParam;
-            if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Any())
+            if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Length != 0)
             {
                 parentClass.AddUsing(configurationParameterTypeUsing);
                 if (usingForDefaultGenericParameter != null)

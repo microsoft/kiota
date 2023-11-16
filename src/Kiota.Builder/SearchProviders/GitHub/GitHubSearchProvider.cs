@@ -84,7 +84,7 @@ public class GitHubSearchProvider : ISearchProvider
                 var keyResults = GetDictionaryResultFromMultipleSources(await Task.WhenAll(_indexFileInfos.Select(x => GetSearchResultsFromRepo(gitHubClient, owner, repo, x.Key, x.Value, cancellationToken))).ConfigureAwait(false));
                 if (parts.Length > 2 && keyResults.TryGetValue(term, out var result))
                     return new Dictionary<string, SearchResult>(StringComparer.OrdinalIgnoreCase) { { term, result } };
-                else if (keyResults.Any())
+                else if (keyResults.Count != 0)
                     return keyResults;
             }
         }

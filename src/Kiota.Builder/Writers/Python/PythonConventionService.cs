@@ -33,7 +33,7 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         if (pathParametersType == null) return;
         writer.WriteLine($"{TempDictionaryVarName} = get_path_parameters({pathParametersReference})");
-        if (parameters.Any())
+        if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
             ));
@@ -169,7 +169,7 @@ public class PythonConventionService : CommonLanguageConventionService
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
         var additionalRemarksArray = additionalRemarks.ToArray();
-        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarksArray.Any())
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarksArray.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)

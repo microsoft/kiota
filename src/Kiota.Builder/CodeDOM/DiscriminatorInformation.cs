@@ -6,11 +6,11 @@ using System.Linq;
 namespace Kiota.Builder.CodeDOM;
 public class DiscriminatorInformation : CodeElement, ICloneable
 {
-    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, CodeType> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Gets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
+    public IOrderedEnumerable<KeyValuePair<string, CodeType>> DiscriminatorMappings
     {
         get
         {
@@ -29,7 +29,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         get; set;
     } = string.Empty;
 
-    public void AddDiscriminatorMapping(string key, CodeTypeBase type)
+    public void AddDiscriminatorMapping(string key, CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(key);
@@ -69,7 +69,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
             Name = Name,
         };
     }
-    public bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && discriminatorMappings.Any();
+    public bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && !discriminatorMappings.IsEmpty;
     public bool ShouldWriteDiscriminatorForInheritedType => HasBasicDiscriminatorInformation && IsComplexType;
     public bool ShouldWriteDiscriminatorForUnionType => IsUnionType; // if union of scalar types, then we don't always get discriminator information
     public bool ShouldWriteDiscriminatorForIntersectionType => IsIntersectionType; // if intersection of scalar types, then we don't always get discriminator information

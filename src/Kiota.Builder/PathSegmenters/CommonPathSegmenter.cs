@@ -44,7 +44,7 @@ public abstract class CommonPathSegmenter : IPathSegmenter
         namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
                                         .Select(NormalizeNamespaceSegment)
                                         .ToList();
-        var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments
+        var targetPath = Path.Combine(RootPath, namespacePathSegments.Count != 0 ? namespacePathSegments
                                         .Aggregate(static (x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
                                         fileName + FileSuffix);
         if (shouldNormalizePath)

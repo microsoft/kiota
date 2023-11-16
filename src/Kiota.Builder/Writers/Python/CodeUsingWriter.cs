@@ -28,7 +28,7 @@ public class CodeUsingWriter
                                                         .GroupBy(static x => x.Item3)
                                                         .OrderBy(static x => x.Key)
                                                         .ToArray();
-        if (externalImportSymbolsAndPaths.Any())
+        if (externalImportSymbolsAndPaths.Length != 0)
         {
             foreach (var codeUsing in externalImportSymbolsAndPaths)
                 if (!string.IsNullOrWhiteSpace(codeUsing.Key))
@@ -100,7 +100,7 @@ public class CodeUsingWriter
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))
                                                         .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                                         .ToArray();
-        if (internalImportSymbolsAndPaths.Any())
+        if (internalImportSymbolsAndPaths.Length != 0)
         {
             writer.WriteLine("if TYPE_CHECKING:");
             writer.IncreaseIndent();
@@ -136,7 +136,7 @@ public class CodeUsingWriter
 
     private static void WriteCodeUsings(IGrouping<string, (string, string, string)>[] importSymbolsAndPaths, LanguageWriter writer)
     {
-        if (importSymbolsAndPaths.Any())
+        if (importSymbolsAndPaths.Length != 0)
         {
             foreach (var codeUsing in importSymbolsAndPaths)
                 writer.WriteLine($"from {codeUsing.Key} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");

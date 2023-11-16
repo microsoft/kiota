@@ -301,7 +301,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                         .OfType<CodeParameter>()
                                         .Select(static x => x.Name)
                                         .ToArray();
-        if (requestInfoParameters.Any())
+        if (requestInfoParameters.Length != 0)
         {
             writer.IncreaseIndent();
             writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));

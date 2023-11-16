@@ -54,7 +54,7 @@ public class PythonRelativeImportManager : RelativeImportManager
     protected static new string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
         var segments = remainingSegments.Select(static x => x.ToSnakeCase()).ToArray();
-        if (segments.Any())
+        if (segments.Length != 0)
             return segments.Aggregate(static (x, y) => $"{x}.{y}") + '.';
         return string.Empty;
     }

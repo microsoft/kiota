@@ -70,7 +70,7 @@ public class RelativeImportManager
     protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
         var segments = remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).ToArray();
-        if (segments.Any())
+        if (segments.Length != 0)
             return segments.Aggregate(static (x, y) => $"{x}/{y}") + '/';
         return string.Empty;
     }

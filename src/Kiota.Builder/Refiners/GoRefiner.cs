@@ -164,8 +164,8 @@ public class GoRefiner : CommonLanguageRefiner
                 });
             AddSerializationModulesImport(
                 generatedCode,
-                new[] { "github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer" },
-                new[] { "github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer" });
+                ["github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"],
+                ["github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"]);
             cancellationToken.ThrowIfCancellationRequested();
             AddParentClassToErrorClasses(
                     generatedCode,
@@ -470,7 +470,7 @@ public class GoRefiner : CommonLanguageRefiner
                                                                 pType.TypeDefinition != null &&
                                                                 currentNamespace.IsParentOf(pType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()))
                                                     .ToArray();
-            if (propertiesToRemove.Any())
+            if (propertiesToRemove.Length != 0)
             {
                 currentClass.RemoveChildElement(propertiesToRemove);
                 var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();
@@ -614,7 +614,7 @@ public class GoRefiner : CommonLanguageRefiner
             }
 
             currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.RequestAdapter))
-                .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                .Where(static x => x.Type.Name.StartsWith('I'))
                 .ToList()
                 .ForEach(static x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }

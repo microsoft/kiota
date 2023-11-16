@@ -185,7 +185,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                             .Where(static x => x.Type is CodeType xType && xType.TypeDefinition is CodeClass && !xType.IsCollection)
                                             .Select(static x => new Tuple<CodeProperty, CodeType>(x, (CodeType)x.Type))
                                             .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             if (includeElse)
             {
@@ -336,7 +336,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                                                 .Where(static x => x.IsOfKind(CodeParameterKind.Path))
                                                                 .Select(static x => (string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name))
                                                                 .ToArray();
-                    if (pathParameters.Any())
+                    if (pathParameters.Length != 0)
                     {
                         writer.StartBlock($"if isinstance({pathParametersParameter.Name}, dict):");
                         foreach (var parameter in pathParameters)
@@ -517,7 +517,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
                                             .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             var propertiesNames = complexProperties
                                 .Select(static x => x.Name)
@@ -566,7 +566,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OfType<CodeParameter>()
                                         .Select(static x => x.Name)
                                         .ToArray();
-        if (requestInfoParameters.Any())
+        if (requestInfoParameters.Length != 0)
         {
             writer.IncreaseIndent();
             writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));
@@ -684,7 +684,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
                                             .ToArray();
-        if (complexProperties.Any())
+        if (complexProperties.Length != 0)
         {
             if (includeElse)
             {

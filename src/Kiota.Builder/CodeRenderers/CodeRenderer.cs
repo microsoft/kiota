@@ -34,7 +34,7 @@ public class CodeRenderer
         writer.SetTextWriter(sw);
         RenderCode(writer, codeElement);
         if (!cancellationToken.IsCancellationRequested)
-            await sw.FlushAsync().ConfigureAwait(false); // stream writer doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
+            await sw.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
     // We created barrels for code namespaces. Skipping for empty namespaces, ones created for users, and ones with same namespace as class name.
     public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace currentNamespace, CancellationToken cancellationToken)

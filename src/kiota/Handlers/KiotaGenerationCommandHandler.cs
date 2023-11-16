@@ -93,21 +93,21 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
-        if (serializer.Any())
+        if (serializer.Count != 0)
             Configuration.Generation.Serializers = serializer.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (deserializer.Any())
+        if (deserializer.Count != 0)
             Configuration.Generation.Deserializers = deserializer.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (includePatterns.Any())
+        if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (excludePatterns.Any())
+        if (excludePatterns.Count != 0)
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (disabledValidationRules.Any())
+        if (disabledValidationRules.Count != 0)
             Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                     .Select(static x => x.TrimQuotes())
-                                                                    .SelectMany(static x => x.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                                                    .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (structuredMimeTypes.Any())
-            Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(new[] { ' ' }))
+        if (structuredMimeTypes.Count != 0)
+            Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);

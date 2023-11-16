@@ -106,7 +106,7 @@ public class JavaConventionService : CommonLanguageConventionService
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
         var remarks = additionalRemarks.ToArray();
-        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Any())
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
@@ -146,7 +146,7 @@ public class JavaConventionService : CommonLanguageConventionService
             varName = TempDictionaryVarName;
             writer.WriteLine($"final {mapTypeName} {varName} = new {mapTypeName}({pathParametersReference});");
         }
-        if (parameters.Any())
+        if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
                 $"{varName}.put(\"{p.Item2}\", {p.Item3});"
             ).ToArray());

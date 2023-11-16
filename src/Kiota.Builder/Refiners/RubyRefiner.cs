@@ -110,9 +110,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new(StringComparer.OrdinalIgnoreCase) {
                     "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
-                                        new[] { "microsoft_kiota_abstractions.ApiClientBuilder",
-                                                "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
-                                        new[] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
+                                        ["microsoft_kiota_abstractions.ApiClientBuilder",
+                                            "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry"],
+                                        ["microsoft_kiota_abstractions.ParseNodeFactoryRegistry"]);
             AddQueryParameterMapperMethod(
                 generatedCode
             );
@@ -156,7 +156,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void UpdateReferencesToDisambiguatedClasses(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix)
     {
-        if (!classesToUpdate.Any()) return;
+        if (classesToUpdate.Count == 0) return;
         if (currentElement is CodeProperty currentProperty &&
             currentProperty.Type is CodeType propertyType &&
             propertyType.TypeDefinition is CodeClass propertyTypeClass &&

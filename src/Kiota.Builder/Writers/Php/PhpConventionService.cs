@@ -156,7 +156,7 @@ public class PhpConventionService : CommonLanguageConventionService
 
         var enumerableArray = additionalRemarks as string[] ?? additionalRemarks.ToArray();
         if (codeDocumentation.DescriptionAvailable || codeDocumentation.ExternalDocumentationAvailable ||
-            enumerableArray.Any())
+            enumerableArray.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (codeDocumentation.DescriptionAvailable)
@@ -175,7 +175,7 @@ public class PhpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         var joined = string.Empty;
-        if (pathParameters?.ToList() is { } codeParameters && codeParameters.Any())
+        if (pathParameters?.ToList() is { } codeParameters && codeParameters.Count != 0)
         {
             joined = $", {string.Join(", ", codeParameters.Select(static x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
         }
@@ -240,7 +240,7 @@ public class PhpConventionService : CommonLanguageConventionService
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         var codeParameters = pathParameters?.ToArray();
-        var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
+        var codePathParametersSuffix = codeParameters?.Length > 0 ? $", {string.Join(", ", codeParameters.Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
             $"$this->{pathParametersProperty.Name}" :
             urlTemplateVarName;
@@ -251,7 +251,7 @@ public class PhpConventionService : CommonLanguageConventionService
     {
         if (pathParametersType == null) return;
         writer.WriteLine($"${TempDictionaryVarName} = {pathParametersReference};");
-        if (parameters.Any())
+        if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
                 $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
             ));

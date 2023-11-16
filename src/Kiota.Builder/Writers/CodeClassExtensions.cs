@@ -12,7 +12,7 @@ public static class CodeClassExtensions
     {
         if (parentClass == null)
             return Enumerable.Empty<CodeProperty>();
-        if (kinds == null || !kinds.Any())
+        if (kinds == null || kinds.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(kinds));
         return parentClass.Properties
                     .Where(x => x.IsOfKind(kinds))
@@ -26,7 +26,7 @@ public static class CodeClassExtensions
     {
         if (parentClass == null)
             return Enumerable.Empty<CodeMethod>();
-        if (kinds == null || !kinds.Any())
+        if (kinds == null || kinds.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(kinds));
         return parentClass.Methods
                     .Where(x => x.IsOfKind(kinds))

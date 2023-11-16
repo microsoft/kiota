@@ -137,7 +137,7 @@ public static class StringExtensions
     public static string ReplaceDoubleQuoteWithSingleQuote(this string? current)
     {
         if (string.IsNullOrEmpty(current)) return string.Empty;
-        return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
+        return current.StartsWith('"') ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
     }
 
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
@@ -162,7 +162,7 @@ public static class StringExtensions
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-        if (result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+        if (result.Length != 0 && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
             result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
                                                                     .Value
                                                                     .Select(static x => SpelledOutNumbers[x])
@@ -229,7 +229,7 @@ public static class StringExtensions
     private static string NormalizeSymbolsBeforeCleanup(string original)
     {
         var result = original;
-        if (result.StartsWith("-", StringComparison.OrdinalIgnoreCase))
+        if (result.StartsWith('-'))
         {
             result = string.Concat("minus_", result.AsSpan(1));
         }

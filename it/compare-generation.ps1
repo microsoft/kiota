@@ -34,7 +34,7 @@ if ($IsWindows) {
 switch ($dev) {
     $true {
         Write-Warning "Using kiota in dev mode"
-        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net7.0", $executableName
+        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net8.0", $executableName
         break
     }
     default { 

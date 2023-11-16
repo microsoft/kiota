@@ -85,7 +85,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             varName = TempDictionaryVarName;
             writer.WriteLine($"var {varName} = new {pathParametersType.Name}({pathParametersReference});");
         }
-        if (parameters.Any())
+        if (parameters.Length != 0)
         {
             writer.WriteLines(parameters.Select(p =>
             {
@@ -111,7 +111,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     private readonly object _namespaceSegmentsNamesLock = new();
     private HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement)
     {
-        if (!_namespaceSegmentsNames.Any())
+        if (_namespaceSegmentsNames.Count == 0)
         {
             lock (_namespaceSegmentsNamesLock)
             {
@@ -155,7 +155,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                 CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
-            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             if (currentType.ActionOf && includeActionInformation)

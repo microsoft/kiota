@@ -35,13 +35,13 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     {
         if (properties == null || properties.Any(static x => x == null))
             throw new ArgumentNullException(nameof(properties));
-        if (!properties.Any())
+        if (properties.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(properties));
         return AddRange(properties);
     }
     public void RemovePropertiesOfKind(params CodePropertyKind[] kind)
     {
-        if (kind == null || !kind.Any())
+        if (kind == null || kind.Length == 0)
             throw new ArgumentNullException(nameof(kind));
         var propertiesToRemove = Properties.Where(x => x.IsOfKind(kind)).ToList();
         foreach (var property in propertiesToRemove)
@@ -79,7 +79,7 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     {
         if (methods == null || methods.Any(static x => x == null))
             throw new ArgumentNullException(nameof(methods));
-        if (!methods.Any())
+        if (methods.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(methods));
         return AddRange(methods);
     }
