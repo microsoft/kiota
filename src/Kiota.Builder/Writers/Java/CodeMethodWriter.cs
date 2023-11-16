@@ -400,7 +400,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         else
             writer.WriteLine($"return this.{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\");");
-
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {

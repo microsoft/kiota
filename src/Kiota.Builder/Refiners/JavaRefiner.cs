@@ -88,17 +88,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "set",
                 string.Empty
             );
-            AddGetterAndSetterMethods(generatedCode,
-                new() {
-                    CodePropertyKind.BackingStore
-                },
-                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
-                _configuration.UsesBackingStore,
-                false,
-                "get",
-                "set",
-                string.Empty
-            );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", new HashSet<Type> { typeof(CodeEnumOption) });
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             LowerCaseNamespaceNames(generatedCode);
@@ -109,7 +98,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
-            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.BackingStore));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             var defaultConfiguration = new GenerationConfiguration();
@@ -300,9 +288,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.IsNullable = true;
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        {
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+        {
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Map<String, Object>";
