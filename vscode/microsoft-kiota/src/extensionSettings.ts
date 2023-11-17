@@ -32,7 +32,7 @@ function getStringArrayConfiguration(extensionId: string, configurationName: str
 function getLanguageSerializationConfiguration(extensionId: string, languageName: string): LanguageSerializationConfiguration {
     return {
         serializers: getStringArrayConfiguration(extensionId, `generate.serializer.${languageName}`),
-        deserializers: getStringArrayConfiguration(extensionId, `generate.serializer.${languageName}`),
+        deserializers: getStringArrayConfiguration(extensionId, `generate.deserializer.${languageName}`),
     };
 }
 
