@@ -79,7 +79,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.AdditionalData
                 },
                 static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
@@ -87,6 +87,18 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "get",
                 "set",
                 string.Empty
+            );
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.BackingStore
+                },
+                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
+                _configuration.UsesBackingStore,
+                false,
+                "get",
+                "set",
+                string.Empty,
+                AccessModifier.Protected
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", new HashSet<Type> { typeof(CodeEnumOption) });
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
@@ -98,6 +110,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.BackingStore));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             var defaultConfiguration = new GenerationConfiguration();

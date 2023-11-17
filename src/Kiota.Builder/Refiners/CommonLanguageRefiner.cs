@@ -157,7 +157,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_", AccessModifier propertyAccessModifier = AccessModifier.Private)
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (propertyKindsToAddAccessors is null || propertyKindsToAddAccessors.Count == 0) return;
@@ -171,7 +171,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.RemoveChildElement(currentProperty);
             else
             {
-                currentProperty.Access = AccessModifier.Private;
+                currentProperty.Access = propertyAccessModifier;
                 if (!string.IsNullOrEmpty(fieldPrefix))
                     currentProperty.NamePrefix = fieldPrefix;
             }
