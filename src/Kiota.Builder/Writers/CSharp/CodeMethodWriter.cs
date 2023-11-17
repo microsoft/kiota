@@ -86,7 +86,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                requestParams = new RequestParams(requestBodyParam, null, null);
+                requestConfig = origParams.OfKind(CodeParameterKind.RequestConfiguration);
+                requestContentType = origParams.OfKind(CodeParameterKind.RequestBodyContentType);
+                requestParams = new RequestParams(requestBodyParam, requestConfig, requestContentType);
                 WriteCommandBuilderBody(codeElement, parentClass, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Factory:

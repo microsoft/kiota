@@ -85,6 +85,11 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             parametersList.Add(bodyParam);
         }
 
+        if (originalMethod.Parameters.OfKind(CodeParameterKind.RequestBodyContentType) is { } bodyContentTypeParam)
+        {
+            parametersList.Add(bodyContentTypeParam);
+        }
+
         var (includedSubCommands, builderVarName) = InitializeSharedCommand(codeElement, parentClass, writer, name);
         AddCommands(writer, Enumerable.Empty<CodeMethod>(), includedSubCommands, builderVarName);
 
@@ -407,6 +412,10 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             optionBuilder.Append("(\"");
             if (name.Length > 1) optionBuilder.Append('-');
             optionBuilder.Append(CultureInfo.InvariantCulture, $"-{NormalizeToOption(option!.Name)}\"");
+            if (option.Kind == CodeParameterKind.RequestBodyContentType)
+            {
+                option.DefaultValue = option.PossibleValues.Count > 0 ? option.PossibleValues[0] : string.Empty;
+            }
             if (!string.IsNullOrEmpty(option.DefaultValue))
             {
                 var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
@@ -470,6 +479,21 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         if (documentation.DescriptionAvailable)
         {
             builder.Append(documentation.Description);
+        }
+
+        // Add content type values to description.
+        if (element is CodeParameter cp && cp.Kind is CodeParameterKind.RequestBodyContentType && cp.PossibleValues.Count > 1)
+        {
+            if (builder.Length > 0)
+            {
+                builder.Append(@"\n");
+            }
+            builder.Append("Allowed values: ");
+            foreach (var value in cp.PossibleValues)
+            {
+                builder.Append(@"\n  - ");
+                builder.Append(value);
+            }
         }
 
         if (documentation.DocumentationLink is not null)
@@ -654,7 +678,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             }
         }
 
-        var parametersList = string.Join(", ", new[] { requestParams.requestBody, requestParams.requestConfiguration }
+        var parametersList = string.Join(", ", new[] { requestParams.requestBody, requestParams.requestContentType }
                             .Select(static x => x?.Name).Where(static x => x != null));
         var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
 
