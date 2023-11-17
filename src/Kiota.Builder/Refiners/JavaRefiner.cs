@@ -79,7 +79,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.AdditionalData
                 },
                 static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
@@ -97,7 +97,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 false,
                 "get",
                 "set",
-                string.Empty
+                string.Empty,
+                AccessModifier.Protected
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", new HashSet<Type> { typeof(CodeEnumOption) });
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
@@ -300,9 +301,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.IsNullable = true;
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        {
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+        {
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Map<String, Object>";
