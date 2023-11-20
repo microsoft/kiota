@@ -272,7 +272,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters)", result);
-        Assert.Contains("requestInfo.tryAddRequestHeaders(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.configure", result);
         Assert.Contains("setContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
@@ -290,7 +290,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters", result);
-        Assert.Contains("requestInfo.tryAddRequestHeaders(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.configure", result);
         Assert.Contains("setContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
