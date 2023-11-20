@@ -6334,6 +6334,25 @@ paths:
         {
             Paths = new OpenApiPaths
             {
+                ["users/{foo}/careerAdvisor/{id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 ["users/{id}/careerAdvisor"] = new OpenApiPathItem
                 {
                     Operations = {
@@ -6390,12 +6409,17 @@ paths:
         Assert.NotNull(managerRB);
         var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);
         Assert.NotNull(managerUrlTemplate);
-        Assert.Equal("{+baseurl}/users/{id}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
+        Assert.Equal("{+baseurl}/users/{users%2Did}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
         var careerAdvisorRB = codeModel.FindNamespaceByName("ApiSdk.users.item.careerAdvisor").FindChildByName<CodeClass>("CareerAdvisorRequestBuilder", false);
         Assert.NotNull(careerAdvisorRB);
         var careerAdvisorUrlTemplate = careerAdvisorRB.FindChildByName<CodeProperty>("UrlTemplate", false);
         Assert.NotNull(careerAdvisorUrlTemplate);
-        Assert.Equal("{+baseurl}/users/{id}/careerAdvisor", careerAdvisorUrlTemplate.DefaultValue.Trim('"'));
+        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor", careerAdvisorUrlTemplate.DefaultValue.Trim('"'));
+        var careerAdvisorItemRB = codeModel.FindNamespaceByName("ApiSdk.users.item.careerAdvisor.item").FindChildByName<CodeClass>("CareerAdvisorItemRequestBuilder", false);
+        Assert.NotNull(careerAdvisorItemRB);
+        var careerAdvisorItemUrlTemplate = careerAdvisorItemRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(careerAdvisorItemUrlTemplate);
+        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor/{id}", careerAdvisorItemUrlTemplate.DefaultValue.Trim('"'));
     }
     [Fact]
     public void AddReservedPathParameterSymbol()

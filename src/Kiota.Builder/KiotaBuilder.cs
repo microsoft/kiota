@@ -549,10 +549,15 @@ public partial class KiotaBuilder
         if (indexNodes.Length > 1)
         {
             var indexNode = indexNodes[0];
+            node.Children.Remove(indexNode.Key);
+            var newSegmentParameterName = $"{{{node.Segment.CleanupSymbolName()}-id}}";
+            indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
+            node.Children.Add(newSegmentParameterName, indexNode.Value);
+            CopyNodeIntoOtherNode(indexNode.Value, indexNode.Value, indexNode.Key, newSegmentParameterName);
             foreach (var child in indexNodes.Except(new[] { indexNode }))
             {
                 node.Children.Remove(child.Key);
-                CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, indexNode.Key);
+                CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, newSegmentParameterName);
             }
         }
 
@@ -567,8 +572,8 @@ public partial class KiotaBuilder
             if (!destination.Children.TryAdd(child.Key, child.Value))
                 CopyNodeIntoOtherNode(child.Value, destination.Children[child.Key], pathParameterNameToReplace, pathParameterNameReplacement);
         }
-        pathParameterNameToReplace = pathParameterNameToReplace.TrimStart('{').TrimEnd('}');
-        pathParameterNameReplacement = pathParameterNameReplacement.TrimStart('{').TrimEnd('}');
+        pathParameterNameToReplace = pathParameterNameToReplace.Trim('{', '}');
+        pathParameterNameReplacement = pathParameterNameReplacement.Trim('{', '}');
         foreach (var pathItem in source.PathItems)
         {
             foreach (var pathParameter in pathItem
