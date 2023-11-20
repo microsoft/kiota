@@ -415,6 +415,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             if (option.Kind == CodeParameterKind.RequestBodyContentType)
             {
                 option.DefaultValue = option.PossibleValues.Count > 0 ? option.PossibleValues[0] : string.Empty;
+                option.Optional = true;
             }
             if (!string.IsNullOrEmpty(option.DefaultValue))
             {

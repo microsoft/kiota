@@ -1095,6 +1095,92 @@ public class CliCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesExecutableCommandForPostRequestWithModelBodyAndContentType()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Post;
+        var stringType = new CodeType
+        {
+            Name = "string",
+        };
+        var contentClass = root.AddClass(new CodeClass
+        {
+            Name = "Content",
+            Kind = CodeClassKind.Model
+        }).First();
+        var bodyType = new CodeType
+        {
+            Name = "content",
+            TypeDefinition = contentClass,
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreatePostRequestInformation",
+            RequestBodyContentType = "application/text",
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        var bodyParam = new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = bodyType,
+        };
+        method.OriginalMethod.AddParameter(bodyParam);
+        generatorMethod.AddParameter(bodyParam);
+        var contentTypeParam = new CodeParameter
+        {
+            Name = "contentType",
+            Kind = CodeParameterKind.RequestBodyContentType,
+            Type = stringType,
+            Documentation = new() { Description = "The request content type." },
+            PossibleValues = new List<string> { "application/json", "text/plain" }
+        };
+        method.OriginalMethod.AddParameter(contentTypeParam);
+        generatorMethod.AddParameter(contentTypeParam);
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathQueryAndHeaderParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
+        Assert.Contains("bodyOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(bodyOption);", result);
+        Assert.Contains("var contentTypeOption = new Option<string>(\"--content-type\", getDefaultValue: ()=> \"application/json\", description: \"The request content type.\\nAllowed values: \\n  - application/json\\n  - text/plain\")", result);
+        Assert.Contains("contentTypeOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(contentTypeOption);", result);
+        Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
+        Assert.Contains("var contentType = invocationContext.ParseResult.GetValueForOption(contentTypeOption);", result);
+        Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("if (model is null)", result);
+        Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
+        Assert.Contains("var requestInfo = CreatePostRequestInformation(model, contentType", result);
+        Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
+        Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
+        Assert.Contains("requestInfo.SetContentFromParsable(reqAdapter, \"application/text\", model);", result);
+        Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
     public void WritesExecutableCommandForPostRequestWithCollectionModel()
     {
 
