@@ -590,7 +590,7 @@ public partial class KiotaBuilder
             {
                 pathParameter.Name = pathParameterNameReplacement;
             }
-            if (!destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
+            if (source != destination && !destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
             {
                 var destinationPathItem = destination.PathItems[pathItem.Key];
                 foreach (var operation in pathItem.Value.Operations)
