@@ -83,7 +83,7 @@ public partial class KiotaBuilder
         return openApiTree;
     }
     public OpenApiDocument? OpenApiDocument => openApiDocument;
-    private static string NormalizeApiManifestPath(Request request, string? baseUrl)
+    private static string NormalizeApiManifestPath(RequestInfo request, string? baseUrl)
     {
         var rawValue = $"{request.UriTemplate}{(request.Method is null ? string.Empty : "#")}{request.Method?.ToUpperInvariant()}";
         if (!string.IsNullOrEmpty(baseUrl) && rawValue.StartsWith(baseUrl, StringComparison.OrdinalIgnoreCase))
