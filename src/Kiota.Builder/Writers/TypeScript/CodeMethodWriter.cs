@@ -358,12 +358,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 _ => throw new InvalidOperationException("unsupported parent type"),
             };
             var queryParametersConstant = parentBlock.FindChildByName<CodeConstant>($"{currentClass.Name.ToFirstCharacterLowerCase()}{codeElement.HttpMethod.Value.ToString().ToFirstCharacterUpperCase()}QueryParametersMapper");
-            var queryParametersConstantName = queryParametersConstant is null ? ", undefined" : $", {queryParametersConstant.Name}";
+            var queryParametersConstantName = queryParametersConstant is null ? string.Empty : $", {queryParametersConstant.Name}";
             writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name}{queryParametersConstantName});");
         }
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.tryAddRequestHeaders(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
         if (requestParams.requestBody != null)
         {
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
