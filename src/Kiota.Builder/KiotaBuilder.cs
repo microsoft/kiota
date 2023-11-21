@@ -1070,9 +1070,12 @@ public partial class KiotaBuilder
         };
     }
     private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
+    private const char OpenAPIUrlTreeNodePathSeparator = '\\';
     private CodeParameter GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
-        var parameterName = currentNode.Path[parentNode.Path.Length..].Trim('\\', ForwardSlash, '{', '}');
+        var parameterName = string.Join(OpenAPIUrlTreeNodePathSeparator, currentNode.Path.Split(OpenAPIUrlTreeNodePathSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                        .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
+                                        .Trim(OpenAPIUrlTreeNodePathSeparator, ForwardSlash, '{', '}');
         var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
                         .Select(static x => new { Parameter = x, IsPathParameter = true })
                         .Union(currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
