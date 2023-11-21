@@ -500,9 +500,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name}::{FactoryMethodName});");
             }
         }
-        var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
+        string factoryParameter;
+        if (codeElement.ReturnType is CodeType returnCodeType)
+        {
+            if (returnCodeType.TypeDefinition is CodeClass)
+                factoryParameter = $"{returnType}::{FactoryMethodName}";
+            else if (returnCodeType.TypeDefinition is CodeEnum)
+                factoryParameter = $"{returnType}::forValue";
+            else
+                factoryParameter = $"{returnType}.class";
+        }
+        else
+            factoryParameter = $"{returnType}.class";
+
         var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
-        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
+        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {errorMappingVarName}, {factoryParameter});");
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
@@ -733,7 +745,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 else
                     return $"getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
             if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({propertyType.ToFirstCharacterUpperCase()}.class)";
+            {
+                var returnType = propertyType.ToFirstCharacterUpperCase();
+                return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({returnType}::forValue)";
+            }
+
         }
         return propertyType switch
         {
