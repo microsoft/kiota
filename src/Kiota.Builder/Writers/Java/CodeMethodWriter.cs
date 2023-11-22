@@ -500,9 +500,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name}::{FactoryMethodName});");
             }
         }
-        var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
+        var factoryParameter = GetSendRequestFactoryParam(returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
-        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
+        writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {errorMappingVarName}, {factoryParameter});");
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
@@ -519,6 +519,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else if (isCollection) return "sendCollection";
         return "send";
     }
+    private string GetSendRequestFactoryParam(string returnType, bool isEnum)
+    {
+        if (conventions.PrimitiveTypes.Contains(returnType))
+            return $"{returnType}.class";
+        else if (isEnum)
+            return $"{returnType}::forValue";
+        else
+            return $"{returnType}::{FactoryMethodName}";
+    }
+
     private const string RequestInfoVarName = "requestInfo";
     private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
@@ -729,11 +739,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 if (currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
                 else if (currentType.TypeDefinition is CodeEnum enumType)
-                    return $"getCollectionOfEnumValues({enumType.Name}.class)";
+                    return $"getCollectionOfEnumValues({enumType.Name}::forValue)";
                 else
                     return $"getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
             if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({propertyType.ToFirstCharacterUpperCase()}.class)";
+            {
+                var returnType = propertyType.ToFirstCharacterUpperCase();
+                return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({returnType}::forValue)";
+            }
+
         }
         return propertyType switch
         {
