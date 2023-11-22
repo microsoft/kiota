@@ -1620,7 +1620,8 @@ public partial class KiotaBuilder
                     Documentation = new()
                     {
                         Description = "The request body content type."
-                    }
+                    },
+                    PossibleValues = contentTypes.ToList()
                 });
         }
         method.AddParameter(new CodeParameter

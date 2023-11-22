@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 public enum CodeParameterKind
@@ -79,6 +81,8 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
         set;
     }
 
+    public IList<string> PossibleValues { get; init; } = new List<string>();
+
     public object Clone()
     {
         return new CodeParameter
@@ -92,6 +96,7 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Type = (CodeTypeBase)Type.Clone(),
             Deprecation = Deprecation,
+            PossibleValues = PossibleValues.ToList()
         };
     }
 }
