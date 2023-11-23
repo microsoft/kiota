@@ -306,7 +306,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             // in the CodeNamespace if-block so we also need to update the using references
             if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true)
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
-            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType))
+            if (currentDeclaration.Inherits is not null && provider.ReservedNames.Contains(currentDeclaration.Inherits.Name))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
         }
         else if (current is CodeNamespace currentNamespace &&
@@ -316,10 +316,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             ReplaceReservedNamespaceSegments(currentNamespace, provider, replacement);
         else if (current is CodeMethod currentMethod &&
             isNotInExceptions &&
-            shouldReplace)
+            shouldReplace &&
+            provider.ReservedNames.Contains(currentMethod.Name) &&
+            current.Parent is IBlock parentBlock)
         {
-            if (provider.ReservedNames.Contains(currentMethod.Name))
-                currentMethod.Name = replacement.Invoke(currentMethod.Name);
+            parentBlock.RenameChildElement(current.Name, replacement.Invoke(currentMethod.Name));
         }
         else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
