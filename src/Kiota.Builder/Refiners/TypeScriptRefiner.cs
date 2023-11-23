@@ -121,10 +121,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: false
             );
-            static string factoryNameCallbackFromTypeName(string? x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
             ReplaceLocalMethodsByGlobalFunctions(
                 generatedCode,
-                static x => factoryNameCallbackFromTypeName(x.Parent?.Name),
+                static x => GetFactoryFunctionNameFromTypeName(x.Parent?.Name),
                 static x =>
                 {
                     var result = new List<CodeUsing>() {
@@ -143,7 +142,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 CodeMethodKind.Factory
             );
-            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.TypeDefinition?.Name);
+            static string factoryNameCallbackFromType(CodeType x) => GetFactoryFunctionNameFromTypeName(x.TypeDefinition?.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
                 generatedCode,
@@ -220,8 +219,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        var queryParameterInterfaces = codeClass.Methods
-            .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
+        var executorMethods = codeClass.Methods
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor))
+            .ToArray();
+
+        var queryParameterInterfaces = executorMethods
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
             .Select(static x => x.Type)
@@ -232,7 +234,53 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeInterface>()
             .ToArray();
 
-        // what about inline request and response body types?
+        var inlineRequestBodyInterfaces = executorMethods
+            .SelectMany(static x => x.Parameters)
+            .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
+            .Select(static x => x.Type.Name)
+            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
+            .OfType<CodeInterface>()
+            .ToArray();
+
+        var inlineRequestBodySerializerFunctions = inlineRequestBodyInterfaces
+            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>()
+            .ToArray();
+
+        var inlineRequestBodyDeserializerFunctions = inlineRequestBodyInterfaces
+            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>()
+            .ToArray();
+
+        var inlineRequestBodyFactoryFunctions = inlineRequestBodyInterfaces
+            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>();
+
+        var inlineResponseBodyInterfaces = executorMethods
+            .Select(static x => x.ReturnType.Name)
+            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
+            .OfType<CodeInterface>()
+            .ToArray();
+
+        var inlineResponseBodyDeserializerFunctions = inlineResponseBodyInterfaces
+            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>()
+            .ToArray();
+
+        var inlineResponseBodySerializerFunctions = inlineResponseBodyInterfaces
+            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>()
+            .ToArray();
+
+        var inlineResponseBodyFactoryFunctions = inlineResponseBodyInterfaces
+            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
+            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
+            .OfType<CodeFunction>();
 
         var queryParametersMapperConstants = queryParameterInterfaces
             .Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}Mapper")
@@ -243,6 +291,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
+                            .Union(inlineRequestBodyInterfaces)
+                            .Union(inlineRequestBodySerializerFunctions)
+                            .Union(inlineRequestBodyDeserializerFunctions)
+                            .Union(inlineRequestBodyFactoryFunctions)
+                            .Union(inlineResponseBodyInterfaces)
+                            .Union(inlineResponseBodySerializerFunctions)
+                            .Union(inlineResponseBodyDeserializerFunctions)
+                            .Union(inlineResponseBodyFactoryFunctions)
+                            .Distinct()
                             .ToArray();
 
         codeNamespace.TryAddCodeFile(codeClass.Name, elements);
@@ -1009,7 +1066,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SetUsingsOfPropertyInSerializationFunctions($"{ModelSerializerPrefix}{propertyClass.Name.ToFirstCharacterUpperCase()}", serializer, propertyClass, interfaceNamingCallback);
 
                 // In case of a deserializer function, for creating each object property the Parsable factory will be called. That is, `create{ModelName}FromDiscriminatorValue`.
-                SetUsingsOfPropertyInSerializationFunctions($"create{propertyClass.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue", deserializer, propertyClass, interfaceNamingCallback);
+                SetUsingsOfPropertyInSerializationFunctions(GetFactoryFunctionNameFromTypeName(propertyClass.Name), deserializer, propertyClass, interfaceNamingCallback);
             }
 
             // Add the property of the model class to the model interface.
@@ -1017,6 +1074,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 modelInterface.AddProperty(newProperty);
         }
     }
+    private const string FactoryPrefix = "create";
+    private const string FactorySuffix = "FromDiscriminatorValue";
+    private static string GetFactoryFunctionNameFromTypeName(string? typeName) => string.IsNullOrEmpty(typeName) ? string.Empty : $"{FactoryPrefix}{typeName.ToFirstCharacterUpperCase()}{FactorySuffix}";
 
     private static (CodeInterface?, CodeUsing?) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
