@@ -3504,9 +3504,9 @@ paths:
     public async Task AnyOfArrayWorks()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
 info:
-  title: Test API
+  title: AnyOf Array
   version: 1.0.0
 paths:
   /foo:
@@ -3532,12 +3532,12 @@ components:
         name:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, OutputPath = @"C:\Users\FrederikBaunHansen\source\repos\kiota\output", Language = GenerationLanguage.CSharp }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var response = codeModel.FindChildByName<CodeMethod>("GetAsFooGetResponse");
-        var unionType = response.ReturnType as CodeUnionType;
+        var unionType = response.ReturnType as CodeIntersectionType;
 
         Assert.Equal(2, unionType.Types.Count());
         Assert.Single(unionType.Types.Where(x => x.Name == "FooResponseObject" && x.IsCollection));
