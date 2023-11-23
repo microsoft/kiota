@@ -45,7 +45,7 @@
     <PackageReference Include="Microsoft.kiota.Serialization.Multipart" Version="1.1.1" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.11" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="0.5.3-preview" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.10" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.11" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="NeoSmart.AsyncLock" Version="3.2.1" />
     <PackageReference Include="YamlDotNet" Version="13.7.1" />
