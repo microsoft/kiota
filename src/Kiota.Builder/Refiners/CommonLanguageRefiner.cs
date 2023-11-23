@@ -160,6 +160,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_", AccessModifier propertyAccessModifier = AccessModifier.Private)
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
+        var isSetterPrefixEmpty = string.IsNullOrEmpty(setterPrefix);
+        var isGetterPrefixEmpty = string.IsNullOrEmpty(getterPrefix);
         if (propertyKindsToAddAccessors is null || propertyKindsToAddAccessors.Count == 0) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -179,7 +181,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
-                Name = $"get-{accessorName}",
+                Name = $"{(isGetterPrefixEmpty ? "get-" : getterPrefix)}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
@@ -191,10 +193,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+            if (isGetterPrefixEmpty)
+                currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             currentProperty.Setter = parentClass.AddMethod(new CodeMethod
             {
-                Name = $"set-{accessorName}",
+                Name = $"{(isSetterPrefixEmpty ? "set-" : setterPrefix)}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Setter,
@@ -211,7 +214,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+            if (isSetterPrefixEmpty)
+                currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
 
             currentProperty.Setter.AddParameter(new CodeParameter
             {
