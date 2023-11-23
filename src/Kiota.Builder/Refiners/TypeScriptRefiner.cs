@@ -259,7 +259,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             // correct the using values
             // eliminate the using referring the elements in the same file
 
-            HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var elementSet = codeFile.GetChildElements(true).Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var element in codeFile.GetChildElements(true))
             {
                 var startBlockUsings = element switch
@@ -271,27 +271,28 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     _ => Enumerable.Empty<CodeUsing>()
                 };
 
-                var foundUsings = startBlockUsings
-                    .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
-                    .Where(y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
-                    .Where(y => elementSet.Contains(y.Declaration!.TypeDefinition!.Name));
+                var foundUsingsNames = startBlockUsings
+                    .Select(static x => x.Declaration?.TypeDefinition)
+                    .OfType<CodeElement>()
+                    .Where(x => x.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
+                    .Where(x => elementSet.Contains(x.Name))
+                    .Select(static x => x.Name);
 
-                foreach (var x in foundUsings)
+                foreach (var x in foundUsingsNames)
                 {
-                    var declarationName = x.Declaration!.Name;
                     switch (element)
                     {
                         case CodeFunction ci:
-                            ci.RemoveUsingsByDeclarationName(declarationName);
+                            ci.RemoveUsingsByDeclarationName(x);
                             break;
                         case CodeInterface ci:
-                            ci.RemoveUsingsByDeclarationName(declarationName);
+                            ci.RemoveUsingsByDeclarationName(x);
                             break;
                         case CodeEnum ci:
-                            ci.RemoveUsingsByDeclarationName(declarationName);
+                            ci.RemoveUsingsByDeclarationName(x);
                             break;
                         case CodeClass ci:
-                            ci.RemoveUsingsByDeclarationName(declarationName);
+                            ci.RemoveUsingsByDeclarationName(x);
                             break;
                     }
                 }
