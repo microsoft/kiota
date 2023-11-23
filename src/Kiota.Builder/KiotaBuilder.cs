@@ -1719,6 +1719,7 @@ public partial class KiotaBuilder
                 return new CodeType
                 {
                     TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, targetSchema, className, shortestNamespace),
+                    CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
                 };// so we don't create unnecessary union types when anyOf was used only for nullable.
             }
         }
@@ -1757,6 +1758,7 @@ public partial class KiotaBuilder
             var declarationType = new CodeType
             {
                 TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace),
+                CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };
             if (!unionType.ContainsType(declarationType))
                 unionType.AddType(declarationType);

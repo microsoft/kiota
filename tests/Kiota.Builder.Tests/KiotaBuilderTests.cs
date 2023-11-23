@@ -3501,6 +3501,48 @@ paths:
         Assert.Contains("double", typeNames);
     }
     [Fact]
+    public async Task AnyOfArrayWorks()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Test API
+  version: 1.0.0
+paths:
+  /foo:
+    get:
+      responses:
+        200:
+          description: ""OK""
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: string
+                - type: array
+                  items:
+                    $ref: ""#/components/schemas/FooResponseObject""
+components:
+  schemas:
+    FooResponseObject:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, OutputPath = @"C:\Users\FrederikBaunHansen\source\repos\kiota\output", Language = GenerationLanguage.CSharp }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var response = codeModel.FindChildByName<CodeMethod>("GetAsFooGetResponse");
+        var unionType = response.ReturnType as CodeUnionType;
+
+        Assert.Equal(2, unionType.Types.Count());
+        Assert.Single(unionType.Types.Where(x => x.Name == "FooResponseObject" && x.IsCollection));
+    }
+    [Fact]
     public void UnionOfInlineSchemasWorks()
     {
         var simpleObjet = new OpenApiSchema
