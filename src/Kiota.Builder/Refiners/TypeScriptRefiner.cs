@@ -220,7 +220,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        var elementNames = codeClass.Methods
+        var queryParameterInterfaces = codeClass.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
@@ -228,23 +228,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeType>()
             .Select(static x => x.GenericTypeParameterValues.FirstOrDefault()?.Name)
             .OfType<string>()
-            .ToArray();
-
-        if (elementNames.Length == 0)
-            return;
-
-        var queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
+            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
             .OfType<CodeInterface>()
             .ToArray();
 
-        var queryParametersMapperConstants = elementNames
-            .Select(static x => $"{x.ToFirstCharacterLowerCase()}Mapper")
+        // what about inline request and response body types?
+
+        var queryParametersMapperConstants = queryParameterInterfaces
+            .Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}Mapper")
             .Select(x => codeNamespace.FindChildByName<CodeConstant>(x, false))
             .OfType<CodeConstant>()
             .ToArray();
 
         var elements = new CodeElement[] { codeClass }
-                            .Union(queryParamClasses)
+                            .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
                             .ToArray();
 
