@@ -110,11 +110,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             );
             AddSerializationModulesImport(generatedCode,
-                [ $"{AbstractionsPackageName}.registerDefaultSerializer",
-                        $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
-                        $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"],
-                [ $"{AbstractionsPackageName}.registerDefaultDeserializer",
-                        $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" ]);
+                [$"{AbstractionsPackageName}.registerDefaultSerializer",
+                    $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
+                    $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"],
+                [$"{AbstractionsPackageName}.registerDefaultDeserializer",
+                    $"{AbstractionsPackageName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
