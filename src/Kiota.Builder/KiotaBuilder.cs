@@ -1081,9 +1081,10 @@ public partial class KiotaBuilder
         var parameterName = string.Join(OpenAPIUrlTreeNodePathSeparator, currentNode.Path.Split(OpenAPIUrlTreeNodePathSeparator, StringSplitOptions.RemoveEmptyEntries)
                                         .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
                                         .Trim(OpenAPIUrlTreeNodePathSeparator, ForwardSlash, '{', '}');
-        var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
+        var pathItems = GetPathItems(currentNode);
+        var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
                         .Select(static x => new { Parameter = x, IsPathParameter = true })
-                        .Union(currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
+                        .Union(pathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
                         .OrderBy(static x => x.IsPathParameter)
                         .Select(static x => x.Parameter)
                         .FirstOrDefault(x => x.Name.Equals(parameterName, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
@@ -1104,6 +1105,15 @@ public partial class KiotaBuilder
                 Description = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
             },
         };
+        return result;
+    }
+    private Dictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode)
+    {
+        var result = currentNode.PathItems.ToDictionary();
+        foreach(var child in currentNode.Children)
+        {
+            result = result.Union(GetPathItems(child.Value)).ToDictionary();
+        }
         return result;
     }
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
