@@ -78,10 +78,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
             AddGetterAndSetterMethods(generatedCode,
-                new() {
+                [
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
-                },
+                ],
                 static (_, s) => s.ToCamelCase(UnderscoreArray),
                 false,
                 false,
@@ -110,11 +110,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             );
             AddSerializationModulesImport(generatedCode,
-                new[] { $"{AbstractionsPackageName}.registerDefaultSerializer",
+                [ $"{AbstractionsPackageName}.registerDefaultSerializer",
                         $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
-                        $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
-                new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
-                        $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
+                        $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"],
+                [ $"{AbstractionsPackageName}.registerDefaultDeserializer",
+                        $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" ]);
             cancellationToken.ThrowIfCancellationRequested();
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -190,7 +190,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        List<CodeElement> functions = new List<CodeElement>();
+        var functions = new List<CodeElement>();
 
         foreach (var element in codeNamespace.GetChildElements(true))
         {
