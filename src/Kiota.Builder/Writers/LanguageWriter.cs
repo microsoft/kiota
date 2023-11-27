@@ -172,7 +172,7 @@ public abstract class LanguageWriter
         if (!Writers.TryAdd(typeof(T), writer))
             Writers[typeof(T)] = writer;
     }
-    private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
+    private readonly Dictionary<Type, object> Writers = []; // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
     public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false, bool excludeBackwardCompatible = false)
     {
         return language switch
