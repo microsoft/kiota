@@ -4,10 +4,10 @@ Kiota generates client code for an API and stores parameters in a kiota.lock fil
 
 ## Status
 
-| Date                | Version | Author           | Status |
-| ------------------- | ------- | ---------------- | ------ |
-| November 22nd, 2023 | v0.2    | Sébastien Levert | Draft  |
-| September 24th, 2023  | v0.1    | Darrel Miller | Draft  |
+| Date | Version | Author | Status |
+| -- | -- | -- | -- |
+| November 22nd, 2023 | v0.2 | Sébastien Levert | Draft |
+| September 24th, 2023 | v0.1 | Darrel Miller | Draft |
 
 ## Current Challenges
 
@@ -44,9 +44,11 @@ Here is an example of what the kiota.config file could look like.
           "clientClassName": "GraphClient",
           "clientNamespaceName": "Contoso.GraphApp",
           "features": {
-            "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
-            "authenticationParameters": {
-              "clientId": "guid"
+            "authentication": {
+              "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
+              "authenticationParameters": {
+                "clientId": "guid"
+              }
             },
             "usesBackingStore": true,
             "includeAdditionalData": true
@@ -72,9 +74,11 @@ Here is an example of what the kiota.config file could look like.
           "language": "csharp",
           "outputPath": "./generated/business-central-app",
           "features": {
-            "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
-            "authenticationParameters": {
-              "clientId": "guid"
+            "authentication": {
+              "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
+              "authenticationParameters": {
+                "clientId": "guid"
+              }
             }
           }
         }
@@ -94,10 +98,78 @@ The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.
 | ------------------- | ------- | ---------------- |
 | init | kiota init --name <appName> | Creates a kiota.config file |
 | add api | kiota add api --name <apiname> --openapi <urlToApiDescription> | Adds an entry for an API with passed parameters and default values |
-| add output | kiota add output --name MyApi --lang python --outputPath ./pythonClient | Adds information about a new output artifact that should be generated |
+| add output | kiota add output --api-name <apiname> --lang python --outputPath ./pythonClient | Adds information about a new output artifact that should be generated |
 | generate | kiota generate | Outputs kiota.apimanifest and source for each of the output objects |
 
 In the past we have had both a generate and an update comment. This is because if it was the first time running, generate would set defaults for all the properties that were not set on the command line. However, now that we have add output, it can be used to set the defaults and generate can just read from the kiota.config file.
+
+## Commands
+
+### kiota init
+
+`kiota init` creates a new kiota.config file with the passed parameters. If the file already exists, it should error out and report it to the user. The initialization process has a single required parameter, the name of the application.
+
+> [!NOTE] 
+> If a project only needs a single API, using `kiota init` is not required as generating code using the `kiota generate` command should generate a `kiota.config` file with values coming from the `kiota generate` command. See [kiota generate](#kiota-generate) for more information.
+
+| Parameters | Required | Example | Description |
+| -- | -- | -- | -- |
+| `--app-name \| -n` | Yes | My application | Name of the application |
+
+#### Using `kiota init`
+
+```bash
+kiota init --app-name "My application"
+```
+
+```json
+// Creates the following kiota.config file
+{
+  "name": "My application",
+  "version": "1.0"
+}
+```
+
+### kiota add api
+
+`kiota add api` allows a developer to add a new API to the kiota.config file. The command will add a new entry to the apis section of the kiota.config file. The command has two required parameters, the name of the API (key of the api map) and the location of the OpenAPI description. The command also has two optional parameters, the include and exclude patterns. If provided, these will be used to filter the paths that are included in the generation process. If not provided, all paths will be assumed.
+
+When executing, a new API entry will be added and will use the `--api-name` parameter as the key for the map. When loading the OpenAPI description, it will generate a hash of the description to enable change detection of the description and save it as part of the `descriptionHash` property. It will also store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
+
+| Parameters | Required | Example | Description |
+| -- | -- | -- | -- |
+| `--api-name \| -n` | Yes | graph | Name of the API |
+| `--open-api \| -d` | Yes | https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
+| `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
+| `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. |
+
+#### Using `kiota add api`
+
+```bash
+kiota add api --api-name "graph" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --include-path "/me/chats#GET" --include-path "/me#GET"
+```
+
+```json
+// Adds the following to the kiota.config file
+"graph": {
+  "descriptionHash": "9EDF8506CB74FE44...",
+  "descriptionLocation": "https://.../openapi.yaml",
+  "includePatterns": ["/me/chats#GET", "/me#GET"],
+  "excludePatterns": []
+}
+```
+
+### kiota generate
+
+In scenarios where a developer only needs a single API or doesn't want to go through the ceremony of executing `kiota init`, it's possible to use `kiota generate` as it will create a `kiota.config` file with the values coming from the command parameters.
+
+#### Using `kiota generate`
+
+```bash
+```
+
+```json
+```
 
 ## Scenarios using the command line tool
 
