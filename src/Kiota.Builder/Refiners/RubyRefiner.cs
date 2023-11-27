@@ -196,7 +196,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
-    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline, 100)]
     private static partial Regex CapitalizedFirstLetterAfterDot();
     private static void FlattenModelsNamespaces(CodeElement currentElement, CodeNamespace modelsNS)
     {

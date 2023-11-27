@@ -7,7 +7,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Java;
-public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
+public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
 {
     public CodeMethodWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
@@ -145,10 +145,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else
             writer.WriteLine($"return new {parentClass.Name}();");
     }
-    private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"_(?<idx>\d+)", RegexOptions.Singleline, 100)]
+    private static partial Regex factoryMethodIndexParser();
     private static void WriteFactoryOverloadMethod(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        if (int.TryParse(factoryMethodIndexParser.Match(codeElement.Name).Groups["idx"].Value, out var currentDiscriminatorPageIndex) &&
+        if (int.TryParse(factoryMethodIndexParser().Match(codeElement.Name).Groups["idx"].Value, out var currentDiscriminatorPageIndex) &&
             codeElement.Parameters.FirstOrDefault() is CodeParameter parameter)
         {
             var takeValue = Math.Min(MaxDiscriminatorsPerMethod, parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() - currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod);

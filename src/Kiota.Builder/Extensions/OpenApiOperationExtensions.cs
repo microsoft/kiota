@@ -6,13 +6,14 @@ using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
-public static class OpenApiOperationExtensions
+public static partial class OpenApiOperationExtensions
 {
     internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema
+    [GeneratedRegex(@"[^/]+\+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 100)]
+    private static partial Regex vendorSpecificCleanup();
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>
-    private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     internal static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -48,7 +49,7 @@ public static class OpenApiOperationExtensions
         return source
                     .Where(static c => !string.IsNullOrEmpty(c.Key))
                     .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries)[0], c.Value))
-                    .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
+                    .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup().Replace(c.Key, string.Empty)))
                     .Select(static co => co.Value.Schema)
                     .Where(static s => s is not null);
     }

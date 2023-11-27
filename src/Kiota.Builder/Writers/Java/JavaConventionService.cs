@@ -9,7 +9,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java;
-public class JavaConventionService : CommonLanguageConventionService
+public partial class JavaConventionService : CommonLanguageConventionService
 {
     internal static string AutoGenerationHeader => "@jakarta.annotation.Generated(\"com.microsoft.kiota\")";
     private const string InternalStreamTypeName = "InputStream";
@@ -122,11 +122,12 @@ public class JavaConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
     }
-    private static readonly Regex nonAsciiReplaceRegex = new(@"[^\u0000-\u007F]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"[^\u0000-\u007F]+", RegexOptions.None, 100)]
+    private static partial Regex nonAsciiReplaceRegex();
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ?
             originalDescription :
-            nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty);
+            nonAsciiReplaceRegex().Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty);
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {

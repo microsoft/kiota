@@ -17,7 +17,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Rpc;
-internal class Server : IServer
+internal partial class Server : IServer
 {
     protected KiotaConfiguration Configuration
     {
@@ -133,12 +133,13 @@ internal class Server : IServer
                                     Enumerable.Empty<string>())
                                     .Union(node.Children.SelectMany(static x => GetOperationsFromTreeNode(x.Value)));
     }
-    private static readonly Regex indexingNormalizationRegex = new(@"{\w+}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+    [GeneratedRegex(@"{\w+}", RegexOptions.Singleline, 100)]
+    private static partial Regex indexingNormalizationRegex();
     private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, OperationType operationType, bool forIndexing = false)
     {
         var name = $"{node.Path}#{operationType.ToString().ToUpperInvariant()}";
         if (forIndexing)
-            return indexingNormalizationRegex.Replace(name, "{}");
+            return indexingNormalizationRegex().Replace(name, "{}");
         return name;
     }
     public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, CancellationToken cancellationToken)
