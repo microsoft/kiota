@@ -81,6 +81,12 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
+            ReplacePropertyNames(generatedCode,
+                [
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
+                ],
+                static s => s.ToPascalCase(UnderscoreArray));
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",
