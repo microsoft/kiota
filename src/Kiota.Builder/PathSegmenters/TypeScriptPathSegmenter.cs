@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
@@ -15,7 +16,7 @@ public class TypeScriptPathSegmenter : CommonPathSegmenter
     public override string NormalizeFileName(CodeElement currentElement)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
-        modelsNamespace ??= currentElement.GetImmediateParentOfType<CodeNamespace>()?.GetRootNamespace().FindChildByName<CodeNamespace>($"{ClientNamespaceName}.models");
+        modelsNamespace ??= currentElement.GetImmediateParentOfType<CodeNamespace>()?.GetRootNamespace().FindChildByName<CodeNamespace>($"{ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
         return currentElement switch
         {
             CodeNamespace => IndexFileName,

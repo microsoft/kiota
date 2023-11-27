@@ -1,5 +1,6 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -32,7 +33,7 @@ public class TypescriptRelativeImportManager : RelativeImportManager
         var importNamespace = typeDef.GetImmediateParentOfType<CodeNamespace>();
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace, importNamespace);
         var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
-        modelsNamespace ??= currentNamespace.GetRootNamespace().FindChildByName<CodeNamespace>($"{prefix}.models");
+        modelsNamespace ??= currentNamespace.GetRootNamespace().FindChildByName<CodeNamespace>($"{prefix}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
         if ("./".Equals(importPath, StringComparison.OrdinalIgnoreCase) && isCodeUsingAModel)
         {
             importPath += "index";
