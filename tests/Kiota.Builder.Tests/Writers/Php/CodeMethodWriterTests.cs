@@ -227,7 +227,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WriteRequestExecutor()
+    public async Task WriteRequestExecutor()
     {
         setup();
         CodeProperty[] properties =
@@ -319,7 +319,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return $primaryError->getMessage() ?? '';", result);
     }
     [Fact]
-    public async void WritesRequestExecutorForEnumTypes()
+    public async Task WritesRequestExecutorForEnumTypes()
     {
         setup();
         CodeProperty[] properties =
@@ -457,7 +457,7 @@ public class CodeMethodWriterTests : IDisposable
 
     [Theory]
     [MemberData(nameof(SerializerProperties))]
-    public async void WriteSerializer(CodeProperty property, string expected)
+    public async Task WriteSerializer(CodeProperty property, string expected)
     {
         setup(true);
         var codeMethod = new CodeMethod
@@ -1067,7 +1067,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WriteConstructorBody()
+    public async Task WriteConstructorBody()
     {
         setup();
         parentClass.Kind = CodeClassKind.Model;
@@ -1193,7 +1193,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WriteGetterAdditionalData()
+    public async Task WriteGetterAdditionalData()
     {
         setup();
         var property = new CodeProperty
@@ -1291,7 +1291,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WriteRequestBuilderConstructor()
+    public async Task WriteRequestBuilderConstructor()
     {
         setup();
         method.Kind = CodeMethodKind.Constructor;
@@ -1488,7 +1488,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WriteFactoryMethod()
+    public async Task WriteFactoryMethod()
     {
         setup();
         var parentModel = root.AddClass(new CodeClass
@@ -1545,7 +1545,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
     }
     [Fact]
-    public async void WriteApiConstructor()
+    public async Task WriteApiConstructor()
     {
         setup();
         parentClass.AddProperty(new CodeProperty
@@ -1598,7 +1598,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WritesApiClientWithBackingStoreConstructor()
+    public async Task WritesApiClientWithBackingStoreConstructor()
     {
         setup();
         var constructor = new CodeMethod
@@ -1660,7 +1660,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WritesModelWithBackingStoreConstructor()
+    public async Task WritesModelWithBackingStoreConstructor()
     {
         setup();
         parentClass.Kind = CodeClassKind.Model;
@@ -1760,7 +1760,7 @@ public class CodeMethodWriterTests : IDisposable
 
     [Theory]
     [MemberData(nameof(GetterWithBackingStoreProperties))]
-    public async void WritesGettersWithBackingStore(CodeProperty property, params string[] expected)
+    public async Task WritesGettersWithBackingStore(CodeProperty property, params string[] expected)
     {
         setup();
         parentClass.Kind = CodeClassKind.Model;
@@ -1794,7 +1794,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WritesSettersWithBackingStore()
+    public async Task WritesSettersWithBackingStore()
     {
         setup();
         parentClass.Kind = CodeClassKind.Model;
@@ -1832,7 +1832,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void ReplaceBinaryTypeWithStreamInterface()
+    public async Task ReplaceBinaryTypeWithStreamInterface()
     {
         setup();
         var binaryProperty = new CodeProperty
@@ -2281,7 +2281,7 @@ public class CodeMethodWriterTests : IDisposable
         });
     }
     [Fact]
-    public async void WritesRequestConfigurationConstructor()
+    public async Task WritesRequestConfigurationConstructor()
     {
         setup();
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
@@ -2326,7 +2326,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WritesQueryParameterFactoryMethod()
+    public async Task WritesQueryParameterFactoryMethod()
     {
         setup();
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
@@ -2377,7 +2377,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public async void WritesQueryParameterConstructor()
+    public async Task WritesQueryParameterConstructor()
     {
         setup();
         parentClass.Kind = CodeClassKind.QueryParameters;

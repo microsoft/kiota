@@ -250,8 +250,8 @@ public class GoLanguageRefinerTests
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        Assert.Equal("SetProperty_a", model.FindChildByName<CodeMethod>("set-property_a").Name);
-        Assert.Equal("SetPropertyA", model.FindChildByName<CodeMethod>("set-propertyA").Name);
+        Assert.Equal("SetProperty_a", model.FindChildByName<CodeMethod>("setProperty_a").Name);
+        Assert.Equal("SetPropertyA", model.FindChildByName<CodeMethod>("setPropertyA").Name);
     }
     [Fact]
     public async Task ReplacesModelsByInnerInterfaces()
