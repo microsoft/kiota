@@ -105,8 +105,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         if (param == null || param.Type is not CodeType codeType || codeType.TypeDefinition is not CodeInterface codeInterface)
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
-        writer.IncreaseIndent();
-
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
             writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
@@ -119,7 +117,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
-        writer.DecreaseIndent();
     }
 
     private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)

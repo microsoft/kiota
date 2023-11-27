@@ -65,10 +65,10 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplacePropertyNames(generatedCode,
-                new() {
+                [
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
-                },
+                ],
                 static s => s.ToSnakeCase());
             AddParentClassToErrorClasses(
                 generatedCode,
@@ -76,12 +76,13 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "MicrosoftKiotaAbstractions",
                 true
             );
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
-                new() {
+                [
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
-                },
+                ],
                 static (_, s) => s.ToSnakeCase(),
                 _configuration.UsesBackingStore,
                 true,
@@ -92,9 +93,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 true,
                 false,
-                new[] { CodeClassKind.RequestConfiguration });
+                [CodeClassKind.RequestConfiguration]);
             ShortenLongNamespaceNames(generatedCode);
-            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
             var defaultConfiguration = new GenerationConfiguration();

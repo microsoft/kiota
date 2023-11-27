@@ -156,7 +156,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
 
     [Fact]
-    public async void AddsImportsToRequestConfigClasses()
+    public async Task AddsImportsToRequestConfigClasses()
     {
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
         var modelsNamespace = root.AddNamespace("Models");

@@ -160,6 +160,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_", AccessModifier propertyAccessModifier = AccessModifier.Private)
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
+        var isSetterPrefixEmpty = string.IsNullOrEmpty(setterPrefix);
+        var isGetterPrefixEmpty = string.IsNullOrEmpty(getterPrefix);
         if (propertyKindsToAddAccessors is null || propertyKindsToAddAccessors.Count == 0) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -179,7 +181,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
-                Name = $"get-{accessorName}",
+                Name = $"{(isGetterPrefixEmpty ? "get-" : getterPrefix)}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
@@ -191,10 +193,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+            if (isGetterPrefixEmpty)
+                currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             currentProperty.Setter = parentClass.AddMethod(new CodeMethod
             {
-                Name = $"set-{accessorName}",
+                Name = $"{(isSetterPrefixEmpty ? "set-" : setterPrefix)}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Setter,
@@ -211,7 +214,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+            if (isSetterPrefixEmpty)
+                currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
 
             currentProperty.Setter.AddParameter(new CodeParameter
             {
@@ -306,8 +310,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             // in the CodeNamespace if-block so we also need to update the using references
             if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true)
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
-            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType))
-                currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
+            // we don't need to rename the inheritance name as it's either external and shouldn't change or it's generated and the code type maps directly to the source
         }
         else if (current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
@@ -316,18 +319,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             ReplaceReservedNamespaceSegments(currentNamespace, provider, replacement);
         else if (current is CodeMethod currentMethod &&
             isNotInExceptions &&
-            shouldReplace)
+            shouldReplace &&
+            provider.ReservedNames.Contains(currentMethod.Name) &&
+            current.Parent is IBlock parentBlock)
         {
-            if (provider.ReservedNames.Contains(currentMethod.Name))
-                currentMethod.Name = replacement.Invoke(currentMethod.Name);
+            parentBlock.RenameChildElement(current.Name, replacement.Invoke(currentMethod.Name));
         }
-        else if (current is CodeProperty currentProperty &&
-                isNotInExceptions &&
-                shouldReplace &&
-                currentProperty.Type is CodeType propertyType &&
-                !propertyType.IsExternal &&
-                provider.ReservedNames.Contains(currentProperty.Type.Name))
-            propertyType.Name = replacement.Invoke(propertyType.Name);
+        // we don't need to property type name as it's either external and shouldn't change or it's generated and the code type maps directly to the source
 
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names

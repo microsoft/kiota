@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Groups request builders and inline request/response bodies in the same file in TypeScript.
+- Fixed a bug where reserved name rename would not rename objects properly. [#3609](https://github.com/microsoft/kiota/issues/3609)
 - Switched to a Jammy Chiseled base image for docker containers.
 - Fixed a bug where path parameters deduplication would create collisions on sub path segments. [#3757](https://github.com/microsoft/kiota/issues/3757)
 - Moved from net7 to net8.
