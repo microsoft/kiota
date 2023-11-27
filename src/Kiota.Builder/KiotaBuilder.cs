@@ -1107,9 +1107,9 @@ public partial class KiotaBuilder
         };
         return result;
     }
-    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParamterNode = true)
+    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParameterNode = true)
     {
-        if((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
+        if ((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
         {
             return currentNode.PathItems;
         }
@@ -1117,7 +1117,7 @@ public partial class KiotaBuilder
         if (currentNode.Children.Any())
         {
             return currentNode.Children
-                .SelectMany(static x => GetPathItems(x, false))
+                .SelectMany(static x => GetPathItems(x.Value, false))
                 .DistinctBy(static x => x.Key, StringComparer.Ordinal)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal);
         }
