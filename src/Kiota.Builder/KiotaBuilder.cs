@@ -1107,23 +1107,22 @@ public partial class KiotaBuilder
         };
         return result;
     }
-    private Dictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode)
+    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode. bool validateIsParamterNode = true)
     {
-        if(currentNode.IsParameter && currentNode.PathItems.Any())
+        if((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
         {
-            return currentNode.PathItems.ToDictionary();
+            return currentNode.PathItems;
         }
 
         if (currentNode.Children.Any())
         {
             return currentNode.Children
-                .First()
-                .Value
-                .PathItems
-                .ToDictionary();
+                .SelectMany(static x => GetPathItems(x, false))
+                .DistinctBy(static x => x.Key, StringComparer.Ordinal)
+                .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal);
         }
 
-        return new();
+        return new Dictionary<string, OpenApiPathItem>();
     }
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
