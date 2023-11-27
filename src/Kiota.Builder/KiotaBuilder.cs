@@ -1107,7 +1107,7 @@ public partial class KiotaBuilder
         };
         return result;
     }
-    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode. bool validateIsParamterNode = true)
+    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParamterNode = true)
     {
         if((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
         {
