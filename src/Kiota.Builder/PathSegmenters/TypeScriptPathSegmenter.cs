@@ -21,7 +21,7 @@ public class TypeScriptPathSegmenter : CommonPathSegmenter
             CodeNamespace => IndexFileName,
             CodeFile when modelsNamespace is not null &&
                         currentElement.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
-                        !modelsNamespace.IsParentOf(currentNamespace)
+                        !(modelsNamespace.IsParentOf(currentNamespace) || modelsNamespace == currentNamespace)
                     => IndexFileName,
             _ => GetDefaultFileName(currentElement),
         };

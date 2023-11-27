@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Request builders are now in the index file to simplify imports and reduce generated code in TypeScript. [#3799](https://github.com/microsoft/kiota/issues/3799)
 - Groups request builders and inline request/response bodies in the same file in TypeScript.
 - Fixed a bug where reserved name rename would not rename objects properly. [#3609](https://github.com/microsoft/kiota/issues/3609)
 - Switched to a Jammy Chiseled base image for docker containers.
