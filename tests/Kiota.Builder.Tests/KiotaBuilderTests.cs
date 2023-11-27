@@ -6204,7 +6204,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/microsoft.graph.post'
-  /authors/{author-id}/posts/{post-id}:
+  /authors/{author-id}/posts:
     get:
       parameters:
         - name: author-id
