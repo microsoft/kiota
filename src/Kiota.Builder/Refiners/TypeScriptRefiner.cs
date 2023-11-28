@@ -234,53 +234,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeInterface>()
             .ToArray();
 
-        var inlineRequestBodyInterfaces = executorMethods
+        var inlineRequestBodyFiles = executorMethods
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
             .Select(static x => x.Type.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
-            .OfType<CodeInterface>()
+            .Select(x => codeNamespace.FindChildByName<CodeFile>(x, false))
+            .OfType<CodeFile>()
             .ToArray();
 
-        var inlineRequestBodySerializerFunctions = inlineRequestBodyInterfaces
-            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineRequestBodyDeserializerFunctions = inlineRequestBodyInterfaces
-            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineRequestBodyFactoryFunctions = inlineRequestBodyInterfaces
-            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>();
-
-        var inlineResponseBodyInterfaces = executorMethods
+        var inlineResponseBodyFiles = executorMethods
             .Select(static x => x.ReturnType.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
-            .OfType<CodeInterface>()
+            .Select(x => codeNamespace.FindChildByName<CodeFile>(x, false))
+            .OfType<CodeFile>()
             .ToArray();
-
-        var inlineResponseBodyDeserializerFunctions = inlineResponseBodyInterfaces
-            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineResponseBodySerializerFunctions = inlineResponseBodyInterfaces
-            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineResponseBodyFactoryFunctions = inlineResponseBodyInterfaces
-            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>();
 
         var queryParametersMapperConstants = queryParameterInterfaces
             .Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}Mapper")
@@ -288,17 +254,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
+        codeNamespace.RemoveChildElement(inlineRequestBodyFiles.Union(inlineResponseBodyFiles).ToArray());
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
-                            .Union(inlineRequestBodyInterfaces)
-                            .Union(inlineRequestBodySerializerFunctions)
-                            .Union(inlineRequestBodyDeserializerFunctions)
-                            .Union(inlineRequestBodyFactoryFunctions)
-                            .Union(inlineResponseBodyInterfaces)
-                            .Union(inlineResponseBodySerializerFunctions)
-                            .Union(inlineResponseBodyDeserializerFunctions)
-                            .Union(inlineResponseBodyFactoryFunctions)
+                            .Union(inlineRequestBodyFiles.SelectMany(static x => x.GetChildElements(true)))
+                            .Union(inlineResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
                             .Distinct()
                             .ToArray();
 
