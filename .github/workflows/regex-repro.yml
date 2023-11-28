@@ -2,6 +2,7 @@ name: Attempt to reproduce 3797
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   test:
