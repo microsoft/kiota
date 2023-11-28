@@ -13,7 +13,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
-    private static readonly char[] namespaceNameSplitCharacters = new[] { '.', '-', '$' }; //$ref from OData
+    private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
@@ -38,10 +38,10 @@ public static partial class OpenApiUrlTreeNodeExtensions
         return currentNode.Path.GetNamespaceFromPath(prefix);
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-    [GeneratedRegex(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 500)]
     private static partial Regex PathParametersRegex();
     // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
-    [GeneratedRegex(@"=@(\w+)", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"=@(\w+)", RegexOptions.Singleline, 500)]
     private static partial Regex AtSignPathParameterRegex();
     private const char RequestParametersChar = '{';
     private const char RequestParametersEndChar = '}';
@@ -81,7 +81,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         return Enumerable.Empty<OpenApiParameter>();
     }
     private const char PathNameSeparator = '\\';
-    [GeneratedRegex(@"-?id\d?}?$", RegexOptions.Singleline | RegexOptions.IgnoreCase, 200)]
+    [GeneratedRegex(@"-?id\d?}?$", RegexOptions.Singleline | RegexOptions.IgnoreCase, 500)]
     private static partial Regex idClassNameCleanup();
     ///<summary>
     /// Returns the class name for the node with more or less precision depending on the provided arguments
@@ -142,7 +142,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         "yml",
         "txt",
     };
-    [GeneratedRegex(@"[\r\n\t]", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"[\r\n\t]", RegexOptions.Singleline, 500)]
     private static partial Regex descriptionCleanupRegex();
     public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex().Replace(description, string.Empty);
     public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default)
@@ -174,9 +174,9 @@ public static partial class OpenApiUrlTreeNodeExtensions
 
         return eval(currentSegment.Where(static x => x == RequestParametersChar));
     }
-    [GeneratedRegex(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
     private static partial Regex stripExtensionForIndexersRegex(); // so {param-name}.json is considered as indexer
-    [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
     private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
@@ -215,7 +215,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
                 queryStringParameters;
     }
-    [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 500)]
     private static partial Regex pathParamMatcher();
     private static string SanitizePathParameterNamesForUrlTemplate(string original, HashSet<string> reservedParameterNames)
     {
@@ -236,7 +236,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                     .Replace(".", "%2E", StringComparison.OrdinalIgnoreCase)
                     .Replace("~", "%7E", StringComparison.OrdinalIgnoreCase);// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
     }
-    [GeneratedRegex(@"%[0-9A-F]{2}", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"%[0-9A-F]{2}", RegexOptions.Singleline, 500)]
     private static partial Regex removePctEncodedCharacters();
     public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "")
     {

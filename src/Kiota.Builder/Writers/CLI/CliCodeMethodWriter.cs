@@ -881,10 +881,10 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         return result.ToLowerInvariant();
     }
 
-    [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Singleline, 200)]
+    [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Singleline, 500)]
     private static partial Regex DelimitedRegex();
-    [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Singleline, 200)]
+    [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Singleline, 500)]
     private static partial Regex CamelCaseRegex();
-    [GeneratedRegex("([A-Z])", RegexOptions.Singleline, 200)]
+    [GeneratedRegex("([A-Z])", RegexOptions.Singleline, 500)]
     private static partial Regex UppercaseRegex();
 }

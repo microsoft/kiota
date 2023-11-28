@@ -50,7 +50,7 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
             writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
         }
     }
-    [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 200)]
+    [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 500)]
     private static partial Regex _enumValueNameRegex();
     private static string GetEnumValueName(string original)
     {
