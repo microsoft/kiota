@@ -170,9 +170,17 @@ public class CSharpLanguageRefinerTests
             Name = "break", // this a keyword
             Kind = CodeClassKind.Model,
         }).First();
-        var property = model.AddProperty(new CodeProperty
+        var propertyWithCsharpReservedName = model.AddProperty(new CodeProperty
         {
             Name = "alias",// this a keyword
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var propertyWithReservedTypeName = model.AddProperty(new CodeProperty
+        {
+            Name = "task",// this a type name reserved in C#
             Type = new CodeType
             {
                 Name = "string"
@@ -183,8 +191,11 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
-        Assert.Equal("Alias", property.Name);
-        Assert.DoesNotContain("@", property.Name); // classname will be capitalized
+        Assert.Equal("Alias", propertyWithCsharpReservedName.Name);
+        Assert.DoesNotContain("@", propertyWithCsharpReservedName.Name); // classname will be capitalized
+        Assert.Equal("Task", propertyWithReservedTypeName.Name);
+        Assert.DoesNotContain("@", propertyWithReservedTypeName.Name); // classname will be capitalized
+        Assert.DoesNotContain("Escaped", propertyWithReservedTypeName.Name); // classname will be capitalized
     }
 
     [Fact]
