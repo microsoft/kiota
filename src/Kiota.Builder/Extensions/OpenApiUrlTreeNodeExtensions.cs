@@ -114,9 +114,9 @@ public static partial class OpenApiUrlTreeNodeExtensions
         {
             if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName))
                 rawClassName = stripExtensionForIndexersRegex().Replace(rawClassName, string.Empty);
-            if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().IsMatch(rawClassName))
+            if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().Replace(rawClassName, string.Empty) is string cleanedUpClassName && !cleanedUpClassName.Equals(rawClassName, StringComparison.Ordinal))
             {
-                rawClassName = idClassNameCleanup().Replace(rawClassName, string.Empty);
+                rawClassName = cleanedUpClassName;
                 if (WithKeyword.Equals(rawClassName, StringComparison.Ordinal)) // in case the single parameter doesn't follow {classname-id} we get the previous segment
                     rawClassName = currentNode.Path
                                             .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
