@@ -177,15 +177,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private void MergeElementsToFile(CodeElement currentElement)
     {
         // create all request builders as a code file with the functions
-        if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model) && currentElement.Parent is CodeNamespace codeNamespace)
+        if (currentElement.Parent is CodeNamespace codeNamespace)
         {
-            GenerateModelCodeFile(codeInterface, codeNamespace);
+            if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model))
+                GenerateModelCodeFile(codeInterface, codeNamespace);
+            else if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+                GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
         }
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentElement.Parent is CodeNamespace namespaceOfRequestBuilder)
-        {
-            GenerateRequestBuilderCodeFile(currentClass, namespaceOfRequestBuilder);
-        }
-        CrawlTree(currentElement, MergeElementsToFile);
+        CrawlTree(currentElement, MergeElementsToFile, true);
     }
 
     private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
@@ -314,7 +313,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, CorrectCodeFileUsing);
+        CrawlTree(currentElement, CorrectCodeFileUsing, true);
     }
 
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
@@ -363,7 +362,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             AliasCollidingSymbols(interfaceDeclaration.Usings, currentInterface.Name);
         }
-        CrawlTree(currentElement, AliasUsingsWithSameSymbol);
+        CrawlTree(currentElement, AliasUsingsWithSameSymbol, true);
     }
     private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
@@ -548,7 +547,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);
         }
-        CrawlTree(currentElement, static x => ReplaceRequestQueryParamsWithInterfaces(x));
+        CrawlTree(currentElement, ReplaceRequestQueryParamsWithInterfaces, true);
     }
     private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string ModelSerializerPrefix = "serialize";
@@ -574,7 +573,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             CreateSerializationFunctions(codeClass);
         }
-        CrawlTree(codeElement, static x => CreateSeparateSerializers(x));
+        CrawlTree(codeElement, CreateSeparateSerializers, true);
     }
 
     private static void CreateSerializationFunctions(CodeClass modelClass)
@@ -669,7 +668,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RenameCodeInterfaceParamsInSerializers(codeFunction);
         }
 
-        CrawlTree(currentElement, static x => RenameModelInterfacesAndRemoveClasses(x));
+        CrawlTree(currentElement, RenameModelInterfacesAndRemoveClasses, true);
     }
 
     private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
@@ -705,7 +704,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => GenerateModelInterfaces(x, interfaceNamingCallback));
+        CrawlTree(currentElement, x => GenerateModelInterfaces(x, interfaceNamingCallback), true);
     }
 
     private static void ProcessorRequestBuilders(CodeClass requestBuilderClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -1065,7 +1064,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
             }
         }
-        CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback));
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback), true);
     }
 
     private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeProperty property, Func<CodeType, string> functionNameCallback)
@@ -1130,6 +1129,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
         }
-        CrawlTree(codeElement, AddDeserializerUsingToDiscriminatorFactory);
+        CrawlTree(codeElement, AddDeserializerUsingToDiscriminatorFactory, true);
     }
 }

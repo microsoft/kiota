@@ -191,7 +191,7 @@ public class SwiftRefiner : CommonLanguageRefiner
     {
         if (current is CodeNamespace currentNamespace)
             currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
-        CrawlTree(current, CapitalizeNamespacesFirstLetters);
+        CrawlTree(current, CapitalizeNamespacesFirstLetters, true);
     }
     private void AddRootClassForExtensions(CodeElement current)
     {

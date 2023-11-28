@@ -220,7 +220,7 @@ public class GoRefiner : CommonLanguageRefiner
             }
 
         }
-        CrawlTree(currentElement, GenerateCodeFiles);
+        CrawlTree(currentElement, GenerateCodeFiles, true);
     }
 
     private string MergeOverLappedStrings(string start, string end)
@@ -287,7 +287,7 @@ public class GoRefiner : CommonLanguageRefiner
                 }
             }
         }
-        CrawlTree(currentElement, CorrectBackingStoreTypes);
+        CrawlTree(currentElement, CorrectBackingStoreTypes, true);
     }
 
     private static void CorrectTypes(CodeElement currentElement)
@@ -302,7 +302,7 @@ public class GoRefiner : CommonLanguageRefiner
         {
             ct.Name = ct.TypeDefinition.Name;
         }
-        CrawlTree(currentElement, CorrectTypes);
+        CrawlTree(currentElement, CorrectTypes, true);
     }
 
     private CodeNamespace? _clientNameSpace;
@@ -342,7 +342,7 @@ public class GoRefiner : CommonLanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, FlattenNestedHierarchy);
+        CrawlTree(currentElement, FlattenNestedHierarchy, true);
     }
 
     private void FlattenGoParamsFileNames(CodeElement currentElement)
@@ -360,7 +360,7 @@ public class GoRefiner : CommonLanguageRefiner
 
         }
 
-        CrawlTree(currentElement, FlattenGoParamsFileNames);
+        CrawlTree(currentElement, FlattenGoParamsFileNames, true);
     }
 
     private List<string> getPathsName(CodeElement codeClass, string fileName, bool removeDuplicate = true)
@@ -418,7 +418,7 @@ public class GoRefiner : CommonLanguageRefiner
             nextNameSpace.AddClass(codeClass);
         }
 
-        CrawlTree(currentElement, FlattenGoFileNames);
+        CrawlTree(currentElement, FlattenGoFileNames, true);
     }
 
     protected static void RenameCancellationParameter(CodeElement currentElement)
@@ -432,7 +432,7 @@ public class GoRefiner : CommonLanguageRefiner
             parameter.Type.Name = conventions.ContextVarTypeName;
             parameter.Type.IsNullable = false;
         }
-        CrawlTree(currentElement, RenameCancellationParameter);
+        CrawlTree(currentElement, RenameCancellationParameter, true);
     }
     private const string ContextParameterName = "ctx";
     private const string ContextVarDescription = "Pass a context parameter to the request";
@@ -454,7 +454,7 @@ public class GoRefiner : CommonLanguageRefiner
                     Description = ContextVarDescription,
                 },
             });
-        CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
+        CrawlTree(currentElement, AddContextParameterToGeneratorMethods, true);
     }
 
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement)
@@ -482,7 +482,7 @@ public class GoRefiner : CommonLanguageRefiner
                 currentClass.RemoveChildElement(methodsToRemove);
             }
         }
-        CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
+        CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces, true);
     }
     private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement)
     {
@@ -502,7 +502,7 @@ public class GoRefiner : CommonLanguageRefiner
                 Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
             });
         }
-        CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);
+        CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods, true);
     }
     private static void AddErrorAndStringsImportForEnums(CodeElement currentElement)
     {
@@ -521,7 +521,7 @@ public class GoRefiner : CommonLanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, AddErrorAndStringsImportForEnums);
+        CrawlTree(currentElement, AddErrorAndStringsImportForEnums, true);
     }
     private static readonly GoConventionService conventions = new();
     private static readonly HashSet<string> typeToSkipStrConv = new(StringComparer.OrdinalIgnoreCase) {
@@ -732,6 +732,6 @@ public class GoRefiner : CommonLanguageRefiner
             foreach (var parameter in currentParentClass.Methods.SelectMany(static x => x.Parameters).Where(x => x.Type.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
                 parameter.Type.Name = currentInnerClass.Name;
         }
-        CrawlTree(currentElement, RenameInnerModelsToAppended);
+        CrawlTree(currentElement, RenameInnerModelsToAppended, true);
     }
 }

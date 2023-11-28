@@ -193,7 +193,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 parentClass.AddMethod(newMethod);
             }
         }
-        CrawlTree(currentElement, SplitLongDiscriminatorMethods);
+        CrawlTree(currentElement, SplitLongDiscriminatorMethods, true);
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs)
     {
@@ -201,7 +201,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false)))
             foreach (var param in method.Parameters)
                 param.Type.IsNullable = true;
-        CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));
+        CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs), true);
     }
     private static void AddEnumSetImport(CodeElement currentElement)
     {
@@ -216,7 +216,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentClass.AddUsing(nUsing);
         }
 
-        CrawlTree(currentElement, AddEnumSetImport);
+        CrawlTree(currentElement, AddEnumSetImport, true);
     }
     private static readonly JavaConventionService conventionService = new();
     private const string AbstractionsNamespaceName = "com.microsoft.kiota";
@@ -291,7 +291,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, element => CorrectCommonNames(element));
+        CrawlTree(currentElement, element => CorrectCommonNames(element), true);
     }
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
@@ -432,7 +432,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
+        CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors, true);
     }
     private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement)
     {
@@ -465,7 +465,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             RemovePrefixFromRequestConfigParameters(currentClass, prefix);
         }
-        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x));
+        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x), true);
     }
     private static void RemovePrefixFromQueryProperties(CodeElement currentElement, String prefix)
     {
@@ -509,7 +509,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(codeNamespace.Name))
                 codeNamespace.Name = codeNamespace.Name.ToLowerInvariant();
 
-            CrawlTree(currentElement, LowerCaseNamespaceNames);
+            CrawlTree(currentElement, LowerCaseNamespaceNames, true);
         }
     }
 }

@@ -121,7 +121,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             currentClass.RemoveChildElement(backwardCompatibleIndexer);
         }
 
-        CrawlTree(currentElement, RemoveBackwardCompatibleIndexers);
+        CrawlTree(currentElement, RemoveBackwardCompatibleIndexers, true);
     }
 
     private static void RenameDuplicateIndexerNavProperties(CodeElement currentElement)
@@ -172,7 +172,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, RenameDuplicateIndexerNavProperties);
+        CrawlTree(currentElement, RenameDuplicateIndexerNavProperties, true);
     }
 
     private static void RenameMatchingSubsequentNavCommands(CodeElement currentElement)
@@ -217,7 +217,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, RenameMatchingSubsequentNavCommands);
+        CrawlTree(currentElement, RenameMatchingSubsequentNavCommands, true);
     }
 
     private static void CreateCommandBuilders(CodeElement currentElement)
@@ -264,7 +264,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                 currentClass.AddMethod(rootMethod);
             }
         }
-        CrawlTree(currentElement, CreateCommandBuilders);
+        CrawlTree(currentElement, CreateCommandBuilders, true);
     }
 
     private static void RemoveUnusedParameters(CodeClass currentClass)
