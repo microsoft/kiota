@@ -66,12 +66,13 @@ public class RelativeImportManager
             _ => throw new NotImplementedException(),
         };
     }
-    protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("/", Enumerable.Repeat("..", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "/" : string.Empty);
+    private const char PathSeparator = '/';
+    protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join(PathSeparator, Enumerable.Repeat("..", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? PathSeparator : string.Empty);
     protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
         var segments = remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).ToArray();
         if (segments.Length != 0)
-            return segments.Aggregate(static (x, y) => $"{x}/{y}") + '/';
+            return segments.Aggregate(static (x, y) => $"{x}/{y}") + PathSeparator;
         return string.Empty;
     }
 }
