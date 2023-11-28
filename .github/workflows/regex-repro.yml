@@ -1,0 +1,60 @@
+name: Attempt to reproduce 3797
+
+on:
+  push:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        exec:
+          [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+          ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.x
+      - name: Compile the CLI in debug mode
+        run: |
+          dotnet restore ./src/kiota
+          dotnet build ./src/kiota
+      - name: Run the CLI
+        run: |
+          nohup sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do while : ; do : ; done & done" > /dev/null 2> /dev/null &
+          for ((n=0;n<100;n++))
+          do
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/twitter.com/current/2.61/openapi.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/notion.com/1.0.0/openapi.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/stripe.com/2022-11-15/openapi.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/meraki.com/0.0.0-streaming/openapi.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://developers.pipedrive.com/docs/api/v1/openapi.yaml" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/twilio.com/api/1.42.0/openapi.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.json" --output=tmp --clean-output --clear-cache --language java
+          done
