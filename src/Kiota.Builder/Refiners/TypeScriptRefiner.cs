@@ -163,57 +163,51 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
-            GenerateCodeFiles(generatedCode);
+            if (generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName) is CodeNamespace modelsNamespace)
+            {
+                GenerateReusableModelsCodeFiles(modelsNamespace);
+                GenerateRequestBuilderCodeFiles(modelsNamespace);
+            }
+            CorrectCodeFileUsing(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
-
-    private void GenerateCodeFiles(CodeElement currentElement)
+    private void GenerateReusableModelsCodeFiles(CodeElement currentElement)
     {
-        MergeElementsToFile(currentElement);
-        CorrectCodeFileUsing(currentElement);
+        if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model))
+            GenerateModelCodeFile(codeInterface, codeNamespace);
+        CrawlTree(currentElement, GenerateReusableModelsCodeFiles, true);
+    }
+    private static void GenerateRequestBuilderCodeFiles(CodeNamespace modelsNamespace)
+    {
+        if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
+        foreach (var subNamespace in mainNamespace.Namespaces.Except([modelsNamespace]))
+        {
+            GenerateRequestBuilderCodeFilesForElement(subNamespace);
+        }
+    }
+    private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
+    {
+        if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
+        CrawlTree(currentElement, GenerateRequestBuilderCodeFilesForElement, true);
     }
 
-    private void MergeElementsToFile(CodeElement currentElement)
+    private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        // create all request builders as a code file with the functions
-        if (currentElement.Parent is CodeNamespace codeNamespace)
-        {
-            if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model))
-                GenerateModelCodeFile(codeInterface, codeNamespace);
-            else if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
-        }
-        CrawlTree(currentElement, MergeElementsToFile, true);
-    }
+        var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
+                codeFunction.OriginalLocalMethod.Parameters
+                    .Any(x => x.Type.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false) ||
 
-    private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
-    {
-        var functions = new List<CodeElement>();
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
+                        codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+                        codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace)
+        ).ToArray();
 
-        foreach (var element in codeNamespace.GetChildElements(true))
-        {
-            if (element is CodeFunction codeFunction)
-            {
-                if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer) &&
-                    codeFunction.OriginalLocalMethod.Parameters
-                        .Any(x => x.Type.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false))
-                {
-                    functions.Add(codeFunction);
-                }
-                else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
-                         codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
-                         codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace))
-                {
-                    functions.Add(codeFunction);
-                }
-            }
-        }
-
-        if (functions.Count == 0)
-            return;
-        functions.Insert(0, codeInterface);
-        codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
+        if (functions.Length == 0)
+            return null;
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
@@ -233,17 +227,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeInterface>()
             .ToArray();
 
-        var inlineRequestBodyFiles = executorMethods
-            .SelectMany(static x => x.Parameters)
-            .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
-            .Select(static x => x.Type.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeFile>(x, false))
-            .OfType<CodeFile>()
-            .ToArray();
-
-        var inlineResponseBodyFiles = executorMethods
-            .Select(static x => x.ReturnType.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeFile>(x, false))
+        var inlineRequestAndResponseBodyFiles = codeNamespace.Interfaces
+            .Where(static x => x.Kind is CodeInterfaceKind.Model)
+            .Select(x => GenerateModelCodeFile(x, codeNamespace))
             .OfType<CodeFile>()
             .ToArray();
 
@@ -253,12 +239,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
-        codeNamespace.RemoveChildElement(inlineRequestBodyFiles.Union(inlineResponseBodyFiles).ToArray());
+        codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
-                            .Union(inlineRequestBodyFiles.SelectMany(static x => x.GetChildElements(true)))
-                            .Union(inlineResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
+                            .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
                             .Distinct()
                             .ToArray();
 
