@@ -9,7 +9,7 @@ namespace Kiota.Builder.Extensions;
 public static partial class OpenApiOperationExtensions
 {
     internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema
-    [GeneratedRegex(@"[^/]+\+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"[^/]+?\+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 100)]
     private static partial Regex vendorSpecificCleanup();
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
