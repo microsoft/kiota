@@ -145,7 +145,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         else
             writer.WriteLine($"return new {parentClass.Name}();");
     }
-    [GeneratedRegex(@"_(?<idx>\d+)", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"_(?<idx>\d+)", RegexOptions.Singleline, 200)]
     private static partial Regex factoryMethodIndexParser();
     private static void WriteFactoryOverloadMethod(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {

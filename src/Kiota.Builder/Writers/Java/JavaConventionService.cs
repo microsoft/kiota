@@ -122,7 +122,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
     }
-    [GeneratedRegex(@"[^\u0000-\u007F]+", RegexOptions.None, 100)]
+    [GeneratedRegex(@"[^\u0000-\u007F]+", RegexOptions.None, 200)]
     private static partial Regex nonAsciiReplaceRegex();
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ?

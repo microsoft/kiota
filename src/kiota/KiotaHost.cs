@@ -315,9 +315,9 @@ public static partial class KiotaHost
         manifestOption.AddAlias("-a");
         return manifestOption;
     }
-    [GeneratedRegex(@"^[a-zA-Z_][\w_-]+", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"^[a-zA-Z_][\w_-]+", RegexOptions.Singleline, 200)]
     private static partial Regex classNameRegex();
-    [GeneratedRegex(@"^[\w][\w\._-]+", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"^[\w][\w\._-]+", RegexOptions.Singleline, 200)]
     private static partial Regex namespaceNameRegex();
     private static Command GetGenerateCommand()
     {

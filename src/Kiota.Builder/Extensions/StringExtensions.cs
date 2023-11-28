@@ -149,7 +149,7 @@ public static partial class StringExtensions
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    [GeneratedRegex(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Singleline, 200)]
     private static partial Regex propertyCleanupRegex();
     private const string CleanupGroupName = "followingLetter";
     public static string CleanupSymbolName(this string? original)
@@ -181,7 +181,7 @@ public static partial class StringExtensions
 
         return result;
     }
-    [GeneratedRegex(@"^(?<number>\d+)", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"^(?<number>\d+)", RegexOptions.Singleline, 200)]
     private static partial Regex NumbersSpellingRegex();
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},

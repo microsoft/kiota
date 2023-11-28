@@ -133,7 +133,7 @@ internal partial class Server : IServer
                                     Enumerable.Empty<string>())
                                     .Union(node.Children.SelectMany(static x => GetOperationsFromTreeNode(x.Value)));
     }
-    [GeneratedRegex(@"{\w+}", RegexOptions.Singleline, 100)]
+    [GeneratedRegex(@"{\w+}", RegexOptions.Singleline, 200)]
     private static partial Regex indexingNormalizationRegex();
     private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, OperationType operationType, bool forIndexing = false)
     {
