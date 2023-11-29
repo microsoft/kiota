@@ -92,7 +92,8 @@ public class TypeScriptLanguageRefinerTests
         var deserializerFunction = graphNS.FindChildByName<CodeFunction>("DeserializeIntoModel");
 
         Assert.NotNull(propertyFactoryMethod);
-        Assert.Contains(deserializerFunction.Usings, x => x.Declaration.TypeDefinition == propertyFactoryMethod);
+        Assert.NotNull(deserializerFunction);
+        Assert.Contains(deserializerFunction.Usings, x => x.Declaration?.TypeDefinition == propertyFactoryMethod);
     }
     [Fact]
     public async Task AddsExceptionImplementsOnErrorClasses()
@@ -249,15 +250,14 @@ public class TypeScriptLanguageRefinerTests
         });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.True(factoryMethod.Parent is CodeFunction);
+        if (factoryMethod.Parent is not CodeFunction parentCodeFunction) throw new InvalidOperationException("Parent is not a CodeFunction");
 
-        Assert.Contains((factoryMethod.Parent as CodeFunction).StartBlock.Usings, x => x.Declaration.Name.Equals("deserializeIntoChildModel", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(parentCodeFunction.StartBlock.Usings, x => "deserializeIntoChildModel".Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
     }
     #endregion
     #region typescript
     private const string HttpCoreDefaultName = "IRequestAdapter";
     private const string FactoryDefaultName = "ISerializationWriterFactory";
-    private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
     private const string PathParametersDefaultName = "Dictionary<string, object>";
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";
@@ -268,6 +268,7 @@ public class TypeScriptLanguageRefinerTests
         var model = TestHelper.CreateModelClass(root, "break");
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var interFaceModel = codeFile.Interfaces.First(x => "BreakEscaped".Equals(x.Name, StringComparison.Ordinal));
         Assert.NotEqual("break", interFaceModel.Name);
         Assert.Contains("Escaped", interFaceModel.Name);
@@ -289,7 +290,7 @@ public class TypeScriptLanguageRefinerTests
                 Name = "void",
                 TypeDefinition = model
             },
-        }); ;
+        });
         model.AddProperty(new CodeProperty
         {
             Name = "core",
@@ -324,7 +325,7 @@ public class TypeScriptLanguageRefinerTests
             },
             DefaultValue = PathParametersDefaultValue
         });
-        var executorMethod = model.AddMethod(new CodeMethod
+        model.AddMethod(new CodeMethod
         {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -332,11 +333,11 @@ public class TypeScriptLanguageRefinerTests
             {
                 Name = "string"
             }
-        }).First();
+        });
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod
         {
-            Name = "seriailization",
+            Name = "serialization",
             Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType
             {
@@ -374,10 +375,14 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
 
         var interFaceModel = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(interFaceModel);
         var deserializerFunction = codeFile.FindChildByName<CodeFunction>($"DeserializeInto{model.Name.ToFirstCharacterUpperCase()}");
         var serializationFunction = codeFile.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        Assert.NotNull(serializationFunction);
         Assert.Empty(interFaceModel.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
@@ -404,6 +409,7 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("Date", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
@@ -424,6 +430,7 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(static x => x.Name.Equals("Guid", StringComparison.Ordinal)));
@@ -445,6 +452,7 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("DateOnly", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
@@ -465,6 +473,7 @@ public class TypeScriptLanguageRefinerTests
         Assert.NotEmpty(model.StartBlock.Usings);
 
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("TimeOnly", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
@@ -486,6 +495,7 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("Duration", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
@@ -568,16 +578,21 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var modelCodeFile = graphNS.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(modelCodeFile);
         var modelInterface = modelCodeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
 
         var source1CodeFile = modelsNS.FindChildByName<CodeFile>(source1.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(source1CodeFile);
         var source1Interface = source1CodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
 
         var source2CodeFile = submodelsNS.FindChildByName<CodeFile>(source2.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(source2CodeFile);
         var source2Interface = source2CodeFile.Interfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
 
-        var modelUsing1 = modelInterface.Usings.First(x => x.Declaration.TypeDefinition == source2Interface);
-        var modelUsing2 = modelInterface.Usings.First(x => x.Declaration.TypeDefinition == source1Interface);
+        var modelUsing1 = modelInterface.Usings.First(x => x.Declaration?.TypeDefinition == source2Interface);
+        var modelUsing2 = modelInterface.Usings.First(x => x.Declaration?.TypeDefinition == source1Interface);
+        Assert.NotNull(modelUsing1.Declaration);
+        Assert.NotNull(modelUsing2.Declaration);
         Assert.Equal(modelUsing1.Declaration.Name, modelUsing2.Declaration.Name);
         Assert.NotEmpty(modelUsing1.Alias);
         Assert.NotEmpty(modelUsing2.Alias);
@@ -602,17 +617,17 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         var cancellationParam = new CodeParameter
         {
-            Name = "cancelletionToken",
+            Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
             Documentation = new()
             {
                 Description = "Cancellation token to use when cancelling requests",
             },
-            Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root); //using CSharp so the cancellationToken doesn't get removed
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
@@ -626,6 +641,7 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
 
         var codeFile = testNS.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile);
         Assert.Contains(codeFile.Interfaces, x => x.Name == "ModelA");
     }
 
@@ -681,7 +697,7 @@ public class TypeScriptLanguageRefinerTests
                 Name = "void",
                 TypeDefinition = model
             },
-        }); ;
+        });
         model.AddProperty(new CodeProperty
         {
             Name = "core",
@@ -716,7 +732,7 @@ public class TypeScriptLanguageRefinerTests
             },
             DefaultValue = PathParametersDefaultValue
         });
-        var executorMethod = model.AddMethod(new CodeMethod
+        model.AddMethod(new CodeMethod
         {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -724,11 +740,11 @@ public class TypeScriptLanguageRefinerTests
             {
                 Name = "string"
             }
-        }).First();
+        });
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod
         {
-            Name = "seriailization",
+            Name = "serialization",
             Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType
             {

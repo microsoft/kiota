@@ -42,7 +42,8 @@
     "phpleague",
     "pwsh",
     "samespaceprefix",
-    "serializers"
+    "serializers",
+    "Xunit"
   ],
   "java.configuration.updateBuildConfiguration": "automatic",
   "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",

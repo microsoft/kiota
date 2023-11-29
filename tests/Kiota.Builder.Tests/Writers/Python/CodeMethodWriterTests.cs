@@ -9,7 +9,7 @@ using Kiota.Builder.Writers.Python;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
-public class CodeMethodWriterTests : IDisposable
+public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -36,7 +36,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         if (parentClass != null)
             throw new InvalidOperationException("setup() must only be called once");
-        CodeClass baseClass = default;
+        CodeClass? baseClass = default;
         if (withInheritance)
         {
             baseClass = root.AddClass(new CodeClass
