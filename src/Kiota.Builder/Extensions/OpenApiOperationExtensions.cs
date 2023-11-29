@@ -5,7 +5,7 @@ using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
-public static partial class OpenApiOperationExtensions
+public static class OpenApiOperationExtensions
 {
     internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema
     private static string vendorSpecificCleanup(string input)
