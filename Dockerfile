@@ -7,10 +7,10 @@ WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; \
     else \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false --version-suffix $version_suffix; \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false --version-suffix "$version_suffix"; \
     fi
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:8.0-jammy-chiseled AS runtime
 WORKDIR /app
 
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net8.0 ./

@@ -74,13 +74,19 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             );
             ReplaceReservedNames(
                 generatedCode,
-                new CSharpReservedClassNamesProvider(),
+                new CliReservedClassNamesProvider(),
                 x => $"{x.ToFirstCharacterUpperCase()}Escaped"
             );
             // Replace the reserved types
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
+            ReplacePropertyNames(generatedCode,
+                [
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
+                ],
+                static s => s.ToPascalCase(UnderscoreArray));
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",

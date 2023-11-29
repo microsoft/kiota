@@ -77,7 +77,7 @@ jobs:
         uses: docker/build-push-action@v5.1.0
         with:
           push: true
-          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,windows/amd64
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}-preview.${{ steps.date.outputs.date }}${{ steps.runnumber.outputs.runnumber }}
           build-args: |
             version_suffix=preview.${{ steps.date.outputs.date }}${{ steps.runnumber.outputs.runnumber }}
@@ -87,5 +87,5 @@ jobs:
         uses: docker/build-push-action@v5.1.0
         with:
           push: true
-          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,windows/amd64
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}

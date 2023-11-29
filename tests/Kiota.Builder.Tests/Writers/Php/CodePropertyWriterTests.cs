@@ -225,7 +225,7 @@ public class CodePropertyWriterTests
     }
 
     [Fact]
-    public async void WriteRequestOption()
+    public async Task WriteRequestOption()
     {
         var options = new CodeProperty
         {

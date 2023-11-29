@@ -657,7 +657,8 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
         Assert.DoesNotContain(testNS.Interfaces, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(testNS.Interfaces, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
-        Assert.NotEmpty(testNS.Classes);
+        Assert.Empty(testNS.Classes);
+        Assert.NotEmpty(testNS.Files);
         Assert.Empty(requestBuilder.InnerClasses);
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
