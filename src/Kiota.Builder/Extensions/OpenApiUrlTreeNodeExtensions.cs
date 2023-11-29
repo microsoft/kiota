@@ -21,6 +21,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                             + currentPath
                             ?.Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                             ?.Select(replaceSingleParameterSegmentByItem)
+                            ?.Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}Escaped" : x)
                             ?.Select(static x => string.Join(string.Empty, x
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
                                                     .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
