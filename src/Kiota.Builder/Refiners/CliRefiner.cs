@@ -74,7 +74,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             );
             ReplaceReservedNames(
                 generatedCode,
-                new CSharpReservedClassNamesProvider(),
+                new CliReservedClassNamesProvider(),
                 x => $"{x.ToFirstCharacterUpperCase()}Escaped"
             );
             // Replace the reserved types
