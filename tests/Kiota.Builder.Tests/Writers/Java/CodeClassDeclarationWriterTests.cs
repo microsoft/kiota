@@ -8,7 +8,7 @@ using Kiota.Builder.Writers.Java;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Java;
-public class CodeClassDeclarationWriterTests : IDisposable
+public sealed class CodeClassDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

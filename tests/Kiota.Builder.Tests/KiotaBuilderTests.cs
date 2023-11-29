@@ -23,7 +23,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
-public class KiotaBuilderTests : IDisposable
+public sealed class KiotaBuilderTests : IDisposable
 {
     private readonly List<string> _tempFiles = new();
     public void Dispose()
