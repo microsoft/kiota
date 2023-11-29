@@ -53,6 +53,6 @@ public class TypescriptRelativeImportManager : RelativeImportManager
                 importPath += (!string.IsNullOrEmpty(codeUsing.Declaration?.TypeDefinition?.Name) ? codeUsing.Declaration.TypeDefinition.Name : codeUsing.Declaration?.Name).ToFirstCharacterLowerCase();
             }
         }
-        return (importSymbol, codeUsing.Alias, importPath.TrimEnd('/'));
+        return (importSymbol, codeUsing.Alias, importPath);
     }
 }
