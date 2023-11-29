@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed reflection for Java enum deserialization. [microsoft/kiota-java#843](https://github.com/microsoft/kiota-java/pull/843)
 - Added support for AnyOf arrays. [#3786](https://github.com/microsoft/kiota/pull/3792)
 - Fixed a bug where property names that matched reserved type would be replaced in dotnet.
+- Fixed pass by value for `contentType` param in Go `requestInfo.SetStreamContentAndContentType`[#3830](https://github.com/microsoft/kiota/issues/3830)
 
 ## [1.8.2] - 2023-11-08
 

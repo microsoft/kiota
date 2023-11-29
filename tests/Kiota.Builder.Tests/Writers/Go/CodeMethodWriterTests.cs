@@ -1327,7 +1327,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("SetStreamContentAndContentType", result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(", requestContentType", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(", *requestContentType", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
