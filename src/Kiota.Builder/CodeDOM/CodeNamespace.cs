@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -181,7 +180,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         var deeperMostSegmentIndex = 0;
         while (deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegmentsCount))
         {
-            if (currentNamespaceSegments.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
+            if (currentNamespaceSegments[deeperMostSegmentIndex].Equals(importNamespaceSegments[deeperMostSegmentIndex], StringComparison.OrdinalIgnoreCase))
                 deeperMostSegmentIndex++;
             else
                 break;
