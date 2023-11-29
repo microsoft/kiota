@@ -58,13 +58,13 @@ jobs:
           nohup sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do while : ; do : ; done & done" > /dev/null 2> /dev/null &
           for ((n=0;n<100;n++))
           do
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
           done
