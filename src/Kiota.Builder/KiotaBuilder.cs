@@ -2033,23 +2033,23 @@ public partial class KiotaBuilder
         foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))
             RemoveEmptyNamespaces(leafNamespace, modelsNamespace);
     }
-    private ConcurrentDictionary<CodeClass, List<CodeClass>> GetDerivationIndex(IEnumerable<CodeClass> models)
+    private ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> GetDerivationIndex(IEnumerable<CodeClass> models)
     {
-        var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
+        var result = new ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>>();
         Parallel.ForEach(models, parallelOptions, x =>
         {
-            if (x.BaseClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
+            if (x.BaseClass is CodeClass parentClass && !result.TryAdd(parentClass, [x]))
                 result[parentClass].Add(x);
         });
         return result;
     }
-    private ConcurrentDictionary<CodeClass, List<CodeClass>> GetInheritanceIndex(ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex)
+    private ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> GetInheritanceIndex(ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> derivedIndex)
     {
-        var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
+        var result = new ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>>();
         Parallel.ForEach(derivedIndex, parallelOptions, entry =>
         {
             foreach (var derivedClass in entry.Value)
-                if (!result.TryAdd(derivedClass, new() { entry.Key }))
+                if (!result.TryAdd(derivedClass, [entry.Key]))
                     result[derivedClass].Add(entry.Key);
         });
         return result;
@@ -2069,12 +2069,12 @@ public partial class KiotaBuilder
             parentNamespace.RemoveChildElement(currentNamespace);
         RemoveEmptyNamespaces(parentNamespace, stopAtNamespace);
     }
-    private static IEnumerable<CodeClass> GetDerivedDefinitions(ConcurrentDictionary<CodeClass, List<CodeClass>> models, CodeClass[] modelsInUse)
+    private static IEnumerable<CodeClass> GetDerivedDefinitions(ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> models, CodeClass[] modelsInUse)
     {
         var currentDerived = modelsInUse.SelectMany(x => models.TryGetValue(x, out var res) ? res : Enumerable.Empty<CodeClass>()).ToArray();
-        return currentDerived.Union(currentDerived.SelectMany(x => GetDerivedDefinitions(models, new CodeClass[] { x })));
+        return currentDerived.Union(currentDerived.SelectMany(x => GetDerivedDefinitions(models, [x])));
     }
-    private static IEnumerable<CodeElement> GetRelatedDefinitions(CodeElement currentElement, ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex, ConcurrentDictionary<CodeClass, List<CodeClass>> inheritanceIndex, ConcurrentDictionary<CodeElement, bool>? visited = null)
+    private static IEnumerable<CodeElement> GetRelatedDefinitions(CodeElement currentElement, ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> derivedIndex, ConcurrentDictionary<CodeClass, ConcurrentBag<CodeClass>> inheritanceIndex, ConcurrentDictionary<CodeElement, bool>? visited = null)
     {
         visited ??= new();
         if (currentElement is not CodeClass currentClass || !visited.TryAdd(currentClass, true)) return Enumerable.Empty<CodeElement>();
@@ -2084,7 +2084,7 @@ public partial class KiotaBuilder
                             .Where(static x => x is CodeClass || x is CodeEnum)
                             .SelectMany(x => x is CodeClass classDefinition ?
                                             (inheritanceIndex.TryGetValue(classDefinition, out var res) ? res : Enumerable.Empty<CodeClass>())
-                                                .Union(GetDerivedDefinitions(derivedIndex, new CodeClass[] { classDefinition }))
+                                                .Union(GetDerivedDefinitions(derivedIndex, [classDefinition]))
                                                 .Union(new[] { classDefinition })
                                                 .OfType<CodeElement>() :
                                             new[] { x })
