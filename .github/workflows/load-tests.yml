@@ -1,8 +1,9 @@
-name: Attempt to reproduce 3797
+name: Generation load tests
 
 on:
-  push:
   workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1" # every monday at 3am UTC
 
 jobs:
   test:
