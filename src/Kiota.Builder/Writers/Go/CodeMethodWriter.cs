@@ -867,7 +867,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, {requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, *{requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
             }
