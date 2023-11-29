@@ -36,7 +36,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         if (parentClass != null)
             throw new InvalidOperationException("setup() must only be called once");
-        CodeClass? baseClass = default;
+        CodeClass baseClass = default;
         if (withInheritance)
         {
             baseClass = root.AddClass(new CodeClass

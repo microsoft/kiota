@@ -163,11 +163,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
-            if (generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName) is CodeNamespace modelsNamespace)
-            {
-                GenerateReusableModelsCodeFiles(modelsNamespace);
-                GenerateRequestBuilderCodeFiles(modelsNamespace);
-            }
+            var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
+            GenerateReusableModelsCodeFiles(modelsNamespace);
+            GenerateRequestBuilderCodeFiles(modelsNamespace);
             CorrectCodeFileUsing(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
@@ -184,6 +182,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         foreach (var subNamespace in mainNamespace.Namespaces.Except([modelsNamespace]))
         {
             GenerateRequestBuilderCodeFilesForElement(subNamespace);
+        }
+        foreach (var classElement in mainNamespace.Classes)
+        {
+            GenerateRequestBuilderCodeFilesForElement(classElement);
         }
     }
     private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)

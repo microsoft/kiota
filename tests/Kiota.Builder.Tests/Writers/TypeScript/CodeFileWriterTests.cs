@@ -12,16 +12,13 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 
-public class CodeFileWriterTests
+public sealed class CodeFileWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
     private readonly CodeNamespace root;
-    private const string MethodName = "methodName";
-    private const string ReturnTypeName = "Somecustomtype";
-
     public CodeFileWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
@@ -30,7 +27,6 @@ public class CodeFileWriterTests
         root = CodeNamespace.InitRootNamespace();
     }
 
-    [Fact]
     public void Dispose()
     {
         tw?.Dispose();
@@ -52,9 +48,10 @@ public class CodeFileWriterTests
     [Fact]
     public async Task WritesAutoGenerationStart()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(generationConfiguration, root);
         var codeFile = root.FindChildByName<CodeFile>(parentClass.Name.ToFirstCharacterUpperCase());
         WriteCode(writer, codeFile);
 

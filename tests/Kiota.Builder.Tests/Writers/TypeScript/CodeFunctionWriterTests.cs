@@ -10,7 +10,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
-public class CodeFunctionWriterTests : IDisposable
+public sealed class CodeFunctionWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -36,9 +36,10 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesAutoGenerationStart()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -48,9 +49,10 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesAutoGenerationEnd()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -290,10 +292,11 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesInheritedSerializerBody()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         var inheritedClass = parentClass.BaseClass;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -303,7 +306,8 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesSerializerBody()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
