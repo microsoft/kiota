@@ -218,6 +218,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor))
             .ToArray();
 
+        var inlineEnums = codeNamespace
+            .Enums
+            .ToArray();
+
         var queryParameterInterfaces = executorMethods
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
@@ -246,6 +250,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
                             .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
+                            .Union(inlineEnums)
                             .Distinct()
                             .ToArray();
 
