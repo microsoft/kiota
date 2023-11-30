@@ -14,6 +14,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
+    private const string EscapedSuffix = "Escaped";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
@@ -21,12 +22,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
                             + currentPath
                             .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                             .Select(replaceSingleParameterSegmentByItem)
-                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}Escaped" : x)
                             .Select(static x => string.Join(string.Empty, x
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
-                                                    .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
+                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}{EscapedSuffix}" : x)
                             .Select(static x => x.CleanupSymbolName())
                             .Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
                             .Aggregate(string.Empty,
@@ -113,7 +113,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                     CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
-            if (stripExtensionForIndexersRegex().IsMatch(rawClassName))
+            if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName)) // {id}.json is considered as indexer
                 rawClassName = stripExtensionForIndexersRegex().Replace(rawClassName, string.Empty);
             if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().Replace(rawClassName, string.Empty) is string cleanedUpClassName && !cleanedUpClassName.Equals(rawClassName, StringComparison.Ordinal))
             {
@@ -177,6 +177,8 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     [GeneratedRegex(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
     private static partial Regex stripExtensionForIndexersRegex(); // so {param-name}.json is considered as indexer
+    [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
+    private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
