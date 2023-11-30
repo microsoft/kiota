@@ -96,7 +96,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
                     else
-                        nullCheck = $"if ({identName} is not null) ";
+                        nullCheck = $"if ({identName} != null) ";
                 }
                 return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
             }).ToArray());
