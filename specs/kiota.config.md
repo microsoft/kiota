@@ -111,7 +111,7 @@ The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.
 kiota init --app-name "My application"
 ```
 
-```jsonc
+```javascript
 // Creates the following kiota.config file
 {
   "name": "My application"
@@ -137,7 +137,7 @@ When executing, a new API entry will be added and will use the `--api-name` para
 kiota api add --api-name "graph" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --include-path "/me/chats#GET" --include-path "/me#GET"
 ```
 
-```jsonc
+```javascript
 // Adds the following to the kiota.config file
 "graph": {
   "descriptionHash": "9EDF8506CB74FE44...",
@@ -149,7 +149,7 @@ kiota api add --api-name "graph" --openapi "https://raw.githubusercontent.com/mi
 
 The resulting `kiota.config` file will look like this:
 
-```jsonc
+```javascript
 {
   "name": "My application",
   "apis": {
@@ -178,7 +178,7 @@ The resulting `kiota.config` file will look like this:
 kiota api delete --api-name "graph" --clean-output
 ```
 
-```jsonc
+```javascript
 // Removes the following from the kiota.config file
 "graph": {
   "descriptionHash": "9EDF8506CB74FE44...",
@@ -193,7 +193,7 @@ kiota api delete --api-name "graph" --clean-output
 
 The resulting `kiota.config` file will look like this:
 
-```jsonc
+```javascript
 {
   "name": "My application",
   "apis": {}
@@ -227,7 +227,7 @@ The resulting `kiota.config` file will look like this:
 kiota client add --api-name "graph" --client-name "graphDelegated" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
 ```
 
-```jsonc
+```javascript
 // Adds the following to the kiota.config file
 "clients": {
   "graphDelegated": {
@@ -261,7 +261,7 @@ kiota client add --api-name "graph" --client-name "graphDelegated" --language cs
 
 The resulting `kiota.config` file will look like this:
 
-```jsonc
+```javascript
 {
   "name": "My application",
   "apis": {
@@ -351,7 +351,7 @@ kiota client delete --api-name "graph" --client-name "graphDelegated" --clean-ou
 
 The resulting `kiota.config` file will look like this:
 
-```jsonc
+```javascript
 {
   "name": "My application",
   "version": "1.0",
@@ -392,7 +392,7 @@ In scenarios where a developer only needs a single API or doesn't want to go thr
 kiota generate --app-name "My Application" --api-name "graph" --client-name "graphDelegated" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --include-path "/me/chats#GET" --include-path "/me#GET" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
 ```
 
-```json
+```javascript
 {
   "name": "My application",
   "apis": {
@@ -452,7 +452,7 @@ kiota generate --api-name "graph" --client-name "graphDelegated"
 kiota generate --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --include-path "/me/chats#GET" --include-path "/me#GET" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
 ```
 
-```json
+```javascript
 // This file gets generated and then `kiota generate` is executed based on these parameters
 {
   "name": "Contoso.GraphApp", // Inferred from the provided --namespace-name or its default value
