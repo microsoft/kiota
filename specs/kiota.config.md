@@ -92,19 +92,6 @@ Note that in this example we added suggestions for new parameters related to aut
 
 The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) file can be used as a replacement for the kiota.lock file as a place to capture a snapshot of what information was used to perform code generation and what APIs that gives the application access to.
 
-## Tooling commands to manage Kiota.config
-
-| Command                | Example | Description           |
-| ------------------- | ------- | ---------------- |
-| init | kiota init --name `appName` | Creates a kiota.config file |
-| api add | kiota api add --name `apiName` --openapi <urlToApiDescription> | Adds an entry for an API with passed parameters and default values |
-| api delete | kiota api delete --api-name `apiName` | Removes the entire API entry with the provided name. |
-| output add | kiota output add --api-name `apiName` --lang python --outputPath ./pythonClient | Adds information about a new output artifact that should be generated |
-| output delete | kiota output delete --api-name `apiName` --client-name `clientName` | Removes the specified output. Has optional parameters to allow deleting the generated output. |
-| generate | kiota generate | Outputs kiota.apimanifest and source for each of the output objects |
-
-In the past we have had both a generate and an update comment. This is because if it was the first time running, generate would set defaults for all the properties that were not set on the command line. However, now that we have output add, it can be used to set the defaults and generate can just read from the kiota.config file.
-
 ## Commands
 
 ### kiota init
