@@ -377,7 +377,7 @@ In scenarios where a developer only needs a single API or doesn't want to go thr
 
 #### kiota generate Parameters
 
-> [!INFO]
+> [!IMPORTANT]
 > This list is only the new parameters that `kiota generate` should support.
 
 | Parameters | Required | Example | Description |
