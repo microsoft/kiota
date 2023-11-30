@@ -1851,6 +1851,32 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]
+    public void WritesConstructorWithEnumValue()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var serializationName = "1024x1024";
+        var defaultValue = "TENTWENTYFOUR_BY_TENTWENTYFOUR";
+        var propName = "size";
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "pictureSize"
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            SerializationName = serializationName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);//ensure symbol is cleaned up
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();

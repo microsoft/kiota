@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where property names that matched reserved type would be replaced in dotnet.
 - Fixed pass by value for `contentType` param in Go `requestInfo.SetStreamContentAndContentType`[#3830](https://github.com/microsoft/kiota/issues/3830)
 - Fixed parsing of `DateOnly` values generated in request executors [#3679](https://github.com/microsoft/kiota/issues/3679)
+- Fixes generation of default values names for go contructor functions [#3436](https://github.com/microsoft/kiota/issues/3436)
+
 
 ## [1.8.2] - 2023-11-08
 

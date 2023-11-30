@@ -555,6 +555,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 var defaultValue = propWithDefault.DefaultValue;
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
                 {
+                    defaultValue = defaultValue.Trim('"');
+                    defaultValue =
+                        enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
                     defaultValue = $"{defaultValue.Trim('"').ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
                 writer.WriteLine($"{defaultValueReference} := {defaultValue}");
