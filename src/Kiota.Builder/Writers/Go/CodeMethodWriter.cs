@@ -742,7 +742,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var constructorFunction = returnType switch
         {
             _ when isVoid => string.Empty,
-            _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+            _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols().TrimPackageReference().ToLowerInvariant()}\", ",
             _ when isBinary => $"\"{returnType}\", ",
             _ when isEnum => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, parentClass, "Parse", string.Empty, string.Empty)}, ",
             _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, parentClass, "Create", "FromDiscriminatorValue", "able")}, ",
