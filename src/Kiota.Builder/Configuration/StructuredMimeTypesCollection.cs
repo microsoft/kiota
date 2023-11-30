@@ -127,9 +127,8 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                         .ThenByDescending(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                         .Select(static x => x.Key);
     }
-    [GeneratedRegex(@"[^/+]+\+", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
+    [GeneratedRegex(@"[^/+]+\+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex vendorStripRegex();
-    private readonly static Regex vendorStripRegexInstance = vendorStripRegex();
     private bool TryGetMimeType(string mimeType, out float result)
     {
         if (string.IsNullOrEmpty(mimeType))
@@ -140,10 +139,10 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
 
         return _mimeTypes.TryGetValue(mimeType, out result) || // vendor and parameters
             mimeType.Contains('+', StringComparison.OrdinalIgnoreCase) &&
-            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(mimeType, string.Empty), out result) || // no vendor with parameters
+            _mimeTypes.TryGetValue(vendorStripRegex().Replace(mimeType, string.Empty), out result) || // no vendor with parameters
             mimeType.Contains(';', StringComparison.OrdinalIgnoreCase) &&
             mimeType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0] is string noParametersMimeType &&
             (_mimeTypes.TryGetValue(noParametersMimeType, out result) || // vendor without parameters
-            _mimeTypes.TryGetValue(vendorStripRegexInstance.Replace(noParametersMimeType, string.Empty), out result)); // no vendor without parameters
+            _mimeTypes.TryGetValue(vendorStripRegex().Replace(noParametersMimeType, string.Empty), out result)); // no vendor without parameters
     }
 }

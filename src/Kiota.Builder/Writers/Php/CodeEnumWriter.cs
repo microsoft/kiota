@@ -6,7 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
-public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
+public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
 {
     public CodeEnumWriter(PhpConventionService conventionService) : base(conventionService) { }
 
@@ -50,10 +50,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
             writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
         }
     }
-    private static readonly Regex _enumValueNameRegex = new("([A-Z]{1})", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 500)]
+    private static partial Regex _enumValueNameRegex();
     private static string GetEnumValueName(string original)
     {
-        return _enumValueNameRegex.Replace(original, "_$1").Trim('_').ToUpperInvariant();
+        return _enumValueNameRegex().Replace(original, "_$1").Trim('_').ToUpperInvariant();
     }
 
 }

@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Kiota.Builder.Extensions;
-public static class StringExtensions
+public static partial class StringExtensions
 {
     private const int MaxStackLimit = 1024;
 
@@ -149,7 +149,8 @@ public static class StringExtensions
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Singleline, 500)]
+    private static partial Regex propertyCleanupRegex();
     private const string CleanupGroupName = "followingLetter";
     public static string CleanupSymbolName(this string? original)
     {
@@ -157,13 +158,13 @@ public static class StringExtensions
 
         string result = NormalizeSymbolsBeforeCleanup(original);
 
-        result = propertyCleanupRegex.Replace(result,
+        result = propertyCleanupRegex().Replace(result,
                                 static x => x.Groups.Keys.Contains(CleanupGroupName) ?
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
         if (result.Length != 0 && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
-            result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
+            result = NumbersSpellingRegex().Replace(result, static x => x.Groups["number"]
                                                                     .Value
                                                                     .Select(static x => SpelledOutNumbers[x])
                                                                     .Aggregate(static (z, y) => z + y));
@@ -180,8 +181,8 @@ public static class StringExtensions
 
         return result;
     }
-
-    private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"^(?<number>\d+)", RegexOptions.Singleline, 500)]
+    private static partial Regex NumbersSpellingRegex();
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
         {'1', "One"},

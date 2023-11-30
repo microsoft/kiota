@@ -1,0 +1,71 @@
+name: Generation load tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1" # every monday at 3am UTC
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        exec:
+          [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+          ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.x
+      - name: Compile the CLI in debug mode
+        run: |
+          dotnet restore ./src/kiota
+          dotnet build ./src/kiota
+      - name: Run the CLI
+        run: |
+          curl -o petstore.yaml https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml
+          curl -o twitter.json https://api.apis.guru/v2/specs/twitter.com/current/2.61/openapi.json
+          curl -o notion.json https://api.apis.guru/v2/specs/notion.com/1.0.0/openapi.json
+          curl -o stripe.json https://api.apis.guru/v2/specs/stripe.com/2022-11-15/openapi.json
+          curl -o maps.yaml https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml
+          curl -o meraki.json https://api.apis.guru/v2/specs/meraki.com/0.0.0-streaming/openapi.json
+          curl -o pipedrive.yaml https://developers.pipedrive.com/docs/api/v1/openapi.yaml
+          curl -o twilio.json https://api.apis.guru/v2/specs/twilio.com/api/1.42.0/openapi.json
+          curl -o docusign.json https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.json
+          nohup sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do while : ; do : ; done & done" > /dev/null 2> /dev/null &
+          for ((n=0;n<100;n++))
+          do
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+          done
