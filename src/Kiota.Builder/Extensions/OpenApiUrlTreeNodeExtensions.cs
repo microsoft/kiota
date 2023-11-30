@@ -19,17 +19,17 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
                     (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                             + currentPath
-                            ?.Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                            ?.Select(replaceSingleParameterSegmentByItem)
-                            ?.Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}Escaped" : x)
-                            ?.Select(static x => string.Join(string.Empty, x
+                            .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(replaceSingleParameterSegmentByItem)
+                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}Escaped" : x)
+                            .Select(static x => string.Join(string.Empty, x
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
                                                     .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
-                            ?.Select(static x => x.CleanupSymbolName())
-                            ?.Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
-                            ?.Aggregate(string.Empty,
+                            .Select(static x => x.CleanupSymbolName())
+                            .Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
+                            .Aggregate(string.Empty,
                                 static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                     string.Empty)
                 .ReplaceValueIdentifier();
