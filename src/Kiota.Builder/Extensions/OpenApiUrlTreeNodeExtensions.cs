@@ -100,7 +100,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             return $"{result}Path"; // we don't run the change of an operation conflicting with a path on the same request builder
         return result;
     }
-    private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
+    private static readonly HashSet<string> httpVerbs = new(8, StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer, bool skipExtension = true)
     {
         var referenceName = schema?.Reference?.GetClassName();
@@ -113,7 +113,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                     CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
-            if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName))
+            if (stripExtensionForIndexersRegex().IsMatch(rawClassName))
                 rawClassName = stripExtensionForIndexersRegex().Replace(rawClassName, string.Empty);
             if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().Replace(rawClassName, string.Empty) is string cleanedUpClassName && !cleanedUpClassName.Equals(rawClassName, StringComparison.Ordinal))
             {
@@ -177,8 +177,6 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     [GeneratedRegex(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
     private static partial Regex stripExtensionForIndexersRegex(); // so {param-name}.json is considered as indexer
-    [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
-    private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
