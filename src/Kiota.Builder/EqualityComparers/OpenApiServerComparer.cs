@@ -8,7 +8,7 @@ namespace Kiota.Builder.EqualityComparers;
 
 internal sealed partial class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
 {
-    [GeneratedRegex("^https?://", RegexOptions.IgnoreCase | RegexOptions.Compiled, 500)]
+    [GeneratedRegex("^https?://", RegexOptions.IgnoreCase, 500)]
     private static partial Regex protocolCleanupRegex();
     public bool Equals(OpenApiServer? x, OpenApiServer? y)
     {
