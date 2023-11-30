@@ -531,7 +531,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-            targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
+            if (CodeConstant.FromQueryParametersMapping(codeInterface) is CodeConstant constant)
+                targetNS.AddConstant(constant);
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
