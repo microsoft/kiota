@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -148,6 +148,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 factoryNameCallbackFromType
             );
+
             AddStaticMethodsUsingsForRequestExecutor(
                 generatedCode,
                 factoryNameCallbackFromType
@@ -162,6 +163,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
+            AddEnumObject(generatedCode);
+            AddEnumObjectUsings(generatedCode);
             AliasUsingsWithSameSymbol(generatedCode);
             GenerateCodeFiles(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -173,7 +176,35 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         MergeElementsToFile(currentElement);
         CorrectCodeFileUsing(currentElement);
     }
-
+    
+    protected static void AddEnumObject(CodeElement currentElement)
+    {
+        if (currentElement is CodeEnum codeEnum)
+        {
+            codeEnum.CodeEnumObject = new CodeEnumObject { Name = codeEnum.Name + "Object", Parent = codeEnum };
+        }
+        CrawlTree(currentElement, AddEnumObject);
+    }
+    
+    protected static void AddEnumObjectUsings(CodeElement currentElement)
+    {
+        if (currentElement is CodeFunction codeFunction &&
+            codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+        {
+            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select( static x => x.TypeDefinition).OfType<CodeEnum>())
+            {
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = propertyEnum.Name,
+                    Declaration = new CodeType
+                    {
+                        TypeDefinition = propertyEnum.CodeEnumObject
+                    }
+                });
+            }
+        }
+        CrawlTree(currentElement, AddEnumObjectUsings);
+    }
     private void MergeElementsToFile(CodeElement currentElement)
     {
         // create all request builders as a code file with the functions
@@ -185,9 +216,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             GenerateRequestBuilderCodeFile(currentClass, namespaceOfRequestBuilder);
         }
+        if (currentElement is CodeEnum codeEnum && codeEnum.Parent is CodeNamespace codeEnumNameSpace)
+        {
+            GenerateCodeEnumFile(codeEnum, codeEnumNameSpace);
+        }
         CrawlTree(currentElement, MergeElementsToFile);
     }
 
+    private static void GenerateCodeEnumFile(CodeEnum codeEnum, CodeNamespace codeEnumNameSpace)
+    {
+        codeEnumNameSpace.TryAddCodeFile(codeEnum.Name, codeEnum, codeEnum.CodeEnumObject!);
+    }
     private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
         var functions = new List<CodeElement>();

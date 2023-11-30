@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -35,5 +36,25 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     public DeprecationInformation? Deprecation
     {
         get; set;
+    }
+
+    public CodeEnumObject? CodeEnumObject
+    {
+        get;
+        set;
+    }
+
+}
+
+
+public class CodeEnumObject : CodeElement, ICloneable
+{
+    public object Clone()
+    {
+        return new CodeUsing
+        {
+            Name = Name,
+            Parent = Parent,
+        };
     }
 }
