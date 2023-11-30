@@ -138,7 +138,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 parentNamespace.RenameChildElement(currentNamespace.Name, newName);
 
         }
-        CrawlTree(currentElement, ShortenLongNamespaceNames, true);
+        CrawlTree(currentElement, ShortenLongNamespaceNames);
     }
     private static void DisambiguateClassesWithNamespaceNames(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix)
     {
@@ -152,7 +152,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentNamespace.AddClass(currentClass);
             classesToUpdate.Add(currentClass);
         }
-        CrawlTree(currentElement, x => DisambiguateClassesWithNamespaceNames(x, classesToUpdate, suffix), true);
+        CrawlTree(currentElement, x => DisambiguateClassesWithNamespaceNames(x, classesToUpdate, suffix));
     }
     private static void UpdateReferencesToDisambiguatedClasses(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix)
     {
@@ -194,7 +194,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                         .ToList()
                         .ForEach(x => x.Name = $"{x.Name}{suffix}");
         }
-        CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix), true);
+        CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
     [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline, 500)]
     private static partial Regex CapitalizedFirstLetterAfterDot();
@@ -211,7 +211,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
         }
-        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS), true);
+        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS));
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
@@ -294,7 +294,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits });
         }
-        CrawlTree(currentElement, AddInheritedAndMethodTypesImports, true);
+        CrawlTree(currentElement, AddInheritedAndMethodTypesImports);
     }
     private static void AddNamespaceModuleImports(CodeNamespace clientNamespaceParent, CodeElement current)
     {
@@ -306,7 +306,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentClass.AddUsing(usingToAdd);
             });
         }
-        CrawlTree(current, c => AddNamespaceModuleImports(clientNamespaceParent, c), true);
+        CrawlTree(current, c => AddNamespaceModuleImports(clientNamespaceParent, c));
     }
     private static void AddModules(CodeNamespace clientNamespaceParent, CodeNamespace module, Action<CodeUsing> callback)
     {

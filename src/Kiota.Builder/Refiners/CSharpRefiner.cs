@@ -126,7 +126,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentClass.AddProperty(sameNameProperty);
             }
         }
-        CrawlTree(currentElement, DisambiguatePropertiesWithClassNames, true);
+        CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
     }
     protected static void MakeEnumPropertiesNullable(CodeElement currentElement)
     {
@@ -135,7 +135,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                         .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
                         .ToList()
                         .ForEach(x => x.Type.IsNullable = true);
-        CrawlTree(currentElement, MakeEnumPropertiesNullable, true);
+        CrawlTree(currentElement, MakeEnumPropertiesNullable);
     }
     private const string AbstractionsNamespaceName = "Microsoft.Kiota.Abstractions";
     private const string SerializationNamespaceName = $"{AbstractionsNamespaceName}.Serialization";
@@ -194,13 +194,13 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (current is CodeNamespace currentNamespace)
             currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
-        CrawlTree(current, CapitalizeNamespacesFirstLetters, true);
+        CrawlTree(current, CapitalizeNamespacesFirstLetters);
     }
     protected static void AddAsyncSuffix(CodeElement currentElement)
     {
         if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
             currentMethod.Name += "Async";
-        CrawlTree(currentElement, AddAsyncSuffix, true);
+        CrawlTree(currentElement, AddAsyncSuffix);
     }
     protected static void CorrectPropertyType(CodeProperty currentProperty)
     {

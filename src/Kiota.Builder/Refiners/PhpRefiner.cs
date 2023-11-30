@@ -275,7 +275,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 x.DefaultValue = "null";
             });
         }
-        CrawlTree(codeElement, CorrectParameterType, true);
+        CrawlTree(codeElement, CorrectParameterType);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -307,14 +307,14 @@ public class PhpRefiner : CommonLanguageRefiner
                 usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";
             }
         }
-        CrawlTree(currentElement, AliasUsingWithSameSymbol, true);
+        CrawlTree(currentElement, AliasUsingWithSameSymbol);
     }
 
     private static void CorrectBackingStoreSetterParam(CodeElement codeElement)
     {
         if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
             method.Parameters.ToList().ForEach(param => param.Optional = false);
-        CrawlTree(codeElement, CorrectBackingStoreSetterParam, true);
+        CrawlTree(codeElement, CorrectBackingStoreSetterParam);
     }
 
     private void AddCollectionValidationUtilImportToModels(CodeElement codeElement)
@@ -331,7 +331,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 codeClass.AddUsing(typeUtilsUsing);
             }
         }
-        CrawlTree(codeElement, AddCollectionValidationUtilImportToModels, true);
+        CrawlTree(codeElement, AddCollectionValidationUtilImportToModels);
     }
 
     private static readonly Dictionary<CodePropertyKind, CodeParameterKind> propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
@@ -399,7 +399,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 }
             }
         }
-        CrawlTree(codeElement, AddRequestConfigurationConstructors, true);
+        CrawlTree(codeElement, AddRequestConfigurationConstructors);
     }
 
     private static void AddQueryParameterFactoryMethod(CodeElement codeElement)
@@ -441,7 +441,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 codeClass.AddMethod(queryParamFactoryMethod);
             }
         }
-        CrawlTree(codeElement, AddQueryParameterFactoryMethod, true);
+        CrawlTree(codeElement, AddQueryParameterFactoryMethod);
     }
 }
 

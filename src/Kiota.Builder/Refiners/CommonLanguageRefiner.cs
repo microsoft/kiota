@@ -49,21 +49,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }).ToArray());
             return;
         }
-        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator), true);
+        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames)
     {
         ArgumentNullException.ThrowIfNull(defaultValues);
         if (ReplaceSerializationModules(generatedCode, static x => x.SerializerModules, (x, y) => x.SerializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, x => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames), true);
+        CrawlTree(generatedCode, x => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames));
     }
     protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames)
     {
         ArgumentNullException.ThrowIfNull(defaultValues);
         if (ReplaceSerializationModules(generatedCode, static x => x.DeserializerModules, (x, y) => x.DeserializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, x => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames), true);
+        CrawlTree(generatedCode, x => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames));
     }
     private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, HashSet<string>> propertyGetter, Action<CodeMethod, HashSet<string>> propertySetter, HashSet<string> initialNames, HashSet<string> moduleNames)
     {
@@ -97,7 +97,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
 
         }
-        CrawlTree(currentElement, x => CorrectCoreTypesForBackingStore(x, defaultPropertyValue, hasPrefix), true);
+        CrawlTree(currentElement, x => CorrectCoreTypesForBackingStore(x, defaultPropertyValue, hasPrefix));
     }
     private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current)
     {
@@ -131,7 +131,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             parentBlock2.RenameChildElement(currentEnum.Name, refinedEnumName);
         }
-        CrawlTree(current, x => CorrectNames(x, refineName), true);
+        CrawlTree(current, x => CorrectNames(x, refineName));
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
@@ -155,7 +155,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.RenameChildElement(currentProperty.Name, refinedName);
             }
         }
-        CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName), true);
+        CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_", AccessModifier propertyAccessModifier = AccessModifier.Private)
     {
@@ -229,7 +229,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Type = (CodeTypeBase)currentProperty.Type.Clone(),
             });
         }
-        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, refineAccessorName, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix, propertyAccessModifier), true);
+        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, refineAccessorName, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix, propertyAccessModifier));
     }
     protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[]? classKindsToExclude = null)
     {
@@ -254,7 +254,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Description = $"Instantiates a new {current.Name} and sets the default values.",
                 },
             });
-        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude), true);
+        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) =>
@@ -353,7 +353,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 current.Name = replacementName;
         }
 
-        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback), true);
+        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
     private static void ReplaceReservedCodeUsingNamespaceSegmentNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -402,7 +402,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var targetBlock = parentBlock.Parent is CodeClass parentClassParent ? parentClassParent : parentBlock;
             targetBlock.AddUsing(usingsToAdd);
         }
-        CrawlTree(current, c => AddDefaultImports(c, evaluators), true);
+        CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
     private static readonly HashSet<string> BinaryTypes = new(StringComparer.OrdinalIgnoreCase) { "binary", "base64", "base64url" };
     protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false, bool isNullable = false)
@@ -438,7 +438,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.AddUsing(newUsing);
             }
         }
-        CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration, isNullable), true);
+        CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration, isNullable));
     }
     protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, Func<string, string> refineMethodName, bool supportInnerClasses = true, string markerInterfaceNamespace = "", string markerInterfaceName = "", string markerMethodName = "")
     {
@@ -464,7 +464,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             else if (currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
                 currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
         }
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName), true);
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
     }
     private static CodeType ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
     {
@@ -601,7 +601,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 childNamespaceWithClassName.AddClass(currentClass);
             }
         }
-        CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace, true);
+        CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
     protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, GenerationLanguage language)
     {
@@ -638,7 +638,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
 
         }
-        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameCallback, parameterNameCallback, language), true);
+        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameCallback, parameterNameCallback, language));
     }
     internal void DisableActionOf(CodeElement current, params CodeParameterKind[] kinds)
     {
@@ -646,7 +646,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             foreach (var parameter in currentMethod.Parameters.Where(x => x.Type.ActionOf && x.IsOfKind(kinds)))
                 parameter.Type.ActionOf = false;
 
-        CrawlTree(current, x => DisableActionOf(x, kinds), true);
+        CrawlTree(current, x => DisableActionOf(x, kinds));
     }
     internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<string, string, string>? nameFactory = default)
     {
@@ -696,7 +696,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     nestedClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
-        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory), true);
+        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
     }
 
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
@@ -763,9 +763,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (usingsToAdd.Length != 0)
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
-        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter), true);
+        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
-    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly)
+    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
         ArgumentNullException.ThrowIfNull(function);
@@ -796,7 +796,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         .Where(static x => x.IsOfKind(CodePropertyKind.Custom))
                         .ToList()
                         .ForEach(static x => x.Type.IsNullable = true);
-        CrawlTree(currentElement, MakeModelPropertiesNullable, true);
+        CrawlTree(currentElement, MakeModelPropertiesNullable);
     }
     protected static void RemoveMethodByKind(CodeElement currentElement, CodeMethodKind kind, params CodeMethodKind[] additionalKinds)
     {
@@ -810,7 +810,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             parentClass.RemoveMethodByKinds(codeMethod.Kind);
         }
-        CrawlTree(currentElement, x => RemoveMethodByKindImpl(x, kinds), true);
+        CrawlTree(currentElement, x => RemoveMethodByKindImpl(x, kinds));
     }
     protected static void RemoveCancellationParameter(CodeElement currentElement)
     {
@@ -819,7 +819,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             currentMethod.RemoveParametersByKind(CodeParameterKind.Cancellation);
         }
-        CrawlTree(currentElement, RemoveCancellationParameter, true);
+        CrawlTree(currentElement, RemoveCancellationParameter);
     }
 
     protected static void AddParsableImplementsForModelClasses(CodeElement currentElement, string className)
@@ -835,7 +835,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = className
             });
         }
-        CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className), true);
+        CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
     protected static void CorrectCoreTypes(CodeClass? parentClass, Dictionary<string, (string, CodeUsing?)> coreTypesReplacements, params CodeTypeBase[] types)
     {
@@ -957,7 +957,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsErasable = isErasable
             });
         }
-        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface, isErasable), true);
+        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface, isErasable));
     }
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
     {
@@ -1018,7 +1018,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace), true);
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace));
     }
     protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]>? usingsCallback, params CodeMethodKind[] kindsToReplace)
     {
@@ -1040,7 +1040,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             parentNamespace.AddFunction(globalFunction);
         }
 
-        CrawlTree(currentElement, x => ReplaceLocalMethodsByGlobalFunctions(x, nameUpdateCallback, usingsCallback, kindsToReplace), true);
+        CrawlTree(currentElement, x => ReplaceLocalMethodsByGlobalFunctions(x, nameUpdateCallback, usingsCallback, kindsToReplace));
     }
     protected static void AddStaticMethodsUsingsForDeserializer(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
@@ -1069,7 +1069,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddStaticMethodsUsingsForDeserializer(x, functionNameCallback), true);
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsForDeserializer(x, functionNameCallback));
     }
     protected static void AddStaticMethodsUsingsForRequestExecutor(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
@@ -1084,7 +1084,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 returnType.TypeDefinition != null)
                 AddStaticMethodImportToClass(parentClass, returnType, functionNameCallback);
         }
-        CrawlTree(currentElement, x => AddStaticMethodsUsingsForRequestExecutor(x, functionNameCallback), true);
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsForRequestExecutor(x, functionNameCallback));
     }
     private static void AddStaticMethodImportToClass(CodeClass parentClass, CodeType returnType, Func<CodeType, string> functionNameCallback)
     {
@@ -1132,7 +1132,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, interfaceNamingCallback), true);
+        CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, interfaceNamingCallback));
     }
     private static void SetTypeAndAddUsing(CodeInterface inter, CodeType elemType, CodeElement targetElement)
     {
@@ -1343,7 +1343,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
             });
         }
-        CrawlTree(currentElement, x => AddQueryParameterMapperMethod(x, methodName, parameterName), true);
+        CrawlTree(currentElement, x => AddQueryParameterMapperMethod(x, methodName, parameterName));
     }
     protected static CodeMethod? GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude)
     {
@@ -1377,7 +1377,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (keysToRemove.Length != 0)
                 currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
         }
-        CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces, true);
+        CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }
     protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
     {
@@ -1403,7 +1403,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier), true);
+        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
     }
     protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
     {
@@ -1422,7 +1422,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.RemovePropertiesOfKind(CodePropertyKind.Headers, CodePropertyKind.Options);
         }
 
-        CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing), true);
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
     protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {
@@ -1462,7 +1462,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam, keepRequestConfigurationClass, addDeprecation, usingForDefaultGenericParameter), true);
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam, keepRequestConfigurationClass, addDeprecation, usingForDefaultGenericParameter));
     }
     private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
     {
@@ -1505,6 +1505,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddPrimaryErrorMessage(x, name, type, asProperty), true);
+        CrawlTree(currentElement, x => AddPrimaryErrorMessage(x, name, type, asProperty));
     }
 }
