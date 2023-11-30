@@ -200,7 +200,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
             codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
                 codeFunction.OriginalLocalMethod.Parameters
-                    .Any(x => x.Type.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    .Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase)) ||
 
             codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
                         codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
