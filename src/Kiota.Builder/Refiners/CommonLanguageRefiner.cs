@@ -1379,7 +1379,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }
-    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
+    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null, bool addCurrentTypeAsGenericTypeParameter = false)
     {
         ArgumentNullException.ThrowIfNull(baseTypeUsing);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
@@ -1391,6 +1391,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = baseTypeUsing.Name,
                     IsExternal = true,
                 };
+                if (addCurrentTypeAsGenericTypeParameter)
+                {
+                    currentClass.StartBlock.Inherits.GenericTypeParameterValues.Add(new CodeType
+                    {
+                        TypeDefinition = currentClass,
+                    });
+                }
                 currentClass.AddUsing(baseTypeUsing);
             }
 
@@ -1403,7 +1410,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
+        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier, addCurrentTypeAsGenericTypeParameter));
     }
     protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
     {

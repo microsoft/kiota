@@ -55,8 +55,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteSetterBody(codeElement, writer, parentClass);
                 break;
             case CodeMethodKind.RawUrlBuilder:
-                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
-                break;
+                throw new InvalidOperationException("RawUrlBuilder is implemented in the base type in TypeScript.");
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -81,14 +80,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteDefaultMethodBody(codeElement, writer);
                 break;
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("};");
-    }
-    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
-    {
-        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
-        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
+        writer.CloseBlock();
     }
 
     internal static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
@@ -192,7 +184,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 var pathParametersValue = "{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     pathParametersValue = pathParametersParameter.Name.ToFirstCharacterLowerCase();
-                writer.WriteLine($"super({pathParametersValue}, {requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue});");
+                writer.WriteLine($"super({pathParametersValue}, {requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}, (x, y) => new {parentClass.Name.ToFirstCharacterUpperCase()}({(currentMethod.Kind is CodeMethodKind.Constructor ? "x, " : string.Empty)}y));");
             }
             else
                 writer.WriteLine("super();");
