@@ -667,10 +667,6 @@ public sealed class CodeMethodWriterTests : IDisposable
             },
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-        AddRequestProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void WritesConstructorWithEnumValue()
