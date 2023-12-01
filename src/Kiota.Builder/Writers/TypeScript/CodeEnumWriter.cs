@@ -14,14 +14,15 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, TypeScriptConventionSe
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any())
             return;
-
         conventions.WriteLongDescription(codeElement, writer);
-        writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
+        writer.WriteLine($"export const {codeElement.CodeEnumObject?.Name.ToFirstCharacterUpperCase()} = {{");
         writer.IncreaseIndent();
         codeElement.Options.ToList().ForEach(x =>
         {
             conventions.WriteShortDescription(x.Documentation.Description, writer);
-            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.WireName}\",");
+            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
         });
+        writer.DecreaseIndent();
+        writer.WriteLine("}  as const;");
     }
 }

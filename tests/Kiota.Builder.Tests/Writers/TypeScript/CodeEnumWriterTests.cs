@@ -39,9 +39,9 @@ public class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains("export enum", result);
+        Assert.Contains("export const", result);
         Assert.Contains(optionName, result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result, 0);
     }
     [Fact]
     public void DoesntWriteAnythingOnNoOption()
@@ -65,6 +65,6 @@ public class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains($"/** {option.Documentation.Description} */", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result, 0);
     }
 }

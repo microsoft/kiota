@@ -15,7 +15,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isFlagEnum = codeElement.Type is CodeType { TypeDefinition: CodeEnum { Flags: true } }
                          && !codeElement.Type.IsCollection;//collection of flagged enums are not supported/don't make sense
-
+ 
         conventions.WriteLongDescription(codeElement, writer);
         switch (codeElement.Parent)
         {
