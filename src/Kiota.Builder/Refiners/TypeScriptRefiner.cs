@@ -158,9 +158,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
-            AddQueryParameterMapperMethod(
-                generatedCode
-            );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
             var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
@@ -531,11 +528,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-            if (CodeConstant.FromQueryParametersMapping(codeInterface) is CodeConstant constant)
-                targetNS.AddConstant(constant);
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
+
+
+            if (CodeConstant.FromQueryParametersMapping(codeInterface) is CodeConstant constant)
+                targetNS.AddConstant(constant);
 
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);

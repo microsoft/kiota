@@ -21,30 +21,6 @@ public class TypeScriptLanguageRefinerTests
 
     #region commonrefiner
     [Fact]
-    public async Task AddsQueryParameterMapperMethod()
-    {
-        var model = graphNS.AddClass(new CodeClass
-        {
-            Name = "somemodel",
-            Kind = CodeClassKind.QueryParameters,
-        }).First();
-
-        model.AddProperty(new CodeProperty
-        {
-            Name = "Select",
-            SerializationName = "%24select",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-        });
-
-        Assert.Empty(model.Methods);
-
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
-    }
-    [Fact]
     public async Task AddStaticMethodsUsingsForDeserializer()
     {
         var model = TestHelper.CreateModelClass(graphNS, "Model");
@@ -676,6 +652,16 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodeClassKind.QueryParameters
         }).First();
 
+        queryParam.AddProperty(new CodeProperty
+        {
+            Name = "Select",
+            SerializationName = "%24select",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+
         requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
         queryParam.AddProperty(new CodeProperty { Name = "stringProp", Type = new CodeType { Name = "string" } });
 
@@ -687,6 +673,7 @@ public class TypeScriptLanguageRefinerTests
         Assert.Empty(requestBuilder.InnerClasses);
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(testNS.Constants.Where(static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper)));
     }
 
 
