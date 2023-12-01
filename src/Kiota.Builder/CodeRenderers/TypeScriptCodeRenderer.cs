@@ -11,7 +11,7 @@ public class TypeScriptCodeRenderer : CodeRenderer
     {
         if (codeNamespace is null) return false;
         modelsNamespace ??= codeNamespace.GetRootNamespace().FindChildByName<CodeNamespace>(Configuration.ModelsNamespaceName);
-        if (modelsNamespace is not null && !modelsNamespace.IsParentOf(codeNamespace)) return false;
+        if (modelsNamespace is not null && !modelsNamespace.IsParentOf(codeNamespace) && modelsNamespace != codeNamespace) return false;
         return codeNamespace.Interfaces.Any() || codeNamespace.Files.Any(static x => x.Interfaces.Any());
     }
 }
