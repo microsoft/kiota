@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved the withUrlMethod of TypeScript in the base package. [#3812](https://github.com/microsoft/kiota/issues/3812)
 - Fixed a bug where path parameters deduplication would create collisions on sub path segments. [#3757](https://github.com/microsoft/kiota/issues/3757)
 - Moved from net7 to net8.
-- Removed windows OS from docker multi-partform image to align with [dotnet changes](https://github.com/dotnet/dotnet-docker/issues/4492).
+- Removed windows OS from docker multi-platform image to align with [dotnet changes](https://github.com/dotnet/dotnet-docker/issues/4492).
 - Fixed a bug where the emitted CSharp would not be compatible with netstandad2.0. [#3829](https://github.com/microsoft/kiota/issues/3829)
 - Fixed a bug where import statements for additionalDataHolder and enumSet are missing when BackingStore is enabled in java. [#3643](https://github.com/microsoft/kiota/pull/3643)
 - Fixed an issue where Kiota's regex's might time out. [#3797](https://github.com/microsoft/kiota/issues/3797)
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where property names that matched reserved type would be replaced in dotnet.
 - Fixed pass by value for `contentType` param in Go `requestInfo.SetStreamContentAndContentType`[#3830](https://github.com/microsoft/kiota/issues/3830)
 - Fixed parsing of `DateOnly` values generated in request executors [#3679](https://github.com/microsoft/kiota/issues/3679)
-- Fixes generation of default values names for go contructor functions [#3436](https://github.com/microsoft/kiota/issues/3436)
+- Fixes generation of default values names for go constructor functions [#3436](https://github.com/microsoft/kiota/issues/3436)
 
 
 ## [1.8.2] - 2023-11-08
