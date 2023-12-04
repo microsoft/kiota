@@ -153,19 +153,42 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 factoryNameCallbackFromType
             );
             ReplacePropertyNames(generatedCode,
-                new() {
+                [
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
-                },
+                ],
                 static s => s.ToCamelCase(UnderscoreArray));
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
             var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
             GenerateReusableModelsCodeFiles(modelsNamespace);
             GenerateRequestBuilderCodeFiles(modelsNamespace);
-            CorrectCodeFileUsing(generatedCode);
+            GroupReusableModelsInSingleFile(modelsNamespace);
+            RemoveSelfReferencingUsings(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+    }
+    private const string FileNameForModels = "index";
+    private static void GroupReusableModelsInSingleFile(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            var targetFile = codeNamespace.TryAddCodeFile(FileNameForModels);
+            foreach (var otherFile in codeNamespace.Files.Except([targetFile]))
+            {
+                targetFile.AddUsing(otherFile.Usings.ToArray());
+                targetFile.AddElements(otherFile.GetChildElements(true).ToArray());
+                codeNamespace.RemoveChildElement(otherFile);
+            }
+            if (codeNamespace.Enums.ToArray() is { Length: > 0 } enums)
+            {
+                targetFile.AddElements(enums);
+                codeNamespace.RemoveChildElement(enums);
+            }
+            RemoveSelfReferencingUsingForFile(targetFile, codeNamespace);
+            AliasCollidingSymbols(targetFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).Distinct(), targetFile.Name);
+        }
+        CrawlTree(currentElement, GroupReusableModelsInSingleFile);
     }
     private void GenerateReusableModelsCodeFiles(CodeElement currentElement)
     {
@@ -254,55 +277,58 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         codeNamespace.TryAddCodeFile(codeClass.Name, elements);
     }
 
-    private static void CorrectCodeFileUsing(CodeElement currentElement)
+    private static IEnumerable<CodeUsing> GetUsingsFromCodeElement(CodeElement codeElement)
     {
-        // if element is a code file eliminate using references to the same file
-        if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
+        return codeElement switch
         {
-            // correct the using values
-            // eliminate the using referring the elements in the same file
+            CodeFunction f => f.StartBlock.Usings,
+            CodeInterface ci => ci.Usings,
+            CodeEnum ce => ce.Usings,
+            CodeClass cc => cc.Usings,
+            _ => Enumerable.Empty<CodeUsing>()
+        };
+    }
+    private static void RemoveSelfReferencingUsingForFile(CodeFile codeFile, CodeNamespace codeNamespace)
+    {
+        // correct the using values
+        // eliminate the using referring the elements in the same file
+        var elementSet = codeFile.GetChildElements(true).Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var fileElements = codeFile.GetChildElements(true).ToArray();
+        foreach (var element in fileElements)
+        {
+            var foundUsingsNames = GetUsingsFromCodeElement(element)
+                .Select(static x => x.Declaration?.TypeDefinition)
+                .OfType<CodeElement>()
+                .Where(x => x.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
+                .Where(x => elementSet.Contains(x.Name))
+                .Select(static x => x.Name);
 
-            var elementSet = codeFile.GetChildElements(true).Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var element in codeFile.GetChildElements(true))
+            foreach (var x in foundUsingsNames)
             {
-                var startBlockUsings = element switch
+                switch (element)
                 {
-                    CodeFunction f => f.StartBlock.Usings,
-                    CodeInterface ci => ci.Usings,
-                    CodeEnum ce => ce.Usings,
-                    CodeClass cc => cc.Usings,
-                    _ => Enumerable.Empty<CodeUsing>()
-                };
-
-                var foundUsingsNames = startBlockUsings
-                    .Select(static x => x.Declaration?.TypeDefinition)
-                    .OfType<CodeElement>()
-                    .Where(x => x.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
-                    .Where(x => elementSet.Contains(x.Name))
-                    .Select(static x => x.Name);
-
-                foreach (var x in foundUsingsNames)
-                {
-                    switch (element)
-                    {
-                        case CodeFunction ci:
-                            ci.RemoveUsingsByDeclarationName(x);
-                            break;
-                        case CodeInterface ci:
-                            ci.RemoveUsingsByDeclarationName(x);
-                            break;
-                        case CodeEnum ci:
-                            ci.RemoveUsingsByDeclarationName(x);
-                            break;
-                        case CodeClass ci:
-                            ci.RemoveUsingsByDeclarationName(x);
-                            break;
-                    }
+                    case CodeFunction ci:
+                        ci.RemoveUsingsByDeclarationName(x);
+                        break;
+                    case CodeInterface ci:
+                        ci.RemoveUsingsByDeclarationName(x);
+                        break;
+                    case CodeEnum ci:
+                        ci.RemoveUsingsByDeclarationName(x);
+                        break;
+                    case CodeClass ci:
+                        ci.RemoveUsingsByDeclarationName(x);
+                        break;
                 }
             }
         }
+    }
+    private static void RemoveSelfReferencingUsings(CodeElement currentElement)
+    {
+        if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
+            RemoveSelfReferencingUsingForFile(codeFile, codeNamespace);
 
-        CrawlTree(currentElement, CorrectCodeFileUsing);
+        CrawlTree(currentElement, RemoveSelfReferencingUsings);
     }
 
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
