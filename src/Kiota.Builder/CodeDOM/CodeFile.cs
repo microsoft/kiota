@@ -8,6 +8,7 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>().OrderBy(static x => x.Name, StringComparer.Ordinal);
     public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name, StringComparer.Ordinal);
+    public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>().OrderBy(static x => x.Name, StringComparer.Ordinal);
 
     public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
     {
@@ -19,8 +20,8 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
         return AddRange(elements);
     }
 
-    public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements()
-        .SelectMany(static x => x.GetChildElements())
+    public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements(true)
+        .SelectMany(static x => x.GetChildElements(false))
         .OfType<ProprietableBlockDeclaration>()
         .SelectMany(static x => x.Usings);
 }
