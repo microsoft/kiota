@@ -35,7 +35,8 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         var file = FindChildByName<CodeFile>(fileName, false) ?? new CodeFile { Name = fileName };
         RemoveChildElement(children);
         RemoveChildElementByName(fileName);
-        file.AddElements(children);
+        if (children is { Length: > 0 })
+            file.AddElements(children);
 
         if (!file.IsChildOf(this, true))
             AddRange(file);
