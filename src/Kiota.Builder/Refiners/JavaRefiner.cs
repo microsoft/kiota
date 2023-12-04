@@ -465,9 +465,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             RemovePrefixFromRequestConfigParameters(currentClass, prefix);
         }
-        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x));
+        CrawlTree(currentElement, RemoveClassNamePrefixFromNestedClasses);
     }
-    private static void RemovePrefixFromQueryProperties(CodeElement currentElement, String prefix)
+    private static void RemovePrefixFromQueryProperties(CodeElement currentElement, string prefix)
     {
         if (currentElement is CodeClass currentClass)
         {

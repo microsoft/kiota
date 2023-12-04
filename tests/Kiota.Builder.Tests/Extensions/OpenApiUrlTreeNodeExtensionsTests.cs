@@ -250,7 +250,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select,api%2Dversion,api%7Etopic,api%2Eencoding}", node.Children.First().Value.GetUrlTemplate());
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
-    [InlineData("\\reviews\\search.json", "reviews.search")]
+    [InlineData("\\reviews\\search.json", "reviews.searchJson")]
     [InlineData("\\members\\microsoft.graph.$ref", "members.microsoftGraphRef")]
     [InlineData("\\feeds\\video-comments.{format}", "feeds.videoCommentsWithFormat")]
     [Theory]

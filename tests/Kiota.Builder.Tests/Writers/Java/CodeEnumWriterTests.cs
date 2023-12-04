@@ -9,7 +9,7 @@ using Kiota.Builder.Writers.Java;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Java;
-public class CodeEnumWriterTests : IDisposable
+public sealed class CodeEnumWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

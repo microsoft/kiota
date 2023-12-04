@@ -7,7 +7,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
-public class CodeNameSpaceWriterTests : IDisposable
+public sealed class CodeNameSpaceWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

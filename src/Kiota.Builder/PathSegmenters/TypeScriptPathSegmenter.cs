@@ -1,19 +1,30 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
 public class TypeScriptPathSegmenter : CommonPathSegmenter
 {
+    private CodeNamespace? modelsNamespace;
     public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
     public override string FileSuffix => ".ts";
+    private const string IndexFileName = "index";
     public override string NormalizeFileName(CodeElement currentElement)
     {
+        ArgumentNullException.ThrowIfNull(currentElement);
+        modelsNamespace ??= currentElement.GetImmediateParentOfType<CodeNamespace>()?.GetRootNamespace().FindChildByName<CodeNamespace>($"{ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
         return currentElement switch
         {
-            CodeNamespace => "index",
+            CodeNamespace => IndexFileName,
+            CodeFile currentFile when modelsNamespace is not null &&
+                        currentElement.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
+                        !(modelsNamespace.IsParentOf(currentNamespace) || modelsNamespace == currentNamespace) &&
+                        !currentFile.Classes.Any(static x => x.Kind is CodeClassKind.RequestBuilder && x.Methods.Any(static y => y.Kind is CodeMethodKind.ClientConstructor))
+                    => IndexFileName,
             _ => GetDefaultFileName(currentElement),
         };
     }

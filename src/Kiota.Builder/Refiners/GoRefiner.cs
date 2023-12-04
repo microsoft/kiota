@@ -265,7 +265,7 @@ public class GoRefiner : CommonLanguageRefiner
 
             var currentNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             var modelsNameSpace = findClientNameSpace(currentNameSpace)
-                ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
+                ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
 
             foreach (var property in propertiesToCorrect)
             {
@@ -328,7 +328,7 @@ public class GoRefiner : CommonLanguageRefiner
             findClientNameSpace(currentNamespace) is CodeNamespace parentNameSpace)
         {
             // if the parent is not the models namespace rename and move it to package root
-            var modelNameSpace = parentNameSpace.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
+            var modelNameSpace = parentNameSpace.FindNamespaceByName($"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
             var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
             if (!packageRootNameSpace.Name.Equals(currentNamespace.Name, StringComparison.Ordinal) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
             {

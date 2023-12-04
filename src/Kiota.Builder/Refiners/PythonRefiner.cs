@@ -232,7 +232,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, element => CorrectCommonNames(element));
+        CrawlTree(currentElement, CorrectCommonNames);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {

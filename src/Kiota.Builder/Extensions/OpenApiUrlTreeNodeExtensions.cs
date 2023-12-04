@@ -14,21 +14,22 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
+    private const string EscapedSuffix = "Escaped";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
                     (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                             + currentPath
-                            ?.Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                            ?.Select(replaceSingleParameterSegmentByItem)
-                            ?.Select(static x => string.Join(string.Empty, x
+                            .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(replaceSingleParameterSegmentByItem)
+                            .Select(static x => string.Join(string.Empty, x
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
-                                                    .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
-                            ?.Select(static x => x.CleanupSymbolName())
-                            ?.Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
-                            ?.Aggregate(string.Empty,
+                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}{EscapedSuffix}" : x)
+                            .Select(static x => x.CleanupSymbolName())
+                            .Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
+                            .Aggregate(string.Empty,
                                 static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                     string.Empty)
                 .ReplaceValueIdentifier();
@@ -99,7 +100,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             return $"{result}Path"; // we don't run the change of an operation conflicting with a path on the same request builder
         return result;
     }
-    private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
+    private static readonly HashSet<string> httpVerbs = new(8, StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer, bool skipExtension = true)
     {
         var referenceName = schema?.Reference?.GetClassName();
@@ -112,7 +113,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                     CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
-            if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName))
+            if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName)) // {id}.json is considered as indexer
                 rawClassName = stripExtensionForIndexersRegex().Replace(rawClassName, string.Empty);
             if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().Replace(rawClassName, string.Empty) is string cleanedUpClassName && !cleanedUpClassName.Equals(rawClassName, StringComparison.Ordinal))
             {

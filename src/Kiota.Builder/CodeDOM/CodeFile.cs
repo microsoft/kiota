@@ -7,6 +7,7 @@ namespace Kiota.Builder.CodeDOM;
 public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>().OrderBy(static x => x.Name, StringComparer.Ordinal);
+    public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name, StringComparer.Ordinal);
 
     public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
     {

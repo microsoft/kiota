@@ -4,7 +4,7 @@ using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests;
-public class CodeInterfaceDeclaraterWriterTests : IDisposable
+public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

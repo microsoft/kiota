@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Cli;
 
-public class CliCodeMethodWriterTests : IDisposable
+public sealed class CliCodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
