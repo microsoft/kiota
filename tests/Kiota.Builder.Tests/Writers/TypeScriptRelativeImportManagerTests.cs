@@ -44,7 +44,7 @@ public class TypeScriptRelativeImportManagerTests
         };
         declaration.AddUsings(nUsing);
         var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-        Assert.Equal("./messages/message", result.Item3);
+        Assert.Equal("./messages/", result.Item3);
     }
     [Fact]
     public void ReplacesImportsParentNamespace()
@@ -118,8 +118,8 @@ public class TypeScriptRelativeImportManagerTests
         declaration2.AddUsings(nUsing2);
         var result = importManager.GetRelativeImportPathForUsing(nUsing, usedRangeNS1);
         var result2 = importManager.GetRelativeImportPathForUsing(nUsing2, usedRangeNS2);
-        Assert.Equal("../../../../workbookRange", result.Item3);
-        Assert.Equal("../../workbookRange", result2.Item3);
+        Assert.Equal("../../../../", result.Item3);
+        Assert.Equal("../../", result2.Item3);
     }
     [Fact]
     public void ReplacesImportsSameNamespace()
@@ -141,7 +141,7 @@ public class TypeScriptRelativeImportManagerTests
         };
         declaration.AddUsings(nUsing);
         var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-        Assert.Equal("./message", result.Item3);
+        Assert.Equal("./", result.Item3);
     }
 
     [Fact]
@@ -165,6 +165,6 @@ public class TypeScriptRelativeImportManagerTests
         };
         declaration.AddUsings(nUsing);
         var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-        Assert.Equal("./index", result.Item3);
+        Assert.Equal("./", result.Item3);
     }
 }

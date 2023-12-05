@@ -186,7 +186,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 codeNamespace.RemoveChildElement(enums);
             }
             RemoveSelfReferencingUsingForFile(targetFile, codeNamespace);
-            AliasCollidingSymbols(targetFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).Distinct(), targetFile.Name);
+            var childElements = targetFile.GetChildElements(true).ToArray();
+            AliasCollidingSymbols(childElements.SelectMany(GetUsingsFromCodeElement).Distinct(), childElements.Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase));
         }
         CrawlTree(currentElement, GroupReusableModelsInSingleFile);
     }
@@ -333,6 +334,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
     {
+        AliasCollidingSymbols(usings, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { currentSymbolName });
+    }
+    private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, HashSet<string> currentSymbolNames)
+    {
         var enumeratedUsings = usings.ToArray();
         var duplicatedSymbolsUsings = enumeratedUsings.Where(static x => !x.IsExternal)
                                                                 .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
@@ -342,9 +347,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                                 .SelectMany(static x => x)
                                                                 .Union(enumeratedUsings
                                                                         .Where(static x => !x.IsExternal && x.Declaration != null)
-                                                                        .Where(x => x.Declaration!
-                                                                                        .Name
-                                                                                        .Equals(currentSymbolName, StringComparison.OrdinalIgnoreCase)))
+                                                                        .Where(x => currentSymbolNames.Contains(x.Declaration!.Name)))
                                                                 .ToArray();
         foreach (var usingElement in duplicatedSymbolsUsings)
             usingElement.Alias = (usingElement.Declaration
