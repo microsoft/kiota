@@ -55,8 +55,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteSetterBody(codeElement, writer, parentClass);
                 break;
             case CodeMethodKind.RawUrlBuilder:
-                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
-                break;
+                throw new InvalidOperationException("RawUrlBuilder is implemented in the base type in TypeScript.");
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -68,8 +67,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteRequestBuilderWithParametersBody(codeElement, parentClass, returnType, writer);
                 break;
             case CodeMethodKind.QueryParametersMapper:
-                WriteQueryParametersMapper(codeElement, parentClass, writer);
-                break;
+                throw new InvalidOperationException("TypeScript relies on a constant for query parameters mapping");
             case CodeMethodKind.Factory:
                 throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
             case CodeMethodKind.RawUrlConstructor:
@@ -82,28 +80,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteDefaultMethodBody(codeElement, writer);
                 break;
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("};");
-    }
-    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
-    {
-        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
-        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
-    }
-
-    private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
-    {
-        var parameter = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter)) ?? throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
-        var parameterName = parameter.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"switch({parameterName}) {{");
-        writer.IncreaseIndent();
-        var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
-        foreach (var escapedProperty in escapedProperties)
-        {
-            writer.WriteLine($"case \"{escapedProperty.Name}\": return \"{escapedProperty.SerializationName}\";");
-        }
-        writer.WriteLine($"default: return {parameterName};");
         writer.CloseBlock();
     }
 
@@ -208,7 +184,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 var pathParametersValue = "{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     pathParametersValue = pathParametersParameter.Name.ToFirstCharacterLowerCase();
-                writer.WriteLine($"super({pathParametersValue}, {requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue});");
+                writer.WriteLine($"super({pathParametersValue}, {requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}, (x, y) => new {parentClass.Name.ToFirstCharacterUpperCase()}({(currentMethod.Kind is CodeMethodKind.Constructor ? "x, " : string.Empty)}y));");
             }
             else
                 writer.WriteLine("super();");

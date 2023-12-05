@@ -1,10 +1,13 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypescriptRelativeImportManager : RelativeImportManager
 
 {
+    private CodeNamespace? modelsNamespace;
     public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix, namespaceSeparator)
     {
     }
@@ -27,16 +30,17 @@ public class TypescriptRelativeImportManager : RelativeImportManager
 
         if (typeDef == null)
             return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
-        var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
-            typeDef.GetImmediateParentOfType<CodeNamespace>());
+        var importNamespace = typeDef.GetImmediateParentOfType<CodeNamespace>();
+        var importPath = GetImportRelativePathFromNamespaces(currentNamespace, importNamespace);
         var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
-        if (importPath == "./" && isCodeUsingAModel)
+        modelsNamespace ??= currentNamespace.GetRootNamespace().FindChildByName<CodeNamespace>($"{prefix}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
+        if ("./".Equals(importPath, StringComparison.OrdinalIgnoreCase) && isCodeUsingAModel)
         {
             importPath += "index";
         }
         else if (string.IsNullOrEmpty(importPath))
             importPath += codeUsing.Name;
-        else if (!isCodeUsingAModel)
+        else if (!isCodeUsingAModel && (modelsNamespace is null || modelsNamespace.IsParentOf(importNamespace) || modelsNamespace == importNamespace))
         {
             var nameSpaceName = string.IsNullOrEmpty(codeUsing.Declaration?.Name) ? codeUsing.Name : codeUsing.Declaration.Name;
             if (codeUsing.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?

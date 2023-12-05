@@ -9,7 +9,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
-public class CodeClassEndWriterTests : IDisposable
+public sealed class CodeClassEndWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

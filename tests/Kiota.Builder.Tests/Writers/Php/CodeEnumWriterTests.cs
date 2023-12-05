@@ -11,7 +11,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
-public class CodeEnumWriterTests : IDisposable
+public sealed class CodeEnumWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

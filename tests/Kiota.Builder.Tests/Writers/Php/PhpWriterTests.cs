@@ -7,7 +7,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
-public class PhpWriterTests : IDisposable
+public sealed class PhpWriterTests : IDisposable
 {
     private readonly StringWriter tw;
     private const string OutputPath = "./";

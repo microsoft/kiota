@@ -53,7 +53,7 @@ jobs:
           distribution: "adopt"
           java-version: 17
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with: # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
           dotnet-version: |
             5.x

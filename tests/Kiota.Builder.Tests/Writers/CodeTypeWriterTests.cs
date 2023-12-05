@@ -8,7 +8,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
-public class CodeTypeWriterTests : IDisposable
+public sealed class CodeTypeWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

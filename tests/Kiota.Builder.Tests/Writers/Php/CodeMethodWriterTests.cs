@@ -14,7 +14,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
-public class CodeMethodWriterTests : IDisposable
+public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

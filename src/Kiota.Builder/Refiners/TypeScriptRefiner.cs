@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,7 +17,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -29,7 +29,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = AbstractionsPackageName,
                     IsExternal = true
                 }
-            });
+            }, addCurrentTypeAsGenericTypeParameter: true);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
@@ -159,107 +159,79 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
-            AddQueryParameterMapperMethod(
-                generatedCode
-            );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
-            AddEnumObject(generatedCode);
-            AddEnumObjectUsings(generatedCode);
+            GenerateEnumObjects(generatedCode);
             AliasUsingsWithSameSymbol(generatedCode);
-            GenerateCodeFiles(generatedCode);
+            var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
+            GenerateReusableModelsCodeFiles(modelsNamespace);
+            GenerateRequestBuilderCodeFiles(modelsNamespace);
+            CorrectCodeFileUsing(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
-
-    private void GenerateCodeFiles(CodeElement currentElement)
+    private static void GenerateEnumObjects(CodeElement currentElement)
     {
-        MergeElementsToFile(currentElement);
-        CorrectCodeFileUsing(currentElement);
+        AddEnumObject(currentElement);
+        AddEnumObjectUsings(currentElement);
+        GenerateEnumCodeFiles(currentElement);
     }
-    
-    protected static void AddEnumObject(CodeElement currentElement)
+    private static void GenerateEnumCodeFiles(CodeElement currentElement)
     {
-        if (currentElement is CodeEnum codeEnum)
+        if (currentElement is CodeEnum codeEnum && codeEnum.CodeEnumObject is not null && codeEnum.Parent is CodeNamespace codeEnumNameSpace)
         {
-            codeEnum.CodeEnumObject = new CodeEnumObject { Name = codeEnum.Name + "Object", Parent = codeEnum };
+            codeEnumNameSpace.TryAddCodeFile(codeEnum.Name, codeEnum, codeEnum.CodeEnumObject);
         }
-        CrawlTree(currentElement, AddEnumObject);
+        CrawlTree(currentElement, GenerateEnumCodeFiles);
     }
-    
-    protected static void AddEnumObjectUsings(CodeElement currentElement)
+    private void GenerateReusableModelsCodeFiles(CodeElement currentElement)
     {
-        if (currentElement is CodeFunction codeFunction &&
-            codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
-        {
-            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select( static x => x.TypeDefinition).OfType<CodeEnum>())
-            {
-                codeFunction.AddUsing(new CodeUsing
-                {
-                    Name = propertyEnum.Name,
-                    Declaration = new CodeType
-                    {
-                        TypeDefinition = propertyEnum.CodeEnumObject
-                    }
-                });
-            }
-        }
-        CrawlTree(currentElement, AddEnumObjectUsings);
-    }
-    private void MergeElementsToFile(CodeElement currentElement)
-    {
-        // create all request builders as a code file with the functions
-        if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model) && currentElement.Parent is CodeNamespace codeNamespace)
-        {
+        if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model))
             GenerateModelCodeFile(codeInterface, codeNamespace);
-        }
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentElement.Parent is CodeNamespace namespaceOfRequestBuilder)
-        {
-            GenerateRequestBuilderCodeFile(currentClass, namespaceOfRequestBuilder);
-        }
-        if (currentElement is CodeEnum codeEnum && codeEnum.Parent is CodeNamespace codeEnumNameSpace)
-        {
-            GenerateCodeEnumFile(codeEnum, codeEnumNameSpace);
-        }
-        CrawlTree(currentElement, MergeElementsToFile);
+        CrawlTree(currentElement, GenerateReusableModelsCodeFiles);
     }
-
-    private static void GenerateCodeEnumFile(CodeEnum codeEnum, CodeNamespace codeEnumNameSpace)
+    private static void GenerateRequestBuilderCodeFiles(CodeNamespace modelsNamespace)
     {
-        codeEnumNameSpace.TryAddCodeFile(codeEnum.Name, codeEnum, codeEnum.CodeEnumObject!);
-    }
-    private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
-    {
-        var functions = new List<CodeElement>();
-
-        foreach (var element in codeNamespace.GetChildElements(true))
+        if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
+        foreach (var subNamespace in mainNamespace.Namespaces.Except([modelsNamespace]))
         {
-            if (element is CodeFunction codeFunction)
-            {
-                if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer) &&
-                    codeFunction.OriginalLocalMethod.Parameters
-                        .Any(x => x.Type.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false))
-                {
-                    functions.Add(codeFunction);
-                }
-                else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
-                         codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
-                         codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace))
-                {
-                    functions.Add(codeFunction);
-                }
-            }
+            GenerateRequestBuilderCodeFilesForElement(subNamespace);
         }
-
-        if (functions.Count == 0)
-            return;
-        functions.Insert(0, codeInterface);
-        codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
+        foreach (var classElement in mainNamespace.Classes)
+        {
+            GenerateRequestBuilderCodeFilesForElement(classElement);
+        }
+    }
+    private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
+    {
+        if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
+        CrawlTree(currentElement, GenerateRequestBuilderCodeFilesForElement);
     }
 
+    private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
+                codeFunction.OriginalLocalMethod.Parameters
+                    .Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase)) ||
+
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
+                        codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+                        codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace)
+        ).ToArray();
+
+        if (functions.Length == 0)
+            return null;
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
+    }
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
         var executorMethods = codeClass.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor))
+            .ToArray();
+
+        var inlineEnums = codeNamespace
+            .Enums
             .ToArray();
 
         var queryParameterInterfaces = executorMethods
@@ -273,53 +245,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeInterface>()
             .ToArray();
 
-        var inlineRequestBodyInterfaces = executorMethods
-            .SelectMany(static x => x.Parameters)
-            .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
-            .Select(static x => x.Type.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
-            .OfType<CodeInterface>()
+        var inlineRequestAndResponseBodyFiles = codeNamespace.Interfaces
+            .Where(static x => x.Kind is CodeInterfaceKind.Model)
+            .Select(x => GenerateModelCodeFile(x, codeNamespace))
+            .OfType<CodeFile>()
             .ToArray();
-
-        var inlineRequestBodySerializerFunctions = inlineRequestBodyInterfaces
-            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineRequestBodyDeserializerFunctions = inlineRequestBodyInterfaces
-            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineRequestBodyFactoryFunctions = inlineRequestBodyInterfaces
-            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>();
-
-        var inlineResponseBodyInterfaces = executorMethods
-            .Select(static x => x.ReturnType.Name)
-            .Select(x => codeNamespace.FindChildByName<CodeInterface>(x, false))
-            .OfType<CodeInterface>()
-            .ToArray();
-
-        var inlineResponseBodyDeserializerFunctions = inlineResponseBodyInterfaces
-            .Select(static x => $"{ModelDeserializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineResponseBodySerializerFunctions = inlineResponseBodyInterfaces
-            .Select(static x => $"{ModelSerializerPrefix}{x.Name.ToFirstCharacterUpperCase()}")
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>()
-            .ToArray();
-
-        var inlineResponseBodyFactoryFunctions = inlineResponseBodyInterfaces
-            .Select(static x => GetFactoryFunctionNameFromTypeName(x.Name))
-            .Select(x => codeNamespace.FindChildByName<CodeFunction>(x, false))
-            .OfType<CodeFunction>();
 
         var queryParametersMapperConstants = queryParameterInterfaces
             .Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}Mapper")
@@ -327,17 +257,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
+        codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
         var elements = new CodeElement[] { codeClass }
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
-                            .Union(inlineRequestBodyInterfaces)
-                            .Union(inlineRequestBodySerializerFunctions)
-                            .Union(inlineRequestBodyDeserializerFunctions)
-                            .Union(inlineRequestBodyFactoryFunctions)
-                            .Union(inlineResponseBodyInterfaces)
-                            .Union(inlineResponseBodySerializerFunctions)
-                            .Union(inlineResponseBodyDeserializerFunctions)
-                            .Union(inlineResponseBodyFactoryFunctions)
+                            .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
+                            .Union(inlineEnums)
                             .Distinct()
                             .ToArray();
 
@@ -618,15 +543,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-            targetNS.AddConstant(CodeConstant.FromQueryParametersMapping(codeInterface));
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
 
+            if (CodeConstant.FromQueryParametersMapping(codeInterface) is CodeConstant constant)
+                targetNS.AddConstant(constant);
+
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);
         }
-        CrawlTree(currentElement, static x => ReplaceRequestQueryParamsWithInterfaces(x));
+        CrawlTree(currentElement, ReplaceRequestQueryParamsWithInterfaces);
     }
     private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string ModelSerializerPrefix = "serialize";
@@ -652,7 +579,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             CreateSerializationFunctions(codeClass);
         }
-        CrawlTree(codeElement, static x => CreateSeparateSerializers(x));
+        CrawlTree(codeElement, CreateSeparateSerializers);
     }
 
     private static void CreateSerializationFunctions(CodeClass modelClass)
@@ -747,7 +674,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RenameCodeInterfaceParamsInSerializers(codeFunction);
         }
 
-        CrawlTree(currentElement, static x => RenameModelInterfacesAndRemoveClasses(x));
+        CrawlTree(currentElement, RenameModelInterfacesAndRemoveClasses);
     }
 
     private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
@@ -1071,6 +998,35 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             }
         }
+    }
+
+    protected static void AddEnumObject(CodeElement currentElement)
+    {
+        if (currentElement is CodeEnum codeEnum)
+        {
+            codeEnum.CodeEnumObject = new CodeEnumObject { Name = codeEnum.Name + "Object", Parent = codeEnum };
+        }
+        CrawlTree(currentElement, AddEnumObject);
+    }
+    
+    protected static void AddEnumObjectUsings(CodeElement currentElement)
+    {
+        if (currentElement is CodeFunction codeFunction &&
+            codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+        {
+            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select( static x => x.TypeDefinition).OfType<CodeEnum>())
+            {
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = propertyEnum.Name,
+                    Declaration = new CodeType
+                    {
+                        TypeDefinition = propertyEnum.CodeEnumObject
+                    }
+                });
+            }
+        }
+        CrawlTree(currentElement, AddEnumObjectUsings);
     }
 
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)

@@ -211,7 +211,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
         }
-        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS), true);
+        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS));
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
