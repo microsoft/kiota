@@ -1008,13 +1008,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddEnumObject);
     }
-    
+
     protected static void AddEnumObjectUsings(CodeElement currentElement)
     {
-        if (currentElement is CodeFunction codeFunction &&
-            codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
         {
-            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select( static x => x.TypeDefinition).OfType<CodeEnum>())
+            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>())
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
