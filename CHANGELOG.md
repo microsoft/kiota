@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Groups request builders and inline request/response bodies in the same file in TypeScript.
 - Fixed a bug where reserved name rename would not rename objects properly. [#3609](https://github.com/microsoft/kiota/issues/3609)
 - Switched to a Jammy Chiseled base image for docker containers.
+- Moved the withUrlMethod of TypeScript in the base package. [#3812](https://github.com/microsoft/kiota/issues/3812)
 - Fixed a bug where path parameters deduplication would create collisions on sub path segments. [#3757](https://github.com/microsoft/kiota/issues/3757)
 - Moved from net7 to net8.
 - Removed windows OS from docker multi-partform image to align with [dotnet changes](https://github.com/dotnet/dotnet-docker/issues/4492).
