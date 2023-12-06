@@ -9,4 +9,5 @@ public interface ICodeElement
     {
         get; set;
     }
+    T GetImmediateParentOfType<T>(CodeElement? item = null);
 }

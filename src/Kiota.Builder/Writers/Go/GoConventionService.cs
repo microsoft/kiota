@@ -114,7 +114,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     public bool IsPrimitiveType(string typeName)
     {
-        return typeName.TrimCollectionAndPointerSymbols() switch
+        return typeName.TrimCollectionAndPointerSymbols().TrimPackageReference() switch
         {
             "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "Guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"

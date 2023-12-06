@@ -11,10 +11,11 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
         get;
         set;
     }
-    public static CodeConstant FromQueryParametersMapping(CodeInterface source)
+    public static CodeConstant? FromQueryParametersMapping(CodeInterface source)
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.Kind is not CodeInterfaceKind.QueryParameters) throw new InvalidOperationException("Cannot create a query parameters constant from a non query parameters interface");
+        if (!source.Properties.Any(static x => !string.IsNullOrEmpty(x.SerializationName))) return default;
         return new CodeConstant
         {
             Name = $"{source.Name.ToFirstCharacterLowerCase()}Mapper",

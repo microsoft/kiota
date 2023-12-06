@@ -8,27 +8,28 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
-public static class OpenApiUrlTreeNodeExtensions
+public static partial class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
-    private static readonly char[] namespaceNameSplitCharacters = new[] { '.', '-', '$' }; //$ref from OData
+    private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
+    private const string EscapedSuffix = "Escaped";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
                     (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                             + currentPath
-                            ?.Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                            ?.Select(replaceSingleParameterSegmentByItem)
-                            ?.Select(static x => string.Join(string.Empty, x
+                            .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(replaceSingleParameterSegmentByItem)
+                            .Select(static x => string.Join(string.Empty, x
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
-                                                    .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
-                            ?.Select(static x => x.CleanupSymbolName())
-                            ?.Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
-                            ?.Aggregate(string.Empty,
+                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}{EscapedSuffix}" : x)
+                            .Select(static x => x.CleanupSymbolName())
+                            .Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
+                            .Aggregate(string.Empty,
                                 static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                     string.Empty)
                 .ReplaceValueIdentifier();
@@ -38,9 +39,11 @@ public static class OpenApiUrlTreeNodeExtensions
         return currentNode.Path.GetNamespaceFromPath(prefix);
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-    private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 500)]
+    private static partial Regex PathParametersRegex();
     // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
-    private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"=@(\w+)", RegexOptions.Singleline, 500)]
+    private static partial Regex AtSignPathParameterRegex();
     private const char RequestParametersChar = '{';
     private const char RequestParametersEndChar = '}';
     private const string RequestParametersSectionChar = "(";
@@ -52,8 +55,8 @@ public static class OpenApiUrlTreeNodeExtensions
     {
         if (string.IsNullOrEmpty(pathSegment))
             return pathSegment;
-        return PathParametersRegex.Replace(
-                                        AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
+        return PathParametersRegex().Replace(
+                                        AtSignPathParameterRegex().Replace(pathSegment, "={$1}"),
                                         requestParametersMatchEvaluator)
                                     .Replace(RequestParametersSectionEndChar, string.Empty, StringComparison.OrdinalIgnoreCase)
                                     .Replace(RequestParametersSectionChar, string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -79,7 +82,8 @@ public static class OpenApiUrlTreeNodeExtensions
         return Enumerable.Empty<OpenApiParameter>();
     }
     private const char PathNameSeparator = '\\';
-    private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"-?id\d?}?$", RegexOptions.Singleline | RegexOptions.IgnoreCase, 500)]
+    private static partial Regex idClassNameCleanup();
     ///<summary>
     /// Returns the class name for the node with more or less precision depending on the provided arguments
     ///</summary>
@@ -96,7 +100,7 @@ public static class OpenApiUrlTreeNodeExtensions
             return $"{result}Path"; // we don't run the change of an operation conflicting with a path on the same request builder
         return result;
     }
-    private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
+    private static readonly HashSet<string> httpVerbs = new(8, StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer, bool skipExtension = true)
     {
         var referenceName = schema?.Reference?.GetClassName();
@@ -109,11 +113,11 @@ public static class OpenApiUrlTreeNodeExtensions
                                     CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
-            if (stripExtensionForIndexersTestRegex.IsMatch(rawClassName))
-                rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
-            if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
+            if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName)) // {id}.json is considered as indexer
+                rawClassName = stripExtensionForIndexersRegex().Replace(rawClassName, string.Empty);
+            if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup().Replace(rawClassName, string.Empty) is string cleanedUpClassName && !cleanedUpClassName.Equals(rawClassName, StringComparison.Ordinal))
             {
-                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
+                rawClassName = cleanedUpClassName;
                 if (WithKeyword.Equals(rawClassName, StringComparison.Ordinal)) // in case the single parameter doesn't follow {classname-id} we get the previous segment
                     rawClassName = currentNode.Path
                                             .Split(PathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
@@ -139,8 +143,9 @@ public static class OpenApiUrlTreeNodeExtensions
         "yml",
         "txt",
     };
-    private static readonly Regex descriptionCleanupRegex = new(@"[\r\n\t]", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-    public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
+    [GeneratedRegex(@"[\r\n\t]", RegexOptions.Singleline, 500)]
+    private static partial Regex descriptionCleanupRegex();
+    public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex().Replace(description, string.Empty);
     public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default)
     {
         if (currentNode != null && !string.IsNullOrEmpty(label) && currentNode.PathItems.TryGetValue(label, out var pathItem))
@@ -158,7 +163,7 @@ public static class OpenApiUrlTreeNodeExtensions
     private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
     {
         if (string.IsNullOrEmpty(currentSegment)) return false;
-        var segmentWithoutExtension = stripExtensionForIndexersRegex.Replace(currentSegment, string.Empty);
+        var segmentWithoutExtension = stripExtensionForIndexersRegex().Replace(currentSegment, string.Empty);
 
         return segmentWithoutExtension.StartsWith(RequestParametersChar) &&
                 segmentWithoutExtension.EndsWith(RequestParametersEndChar) &&
@@ -170,8 +175,10 @@ public static class OpenApiUrlTreeNodeExtensions
 
         return eval(currentSegment.Where(static x => x == RequestParametersChar));
     }
-    private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, Constants.DefaultRegexTimeout); // so {param-name}.json is considered as indexer
-    private static readonly Regex stripExtensionForIndexersTestRegex = new(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, Constants.DefaultRegexTimeout); // so {param-name}.json is considered as indexer
+    [GeneratedRegex(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
+    private static partial Regex stripExtensionForIndexersRegex(); // so {param-name}.json is considered as indexer
+    [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
+    private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
@@ -209,11 +216,12 @@ public static class OpenApiUrlTreeNodeExtensions
                 SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
                 queryStringParameters;
     }
-    private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 500)]
+    private static partial Regex pathParamMatcher();
     private static string SanitizePathParameterNamesForUrlTemplate(string original, HashSet<string> reservedParameterNames)
     {
         if (string.IsNullOrEmpty(original) || !original.Contains('{', StringComparison.OrdinalIgnoreCase)) return original;
-        var parameters = pathParamMatcher.Matches(original);
+        var parameters = pathParamMatcher().Matches(original);
         foreach (var value in parameters.Select(x => x.Groups["paramname"].Value))
             original = original.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
         return original;
@@ -221,7 +229,7 @@ public static class OpenApiUrlTreeNodeExtensions
     public static string SanitizeParameterNameForUrlTemplate(this string original)
     {
         if (string.IsNullOrEmpty(original)) return original;
-        return Uri.EscapeDataString(stripExtensionForIndexersRegex
+        return Uri.EscapeDataString(stripExtensionForIndexersRegex()
                                         .Replace(original, string.Empty) // {param-name}.json becomes {param-name}
                                 .TrimStart('{')
                                 .TrimEnd('}'))
@@ -229,10 +237,11 @@ public static class OpenApiUrlTreeNodeExtensions
                     .Replace(".", "%2E", StringComparison.OrdinalIgnoreCase)
                     .Replace("~", "%7E", StringComparison.OrdinalIgnoreCase);// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
     }
-    private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"%[0-9A-F]{2}", RegexOptions.Singleline, 500)]
+    private static partial Regex removePctEncodedCharacters();
     public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "")
     {
         if (string.IsNullOrEmpty(original)) return original;
-        return removePctEncodedCharacters.Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
+        return removePctEncodedCharacters().Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
     }
 }

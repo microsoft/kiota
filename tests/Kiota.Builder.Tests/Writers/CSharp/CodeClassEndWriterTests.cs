@@ -9,7 +9,7 @@ using Kiota.Builder.Writers.CSharp;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
-public class CodeClassEndWriterTests : IDisposable
+public sealed class CodeClassEndWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

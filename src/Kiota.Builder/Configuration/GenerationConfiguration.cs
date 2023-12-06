@@ -83,16 +83,6 @@ public class GenerationConfiguration : ICloneable
             return BarreledLanguagesWithConstantFileName.Contains(Language);
         }
     }
-    public bool ShouldRenderMethodsOutsideOfClasses
-    {
-        get
-        {
-            return MethodOutsideOfClassesLanguages.Contains(Language);
-        }
-    }
-    private static readonly HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new(1) {
-        GenerationLanguage.Go,
-    };
     private static readonly HashSet<GenerationLanguage> BarreledLanguages = new(3) {
         GenerationLanguage.Ruby,
         GenerationLanguage.TypeScript,

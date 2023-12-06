@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
 
-public class CodeNameSpaceWriterTests : IDisposable
+public sealed class CodeNameSpaceWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

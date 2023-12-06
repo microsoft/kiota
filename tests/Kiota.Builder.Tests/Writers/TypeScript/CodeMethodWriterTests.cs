@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
-public class CodeMethodWriterTests : IDisposable
+public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -666,10 +667,6 @@ public class CodeMethodWriterTests : IDisposable
             },
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-        AddRequestProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void WritesConstructorWithEnumValue()
@@ -857,19 +854,12 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "string",
             }
         });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("originalName", result);
-        Assert.Contains("switch", result);
-        Assert.Contains("case \"select\": return \"%24select\"", result);
-        Assert.Contains("case \"expand\": return \"%24expand\"", result);
-        Assert.Contains("case \"filter\": return \"%24filter\"", result);
-        Assert.Contains("default: return originalName", result);
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesDeprecationInformation()
     {
-        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), "v2.0");
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z", CultureInfo.InvariantCulture), DateTimeOffset.Parse("2021-01-01T00:00:00Z", CultureInfo.InvariantCulture), "v2.0");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("This method is deprecated", result);

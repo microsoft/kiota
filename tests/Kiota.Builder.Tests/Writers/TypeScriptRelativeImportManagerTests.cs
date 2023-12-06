@@ -70,7 +70,7 @@ public class TypeScriptRelativeImportManagerTests
         };
         declaration.AddUsings(nUsing);
         var result = importManager.GetRelativeImportPathForUsing(nUsing, modelsNS);
-        Assert.Equal("../messages/message", result.Item3);
+        Assert.Equal("../messages/", result.Item3);
     }
     [Fact]
     public void ReplacesImportsInOtherTrunk()
