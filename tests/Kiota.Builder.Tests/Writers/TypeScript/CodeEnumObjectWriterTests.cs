@@ -23,6 +23,8 @@ public class CodeEnumObjectWriterTests
         tw = new StringWriter();
         writer.SetTextWriter(tw);
     }
+
+    [Fact]
     public void Dispose()
     {
         tw?.Dispose();
