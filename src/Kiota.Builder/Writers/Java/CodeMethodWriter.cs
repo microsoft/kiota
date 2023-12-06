@@ -315,7 +315,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     {
         if (serializationModules != null)
             foreach (var module in serializationModules)
-                writer.WriteLine($"ApiClientBuilder.{methodName}(new {module}());");
+                writer.WriteLine($"ApiClientBuilder.{methodName}(() -> new {module}());");
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
