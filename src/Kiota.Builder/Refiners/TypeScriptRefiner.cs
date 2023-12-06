@@ -326,7 +326,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void RemoveSelfReferencingUsings(CodeElement currentElement)
     {
-        if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
+        if (currentElement is CodeFile { Parent: CodeNamespace codeNamespace } codeFile)
             RemoveSelfReferencingUsingForFile(codeFile, codeNamespace);
 
         CrawlTree(currentElement, RemoveSelfReferencingUsings);
