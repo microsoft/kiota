@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug in the vscode extension where the "Paste API Manifest" button would not be able to parse the manifest.
+
 ## [1.9.0] - 2023-12-07
 
 ### Added
