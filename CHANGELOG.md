@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.9.0] - 2023-12-07
+
+### Added
+
 - Added `--content-type` option for requests with multiple allowed content types. (CLI)
 
 ### Changed
@@ -1182,3 +1188,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
