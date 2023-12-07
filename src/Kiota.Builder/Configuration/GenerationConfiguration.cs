@@ -83,14 +83,11 @@ public class GenerationConfiguration : ICloneable
             return BarreledLanguagesWithConstantFileName.Contains(Language);
         }
     }
-    private static readonly HashSet<GenerationLanguage> BarreledLanguages = new(3) {
+    private static readonly HashSet<GenerationLanguage> BarreledLanguages = [
         GenerationLanguage.Ruby,
-        GenerationLanguage.TypeScript,
         GenerationLanguage.Swift,
-    };
-    private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new(1) {
-        GenerationLanguage.TypeScript
-    };
+    ];
+    private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = [];
     public bool CleanOutput
     {
         get; set;

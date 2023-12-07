@@ -58,7 +58,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
 
-        CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
+        if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
+            CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
         WriteFactoryMethodBody(codeElement, returnType, writer);
     }
 

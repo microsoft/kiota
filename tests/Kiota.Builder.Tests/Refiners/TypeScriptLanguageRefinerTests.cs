@@ -242,9 +242,10 @@ public class TypeScriptLanguageRefinerTests
     public async Task EscapesReservedKeywords()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var model = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "break");
+        TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "break");
         await ILanguageRefiner.Refine(generationConfiguration, root);
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var interFaceModel = codeFile.Interfaces.First(x => "BreakEscaped".Equals(x.Name, StringComparison.Ordinal));
         Assert.NotEqual("break", interFaceModel.Name);
@@ -352,7 +353,8 @@ public class TypeScriptLanguageRefinerTests
 
         await ILanguageRefiner.Refine(generationConfiguration, root);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
 
         var interFaceModel = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
@@ -387,7 +389,8 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(generationConfiguration, root);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
@@ -409,7 +412,8 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(generationConfiguration, root);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
@@ -431,7 +435,8 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(generationConfiguration, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
@@ -453,13 +458,15 @@ public class TypeScriptLanguageRefinerTests
         await ILanguageRefiner.Refine(generationConfiguration, root);
         Assert.NotEmpty(model.StartBlock.Usings);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("TimeOnly", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
 
     }
+    private const string IndexFileName = "index";
     [Fact]
     public async Task ReplacesDurationByNativeType()
     {
@@ -475,7 +482,8 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(generationConfiguration, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
@@ -561,26 +569,14 @@ public class TypeScriptLanguageRefinerTests
         model.AddUsing(using2);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var modelCodeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(modelCodeFile);
         var modelInterface = modelCodeFile.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var source1Interface = modelCodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
+        var source2Interface = modelCodeFile.Interfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
 
-        var source1CodeFile = modelsNS.FindChildByName<CodeFile>(source1.Name.ToFirstCharacterUpperCase());
-        Assert.NotNull(source1CodeFile);
-        var source1Interface = source1CodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
-
-        var source2CodeFile = submodelsNS.FindChildByName<CodeFile>(source2.Name.ToFirstCharacterUpperCase());
-        Assert.NotNull(source2CodeFile);
-        var source2Interface = source2CodeFile.Interfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
-
-        var modelUsing1 = modelInterface.Usings.First(x => x.Declaration?.TypeDefinition == source2Interface);
-        var modelUsing2 = modelInterface.Usings.First(x => x.Declaration?.TypeDefinition == source1Interface);
-        Assert.NotNull(modelUsing1.Declaration);
-        Assert.NotNull(modelUsing2.Declaration);
-        Assert.Equal(modelUsing1.Declaration.Name, modelUsing2.Declaration.Name);
-        Assert.NotEmpty(modelUsing1.Alias);
-        Assert.NotEmpty(modelUsing2.Alias);
-        Assert.NotEqual(modelUsing1.Alias, modelUsing2.Alias);
+        Assert.Empty(modelInterface.Usings.Where(x => x.Declaration?.TypeDefinition == source2Interface));
+        Assert.Empty(modelInterface.Usings.Where(x => x.Declaration?.TypeDefinition == source1Interface));
     }
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()
@@ -620,11 +616,12 @@ public class TypeScriptLanguageRefinerTests
     public async Task AddsModelInterfaceForAModelClass()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var model = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "modelA");
+        TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "modelA");
 
         await ILanguageRefiner.Refine(generationConfiguration, root);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
         Assert.Contains(codeFile.Interfaces, static x => "ModelA".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
     }
@@ -778,7 +775,8 @@ public class TypeScriptLanguageRefinerTests
 
         await ILanguageRefiner.Refine(generationConfiguration, root);
 
-        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile); // codefile exists
 
         // model , interface, deserializer, serializer should be direct descendant of the codefile

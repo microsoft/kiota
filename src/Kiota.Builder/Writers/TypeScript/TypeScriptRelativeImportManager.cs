@@ -1,13 +1,10 @@
-﻿using System;
-using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Configuration;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypescriptRelativeImportManager : RelativeImportManager
 
 {
-    private CodeNamespace? modelsNamespace;
     public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix, namespaceSeparator)
     {
     }
@@ -32,27 +29,6 @@ public class TypescriptRelativeImportManager : RelativeImportManager
             return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
         var importNamespace = typeDef.GetImmediateParentOfType<CodeNamespace>();
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace, importNamespace);
-        var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
-        modelsNamespace ??= currentNamespace.GetRootNamespace().FindChildByName<CodeNamespace>($"{prefix}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
-        if ("./".Equals(importPath, StringComparison.OrdinalIgnoreCase) && isCodeUsingAModel)
-        {
-            importPath += "index";
-        }
-        else if (string.IsNullOrEmpty(importPath))
-            importPath += codeUsing.Name;
-        else if (!isCodeUsingAModel && (modelsNamespace is null || modelsNamespace.IsParentOf(importNamespace) || modelsNamespace == importNamespace))
-        {
-            var nameSpaceName = string.IsNullOrEmpty(codeUsing.Declaration?.Name) ? codeUsing.Name : codeUsing.Declaration.Name;
-            if (codeUsing.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?
-                    .FindChildByName<CodeElement>(nameSpaceName)?.Parent is CodeFile f)
-            {
-                importPath += f.Name.ToFirstCharacterLowerCase();
-            }
-            else
-            {
-                importPath += (!string.IsNullOrEmpty(codeUsing.Declaration?.TypeDefinition?.Name) ? codeUsing.Declaration.TypeDefinition.Name : codeUsing.Declaration?.Name).ToFirstCharacterLowerCase();
-            }
-        }
         return (importSymbol, codeUsing.Alias, importPath);
     }
 }
