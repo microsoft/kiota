@@ -7,13 +7,13 @@ config.md)
 
 * [kiota client add](./cli/client-add.md)
 * [kiota client edit](./cli/client-edit.md)
-* [kiota client update](./cli/client-update.md)
+* [kiota client remove](./cli/client-remove.md)
 * [kiota client generate](./cli/client-generate.md)
-* [kiota init](./cli/init.md)
-* [kiota migrate](./cli/migrate.md)
+* [kiota config init](./cli/config-init.md)
+* [kiota config migrate](./cli/config-migrate.md)
 
 ## Extension
 
 ## Scenarios
 
-* [Kiota.Config](./scenarios/kiota.
+* [Kiota Config](./scenarios/kiota.config.md)

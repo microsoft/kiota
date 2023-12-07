@@ -1,6 +1,6 @@
-## JSON Schema for kiota.config
+## JSON Schema for kiota-config.json
 
-```json
+```jsonc
 {
   "$schema": "<http://json-schema.org/draft-07/schema#>",
   "type": "object",
