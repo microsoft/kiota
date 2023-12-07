@@ -6221,6 +6221,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/microsoft.graph.post'
+  /actors/{actor-id}/foo/baz:
+    get:
+      parameters:
+        - name: actor-id
+          in: path
+          required: true
+          description: The id of the actor
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
 components:
   schemas:
     microsoft.graph.post:
@@ -6273,6 +6290,25 @@ components:
         Assert.NotNull(authorsItemRequestBuilderNamespace);
         var authorsItemRequestBuilder = authorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("authorItemRequestBuilder");
         Assert.Equal(authorsCollectionIndexer.ReturnType.Name, authorsItemRequestBuilder.Name);
+
+        var actorsCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.actors");
+        Assert.NotNull(actorsCollectionRequestBuilderNamespace);
+        var actorsCollectionRequestBuilder = actorsCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("actorsRequestBuilder");
+        var actorsCollectionIndexer = actorsCollectionRequestBuilder.Indexer;
+        Assert.NotNull(actorsCollectionIndexer);
+        Assert.Equal("Guid", actorsCollectionIndexer.IndexParameter.Type.Name);
+        Assert.Equal("The id of the actor", actorsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(actorsCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(actorsCollectionIndexer.Deprecation.IsDeprecated);
+        var actorsCllectionStringIndexer = actorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{actorsCollectionIndexer.Name}-string");
+        Assert.NotNull(actorsCllectionStringIndexer);
+        Assert.Equal("string", actorsCllectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(actorsCllectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(actorsCllectionStringIndexer.Deprecation.IsDeprecated);
+        var actorsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.actors.item");
+        Assert.NotNull(actorsItemRequestBuilderNamespace);
+        var actorsItemRequestBuilder = actorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("actorItemRequestBuilder");
+        Assert.Equal(actorsCollectionIndexer.ReturnType.Name, actorsItemRequestBuilder.Name);
     }
     [Fact]
     public async Task MapsBooleanEnumToBooleanType()

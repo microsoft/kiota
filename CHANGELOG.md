@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where a property named constructor would make generation fail. [#3756](https://github.com/microsoft/kiota/issues/3756)
 - Removed reflection for Java enum deserialization. [microsoft/kiota-java#843](https://github.com/microsoft/kiota-java/pull/843)
 - Added support for AnyOf arrays. [#3786](https://github.com/microsoft/kiota/pull/3792)
+- Fixed a bug where path parameter type was not correctly detected during generation. [#3791](https://github.com/microsoft/kiota/issues/3791)
 
 ## [1.8.2] - 2023-11-08
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -1122,7 +1123,7 @@ public partial class KiotaBuilder
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal);
         }
 
-        return new Dictionary<string, OpenApiPathItem>();
+        return ImmutableDictionary<string, OpenApiPathItem>.Empty;
     }
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
