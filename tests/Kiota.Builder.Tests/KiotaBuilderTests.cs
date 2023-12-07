@@ -6204,6 +6204,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/microsoft.graph.post'
+  /authors/{author-id}/posts:
+    get:
+      parameters:
+        - name: author-id
+          in: path
+          required: true
+          description: The id of the author's posts to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
+  /actors/{actor-id}/foo/baz:
+    get:
+      parameters:
+        - name: actor-id
+          in: path
+          required: true
+          description: The id of the actor
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
 components:
   schemas:
     microsoft.graph.post:
@@ -6218,24 +6252,63 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
-        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
-        Assert.NotNull(collectionRequestBuilderNamespace);
-        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
-        var collectionIndexer = collectionRequestBuilder.Indexer;
-        Assert.NotNull(collectionIndexer);
-        Assert.Equal("integer", collectionIndexer.IndexParameter.Type.Name);
-        Assert.Equal("The id of the pet to retrieve", collectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
-        Assert.False(collectionIndexer.IndexParameter.Type.IsNullable);
-        Assert.False(collectionIndexer.Deprecation.IsDeprecated);
-        var collectionStringIndexer = collectionRequestBuilder.FindChildByName<CodeIndexer>($"{collectionIndexer.Name}-string");
-        Assert.NotNull(collectionStringIndexer);
-        Assert.Equal("string", collectionStringIndexer.IndexParameter.Type.Name);
-        Assert.True(collectionStringIndexer.IndexParameter.Type.IsNullable);
-        Assert.True(collectionStringIndexer.Deprecation.IsDeprecated);
-        var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
-        Assert.NotNull(itemRequestBuilderNamespace);
-        var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
-        Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
+
+        var postsCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
+        Assert.NotNull(postsCollectionRequestBuilderNamespace);
+        var postsCollectionRequestBuilder = postsCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
+        var postsCollectionIndexer = postsCollectionRequestBuilder.Indexer;
+        Assert.NotNull(postsCollectionIndexer);
+        Assert.Equal("integer", postsCollectionIndexer.IndexParameter.Type.Name);
+        Assert.Equal("The id of the pet to retrieve", postsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(postsCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(postsCollectionIndexer.Deprecation.IsDeprecated);
+        var postsCollectionStringIndexer = postsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{postsCollectionIndexer.Name}-string");
+        Assert.NotNull(postsCollectionStringIndexer);
+        Assert.Equal("string", postsCollectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(postsCollectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(postsCollectionStringIndexer.Deprecation.IsDeprecated);
+        var postsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
+        Assert.NotNull(postsItemRequestBuilderNamespace);
+        var postsItemRequestBuilder = postsItemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
+        Assert.Equal(postsCollectionIndexer.ReturnType.Name, postsItemRequestBuilder.Name);
+
+        var authorsCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.authors");
+        Assert.NotNull(authorsCollectionRequestBuilderNamespace);
+        var authorsCollectionRequestBuilder = authorsCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("authorsRequestBuilder");
+        var authorsCollectionIndexer = authorsCollectionRequestBuilder.Indexer;
+        Assert.NotNull(authorsCollectionIndexer);
+        Assert.Equal("Guid", authorsCollectionIndexer.IndexParameter.Type.Name);
+        Assert.Equal("The id of the author's posts to retrieve", authorsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(authorsCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(authorsCollectionIndexer.Deprecation.IsDeprecated);
+        var authorsCllectionStringIndexer = authorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{authorsCollectionIndexer.Name}-string");
+        Assert.NotNull(authorsCllectionStringIndexer);
+        Assert.Equal("string", authorsCllectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(authorsCllectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(authorsCllectionStringIndexer.Deprecation.IsDeprecated);
+        var authorsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.authors.item");
+        Assert.NotNull(authorsItemRequestBuilderNamespace);
+        var authorsItemRequestBuilder = authorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("authorItemRequestBuilder");
+        Assert.Equal(authorsCollectionIndexer.ReturnType.Name, authorsItemRequestBuilder.Name);
+
+        var actorsCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.actors");
+        Assert.NotNull(actorsCollectionRequestBuilderNamespace);
+        var actorsCollectionRequestBuilder = actorsCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("actorsRequestBuilder");
+        var actorsCollectionIndexer = actorsCollectionRequestBuilder.Indexer;
+        Assert.NotNull(actorsCollectionIndexer);
+        Assert.Equal("Guid", actorsCollectionIndexer.IndexParameter.Type.Name);
+        Assert.Equal("The id of the actor", actorsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(actorsCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(actorsCollectionIndexer.Deprecation.IsDeprecated);
+        var actorsCllectionStringIndexer = actorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{actorsCollectionIndexer.Name}-string");
+        Assert.NotNull(actorsCllectionStringIndexer);
+        Assert.Equal("string", actorsCllectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(actorsCllectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(actorsCllectionStringIndexer.Deprecation.IsDeprecated);
+        var actorsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.actors.item");
+        Assert.NotNull(actorsItemRequestBuilderNamespace);
+        var actorsItemRequestBuilder = actorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("actorItemRequestBuilder");
+        Assert.Equal(actorsCollectionIndexer.ReturnType.Name, actorsItemRequestBuilder.Name);
     }
     [Fact]
     public async Task MapsBooleanEnumToBooleanType()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -1080,9 +1081,10 @@ public partial class KiotaBuilder
         var parameterName = string.Join(OpenAPIUrlTreeNodePathSeparator, currentNode.Path.Split(OpenAPIUrlTreeNodePathSeparator, StringSplitOptions.RemoveEmptyEntries)
                                         .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
                                         .Trim(OpenAPIUrlTreeNodePathSeparator, ForwardSlash, '{', '}');
-        var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
+        var pathItems = GetPathItems(currentNode);
+        var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
                         .Select(static x => new { Parameter = x, IsPathParameter = true })
-                        .Union(currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
+                        .Union(pathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
                         .OrderBy(static x => x.IsPathParameter)
                         .Select(static x => x.Parameter)
                         .FirstOrDefault(x => x.Name.Equals(parameterName, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
@@ -1104,6 +1106,23 @@ public partial class KiotaBuilder
             },
         };
         return result;
+    }
+    private static IDictionary<string, OpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParameterNode = true)
+    {
+        if ((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
+        {
+            return currentNode.PathItems;
+        }
+
+        if (currentNode.Children.Any())
+        {
+            return currentNode.Children
+                .SelectMany(static x => GetPathItems(x.Value, false))
+                .DistinctBy(static x => x.Key, StringComparer.Ordinal)
+                .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal);
+        }
+
+        return ImmutableDictionary<string, OpenApiPathItem>.Empty;
     }
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
