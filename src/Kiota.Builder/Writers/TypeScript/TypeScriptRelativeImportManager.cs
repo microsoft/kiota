@@ -27,28 +27,8 @@ public class TypescriptRelativeImportManager : RelativeImportManager
 
         if (typeDef == null)
             return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
-        var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
-            typeDef.GetImmediateParentOfType<CodeNamespace>());
-        var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
-        if (importPath == "./" && isCodeUsingAModel)
-        {
-            importPath += "index";
-        }
-        else if (string.IsNullOrEmpty(importPath))
-            importPath += codeUsing.Name;
-        else if (!isCodeUsingAModel)
-        {
-            var nameSpaceName = string.IsNullOrEmpty(codeUsing.Declaration?.Name) ? codeUsing.Name : codeUsing.Declaration.Name;
-            if (codeUsing.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?
-                    .FindChildByName<CodeElement>(nameSpaceName)?.Parent is CodeFile f)
-            {
-                importPath += f.Name.ToFirstCharacterLowerCase();
-            }
-            else
-            {
-                importPath += (!string.IsNullOrEmpty(codeUsing.Declaration?.TypeDefinition?.Name) ? codeUsing.Declaration.TypeDefinition.Name : codeUsing.Declaration?.Name).ToFirstCharacterLowerCase();
-            }
-        }
+        var importNamespace = typeDef.GetImmediateParentOfType<CodeNamespace>();
+        var importPath = GetImportRelativePathFromNamespaces(currentNamespace, importNamespace);
         return (importSymbol, codeUsing.Alias, importPath);
     }
 }

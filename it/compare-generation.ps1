@@ -48,7 +48,10 @@ if (Test-Path $targetOpenapiPath) {
     Remove-Item $targetOpenapiPath
 }
 
-if ($descriptionUrl.StartsWith("./")) {
+if ($descriptionUrl.StartsWith("./") -or $descriptionUrl.StartsWith(".\\") -or 
+    $descriptionUrl.Substring(1).StartsWith(":\") -or $descriptionUrl.Substring(1).StartsWith(":/") -or
+    $descriptionUrl.StartsWith("\") -or $descriptionUrl.StartsWith("/")) {
+    # relative path, absolute path windows, absolute path unix
     Copy-Item -Path $descriptionUrl -Destination $targetOpenapiPath -Force
 }
 elseif ($descriptionUrl.StartsWith("http")) {

@@ -196,7 +196,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
-    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline, 500)]
     private static partial Regex CapitalizedFirstLetterAfterDot();
     private static void FlattenModelsNamespaces(CodeElement currentElement, CodeNamespace modelsNS)
     {
@@ -211,7 +211,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
         }
-        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS), true);
+        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS));
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {

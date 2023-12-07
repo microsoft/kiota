@@ -12,7 +12,7 @@ using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace kiota;
-public static class KiotaHost
+public static partial class KiotaHost
 {
     public static RootCommand GetRootCommand()
     {
@@ -315,8 +315,10 @@ public static class KiotaHost
         manifestOption.AddAlias("-a");
         return manifestOption;
     }
-    private static readonly Regex classNameRegex = new(@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-    private static readonly Regex namespaceNameRegex = new(@"^[\w][\w\._-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    [GeneratedRegex(@"^[a-zA-Z_][\w_-]+", RegexOptions.Singleline, 500)]
+    private static partial Regex classNameRegex();
+    [GeneratedRegex(@"^[\w][\w\._-]+", RegexOptions.Singleline, 500)]
+    private static partial Regex namespaceNameRegex();
     private static Command GetGenerateCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -333,12 +335,12 @@ public static class KiotaHost
         var classOption = new Option<string>("--class-name", () => defaultConfiguration.ClientClassName, "The class name to use for the core client class.");
         classOption.AddAlias("-c");
         classOption.ArgumentHelpName = "name";
-        AddStringRegexValidator(classOption, classNameRegex, "class name");
+        AddStringRegexValidator(classOption, classNameRegex(), "class name");
 
         var namespaceOption = new Option<string>("--namespace-name", () => defaultConfiguration.ClientNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
         namespaceOption.AddAlias("-n");
         namespaceOption.ArgumentHelpName = "name";
-        AddStringRegexValidator(namespaceOption, namespaceNameRegex, "namespace name");
+        AddStringRegexValidator(namespaceOption, namespaceNameRegex(), "namespace name");
 
         var logLevelOption = GetLogLevelOption();
 

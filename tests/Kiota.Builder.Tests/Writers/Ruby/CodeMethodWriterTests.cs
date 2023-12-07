@@ -10,7 +10,7 @@ using Kiota.Builder.Writers.Ruby;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Ruby;
-public class CodeMethodWriterTests : IDisposable
+public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

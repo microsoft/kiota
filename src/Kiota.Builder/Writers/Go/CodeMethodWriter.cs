@@ -555,7 +555,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 var defaultValue = propWithDefault.DefaultValue;
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
                 {
-                    defaultValue = $"{defaultValue.Trim('"').ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
+                    defaultValue = defaultValue.Trim('"');
+                    defaultValue =
+                        enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
+                    defaultValue = $"{defaultValue.ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
                 writer.WriteLine($"{defaultValueReference} := {defaultValue}");
                 defaultValueReference = $"&{defaultValueReference}";
@@ -742,7 +745,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var constructorFunction = returnType switch
         {
             _ when isVoid => string.Empty,
-            _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+            _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols().TrimPackageReference().ToLowerInvariant()}\", ",
             _ when isBinary => $"\"{returnType}\", ",
             _ when isEnum => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, parentClass, "Parse", string.Empty, string.Empty)}, ",
             _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, parentClass, "Create", "FromDiscriminatorValue", "able")}, ",
@@ -867,7 +870,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, {requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, *{requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
             }

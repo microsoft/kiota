@@ -7,7 +7,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
-public class CodeIndexerWriterTests : IDisposable
+public sealed class CodeIndexerWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

@@ -8,7 +8,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Ruby;
-public class CodeEnumWriterTests : IDisposable
+public sealed class CodeEnumWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

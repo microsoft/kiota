@@ -12,9 +12,6 @@ using Kiota.Builder.Writers.CSharp;
 namespace Kiota.Builder.Writers.Cli;
 partial class CliCodeMethodWriter : CodeMethodWriter
 {
-    private static readonly Regex DelimitedRegex = CliDelimitedRegex();
-    private static readonly Regex CamelCaseRegex = CliCamelCaseRegex();
-    private static readonly Regex UppercaseRegex = CliUppercaseRegex();
     private const string AllParamType = "bool";
     private const string AllParamName = "all";
     private const string CancellationTokenParamType = "CancellationToken";
@@ -49,7 +46,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     {
         var classMethods = parentClass.Methods;
         var name = codeElement.SimpleName;
-        name = UppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLowerInvariant();
+        name = UppercaseRegex().Replace(name, "-$1").TrimStart('-').ToLowerInvariant();
 
         if (codeElement.HttpMethod == null)
         {
@@ -877,17 +874,17 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     /// <returns></returns>
     private static string NormalizeToOption(string input)
     {
-        var result = CamelCaseRegex.Replace(input, "-$1");
+        var result = CamelCaseRegex().Replace(input, "-$1");
         // 2 passes for cases like "singleValueLegacyExtendedProperty_id"
-        result = DelimitedRegex.Replace(result, "-$1");
+        result = DelimitedRegex().Replace(result, "-$1");
 
         return result.ToLowerInvariant();
     }
 
-    [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled)]
-    private static partial Regex CliDelimitedRegex();
-    [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Compiled)]
-    private static partial Regex CliCamelCaseRegex();
-    [GeneratedRegex("([A-Z])", RegexOptions.Compiled)]
-    private static partial Regex CliUppercaseRegex();
+    [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Singleline, 500)]
+    private static partial Regex DelimitedRegex();
+    [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Singleline, 500)]
+    private static partial Regex CamelCaseRegex();
+    [GeneratedRegex("([A-Z])", RegexOptions.Singleline, 500)]
+    private static partial Regex UppercaseRegex();
 }

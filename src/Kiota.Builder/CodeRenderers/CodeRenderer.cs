@@ -19,7 +19,7 @@ public class CodeRenderer
     {
         ArgumentNullException.ThrowIfNull(configuration);
         Configuration = configuration;
-        _rendererElementComparer = elementComparer ?? (configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer());
+        _rendererElementComparer = elementComparer ?? new CodeElementOrderComparer();
     }
     public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
     {
@@ -104,7 +104,8 @@ public class CodeRenderer
         return config.Language switch
         {
             GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),
-            GenerationLanguage.Python => new PythonCodeRenderer(config),
+            GenerationLanguage.Python => new CodeRenderer(config, new CodeElementOrderComparerPython()),
+            GenerationLanguage.Go => new CodeRenderer(config, new CodeElementOrderComparerWithExternalMethods()),
             _ => new CodeRenderer(config),
         };
     }

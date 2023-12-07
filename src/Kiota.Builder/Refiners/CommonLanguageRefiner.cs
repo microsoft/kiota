@@ -81,7 +81,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue, Boolean hasPrefix = true)
+    protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue, bool hasPrefix = true)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
             && currentClass.StartBlock is ClassDeclaration currentDeclaration)
@@ -93,7 +93,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (backingStoreProperty != null)
             {
                 backingStoreProperty.DefaultValue = defaultPropertyValue;
-                backingStoreProperty.NamePrefix = hasPrefix ? backingStoreProperty.NamePrefix : String.Empty;
+                backingStoreProperty.NamePrefix = hasPrefix ? backingStoreProperty.NamePrefix : string.Empty;
             }
 
         }
@@ -264,8 +264,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             codeElementExceptions: new HashSet<Type> { typeof(CodeNamespace) },
             shouldReplaceCallback: codeElement => codeElement is CodeClass
                                                 || codeElement is CodeMethod
-                                                || codeElement is CodeEnum codeEnum && provider.ReservedNames.Contains(codeEnum.Name) // only replace enum type names not enum member names
-                                                || (codeElement is CodeProperty currentProperty && currentProperty.Type is CodeType propertyType && !propertyType.IsExternal && provider.ReservedNames.Contains(propertyType.Name)));// only replace property type names not property names
+                                                || codeElement is CodeEnum codeEnum && provider.ReservedNames.Contains(codeEnum.Name)); // only replace enum type names not enum member names
 
     protected static void ReplaceReservedNamespaceTypeNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) =>
         ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: codeElement => codeElement is CodeNamespace || codeElement is CodeClass);
@@ -354,7 +353,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 current.Name = replacementName;
         }
 
-        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback), true);
+        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
     private static void ReplaceReservedCodeUsingNamespaceSegmentNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -766,7 +765,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
-    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = false)
+    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
         ArgumentNullException.ThrowIfNull(function);
@@ -787,7 +786,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 correctImplements?.Invoke(block);
                 break;
         }
-        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements));
+        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements), false);
     }
     protected static void MakeModelPropertiesNullable(CodeElement currentElement)
     {
@@ -1050,7 +1049,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
             currentMethod.Parent is CodeClass parentClass)
         {
-            foreach (var property in parentClass.GetChildElements(true).OfType<CodeProperty>())
+            foreach (var property in parentClass.UnorderedProperties)
             {
                 if (property.Type is not CodeType propertyType || propertyType.TypeDefinition == null)
                     continue;
@@ -1380,7 +1379,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }
-    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
+    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null, bool addCurrentTypeAsGenericTypeParameter = false)
     {
         ArgumentNullException.ThrowIfNull(baseTypeUsing);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
@@ -1392,6 +1391,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = baseTypeUsing.Name,
                     IsExternal = true,
                 };
+                if (addCurrentTypeAsGenericTypeParameter)
+                {
+                    currentClass.StartBlock.Inherits.GenericTypeParameterValues.Add(new CodeType
+                    {
+                        TypeDefinition = currentClass,
+                    });
+                }
                 currentClass.AddUsing(baseTypeUsing);
             }
 
@@ -1404,7 +1410,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
+        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier, addCurrentTypeAsGenericTypeParameter));
     }
     protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
     {

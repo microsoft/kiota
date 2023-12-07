@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Models;
 
@@ -9,10 +8,19 @@ namespace Kiota.Builder.Extensions;
 public static class OpenApiOperationExtensions
 {
     internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema
+    private static string vendorSpecificCleanup(string input)
+    {
+        var slashIndex = input.IndexOf('/', StringComparison.OrdinalIgnoreCase);
+        var plusIndex = input.IndexOf('+', StringComparison.OrdinalIgnoreCase);
+        if (slashIndex == -1 || plusIndex == -1)
+            return input;
+        if (plusIndex < slashIndex)
+            return input;
+        return input[0..(slashIndex + 1)] + input[(plusIndex + 1)..];
+    }
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>
-    private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     internal static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -48,7 +56,7 @@ public static class OpenApiOperationExtensions
         return source
                     .Where(static c => !string.IsNullOrEmpty(c.Key))
                     .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries)[0], c.Value))
-                    .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
+                    .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup(c.Key)))
                     .Select(static co => co.Value.Schema)
                     .Where(static s => s is not null);
     }

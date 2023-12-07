@@ -12,7 +12,7 @@ using Kiota.Builder.Writers.Go;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
-public class CodeMethodWriterTests : IDisposable
+public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -1301,6 +1301,44 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public async Task WritesRequestExecutorForScalarTypes()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "DateOnly",
+            IsExternal = true,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        AddRequestBodyParameters(method, false);
+        AddRequestBodyParameters(useComplexTypeForBody: false);
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ctx",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType
+            {
+                Name = "context.Context",
+                IsExternal = true,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"func (m *ParentClass) MethodName(ctx context.Context, b []RequestOption, c *RequestConfig)([]i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91.DateOnly, error)", result);
+        Assert.Contains("res, err := m.BaseRequestBuilder.RequestAdapter.SendPrimitiveCollection(ctx, requestInfo, \"dateonly\", nil)", result);
+        Assert.Contains($"val := make([]i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91.DateOnly, len(res))", result);
+        Assert.Contains("return val, nil", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyUnknownRequestBodyType()
     {
         setup();
@@ -1327,7 +1365,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("SetStreamContentAndContentType", result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(", requestContentType", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(", *requestContentType", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1811,6 +1849,32 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"m.Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains("NewBaseRequestBuilder", result);
+    }
+    [Fact]
+    public void WritesConstructorWithEnumValue()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var serializationName = "1024x1024";
+        var defaultValue = "TENTWENTYFOUR_BY_TENTWENTYFOUR";
+        var propName = "size";
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "pictureSize"
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            SerializationName = serializationName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesWithUrl()

@@ -15,7 +15,6 @@ public class TypeScriptWriter : LanguageWriter
         AddOrReplaceCodeElementWriter(new CodeFunctionWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeNameSpaceWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeInterfaceDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeFileBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeFileDeclarationWriter(conventionService, clientNamespaceName));
