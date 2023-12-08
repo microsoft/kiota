@@ -47,11 +47,11 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         return logs;
     }
-    public async loadManifestFromContent(encodedManifest: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
+    public async loadManifestFromContent(jsonManifest: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         this.closeDescription(false);
         const manifestFilePath = path.join(os.tmpdir(), "kiota-vscode-extension", Date.now().toString(), "manifest.json");
         fs.mkdirSync(path.parse(manifestFilePath).dir, { recursive: true });
-        await vscode.workspace.fs.writeFile(vscode.Uri.file(manifestFilePath), Buffer.from(encodedManifest, 'base64'));
+        await vscode.workspace.fs.writeFile(vscode.Uri.file(manifestFilePath), Buffer.from(jsonManifest, 'utf8'));
         return await this.loadManifestFromUri(manifestFilePath, apiIdentifier);
     }
     private setAllSelected(node: KiotaOpenApiNode, selected: boolean) {
