@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 using Xunit;
@@ -28,6 +29,11 @@ public sealed class CodeEnumWriterTests : IDisposable
         {
             Name = EnumName,
         }).First();
+        if (CodeConstant.FromCodeEnum(currentEnum) is CodeConstant constant)
+        {
+            currentEnum.CodeEnumObject = constant;
+            root.AddConstant(constant);
+        }
     }
     public void Dispose()
     {
@@ -44,5 +50,24 @@ public sealed class CodeEnumWriterTests : IDisposable
     {
         var codeElement = new CodeEnum();
         Assert.Throws<ArgumentNullException>(() => codeEnumWriter.WriteCodeElement(codeElement, null));
+    }
+    [Fact]
+    public void WritesEnum()
+    {
+        const string optionName = "option1";
+        currentEnum.AddOption(new CodeEnumOption { Name = optionName });
+        codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains("export type SomeEnum = (", result);
+        Assert.Contains("typeof", result);
+        Assert.Contains(currentEnum.Name.ToFirstCharacterUpperCase(), result);
+        AssertExtensions.CurlyBracesAreClosed(result, 0);
+    }
+    [Fact]
+    public void DoesntWriteEnumWithEmptyOptions()
+    {
+        codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Equal("", result);
     }
 }
