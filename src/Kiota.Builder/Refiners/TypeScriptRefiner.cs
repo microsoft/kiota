@@ -148,6 +148,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 factoryNameCallbackFromType
             );
+
             AddStaticMethodsUsingsForRequestExecutor(
                 generatedCode,
                 factoryNameCallbackFromType
@@ -159,6 +160,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 ],
                 static s => s.ToCamelCase(UnderscoreArray));
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
+            GenerateEnumObjects(generatedCode);
             AliasUsingsWithSameSymbol(generatedCode);
             var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
             GenerateReusableModelsCodeFiles(modelsNamespace);
@@ -167,6 +169,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveSelfReferencingUsings(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+    }
+    private static void GenerateEnumObjects(CodeElement currentElement)
+    {
+        AddEnumObject(currentElement);
+        AddEnumObjectUsings(currentElement);
     }
     private const string FileNameForModels = "index";
     private static void GroupReusableModelsInSingleFile(CodeElement currentElement)
@@ -182,7 +189,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             if (codeNamespace.Enums.ToArray() is { Length: > 0 } enums)
             {
+                var enumObjects = enums.Select(static x => x.CodeEnumObject).OfType<CodeConstant>().ToArray();
+                targetFile.AddElements(enumObjects);
                 targetFile.AddElements(enums);
+                codeNamespace.RemoveChildElement(enumObjects);
                 codeNamespace.RemoveChildElement(enums);
             }
             RemoveSelfReferencingUsingForFile(targetFile, codeNamespace);
@@ -232,7 +242,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
-
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
         var executorMethods = codeClass.Methods
@@ -241,6 +250,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         var inlineEnums = codeNamespace
             .Enums
+            .ToArray();
+
+        var enumObjects = inlineEnums
+            .Select(static x => x.CodeEnumObject)
+            .OfType<CodeConstant>()
             .ToArray();
 
         var queryParameterInterfaces = executorMethods
@@ -272,6 +286,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             .Union(queryParametersMapperConstants)
                             .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
                             .Union(inlineEnums)
+                            .Union(enumObjects)
                             .Distinct()
                             .ToArray();
 
@@ -560,7 +575,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             var props = codeClass.Properties.ToArray();
             codeInterface.AddProperty(props);
-
 
             if (CodeConstant.FromQueryParametersMapping(codeInterface) is CodeConstant constant)
                 targetNS.AddConstant(constant);
@@ -1013,6 +1027,36 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             }
         }
+    }
+
+    protected static void AddEnumObject(CodeElement currentElement)
+    {
+        if (currentElement is CodeEnum codeEnum && CodeConstant.FromCodeEnum(codeEnum) is CodeConstant constant)
+        {
+            codeEnum.CodeEnumObject = constant;
+            var nameSpace = codeEnum.GetImmediateParentOfType<CodeNamespace>();
+            nameSpace.AddConstant(constant);
+        }
+        CrawlTree(currentElement, AddEnumObject);
+    }
+
+    protected static void AddEnumObjectUsings(CodeElement currentElement)
+    {
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+        {
+            foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>())
+            {
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = propertyEnum.Name,
+                    Declaration = new CodeType
+                    {
+                        TypeDefinition = propertyEnum.CodeEnumObject
+                    }
+                });
+            }
+        }
+        CrawlTree(currentElement, AddEnumObjectUsings);
     }
 
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)
