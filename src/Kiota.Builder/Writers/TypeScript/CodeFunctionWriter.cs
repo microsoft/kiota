@@ -223,8 +223,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var propertyType = conventions.GetTypeString(propType, codeFunction, false);
         if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType)
         {
-            if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject?.Name.ToFirstCharacterUpperCase()})";
+            if (currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.CodeEnumObject is not null)
+                return $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})";
             else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
                 return "getByteArrayValue";
             else if (isCollection)
