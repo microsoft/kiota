@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug in the vscode extension where the "Paste API Manifest" button would not be able to parse the manifest.
+- Enhance the way Enums are expressed in Typescript. [#2105](https://github.com/microsoft/kiota/issues/2105)
 
 ## [1.9.0] - 2023-12-07
 
