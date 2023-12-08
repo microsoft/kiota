@@ -12,7 +12,7 @@ In general cases, the `kiota client generate` command will generate the code for
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ./kiota-config.json | A location where to find the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./kiota-config.json`. |
+| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
 | `--client-name \| --cn` | No | graphDelegated | Name of the client. Unique within the parent API. |
 | `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. |
 

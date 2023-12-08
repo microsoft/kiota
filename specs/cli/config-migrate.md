@@ -6,7 +6,7 @@ This command is valuable in cases where a code base was created with Kiota v1.0 
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ./kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./kiota-config.json`. |
+| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
 | `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. In the case where conflicting API client names are created, the user would be prompted for a new client name |
 | `--client-name \| --cn` | No | graphDelegated | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
 
