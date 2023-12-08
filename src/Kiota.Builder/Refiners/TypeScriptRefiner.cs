@@ -192,8 +192,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var enumObjects = enums.Select(static x => x.CodeEnumObject).OfType<CodeConstant>().ToArray();
                 targetFile.AddElements(enumObjects);
                 targetFile.AddElements(enums);
-                codeNamespace.RemoveChildElement(enums);
                 codeNamespace.RemoveChildElement(enumObjects);
+                codeNamespace.RemoveChildElement(enums);
             }
             RemoveSelfReferencingUsingForFile(targetFile, codeNamespace);
             var childElements = targetFile.GetChildElements(true).ToArray();
@@ -252,6 +252,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Enums
             .ToArray();
 
+        var enumObjects = inlineEnums
+            .Select(static x => x.CodeEnumObject)
+            .OfType<CodeConstant>()
+            .ToArray();
+
         var queryParameterInterfaces = executorMethods
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
@@ -281,6 +286,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             .Union(queryParametersMapperConstants)
                             .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
                             .Union(inlineEnums)
+                            .Union(enumObjects)
                             .Distinct()
                             .ToArray();
 
