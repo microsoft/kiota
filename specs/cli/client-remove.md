@@ -31,10 +31,6 @@ _The resulting `apimanifest.json` file will look like this:_
 
 ```jsonc
 {
-  "publisher": {
-    "name": "Microsoft Graph",
-    "contactEmail": "graphsdkpub@microsoft.com"
-  },
   "apiDependencies": { }
 }
 ```

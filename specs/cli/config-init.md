@@ -20,7 +20,9 @@ When `kiota config init` is executed, a `kiota-config.json` file would be create
 ```bash
 kiota config init
 ```
-_Results in the following `kiota-config.json` file:_
+
+_The resulting `kiota-config.json` file will look like this:_
+
 ```jsonc
 {
   "version": "1.0.0",

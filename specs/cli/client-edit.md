@@ -37,36 +37,6 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 kiota client edit --client-name "graphDelegated" --class-name "GraphServiceClient" --exclude-path "/users/$count"
 ```
 
-```jsonc
-{
-  "clients": {
-    "graphDelegated": {
-      "descriptionHash": "9EDF8506CB74FE44...",
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
-      "includePatterns": ["**/users/**"],
-      "excludePatterns": ["/users/$count"],
-      "language": "csharp",
-      "outputPath": "./generated/graph/csharp",
-      "clientClassName": "GraphServiceClient",
-      "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "serializers": [
-          "Contoso.Json.CustomSerializer"
-        ],
-        "deserializers": [
-          "Contoso.Json.CustomDeserializer"
-        ],
-        "structuredMimeTypes": [
-          "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
-    }
-  }
-}
-```
-
 _The resulting `kiota-config.json` file will look like this:_
 
 ```jsonc
@@ -77,7 +47,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
-      "excludePatterns": [],
+      "excludePatterns": ["/users/$count"],
       "language": "csharp",
       "outputPath": "./generated/graph/csharp",
       "clientClassName": "GraphServiceClient",

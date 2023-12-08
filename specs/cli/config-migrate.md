@@ -160,7 +160,6 @@ _The resulting `apimanifest.json` file will look like this:_
 }
 ```
 
-
 _The resulting file structure will look like this:_
 
 ```bash
