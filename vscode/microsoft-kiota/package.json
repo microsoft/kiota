@@ -3,8 +3,8 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.7.100000001",
-  "kiotaVersion": "1.7.0",
+  "version": "1.9.100000001",
+  "kiotaVersion": "1.9.0",
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
@@ -27,37 +27,37 @@
       "title": "Kiota",
       "properties": {
         "kiota.generate.includeAdditionalData.enabled": {
-          "type":"boolean",
+          "type": "boolean",
           "default": true,
           "description": "%kiota.generate.includeAdditionalData.description%"
         },
         "kiota.generate.backingStore.enabled": {
-          "type":"boolean",
+          "type": "boolean",
           "default": false,
           "description": "%kiota.generate.backingStore.description%"
         },
         "kiota.generate.excludeBackwardCompatible.enabled": {
-          "type":"boolean",
+          "type": "boolean",
           "default": false,
           "description": "%kiota.generate.excludeBackwardCompatible.description%"
         },
         "kiota.cleanOutput.enabled": {
-          "type":"boolean",
+          "type": "boolean",
           "default": false,
           "description": "%kiota.cleanOutput.description%"
         },
         "kiota.generate.disabledValidationRules": {
-          "type":"array",
+          "type": "array",
           "default": [],
           "description": "%kiota.generate.disabledValidationRules.description%"
         },
         "kiota.clearCache.enabled": {
-          "type":"boolean",
+          "type": "boolean",
           "default": false,
           "description": "%kiota.clearCache.description%"
         },
         "kiota.generate.serializer.CSharp": {
-          "type":"array",
+          "type": "array",
           "default": [
             "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
             "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
@@ -67,7 +67,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.CSharp": {
-          "type":"array",
+          "type": "array",
           "default": [
             "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
             "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
@@ -76,7 +76,7 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.Go": {
-          "type":"array",
+          "type": "array",
           "default": [
             "github.com/microsoft/kiota-serialization-form-go/FormSerializationWriterFactory",
             "github.com/microsoft/kiota-serialization-json-go/JsonSerializationWriterFactory",
@@ -86,7 +86,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.Go": {
-          "type":"array",
+          "type": "array",
           "default": [
             "github.com/microsoft/kiota-serialization-form-go/FormParseNodeFactory",
             "github.com/microsoft/kiota-serialization-json-go/JsonParseNodeFactory",
@@ -95,7 +95,7 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.Java": {
-          "type":"array",
+          "type": "array",
           "default": [
             "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
             "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
@@ -105,7 +105,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.Java": {
-          "type":"array",
+          "type": "array",
           "default": [
             "com.microsoft.kiota.serialization.TextParseNodeFactory",
             "com.microsoft.kiota.serialization.JsonParseNodeFactory",
@@ -114,7 +114,7 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.PHP": {
-          "type":"array",
+          "type": "array",
           "default": [
             "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
             "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
@@ -122,7 +122,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.PHP": {
-          "type":"array",
+          "type": "array",
           "default": [
             "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
             "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
@@ -130,7 +130,7 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.Python": {
-          "type":"array",
+          "type": "array",
           "default": [
             "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
             "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
@@ -138,7 +138,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.Python": {
-          "type":"array",
+          "type": "array",
           "default": [
             "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
             "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
@@ -146,21 +146,21 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.Ruby": {
-          "type":"array",
+          "type": "array",
           "default": [
             "microsoft_kiota_serialization/json_serialization_writer_factory"
           ],
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.Ruby": {
-          "type":"array",
+          "type": "array",
           "default": [
             "microsoft_kiota_serialization/json_parse_node_factory"
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.serializer.TypeScript": {
-          "type":"array",
+          "type": "array",
           "default": [
             "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
             "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
@@ -170,7 +170,7 @@
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.TypeScript": {
-          "type":"array",
+          "type": "array",
           "default": [
             "@microsoft/kiota-serialization-form.FormParseNodeFactory",
             "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
@@ -179,7 +179,7 @@
           "description": "%kiota.generate.deserializer.description%"
         },
         "kiota.generate.structuredMimeTypes": {
-          "type":"array",
+          "type": "array",
           "default": [
             "application/json;q=1",
             "application/x-www-form-urlencoded;q=0.2",
@@ -434,7 +434,7 @@
     "glob": "^10.3.10",
     "mocha": "^10.1.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.3.2",
+    "typescript": "^5.3.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
   },
@@ -450,23 +450,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "F56C6430DBBD480C33D0BC70FFCABFFA7E3384308B9EC12040D21A6E5B7E99A3"
+      "sha256": "16FE8B6E48A23EE00F89697EB34714C57E996EAFB57476C0F5BFD3D473C17A83"
     },
     {
       "platformId": "win-x86",
-      "sha256": "63AEC3490E0C4DAB4EFC8F06C5BF157A21FB9B613AD13F1F337A2E9D872D0FD5"
+      "sha256": "FF0F55CEA4520C6B8EE8308820847C20CE5C1123B9146E943D29BBAF1BF6E8A9"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "E07A9D438E8CBC30C77F1FEB0943DEA1D28F53C3E31E941A3ED7B19F4013CF77"
+      "sha256": "E9A445B61B9A1B2F733FAC2A47E7D0C530241535137BA98EA8AD5514CA1D5350"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "EAF3BE094DA835BD45B5EA0F4C63E12733D973B5EFA31D25170B3866BEA6B6BD"
+      "sha256": "74DCC6F65D7D9FF9AC2DBA3875EFE4CBE38ADB8888D909AA206E3D67872EB8DB"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "FC74F2A0E7338CD618F9B98838884BC3E6F8FDD79420D7799A51AD0D0780B87E"
+      "sha256": "FE98BDEB3D606016592C41ED4765D089C30F09DAF24CF1DFAC9F5392FFC57980"
     }
   ]
 }

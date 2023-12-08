@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed a bug in the vscode extension where the "Paste API Manifest" button would not be able to parse the manifest.
+
+## [1.9.0] - 2023-12-07
+
+### Added
+
 - Added `--content-type` option for requests with multiple allowed content types. (CLI)
 
 ### Changed
@@ -36,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parsing of `DateOnly` values generated in request executors [#3679](https://github.com/microsoft/kiota/issues/3679)
 - Fixes generation of default values names for go constructor functions [#3436](https://github.com/microsoft/kiota/issues/3436)
 - [Java] Removed the usage of reflection in `ApiClientBuilder` [`kiota-java#923`](https://github.com/microsoft/kiota-java/issues/923)
+- Fixed a bug where path parameter type was not correctly detected during generation. [#3791](https://github.com/microsoft/kiota/issues/3791)
 
 ## [1.8.2] - 2023-11-08
 
@@ -1181,3 +1190,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

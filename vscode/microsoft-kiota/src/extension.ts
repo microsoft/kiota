@@ -351,9 +351,9 @@ export async function activate(
 
   context.subscriptions.push(disposable);
 }
-async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvider, apiIdentifier: string): Promise<void> {
+async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvider, apiIdentifier?: string): Promise<void> {
   await openTreeViewWithProgress(async () => {
-    const clipBoardContent = await vscode.env.clipboard.readText();
+    let clipBoardContent = await vscode.env.clipboard.readText();
     if (!clipBoardContent) {
       await vscode.window.showErrorMessage(
         vscode.l10n.t("No content found in the clipboard")
@@ -361,8 +361,14 @@ async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvide
       return;
     }
     try {
-      const decodedContent = Buffer.from(clipBoardContent, 'base64').toString('utf-8');
-      const deserializedContent = JSON.parse(decodedContent) as ApiManifest;
+      let deserializedContent: ApiManifest;
+      try {
+        deserializedContent = JSON.parse(clipBoardContent) as ApiManifest;
+        // if it's valid json, it's not base64 encoded
+      } catch {
+        clipBoardContent = Buffer.from(clipBoardContent, 'base64').toString('utf-8');
+        deserializedContent = JSON.parse(clipBoardContent) as ApiManifest;
+      }
       if (!apiIdentifier && deserializedContent.apiDependencies && Object.keys(deserializedContent.apiDependencies).length > 1) {
         const apiKeys = Object.keys(deserializedContent.apiDependencies);
         const selectKeyResult = await selectApiManifestKey(apiKeys);
