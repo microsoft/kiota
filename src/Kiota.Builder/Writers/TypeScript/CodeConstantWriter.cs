@@ -43,14 +43,12 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (!codeEnum.Options.Any())
             return;
         conventions.WriteLongDescription(codeEnum, writer);
-        writer.WriteLine($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeEnum.Options.ToList().ForEach(x =>
         {
             conventions.WriteShortDescription(x.Documentation.Description, writer);
             writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
         });
-        writer.DecreaseIndent();
-        writer.WriteLine("}  as const;");
+        writer.CloseBlock("}  as const;");
     }
 }
