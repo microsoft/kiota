@@ -17,3 +17,7 @@ config.md)
 ## Scenarios
 
 * [Kiota Config](./scenarios/kiota.config.md)
+
+## Schemas
+
+* [kiota-config.json](./schemas/kiota-config.json)

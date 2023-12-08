@@ -13,7 +13,7 @@ When `kiota config init` is executed, a `kiota-config.json` file would be create
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-file \| --cf` | No | ../../kiota-config.json | Path to an existing `kiota-config.json` file. Defaults to `./` |
+| `--config-location \| --cf` | No | ../../ | Path to a folder containing an existing `kiota-config.json` file. Defaults to `./` |
 
 ## Using `kiota config init`
 

@@ -6,8 +6,8 @@ This command is valuable in cases where a code base was created with Kiota v1.0 
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ./.kiota/kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./.kiota/kiota-config.json`. |
-| `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
+| `--config-location \| --cl` | No | ./kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./kiota-config.json`. |
+| `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. In the case where conflicting API client names are created, the user would be prompted for a new client name |
 | `--client-name \| --cn` | No | graphDelegated | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
 
 ## Using `kiota config migrate`
@@ -91,12 +91,41 @@ _The resulting `apimanifest.json` file will look like this:_
 
 ```jsonc
 {
-  "publisher": {
-    "name": "Microsoft Graph",
-    "contactEmail": "graphsdkpub@microsoft.com"
-  },
   "apiDependencies": {
-    "graphDelegated": {
+    "csharpGraphServiceClient": {
+      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "apiDeploymentBaseUrl": "https://graph.microsoft.com",
+      "apiDescriptionVersion": "v1.0",
+      "requests": [
+        {
+          "method": "GET",
+          "uriTemplate": "/users"
+        },
+        {
+          "method": "POST",
+          "uriTemplate": "/users"
+        },
+        {
+          "method": "GET",
+          "uriTemplate": "/users/$count"
+        },
+        {
+          "method": "GET",
+          "uriTemplate": "/users/{user-id}"
+        },
+        {
+          "method": "PATCH",
+          "uriTemplate": "/users/{user-id}"
+        },
+        {
+          "method": "DELETE",
+          "uriTemplate": "/users/{user-id}"
+        }
+      ]
+    },
+    "pythonGraphServiceClient": {
+      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -129,6 +158,27 @@ _The resulting `apimanifest.json` file will look like this:_
     }
   }
 }
+```
+
+
+_The resulting file structure will look like this:_
+
+```bash
+/
+  └─.kiota
+    └─definitions
+       └─csharpGraphServiceClient.yaml
+       └─pythonGraphServiceClient.yaml
+  └─generated
+    └─graph
+       └─csharp
+          └─... # Generated code files
+          └─GraphClient.cs
+        └─python
+          └─... # Generated code files
+          └─graph_client.py       
+  └─apimanifest.json
+  └─kiota-config.json 
 ```
 
 ## Using `kiota config migrate` for a specific `kiota-lock.json` file and a specific client name
@@ -183,3 +233,23 @@ _The resulting `kiota-config.json` file will look like this:_
     }
   }
 }
+```
+
+
+```bash
+/
+  └─.kiota
+    └─definitions
+       └─graphDelegated.yaml
+  └─generated
+    └─graph
+       └─csharp
+          └─... # Generated code files
+          └─GraphClient.cs
+        └─python
+          └─... # Generated code files
+          └─graph_client.py   
+          └─kiota-lock.json    
+  └─apimanifest.json
+  └─kiota-config.json 
+```

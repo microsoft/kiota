@@ -8,7 +8,7 @@ The command also has one optional parameter, the ability to remove the generated
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ./.kiota/kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./.kiota/kiota-config.json`. |
+| `--config-location \| --cl` | No | ./kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./kiota-config.json`. |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client |
 | `--clean-output \| --co` | No |  | Cleans the generated client |
 
@@ -43,8 +43,8 @@ _The resulting `apimanifest.json` file will look like this:_
 ```bash
 /
  └─.kiota
-    └─kiota-config.json
-    └─apimanifest.json
  └─generated
     └─graph
+ └─kiota-config.json
+ └─apimanifest.json
 ```

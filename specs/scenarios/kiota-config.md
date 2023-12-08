@@ -20,59 +20,36 @@ Here is an example of what the kiota-config.json file could look like.
 
 ```jsonc
 {
-  "name": "My application",
-  "apis": {
-    "Graph": {
-      "descriptionHash": "9EDF8506CB74FE44...",
-      "descriptionLocation": "https://.../openapi.yaml",
-      "includePatterns": ["/me/chats#GET", "/me#GET"],
+  "version": "1.0.0",
+  "clients": {
+    "graphDelegated": {
+      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "includePatterns": ["**/users/**"],
       "excludePatterns": [],
-      "clients": [
-        {
-          "language": "csharp",
-          "outputPath": "./generated/graph/csharp",
-          "clientClassName": "GraphClient",
-          "clientNamespaceName": "Contoso.GraphApp",
-          "features": {
-            "authentication": {
-              "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
-              "authenticationParameters": {
-                "clientId": "guid"
-              }
-            },
-            "usesBackingStore": true,
-            "includeAdditionalData": true
-          }
-        }
-      ]
+      "language": "csharp",
+      "outputPath": "./generated/graph",
+      "clientClassName": "GraphClient",
+      "clientNamespaceName": "Contoso.GraphApp",
+      "features": {
+      "serializers": [
+        "Contoso.Json.CustomSerializer"
+      ],
+      "deserializers": [
+        "Contoso.Json.CustomDeserializer"
+      ],
+      "structuredMimeTypes": [
+        "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
+      }
     },
-    "BusinessCentral": {
-      "descriptionHash": "810CF81EFDB5D8E065...",
+    "businessCentral": {
       "descriptionLocation": "https://.../bcoas1.0.yaml",
       "includePatterns": ["/companies#GET"],
       "excludePatterns": [],
-      "outputs": [
-        {
-          "language": "csharp",
-          "outputPath": "./generated/business-central"
-        },
-        {
-          "language": "python",
-          "outputPath": "./generated/python/business-central"
-        },
-        {
-          "language": "csharp",
-          "outputPath": "./generated/business-central-app",
-          "features": {
-            "authentication": {
-              "authenticationProvider": "Microsoft.Kiota.Authentication.AzureAuthProvider",
-              "authenticationParameters": {
-                "clientId": "guid"
-              }
-            }
-          }
-        }
-      ]
+      "language": "csharp",
+      "outputPath": "./generated/businessCentral"
     }
   }
 }

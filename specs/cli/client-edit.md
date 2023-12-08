@@ -12,7 +12,7 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ./.kiota/kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./.kiota/kiota-config.json`. |
+| `--config-location \| --cl` | No | ./kiota-config.json | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use `./kiota-config.json`. |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client. Unique within the parent API. If not provided, defaults to --class-name or its default. |
 | `--openapi \| -d` | No | https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
@@ -144,13 +144,13 @@ _The resulting `apimanifest.json` file will look like this:_
 ```bash
 /
  └─.kiota
-    └─kiota-config.json
-    └─apimanifest.json
     └─definitions
-       └─9EDF8506CB74FE44.yaml
+       └─graphDelegated.yaml
  └─generated
     └─graph
        └─csharp
           └─... # Generated code files
-          └─GraphClient.cs
+          └─GraphClient.cs  
+ └─apimanifest.json
+ └─kiota-config.json 
 ```
