@@ -174,15 +174,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         AddEnumObject(currentElement);
         AddEnumObjectUsings(currentElement);
-        GenerateEnumCodeFiles(currentElement);
-    }
-    private static void GenerateEnumCodeFiles(CodeElement currentElement)
-    {
-        if (currentElement is CodeEnum codeEnum && codeEnum.CodeEnumObject is not null && codeEnum.Parent is CodeNamespace codeEnumNameSpace)
-        {
-            codeEnumNameSpace.TryAddCodeFile(codeEnum.Name, codeEnum, codeEnum.CodeEnumObject);
-        }
-        CrawlTree(currentElement, GenerateEnumCodeFiles);
     }
     private const string FileNameForModels = "index";
     private static void GroupReusableModelsInSingleFile(CodeElement currentElement)
@@ -198,8 +189,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             if (codeNamespace.Enums.ToArray() is { Length: > 0 } enums)
             {
+                var enumObjects = enums.Select(static x => x.CodeEnumObject).OfType<CodeConstant>().ToArray();
+                targetFile.AddElements(enumObjects);
                 targetFile.AddElements(enums);
                 codeNamespace.RemoveChildElement(enums);
+                codeNamespace.RemoveChildElement(enumObjects);
             }
             RemoveSelfReferencingUsingForFile(targetFile, codeNamespace);
             var childElements = targetFile.GetChildElements(true).ToArray();
@@ -1031,9 +1025,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     protected static void AddEnumObject(CodeElement currentElement)
     {
-        if (currentElement is CodeEnum codeEnum)
+        if (currentElement is CodeEnum codeEnum && CodeConstant.FromCodeEnum(codeEnum) is CodeConstant constant)
         {
-            codeEnum.CodeEnumObject = new CodeEnumObject { Name = codeEnum.Name + "Object", Parent = codeEnum };
+            codeEnum.CodeEnumObject = constant;
+            var nameSpace = codeEnum.GetImmediateParentOfType<CodeNamespace>();
+            nameSpace.AddConstant(constant);
         }
         CrawlTree(currentElement, AddEnumObject);
     }

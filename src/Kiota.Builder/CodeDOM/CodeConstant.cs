@@ -6,7 +6,7 @@ namespace Kiota.Builder.CodeDOM;
 
 public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
 {
-    public CodeInterface? OriginalInterface
+    public CodeElement? OriginalCodeElement
     {
         get;
         set;
@@ -20,11 +20,22 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
         {
             Name = $"{source.Name.ToFirstCharacterLowerCase()}Mapper",
             Kind = CodeConstantKind.QueryParametersMapper,
-            OriginalInterface = source,
+            OriginalCodeElement = source,
+        };
+    }
+    public static CodeConstant? FromCodeEnum(CodeEnum source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        return new CodeConstant
+        {
+            Name = $"{source.Name.ToFirstCharacterLowerCase()}Object",
+            Kind = CodeConstantKind.EnumObject,
+            OriginalCodeElement = source,
         };
     }
 }
 public enum CodeConstantKind
 {
     QueryParametersMapper,
+    EnumObject,
 }

@@ -37,24 +37,8 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
-
-    public CodeEnumObject? CodeEnumObject
+    public CodeConstant? CodeEnumObject
     {
-        get;
-        set;
-    }
-
-}
-
-
-public class CodeEnumObject : CodeElement, ICloneable
-{
-    public object Clone()
-    {
-        return new CodeUsing
-        {
-            Name = Name,
-            Parent = Parent,
-        };
+        get; set;
     }
 }

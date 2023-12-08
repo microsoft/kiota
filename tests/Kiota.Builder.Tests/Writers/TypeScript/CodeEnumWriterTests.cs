@@ -28,7 +28,6 @@ public sealed class CodeEnumWriterTests : IDisposable
         {
             Name = EnumName,
         }).First();
-        currentEnum.CodeEnumObject = new CodeEnumObject { Name = currentEnum.Name + "Object", Parent = currentEnum };
     }
     public void Dispose()
     {
@@ -45,42 +44,5 @@ public sealed class CodeEnumWriterTests : IDisposable
     {
         var codeElement = new CodeEnum();
         Assert.Throws<ArgumentNullException>(() => codeEnumWriter.WriteCodeElement(codeElement, null));
-    }
-    [Fact]
-    public void WritesEnum()
-    {
-        const string optionName = "option1";
-        currentEnum.AddOption(new CodeEnumOption { Name = optionName });
-        writer.Write(currentEnum);
-        var result = tw.ToString();
-        Assert.Contains("export const SomeEnumObject = {", result);
-        Assert.Contains("Option1: \"option1\"", result);
-        Assert.Contains("as const;", result);
-        Assert.Contains(optionName, result);
-        AssertExtensions.CurlyBracesAreClosed(result, 0);
-    }
-    [Fact]
-    public void DoesntWriteAnythingOnNoOption()
-    {
-        writer.Write(currentEnum);
-        var result = tw.ToString();
-        Assert.Empty(result);
-    }
-    [Fact]
-    public void WritesEnumOptionDescription()
-    {
-        var option = new CodeEnumOption
-        {
-            Documentation = new()
-            {
-                Description = "Some option description",
-            },
-            Name = "option1",
-        };
-        currentEnum.AddOption(option);
-        writer.Write(currentEnum);
-        var result = tw.ToString();
-        Assert.Contains($"/** {option.Documentation.Description} */", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 0);
     }
 }

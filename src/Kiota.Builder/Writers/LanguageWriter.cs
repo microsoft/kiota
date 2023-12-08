@@ -158,9 +158,6 @@ public abstract class LanguageWriter
                 case CodeConstant codeConstant:
                     ((ICodeElementWriter<CodeConstant>)elementWriter).WriteCodeElement(codeConstant, this);
                     break;
-                case CodeEnumObject codeEnumObject:
-                    ((ICodeElementWriter<CodeEnumObject>)elementWriter).WriteCodeElement(codeEnumObject, this);
-                    break;
             }
         else if (code is not CodeClass &&
                 code is not BlockDeclaration &&
