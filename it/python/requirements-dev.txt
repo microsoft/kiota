@@ -110,7 +110,7 @@ microsoft-kiota-serialization-text==1.0.0
 
 msal==1.26.0
 
-msal-extensions==1.0.0
+msal-extensions==1.1.0
 
 multidict==6.0.4 ; python_version >= '3.7'
 
