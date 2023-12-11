@@ -28,17 +28,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string ParseNodeInterfaceName => "ParseNode";
     internal string DocCommentStart = "/**";
     internal string DocCommentEnd = " */";
-#pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
-    {
-        var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => x.Name.ToFirstCharacterLowerCase()))}";
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
-        {
-            var urlTemplateParams = !string.IsNullOrEmpty(urlTemplateVarName) ? urlTemplateVarName : $"this.{pathParametersProperty.Name}";
-            writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
-        }
-    }
     public override string TempDictionaryVarName => "urlTplParams";
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, string varName = "", params (CodeTypeBase, string, string)[] parameters)
     {
@@ -53,7 +42,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 $"{varName}[\"{p.Item2}\"] = {p.Item3}"
             ).ToArray());
     }
-#pragma warning restore CA1822 // Method should be static
     public override string GetAccessModifier(AccessModifier access)
     {
         return access switch

@@ -35,14 +35,16 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
             Deprecation = codeClass.Deprecation,
         };
 
-        result.AddMethod(codeClass.Methods
+        if (codeClass.Methods
                 .Where(static x => x.Kind is CodeMethodKind.RequestGenerator or
                                             CodeMethodKind.RequestExecutor or
                                             CodeMethodKind.IndexerBackwardCompatibility or
                                             CodeMethodKind.RequestBuilderWithParameters)
-                .Select(static x => (CodeMethod)x.Clone()).ToArray());
+                .Select(static x => (CodeMethod)x.Clone()).ToArray() is { Length: > 0 } methods)
+            result.AddMethod(methods);
 
-        result.AddUsing(codeClass.Usings.ToArray());
+        if (codeClass.Usings.ToArray() is { Length: > 0 } usings)
+            result.AddUsing(usings); //TODO pass a list of external imports to remove as we create the interface
 
         return result;
     }

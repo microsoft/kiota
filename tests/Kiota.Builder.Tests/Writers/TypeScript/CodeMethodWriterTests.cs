@@ -171,16 +171,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
         method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error403 });
         AddRequestBodyParameters();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("const requestInfo", result);
-        Assert.Contains("const errorMapping", result);
-        Assert.Contains("\"4XX\": createError4XXFromDiscriminatorValue,", result);
-        Assert.Contains("\"5XX\": createError5XXFromDiscriminatorValue,", result);
-        Assert.Contains("\"403\": createError403FromDiscriminatorValue,", result);
-        Assert.Contains("as Record<string, ParsableFactory<Parsable>>", result);
-        Assert.Contains("sendAsync", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory()
@@ -227,7 +218,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping()
-    {
+    {//TODO move to constants
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestBodyParameters();
@@ -239,7 +230,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesRequestGeneratorBodyForMultipart()
-    {
+    {// TODO move to constants
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
@@ -252,7 +243,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollections()
-    {
+    {//TODO move to constants
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
@@ -264,7 +255,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalar()
-    {
+    {//TODO move to constants
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();

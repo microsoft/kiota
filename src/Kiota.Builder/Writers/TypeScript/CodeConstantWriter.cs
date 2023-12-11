@@ -12,7 +12,6 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.OriginalCodeElement is null) throw new InvalidOperationException("Original CodeElement cannot be null");
         switch (codeElement.Kind)
         {
             case CodeConstantKind.QueryParametersMapper:
@@ -21,6 +20,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             case CodeConstantKind.EnumObject:
                 WriteEnumObjectConstant(codeElement, writer);
                 break;
+                //TODO new constant types
         }
     }
     private static void WriteQueryParametersMapperConstant(CodeConstant codeElement, LanguageWriter writer)

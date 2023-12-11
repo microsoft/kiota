@@ -22,8 +22,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
             case CodeInterface:
                 WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum);
                 break;
-            case CodeClass codeClass:
-                WriteCodePropertyForClass(codeElement, codeClass, writer, returnType, isFlagEnum);
+            case CodeClass:
+                WriteCodePropertyForClass(codeElement, writer, returnType, isFlagEnum);
                 break;
         }
     }
@@ -33,17 +33,14 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
     }
 
-    private void WriteCodePropertyForClass(CodeProperty codeElement, CodeClass parentClass, LanguageWriter writer, string returnType, bool isFlagEnum)
-    {
+    private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    {//TODO double check we still need this
         switch (codeElement.Kind)
         {
             case CodePropertyKind.ErrorMessageOverride:
                 throw new InvalidOperationException($"Primary message mapping is done in deserializer function in TypeScript.");
             case CodePropertyKind.RequestBuilder:
-                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
-                conventions.AddRequestBuilderBody(parentClass, returnType, writer);
-                writer.CloseBlock();
-                break;
+                throw new InvalidOperationException($"Request builder property is implemented via a constant in TypeScript.");
             default:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
                 break;

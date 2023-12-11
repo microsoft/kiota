@@ -222,7 +222,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
     {
         if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-            GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
+            GenerateRequestBuilderCodeFile(ReplaceRequestBuilderClassByInterface(currentClass, codeNamespace), codeNamespace);
         CrawlTree(currentElement, GenerateRequestBuilderCodeFilesForElement);
     }
 
@@ -242,9 +242,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
-    private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
+    private static CodeInterface ReplaceRequestBuilderClassByInterface(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        var executorMethods = codeClass.Methods
+        if (CodeConstant.FromRequestBuilderToRequestsMetadata(codeClass) is CodeConstant requestsMetadataConstant)
+            codeNamespace.AddConstant(requestsMetadataConstant);
+        if (CodeConstant.FromRequestBuilderToNavigationMetadata(codeClass) is CodeConstant navigationConstant)
+            codeNamespace.AddConstant(navigationConstant);
+        if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
+            codeNamespace.AddConstant(uriTemplateConstant);
+        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass);
+        codeNamespace.RemoveChildElement(codeClass);
+        codeNamespace.AddInterface(interfaceDeclaration);
+        return interfaceDeclaration;
+
+    }
+    private static void GenerateRequestBuilderCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        var executorMethods = codeInterface.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor))
             .ToArray();
 
@@ -280,8 +294,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
+        var navigationConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}NavigationMetadata", false);
+        var requestsMetadataConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}RequestsMetadata", false);
+        var uriTemplateConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}UriTemplate", false);
+
+        var proxyConstants = new[] { navigationConstant, requestsMetadataConstant, uriTemplateConstant }
+            .OfType<CodeConstant>()
+            .ToArray();
+
         codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
-        var elements = new CodeElement[] { codeClass }
+        var elements = new CodeElement[] { codeInterface }
+                            .Union(proxyConstants)
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
                             .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
@@ -290,7 +313,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             .Distinct()
                             .ToArray();
 
-        codeNamespace.TryAddCodeFile(codeClass.Name, elements);
+        codeNamespace.TryAddCodeFile(codeInterface.Name, elements);
     }
 
     private static IEnumerable<CodeUsing> GetUsingsFromCodeElement(CodeElement codeElement)
