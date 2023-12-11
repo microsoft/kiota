@@ -569,6 +569,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 Name = codeClass.Name,
                 Kind = CodeInterfaceKind.QueryParameters,
+                Documentation = codeClass.Documentation,
+                Deprecation = codeClass.Deprecation,
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
@@ -899,6 +901,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = temporaryInterfaceName,
             Kind = CodeInterfaceKind.Model,
+            Documentation = modelClass.Documentation,
+            Deprecation = modelClass.Deprecation,
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
