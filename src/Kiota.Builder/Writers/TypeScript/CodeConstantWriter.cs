@@ -55,7 +55,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         {
             writer.StartBlock($"\"{navigationMethod.Name.ToFirstCharacterLowerCase()}\": {{");
             var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
@@ -77,9 +77,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}NavigationMetadata", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
             writer.WriteLine($"navigationMetadata: {navigationMetadataConstant.Name.ToFirstCharacterUpperCase()},");
         if (pathParameters is { Length: > 0 })
-        {
-            writer.StartBlock($"pathSegmentOfPathParameters: [{string.Join(", ", pathParameters)}],");
-        }
+            writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
     }
 
     private void WriteRequestsMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
