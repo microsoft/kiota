@@ -25,18 +25,70 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             case CodeConstantKind.RequestsMetadata:
                 WriteRequestsMetadataConstant(codeElement, writer);
                 break;
-                //TODO new constant types
+            case CodeConstantKind.NavigationMetadata:
+                WriteNavigationMetadataConstant(codeElement, writer);
+                break;
+            default:
+                throw new InvalidOperationException($"Invalid constant kind {codeElement.Kind}");
+        }
+    }
+
+    private void WriteNavigationMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
+    {
+        if (codeElement.OriginalCodeElement is not CodeClass codeClass) throw new InvalidOperationException("Original CodeElement cannot be null");
+        if (codeElement.Parent is not CodeFile parentCodeFile || parentCodeFile.FindChildByName<CodeInterface>(codeElement.Name.Replace("NavigationMetadata", string.Empty, StringComparison.Ordinal), false) is not CodeInterface currentInterface)
+            throw new InvalidOperationException("Couldn't find the associated interface for the navigation metadata constant");
+        var navigationMethods = codeClass.Methods
+                                    .Where(static x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility or CodeMethodKind.RequestBuilderWithParameters)
+                                    .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                    .ToArray();
+        var navigationProperties = codeClass.Properties
+                    .Where(static x => x.Kind is CodePropertyKind.RequestBuilder)
+                    .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+        if (navigationProperties.Length == 0 && navigationMethods.Length == 0)
+            return;
+
+        var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+        writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<Exclude<keyof {currentInterface.Name.ToFirstCharacterUpperCase()}, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {{");
+        foreach (var navigationMethod in navigationMethods)
+        {
+            writer.StartBlock($"\"{navigationMethod.Name.ToFirstCharacterLowerCase()}\": {{");
+            var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
+            writer.CloseBlock("},");
+        }
+        foreach (var navigationProperty in navigationProperties)
+        {
+            writer.StartBlock($"\"{navigationProperty.Name.ToFirstCharacterLowerCase()}\": {{");
+            var requestBuilderName = navigationProperty.Type.Name.ToFirstCharacterUpperCase();
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName);
+            writer.CloseBlock("},");
+        }
+        writer.CloseBlock("};");
+    }
+
+    private static void WriteNavigationMetadataEntry(CodeNamespace parentNamespace, LanguageWriter writer, string requestBuilderName, string[]? pathParameters = null)
+    {
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}UriTemplate", 3) is CodeConstant uriTemplateConstant && uriTemplateConstant.Kind is CodeConstantKind.UriTemplate)
+            writer.WriteLine($"uriTemplate: {uriTemplateConstant.Name.ToFirstCharacterUpperCase()},");
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}RequestsMetadata", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
+            writer.WriteLine($"requestsMetadata: {requestsMetadataConstant.Name.ToFirstCharacterUpperCase()},");
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}NavigationMetadata", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
+            writer.WriteLine($"navigationMetadata: {navigationMetadataConstant.Name.ToFirstCharacterUpperCase()},");
+        if (pathParameters is { Length: > 0 })
+        {
+            writer.StartBlock($"pathSegmentOfPathParameters: [{string.Join(", ", pathParameters)}],");
         }
     }
 
     private void WriteRequestsMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
     {
         if (codeElement.OriginalCodeElement is not CodeClass codeClass) throw new InvalidOperationException("Original CodeElement cannot be null");
-        var executorMethods = codeClass.Methods
-                                            .Where(static x => x.Kind is CodeMethodKind.RequestExecutor)
-                                            .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                            .ToArray();
-        if (executorMethods.Length == 0)
+        if (codeClass.Methods
+                    .Where(static x => x.Kind is CodeMethodKind.RequestExecutor)
+                    .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToArray() is not { Length: > 0 } executorMethods)
             return;
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<string, RequestMetadata> = {{");
         foreach (var executorMethod in executorMethods)

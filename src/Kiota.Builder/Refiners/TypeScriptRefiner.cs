@@ -201,13 +201,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void GenerateRequestBuilderCodeFiles(CodeNamespace modelsNamespace)
     {
         if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
-        foreach (var subNamespace in mainNamespace.Namespaces.Except([modelsNamespace]))
+        var elementsToConsider = mainNamespace.Namespaces.Except([modelsNamespace]).OfType<CodeElement>().Union(mainNamespace.Classes).ToArray();
+        foreach (var element in elementsToConsider)
         {
-            GenerateRequestBuilderCodeFilesForElement(subNamespace);
+            GenerateRequestBuilderCodeFilesForElement(element);
         }
-        foreach (var classElement in mainNamespace.Classes)
-        {
-            GenerateRequestBuilderCodeFilesForElement(classElement);
+        foreach (var element in elementsToConsider)
+        {// in two separate loops to ensure all the constants are added before the usings are added
+            AddDownwardsConstantsImports(element);
         }
     }
     private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
@@ -215,6 +216,28 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
             GenerateRequestBuilderCodeFile(ReplaceRequestBuilderClassByInterface(currentClass, codeNamespace), codeNamespace);
         CrawlTree(currentElement, GenerateRequestBuilderCodeFilesForElement);
+    }
+    private static void AddDownwardsConstantsImports(CodeElement currentElement)
+    {
+        if (currentElement is CodeInterface currentInterface &&
+            currentInterface.Kind is CodeInterfaceKind.RequestBuilder &&
+            currentElement.Parent is CodeFile codeFile &&
+            codeFile.Parent is CodeNamespace parentNamespace &&
+            parentNamespace.Parent is CodeNamespace parentLevelNamespace &&
+            parentLevelNamespace.Files.SelectMany(static x => x.Interfaces).FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface parentLevelInterface &&
+            codeFile.Constants
+                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.UriTemplate or CodeConstantKind.RequestsMetadata)
+                .Select(static x => new CodeUsing
+                {
+                    Name = x.Name,
+                    Declaration = new CodeType
+                    {
+                        TypeDefinition = x,
+                    },
+                })
+                .ToArray() is { Length: > 0 } constantUsings)
+            parentLevelInterface.AddUsing(constantUsings);
+        CrawlTree(currentElement, AddDownwardsConstantsImports);
     }
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
@@ -233,6 +256,31 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
+    private static readonly CodeUsing[] requestBuilderUsings = [
+        new CodeUsing {
+            Name = "RequestMetadata",
+            IsErasable = true,
+            Declaration = new CodeType {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        },
+        new CodeUsing {
+            Name = "NavigationMetadata",
+            IsErasable = true,
+            Declaration = new CodeType {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        },
+        new CodeUsing {
+            Name = "KeysToExcludeForNavigationMetadata",
+            IsErasable = true,
+            Declaration = new CodeType {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        }];
     private static CodeInterface ReplaceRequestBuilderClassByInterface(CodeClass codeClass, CodeNamespace codeNamespace)
     {
         if (CodeConstant.FromRequestBuilderToRequestsMetadata(codeClass) is CodeConstant requestsMetadataConstant)
@@ -241,14 +289,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeNamespace.AddConstant(navigationConstant);
         if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
             codeNamespace.AddConstant(uriTemplateConstant);
-        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass, [new CodeUsing {
-            Name = "RequestMetadata",
-            IsErasable = true,
-            Declaration = new CodeType {
-                Name = AbstractionsPackageName,
-                IsExternal = true,
-            },
-        }]);
+        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass, requestBuilderUsings);
         codeNamespace.RemoveChildElement(codeClass);
         codeNamespace.AddInterface(interfaceDeclaration);
         return interfaceDeclaration;
