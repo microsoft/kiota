@@ -158,6 +158,10 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
     }
     public T? FindChildByName<T>(string childName, bool findInChildElements = true) where T : ICodeElement
     {
+        return FindChildByName<T>(childName, findInChildElements ? uint.MaxValue : 1);
+    }
+    public T? FindChildByName<T>(string childName, uint maxDepth) where T : ICodeElement
+    {
         ArgumentException.ThrowIfNullOrEmpty(childName);
 
         if (InnerChildElements.IsEmpty)
@@ -165,10 +169,10 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
 
         if (InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
             return castResult;
-        if (findInChildElements)
+        if (--maxDepth > 0)
             foreach (var childElement in InnerChildElements.Values.OfType<IBlock>())
             {
-                var childResult = childElement.FindChildByName<T>(childName);
+                var childResult = childElement.FindChildByName<T>(childName, maxDepth);
                 if (childResult != null)
                     return childResult;
             }

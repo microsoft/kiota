@@ -9,6 +9,7 @@ namespace Kiota.Builder.CodeDOM;
 public interface IBlock
 {
     T? FindChildByName<T>(string childName, bool findInChildElements = true) where T : ICodeElement;
+    T? FindChildByName<T>(string childName, uint maxDepth) where T : ICodeElement;
     IEnumerable<T> FindChildrenByName<T>(string childName) where T : ICodeElement;
     void AddUsing(params CodeUsing[] codeUsings);
     CodeElement? Parent
