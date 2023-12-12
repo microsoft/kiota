@@ -500,31 +500,31 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         m.Parameters.Any(IsMultipartBody);
     // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor,
             AbstractionsPackageName, true, "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, false, "RequestInformation"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.RequestGenerator,
+            AbstractionsPackageName, true, "RequestInformation"),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.Serializer,
             AbstractionsPackageName, true,"SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Factory,
             AbstractionsPackageName, true, "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.RequestExecutor,
             AbstractionsPackageName, true, "Parsable", "ParsableFactory"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.Kind is CodeClassKind.Model,
             AbstractionsPackageName, true, "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.Kind is CodeClassKind.Model && @class.Properties.Any(static x => x.Kind is CodePropertyKind.AdditionalData),
             AbstractionsPackageName, true, "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor &&
+                    method.Parameters.Any(static y => y.Kind is CodeParameterKind.BackingStore),
             AbstractionsPackageName, true, "BackingStoreFactory"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor &&
+                    method.Parameters.Any(static y => y.Kind is CodeParameterKind.BackingStore),
             AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
-        new (x => x is CodeMethod m && HasMultipartBody(m),
+        new (static x => x is CodeMethod m && HasMultipartBody(m),
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
     private const string MultipartBodyClassName = "MultipartBody";
