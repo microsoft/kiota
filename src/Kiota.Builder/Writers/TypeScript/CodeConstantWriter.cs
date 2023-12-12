@@ -96,7 +96,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
             writer.StartBlock($"\"{executorMethod.Name.ToFirstCharacterLowerCase()}\": {{");
-            if (executorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
+            if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
+                 generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
                 writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");
             if (executorMethod.ErrorMappings.Any())
             {
