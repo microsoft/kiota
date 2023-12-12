@@ -24,6 +24,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             new CodeUsing
             {
                 Name = "BaseRequestBuilder",
+                IsErasable = true,
                 Declaration = new CodeType
                 {
                     Name = AbstractionsPackageName,

@@ -48,7 +48,13 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
             result.AddProperty(properties);
 
         if (codeClass.Usings.ToArray() is { Length: > 0 } usings)
+        {
+            foreach (var usingToCopy in usings.Where(static x => x.Declaration is not null && x.Declaration.TypeDefinition is CodeInterface or CodeClass { Kind: CodeClassKind.RequestBuilder }))
+            {
+                usingToCopy.IsErasable = true;
+            }
             result.AddUsing(usings); //TODO pass a list of external imports to remove as we create the interface
+        }
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
         if (codeClass.StartBlock.Inherits is not null)
