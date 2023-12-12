@@ -2,7 +2,6 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConventionService>
@@ -20,18 +19,130 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             case CodeConstantKind.EnumObject:
                 WriteEnumObjectConstant(codeElement, writer);
                 break;
+            case CodeConstantKind.UriTemplate:
+                WriteUriTemplateConstant(codeElement, writer);
+                break;
+            case CodeConstantKind.RequestsMetadata:
+                WriteRequestsMetadataConstant(codeElement, writer);
+                break;
                 //TODO new constant types
         }
     }
+
+    private void WriteRequestsMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
+    {
+        if (codeElement.OriginalCodeElement is not CodeClass codeClass) throw new InvalidOperationException("Original CodeElement cannot be null");
+        var executorMethods = codeClass.Methods
+                                            .Where(static x => x.Kind is CodeMethodKind.RequestExecutor)
+                                            .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                            .ToArray();
+        if (executorMethods.Length == 0)
+            return;
+        writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<string, RequestMetadata> = {{");
+        foreach (var executorMethod in executorMethods)
+        {
+            var returnType = conventions.GetTypeString(executorMethod.ReturnType, codeElement);
+            var isVoid = "void".EqualsIgnoreCase(returnType);
+            var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
+            writer.StartBlock($"\"{executorMethod.Name.ToFirstCharacterLowerCase()}\": {{");
+            if (executorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
+                writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");
+            if (executorMethod.ErrorMappings.Any())
+            {
+                writer.StartBlock("errorMappings: {");
+                foreach (var errorMapping in executorMethod.ErrorMappings)
+                {
+                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {GetFactoryMethodName(errorMapping.Value, codeElement, writer)},");
+                }
+                writer.CloseBlock("} as Record<string, ParsableFactory<Parsable>>,");
+            }
+            writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol)}\",");
+            if (!isVoid)
+                writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
+            if (!string.IsNullOrEmpty(executorMethod.RequestBodyContentType))
+                writer.WriteLine($"requestBodyContentType: \"{executorMethod.RequestBodyContentType}\","); //TODO add support for configurable content type
+            if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody && GetBodySerializer(requestBody) is string bodySerializer)
+                writer.WriteLine($"requestBodySerializer: {bodySerializer},");
+            if (codeElement.Parent is CodeFile parentCodeFile &&
+                parentCodeFile.FindChildByName<CodeConstant>(codeElement.Name.Replace("RequestsMetadata", $"{executorMethod.Name.ToFirstCharacterUpperCase()}QueryParametersMapper", StringComparison.Ordinal), false) is CodeConstant mapperConstant)
+                writer.WriteLine($"queryParametersMapper: {mapperConstant.Name.ToFirstCharacterUpperCase()},");
+            writer.CloseBlock("},");
+        }
+        writer.CloseBlock("};");
+    }
+    private string? GetBodySerializer(CodeParameter requestBody)
+    {
+        if (requestBody.Type is CodeType currentType && (currentType.TypeDefinition is CodeInterface || currentType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
+        {
+            return $"serialize{currentType.Name.ToFirstCharacterUpperCase()}";
+        }
+        return default;
+    }
+    private string GetTypeFactory(bool isVoid, bool isStream, CodeMethod codeElement, LanguageWriter writer)
+    {
+        if (isVoid) return string.Empty;
+        var typeName = conventions.TranslateType(codeElement.ReturnType);
+        if (isStream || conventions.IsPrimitiveType(typeName)) return $" \"{typeName}\"";
+        return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
+    }
+    private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
+    {
+        if (!codeElement.ReturnType.IsCollection) return fullTypeName;
+        var clone = (CodeTypeBase)codeElement.ReturnType.Clone();
+        clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
+        return conventions.GetTypeString(clone, codeElement);
+    }
+    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer)
+    {
+        var returnType = conventions.GetTypeString(targetClassType, currentElement, false, writer);
+        var targetClassName = conventions.TranslateType(targetClassType);
+        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            return resultName;
+        if (targetClassType is CodeType currentType &&
+            currentType.TypeDefinition is CodeClass definitionClass &&
+            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
+            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+        {
+            var methodName = conventions.GetTypeString(new CodeType
+            {
+                Name = resultName,
+                TypeDefinition = factoryMethod
+            }, currentElement, false, writer);
+            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+        }
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
+    }
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    {
+        if (isVoid) return "sendNoResponseContentAsync";
+        if (isCollection)
+        {
+            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync";
+            return $"sendCollectionAsync";
+        }
+
+        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync";
+        return $"sendAsync";
+    }
+
+    private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)
+    {
+        writer.WriteLine($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {codeElement.UriTemplate};");
+    }
+
     private static void WriteQueryParametersMapperConstant(CodeConstant codeElement, LanguageWriter writer)
     {
         if (codeElement.OriginalCodeElement is not CodeInterface codeInterface) throw new InvalidOperationException("Original CodeElement cannot be null");
-        writer.StartBlock($"const {codeElement.Name.ToFirstCharacterLowerCase()}: Record<string, string> = {{");
-        foreach (var property in codeInterface
-                                                .Properties
-                                                .OfKind(CodePropertyKind.QueryParameter)
-                                                .Where(static x => !string.IsNullOrEmpty(x.SerializationName))
-                                                .OrderBy(static x => x.SerializationName, StringComparer.OrdinalIgnoreCase))
+        if (codeInterface.Properties
+                        .OfKind(CodePropertyKind.QueryParameter)
+                        .Where(static x => !string.IsNullOrEmpty(x.SerializationName))
+                        .OrderBy(static x => x.SerializationName, StringComparer.OrdinalIgnoreCase)
+                        .ToArray() is not { Length: > 0 } properties)
+            return;
+        writer.StartBlock($"const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<string, string> = {{");
+        foreach (var property in properties)
         {
             writer.WriteLine($"\"{property.Name.ToFirstCharacterLowerCase()}\": \"{property.SerializationName}\",");
         }

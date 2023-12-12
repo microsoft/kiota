@@ -30,7 +30,15 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
 
     private static void WriteCodePropertyForInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
-        writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+        switch (codeElement.Kind)
+        {
+            case CodePropertyKind.RequestBuilder:
+                writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+                break;
+            default:
+                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+                break;
+        }
     }
 
     private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)

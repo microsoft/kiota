@@ -20,16 +20,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
-            MoveRequestBuilderPropertiesToBaseType(generatedCode,
-            new CodeUsing
-            {
-                Name = "BaseRequestBuilder",
-                Declaration = new CodeType
-                {
-                    Name = AbstractionsPackageName,
-                    IsExternal = true
-                }
-            }, addCurrentTypeAsGenericTypeParameter: true);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
@@ -250,7 +241,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeNamespace.AddConstant(navigationConstant);
         if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
             codeNamespace.AddConstant(uriTemplateConstant);
-        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass);
+        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass, [new CodeUsing {
+            Name = "RequestMetadata",
+            IsErasable = true,
+            Declaration = new CodeType {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        }]);
         codeNamespace.RemoveChildElement(codeClass);
         codeNamespace.AddInterface(interfaceDeclaration);
         return interfaceDeclaration;
@@ -435,18 +433,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, true, "RequestAdapter"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            AbstractionsPackageName, true, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, false, "HttpMethod", "RequestInformation"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, true, "RequestOption"),
+            AbstractionsPackageName, false, "RequestInformation"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, true,"SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, true, "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility),
-            AbstractionsPackageName, false, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             AbstractionsPackageName, true, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
