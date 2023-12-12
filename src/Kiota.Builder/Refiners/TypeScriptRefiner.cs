@@ -299,6 +299,21 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeNamespace.AddConstant(navigationConstant);
         if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
             codeNamespace.AddConstant(uriTemplateConstant);
+        if (codeClass.Methods.FirstOrDefault(static x => x.Kind is CodeMethodKind.ClientConstructor) is CodeMethod clientConstructor)
+        {
+            clientConstructor.IsStatic = true;
+            clientConstructor.Name = $"New{codeClass.Name.ToFirstCharacterUpperCase()}";
+
+            codeNamespace.AddFunction(new CodeFunction(clientConstructor)).First().AddUsing(new CodeUsing
+            {
+                Name = "apiClientProxifier",
+                Declaration = new CodeType
+                {
+                    Name = AbstractionsPackageName,
+                    IsExternal = true,
+                },
+            });
+        }
         var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass, requestBuilderUsings);
         codeNamespace.RemoveChildElement(codeClass);
         codeNamespace.AddInterface(interfaceDeclaration);
@@ -351,8 +366,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
+        var clientConstructorFunction = codeNamespace.FindChildByName<CodeFunction>($"New{codeInterface.Name.ToFirstCharacterUpperCase()}", false);
+
         codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
         var elements = new CodeElement[] { codeInterface }
+                            .Union(clientConstructorFunction is not null ? new[] { clientConstructorFunction } : Array.Empty<CodeElement>())
                             .Union(proxyConstants)
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)

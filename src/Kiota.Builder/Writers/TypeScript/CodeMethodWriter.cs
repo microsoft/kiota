@@ -51,11 +51,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 case CodeMethodKind.RawUrlBuilder:
                     throw new InvalidOperationException("RawUrlBuilder is implemented in the base type in TypeScript.");
                 case CodeMethodKind.ClientConstructor:
-                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
-                    WriteApiConstructorBody(parentClass, codeElement, writer);
-                    break;
+                    throw new InvalidOperationException("ClientConstructor is implemented in by a function in TypeScript.");
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits); //TODO double check whether we still need this
                     break;
                 case CodeMethodKind.RequestBuilderWithParameters:
                     throw new InvalidOperationException("RequestBuilderWithParameters is implemented by constants in TypeScript.");
@@ -70,10 +68,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 case CodeMethodKind.ErrorMessageOverride:
                     throw new InvalidOperationException("ErrorMessageOverride is not supported as the error message is implemented by the deserializer function in typescript.");
                 default:
-                    WriteDefaultMethodBody(codeElement, writer);
+                    WriteDefaultMethodBody(codeElement, writer); //TODO double check whether we still need this
                     break;
             }
-            writer.CloseBlock();
+            writer.CloseBlock(); //TODO if all cases are not needed anymore, drop the class
         }
     }
 
@@ -92,30 +90,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
         }
     }
-    private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
-    {
-        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var backingStoreParameter = method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.BackingStore));
-        WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string requestAdapterPropertyName) return;
-        if (!string.IsNullOrEmpty(method.BaseUrl))
-        {
-            writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
-            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
-            writer.CloseBlock();
-            if (pathParametersProperty != null)
-                writer.WriteLine($"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = {requestAdapterPropertyName}.baseUrl;");
-        }
-        if (backingStoreParameter != null)
-            writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
-    }
-    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
-    {
-        if (serializationModules != null)
-            foreach (var module in serializationModules)
-                writer.WriteLine($"{methodName}({module});");
-    }
+
     private CodePropertyKind[]? _DirectAccessProperties;
     private CodePropertyKind[] DirectAccessProperties
     {
@@ -269,7 +244,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var methodName = (code.Kind switch
         {
             _ when code.IsAccessor => code.AccessedProperty?.Name,
-            _ when isConstructor => "constructor",
             _ => code.Name,
         })?.ToFirstCharacterLowerCase();
         var asyncPrefix = code.IsAsync && code.Kind != CodeMethodKind.RequestExecutor ? " async " : string.Empty;
