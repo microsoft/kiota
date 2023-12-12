@@ -26,7 +26,7 @@ public class CodeInterfaceDeclarationWriter : BaseElementWriter<InterfaceDeclara
         }
         if (codeElement.Parent is CodeInterface parentInterface)
             conventions.WriteLongDescription(parentInterface, writer);
-        var derivation = codeElement.Implements.Any() ? $" extends {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}" : string.Empty;
+        var derivation = codeElement.Implements.Any() ? $" extends {codeElement.Implements.Select(x => conventions.GetTypeString(x, codeElement)).Aggregate(static (x, y) => x + ", " + y)}" : string.Empty;
         writer.StartBlock($"export interface {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
     }
 }

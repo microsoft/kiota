@@ -51,6 +51,8 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
             result.AddUsing(usings); //TODO pass a list of external imports to remove as we create the interface
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
+        if (codeClass.StartBlock.Inherits is not null)
+            result.StartBlock.AddImplements(codeClass.StartBlock.Inherits);
         return result;
     }
 }

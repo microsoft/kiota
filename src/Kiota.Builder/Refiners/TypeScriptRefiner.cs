@@ -20,7 +20,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
-            MoveRequestBuilderPropertiesToBaseType(generatedCode);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+            new CodeUsing
+            {
+                Name = "BaseRequestBuilder",
+                Declaration = new CodeType
+                {
+                    Name = AbstractionsPackageName,
+                    IsExternal = true
+                }
+            }, addCurrentTypeAsGenericTypeParameter: true);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",

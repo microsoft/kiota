@@ -1379,11 +1379,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }
-    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing? baseTypeUsing = null, AccessModifier? accessModifier = null, bool addCurrentTypeAsGenericTypeParameter = false)
+    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null, bool addCurrentTypeAsGenericTypeParameter = false)
     {
+        ArgumentNullException.ThrowIfNull(baseTypeUsing);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            if (currentClass.StartBlock.Inherits is null && baseTypeUsing is not null)
+            if (currentClass.StartBlock.Inherits == null)
             {
                 currentClass.StartBlock.Inherits = new CodeType
                 {
