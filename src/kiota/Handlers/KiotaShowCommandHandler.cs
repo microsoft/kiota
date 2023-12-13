@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
+using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
 
@@ -119,7 +120,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     private const string Space = "   ";
     private static void RenderNode(OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {
-        builder.AppendLine(node.Segment);
+        builder.AppendLine(node.DeduplicatedSegment());
 
         var children = node.Children;
         var numberOfChildren = children.Count;

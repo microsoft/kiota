@@ -73,11 +73,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (node != null &&
             node.IsComplexPathMultipleParameters())
             if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
-                return GetParametersForPathItem(pathItem, node.Segment);
+                return GetParametersForPathItem(pathItem, node.DeduplicatedSegment());
             else if (node.Children.Any())
                 return node.Children
                             .Where(static x => x.Value.PathItems.ContainsKey(Constants.DefaultOpenApiLabel))
-                            .SelectMany(x => GetParametersForPathItem(x.Value.PathItems[Constants.DefaultOpenApiLabel], node.Segment))
+                            .SelectMany(x => GetParametersForPathItem(x.Value.PathItems[Constants.DefaultOpenApiLabel], node.DeduplicatedSegment()))
                             .Distinct();
         return Enumerable.Empty<OpenApiParameter>();
     }
@@ -110,7 +110,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                 responseClassName :
                                 ((requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() is string requestClassName && !string.IsNullOrEmpty(requestClassName) ?
                                     requestClassName :
-                                    CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
+                                    CleanupParametersFromPath(currentNode.DeduplicatedSegment())?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
             if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName)) // {id}.json is considered as indexer
@@ -159,7 +159,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
-        currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
+        currentNode?.DeduplicatedSegment().IsPathSegmentWithSingleSimpleParameter() ?? false;
     private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
     {
         if (string.IsNullOrEmpty(currentSegment)) return false;
@@ -180,7 +180,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     [GeneratedRegex(@"\{\w+\}\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Singleline, 500)]
     private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
-        (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
+        (currentNode?.DeduplicatedSegment()?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
@@ -243,5 +243,19 @@ public static partial class OpenApiUrlTreeNodeExtensions
     {
         if (string.IsNullOrEmpty(original)) return original;
         return removePctEncodedCharacters().Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
+    }
+    private const string DeduplicatedSegmentKey = "x-ms-kiota-deduplicatedSegment";
+    public static string DeduplicatedSegment(this OpenApiUrlTreeNode currentNode)
+    {
+        if (currentNode is null) return string.Empty;
+        if (currentNode.AdditionalData.TryGetValue(DeduplicatedSegmentKey, out var deduplicatedSegment) && deduplicatedSegment.FirstOrDefault() is string deduplicatedSegmentString)
+            return deduplicatedSegmentString;
+        return currentNode.Segment;
+    }
+    public static void AddDeduplicatedSegment(this OpenApiUrlTreeNode openApiUrlTreeNode, string newName)
+    {
+        ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
+        ArgumentException.ThrowIfNullOrEmpty(newName);
+        openApiUrlTreeNode.AdditionalData.Add(DeduplicatedSegmentKey, [newName]);
     }
 }

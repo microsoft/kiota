@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a regression introduced by [#3760](https://github.com/microsoft/kiota/issues/3760) in 1.9.0 and its previews where indexer parameter name would be wrong leading to invalid URLs. [#3901](https://github.com/microsoft/kiota/issues/3901)
 - Fixed a bug in the vscode extension where the "Paste API Manifest" button would not be able to parse the manifest.
 - Enhance the way Enums are expressed in Typescript. [#2105](https://github.com/microsoft/kiota/issues/2105)
 - Fixed missing dependency version in info command. [#3894](https://github.com/microsoft/kiota/issues/3894)
