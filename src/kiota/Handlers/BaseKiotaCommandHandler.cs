@@ -284,6 +284,16 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
                     $"Example: kiota info {sourceArg} -l {language}");
     }
+    protected void DisplayInstallHint(LanguageInformation languageInformation, List<LanguageDependency> languageDependencies)
+    {
+        if (!string.IsNullOrEmpty(languageInformation.DependencyInstallCommand) && languageDependencies.Count > 0)
+        {
+            string[] fixedLines = [$"Hint: use the install command to install the dependencies.",
+                $"Example: "];
+            DisplayHint(fixedLines.Union(
+                    languageDependencies.Select(x => "   " + string.Format(languageInformation.DependencyInstallCommand, x.Name, x.Version))).ToArray());
+        }
+    }
     protected void DisplayCleanHint(string commandName)
     {
         DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
