@@ -11,6 +11,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
 using Kiota.Generated;
+using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
@@ -218,7 +219,7 @@ internal partial class Server : IServer
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
                             .ToArray();
-        return new PathItem(node.Path, node.Segment, children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
+        return new PathItem(node.Path, node.DeduplicatedSegment(), children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
     }
     protected static string GetAbsolutePath(string source)
     {

@@ -932,8 +932,8 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
         Assert.NotNull(treeNode);
-        Assert.Equal("/", treeNode.Segment);
-        Assert.Equal("enumeration", treeNode.Children.First().Value.Segment);
+        Assert.Equal("/", treeNode.DeduplicatedSegment());
+        Assert.Equal("enumeration", treeNode.Children.First().Value.DeduplicatedSegment());
 
         _tempFiles.Add(tempFilePath);
     }
@@ -6520,6 +6520,11 @@ paths:
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
+        var usersRB = codeModel.FindNamespaceByName("ApiSdk.users").FindChildByName<CodeClass>("UsersRequestBuilder", false);
+        Assert.NotNull(usersRB);
+        var usersIndexer = usersRB.Indexer;
+        Assert.NotNull(usersIndexer);
+        Assert.Equal("users%2Did", usersIndexer.IndexParameter.SerializationName);
         var managerRB = codeModel.FindNamespaceByName("ApiSdk.users.item.manager").FindChildByName<CodeClass>("ManagerRequestBuilder", false);
         Assert.NotNull(managerRB);
         var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);

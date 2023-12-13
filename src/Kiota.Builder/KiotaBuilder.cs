@@ -552,6 +552,7 @@ public partial class KiotaBuilder
             node.Children.Remove(indexNode.Key);
             var newSegmentParameterName = $"{{{node.Segment.CleanupSymbolName()}-id}}";
             indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
+            indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
             node.Children.Add(newSegmentParameterName, indexNode.Value);
             CopyNodeIntoOtherNode(indexNode.Value, indexNode.Value, indexNode.Key, newSegmentParameterName);
             foreach (var child in indexNodes.Except(new[] { indexNode }))
@@ -727,7 +728,7 @@ public partial class KiotaBuilder
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
             {
-                var indexerParameterType = GetIndexerParameterType(child.Value, currentNode);
+                var indexerParameterType = GetIndexerParameter(child.Value, currentNode);
                 codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
             }
             else if (child.Value.IsComplexPathMultipleParameters())
@@ -1076,7 +1077,7 @@ public partial class KiotaBuilder
     }
     private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
     private const char OpenAPIUrlTreeNodePathSeparator = '\\';
-    private CodeParameter GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private CodeParameter GetIndexerParameter(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         var parameterName = string.Join(OpenAPIUrlTreeNodePathSeparator, currentNode.Path.Split(OpenAPIUrlTreeNodePathSeparator, StringSplitOptions.RemoveEmptyEntries)
                                         .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
@@ -1095,11 +1096,12 @@ public partial class KiotaBuilder
             _ => GetPrimitiveType(parameter.Schema),
         } ?? DefaultIndexerParameterType;
         type.IsNullable = false;
+        var segment = currentNode.DeduplicatedSegment();
         var result = new CodeParameter
         {
             Type = type,
-            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
-            Name = currentNode.Segment.CleanupSymbolName(),
+            SerializationName = segment.SanitizeParameterNameForUrlTemplate(),
+            Name = segment.CleanupSymbolName(),
             Documentation = new()
             {
                 Description = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
@@ -1127,15 +1129,14 @@ public partial class KiotaBuilder
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         logger.LogTrace("Creating indexer {Name}", childIdentifier);
-        var result = new List<CodeIndexer> { new CodeIndexer
-        {
+        var result = new List<CodeIndexer> { new() {
             Name = childIdentifier,
             Documentation = new()
             {
                 Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
             },
             ReturnType = new CodeType { Name = childType },
-            PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
+            PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.')[^1],
             Deprecation = currentNode.GetDeprecationInformation(),
             IndexParameter = parameter,
         }};
