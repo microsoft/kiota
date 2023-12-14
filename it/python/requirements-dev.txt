@@ -24,7 +24,7 @@ importlib-metadata==6.8.0 ; python_version >= '3.7'
 
 iniconfig==2.0.0 ; python_version >= '3.7'
 
-isort==5.13.1
+isort==5.13.2
 
 lazy-object-proxy==1.9.0 ; python_version >= '3.7'
 
