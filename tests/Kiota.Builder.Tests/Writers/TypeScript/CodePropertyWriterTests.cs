@@ -63,11 +63,7 @@ public sealed class CodePropertyWriterTests : IDisposable
     public void WritesRequestBuilder()
     {
         property.Kind = CodePropertyKind.RequestBuilder;
-        writer.Write(property);
-        var result = tw.ToString();
-        Assert.Contains($"return new {TypeName}", result);
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
+        Assert.Throws<InvalidOperationException>(() => writer.Write(property));
     }
     [Fact]
     public void WritesCustomProperty()

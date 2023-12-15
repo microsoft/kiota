@@ -446,4 +446,180 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // Then
         Assert.Contains("oDataError.message = oDataError.prop1 ?? \"\"", result);
     }
+    [Fact]
+    public void WritesApiConstructor()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("constructor", result);
+        Assert.Contains("registerDefaultSerializer", result);
+        Assert.Contains("registerDefaultDeserializer", result);
+        Assert.Contains($"[\"baseurl\"] = core.baseUrl", result);
+        Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
+    }
+    [Fact]
+    public void WritesApiConstructorWithBackingStore()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.ClientConstructor;
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        var backingStoreParam = new CodeParameter
+        {
+            Name = "backingStore",
+            Kind = CodeParameterKind.BackingStore,
+            Type = new CodeType
+            {
+                Name = "BackingStore",
+                IsExternal = true,
+            }
+        };
+        method.AddParameter(backingStoreParam);
+        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
+        tempWriter.SetTextWriter(tw);
+        tempWriter.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("enableBackingStore", result);
+    }
+    [Fact]
+    public void WritesDefaultValuesInFactory()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var defaultValue = "someVal";
+        var propName = "propWithDefaultValue";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Map<string,string>"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"this.{propName} = {defaultValue}", result);
+    }
+    [Fact]
+    public void DoesNotWriteConstructorWithDefaultFromComposedType()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"Test Value\"";
+        var propName = "size";
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = unionTypeWrapper }
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        var arrayType = new CodeType
+        {
+            Name = "array",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("constructor", result);
+        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
+    }
 }

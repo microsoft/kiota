@@ -2,11 +2,8 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -54,88 +51,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
-    private void AddRequestProperties()
-    {
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "requestAdapter",
-            Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType
-            {
-                Name = "RequestAdapter",
-            },
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "pathParameters",
-            Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "urlTemplate",
-            Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-        });
-    }
-
-    private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
-    {
-        var stringType = new CodeType
-        {
-            Name = "string",
-        };
-        var requestConfigClass = parentClass.AddInnerClass(new CodeClass
-        {
-            Name = "RequestConfig",
-            Kind = CodeClassKind.RequestConfiguration,
-        }).First();
-        requestConfigClass.AddProperty(new()
-        {
-            Name = "h",
-            Kind = CodePropertyKind.Headers,
-            Type = stringType,
-        },
-        new()
-        {
-            Name = "q",
-            Kind = CodePropertyKind.QueryParameters,
-            Type = stringType,
-        },
-        new()
-        {
-            Name = "o",
-            Kind = CodePropertyKind.Options,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "b",
-            Kind = CodeParameterKind.RequestBody,
-            Type = useComplexTypeForBody ? new CodeType
-            {
-                Name = "SomeComplexTypeForRequestBody",
-                TypeDefinition = TestHelper.CreateModelClass(root, "SomeComplexTypeForRequestBody"),
-            } : stringType,
-        });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "c",
-            Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType
-            {
-                Name = "RequestConfig",
-                TypeDefinition = requestConfigClass,
-            },
-            Optional = true,
-        });
-    }
     [Fact]
     public void WritesRequestBuilder()
     {
@@ -148,29 +63,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.RequestExecutor;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.Kind = CodeMethodKind.RequestGenerator;
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void WritesRequestExecutorBody()
-    {
-        method.Kind = CodeMethodKind.RequestExecutor;
-        method.HttpMethod = HttpMethod.Get;
-        var error4XX = root.AddClass(new CodeClass
-        {
-            Name = "Error4XX",
-        }).First();
-        var error5XX = root.AddClass(new CodeClass
-        {
-            Name = "Error5XX",
-        }).First();
-        var error403 = root.AddClass(new CodeClass
-        {
-            Name = "Error403",
-        }).First();
-        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
-        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error403 });
-        AddRequestBodyParameters();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
@@ -216,135 +108,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
     }
-    [Fact]
-    public void DoesntCreateDictionaryOnEmptyErrorMapping()
-    {//TODO move to constants
-        method.Kind = CodeMethodKind.RequestExecutor;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestBodyParameters();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain("const errorMapping: Record<string, new () => Parsable> =", result);
-        Assert.Contains("undefined", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesRequestGeneratorBodyForMultipart()
-    {// TODO move to constants
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Post;
-        AddRequestProperties();
-        AddRequestBodyParameters();
-        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("setContentFromParsable", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesRequestExecutorBodyForCollections()
-    {//TODO move to constants
-        method.Kind = CodeMethodKind.RequestExecutor;
-        method.HttpMethod = HttpMethod.Get;
-        method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-        AddRequestBodyParameters();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("sendCollectionAsync", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesRequestGeneratorBodyForScalar()
-    {//TODO move to constants
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters();
-        method.AcceptedResponseTypes.Add("application/json");
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters)", result);
-        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.configure", result);
-        Assert.Contains("setContentFromScalar", result);
-        Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public async Task WritesRequestGeneratorBodyForParsable()
-    {
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters(true);
-        method.AcceptedResponseTypes.Add("application/json");
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters", result);
-        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.configure", result);
-        Assert.Contains("setContentFromParsable", result);
-        Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesRequestGeneratorBodyKnownRequestBodyType()
-    {
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters(true);
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Post;
-        AddRequestProperties();
-        AddRequestBodyParameters(false);
-        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
-        {
-            Name = new TypeScriptConventionService().StreamTypeName,
-            IsExternal = true,
-        };
-        method.RequestBodyContentType = "application/json";
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("application/json", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesRequestGeneratorBodyUnknownRequestBodyType()
-    {
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters(true);
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Post;
-        AddRequestProperties();
-        AddRequestBodyParameters(false);
-        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
-        {
-            Name = new TypeScriptConventionService().StreamTypeName,
-            IsExternal = true,
-        };
-        method.AddParameter(new CodeParameter
-        {
-            Name = "requestContentType",
-            Type = new CodeType()
-            {
-                Name = "string",
-                IsExternal = true,
-            },
-            Kind = CodeParameterKind.RequestBodyContentType,
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(", requestContentType", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
     [Fact]
     public void WritesMethodAsyncDescription()
     {
@@ -430,18 +193,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
-        var originalParent = method.Parent;
-        method.Parent = CodeNamespace.InitRootNamespace();
-        Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
-        method.Parent = originalParent;
     }
-    [Fact]
-    public void ThrowsIfParentIsNotClass()
-    {
-        method.Parent = CodeNamespace.InitRootNamespace();
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-
     [Fact]
     public void WritesReturnType()
     {
@@ -503,57 +255,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("protected ", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    [Fact]
-    public void WritesIndexer()
-    {
-        AddRequestProperties();
-        method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
-        method.OriginalIndexer = new()
-        {
-            Name = "indx",
-            ReturnType = new CodeType
-            {
-                Name = "string",
-            },
-            IndexParameter = new()
-            {
-                Name = "id",
-                SerializationName = "id",
-                Type = new CodeType
-                {
-                    Name = "string",
-                    IsNullable = true,
-                },
-            }
-        };
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
-        Assert.Contains("id", result);
-        Assert.Contains("return new", result);
-    }
-    [Fact]
-    public void WritesPathParameterRequestBuilder()
-    {
-        AddRequestProperties();
-        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
-        method.AddParameter(new CodeParameter
-        {
-            Name = "pathParam",
-            Kind = CodeParameterKind.Path,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
-        Assert.Contains("pathParam", result);
-        Assert.Contains("return new", result);
-    }
+
     [Fact]
     public void WritesGetterToBackingStore()
     {
@@ -611,38 +313,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("this.someProperty = value", result);
     }
     [Fact]
-    public void WritesConstructor()
-    {
-        method.Kind = CodeMethodKind.Constructor;
-        method.IsAsync = false;
-        var defaultValue = "someVal";
-        var propName = "propWithDefaultValue";
-        parentClass.Kind = CodeClassKind.RequestBuilder;
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType
-            {
-                Name = "string",
-            },
-        });
-        AddRequestProperties();
-        method.AddParameter(new CodeParameter
-        {
-            Name = "pathParameters",
-            Kind = CodeParameterKind.PathParameters,
-            Type = new CodeType
-            {
-                Name = "Map<string,string>"
-            }
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains($"this.{propName} = {defaultValue}", result);
-    }
-    [Fact]
     public void WritesWithUrl()
     {
         method.Kind = CodeMethodKind.RawUrlBuilder;
@@ -679,127 +349,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"this.{propName.ToFirstCharacterLowerCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
-    }
-    [Fact]
-    public void DoesNotWriteConstructorWithDefaultFromComposedType()
-    {
-        method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "\"Test Value\"";
-        var propName = "size";
-        var unionTypeWrapper = root.AddClass(new CodeClass
-        {
-            Name = "UnionTypeWrapper",
-            Kind = CodeClassKind.Model,
-            OriginalComposedType = new CodeUnionType
-            {
-                Name = "UnionTypeWrapper",
-            },
-            DiscriminatorInformation = new()
-            {
-                DiscriminatorPropertyName = "@odata.type",
-            },
-        }).First();
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType { TypeDefinition = unionTypeWrapper }
-        });
-        var sType = new CodeType
-        {
-            Name = "string",
-        };
-        var arrayType = new CodeType
-        {
-            Name = "array",
-        };
-        unionTypeWrapper.OriginalComposedType.AddType(sType);
-        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
-
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("constructor", result);
-        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
-    }
-    [Fact]
-    public void WritesApiConstructor()
-    {
-        method.Kind = CodeMethodKind.ClientConstructor;
-        method.IsAsync = false;
-        method.BaseUrl = "https://graph.microsoft.com/v1.0";
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "pathParameters",
-            Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType
-            {
-                Name = "Dictionary<string, string>",
-                IsExternal = true,
-            }
-        });
-        var coreProp = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "core",
-            Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType
-            {
-                Name = "HttpCore",
-                IsExternal = true,
-            }
-        }).First();
-        method.AddParameter(new CodeParameter
-        {
-            Name = "core",
-            Kind = CodeParameterKind.RequestAdapter,
-            Type = coreProp.Type,
-        });
-        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
-        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("constructor", result);
-        Assert.Contains("registerDefaultSerializer", result);
-        Assert.Contains("registerDefaultDeserializer", result);
-        Assert.Contains($"[\"baseurl\"] = core.baseUrl", result);
-        Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
-    }
-    [Fact]
-    public void WritesApiConstructorWithBackingStore()
-    {
-        method.Kind = CodeMethodKind.ClientConstructor;
-        var coreProp = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "core",
-            Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType
-            {
-                Name = "HttpCore",
-                IsExternal = true,
-            }
-        }).First();
-        method.AddParameter(new CodeParameter
-        {
-            Name = "core",
-            Kind = CodeParameterKind.RequestAdapter,
-            Type = coreProp.Type,
-        });
-        var backingStoreParam = new CodeParameter
-        {
-            Name = "backingStore",
-            Kind = CodeParameterKind.BackingStore,
-            Type = new CodeType
-            {
-                Name = "BackingStore",
-                IsExternal = true,
-            }
-        };
-        method.AddParameter(backingStoreParam);
-        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-        tempWriter.SetTextWriter(tw);
-        tempWriter.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("enableBackingStore", result);
     }
     [Fact]
     public void WritesNameMapperMethod()
