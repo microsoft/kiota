@@ -11,11 +11,9 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConventionService>
 {
-    public CodeFunctionWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService)
+    public CodeFunctionWriter(TypeScriptConventionService conventionService) : base(conventionService)
     {
-        _codeUsingWriter = new(clientNamespaceName);
     }
-    private readonly CodeUsingWriter _codeUsingWriter;
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
@@ -88,7 +86,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
 
         if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
-            CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
+            WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
         WriteFactoryMethodBody(codeElement, returnType, writer);
     }
 
@@ -104,12 +102,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                             "if (mappingValue) {");
             writer.IncreaseIndent();
 
-            writer.WriteLine("switch (mappingValue) {");
-            writer.IncreaseIndent();
+            writer.StartBlock("switch (mappingValue) {");
             foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                writer.WriteLine($"case \"{mappedType.Key}\":");
-                writer.IncreaseIndent();
+                writer.StartBlock($"case \"{mappedType.Key}\":");
                 writer.WriteLine($"return {getDeserializationFunction(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase())};");
                 writer.DecreaseIndent();
             }
@@ -123,8 +119,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string getDeserializationFunction(CodeElement codeElement, string returnType)
     {
-        CodeNamespace codeNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        CodeFunction parent = codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}")!;
+        var codeNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+        var parent = codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}")!;
 
         return conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
     }
@@ -234,7 +230,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 var keyName = !string.IsNullOrWhiteSpace(otherProp.SerializationName) ? otherProp.SerializationName.ToFirstCharacterLowerCase() : otherProp.Name.ToFirstCharacterLowerCase();
                 var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
-                if (keyName.Equals(BackingStoreEnabledKey, StringComparison.Ordinal))
+                if (keyName.Equals(BackingStoreEnabledKey, StringComparison.Ordinal)) //TODO the deserializer should set the default when it doesn't get a value from payload, see the pasta below
                     writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
                 else
                     writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)};{suffix} }},");
@@ -245,7 +241,59 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         else
             throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
     }
+    // private static void PlaceHolderDefaultValuesPasta() {
+    // foreach (var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
+    //                                 .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
+    //                                 .OrderByDescending(static x => x.Kind)
+    //                                 .ThenBy(static x => x.Name))
+    // {
+    //     writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+    // }
+    //     foreach (var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
+    //                                     .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
+    //                                     // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+    //                                     .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+    //                                     .OrderByDescending(static x => x.Kind)
+    //                                     .ThenBy(static x => x.Name))
+    //     {
+    //         var defaultValue = propWithDefault.DefaultValue;
+    //         if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+    //         {
+    //             defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+    //         }
+    //         writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue};");
+    //     }
+    //     if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+    //         currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+    //             currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam &&
+    //             parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
+    //     {
+    //         conventions.AddParametersAssignment(writer,
+    //                                             pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
+    //                                             pathParametersParam.Name.ToFirstCharacterLowerCase(),
+    //                                             $"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
+    //                                             currentMethod.Parameters
+    //                                                         .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+    //                                                         .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+    //                                                         .ToArray());
+    //     }
+    // }
 
+    private static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
+    {
+        if (codeElement.IsOfKind(CodeMethodKind.Setter)) return;
+
+        var isRequestExecutor = codeElement.IsOfKind(CodeMethodKind.RequestExecutor);
+
+        foreach (var parameter in codeElement.Parameters
+                                        .Where(x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters) &&
+                                                !(isRequestExecutor && x.IsOfKind(CodeParameterKind.RequestBody)))
+                                        .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            var parameterName = parameter.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
+        }
+    }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeFunction codeFunction)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

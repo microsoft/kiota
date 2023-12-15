@@ -179,7 +179,7 @@ public abstract class LanguageWriter
         {
             GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
-            GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
+            GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),

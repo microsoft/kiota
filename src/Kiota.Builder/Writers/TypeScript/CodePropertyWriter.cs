@@ -23,11 +23,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum);
                 break;
             case CodeClass:
-                WriteCodePropertyForClass(codeElement, writer, returnType, isFlagEnum);
-                break;
+                throw new InvalidOperationException($"All properties are defined on interfaces in TypeScript.");
         }
     }
-
     private static void WriteCodePropertyForInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
         switch (codeElement.Kind)
@@ -37,20 +35,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 break;
             default:
                 writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
-                break;
-        }
-    }
-
-    private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
-    {//TODO double check we still need this
-        switch (codeElement.Kind)
-        {
-            case CodePropertyKind.ErrorMessageOverride:
-                throw new InvalidOperationException($"Primary message mapping is done in deserializer function in TypeScript.");
-            case CodePropertyKind.RequestBuilder:
-                throw new InvalidOperationException($"Request builder property is implemented via a constant in TypeScript.");
-            default:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
                 break;
         }
     }

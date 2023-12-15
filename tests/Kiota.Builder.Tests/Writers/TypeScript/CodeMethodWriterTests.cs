@@ -190,7 +190,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     [Fact]
     public void Defensive()
     {
-        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(), false);
+        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService());
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
     }
