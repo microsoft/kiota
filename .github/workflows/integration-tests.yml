@@ -144,10 +144,12 @@ jobs:
 
       - id: replace_url
         if: always()
+        # 97 so we don't exceed the 128 character limit for artifact names with the generation-results-typescript prefix
         run: |
-          ORIGINAL="${{ matrix.description }}"
-          REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
-          echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
+          $original="${{ matrix.description }}"
+          $replaced=($original -replace "[-:<>|\*\?\\\/\.]", "_").Substring(0, [Math]::Min(97, $original.Length))
+          Write-Output "ARTKEY=$replaced" >> $$EnvGITHUB_OUTPUT
+        shell: pwsh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
