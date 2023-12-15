@@ -45,7 +45,7 @@ jobs:
       - name: Build
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: generator
           path: publish
@@ -148,7 +148,7 @@ jobs:
           ORIGINAL="${{ matrix.description }}"
           REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
           echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
