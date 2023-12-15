@@ -148,7 +148,7 @@ jobs:
         run: |
           $original="${{ matrix.description }}"
           $replaced=($original -replace "[-:<>|\*\?\\\/\.]", "_").Substring(0, [Math]::Min(97, $original.Length))
-          Write-Output "ARTKEY=$replaced" >> $$EnvGITHUB_OUTPUT
+          Write-Output "ARTKEY=$replaced" >> $Env:GITHUB_OUTPUT
         shell: pwsh
       - uses: actions/upload-artifact@v4
         if: always()
