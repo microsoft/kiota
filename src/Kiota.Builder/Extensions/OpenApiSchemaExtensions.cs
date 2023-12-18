@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
@@ -123,7 +123,7 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsEnum(this OpenApiSchema schema)
     {
-        return (schema?.Enum?.Any() ?? false) &&
+        return (schema?.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) ?? false) &&
                 (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
                 (schema?.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => x.IsEnum()) ?? false) ||
                 (schema?.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => x.IsEnum()) ?? false)
