@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 using Kiota.Builder.Extensions;
-
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 using Xunit;
@@ -514,5 +514,18 @@ public class OpenApiSchemaExtensionsTests
             Type = "array",
         };
         Assert.False(schema.IsArray());
+    }
+    [Fact]
+    public void IsEnumFailsOnEmptyMembers()
+    {
+        var schema = new OpenApiSchema
+        {
+            Type = "string",
+            Enum = new List<IOpenApiAny>(),
+        };
+        Assert.False(schema.IsEnum());
+
+        schema.Enum.Add(new OpenApiString(""));
+        Assert.False(schema.IsEnum());
     }
 }
