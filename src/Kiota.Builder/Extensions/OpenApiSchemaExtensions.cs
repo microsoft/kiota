@@ -123,10 +123,11 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsEnum(this OpenApiSchema schema)
     {
-        return (schema?.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) ?? false) &&
+        if (schema is null) return false;
+        return schema.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) &&
                 (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
-                (schema?.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => x.IsEnum()) ?? false) ||
-                (schema?.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => x.IsEnum()) ?? false)
+                schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum()) ||
+                schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum())
         ; // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)

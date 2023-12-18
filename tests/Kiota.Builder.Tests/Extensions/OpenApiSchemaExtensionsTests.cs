@@ -528,4 +528,110 @@ public class OpenApiSchemaExtensionsTests
         schema.Enum.Add(new OpenApiString(""));
         Assert.False(schema.IsEnum());
     }
+    private static readonly OpenApiSchema enumSchema = new OpenApiSchema
+    {
+        Title = "riskLevel",
+        Enum = new List<IOpenApiAny>
+            {
+                new OpenApiString("low"),
+                new OpenApiString("medium"),
+                new OpenApiString("high"),
+                new OpenApiString("hidden"),
+                new OpenApiString("none"),
+                new OpenApiString("unknownFutureValue")
+            },
+        Type = "string"
+    };
+    [Fact]
+    public void IsEnumIgnoresNullableUnions()
+    {
+        var schema = new OpenApiSchema
+        {
+            AnyOf = new List<OpenApiSchema>
+            {
+                enumSchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.True(schema.IsEnum());
+    }
+    [Fact]
+    public void IsEnumFailsOnNullableInheritance()
+    {
+        var schema = new OpenApiSchema
+        {
+            AllOf = new List<OpenApiSchema>
+            {
+                enumSchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.False(schema.IsEnum());
+    }
+    [Fact]
+    public void IsEnumIgnoresNullableExclusiveUnions()
+    {
+        var schema = new OpenApiSchema
+        {
+            OneOf = new List<OpenApiSchema>
+            {
+                enumSchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.True(schema.IsEnum());
+    }
+    private static readonly OpenApiSchema numberSchema = new OpenApiSchema
+    {
+        Type = "number",
+        Format = "double",
+    };
+    [Fact]
+    public void IsEnumDoesNotMaskExclusiveUnions()
+    {
+        var schema = new OpenApiSchema
+        {
+            OneOf = new List<OpenApiSchema>
+            {
+                enumSchema,
+                numberSchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.False(schema.IsEnum());
+    }
+    [Fact]
+    public void IsEnumDoesNotMaskUnions()
+    {
+        var schema = new OpenApiSchema
+        {
+            AnyOf = new List<OpenApiSchema>
+            {
+                enumSchema,
+                numberSchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.False(schema.IsEnum());
+    }
 }
