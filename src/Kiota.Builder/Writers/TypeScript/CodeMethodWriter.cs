@@ -28,13 +28,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid)
     {
+        WriteMethodDocumentationInternal(code, writer, isVoid, conventions);
+    }
+    internal static void WriteMethodDocumentationInternal(CodeMethod code, LanguageWriter writer, bool isVoid, TypeScriptConventionService typeScriptConventionService)
+    {
         var returnRemark = (isVoid, code.IsAsync) switch
         {
             (true, _) => string.Empty,
             (false, true) => $"@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}",
             (false, false) => $"@returns a {code.ReturnType.Name}",
         };
-        conventions.WriteLongDescription(code,
+        typeScriptConventionService.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)

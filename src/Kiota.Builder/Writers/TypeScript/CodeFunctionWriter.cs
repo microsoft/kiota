@@ -27,8 +27,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var codeMethod = codeElement.OriginalLocalMethod;
 
         var returnType = codeMethod.Kind != CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
-        //TODO documentation is missing
-        CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, false, conventions, true);
+        var isVoid = "void".EqualsIgnoreCase(returnType);
+        CodeMethodWriter.WriteMethodDocumentationInternal(codeElement.OriginalLocalMethod, writer, isVoid, conventions);
+        CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, isVoid, conventions, true);
 
         writer.IncreaseIndent();
 

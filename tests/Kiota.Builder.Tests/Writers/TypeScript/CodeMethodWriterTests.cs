@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
@@ -110,8 +109,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesMethodAsyncDescription()
-    {
-
+    {//TODO move to functions
         method.Documentation.Description = MethodDescription;
         var parameter = new CodeParameter
         {
@@ -140,8 +138,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
     [Fact]
     public void WritesMethodSyncDescription()
-    {
-
+    {//TODO move to functions
         method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
@@ -164,7 +161,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesMethodDescriptionLink()
-    {
+    {//TODO move to functions
         method.Documentation.Description = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
@@ -196,7 +193,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesReturnType()
-    {
+    { //TODO move to functions
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(MethodName, result);
@@ -208,7 +205,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
     [Fact]
     public void DoesNotAddUndefinedOnNonNullableReturnType()
-    {
+    { //TODO move to functions
         method.ReturnType.IsNullable = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -218,7 +215,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
     [Fact]
     public void DoesNotAddAsyncInformationOnSyncMethods()
-    {
+    { //TODO move to functions
         method.IsAsync = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -229,7 +226,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
     [Fact]
     public void WritesPublicMethodByDefault()
-    {
+    { //TODO move to functions
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("public ", result);// public default
@@ -238,7 +235,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
     [Fact]
     public void WritesPrivateMethod()
-    {
+    { //TODO move to functions
         method.Access = AccessModifier.Private;
         writer.Write(method);
         var result = tw.ToString();
@@ -255,62 +252,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("protected ", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-
     [Fact]
-    public void WritesGetterToBackingStore()
-    {
-        parentClass.AddBackingStoreProperty();
-        method.AddAccessedProperty();
-        method.Kind = CodeMethodKind.Getter;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.backingStore.get(\"someProperty\")", result);
-    }
-    [Fact]
-    public void WritesGetterToBackingStoreWithNonnullProperty()
-    {
-        method.AddAccessedProperty();
-        parentClass.AddBackingStoreProperty();
-        method.AccessedProperty.Type = new CodeType
-        {
-            Name = "string",
-            IsNullable = false,
-        };
-        var defaultValue = "someDefaultValue";
-        method.AccessedProperty.DefaultValue = defaultValue;
-        method.Kind = CodeMethodKind.Getter;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("if(!value)", result);
-        Assert.Contains(defaultValue, result);
-    }
-    [Fact]
-    public void WritesSetterToBackingStore()
-    {
-        parentClass.AddBackingStoreProperty();
-        method.AddAccessedProperty();
-        method.Kind = CodeMethodKind.Setter;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.backingStore.set(\"someProperty\", value)", result);
-    }
-    [Fact]
-    public void WritesGetterToField()
+    public void FailsOnCodeClassParent()
     {
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.someProperty", result);
-    }
-    [Fact]
-    public void WritesSetterToField()
-    {
-        method.AddAccessedProperty();
-        method.Kind = CodeMethodKind.Setter;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("this.someProperty = value", result);
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesWithUrl()
@@ -331,7 +278,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Fact]
     public void WritesConstructorWithEnumValue()
-    {
+    {//TODO move to functions
         method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "1024x1024";
         var propName = "size";
@@ -395,17 +342,5 @@ public sealed class CodeMethodWriterTests : IDisposable
             }
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void WritesDeprecationInformation()
-    {
-        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z", CultureInfo.InvariantCulture), DateTimeOffset.Parse("2021-01-01T00:00:00Z", CultureInfo.InvariantCulture), "v2.0");
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("This method is deprecated", result);
-        Assert.Contains("2020-01-01", result);
-        Assert.Contains("2021-01-01", result);
-        Assert.Contains("v2.0", result);
-        Assert.Contains("@deprecated", result);
     }
 }
