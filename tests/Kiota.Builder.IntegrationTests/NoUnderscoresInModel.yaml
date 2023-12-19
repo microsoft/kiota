@@ -24,6 +24,22 @@ paths:
                 $ref: "#/components/schemas/app-permissions"
           description: Test
       description: Returns a app permissions
+  /api/image/v1:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateImageRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Value"
+          description: Test
+      description: Returns a create image request
 components:
   schemas:
     app-permissions:
@@ -58,3 +74,20 @@ components:
           type: array
           items:
             type: string
+    CreateImageRequest:
+      type: object
+      properties:
+        prompt:
+          description: A text description of the desired image(s). The maximum length is 1000 characters for `dall-e-2` and 4000 characters for `dall-e-3`.
+          type: string
+          example: "A cute baby sea otter"
+        model:
+          anyOf:
+            - type: string
+            - type: string
+              enum: ["dall-e-2", "dall-e-3"]
+          x-oaiTypeLabel: string
+          default: "dall-e-2"
+          example: "dall-e-3"
+          nullable: true
+          description: The model to use for image generation.
