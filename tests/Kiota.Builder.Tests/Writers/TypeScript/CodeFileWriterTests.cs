@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;

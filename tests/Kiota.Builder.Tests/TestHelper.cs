@@ -32,14 +32,16 @@ public static class TestHelper
         {
             Name = "DeserializerMethod",
             ReturnType = new CodeType { },
-            Kind = CodeMethodKind.Deserializer
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
         };
 
         var serializer = new CodeMethod
         {
             Name = "SerializerMethod",
             ReturnType = new CodeType { },
-            Kind = CodeMethodKind.Serializer
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
         };
         testClass.AddMethod(deserializer);
         testClass.AddMethod(serializer);
