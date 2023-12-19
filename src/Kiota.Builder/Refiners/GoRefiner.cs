@@ -425,30 +425,18 @@ public class GoRefiner : CommonLanguageRefiner
 
     private static void FixConstructorClashes(CodeElement currentElement, Func<string, string> nameCorrection)
     {
-        var allClasses = new List<CodeClass>();
-        FindAllClasses(currentElement, allClasses);
-
-        foreach (var codeClass in allClasses)
-        {
-            if (codeClass.Name.StartsWith("New", StringComparison.OrdinalIgnoreCase))
+        if (currentElement is CodeNamespace currentNamespace)
+            foreach (var codeClassName in currentNamespace
+                                        .Classes
+                                        .Where(static x => x.Name.StartsWith("New", StringComparison.OrdinalIgnoreCase))
+                                        .Select(static x => x.Name)
+                                        .ToArray())
             {
-                var targetName = codeClass.Name.Substring(3);
-                if (allClasses.Exists(x => x.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase)) &&
-                    codeClass.Parent is IBlock parentBlock)
-                    parentBlock.RenameChildElement(codeClass.Name, nameCorrection(codeClass.Name));
+                var targetName = codeClassName[3..];
+                if (currentNamespace.FindChildByName<CodeClass>(targetName) is not null)
+                    currentNamespace.RenameChildElement(codeClassName, nameCorrection(codeClassName));
             }
-        }
-    }
-
-    private static List<CodeClass> FindAllClasses(CodeElement currentElement, List<CodeClass> codeClasses)
-    {
-        if (currentElement is CodeClass codeClass)
-        {
-            codeClasses.Add(codeClass);
-        }
-
-        CrawlTree(currentElement, x => FindAllClasses(x, codeClasses));
-        return codeClasses;
+        CrawlTree(currentElement, x => FixConstructorClashes(x, nameCorrection));
     }
 
     protected static void RenameCancellationParameter(CodeElement currentElement)
