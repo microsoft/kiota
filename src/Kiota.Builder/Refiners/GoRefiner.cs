@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -88,6 +90,7 @@ public class GoRefiner : CommonLanguageRefiner
             RemoveModelPropertiesThatDependOnSubNamespaces(
                 generatedCode
             );
+            FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
@@ -419,6 +422,34 @@ public class GoRefiner : CommonLanguageRefiner
         }
 
         CrawlTree(currentElement, FlattenGoFileNames);
+    }
+
+    private static void FixConstructorClashes(CodeElement currentElement, Func<string, string> nameCorrection)
+    {
+        var allClasses = new List<CodeClass>();
+        FindAllClasses(currentElement, allClasses);
+
+        foreach (var codeClass in allClasses)
+        {
+            if (codeClass.Name.StartsWith("New", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetName = codeClass.Name.Substring(3);
+                if (allClasses.Exists(x => x.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase)))
+                    codeClass.Name = nameCorrection(codeClass.Name);
+            }
+        }
+    }
+
+    private static List<CodeClass> FindAllClasses(CodeElement currentElement, List<CodeClass> codeClasses)
+    {
+        // add the namespace to the name of the code element and the file name
+        if (currentElement is CodeClass codeClass)
+        {
+            codeClasses.Add(codeClass);
+        }
+
+        CrawlTree(currentElement, x => FindAllClasses(x, codeClasses));
+        return codeClasses;
     }
 
     protected static void RenameCancellationParameter(CodeElement currentElement)
