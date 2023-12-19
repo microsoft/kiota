@@ -137,6 +137,7 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is null) return false;
         return schema.Properties.Any() ||
+                schema.Enum is { Count: > 0 } ||
                 schema.Items != null ||
                 (!string.IsNullOrEmpty(schema.Type) &&
                     ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
