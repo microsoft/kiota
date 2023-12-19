@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
