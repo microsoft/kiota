@@ -953,4 +953,34 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("export ", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+    [Fact]
+    public async Task WritesConstructorWithEnumValue()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        method.Kind = CodeMethodKind.Serializer;
+        var defaultValue = "1024x1024";
+        var propName = "size";
+        var codeEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "pictureSize"
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        method.IsStatic = true;
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains($" ?? {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+    }
 }

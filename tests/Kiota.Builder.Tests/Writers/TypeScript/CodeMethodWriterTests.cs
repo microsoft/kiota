@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -134,27 +133,6 @@ public sealed class CodeMethodWriterTests : IDisposable
             },
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void WritesConstructorWithEnumValue()
-    {//TODO move to functions
-        method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "1024x1024";
-        var propName = "size";
-        var codeEnum = new CodeEnum
-        {
-            Name = "pictureSize"
-        };
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType { TypeDefinition = codeEnum }
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains($"this.{propName.ToFirstCharacterLowerCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesNameMapperMethod()

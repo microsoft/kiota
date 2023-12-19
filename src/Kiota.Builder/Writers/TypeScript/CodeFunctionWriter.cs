@@ -164,11 +164,12 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var propTypeName = conventions.GetTypeString(codeProperty.Type, codeProperty.Parent!, false);
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
+        var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) ? $" ?? {dft}" : string.Empty;
 
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
             var serializeName = getSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
-            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}, {serializeName});");
+            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
         }
         else
         {
@@ -176,7 +177,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 writer.WriteLine($"if({modelParamName}.{codePropertyName})");
             }
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
         }
     }
 
@@ -236,10 +237,13 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 var keyName = !string.IsNullOrWhiteSpace(otherProp.SerializationName) ? otherProp.SerializationName.ToFirstCharacterLowerCase() : otherProp.Name.ToFirstCharacterLowerCase();
                 var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
-                if (keyName.Equals(BackingStoreEnabledKey, StringComparison.Ordinal)) //TODO the deserializer should set the default when it doesn't get a value from payload, see the pasta below
+                if (keyName.Equals(BackingStoreEnabledKey, StringComparison.Ordinal))
                     writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
                 else
-                    writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)};{suffix} }},");
+                {
+                    var defaultValueSuffix = GetDefaultValueLiteralForProperty(otherProp) is string dft && !string.IsNullOrEmpty(dft) ? $" ?? {dft}" : string.Empty;
+                    writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)}{defaultValueSuffix};{suffix} }},");
+                }
             }
 
             writer.CloseBlock();
@@ -247,44 +251,13 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         else
             throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
     }
-    // private static void PlaceHolderDefaultValuesPasta() {
-    // foreach (var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
-    //                                 .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
-    //                                 .OrderByDescending(static x => x.Kind)
-    //                                 .ThenBy(static x => x.Name))
-    // {
-    //     writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
-    // }
-    //     foreach (var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
-    //                                     .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
-    //                                     // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-    //                                     .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-    //                                     .OrderByDescending(static x => x.Kind)
-    //                                     .ThenBy(static x => x.Name))
-    //     {
-    //         var defaultValue = propWithDefault.DefaultValue;
-    //         if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
-    //         {
-    //             defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
-    //         }
-    //         writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue};");
-    //     }
-    //     if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-    //         currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-    //             currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam &&
-    //             parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-    //     {
-    //         conventions.AddParametersAssignment(writer,
-    //                                             pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
-    //                                             pathParametersParam.Name.ToFirstCharacterLowerCase(),
-    //                                             $"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
-    //                                             currentMethod.Parameters
-    //                                                         .Where(static x => x.IsOfKind(CodeParameterKind.Path))
-    //                                                         .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-    //                                                         .ToArray());
-    //     }
-    // }
-
+    private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
+    {
+        if (string.IsNullOrEmpty(codeProperty.DefaultValue)) return string.Empty;
+        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            return $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+        return codeProperty.DefaultValue;
+    }
     private static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {
         if (codeElement.IsOfKind(CodeMethodKind.Setter)) return;
