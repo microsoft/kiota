@@ -61,7 +61,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         })?.ToFirstCharacterLowerCase();
         var asyncPrefix = code.IsAsync && code.Kind != CodeMethodKind.RequestExecutor ? " async " : string.Empty;
         var staticPrefix = code.IsStatic && !isFunction ? "static " : string.Empty;
-        var functionPrefix = isFunction ? $"export{asyncPrefix.TrimEnd()} function " : " ";
+        var exportPrefix = code.Access is AccessModifier.Public ? "export" : string.Empty;
+        var functionPrefix = isFunction ? $"{exportPrefix}{asyncPrefix.TrimEnd()} function " : " ";
         var parameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer).Select(p => pConventions.GetParameterSignature(p, code)));
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<" : string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">" : string.Empty;

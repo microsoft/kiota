@@ -112,67 +112,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
     }
     [Fact]
-    public void WritesReturnType()
-    { //TODO move to functions
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains(MethodName, result);
-        Assert.Contains(ReturnTypeName, result);
-        Assert.Contains("Promise<", result);// async default
-        Assert.Contains("| undefined", result);// nullable default
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void DoesNotAddUndefinedOnNonNullableReturnType()
-    { //TODO move to functions
-        method.ReturnType.IsNullable = false;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain("| undefined", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void DoesNotAddAsyncInformationOnSyncMethods()
-    { //TODO move to functions
-        method.IsAsync = false;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain("Promise<", result);
-        Assert.DoesNotContain("async", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void WritesPublicMethodByDefault()
-    { //TODO move to functions
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("public ", result);// public default
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void WritesPrivateMethod()
-    { //TODO move to functions
-        method.Access = AccessModifier.Private;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("private ", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void WritesProtectedMethod()
-    {
-        method.Access = AccessModifier.Protected;
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("protected ", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
     public void FailsOnCodeClassParent()
     {
         method.AddAccessedProperty();

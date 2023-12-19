@@ -755,4 +755,202 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("@see {@link", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+    [Fact]
+    public void WritesReturnType()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains(MethodName, result);
+        Assert.Contains(ReturnTypeName, result);
+        Assert.Contains("Promise<", result);// async default
+        Assert.Contains("| undefined", result);// nullable default
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void DoesNotAddUndefinedOnNonNullableReturnType()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        method.ReturnType.IsNullable = false;
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("| undefined", result.Substring(result.IndexOf("Promise<", StringComparison.OrdinalIgnoreCase)));
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public void DoesNotAddAsyncInformationOnSyncMethods()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        method.IsAsync = false;
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("Promise<", result);
+        Assert.DoesNotContain("async", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public void WritesPublicMethodByDefault()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("export ", result);// public default
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public void WritesPrivateMethod()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.Access = AccessModifier.Private;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("export ", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public void WritesProtectedMethod()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var targetInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsStatic = true;
+        method.Access = AccessModifier.Protected;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Type = new CodeType
+            {
+                TypeDefinition = targetInterface,
+            }
+        });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("export ", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
 }
