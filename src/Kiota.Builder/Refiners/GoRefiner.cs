@@ -442,7 +442,6 @@ public class GoRefiner : CommonLanguageRefiner
 
     private static List<CodeClass> FindAllClasses(CodeElement currentElement, List<CodeClass> codeClasses)
     {
-        // add the namespace to the name of the code element and the file name
         if (currentElement is CodeClass codeClass)
         {
             codeClasses.Add(codeClass);
