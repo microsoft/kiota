@@ -636,6 +636,16 @@ public class TypeScriptLanguageRefinerTests
             Name = "requestBuilder",
             Kind = CodeClassKind.RequestBuilder
         }).First();
+        requestBuilder.AddProperty(new CodeProperty
+        {
+            Kind = CodePropertyKind.UrlTemplate,
+            Name = "urlTemplate",
+            DefaultValue = "{baseurl+}",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
 
         var requestConfig = requestBuilder.AddInnerClass(new CodeClass
         {

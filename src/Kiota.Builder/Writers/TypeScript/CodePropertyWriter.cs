@@ -31,7 +31,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+                writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType};");
                 break;
             default:
                 writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
