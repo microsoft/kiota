@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
@@ -60,8 +60,8 @@ public static class OpenApiSchemaExtensions
         return "array".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase) && schema.Items != null &&
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
-            IsSemanticallyMeaningful(schema.Items) ||
-            FlattenEmptyEntries(new OpenApiSchema[] { schema.Items }, static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && IsSemanticallyMeaningful(flat));
+            schema.Items.IsSemanticallyMeaningful() ||
+            FlattenEmptyEntries(new OpenApiSchema[] { schema.Items }, static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
     }
 
     public static bool IsObject(this OpenApiSchema? schema)
@@ -70,13 +70,14 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
-        return schema?.AnyOf?.Count(IsSemanticallyMeaningful) > 1;
+        return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
+        // so we don't consider any of object/nullable as a union type
     }
 
     public static bool IsInherited(this OpenApiSchema? schema)
     {
         if (schema is null) return false;
-        var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(IsSemanticallyMeaningful).ToArray();
+        var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
         return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
     }
 
@@ -86,20 +87,21 @@ public static class OpenApiSchemaExtensions
         if (!schema.IsIntersection()) return schema;
         var result = new OpenApiSchema(schema);
         result.AllOf.Clear();
-        var meaningfulSchemas = schema.AllOf.Where(IsSemanticallyMeaningful).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
+        var meaningfulSchemas = schema.AllOf.Where(static x => x.IsSemanticallyMeaningful()).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
         meaningfulSchemas.SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.TryAdd(x.Key, x.Value));
         return result;
     }
 
     public static bool IsIntersection(this OpenApiSchema? schema)
     {
-        var meaningfulSchemas = schema?.AllOf?.Where(IsSemanticallyMeaningful);
+        var meaningfulSchemas = schema?.AllOf?.Where(static x => x.IsSemanticallyMeaningful());
         return meaningfulSchemas?.Count() > 3 || meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
     }
 
     public static bool IsExclusiveUnion(this OpenApiSchema? schema)
     {
-        return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
+        return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
+        // so we don't consider one of object/nullable as a union type
     }
     private static readonly HashSet<string> oDataTypes = new(StringComparer.OrdinalIgnoreCase) {
         "number",
@@ -121,15 +123,26 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsEnum(this OpenApiSchema schema)
     {
-        return (schema?.Enum?.Any() ?? false) && (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)); // number and boolean enums are not supported
+        if (schema is null) return false;
+        return schema.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) &&
+                (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
+                schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum()) ||
+                schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum())
+        ; // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
         return (schema.IsInclusiveUnion() && schema.AnyOf.Any(static x => x.IsEnum())) || (schema.IsExclusiveUnion() && schema.OneOf.Any(static x => x.IsEnum()));
     }
-    private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
+    private static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
     {
-        return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format) || !string.IsNullOrEmpty(schema.Reference?.Id);
+        return schema.Properties.Any() ||
+                schema.Items != null ||
+                (!string.IsNullOrEmpty(schema.Type) &&
+                    ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
+                    !ignoreNullableObjects)) ||
+                !string.IsNullOrEmpty(schema.Format) ||
+                !string.IsNullOrEmpty(schema.Reference?.Id);
     }
     public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema>? visitedSchemas = null)
     {

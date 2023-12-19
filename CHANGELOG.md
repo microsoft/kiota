@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where the discriminator validation rule would report false positives on nullable union types.
+
 ## [1.9.1] - 2023-12-13
 
 ### Added
