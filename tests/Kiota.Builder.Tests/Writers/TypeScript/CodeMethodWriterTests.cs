@@ -20,9 +20,6 @@ public sealed class CodeMethodWriterTests : IDisposable
     private readonly CodeNamespace root;
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
-    private const string MethodDescription = "some description";
-    private const string ParamDescription = "some parameter description";
-    private const string ParamName = "paramName";
     public CodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
@@ -106,83 +103,6 @@ public sealed class CodeMethodWriterTests : IDisposable
             Optional = false,
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
-    }
-    [Fact]
-    public void WritesMethodAsyncDescription()
-    {//TODO move to functions
-        method.Documentation.Description = MethodDescription;
-        var parameter = new CodeParameter
-        {
-            Documentation = new()
-            {
-                Description = ParamDescription,
-            },
-            Name = ParamName,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        };
-        method.AddParameter(parameter);
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("/**", result);
-        Assert.Contains(MethodDescription, result);
-        Assert.Contains("@param ", result);
-        Assert.Contains(ParamName, result);
-        Assert.Contains(ParamDescription, result);
-        Assert.Contains("@returns a Promise of", result);
-        Assert.Contains("*/", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-
-    [Fact]
-    public void WritesMethodSyncDescription()
-    {//TODO move to functions
-        method.Documentation.Description = MethodDescription;
-        method.IsAsync = false;
-        var parameter = new CodeParameter
-        {
-            Documentation = new()
-            {
-                Description = ParamDescription,
-            },
-            Name = ParamName,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        };
-        method.AddParameter(parameter);
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain("@returns a Promise of", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesMethodDescriptionLink()
-    {//TODO move to functions
-        method.Documentation.Description = MethodDescription;
-        method.Documentation.DocumentationLabel = "see more";
-        method.Documentation.DocumentationLink = new("https://foo.org/docs");
-        method.IsAsync = false;
-        var parameter = new CodeParameter
-        {
-            Documentation = new()
-            {
-                Description = ParamDescription,
-            },
-            Name = ParamName,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        };
-        method.AddParameter(parameter);
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("@see {@link", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void Defensive()

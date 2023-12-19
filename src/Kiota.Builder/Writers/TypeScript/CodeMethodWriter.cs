@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -62,7 +61,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         })?.ToFirstCharacterLowerCase();
         var asyncPrefix = code.IsAsync && code.Kind != CodeMethodKind.RequestExecutor ? " async " : string.Empty;
         var staticPrefix = code.IsStatic && !isFunction ? "static " : string.Empty;
-        var functionPrefix = isFunction ? "export function " : " ";
+        var functionPrefix = isFunction ? $"export{asyncPrefix.TrimEnd()} function " : " ";
         var parameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer).Select(p => pConventions.GetParameterSignature(p, code)));
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<" : string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">" : string.Empty;
@@ -76,6 +75,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && !string.IsNullOrEmpty(returnType);
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         var openBracketSuffix = code.Parent is CodeClass || isFunction ? " {" : ";";
-        writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix}{openBracketSuffix}");
+        writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
     }
 }

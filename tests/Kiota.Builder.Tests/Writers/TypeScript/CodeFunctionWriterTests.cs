@@ -645,4 +645,114 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("v2.0", result);
         Assert.Contains("@deprecated", result);
     }
+    private const string MethodDescription = "some description";
+    private const string ParamDescription = "some parameter description";
+    private const string ParamName = "paramName";
+    [Fact]
+    public void WritesMethodAsyncDescription()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Documentation.Description = MethodDescription;
+        var parameter = new CodeParameter
+        {
+            Documentation = new()
+            {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("/**", result);
+        Assert.Contains(MethodDescription, result);
+        Assert.Contains("@param ", result);
+        Assert.Contains(ParamName, result);
+        Assert.Contains(ParamDescription, result);
+        Assert.Contains("@returns a Promise of", result);
+        Assert.Contains("*/", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public void WritesMethodSyncDescription()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Documentation.Description = MethodDescription;
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new()
+            {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("@returns a Promise of", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void WritesMethodDescriptionLink()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new()
+            {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("@see {@link", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
 }
