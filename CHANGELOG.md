@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the order of enum declaration might results in a missing enum type. [#3935](https://github.com/microsoft/kiota/issues/3935)
 - Fixed java generating compound types with underscore in the name. [#3824](https://github.com/microsoft/kiota/issues/3824)
 - Fixed a bug where the order of enum declaration might results in a missing enum type. [#3935](https://github.com/microsoft/kiota/issues/3935)
+- Fixed java generating compound types with underscore in the name. [#3824](https://github.com/microsoft/kiota/issues/3824)
 
 ## [1.9.1] - 2023-12-13
 
