@@ -128,8 +128,13 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
-        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType type && type.TypeDefinition is CodeInterface);
-        if (param == null || param.Type is not CodeType codeType || codeType.TypeDefinition is not CodeInterface codeInterface)
+        if (codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType type && type.TypeDefinition is CodeInterface) is not
+            {
+                Type: CodeType
+                {
+                    TypeDefinition: CodeInterface codeInterface
+                }
+            } param)
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
