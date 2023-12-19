@@ -433,8 +433,9 @@ public class GoRefiner : CommonLanguageRefiner
             if (codeClass.Name.StartsWith("New", StringComparison.OrdinalIgnoreCase))
             {
                 var targetName = codeClass.Name.Substring(3);
-                if (allClasses.Exists(x => x.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase)))
-                    codeClass.Name = nameCorrection(codeClass.Name);
+                if (allClasses.Exists(x => x.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase)) &&
+                    codeClass.Parent is IBlock parentBlock)
+                    parentBlock.RenameChildElement(codeClass.Name, nameCorrection(codeClass.Name));
             }
         }
     }
