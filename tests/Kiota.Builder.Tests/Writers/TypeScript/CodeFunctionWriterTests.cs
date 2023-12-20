@@ -288,6 +288,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.Contains($"...deserializeInto{inheritedClass.Name.ToFirstCharacterUpperCase()}", result);
@@ -300,6 +304,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
         writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains("getStringValue", result);
@@ -307,6 +315,33 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("getCollectionOfObjectValues", result);
         Assert.Contains("getEnumValue", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task WritesDeSerializerBodyWithDefaultValue()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        var defaultValue = "\"Test Value\"";
+        var propName = "propWithDefaultValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+        Assert.Contains("?? \"Test Value\"", result);
     }
     [Fact]
     public async Task WritesInheritedSerializerBody()
@@ -333,6 +368,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.Contains("writeStringValue", result);
@@ -342,6 +381,38 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("writeEnumValue", result);
         Assert.Contains($"writer.writeAdditionalData", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task WritesSerializerBodyWithDefault()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        var defaultValue = "\"Test Value\"";
+        var propName = "propWithDefaultValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains("?? \"Test Value\"", result);
     }
 
     [Fact]
@@ -368,6 +439,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>("SerializeTestModel");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.DoesNotContain("readOnlyProperty", result);
@@ -385,7 +460,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
         var errorClass = TestHelper.CreateModelClass(subNS, "Error4XX");
         errorClass.IsErrorDefinition = true;
-        var factoryMethod = errorClass.AddMethod(new CodeMethod
+        errorClass.AddMethod(new CodeMethod
         {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
@@ -395,7 +470,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = errorClass,
             },
             IsStatic = true,
-        }).First();
+        });
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod
         {
             Name = "get",
@@ -457,6 +532,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var function = root.FindChildByName<CodeFunction>("deserializeIntoODataError");
+        Assert.NotNull(function);
+        var parentNS = function.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", function);
 
         // When
         writer.Write(function);
@@ -555,43 +634,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
         tempWriter.Write(method);
         var result = tw.ToString();
         Assert.Contains("enableBackingStore", result);
-    }
-    [Fact]
-    public void WritesDefaultValuesInFactory()
-    {
-        var parentClass = root.AddClass(new CodeClass
-        {
-            Name = "ODataError",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
-        method.Kind = CodeMethodKind.Constructor;
-        method.IsAsync = false;
-        var defaultValue = "someVal";
-        var propName = "propWithDefaultValue";
-        parentClass.Kind = CodeClassKind.RequestBuilder;
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType
-            {
-                Name = "string",
-            },
-        });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "pathParameters",
-            Kind = CodeParameterKind.PathParameters,
-            Type = new CodeType
-            {
-                Name = "Map<string,string>"
-            }
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains($"this.{propName} = {defaultValue}", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
