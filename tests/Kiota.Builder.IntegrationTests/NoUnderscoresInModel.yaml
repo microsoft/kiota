@@ -1,11 +1,25 @@
 openapi: 3.0.0
+servers:
+  - url: https://localhost
 info:
   title: Test
   version: 1.0.0
   description: something
+  contact:
+    name: Microsoft
+tags:
+  - name: metrics
+    description: "The metrics API"
+  - name: permissions
+    description: "The permissions API"
+  - name: image
+    description: "The image API"
 paths:
   /api/metrics/v1:
     get:
+      operationId: getMetrics
+      tags:
+        - "metrics"
       responses:
         "200":
           content:
@@ -16,6 +30,9 @@ paths:
       description: Returns a test list
   /api/permissions/v1:
     get:
+      operationId: getPermissions
+      tags:
+        - "permissions"
       responses:
         "200":
           content:
@@ -26,6 +43,9 @@ paths:
       description: Returns a app permissions
   /api/image/v1:
     post:
+      operationId: createImage
+      tags:
+        - "image"
       requestBody:
         required: true
         content:
