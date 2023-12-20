@@ -292,6 +292,7 @@ public sealed class CodeConstantWriterTests : IDisposable
     {
         AddRequestProperties();
         method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
         method.OriginalIndexer = new()
         {
             Name = "indx",
@@ -310,37 +311,53 @@ public sealed class CodeConstantWriterTests : IDisposable
                 },
             }
         };
-        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
-        writer.Write(constant);
-        var result = tw.ToString();
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
-        Assert.Contains("id", result);
-        Assert.Contains("return new", result);
-    }
-    [Fact]
-    public void WritesPathParameterRequestBuilder()
-    {
-        AddRequestProperties();
-        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
+        var parentInterface = new CodeInterface
+        {
+            Name = "parentClass",
+            Kind = CodeInterfaceKind.RequestBuilder
+        };
         method.AddParameter(new CodeParameter
         {
-            Name = "pathParam",
-            Kind = CodeParameterKind.Path,
+            Name = "id",
             Type = new CodeType
             {
-                Name = "string"
-            }
+                Name = "string",
+                IsNullable = true,
+            },
+            SerializationName = "foo-id",
+            Kind = CodeParameterKind.Path
         });
-        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        var parentNS = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var childNS = parentNS.AddNamespace($"{parentNS.Name}.childNS");
+        childNS.TryAddCodeFile("foo",
+            new CodeConstant
+            {
+                Name = "SomecustomtypeUriTemplate",
+                Kind = CodeConstantKind.UriTemplate,
+            },
+            new CodeConstant
+            {
+                Name = "SomecustomtypeNavigationMetadata",
+                Kind = CodeConstantKind.NavigationMetadata,
+            },
+            new CodeConstant
+            {
+                Name = "SomecustomtypeRequestsMetadata",
+                Kind = CodeConstantKind.RequestsMetadata,
+            });
+        parentInterface.AddMethod(method);
+        var constant = CodeConstant.FromRequestBuilderToNavigationMetadata(parentClass);
+        Assert.NotNull(constant);
+        parentNS.TryAddCodeFile("foo", constant, parentInterface);
         writer.Write(constant);
         var result = tw.ToString();
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
-        Assert.Contains("pathParam", result);
-        Assert.Contains("return new", result);
+        Assert.Contains("export const ParentClassNavigationMetadata: Record<Exclude<keyof ParentClass, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {", result);
+        Assert.Contains("methodName", result);
+        Assert.Contains("uriTemplate: SomecustomtypeUriTemplate", result);
+        Assert.Contains("requestsMetadata: SomecustomtypeRequestsMetadata", result);
+        Assert.Contains("navigationMetadata: SomecustomtypeNavigationMetadata", result);
+        Assert.Contains("pathParametersMappings: [\"foo-id\"]", result);
     }
     private void AddRequestProperties()
     {

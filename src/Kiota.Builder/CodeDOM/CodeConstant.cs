@@ -56,7 +56,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
         ArgumentNullException.ThrowIfNull(codeClass);
         if (codeClass.Kind != CodeClassKind.RequestBuilder) return default;
         if (!(codeClass.Properties.Any(static x => x.Kind is CodePropertyKind.RequestBuilder) ||
-            codeClass.Methods.Any(x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility or CodeMethodKind.RequestBuilderWithParameters)))
+            codeClass.Methods.Any(static x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility or CodeMethodKind.RequestBuilderWithParameters)))
             return default;
         return new CodeConstant
         {
@@ -69,7 +69,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         if (codeClass.Kind != CodeClassKind.RequestBuilder) return default;
-        if (!codeClass.Methods.Any(x => x.Kind is CodeMethodKind.RequestExecutor or CodeMethodKind.RequestGenerator))
+        if (!codeClass.Methods.Any(static x => x.Kind is CodeMethodKind.RequestExecutor or CodeMethodKind.RequestGenerator))
             return default;
         return new CodeConstant
         {
