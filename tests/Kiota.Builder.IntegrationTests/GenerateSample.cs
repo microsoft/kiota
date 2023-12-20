@@ -134,7 +134,14 @@ public class GenerateSample : IDisposable
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
 
+        var fullText = "";
+        foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
+        {
+            fullText += File.ReadAllText(file);
+        }
+
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
+        Assert.DoesNotContain("_", fullText);
     }
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Go)]

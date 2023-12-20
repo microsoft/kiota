@@ -39,6 +39,10 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             var suffix = "Model";
             DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);
             UpdateReferencesToDisambiguatedClasses(generatedCode, classesToDisambiguate, suffix);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s
+            );
             var reservedNamesProvider = new RubyReservedNamesProvider();
             CorrectNames(generatedCode, s =>
             {
@@ -55,10 +59,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 FlattenModelsNamespaces(modelsNS, modelsNS);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                static s => s
-            );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddDefaultImports(generatedCode, defaultUsingEvaluators);

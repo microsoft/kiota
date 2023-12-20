@@ -38,6 +38,13 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                s => s.ToFirstCharacterLowerCase(),
+                true,
+                SerializationNamespaceName,
+                "ComposedTypeWrapper"
+            );
             var reservedNamesProvider = new JavaReservedNamesProvider();
             CorrectNames(generatedCode, s =>
             {
@@ -58,13 +65,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 GenerationLanguage.Java);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                s => s.ToFirstCharacterLowerCase(),
-                true,
-                SerializationNamespaceName,
-                "ComposedTypeWrapper"
-            );
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);
