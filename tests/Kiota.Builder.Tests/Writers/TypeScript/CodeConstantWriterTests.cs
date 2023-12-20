@@ -140,16 +140,18 @@ public sealed class CodeConstantWriterTests : IDisposable
     [Fact]
     public void WritesRequestGeneratorBodyForMultipart()
     {
-        method.Kind = CodeMethodKind.RequestGenerator;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters();
         method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        root.TryAddCodeFile("foo", constant);
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("setContentFromParsable", result);
+        Assert.Contains("serializeMultipartBody", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -169,49 +171,78 @@ public sealed class CodeConstantWriterTests : IDisposable
     [Fact]
     public void WritesRequestGeneratorBodyForScalar()
     {
-        method.Kind = CodeMethodKind.RequestGenerator;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
-        method.AcceptedResponseTypes.Add("application/json");
+        var generatorMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "toGetRequestInformation",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestGenerator,
+            ReturnType = new CodeType
+            {
+                Name = "RequestInformation",
+                IsExternal = true,
+            },
+        }).First();
+        generatorMethod.AcceptedResponseTypes.Add("application/json");
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        root.TryAddCodeFile("foo", constant);
         writer.Write(constant);
         var result = tw.ToString();
-        Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters)", result);
-        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.configure", result);
-        Assert.Contains("setContentFromScalar", result);
-        Assert.Contains("return requestInfo;", result);
+        Assert.Contains("export const", result);
+        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("responseBodyContentType: \"application/json\"", result);
+        Assert.Contains("requestInformationContentSetMethod: \"setContentFromScalar", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForParsable()
     {
-        method.Kind = CodeMethodKind.RequestGenerator;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters(true);
-        method.AcceptedResponseTypes.Add("application/json");
+        var generatorMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "toGetRequestInformation",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestGenerator,
+            ReturnType = new CodeType
+            {
+                Name = "RequestInformation",
+                IsExternal = true,
+            },
+        }).First();
+        var bodyParameter = method.Parameters.First(static x => x.Kind is CodeParameterKind.RequestBody);
+        bodyParameter.Type = new CodeType
+        {
+            Name = "SomeComplexTypeForRequestBody",
+            TypeDefinition = new CodeInterface
+            {
+                Name = "SomeComplexTypeForRequestBody",
+                Kind = CodeInterfaceKind.Model,
+            },
+        };
+        generatorMethod.AcceptedResponseTypes.Add("application/json");
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        root.TryAddCodeFile("foo", constant);
         writer.Write(constant);
         var result = tw.ToString();
-        Assert.Contains("const requestInfo = new RequestInformation(HttpMethod.GET, this.urlTemplate, this.pathParameters", result);
-        Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.configure", result);
-        Assert.Contains("setContentFromParsable", result);
-        Assert.Contains("return requestInfo;", result);
+        Assert.Contains("export const", result);
+        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("responseBodyContentType: \"application/json\"", result);
+        Assert.Contains("requestInformationContentSetMethod: \"setContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestGeneratorBodyKnownRequestBodyType()
     {
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters(true);
-        method.Kind = CodeMethodKind.RequestGenerator;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters(false);
@@ -222,21 +253,20 @@ public sealed class CodeConstantWriterTests : IDisposable
         };
         method.RequestBodyContentType = "application/json";
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        root.TryAddCodeFile("foo", constant);
         writer.Write(constant);
         var result = tw.ToString();
-        Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("application/json", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("export const", result);
+        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("requestBodyContentType: \"application/json\"", result);
+        Assert.Contains("requestInformationContentSetMethod: \"setStreamContent", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestGeneratorBodyUnknownRequestBodyType()
     {
-        method.Kind = CodeMethodKind.RequestGenerator;
-        method.HttpMethod = HttpMethod.Get;
-        AddRequestProperties();
-        AddRequestBodyParameters(true);
-        method.Kind = CodeMethodKind.RequestGenerator;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters(false);
@@ -256,17 +286,20 @@ public sealed class CodeConstantWriterTests : IDisposable
             Kind = CodeParameterKind.RequestBodyContentType,
         });
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        root.TryAddCodeFile("foo", constant);
         writer.Write(constant);
         var result = tw.ToString();
+        Assert.Contains("export const", result);
+        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.DoesNotContain("requestBodyContentType: \"application/json\"", result);
+        Assert.Contains("requestInformationContentSetMethod: \"setStreamContent", result);
         Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("application/json", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(", requestContentType", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestExecutorBody()
     {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         var error4XX = root.AddClass(new CodeClass
@@ -285,7 +318,15 @@ public sealed class CodeConstantWriterTests : IDisposable
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
         method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error403 });
         AddRequestBodyParameters();
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        root.TryAddCodeFile("foo", constant);
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("errorMappings: {", result);
+        Assert.Contains("4XX\": createError4XXFromDiscriminatorValue", result);
+        Assert.Contains("5XX\": createError5XXFromDiscriminatorValue", result);
+        Assert.Contains("403\": createError403FromDiscriminatorValue", result);
+        Assert.Contains(" as Record<string, ParsableFactory<Parsable>>", result);
     }
     [Fact]
     public void WritesIndexer()

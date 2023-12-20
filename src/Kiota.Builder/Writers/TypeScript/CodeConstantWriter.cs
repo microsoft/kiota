@@ -112,15 +112,28 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
             if (!string.IsNullOrEmpty(executorMethod.RequestBodyContentType))
-                writer.WriteLine($"requestBodyContentType: \"{executorMethod.RequestBodyContentType}\","); //TODO add support for configurable content type
-            if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody && GetBodySerializer(requestBody) is string bodySerializer)
-                writer.WriteLine($"requestBodySerializer: {bodySerializer},");
+                writer.WriteLine($"requestBodyContentType: \"{executorMethod.RequestBodyContentType}\",");
+            if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody)
+            {
+                if (GetBodySerializer(requestBody) is string bodySerializer)
+                    writer.WriteLine($"requestBodySerializer: {bodySerializer},");
+                writer.WriteLine($"requestInformationContentSetMethod: {GetRequestContentSetterMethodName(requestBody)},");
+            }
             if (codeElement.Parent is CodeFile parentCodeFile &&
                 parentCodeFile.FindChildByName<CodeConstant>(codeElement.Name.Replace("RequestsMetadata", $"{executorMethod.Name.ToFirstCharacterUpperCase()}QueryParametersMapper", StringComparison.Ordinal), false) is CodeConstant mapperConstant)
                 writer.WriteLine($"queryParametersMapper: {mapperConstant.Name.ToFirstCharacterUpperCase()},");
             writer.CloseBlock("},");
         }
         writer.CloseBlock("};");
+    }
+    private string GetRequestContentSetterMethodName(CodeParameter requestBody)
+    {
+        if (requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+            return "\"setStreamContent\"";
+
+        if (requestBody.Type is CodeType currentType && (currentType.TypeDefinition is CodeInterface || currentType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
+            return "\"setContentFromParsable\"";
+        return "\"setContentFromScalar\"";
     }
     private string? GetBodySerializer(CodeParameter requestBody)
     {
