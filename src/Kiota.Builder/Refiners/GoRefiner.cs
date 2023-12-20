@@ -88,6 +88,7 @@ public class GoRefiner : CommonLanguageRefiner
             RemoveModelPropertiesThatDependOnSubNamespaces(
                 generatedCode
             );
+            FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
@@ -419,6 +420,22 @@ public class GoRefiner : CommonLanguageRefiner
         }
 
         CrawlTree(currentElement, FlattenGoFileNames);
+    }
+
+    private static void FixConstructorClashes(CodeElement currentElement, Func<string, string> nameCorrection)
+    {
+        if (currentElement is CodeNamespace currentNamespace)
+            foreach (var codeClassName in currentNamespace
+                                        .Classes
+                                        .Where(static x => x.Name.StartsWith("New", StringComparison.OrdinalIgnoreCase))
+                                        .Select(static x => x.Name)
+                                        .ToArray())
+            {
+                var targetName = codeClassName[3..];
+                if (currentNamespace.FindChildByName<CodeClass>(targetName, false) is not null)
+                    currentNamespace.RenameChildElement(codeClassName, nameCorrection(codeClassName));
+            }
+        CrawlTree(currentElement, x => FixConstructorClashes(x, nameCorrection));
     }
 
     protected static void RenameCancellationParameter(CodeElement currentElement)

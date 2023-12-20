@@ -6,21 +6,21 @@ servers:
   - url: https://mytodos.doesnotexist/
     description: Core
 paths:
-  /todos: 
+  /todos:
     get:
       description: Return a list of Todo entities
       operationId: todos_ListTodos
       parameters:
-          - name: active
-            in: query
-            schema:
-              type: boolean
-          - name: keyword
-            in: query
-            schema:
-              type: string
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: keyword
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -30,7 +30,7 @@ paths:
                 properties:
                   value:
                     type: array
-                    items: 
+                    items:
                       $ref: "#/components/schemas/todo"
 
     post:
@@ -39,21 +39,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/todo'
+              $ref: "#/components/schemas/NewTodo"
         required: true
       responses:
-        '201':
+        "201":
           description: OK
   /todos/{todoId}:
     get:
       description: Return a single Todo object
       responses:
-        '200':
+        "200":
           description: OK
     delete:
       description: Delete a single Todo object
       responses:
-        '200':
+        "200":
           description: OK
 components:
   schemas:
@@ -63,6 +63,14 @@ components:
       properties:
         id:
           type: string
+        subject:
+          type: string
+        Notes:
+          type: string
+    NewTodo:
+      title: NewTodo
+      type: object
+      properties:
         subject:
           type: string
         Notes:
