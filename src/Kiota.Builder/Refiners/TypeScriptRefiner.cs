@@ -267,26 +267,32 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
     private static readonly CodeUsing[] requestBuilderUsings = [
-        new CodeUsing {
+        new CodeUsing
+        {
             Name = "RequestMetadata",
             IsErasable = true,
-            Declaration = new CodeType {
+            Declaration = new CodeType
+            {
                 Name = AbstractionsPackageName,
                 IsExternal = true,
             },
         },
-        new CodeUsing {
+        new CodeUsing
+        {
             Name = "NavigationMetadata",
             IsErasable = true,
-            Declaration = new CodeType {
+            Declaration = new CodeType
+            {
                 Name = AbstractionsPackageName,
                 IsExternal = true,
             },
         },
-        new CodeUsing {
+        new CodeUsing
+        {
             Name = "KeysToExcludeForNavigationMetadata",
             IsErasable = true,
-            Declaration = new CodeType {
+            Declaration = new CodeType
+            {
                 Name = AbstractionsPackageName,
                 IsExternal = true,
             },

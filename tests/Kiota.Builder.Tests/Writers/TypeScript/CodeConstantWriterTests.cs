@@ -2,10 +2,9 @@
 using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
-using Kiota.Builder.Extensions;
-
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
