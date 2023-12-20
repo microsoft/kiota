@@ -31,17 +31,11 @@ Here is an example of what the kiota-config.json file could look like.
       "clientClassName": "GraphClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-      "serializers": [
-        "Contoso.Json.CustomSerializer"
-      ],
-      "deserializers": [
-        "Contoso.Json.CustomDeserializer"
-      ],
-      "structuredMimeTypes": [
-        "application/json"
-      ],
-      "usesBackingStore": true,
-      "includeAdditionalData": true
+        "structuredMediaTypes": [
+          "application/json"
+        ],
+        "usesBackingStore": true,
+        "includeAdditionalData": true
       }
     },
     "businessCentral": {

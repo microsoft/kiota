@@ -24,7 +24,7 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. |
 | `--serializer \| -s` | No | `Contoso.Json.CustomSerializer` | One or more module names that implements ISerializationWriterFactory. Default are documented [here](https://learn.microsoft.com/openapi/kiota/using#--serializer--s). |
 | `--deserializer \| --ds` | No | `Contoso.Json.CustomDeserializer` | One or more module names that implements IParseNodeFactory. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--deserializer---ds). |
-| `--structured-mime-types \| -m` | No | `application/json` |Any valid MIME type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). |
+| `--structured-media-types \| -m` | No | `application/json` |Any valid media type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |
 | `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. Defaults to `./output`. |
 
@@ -44,7 +44,6 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": ["/users/$count"],
@@ -53,17 +52,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-      "serializers": [
-        "Contoso.Json.CustomSerializer"
-      ],
-      "deserializers": [
-        "Contoso.Json.CustomDeserializer"
-      ],
-      "structuredMimeTypes": [
-        "application/json"
-      ],
-      "usesBackingStore": true,
-      "includeAdditionalData": true
+        "structuredMediaTypes": [
+          "application/json"
+        ],
+        "usesBackingStore": true,
+        "includeAdditionalData": true
       }
     }
   }
@@ -80,6 +73,7 @@ _The resulting `apimanifest.json` file will look like this:_
   },
   "apiDependencies": {
     "graphDelegated": {
+      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",

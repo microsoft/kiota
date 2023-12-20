@@ -4,7 +4,7 @@
 
 `kiota client add` allows a developer to add a new API client to the `kiota-config.json` file. If no `kiota-config.json` file is found, a new `kiota-config.json` file would be created in thr current working directory. The command will add a new entry to the `clients` section of the `kiota-config.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/descriptions` folder.
 
-When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will generate a hash of the description to enable change detection of the description and save it as part of the `descriptionHash` property. It will also store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
+When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
 
 Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/{client-name}` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
 
@@ -29,7 +29,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. |
 | `--serializer \| -s` | No | `Contoso.Json.CustomSerializer` | One or more module names that implements ISerializationWriterFactory. Default are documented [here](https://learn.microsoft.com/openapi/kiota/using#--serializer--s). |
 | `--deserializer \| --ds` | No | `Contoso.Json.CustomDeserializer` | One or more module names that implements IParseNodeFactory. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--deserializer---ds). |
-| `--structured-mime-types \| -m` | No | `application/json` |Any valid MIME type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). |
+| `--structured-media-types \| -m` | No | `application/json` |Any valid media type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |
 | `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. Defaults to `./output`. |
 
@@ -49,7 +49,6 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -58,17 +57,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "clientClassName": "GraphClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-      "serializers": [
-        "Contoso.Json.CustomSerializer"
-      ],
-      "deserializers": [
-        "Contoso.Json.CustomDeserializer"
-      ],
-      "structuredMimeTypes": [
-        "application/json"
-      ],
-      "usesBackingStore": true,
-      "includeAdditionalData": true
+        "structuredMediaTypes": [
+          "application/json"
+        ],
+        "usesBackingStore": true,
+        "includeAdditionalData": true
       }
     }
   }
