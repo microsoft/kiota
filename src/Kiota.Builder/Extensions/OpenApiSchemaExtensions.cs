@@ -125,18 +125,19 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is null) return false;
         return schema.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) &&
-                (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
-                schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.AnyOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum()) ||
-                schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Count(static x => x.IsEnum()) == 1 && !schema.OneOf.Where(static x => x.IsSemanticallyMeaningful(true)).Any(static x => !x.IsEnum())
-        ; // number and boolean enums are not supported
+                (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)); // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
-        return (schema.IsInclusiveUnion() && schema.AnyOf.Any(static x => x.IsEnum())) || (schema.IsExclusiveUnion() && schema.OneOf.Any(static x => x.IsEnum()));
+        if (schema is null) return false;
+        return schema.AnyOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
+                schema.OneOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
     }
-    private static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
+    public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
     {
+        if (schema is null) return false;
         return schema.Properties.Any() ||
+                schema.Enum is { Count: > 0 } ||
                 schema.Items != null ||
                 (!string.IsNullOrEmpty(schema.Type) &&
                     ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||

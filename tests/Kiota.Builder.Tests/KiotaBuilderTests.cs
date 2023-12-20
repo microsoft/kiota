@@ -7300,6 +7300,132 @@ components:
         Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
+    public async Task EnumsWithNullableDoesNotResultInInlineType()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  '/communications/calls/{call-id}/reject':
+    post:
+      requestBody:
+        description: Action parameters
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  anyOf:
+                    - $ref: '#/components/schemas/microsoft.graph.rejectReason'
+                    - type: object
+                      nullable: true
+                callbackUri:
+                  type: string
+                  nullable: true
+        required: true
+      responses:
+        '204':
+          description: Success,
+components:
+  schemas:
+    microsoft.graph.rejectReason:
+      title: rejectReason
+      enum:
+        - none
+        - busy
+        - forbidden
+        - unknownFutureValue
+      type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.communications.calls.item.reject");
+        Assert.NotNull(requestBuilderNS);
+        var requestBuilderClass = requestBuilderNS.FindChildByName<CodeClass>("RejectRequestBuilder", false);
+        Assert.NotNull(requestBuilderClass);
+        var reasonCandidate = requestBuilderNS.FindChildByName<CodeEnum>("RejectPostRequestBody_reason", false);
+        Assert.Null(reasonCandidate);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.Models");
+        Assert.NotNull(modelsNS);
+        var graphModelsNS = modelsNS.FindNamespaceByName("ApiSdk.Models.Microsoft.Graph");
+        Assert.NotNull(graphModelsNS);
+        var rejectReasonEnum = graphModelsNS.FindChildByName<CodeEnum>("RejectReason", false);
+        Assert.NotNull(rejectReasonEnum);
+    }
+
+    [Fact]
+    public async Task EnumsWithNullableDoesNotResultInInlineTypeInReveredOrder()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  '/communications/calls/{call-id}/reject':
+    post:
+      requestBody:
+        description: Action parameters
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  anyOf:
+                    - type: object
+                      nullable: true
+                    - $ref: '#/components/schemas/microsoft.graph.rejectReason'
+                callbackUri:
+                  type: string
+                  nullable: true
+        required: true
+      responses:
+        '204':
+          description: Success,
+components:
+  schemas:
+    microsoft.graph.rejectReason:
+      title: rejectReason
+      enum:
+        - none
+        - busy
+        - forbidden
+        - unknownFutureValue
+      type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.communications.calls.item.reject");
+        Assert.NotNull(requestBuilderNS);
+        var requestBuilderClass = requestBuilderNS.FindChildByName<CodeClass>("RejectRequestBuilder", false);
+        Assert.NotNull(requestBuilderClass);
+        var reasonCandidate = requestBuilderNS.FindChildByName<CodeEnum>("RejectPostRequestBody_reason", false);
+        Assert.Null(reasonCandidate);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.Models");
+        Assert.NotNull(modelsNS);
+        var graphModelsNS = modelsNS.FindNamespaceByName("ApiSdk.Models.Microsoft.Graph");
+        Assert.NotNull(graphModelsNS);
+        var rejectReasonEnum = graphModelsNS.FindChildByName<CodeEnum>("RejectReason", false);
+        Assert.NotNull(rejectReasonEnum);
+    }
+
+    [Fact]
     public async Task AnyTypeResponse()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());

@@ -557,7 +557,7 @@ public class OpenApiSchemaExtensionsTests
                 }
             }
         };
-        Assert.True(schema.IsEnum());
+        Assert.False(schema.IsEnum());
     }
     [Fact]
     public void IsEnumFailsOnNullableInheritance()
@@ -591,7 +591,7 @@ public class OpenApiSchemaExtensionsTests
                 }
             }
         };
-        Assert.True(schema.IsEnum());
+        Assert.False(schema.IsEnum());
     }
     private static readonly OpenApiSchema numberSchema = new OpenApiSchema
     {
