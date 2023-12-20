@@ -549,8 +549,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
     {
         var parentClass = root.AddClass(new CodeClass
         {
-            Name = "ODataError",
-            Kind = CodeClassKind.Model,
+            Name = "ApiClient",
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.ClientConstructor;
@@ -566,59 +566,77 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 IsExternal = true,
             }
         });
-        var coreProp = parentClass.AddProperty(new CodeProperty
+        var requestAdapterProp = parentClass.AddProperty(new CodeProperty
         {
-            Name = "core",
+            Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "HttpCore",
+                Name = "RequestAdapter",
                 IsExternal = true,
             }
         }).First();
         method.AddParameter(new CodeParameter
         {
-            Name = "core",
+            Name = "requestAdapter",
             Kind = CodeParameterKind.RequestAdapter,
-            Type = coreProp.Type,
+            Type = requestAdapterProp.Type,
         });
-        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
-        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
-        writer.Write(method);
+        method.DeserializerModules = ["com.microsoft.kiota.serialization.Deserializer"];
+        method.SerializerModules = ["com.microsoft.kiota.serialization.Serializer"];
+        method.IsStatic = true;
+        root.RemoveChildElement(parentClass);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
+        writer.Write(function);
         var result = tw.ToString();
-        Assert.Contains("constructor", result);
         Assert.Contains("registerDefaultSerializer", result);
         Assert.Contains("registerDefaultDeserializer", result);
-        Assert.Contains($"[\"baseurl\"] = core.baseUrl", result);
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
+        Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
+        Assert.Contains($"apiClientProxifier<", result);
+        Assert.Contains($"pathParameters", result);
+        Assert.Contains($"UriTemplate", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()
     {
         var parentClass = root.AddClass(new CodeClass
         {
-            Name = "ODataError",
-            Kind = CodeClassKind.Model,
+            Name = "ApiClient",
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.ClientConstructor;
-        var coreProp = parentClass.AddProperty(new CodeProperty
+        method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty
         {
-            Name = "core",
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var requestAdapterProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "HttpCore",
+                Name = "RequestAdapter",
                 IsExternal = true,
             }
         }).First();
         method.AddParameter(new CodeParameter
         {
-            Name = "core",
+            Name = "requestAdapter",
             Kind = CodeParameterKind.RequestAdapter,
-            Type = coreProp.Type,
+            Type = requestAdapterProp.Type,
         });
-        var backingStoreParam = new CodeParameter
+        method.AddParameter(new CodeParameter
         {
             Name = "backingStore",
             Kind = CodeParameterKind.BackingStore,
@@ -627,61 +645,16 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 Name = "BackingStore",
                 IsExternal = true,
             }
-        };
-        method.AddParameter(backingStoreParam);
-        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-        tempWriter.SetTextWriter(tw);
-        tempWriter.Write(method);
+        });
+        method.DeserializerModules = ["com.microsoft.kiota.serialization.Deserializer"];
+        method.SerializerModules = ["com.microsoft.kiota.serialization.Serializer"];
+        method.IsStatic = true;
+        root.RemoveChildElement(parentClass);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
+        writer.Write(function);
         var result = tw.ToString();
         Assert.Contains("enableBackingStore", result);
-    }
-    [Fact]
-    public void DoesNotWriteConstructorWithDefaultFromComposedType()
-    {
-        var parentClass = root.AddClass(new CodeClass
-        {
-            Name = "ODataError",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
-        method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "\"Test Value\"";
-        var propName = "size";
-        var unionTypeWrapper = root.AddClass(new CodeClass
-        {
-            Name = "UnionTypeWrapper",
-            Kind = CodeClassKind.Model,
-            OriginalComposedType = new CodeUnionType
-            {
-                Name = "UnionTypeWrapper",
-            },
-            DiscriminatorInformation = new()
-            {
-                DiscriminatorPropertyName = "@odata.type",
-            },
-        }).First();
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType { TypeDefinition = unionTypeWrapper }
-        });
-        var sType = new CodeType
-        {
-            Name = "string",
-        };
-        var arrayType = new CodeType
-        {
-            Name = "array",
-        };
-        unionTypeWrapper.OriginalComposedType.AddType(sType);
-        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
-
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("constructor", result);
-        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
     }
     [Fact]
     public void WritesDeprecationInformation()

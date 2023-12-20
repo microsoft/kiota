@@ -53,7 +53,7 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
             {
                 usingToCopy.IsErasable = true;
             }
-            result.AddUsing(usings); //TODO pass a list of external imports to remove as we create the interface
+            result.AddUsing(usings);
         }
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
