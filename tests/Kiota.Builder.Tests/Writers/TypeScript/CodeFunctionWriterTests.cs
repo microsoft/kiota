@@ -103,8 +103,13 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var modelInterface = root.FindChildByName<CodeInterface>("childModel");
+        Assert.NotNull(modelInterface);
+        var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var factoryFunction = parentNS.FindChildByName<CodeFunction>("createParentModelFromDiscriminatorValue", false);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
         Assert.Contains("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
@@ -120,7 +125,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task DoesntWriteFactorySwitchOnMissingParameter()
     {
-
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var childModel = TestHelper.CreateModelClass(root, "childModel");
         childModel.StartBlock.Inherits = new CodeType
@@ -128,7 +132,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        parentModel.AddMethod(new CodeMethod
         {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
@@ -138,16 +142,20 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = parentModel,
             },
             IsStatic = true,
-        }).First();
+        });
         parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType
         {
             Name = "childModel",
             TypeDefinition = childModel,
         });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
-
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var modelInterface = root.FindChildByName<CodeInterface>("childModel");
+        Assert.NotNull(modelInterface);
+        var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var factoryFunction = parentNS.FindChildByName<CodeFunction>("createParentModelFromDiscriminatorValue", false);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
         Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
@@ -202,8 +210,13 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var modelInterface = root.FindChildByName<CodeInterface>("childModel");
+        Assert.NotNull(modelInterface);
+        var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var factoryFunction = parentNS.FindChildByName<CodeFunction>("createParentModelFromDiscriminatorValue", false);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
         Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
@@ -247,8 +260,13 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var modelInterface = root.FindChildByName<CodeInterface>("parentModel");
+        Assert.NotNull(modelInterface);
+        var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var factoryFunction = parentNS.FindChildByName<CodeFunction>("createParentModelFromDiscriminatorValue", false);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
         Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
