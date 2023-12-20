@@ -107,7 +107,6 @@ components:
             - type: string
               enum: ["dall-e-2", "dall-e-3"]
           x-oaiTypeLabel: string
-          default: "dall-e-2"
           example: "dall-e-3"
           nullable: true
           description: The model to use for image generation.
