@@ -432,7 +432,7 @@ public class GoRefiner : CommonLanguageRefiner
                                         .ToArray())
             {
                 var targetName = codeClassName[3..];
-                if (currentNamespace.FindChildByName<CodeClass>(targetName) is not null)
+                if (currentNamespace.FindChildByName<CodeClass>(targetName, false) is not null)
                     currentNamespace.RenameChildElement(codeClassName, nameCorrection(codeClassName));
             }
         CrawlTree(currentElement, x => FixConstructorClashes(x, nameCorrection));
