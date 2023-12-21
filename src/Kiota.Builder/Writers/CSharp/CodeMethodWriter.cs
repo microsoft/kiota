@@ -629,16 +629,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                                         GetParameterSignatureWithNullableRefType(p, code) :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            CSharpConventionService.WriteNullableOpening(writer);
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
-            CSharpConventionService.WriteNullableMiddle(writer);
         }
-
-        writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
-
-        if (includeNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
-
+        else
+        {
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+        }
     }
 
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
