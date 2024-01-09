@@ -27,9 +27,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock();
                 break;
-            case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"@QueryParameter(name = \"{codeElement.SerializationName}\")");
-                goto default;
             case CodePropertyKind.Headers or CodePropertyKind.Options when !string.IsNullOrEmpty(codeElement.DefaultValue):
                 defaultValue = $" = {codeElement.DefaultValue}";
                 goto default;

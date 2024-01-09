@@ -67,6 +67,7 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
           - "oas::petstore"
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"

@@ -105,15 +105,6 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("@jakarta.annotation.Nonnull", result);
     }
     [Fact]
-    public void WritesSerializationAnnotation()
-    {
-        property.Kind = CodePropertyKind.QueryParameter;
-        property.SerializationName = "someserializationname";
-        writer.Write(property);
-        var result = tw.ToString();
-        Assert.Contains("@QueryParameter(name = \"someserializationname\")", result);
-    }
-    [Fact]
     public void WritesCollectionFlagEnumsAsOneDimensionalArray()
     {
         property.Kind = CodePropertyKind.Custom;

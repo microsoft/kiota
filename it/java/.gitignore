@@ -2,3 +2,6 @@
 target
 /basic/src/main
 /basic/src/kiota-lock.json
+/query-params/src/main
+/query-params/src/kiota-lock.json
+
