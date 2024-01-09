@@ -49,6 +49,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
             Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
             UriTemplate = urlTemplateProperty.DefaultValue,
+            OriginalCodeElement = codeClass
         };
     }
     public static CodeConstant? FromRequestBuilderToNavigationMetadata(CodeClass codeClass)

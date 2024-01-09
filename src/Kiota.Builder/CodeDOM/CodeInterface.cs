@@ -49,7 +49,7 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
 
         if (codeClass.Usings.ToArray() is { Length: > 0 } usings)
         {
-            foreach (var usingToCopy in usings.Where(static x => x.Declaration is not null && x.Declaration.TypeDefinition is CodeInterface or CodeClass { Kind: CodeClassKind.RequestBuilder }))
+            foreach (var usingToCopy in usings.Where(static x => x.Declaration?.TypeDefinition is CodeInterface or CodeClass { Kind: CodeClassKind.RequestBuilder }))
             {
                 usingToCopy.IsErasable = true;
             }
