@@ -414,11 +414,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                 .ThenBy(static x => x.Name);
         foreach (var queryParam in allQueryParams)
         {
-            var keyValue = queryParam.Name;
-            if (queryParam.IsNameEscaped)
-            {
-                keyValue = queryParam.SerializationName;
-            }
+            var keyValue = queryParam.IsNameEscaped ? queryParam.SerializationName : queryParam.Name;
             writer.WriteLine($"allQueryParams.put(\"{keyValue}\", {queryParam.Name});");
         }
         writer.WriteLine("return allQueryParams;");
