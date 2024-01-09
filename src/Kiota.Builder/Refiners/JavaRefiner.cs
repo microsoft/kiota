@@ -525,7 +525,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 IsExternal = true,
                 Name = "QueryParameters"
             });
-            var method = currentClass.AddMethod(new CodeMethod
+            currentClass.AddMethod(new CodeMethod
             {
                 Name = methodName,
                 Access = AccessModifier.Public,
