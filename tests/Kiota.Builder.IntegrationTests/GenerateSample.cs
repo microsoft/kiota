@@ -183,7 +183,7 @@ public class GenerateSample : IDisposable
                 Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
                 break;
             case GenerationLanguage.Java:
-                Assert.Contains("@QueryParameter(name = \"EndDateTime\")", fullText);
+                Assert.Contains("allQueryParams.put(\"EndDateTime\", endDateTime)", fullText);
                 break;
             case GenerationLanguage.PHP:
                 Assert.Contains("@QueryParameter(\"EndDateTime\")", fullText);
