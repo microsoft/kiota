@@ -541,7 +541,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     Description = "Extracts the query parameters into a map for the URI template parsing.",
                 },
-            }).First();
+            });
         }
         CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
     }
