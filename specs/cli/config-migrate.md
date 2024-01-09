@@ -40,7 +40,6 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "csharpGraphServiceClient": {
-      "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -49,13 +48,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-        "serializers": [
-            "Contoso.Json.CustomSerializer"
-        ],
-        "deserializers": [
-            "Contoso.Json.CustomDeserializer"
-        ],
-        "structuredMimeTypes": [
+        "structuredMediaTypes": [
             "application/json"
         ],
         "usesBackingStore": true,
@@ -63,7 +56,6 @@ _The resulting `kiota-config.json` file will look like this:_
       }
     },
     "pythonGraphServiceClient": {
-      "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -72,13 +64,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-        "serializers": [
-            "Contoso.Json.CustomSerializer"
-        ],
-        "deserializers": [
-            "Contoso.Json.CustomDeserializer"
-        ],
-        "structuredMimeTypes": [
+        "structuredMediaTypes": [
             "application/json"
         ],
         "usesBackingStore": true,
@@ -210,7 +196,6 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionHash": "9EDF8506CB74FE44...",
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -219,13 +204,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "features": {
-        "serializers": [
-            "Contoso.Json.CustomSerializer"
-        ],
-        "deserializers": [
-            "Contoso.Json.CustomDeserializer"
-        ],
-        "structuredMimeTypes": [
+        "structuredMediaTypes": [
             "application/json"
         ],
         "usesBackingStore": true,

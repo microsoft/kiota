@@ -54,18 +54,6 @@
                   "type": "string"
                 }
               },
-              "serializers": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "deserializers": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
               "usesBackingStore": {
                 "type": "boolean"
               },
