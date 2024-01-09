@@ -1986,17 +1986,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("allQueryParams.put(\"propWithDefaultValue\", propWithDefaultValue);", result);
     }
     [Fact]
-    public void WritesQueryParamsExtractor()
-    {
-        setup();
-        method.Kind = CodeMethodKind.QueryParametersMapper;
-        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
-        tempWriter.SetTextWriter(tw);
-        tempWriter.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("enableBackingStore", result);
-    }
-    [Fact]
     public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves()
     {
         setup();

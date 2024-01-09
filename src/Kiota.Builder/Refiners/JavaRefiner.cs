@@ -259,7 +259,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.QueryParametersMapper),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
                 AbstractionsNamespaceName, "QueryParameters"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             SerializationNamespaceName, "ParseNodeHelper"),
