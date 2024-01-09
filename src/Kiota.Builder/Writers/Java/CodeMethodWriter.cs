@@ -407,7 +407,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     }
     private void WriteQueryParametersExtractorBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        writer.WriteLine("Map<String, Object> allQueryParams = new HashMap();");
+        writer.WriteLine("final Map<String, Object> allQueryParams = new HashMap();");
         var allQueryParams = parentClass
                                 .GetPropertiesOfKind(CodePropertyKind.QueryParameter)
                                 .OrderBy(static x => x, CodePropertyTypeForwardComparer)
