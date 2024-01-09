@@ -411,8 +411,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         var allQueryParams = parentClass
                                 .GetPropertiesOfKind(CodePropertyKind.QueryParameter)
                                 .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                .ThenBy(static x => x.Name)
-                                .ToArray();
+                                .ThenBy(static x => x.Name);
         foreach (var queryParam in allQueryParams)
         {
             var keyValue = queryParam.Name;
