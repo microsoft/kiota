@@ -4,8 +4,10 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
-public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
+public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedElement
 {
+    public BlockDeclaration StartBlock { get; set; } = new();
+    public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
     public CodeElement? OriginalCodeElement
     {
         get;
@@ -16,6 +18,11 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
     {
         get; init;
     }
+    /// <inheritdoc/>
+    public CodeDocumentation Documentation
+    {
+        get; set;
+    } = new();
 #pragma warning restore CA1056 // URI-like properties should not be strings
     public static CodeConstant? FromQueryParametersMapping(CodeInterface source)
     {
@@ -52,32 +59,38 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>
             OriginalCodeElement = codeClass
         };
     }
-    public static CodeConstant? FromRequestBuilderToNavigationMetadata(CodeClass codeClass)
+    public static CodeConstant? FromRequestBuilderToNavigationMetadata(CodeClass codeClass, CodeUsing[]? usingsToAdd = default)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         if (codeClass.Kind != CodeClassKind.RequestBuilder) return default;
         if (!(codeClass.Properties.Any(static x => x.Kind is CodePropertyKind.RequestBuilder) ||
             codeClass.Methods.Any(static x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility or CodeMethodKind.RequestBuilderWithParameters)))
             return default;
-        return new CodeConstant
+        var result = new CodeConstant
         {
             Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}NavigationMetadata",
             Kind = CodeConstantKind.NavigationMetadata,
             OriginalCodeElement = codeClass,
         };
+        if (usingsToAdd is { Length: > 0 } usingsToAddList)
+            result.AddUsing(usingsToAddList);
+        return result;
     }
-    public static CodeConstant? FromRequestBuilderToRequestsMetadata(CodeClass codeClass)
+    public static CodeConstant? FromRequestBuilderToRequestsMetadata(CodeClass codeClass, CodeUsing[]? usingsToAdd = default)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         if (codeClass.Kind != CodeClassKind.RequestBuilder) return default;
         if (!codeClass.Methods.Any(static x => x.Kind is CodeMethodKind.RequestExecutor or CodeMethodKind.RequestGenerator))
             return default;
-        return new CodeConstant
+        var result = new CodeConstant
         {
             Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}RequestsMetadata",
             Kind = CodeConstantKind.RequestsMetadata,
             OriginalCodeElement = codeClass,
         };
+        if (usingsToAdd is { Length: > 0 } usingsToAddList)
+            result.AddUsing(usingsToAddList);
+        return result;
     }
 }
 public enum CodeConstantKind
