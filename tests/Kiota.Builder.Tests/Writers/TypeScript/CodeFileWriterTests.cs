@@ -57,13 +57,13 @@ public sealed class CodeFileWriterTests : IDisposable
         WriteCode(writer, codeFile);
 
         var result = tw.ToString();
-        Assert.Contains("// eslint-disable", result);
-        Assert.Contains("// tslint:disable", result);
+        Assert.Contains("/* eslint-disable */", result);
+        Assert.Contains("/* tslint:disable */", result);
         Assert.Contains("export function deserializeIntoParentClass", result);
         Assert.Contains("export interface ParentClass", result);
         Assert.Contains("export function serializeParentClass", result);
-        Assert.Contains("// eslint-enable", result);
-        Assert.Contains("// tslint:enable", result);
+        Assert.Contains("/* eslint-enable */", result);
+        Assert.Contains("/* tslint:enable */", result);
     }
 
 }

@@ -35,8 +35,8 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
     {
         writer.Write(parentInterface.StartBlock);
         var result = tw.ToString();
-        Assert.Contains("// eslint-disable", result);
-        Assert.Contains("// tslint:disable", result);
+        Assert.Contains("/* eslint-disable */", result);
+        Assert.Contains("/* tslint:disable */", result);
     }
     [Fact]
     public void WritesSimpleDeclaration()

@@ -43,8 +43,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.DoesNotContain("// eslint-disable", result);
-        Assert.DoesNotContain("// tslint:disable", result);
+        Assert.DoesNotContain("/* eslint-disable */", result);
+        Assert.DoesNotContain("/* tslint:disable */", result);
     }
     [Fact]
     public async Task WritesAutoGenerationEnd()
@@ -56,8 +56,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.DoesNotContain("// eslint-enable", result); //written by code end block writer
-        Assert.DoesNotContain("// tslint:enable", result);
+        Assert.DoesNotContain("/* eslint-enable */", result); //written by code end block writer
+        Assert.DoesNotContain("/* tslint:enable */", result);
     }
 
     [Fact]
