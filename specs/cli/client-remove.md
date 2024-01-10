@@ -8,7 +8,6 @@ The command also has one optional parameter, the ability to remove the generated
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client |
 | `--clean-output \| --co` | No |  | Cleans the generated client |
 

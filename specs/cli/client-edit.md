@@ -12,7 +12,6 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client. Unique within the parent API. If not provided, defaults to --class-name or its default. |
 | `--openapi \| -d` | No | https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
@@ -22,8 +21,6 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. |
 | `--backing-store \| -b` | No | | Defaults to `false` |
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. |
-| `--serializer \| -s` | No | `Contoso.Json.CustomSerializer` | One or more module names that implements ISerializationWriterFactory. Default are documented [here](https://learn.microsoft.com/openapi/kiota/using#--serializer--s). |
-| `--deserializer \| --ds` | No | `Contoso.Json.CustomDeserializer` | One or more module names that implements IParseNodeFactory. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--deserializer---ds). |
 | `--structured-media-types \| -m` | No | `application/json` |Any valid media type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |
 | `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. Defaults to `./output`. |
@@ -51,13 +48,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "outputPath": "./generated/graph/csharp",
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "structuredMediaTypes": [
-          "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
+      "structuredMediaTypes": [
+        "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
     }
   }
 }
@@ -74,6 +69,7 @@ _The resulting `apimanifest.json` file will look like this:_
   "apiDependencies": {
     "graphDelegated": {
       "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",

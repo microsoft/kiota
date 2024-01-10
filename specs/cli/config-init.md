@@ -11,9 +11,7 @@ When `kiota config init` is executed, a `kiota-config.json` file would be create
 
 ## Parameters
 
-| Parameters | Required | Example | Description |
-| -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
+None.
 
 ## Using `kiota config init`
 

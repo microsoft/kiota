@@ -8,7 +8,6 @@ In the case where conflicting API client names would be migrated, the command wi
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--config-location \| --cl` | No | ../../ | A location where to find or create the `kiota-config.json` file. When not specified it will find an ancestor `kiota-config.json` file and if not found, will use the defaults. Defaults to `./`. |
 | `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
 | `--client-name \| --cn` | No | graphDelegated | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
 
@@ -47,13 +46,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "outputPath": "./generated/graph/csharp",
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "structuredMediaTypes": [
-            "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
+      "structuredMediaTypes": [
+          "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
     },
     "pythonGraphServiceClient": {
       "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
@@ -63,13 +60,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "outputPath": "./generated/graph/python",
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "structuredMediaTypes": [
-            "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
+      "structuredMediaTypes": [
+          "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
     }
   }
 }
@@ -82,6 +77,7 @@ _The resulting `apimanifest.json` file will look like this:_
   "apiDependencies": {
     "csharpGraphServiceClient": {
       "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -114,6 +110,7 @@ _The resulting `apimanifest.json` file will look like this:_
     },
     "pythonGraphServiceClient": {
       "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -203,13 +200,11 @@ _The resulting `kiota-config.json` file will look like this:_
       "outputPath": "./generated/graph/csharp",
       "clientClassName": "GraphServiceClient",
       "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "structuredMediaTypes": [
-            "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
+      "structuredMediaTypes": [
+          "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
     }
   }
 }

@@ -13,53 +13,45 @@
           "properties": {
             "descriptionLocation": {
               "type": "string"
-            }
-          },
-          "descriptionLocation": {
-            "type": "string"
-          },
-          "includePatterns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "excludePatterns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "baseUrl": {
-            "type": "string"
-          },
-          "language": {
-            "type": "string"
-          },
-          "outputPath": {
-            "type": "string"
-          },
-          "clientClassName": {
-            "type": "string"
-          },
-          "clientNamespaceName": {
-            "type": "string"
-          },
-          "features": {
-            "type": "object",
-            "properties": {
-              "structuredMediaTypes": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "usesBackingStore": {
-                "type": "boolean"
-              },
-              "includeAdditionalData": {
-                "type": "boolean"
+            },
+            "includePatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
               }
+            },
+            "excludePatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "baseUrl": {
+              "type": "string"
+            },
+            "language": {
+              "type": "string"
+            },
+            "outputPath": {
+              "type": "string"
+            },
+            "clientClassName": {
+              "type": "string"
+            },
+            "clientNamespaceName": {
+              "type": "string"
+            },
+            "structuredMediaTypes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "usesBackingStore": {
+              "type": "boolean"
+            },
+            "includeAdditionalData": {
+              "type": "boolean"
             }
           }
         }
