@@ -200,7 +200,7 @@ public class BlockDeclaration : CodeTerminal
     }
     public void RemoveUsingsByDeclarationName(params string[] names)
     {
-        if (names == null || names.Any(x => string.IsNullOrEmpty(x)))
+        if (names == null || names.Any(string.IsNullOrEmpty))
             throw new ArgumentNullException(nameof(names));
         var namesAsHashSet = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var usingToRemove in usings.Keys.Where(x => !string.IsNullOrEmpty(x.Declaration?.Name) && namesAsHashSet.Contains(x.Declaration!.Name)))
