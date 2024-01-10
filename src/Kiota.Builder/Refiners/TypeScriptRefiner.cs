@@ -111,11 +111,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             );
             AddSerializationModulesImport(generatedCode,
-                [$"{AbstractionsPackageName}.registerDefaultSerializer",
-                    $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
-                    $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"],
-                [$"{AbstractionsPackageName}.registerDefaultDeserializer",
-                    $"{AbstractionsPackageName}.ParseNodeFactoryRegistry"]);
+                [$"{AbstractionsPackageName}.registerDefaultSerializer"],
+                [$"{AbstractionsPackageName}.registerDefaultDeserializer"]);
             cancellationToken.ThrowIfCancellationRequested();
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -266,17 +263,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
-    private static readonly CodeUsing[] requestBuilderUsings = [
-        new CodeUsing
-        {
-            Name = "RequestMetadata",
-            IsErasable = true,
-            Declaration = new CodeType
-            {
-                Name = AbstractionsPackageName,
-                IsExternal = true,
-            },
-        },
+    private static readonly CodeUsing[] navigationMetadataUsings = [
         new CodeUsing
         {
             Name = "NavigationMetadata",
@@ -297,11 +284,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 IsExternal = true,
             },
         }];
+    private static readonly CodeUsing[] requestMetadataUsings = [
+        new CodeUsing
+        {
+            Name = "RequestMetadata",
+            IsErasable = true,
+            Declaration = new CodeType
+            {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        },
+    ];
     private static CodeInterface ReplaceRequestBuilderClassByInterface(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        if (CodeConstant.FromRequestBuilderToRequestsMetadata(codeClass) is CodeConstant requestsMetadataConstant)
+        if (CodeConstant.FromRequestBuilderToRequestsMetadata(codeClass, requestMetadataUsings) is CodeConstant requestsMetadataConstant)
             codeNamespace.AddConstant(requestsMetadataConstant);
-        if (CodeConstant.FromRequestBuilderToNavigationMetadata(codeClass) is CodeConstant navigationConstant)
+        if (CodeConstant.FromRequestBuilderToNavigationMetadata(codeClass, navigationMetadataUsings) is CodeConstant navigationConstant)
             codeNamespace.AddConstant(navigationConstant);
         if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
             codeNamespace.AddConstant(uriTemplateConstant);
@@ -320,7 +319,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
             });
         }
-        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass, requestBuilderUsings);
+        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass);
         codeNamespace.RemoveChildElement(codeClass);
         codeNamespace.AddInterface(interfaceDeclaration);
         return interfaceDeclaration;
@@ -397,6 +396,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CodeInterface ci => ci.Usings,
             CodeEnum ce => ce.Usings,
             CodeClass cc => cc.Usings,
+            CodeConstant codeConstant => codeConstant.StartBlock.Usings,
             _ => Enumerable.Empty<CodeUsing>()
         };
     }
