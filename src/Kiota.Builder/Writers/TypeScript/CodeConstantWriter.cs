@@ -11,6 +11,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
+        conventions.WriteLongDescription(codeElement, writer);
         switch (codeElement.Kind)
         {
             case CodeConstantKind.QueryParametersMapper:

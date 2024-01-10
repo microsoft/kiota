@@ -29,12 +29,14 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
         ArgumentNullException.ThrowIfNull(source);
         if (source.Kind is not CodeInterfaceKind.QueryParameters) throw new InvalidOperationException("Cannot create a query parameters constant from a non query parameters interface");
         if (!source.Properties.Any(static x => !string.IsNullOrEmpty(x.SerializationName))) return default;
-        return new CodeConstant
+        var result = new CodeConstant
         {
             Name = $"{source.Name.ToFirstCharacterLowerCase()}Mapper",
             Kind = CodeConstantKind.QueryParametersMapper,
             OriginalCodeElement = source,
         };
+        result.Documentation.Description = "Mapper for query parameters from symbol name to serialization name represented as a constant.";
+        return result;
     }
     public static CodeConstant? FromCodeEnum(CodeEnum source)
     {
@@ -51,13 +53,15 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
         ArgumentNullException.ThrowIfNull(codeClass);
         if (codeClass.Kind != CodeClassKind.RequestBuilder) return default;
         if (codeClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException($"Couldn't find the url template property for class {codeClass.Name}");
-        return new CodeConstant
+        var result = new CodeConstant
         {
             Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
             UriTemplate = urlTemplateProperty.DefaultValue,
             OriginalCodeElement = codeClass
         };
+        result.Documentation.Description = "Uri template for the request builder.";
+        return result;
     }
     public static CodeConstant? FromRequestBuilderToNavigationMetadata(CodeClass codeClass, CodeUsing[]? usingsToAdd = default)
     {
@@ -72,6 +76,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Kind = CodeConstantKind.NavigationMetadata,
             OriginalCodeElement = codeClass,
         };
+        result.Documentation.Description = "Metadata for all the navigation properties in the request builder.";
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
         return result;
@@ -88,6 +93,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Kind = CodeConstantKind.RequestsMetadata,
             OriginalCodeElement = codeClass,
         };
+        result.Documentation.Description = "Metadata for all the requests in the request builder.";
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
         return result;
