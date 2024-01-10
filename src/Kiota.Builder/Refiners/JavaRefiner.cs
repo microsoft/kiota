@@ -7,6 +7,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
+using Microsoft.Kiota.Abstractions;
 
 namespace Kiota.Builder.Refiners;
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -18,6 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCommonNames(generatedCode);
+            AddQueryParameterExtractorMethod(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -224,11 +226,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsNamespaceName, "RequestAdapter"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters) || x is CodeMethod method && method.IsOfKind(CodeMethodKind.QueryParametersMapper),
             "java.util", "HashMap"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsNamespaceName, "RequestInformation", "RequestOption", "HttpMethod"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestGenerator) || method.IsOfKind(CodeMethodKind.QueryParametersMapper)),
             "java.util", "Collection", "Map"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             SerializationNamespaceName, "Parsable"),
@@ -257,8 +259,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
-                AbstractionsNamespaceName, "QueryParameter"),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
+                AbstractionsNamespaceName, "QueryParameters"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             SerializationNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
@@ -511,5 +513,36 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             CrawlTree(currentElement, LowerCaseNamespaceNames);
         }
+    }
+
+    private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "toQueryParameters")
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.QueryParameters))
+        {
+            currentClass.StartBlock.AddImplements(new CodeType
+            {
+                IsExternal = true,
+                Name = "QueryParameters"
+            });
+            currentClass.AddMethod(new CodeMethod
+            {
+                Name = methodName,
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType
+                {
+                    Name = "Map<String, Object>",
+                    IsNullable = false,
+                },
+                IsAsync = false,
+                IsStatic = false,
+                Kind = CodeMethodKind.QueryParametersMapper,
+                Documentation = new()
+                {
+                    Description = "Extracts the query parameters into a map for the URI template parsing.",
+                },
+            });
+        }
+        CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
     }
 }

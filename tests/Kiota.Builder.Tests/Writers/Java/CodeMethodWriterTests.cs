@@ -1964,6 +1964,28 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("enableBackingStore", result);
     }
     [Fact]
+    public void WritesQueryParametersExtractor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        var defaultValue = "\"someVal\"";
+        var propName = "propWithDefaultValue";
+        parentClass.Kind = CodeClassKind.QueryParameters;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("allQueryParams.put(\"propWithDefaultValue\", propWithDefaultValue);", result);
+    }
+    [Fact]
     public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves()
     {
         setup();

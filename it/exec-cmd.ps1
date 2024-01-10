@@ -63,8 +63,14 @@ if ($null -ne $descriptionValue) {
     }
 }
 
+$mockServerTest = false
+$itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+if (Test-Path -Path $itTestPath) {
+    $mockServerTest = true
+}
+
 # Start MockServer if needed
-if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
+if ($mockServerTest) {
     # Kill any leftover MockServer
     Kill-MockServer
     Push-Location $mockServerPath
@@ -80,8 +86,7 @@ if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
 
 Push-Location $testPath
 if ($language -eq "csharp") {
-    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
-        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+    if ($mockServerTest) {
         Push-Location $itTestPath
 
         $itTestPathSources = Join-Path -Path $testPath -ChildPath "client"
@@ -104,8 +109,7 @@ if ($language -eq "csharp") {
     }
 }
 elseif ($language -eq "java") {
-    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
-        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+    if ($mockServerTest) {
         Push-Location $itTestPath
 
         $itTestPathSources = Join-Path -Path $testPath -ChildPath "src" -AdditionalChildPath "*"
@@ -128,8 +132,7 @@ elseif ($language -eq "java") {
     }
 }
 elseif ($language -eq "go") {
-    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
-        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+    if ($mockServerTest) {
         Push-Location $itTestPath
 
         $itTestPathSources = Join-Path -Path $testPath -ChildPath "client"
@@ -182,8 +185,7 @@ elseif ($language -eq "python") {
         mypy integration_test
     } -ErrorAction Stop
 
-    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
-        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+    if ($mockServerTest) {
         Push-Location $itTestPath
 
         $itTestPathSources = Join-Path -Path $testPath -ChildPath "integration_test" -AdditionalChildPath "client"

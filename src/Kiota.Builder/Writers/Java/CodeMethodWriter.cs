@@ -85,6 +85,9 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             case CodeMethodKind.ErrorMessageOverride:
                 WriteErrorMethodOverride(parentClass, writer);
                 break;
+            case CodeMethodKind.QueryParametersMapper:
+                WriteQueryParametersExtractorBody(codeElement, writer, parentClass);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
@@ -401,6 +404,20 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         }
         else
             writer.WriteLine($"return this.{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\");");
+    }
+    private void WriteQueryParametersExtractorBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
+    {
+        writer.WriteLine("final Map<String, Object> allQueryParams = new HashMap();");
+        var allQueryParams = parentClass
+                                .GetPropertiesOfKind(CodePropertyKind.QueryParameter)
+                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                .ThenBy(static x => x.Name);
+        foreach (var queryParam in allQueryParams)
+        {
+            var keyValue = queryParam.IsNameEscaped ? queryParam.SerializationName : queryParam.Name;
+            writer.WriteLine($"allQueryParams.put(\"{keyValue}\", {queryParam.Name});");
+        }
+        writer.WriteLine("return allQueryParams;");
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {
