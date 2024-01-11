@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.10.0] - 2024-01-11
+
+### Added
+
+### Changed
+
 - Java -  Self-extraction of query parameters instead of using reflection. [#3965](https://github.com/microsoft/kiota/issues/3965)
 - Fixed a bug where the discriminator validation rule would report false positives on nullable union types.
 - Fixed a bug where constructors and model names where clashing in Go. [#3920](https://github.com/microsoft/kiota/issues/3920)
@@ -1206,3 +1212,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
