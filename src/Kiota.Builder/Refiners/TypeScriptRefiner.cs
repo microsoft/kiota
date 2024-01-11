@@ -504,7 +504,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static bool HasMultipartBody(CodeMethod m) =>
         m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
         m.Parameters.Any(IsMultipartBody);
-    // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
+    // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErasable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor,
             AbstractionsPackageName, true, "RequestAdapter"),
@@ -853,9 +853,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void AddSerializationUsingToRequestBuilder(CodeClass modelClass, CodeClass targetClass)
     {
-        var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
-        var serializer = serializationFunctions.Item1;
-        var deserializer = serializationFunctions.Item2;
+        var (serializer, _) = GetSerializationFunctionsForNamespace(modelClass);
         if (serializer.Parent is not null)
         {
             targetClass.AddUsing(new CodeUsing
@@ -865,19 +863,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     Name = serializer.Name,
                     TypeDefinition = serializer
-                }
-            });
-        }
-
-        if (deserializer.Parent is not null)
-        {
-            targetClass.AddUsing(new CodeUsing
-            {
-                Name = deserializer.Parent.Name,
-                Declaration = new CodeType
-                {
-                    Name = deserializer.Name,
-                    TypeDefinition = deserializer
                 }
             });
         }
@@ -922,20 +907,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         }
                     });
                 }
-            }
-        }
-        if (codeMethod.ErrorMappings.Any())
-        {
-            ProcessModelClassAssociatedWithErrorMappings(codeMethod);
-        }
-    }
-    private static void ProcessModelClassAssociatedWithErrorMappings(CodeMethod codeMethod)
-    {
-        foreach (var errorMapping in codeMethod.ErrorMappings)
-        {
-            if (errorMapping.Value is CodeType codeType && codeType.TypeDefinition is CodeClass errorMappingClass && codeMethod.Parent is CodeClass parentClass)
-            {
-                AddSerializationUsingToRequestBuilder(errorMappingClass, parentClass);
             }
         }
     }
