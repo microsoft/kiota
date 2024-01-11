@@ -48,6 +48,9 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             OriginalCodeElement = source,
         };
     }
+    internal const string UriTemplateSuffix = "UriTemplate";
+    internal const string RequestsMetadataSuffix = "RequestsMetadata";
+    internal const string NavigationMetadataSuffix = "NavigationMetadata";
     public static CodeConstant? FromRequestBuilderClassToUriTemplate(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
@@ -55,7 +58,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
         if (codeClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException($"Couldn't find the url template property for class {codeClass.Name}");
         var result = new CodeConstant
         {
-            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}UriTemplate",
+            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}{UriTemplateSuffix}",
             Kind = CodeConstantKind.UriTemplate,
             UriTemplate = urlTemplateProperty.DefaultValue,
             OriginalCodeElement = codeClass
@@ -72,7 +75,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             return default;
         var result = new CodeConstant
         {
-            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}NavigationMetadata",
+            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}{NavigationMetadataSuffix}",
             Kind = CodeConstantKind.NavigationMetadata,
             OriginalCodeElement = codeClass,
         };
@@ -89,7 +92,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             return default;
         var result = new CodeConstant
         {
-            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}RequestsMetadata",
+            Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}{RequestsMetadataSuffix}",
             Kind = CodeConstantKind.RequestsMetadata,
             OriginalCodeElement = codeClass,
         };

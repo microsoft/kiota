@@ -363,9 +363,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
-        var navigationConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}NavigationMetadata", false);
-        var requestsMetadataConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}RequestsMetadata", false);
-        var uriTemplateConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}UriTemplate", false);
+        var navigationConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.NavigationMetadataSuffix}", false);
+        var requestsMetadataConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.RequestsMetadataSuffix}", false);
+        var uriTemplateConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.UriTemplateSuffix}", false);
 
         var proxyConstants = new[] { navigationConstant, requestsMetadataConstant, uriTemplateConstant }
             .OfType<CodeConstant>()

@@ -37,7 +37,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     private void WriteNavigationMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
     {
         if (codeElement.OriginalCodeElement is not CodeClass codeClass) throw new InvalidOperationException("Original CodeElement cannot be null");
-        if (codeElement.Parent is not CodeFile parentCodeFile || parentCodeFile.FindChildByName<CodeInterface>(codeElement.Name.Replace("NavigationMetadata", string.Empty, StringComparison.Ordinal), false) is not CodeInterface currentInterface)
+        if (codeElement.Parent is not CodeFile parentCodeFile || parentCodeFile.FindChildByName<CodeInterface>(codeElement.Name.Replace(CodeConstant.NavigationMetadataSuffix, string.Empty, StringComparison.Ordinal), false) is not CodeInterface currentInterface)
             throw new InvalidOperationException("Couldn't find the associated interface for the navigation metadata constant");
         var navigationMethods = codeClass.Methods
                                     .Where(static x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility or CodeMethodKind.RequestBuilderWithParameters)
@@ -71,11 +71,11 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
 
     private static void WriteNavigationMetadataEntry(CodeNamespace parentNamespace, LanguageWriter writer, string requestBuilderName, string[]? pathParameters = null)
     {
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}UriTemplate", 3) is CodeConstant uriTemplateConstant && uriTemplateConstant.Kind is CodeConstantKind.UriTemplate)
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.UriTemplateSuffix}", 3) is CodeConstant uriTemplateConstant && uriTemplateConstant.Kind is CodeConstantKind.UriTemplate)
             writer.WriteLine($"uriTemplate: {uriTemplateConstant.Name.ToFirstCharacterUpperCase()},");
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}RequestsMetadata", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
             writer.WriteLine($"requestsMetadata: {requestsMetadataConstant.Name.ToFirstCharacterUpperCase()},");
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}NavigationMetadata", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
+        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
             writer.WriteLine($"navigationMetadata: {navigationMetadataConstant.Name.ToFirstCharacterUpperCase()},");
         if (pathParameters is { Length: > 0 })
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
@@ -121,7 +121,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 writer.WriteLine($"requestInformationContentSetMethod: {GetRequestContentSetterMethodName(requestBody)},");
             }
             if (codeElement.Parent is CodeFile parentCodeFile &&
-                parentCodeFile.FindChildByName<CodeConstant>(codeElement.Name.Replace("RequestsMetadata", $"{executorMethod.Name.ToFirstCharacterUpperCase()}QueryParametersMapper", StringComparison.Ordinal), false) is CodeConstant mapperConstant)
+                parentCodeFile.FindChildByName<CodeConstant>(codeElement.Name.Replace(CodeConstant.RequestsMetadataSuffix, $"{executorMethod.Name.ToFirstCharacterUpperCase()}QueryParametersMapper", StringComparison.Ordinal), false) is CodeConstant mapperConstant)
                 writer.WriteLine($"queryParametersMapper: {mapperConstant.Name.ToFirstCharacterUpperCase()},");
             writer.CloseBlock("},");
         }
