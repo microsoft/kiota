@@ -41,8 +41,8 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("// eslint-disable", result);
-        Assert.Contains("// tslint:disable", result);
+        Assert.Contains("/* eslint-disable */", result);
+        Assert.Contains("/* tslint:disable */", result);
     }
     [Fact]
     public void WritesSimpleDeclaration()
