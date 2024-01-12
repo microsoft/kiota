@@ -57,8 +57,10 @@ public class APIsGuruSearchProvider : ISearchProvider
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
-    private static Uri ChangeSourceUrlToGitHub(Uri original) =>
-        new(original.ToString().Replace("https://api.apis.guru", "https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages", StringComparison.OrdinalIgnoreCase), UriKind.Absolute);
+    internal static Uri ChangeSourceUrlToGitHub(Uri original) =>
+        original.Host.StartsWith("api.apis.guru", StringComparison.OrdinalIgnoreCase) ?
+            new(original.ToString().Replace("https://api.apis.guru", "https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages", StringComparison.OrdinalIgnoreCase), UriKind.Absolute) :
+            original;
     private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate && !string.IsNullOrEmpty(version) ? version : x.Value.preferred;
 }
 
