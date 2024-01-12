@@ -54,14 +54,14 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<Exclude<keyof {currentInterface.Name.ToFirstCharacterUpperCase()}, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {{");
         foreach (var navigationMethod in navigationMethods)
         {
-            writer.StartBlock($"\"{navigationMethod.Name.ToFirstCharacterLowerCase()}\": {{");
+            writer.StartBlock($"{navigationMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
             WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
         {
-            writer.StartBlock($"\"{navigationProperty.Name.ToFirstCharacterLowerCase()}\": {{");
+            writer.StartBlock($"{navigationProperty.Name.ToFirstCharacterLowerCase()}: {{");
             var requestBuilderName = navigationProperty.Type.Name.ToFirstCharacterUpperCase();
             WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName);
             writer.CloseBlock("},");
@@ -89,14 +89,14 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                     .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                     .ToArray() is not { Length: > 0 } executorMethods)
             return;
-        writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<string, RequestMetadata> = {{");
+        writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: RequestsMetadata = {{");
         foreach (var executorMethod in executorMethods)
         {
             var returnType = conventions.GetTypeString(executorMethod.ReturnType, codeElement);
             var isVoid = "void".EqualsIgnoreCase(returnType);
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
-            writer.StartBlock($"\"{executorMethod.Name.ToFirstCharacterLowerCase()}\": {{");
+            writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
                  generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
                 writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");

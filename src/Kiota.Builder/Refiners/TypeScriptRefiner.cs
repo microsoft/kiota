@@ -287,7 +287,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly CodeUsing[] requestMetadataUsings = [
         new CodeUsing
         {
-            Name = "RequestMetadata",
+            Name = "RequestsMetadata",
             IsErasable = true,
             Declaration = new CodeType
             {

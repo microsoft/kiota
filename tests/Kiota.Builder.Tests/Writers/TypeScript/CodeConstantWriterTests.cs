@@ -192,7 +192,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
-        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("RequestsMetadata: RequestsMetadata = {", result);
         Assert.Contains("responseBodyContentType: \"application/json\"", result);
         Assert.Contains("requestInformationContentSetMethod: \"setContentFromScalar", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -232,7 +232,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
-        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("RequestsMetadata: RequestsMetadata = {", result);
         Assert.Contains("responseBodyContentType: \"application/json\"", result);
         Assert.Contains("requestInformationContentSetMethod: \"setContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -256,7 +256,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
-        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("RequestsMetadata: RequestsMetadata = {", result);
         Assert.Contains("requestBodyContentType: \"application/json\"", result);
         Assert.Contains("requestInformationContentSetMethod: \"setStreamContent", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -289,7 +289,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
-        Assert.Contains("RequestsMetadata: Record<string, RequestMetadata> = {", result);
+        Assert.Contains("RequestsMetadata: RequestsMetadata = {", result);
         Assert.DoesNotContain("requestBodyContentType: \"application/json\"", result);
         Assert.Contains("requestInformationContentSetMethod: \"setStreamContent", result);
         Assert.Contains("setStreamContent", result, StringComparison.OrdinalIgnoreCase);
