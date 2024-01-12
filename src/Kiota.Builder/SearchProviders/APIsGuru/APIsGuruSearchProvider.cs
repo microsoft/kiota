@@ -30,7 +30,7 @@ public class APIsGuruSearchProvider : ISearchProvider
     public HashSet<string> KeysToExclude
     {
         get; init;
-    } = new() {
+    } = new(StringComparer.OrdinalIgnoreCase) {
         "microsoft.com:graph"
     };
     public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
@@ -53,10 +53,14 @@ public class APIsGuruSearchProvider : ISearchProvider
                                 .Where(static x => x.versionInfo is not null)
                                 .DistinctBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                 .ToDictionary(static x => x.Key,
-                                            static x => new SearchResult(x.versionInfo!.info?.title ?? string.Empty, x.versionInfo.info?.description ?? string.Empty, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3 ?? Enumerable.Empty<string>().ToList()),
+                                            static x => new SearchResult(x.versionInfo!.info?.title ?? string.Empty, x.versionInfo.info?.description ?? string.Empty, x.versionInfo.info?.contact?.url, ChangeSourceUrlToGitHub(x.versionInfo.swaggerUrl), x.Item3 ?? Enumerable.Empty<string>().ToList()),
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
+    internal static Uri ChangeSourceUrlToGitHub(Uri original) =>
+        original.Host.StartsWith("api.apis.guru", StringComparison.OrdinalIgnoreCase) ?
+            new(original.ToString().Replace("https://api.apis.guru", "https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages", StringComparison.OrdinalIgnoreCase), UriKind.Absolute) :
+            original;
     private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate && !string.IsNullOrEmpty(version) ? version : x.Value.preferred;
 }
 

@@ -78,6 +78,10 @@ public sealed class KiotaSearcherTests : IDisposable
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("apisguru::github.com:api.github.com.2022-11-28", string.Empty, new CancellationToken());
         Assert.Single(results);
+        var result = results.First();
+        var resultUrl = result.Value.DescriptionUrl;
+        var bytes = await httpClient.GetByteArrayAsync(resultUrl);
+        Assert.NotEmpty(bytes);
     }
     public void Dispose()
     {
