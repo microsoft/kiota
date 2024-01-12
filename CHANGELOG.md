@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue where domain expiration for apis.guru would lead to search failures.
+
 ## [1.10.0] - 2024-01-11
 
 ### Added
