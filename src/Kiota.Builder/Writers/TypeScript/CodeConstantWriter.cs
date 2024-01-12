@@ -80,6 +80,10 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (pathParameters is { Length: > 0 })
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
     }
+    private static string GetErrorMappingKey(string original) =>
+    original.Equals("4XX", StringComparison.OrdinalIgnoreCase) || original.Equals("5XX", StringComparison.OrdinalIgnoreCase) ?
+        $"_{original.ToUpperInvariant()}" : // to avoid emitting strings that can't be minified
+        original.ToUpperInvariant();
 
     private void WriteRequestsMetadataConstant(CodeConstant codeElement, LanguageWriter writer)
     {
@@ -105,9 +109,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 writer.StartBlock("errorMappings: {");
                 foreach (var errorMapping in executorMethod.ErrorMappings)
                 {
-                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {GetFactoryMethodName(errorMapping.Value, codeElement, writer)},");
+                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
                 }
-                writer.CloseBlock("} as Record<string, ParsableFactory<Parsable>>,");
+                writer.CloseBlock("},");
             }
             writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol)}\",");
             if (!isVoid)

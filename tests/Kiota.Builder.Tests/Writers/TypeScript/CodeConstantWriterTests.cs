@@ -322,10 +322,9 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("errorMappings: {", result);
-        Assert.Contains("4XX\": createError4XXFromDiscriminatorValue", result);
-        Assert.Contains("5XX\": createError5XXFromDiscriminatorValue", result);
-        Assert.Contains("403\": createError403FromDiscriminatorValue", result);
-        Assert.Contains(" as Record<string, ParsableFactory<Parsable>>", result);
+        Assert.Contains("_4XX: createError4XXFromDiscriminatorValue as ParsableFactory<Parsable>", result);
+        Assert.Contains("_5XX: createError5XXFromDiscriminatorValue as ParsableFactory<Parsable>", result);
+        Assert.Contains("403: createError403FromDiscriminatorValue as ParsableFactory<Parsable>", result);
     }
     [Fact]
     public void WritesIndexer()
