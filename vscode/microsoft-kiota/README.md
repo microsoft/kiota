@@ -24,7 +24,7 @@ This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension ad
 
 * Search for an API description using a keyword 
 
-<img width="479" alt="vscode entension search " src="https://user-images.githubusercontent.com/5781590/229947287-3a2850d0-d97e-4a1e-9440-9c97f8e66e1a.png">
+<img width="479" alt="vscode extension search " src="https://user-images.githubusercontent.com/5781590/229947287-3a2850d0-d97e-4a1e-9440-9c97f8e66e1a.png">
 
 <img width="478" alt="vscode extension search results" src="https://user-images.githubusercontent.com/5781590/229947317-dd24f722-d58c-41a6-a85b-fa7c0d48493e.png">
 

@@ -6806,7 +6806,7 @@ paths:
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
-    public async Task DiscriptionTakenFromAllOf()
+    public async Task DescriptionTakenFromAllOf()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStream(@"openapi: 3.0.1

@@ -199,7 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds 'Generated' annotation to generated Enums and Classes for Java. [#3106](https://github.com/microsoft/kiota/issues/3106)
 - Fixes uuid conversion to string value in PathParameters in Go. [#3106](https://github.com/microsoft/kiota/issues/3176)
 - Fixes a bug with incorrect reserved models renaming that occurs sometimes depending on the order of type processing [microsoftgraph/msgraph-sdk-dotnet/issues/2084](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2084)
-- Work around a System.ComandLine bug where adjacent matching command names would crash the CLI parser (CLI). [microsoftgraph/msgraph-cli#316](https://github.com/microsoftgraph/msgraph-cli/issues/316) [microsoftgraph/msgraph-cli#320](https://github.com/microsoftgraph/msgraph-cli/issues/320), [dotnet/command-line-api#2260](https://github.com/dotnet/command-line-api/issues/2260)
+- Work around a System.CommandLine bug where adjacent matching command names would crash the CLI parser (CLI). [microsoftgraph/msgraph-cli#316](https://github.com/microsoftgraph/msgraph-cli/issues/316) [microsoftgraph/msgraph-cli#320](https://github.com/microsoftgraph/msgraph-cli/issues/320), [dotnet/command-line-api#2260](https://github.com/dotnet/command-line-api/issues/2260)
 - Aggregate typescript import statements by source [#3232](https://github.com/microsoft/kiota/issues/3232)
 - Fixes a bug in dotnet where enums types would not be fully disambiguated when initialized in constructor with default values and existing conflicting property exists [#3233]
 - Fixes a bug in generation of flagged enum properties and their serializer/deserializer functions in typescript [https://github.com/microsoft/kiota/issues/3260]
@@ -734,7 +734,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
 - Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
 - Defined the Access Token Provider interface (Ruby) [#1638](https://github.com/microsoft/kiota/issues/1638)
-- Added Continuous Access Evalution infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
+- Added Continuous Access Evaluation infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
 
 ### Changed
 
@@ -1008,9 +1008,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
-- Modified the TypeScript RequestInformation URL paramater data type from URL to string.
+- Modified the TypeScript RequestInformation URL parameter data type from URL to string.
 - Modified TypeScript packages to provide CJS and ESM modules.
-- Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
+- Modified the TypeScript RequestInformation query and path parameters data type from Map to Record Type.
 - Modified TypeScript RequestInformation headers and options to Record type.
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
 - Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
@@ -1041,7 +1041,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
 - Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet.
-- Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
+- Fixes a bug where deserialzation of enums would throw an ArgumentException if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08
 
@@ -1135,7 +1135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where raw collections requests would not be supported #467
 - Fixes a bug where in memory backing store would not return changed properties to null #243
 - Fixes a bug where generated models would be tied to a specific backing store implementation #400
-- Fixed #428 a bug where inline double defintion would make code dom generation fail
+- Fixed #428 a bug where inline double definition would make code dom generation fail
 - Revamped authentication provider interface to allow multiple authentication schemes #498
 - Fixed a bug preventing from using request builders with raw URls #508
 

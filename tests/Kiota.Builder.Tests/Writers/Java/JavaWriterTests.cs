@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests.Writers.Java;
 public class JavaWriterTests
 {
     [Fact]
-    public void Instanciates()
+    public void Instantiates()
     {
         var writer = new JavaWriter("./", "graph");
         Assert.NotNull(writer);

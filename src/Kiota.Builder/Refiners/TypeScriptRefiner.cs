@@ -408,7 +408,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static bool HasMultipartBody(CodeMethod m) =>
         m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
         m.Parameters.Any(IsMultipartBody);
-    // for Kiota abstration library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
+    // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, true, "RequestAdapter"),

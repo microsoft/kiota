@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests.Writers.Ruby;
 public class RubyWriterTests
 {
     [Fact]
-    public void Instanciates()
+    public void Instantiates()
     {
         var writer = new RubyWriter("./", "graph");
         Assert.NotNull(writer);

@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests.Writers.CSharp;
 public class CSharpWriterTests
 {
     [Fact]
-    public void Instanciates()
+    public void Instantiates()
     {
         var writer = new CSharpWriter("./", "graph");
         Assert.NotNull(writer);
