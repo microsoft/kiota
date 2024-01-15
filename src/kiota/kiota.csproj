@@ -31,7 +31,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
-    <!-- the source generators emmit warnings -->
+    <!-- the source generators emit warnings -->
     <NoWarn>$(NoWarn);CS8785;NU5048;NU5104</NoWarn>
   </PropertyGroup>
   <ItemGroup>

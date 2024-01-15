@@ -16,7 +16,7 @@ public class CommonLanguageConventionServiceTests
         var service = new CSharpConventionService();
         var root = CodeNamespace.InitRootNamespace();
         var unknownTypeMock = new Mock<CodeTypeBase>();
-        unknownTypeMock.Setup(x => x.Name).Returns("unkownType");
+        unknownTypeMock.Setup(x => x.Name).Returns("unknownType");
         Assert.Throws<InvalidOperationException>(() => service.TranslateType(unknownTypeMock.Object));
         var stringType = new CodeType
         {

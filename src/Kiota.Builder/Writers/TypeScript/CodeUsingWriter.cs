@@ -42,7 +42,7 @@ public class CodeUsingWriter
         if (codeUsing.Declaration is CodeType codeType)
         {
             if (codeType.TypeDefinition is CodeInterface) return true;
-            // this will handle endge cases for typescript Declarations that are already known to be interfaces: RequestConfiguration, QueryParameters, and Model classes
+            // this will handle edge cases for typescript Declarations that are already known to be interfaces: RequestConfiguration, QueryParameters, and Model classes
             if (codeType.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters, CodeClassKind.Model)) return true;
         }
         return false;

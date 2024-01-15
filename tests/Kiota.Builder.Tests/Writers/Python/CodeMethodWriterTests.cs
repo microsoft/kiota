@@ -1566,7 +1566,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_adapter, raw_url", result);
     }
     [Fact]
-    public void WritesConstructorForReqestBuilder()
+    public void WritesConstructorForRequestBuilder()
     {
         setup(true);
         method.Kind = CodeMethodKind.Constructor;
