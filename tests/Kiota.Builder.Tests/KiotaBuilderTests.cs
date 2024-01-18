@@ -2037,6 +2037,19 @@ paths:
                                 }
                             }
                         },
+                        ["402"] = new OpenApiResponse
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "string"
+                                    }
+                                }
+                            }
+                        },
                         ["401"] = new OpenApiResponse
                         {
                             Content =
@@ -2083,6 +2096,7 @@ paths:
         var keys = executorMethod.ErrorMappings.Select(x => x.Key).ToHashSet();
         Assert.Contains("4XX", keys);
         Assert.Contains("401", keys);
+        Assert.DoesNotContain("402", keys);
         Assert.Contains("5XX", keys);
         var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error");
         Assert.NotNull(errorType401);
