@@ -523,13 +523,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor &&
                     method.Parameters.Any(static y => y.Kind is CodeParameterKind.BackingStore),
             AbstractionsPackageName, true, "BackingStoreFactory"),
-        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor &&
-                    method.Parameters.Any(static y => y.Kind is CodeParameterKind.BackingStore),
-            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
-        new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
-            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
         new (static x => x is CodeMethod m && HasMultipartBody(m),
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
