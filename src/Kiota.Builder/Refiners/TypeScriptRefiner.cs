@@ -307,7 +307,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (codeClass.Methods.FirstOrDefault(static x => x.Kind is CodeMethodKind.ClientConstructor) is CodeMethod clientConstructor)
         {
             clientConstructor.IsStatic = true;
-            clientConstructor.Name = $"New{codeClass.Name.ToFirstCharacterUpperCase()}";
+            clientConstructor.Name = $"Create{codeClass.Name.ToFirstCharacterUpperCase()}";
 
             codeNamespace.AddFunction(new CodeFunction(clientConstructor)).First().AddUsing(new CodeUsing
             {
@@ -371,7 +371,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
-        var clientConstructorFunction = codeNamespace.FindChildByName<CodeFunction>($"New{codeInterface.Name.ToFirstCharacterUpperCase()}", false);
+        var clientConstructorFunction = codeNamespace.FindChildByName<CodeFunction>($"Create{codeInterface.Name.ToFirstCharacterUpperCase()}", false);
 
         codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
         var elements = new CodeElement[] { codeInterface }
