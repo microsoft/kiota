@@ -30,13 +30,11 @@ Here is an example of what the kiota-config.json file could look like.
       "outputPath": "./generated/graph",
       "clientClassName": "GraphClient",
       "clientNamespaceName": "Contoso.GraphApp",
-      "features": {
-        "structuredMediaTypes": [
-          "application/json"
-        ],
-        "usesBackingStore": true,
-        "includeAdditionalData": true
-      }
+      "structuredMediaTypes": [
+        "application/json"
+      ],
+      "usesBackingStore": true,
+      "includeAdditionalData": true
     },
     "businessCentral": {
       "descriptionLocation": "https://.../bcoas1.0.yaml",
