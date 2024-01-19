@@ -39,7 +39,7 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "csharpGraphServiceClient": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "csharp",
@@ -53,7 +53,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "includeAdditionalData": true
     },
     "pythonGraphServiceClient": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "python",
@@ -76,9 +76,9 @@ _The resulting `apimanifest.json` file will look like this:_
 {
   "apiDependencies": {
     "csharpGraphServiceClient": {
-      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "x-ms-kiotaVersion": "1.11.0",
-      "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
       "requests": [
@@ -109,9 +109,9 @@ _The resulting `apimanifest.json` file will look like this:_
       ]
     },
     "pythonGraphServiceClient": {
-      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "x-ms-kiotaVersion": "1.11.0",
-      "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
       "requests": [
@@ -193,7 +193,7 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "csharp",

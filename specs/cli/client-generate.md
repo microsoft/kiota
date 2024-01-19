@@ -6,7 +6,7 @@ Now that we have a `kiota-config.json` file, all the parameters required to gene
 
 It's also possible to specify for which API and client the code should be generated. This is useful when a project contains multiple clients. The `kiota client generate --client-name "MyClient"` command will read the `kiota-config.json` file and generate the code for the specified client. If it can't find the specified API or client, it will throw an error.
 
-In general cases, the `kiota client generate` command will generate the code for all the clients in the `kiota-config.json` file based on the cached OpenAPI description. If the `--refresh` parameter is provided, the command will refresh the cached OpenAPI description(s), update the different `descriptionHash` and then generate the code for the specified clients.
+In general cases, the `kiota client generate` command will generate the code for all the clients in the `kiota-config.json` file based on the cached OpenAPI description. If the `--refresh` parameter is provided, the command will refresh the cached OpenAPI description(s), update the different `x-ms-kiotaHash` in the API Manifest and then generate the code for the specified clients.
 
 ## Parameters
 

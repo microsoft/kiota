@@ -4,7 +4,7 @@
 
 `kiota client update` allows a developer to edit an existing API client int the `kiota-config.json` file. If either the `kiota-config.json` file or if the `--client-name` client can't be found within the `kiota-config.json` file, the command should error out and let the developer know.
 
-When executing, the API entry defined by the `--client-name` parameter will be modified. All parameters should be supported and the only required one is `--client-name`. All others are optional as they would only modify the configuration of the API client. If the OpenAPI description location changed, a new hash of the description will be generated saved as part of the `descriptionHash` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3).
+When executing, the API entry defined by the `--client-name` parameter will be modified. All parameters should be supported and the only required one is `--client-name`. All others are optional as they would only modify the configuration of the API client. If the OpenAPI description location changed or any properties of the client entry in `kiota-config.json`, a new hash will be generated and and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3).
 
 Once the `kiota-config.json` file and the API Manifest are updated, the code generation will be executed based on the newly updated API client configuration.
 
@@ -13,7 +13,7 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client. Unique within the parent API. If not provided, defaults to --class-name or its default. |
-| `--openapi \| -d` | No | https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
+| `--openapi \| -d` | No | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. |
 | `--language \| -l` | No | csharp | The target language for the generated code files or for the information. |
@@ -41,7 +41,7 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": ["/users/$count"],
       "language": "csharp",
@@ -68,9 +68,9 @@ _The resulting `apimanifest.json` file will look like this:_
   },
   "apiDependencies": {
     "graphDelegated": {
-      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "x-ms-kiotaVersion": "1.11.0",
-      "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
       "requests": [

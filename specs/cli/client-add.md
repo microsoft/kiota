@@ -17,7 +17,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client and the client class. Unique within the parent API. Defaults to `Client` |
-| `--openapi \| -d` | Yes | https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
+| `--openapi \| -d` | Yes | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
 | `--search-key \| --sk` | No | github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0 | The search key used to locate the OpenAPI description. |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. |
@@ -35,7 +35,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 ## Using `kiota client add`
 
 ```bash
-kiota client add --client-name "graphDelegated" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --include-path "**/users/**" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
+kiota client add --client-name "graphDelegated" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --include-path "**/users/**" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
 ```
 
 _The resulting `kiota-config.json` file will look like this:_
@@ -45,7 +45,7 @@ _The resulting `kiota-config.json` file will look like this:_
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "csharp",
@@ -68,9 +68,9 @@ _The resulting `apimanifest.json` file will look like this:_
 {
   "apiDependencies": {
     "graphDelegated": {
-      "x-ms-apiDescriptionHash": "9EDF8506CB74FE44...",
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "x-ms-kiotaVersion": "1.11.0",
-      "apiDescriptionUrl": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
       "requests": [

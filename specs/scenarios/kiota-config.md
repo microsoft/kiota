@@ -23,7 +23,7 @@ Here is an example of what the kiota-config.json file could look like.
   "version": "1.0.0",
   "clients": {
     "graphDelegated": {
-      "descriptionLocation": "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml",
+      "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "csharp",
@@ -73,13 +73,13 @@ kiota config migrate
 
 ```bash
 kiota client init
-kiota client add --client-name "graphDelegated" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --language csharp --output "./csharpClient"
+kiota client add --client-name "graphDelegated" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --language csharp --output "./csharpClient"
 ```
 
 ### Add a second API client
 
 ```bash
-kiota client add  --clientName "graphPython" --openapi "https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml" --language python --outputPath ./pythonClient
+kiota client add  --clientName "graphPython" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --language python --outputPath ./pythonClient
 ```
 
 ### Edit an API client
