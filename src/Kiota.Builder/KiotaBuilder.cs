@@ -1283,15 +1283,14 @@ public partial class KiotaBuilder
                 : modelsNamespace;
             var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response);
             if (errorType is CodeType codeType &&
-                codeType.TypeDefinition is CodeClass codeClass &&
-                !codeClass.IsErrorDefinition)
+                codeType.TypeDefinition is CodeClass codeClass)
             {
-                codeClass.IsErrorDefinition = true;
-            }
-            if (errorType is null)
-                logger.LogWarning("Could not create error type for {Error} in {Operation}", errorCode, operation.OperationId);
-            else
+                if (!codeClass.IsErrorDefinition)
+                    codeClass.IsErrorDefinition = true;
                 executorMethod.AddErrorMapping(errorCode, errorType);
+            }
+            else
+                logger.LogWarning("Could not create error type for {Error} in {Operation}", errorCode, operation.OperationId);
         }
     }
     private (CodeTypeBase?, CodeTypeBase?) GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, OperationType operationType)
