@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added Japanese translations to vscode extension.
+
 ### Changed
 
 - Fixed a bug where scalar error mappings would be generated even though it's not supported by the http request adapter. [#4018](https://github.com/microsoft/kiota/issues/4018)
