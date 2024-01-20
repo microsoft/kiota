@@ -278,20 +278,15 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         const lowerCaseSegment = this.label.toLowerCase();
         const splatPath = trimOperation(this.path);
         if (tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()))) {
-            if (this.isOperation &&tokenizedFilter.some(x => operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
+            if (this.isOperation && tokenizedFilter.some(x => operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
                 return false;
             }
             return true;
         }
-        
-        if (this.isOperation) {
-            const segments = getPathSegments(splatPath);
-            if (segments.length === 0) {
-                return false;
-            }
-            const parentSegment = segments[segments.length - 1].toLowerCase();
-            return tokenizedFilter.some(x => parentSegment.includes(x));
-        }
-        return this.children.some(x => x.isNodeVisible(tokenizedFilter));
+
+        const segments = getPathSegments(splatPath);
+
+        return tokenizedFilter.some(x => segments.some(s => s.includes(x)))
+            || this.children.some(x => x.isNodeVisible(tokenizedFilter));
     }
 }
