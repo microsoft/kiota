@@ -214,19 +214,26 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             }
         }
     }
-    getCollapsedState(hasChildren: boolean): vscode.TreeItemCollapsibleState {
-        return !hasChildren ?
-                vscode.TreeItemCollapsibleState.None :
-                (this.tokenizedFilter.length === 0 ?
-                    vscode.TreeItemCollapsibleState.Collapsed : 
-                    vscode.TreeItemCollapsibleState.Expanded);
+    getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {
+        const hasChildren = node.children.length > 0;
+        if (!hasChildren) {
+            return vscode.TreeItemCollapsibleState.None;
+        }
+        if (this.tokenizedFilter.length === 0) {
+            return vscode.TreeItemCollapsibleState.Expanded;
+        }
+
+        if (this.tokenizedFilter.some(x => node.children.some(c => c.segment.includes(x) || this.getCollapsedState(c) === vscode.TreeItemCollapsibleState.Expanded))) {
+            return vscode.TreeItemCollapsibleState.Expanded;
+        }
+        return vscode.TreeItemCollapsibleState.Collapsed;
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
         return new OpenApiTreeNode(
             node.path, 
             node.segment === pathSeparator && this.apiTitle ? pathSeparator + " (" + this.apiTitle + ")" : node.segment,
             node.selected ?? false,
-            this.getCollapsedState(node.children.length > 0),
+            this.getCollapsedState(node),
             node.isOperation ?? false,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
             node.documentationUrl
