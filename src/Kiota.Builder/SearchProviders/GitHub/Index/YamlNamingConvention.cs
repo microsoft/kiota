@@ -8,4 +8,9 @@ internal class YamlNamingConvention : INamingConvention
     {
         return value.ToFirstCharacterLowerCase();
     }
+
+    public string Reverse(string value)
+    {
+        return value;
+    }
 }
