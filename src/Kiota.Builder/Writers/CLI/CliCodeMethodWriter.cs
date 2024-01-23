@@ -240,7 +240,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         var builderName = NormalizeToIdentifier(indexer.Name).ToFirstCharacterLowerCase();
 
-        AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        AddCommandBuilderContainerInitialization(parent, targetClass, writer, builderName, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
 
         return (builderName, match);
     }
@@ -285,7 +285,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         if (exclude is null)
         {
             var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
-            AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+            AddCommandBuilderContainerInitialization(parent, targetClass, writer, builderName, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
 
         return matches;
@@ -476,7 +476,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var builder = new StringBuilder();
         if (documentation.DescriptionAvailable)
         {
-            builder.Append(documentation.Description);
+            builder.Append(documentation.Description.Replace("\\", "\\\\", StringComparison.Ordinal));
         }
 
         // Add content type values to description.
@@ -544,7 +544,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             if (!builderMethods.Any()) return;
 
             var (includedSubCommands, matchingIndexerIdName) = InitializeSharedCommand(codeElement, parent, writer, name);
-            AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+            AddCommandBuilderContainerInitialization(parent, targetClass, writer, BuilderInstanceName, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
             AddCommands(writer, builderMethods, includedSubCommands, matchingIndexerIdName);
         }
@@ -552,14 +552,32 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return {CommandVariableName};");
     }
 
+    private static void AddCurrentNameVariable(LanguageWriter writer)
+    {
+        writer.WriteLine($"var name = string.Empty;");
+        writer.WriteLine("if (Arguments.Length > Level + 1)");
+        writer.StartBlock();
+        writer.WriteLine("name = Arguments[Level + 1];");
+        writer.CloseBlock();
+    }
+
     private static void WriteRootBuildCommand(CodeMethod codeElement, LanguageWriter writer, IEnumerable<CodeMethod> orderedClassMethods)
     {
         var commandBuilderMethods = orderedClassMethods.Where(m => m.Kind == CodeMethodKind.CommandBuilder && m != codeElement);
         writer.WriteLine($"var {CommandVariableName} = new RootCommand();");
+        writer.WriteLine($"var name = string.Empty;");
+        writer.WriteLine("if (Arguments.Length > Level)");
+        writer.StartBlock();
+        writer.WriteLine("name = Arguments[Level];");
+        writer.CloseBlock();
         WriteCommandDescription(codeElement, writer);
         foreach (var method in commandBuilderMethods)
         {
+            var name = NormalizeToOption(method.SimpleName ?? string.Empty);
+            writer.WriteLine($"if (string.IsNullOrEmpty(name) || name == \"{name}\")");
+            writer.StartBlock();
             writer.WriteLine($"{CommandVariableName}.AddCommand({method.Name}());");
+            writer.CloseBlock();
         }
 
         writer.WriteLine($"return {CommandVariableName};");
@@ -598,11 +616,15 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             writer.WriteLine("var commands = new List<Command>();");
         }
 
-        AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        AddCommandBuilderContainerInitialization(parent, targetClass, writer, BuilderInstanceName, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
 
+        AddCurrentNameVariable(writer);
         foreach (var method in builderMethods)
         {
             string variableName = method.HttpMethod is not null ? "executables" : "commands";
+            var name = NormalizeToOption(method.SimpleName ?? string.Empty);
+            writer.WriteLine($"if (string.IsNullOrEmpty(name) || name == \"{name}\")");
+            writer.StartBlock();
             if (method.ReturnType.IsCollection)
             {
                 writer.WriteLine($"{variableName}.AddRange({BuilderInstanceName}.{method.Name}());");
@@ -611,6 +633,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             {
                 writer.WriteLine($"{variableName}.Add({BuilderInstanceName}.{method.Name}());");
             }
+            writer.CloseBlock();
         }
 
         var item1 = hasExecutable ? "executables" : "new(0)";
@@ -618,13 +641,15 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return new({item1}, {item2});");
     }
 
-    private static void AddCommandBuilderContainerInitialization(CodeClass parentClass, string returnType, LanguageWriter writer, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
+    private static void AddCommandBuilderContainerInitialization(CodeClass parentClass, string returnType, LanguageWriter writer, string builderName, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var urlTplRef = pathParametersProp?.Name.ToFirstCharacterUpperCase();
         var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
 
         writer.WriteLine($"{prefix}new {returnType}({urlTplRef}{pathParametersSuffix});");
+        writer.WriteLine($"{builderName}.Level = Level + 1;");
+        writer.WriteLine($"{builderName}.Arguments = Arguments;");
     }
 
     protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
@@ -803,6 +828,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
 
         bool sortMethods = false;
 
+        AddCurrentNameVariable(writer);
         // Start with the current class' commands then the indexer commands in the item builder.
         foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, IndexerReturn, StringComparison.Ordinal)))
         {
@@ -832,7 +858,12 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                 {
                     variableName = NonExecCommandsVariableName;
                 }
+
+                var name = NormalizeToOption(method.SimpleName ?? string.Empty);
+                writer.WriteLine($"if (string.IsNullOrEmpty(name) || name == \"{name}\")");
+                writer.StartBlock();
                 writer.WriteLine($"{variableName}.Add({BuilderInstanceName}.{method.Name}());");
+                writer.CloseBlock();
             }
         }
         if (hasExecutable)
