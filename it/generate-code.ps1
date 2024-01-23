@@ -50,7 +50,16 @@ elseif ($descriptionUrl.StartsWith("http")) {
     Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
 }
 else {
-    Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow    
+    $downloadProcess = Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow -PassThru
+    if ($downloadProcess.ExitCode -ne 0) {
+        Write-Error "Failed to download the openapi description"
+        exit 1
+    }
 }
 
-Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments}" -Wait -NoNewWindow
+$generationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments}" -Wait -NoNewWindow -PassThru
+
+if ($generationProcess.ExitCode -ne 0) {
+    Write-Error "Failed to generate the code for ${language}"
+    exit 1
+}

@@ -58,14 +58,25 @@ elseif ($descriptionUrl.StartsWith("http")) {
     Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
 }
 else {
-    Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow    
+    $downloadProcess = Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow -PassThru
+    if ($downloadProcess.ExitCode -ne 0) {
+        Write-Error "Failed to download the openapi description"
+        exit 1
+    }    
 }
 
 $tmpFolder1 = New-TemporaryDirectory
 $tmpFolder2 = New-TemporaryDirectory
 
-Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder1" -Wait -NoNewWindow
-Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder2" -Wait -NoNewWindow
+$additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
+$additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionUrl $descriptionUrl -language $language -includeOutputParameter $false"
+$firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1" -Wait -NoNewWindow -PassThru
+$secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2" -Wait -NoNewWindow -PassThru
+
+if ($firstGenerationProcess.ExitCode -ne 0 -or $secondGenerationProcess.ExitCode -ne 0) {
+    Write-Error "Failed to generate the code for ${language}"
+    exit 1
+}
 
 # Remove variable output files
 Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
