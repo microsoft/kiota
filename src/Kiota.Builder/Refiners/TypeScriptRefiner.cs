@@ -24,6 +24,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             new CodeUsing
             {
                 Name = "BaseRequestBuilder",
+                IsErasable = true,
                 Declaration = new CodeType
                 {
                     Name = AbstractionsPackageName,
@@ -110,11 +111,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             );
             AddSerializationModulesImport(generatedCode,
-                [$"{AbstractionsPackageName}.registerDefaultSerializer",
-                    $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
-                    $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"],
-                [$"{AbstractionsPackageName}.registerDefaultDeserializer",
-                    $"{AbstractionsPackageName}.ParseNodeFactoryRegistry"]);
+                [$"{AbstractionsPackageName}.registerDefaultSerializer"],
+                [$"{AbstractionsPackageName}.registerDefaultDeserializer"]);
             cancellationToken.ThrowIfCancellationRequested();
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -210,20 +208,43 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void GenerateRequestBuilderCodeFiles(CodeNamespace modelsNamespace)
     {
         if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
-        foreach (var subNamespace in mainNamespace.Namespaces.Except([modelsNamespace]))
+        var elementsToConsider = mainNamespace.Namespaces.Except([modelsNamespace]).OfType<CodeElement>().Union(mainNamespace.Classes).ToArray();
+        foreach (var element in elementsToConsider)
         {
-            GenerateRequestBuilderCodeFilesForElement(subNamespace);
+            GenerateRequestBuilderCodeFilesForElement(element);
         }
-        foreach (var classElement in mainNamespace.Classes)
-        {
-            GenerateRequestBuilderCodeFilesForElement(classElement);
+        foreach (var element in elementsToConsider)
+        {// in two separate loops to ensure all the constants are added before the usings are added
+            AddDownwardsConstantsImports(element);
         }
     }
     private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
     {
         if (currentElement.Parent is CodeNamespace codeNamespace && currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-            GenerateRequestBuilderCodeFile(currentClass, codeNamespace);
+            GenerateRequestBuilderCodeFile(ReplaceRequestBuilderClassByInterface(currentClass, codeNamespace), codeNamespace);
         CrawlTree(currentElement, GenerateRequestBuilderCodeFilesForElement);
+    }
+    private static void AddDownwardsConstantsImports(CodeElement currentElement)
+    {
+        if (currentElement is CodeInterface currentInterface &&
+            currentInterface.Kind is CodeInterfaceKind.RequestBuilder &&
+            currentElement.Parent is CodeFile codeFile &&
+            codeFile.Parent is CodeNamespace parentNamespace &&
+            parentNamespace.Parent is CodeNamespace parentLevelNamespace &&
+            parentLevelNamespace.Files.SelectMany(static x => x.Interfaces).FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface parentLevelInterface &&
+            codeFile.Constants
+                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.UriTemplate or CodeConstantKind.RequestsMetadata)
+                .Select(static x => new CodeUsing
+                {
+                    Name = x.Name,
+                    Declaration = new CodeType
+                    {
+                        TypeDefinition = x,
+                    },
+                })
+                .ToArray() is { Length: > 0 } constantUsings)
+            parentLevelInterface.AddUsing(constantUsings);
+        CrawlTree(currentElement, AddDownwardsConstantsImports);
     }
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
@@ -242,9 +263,71 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
-    private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
+    private static readonly CodeUsing[] navigationMetadataUsings = [
+        new CodeUsing
+        {
+            Name = "NavigationMetadata",
+            IsErasable = true,
+            Declaration = new CodeType
+            {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        },
+        new CodeUsing
+        {
+            Name = "KeysToExcludeForNavigationMetadata",
+            IsErasable = true,
+            Declaration = new CodeType
+            {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        }];
+    private static readonly CodeUsing[] requestMetadataUsings = [
+        new CodeUsing
+        {
+            Name = "RequestsMetadata",
+            IsErasable = true,
+            Declaration = new CodeType
+            {
+                Name = AbstractionsPackageName,
+                IsExternal = true,
+            },
+        },
+    ];
+    private static CodeInterface ReplaceRequestBuilderClassByInterface(CodeClass codeClass, CodeNamespace codeNamespace)
     {
-        var executorMethods = codeClass.Methods
+        if (CodeConstant.FromRequestBuilderToRequestsMetadata(codeClass, requestMetadataUsings) is CodeConstant requestsMetadataConstant)
+            codeNamespace.AddConstant(requestsMetadataConstant);
+        if (CodeConstant.FromRequestBuilderToNavigationMetadata(codeClass, navigationMetadataUsings) is CodeConstant navigationConstant)
+            codeNamespace.AddConstant(navigationConstant);
+        if (CodeConstant.FromRequestBuilderClassToUriTemplate(codeClass) is CodeConstant uriTemplateConstant)
+            codeNamespace.AddConstant(uriTemplateConstant);
+        if (codeClass.Methods.FirstOrDefault(static x => x.Kind is CodeMethodKind.ClientConstructor) is CodeMethod clientConstructor)
+        {
+            clientConstructor.IsStatic = true;
+            clientConstructor.Name = $"Create{codeClass.Name.ToFirstCharacterUpperCase()}";
+
+            codeNamespace.AddFunction(new CodeFunction(clientConstructor)).First().AddUsing(new CodeUsing
+            {
+                Name = "apiClientProxifier",
+                Declaration = new CodeType
+                {
+                    Name = AbstractionsPackageName,
+                    IsExternal = true,
+                },
+            });
+        }
+        var interfaceDeclaration = CodeInterface.FromRequestBuilder(codeClass);
+        codeNamespace.RemoveChildElement(codeClass);
+        codeNamespace.AddInterface(interfaceDeclaration);
+        return interfaceDeclaration;
+
+    }
+    private static void GenerateRequestBuilderCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        var executorMethods = codeInterface.Methods
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor))
             .ToArray();
 
@@ -280,8 +363,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .OfType<CodeConstant>()
             .ToArray();
 
+        var navigationConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.NavigationMetadataSuffix}", false);
+        var requestsMetadataConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.RequestsMetadataSuffix}", false);
+        var uriTemplateConstant = codeNamespace.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterLowerCase()}{CodeConstant.UriTemplateSuffix}", false);
+
+        var proxyConstants = new[] { navigationConstant, requestsMetadataConstant, uriTemplateConstant }
+            .OfType<CodeConstant>()
+            .ToArray();
+
+        var clientConstructorFunction = codeNamespace.FindChildByName<CodeFunction>($"Create{codeInterface.Name.ToFirstCharacterUpperCase()}", false);
+
         codeNamespace.RemoveChildElement(inlineRequestAndResponseBodyFiles);
-        var elements = new CodeElement[] { codeClass }
+        var elements = new CodeElement[] { codeInterface }
+                            .Union(clientConstructorFunction is not null ? new[] { clientConstructorFunction } : Array.Empty<CodeElement>())
+                            .Union(proxyConstants)
                             .Union(queryParameterInterfaces)
                             .Union(queryParametersMapperConstants)
                             .Union(inlineRequestAndResponseBodyFiles.SelectMany(static x => x.GetChildElements(true)))
@@ -290,7 +385,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             .Distinct()
                             .ToArray();
 
-        codeNamespace.TryAddCodeFile(codeClass.Name, elements);
+        codeNamespace.TryAddCodeFile(codeInterface.Name, elements);
     }
 
     private static IEnumerable<CodeUsing> GetUsingsFromCodeElement(CodeElement codeElement)
@@ -301,6 +396,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CodeInterface ci => ci.Usings,
             CodeEnum ce => ce.Usings,
             CodeClass cc => cc.Usings,
+            CodeConstant codeConstant => codeConstant.StartBlock.Usings,
             _ => Enumerable.Empty<CodeUsing>()
         };
     }
@@ -408,39 +504,28 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static bool HasMultipartBody(CodeMethod m) =>
         m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
         m.Parameters.Any(IsMultipartBody);
-    // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
+    // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErasable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor,
             AbstractionsPackageName, true, "RequestAdapter"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            AbstractionsPackageName, true, "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, false, "HttpMethod", "RequestInformation"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, true, "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.RequestGenerator,
+            AbstractionsPackageName, true, "RequestInformation"),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.Serializer,
             AbstractionsPackageName, true,"SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Factory,
             AbstractionsPackageName, true, "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility),
-            AbstractionsPackageName, false, "getPathParameters"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.RequestExecutor,
             AbstractionsPackageName, true, "Parsable", "ParsableFactory"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.Kind is CodeClassKind.Model,
             AbstractionsPackageName, true, "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.Kind is CodeClassKind.Model && @class.Properties.Any(static x => x.Kind is CodePropertyKind.AdditionalData),
             AbstractionsPackageName, true, "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+        new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor &&
+                    method.Parameters.Any(static y => y.Kind is CodeParameterKind.BackingStore),
             AbstractionsPackageName, true, "BackingStoreFactory"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
-        new (x => x is CodeMethod m && HasMultipartBody(m),
+        new (static x => x is CodeMethod m && HasMultipartBody(m),
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
     private const string MultipartBodyClassName = "MultipartBody";
@@ -569,6 +654,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 Name = codeClass.Name,
                 Kind = CodeInterfaceKind.QueryParameters,
+                Documentation = codeClass.Documentation,
+                Deprecation = codeClass.Deprecation,
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
@@ -761,9 +848,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void AddSerializationUsingToRequestBuilder(CodeClass modelClass, CodeClass targetClass)
     {
-        var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
-        var serializer = serializationFunctions.Item1;
-        var deserializer = serializationFunctions.Item2;
+        var (serializer, _) = GetSerializationFunctionsForNamespace(modelClass);
         if (serializer.Parent is not null)
         {
             targetClass.AddUsing(new CodeUsing
@@ -773,19 +858,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     Name = serializer.Name,
                     TypeDefinition = serializer
-                }
-            });
-        }
-
-        if (deserializer.Parent is not null)
-        {
-            targetClass.AddUsing(new CodeUsing
-            {
-                Name = deserializer.Parent.Name,
-                Declaration = new CodeType
-                {
-                    Name = deserializer.Name,
-                    TypeDefinition = deserializer
                 }
             });
         }
@@ -830,20 +902,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         }
                     });
                 }
-            }
-        }
-        if (codeMethod.ErrorMappings.Any())
-        {
-            ProcessModelClassAssociatedWithErrorMappings(codeMethod);
-        }
-    }
-    private static void ProcessModelClassAssociatedWithErrorMappings(CodeMethod codeMethod)
-    {
-        foreach (var errorMapping in codeMethod.ErrorMappings)
-        {
-            if (errorMapping.Value is CodeType codeType && codeType.TypeDefinition is CodeClass errorMappingClass && codeMethod.Parent is CodeClass parentClass)
-            {
-                AddSerializationUsingToRequestBuilder(errorMappingClass, parentClass);
             }
         }
     }
@@ -899,6 +957,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = temporaryInterfaceName,
             Kind = CodeInterfaceKind.Model,
+            Documentation = modelClass.Documentation,
+            Deprecation = modelClass.Deprecation,
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?

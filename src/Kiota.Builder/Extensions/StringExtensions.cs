@@ -280,5 +280,5 @@ public static partial class StringExtensions
     /// <param name="b">The second string</param>
     /// <returns></returns>
     public static bool EqualsIgnoreCase(this string? a, string? b)
-        => String.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 }

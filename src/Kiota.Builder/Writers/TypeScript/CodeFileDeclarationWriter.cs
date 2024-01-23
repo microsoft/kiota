@@ -26,6 +26,7 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                         CodeFunction f => f.StartBlock.Usings,
                         CodeInterface ci => ci.Usings,
                         CodeClass cc => cc.Usings,
+                        CodeConstant c => c.StartBlock.Usings,
                         _ => Enumerable.Empty<CodeUsing>()
                     };
                 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
 
@@ -14,7 +14,7 @@ public sealed class CodePropertyWriterTests : IDisposable
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
     private readonly CodeProperty property;
-    private readonly CodeClass parentClass;
+    private readonly CodeInterface parentInterface;
     private const string PropertyName = "propertyName";
     private const string TypeName = "Somecustomtype";
     public CodePropertyWriterTests()
@@ -23,11 +23,10 @@ public sealed class CodePropertyWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass
+        parentInterface = root.AddInterface(new CodeInterface
         {
             Name = "parentClass"
-        };
-        root.AddClass(parentClass);
+        }).First();
         property = new CodeProperty
         {
             Name = PropertyName,
@@ -36,7 +35,7 @@ public sealed class CodePropertyWriterTests : IDisposable
                 Name = TypeName
             }
         };
-        parentClass.AddProperty(property, new()
+        parentInterface.AddProperty(property, new()
         {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
@@ -65,9 +64,8 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.RequestBuilder;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"return new {TypeName}", result);
-        Assert.Contains("this.requestAdapter", result);
-        Assert.Contains("this.pathParameters", result);
+        Assert.Contains("get", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("?", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesCustomProperty()
@@ -113,5 +111,15 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("[]", result);
         Assert.DoesNotContain("[] []", result);
+    }
+    [Fact]
+    public void FailsOnPropertiesForClasses()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        property.Parent = new CodeClass
+        {
+            Name = "parentClass"
+        };
+        Assert.Throws<InvalidOperationException>(() => writer.Write(property));
     }
 }

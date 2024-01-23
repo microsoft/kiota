@@ -25,7 +25,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ty
 
         var inheritSymbol = codeElement.Inherits is null ? string.Empty : conventions.GetTypeString(codeElement.Inherits, codeElement);
         var derivation = (string.IsNullOrEmpty(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}") +
-                        (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}");
+                        (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}");
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteLongDescription(parentClass, writer);
         writer.WriteLine($"export class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");

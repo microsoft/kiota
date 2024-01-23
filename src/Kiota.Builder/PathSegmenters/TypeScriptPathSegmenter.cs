@@ -21,7 +21,7 @@ public class TypeScriptPathSegmenter : CommonPathSegmenter
             CodeFile currentFile when modelsNamespace is not null &&
                         currentElement.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
                         !(modelsNamespace.IsParentOf(currentNamespace) || modelsNamespace == currentNamespace) &&
-                        !currentFile.Classes.Any(static x => x.Kind is CodeClassKind.RequestBuilder && x.Methods.Any(static y => y.Kind is CodeMethodKind.ClientConstructor))
+                        !currentFile.Interfaces.Any(static x => x.Kind is CodeInterfaceKind.RequestBuilder && x.OriginalClass is not null && x.OriginalClass.Methods.Any(static y => y.Kind is CodeMethodKind.ClientConstructor))
                     => IndexFileName,
             _ => GetDefaultFileName(currentElement),
         };
