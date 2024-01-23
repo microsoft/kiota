@@ -3,7 +3,7 @@ import { Logger } from './common/logger';
 import { DeviceCodeCredential } from '@azure/identity';
 import { FetchRequestAdapter } from '@microsoft/kiota-http-fetchlibrary';
 import { AzureIdentityAuthenticationProvider } from '@microsoft/kiota-authentication-azure';
-import { ApiClient } from './client/apiClient';
+import { type ApiClient } from './client/apiClient';
 
 export class App {
   static run(): App {

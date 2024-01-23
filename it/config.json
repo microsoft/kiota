@@ -130,6 +130,10 @@
       {
         "Pattern": "/permissionSets/**",
         "Rationale": "error 404 is invalid"
+      },
+      {
+        "Pattern": "/oauth/token/",
+        "Rationale": "Duplicate path exists in the spec without the trailing '/'"
       }
     ],
     "Suppressions": [

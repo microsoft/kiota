@@ -2,7 +2,8 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
-    [Parameter(Mandatory = $true)][string]$language
+    [Parameter(Mandatory = $true)][string]$language,
+    [Parameter(Mandatory = $false)][string]$includeOutputParameter = $true
 )
 
 if ([string]::IsNullOrEmpty($descriptionUrl)) {
@@ -36,6 +37,10 @@ elseif ($language -eq "php") {
 }
 elseif ($language -eq "python") {
     $command = " --output `"./it/$language/integration_test/client`" --namespace-name `"integration_test.client`""
+}
+
+if ($includeOutputParameter -eq $false) {
+    $command = "" # no output parameter to generate
 }
 
 $configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
