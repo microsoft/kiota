@@ -67,7 +67,7 @@ public class DocumentCachingProvider
             return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
         }
     }
-    private static readonly ConcurrentDictionary<string, AsyncNonKeyedLocker> _locks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly AsyncKeyedLocker<string> _locks = new();
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
         Logger.LogDebug("cache file {CacheFile} not found, downloading from {Url}", target, documentUri);
