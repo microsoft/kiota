@@ -39,8 +39,7 @@ public class DocumentCachingProvider
     {
         var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         var target = Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "cache", intermediateFolderName, hashedUrl, fileName);
-        var currentLock = _locks.GetOrAdd(target, _ => new AsyncNonKeyedLocker());
-        using (await currentLock.LockAsync(token).ConfigureAwait(false))
+        using (await _locks.LockAsync(target, token).ConfigureAwait(false))
         {// if multiple clients are being updated for the same description, we'll have concurrent download of the file without the lock
             if (!File.Exists(target) || couldNotDelete)
                 return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token).ConfigureAwait(false);
