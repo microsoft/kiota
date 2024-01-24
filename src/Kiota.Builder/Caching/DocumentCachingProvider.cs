@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using AsyncKeyedLock;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Caching;
 
@@ -66,7 +65,11 @@ public class DocumentCachingProvider
             return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
         }
     }
-    private static readonly AsyncKeyedLocker<string> _locks = new();
+    private static readonly AsyncKeyedLocker<string> _locks = new(o =>
+    {
+        o.PoolSize = 20;
+        o.PoolInitialFill = 1;
+    });
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
         Logger.LogDebug("cache file {CacheFile} not found, downloading from {Url}", target, documentUri);
