@@ -234,4 +234,19 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("from . import message", result);
     }
+    [Fact]
+    public void WritesModelClassDeprecationInformation()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.Deprecation = new("This class is deprecated", DateTimeOffset.Parse("2024-01-01T00:00:00Z"), DateTimeOffset.Parse("2024-01-01T00:00:00Z"), "v2.0");
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("@dataclass", result);
+        Assert.Contains("class ParentClass()", result);
+         Assert.Contains("warn(", result);
+        Assert.Contains("This class is deprecated", result);
+        Assert.Contains("2024-01-01", result);
+        Assert.Contains("2024-01-01", result);
+        Assert.Contains("v2.0", result);
+    }
 }
