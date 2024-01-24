@@ -52,6 +52,10 @@ public enum CodeParameterKind
     /// The content type of the request body when it couldn't be inferred from the description.
     /// </summary>
     RequestBodyContentType,
+    /// <summary>
+    /// When the deserialization method is replaced as a function, this is the parameter representing instance we're deserializing into.
+    /// </summary>
+    DeserializationTarget,
 }
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement, IDeprecableElement
