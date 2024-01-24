@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added Japanese translations to vscode extension.
+- Added support for deprecation annotations in Python. [#2798](https://github.com/microsoft/kiota/issues/2798)
 
 ### Changed
 
