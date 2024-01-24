@@ -713,6 +713,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                                .Select(x => $"param {x.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                                .Union(new[] { returnRemark }));
+        conventions.WriteDeprecationWarning(code, writer);
     }
     private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
