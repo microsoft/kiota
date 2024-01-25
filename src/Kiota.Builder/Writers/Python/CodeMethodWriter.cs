@@ -100,6 +100,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 writer.CloseBlock(string.Empty);
                 break;
+            case CodeMethodKind.ComposedTypeMarker:
+                throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported in python");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:

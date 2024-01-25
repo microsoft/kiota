@@ -68,6 +68,13 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                true,
+                $"{AbstractionsPackageName}.composed_type_wrapper",
+                "ComposedTypeWrapper"
+            );
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.AdditionalData,
@@ -138,6 +145,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private const string AbstractionsPackageName = "kiota_abstractions";
+    private const string SerializationModuleName = $"{AbstractionsPackageName}.serialization";
+    private const string StoreModuleName = $"{AbstractionsPackageName}.store";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
         new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union"),
@@ -150,25 +159,25 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            $"{AbstractionsPackageName}.serialization", "SerializationWriter"),
+            SerializationModuleName, "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            $"{AbstractionsPackageName}.serialization", "ParseNode"),
+            SerializationModuleName, "ParseNode"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             $"{AbstractionsPackageName}.get_path_parameters", "get_path_parameters"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            $"{AbstractionsPackageName}.serialization", "Parsable", "ParsableFactory"),
+            SerializationModuleName, "Parsable", "ParsableFactory"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            $"{AbstractionsPackageName}.serialization", "Parsable"),
+            SerializationModuleName, "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            $"{AbstractionsPackageName}.serialization", "AdditionalDataHolder"),
+            SerializationModuleName, "AdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            StoreModuleName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            $"{AbstractionsPackageName}.store", "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
+            StoreModuleName, "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
         new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) || x.Parent is CodeClass), "dataclasses", "dataclass, field"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
-            $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
+            SerializationModuleName, "ParseNodeHelper"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
             "warnings", "warn"),
     };
