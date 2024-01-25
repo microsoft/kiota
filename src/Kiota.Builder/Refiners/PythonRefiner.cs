@@ -140,7 +140,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private const string AbstractionsPackageName = "kiota_abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
-        new (static x => x is CodeClass, "warnings", "warn"),
         new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
@@ -170,6 +169,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) || x.Parent is CodeClass), "dataclasses", "dataclass, field"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
+        new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
+            "warnings", "warn"),
     };
 
     private static void CorrectCommonNames(CodeElement currentElement)
