@@ -736,7 +736,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = ReturnFinalInterfaceName(modelInterface.Name), // remove the interface suffix
             DefaultValue = "{}",
-            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
+            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface },
+            Kind = CodeParameterKind.DeserializationTarget,
         });
 
         if (modelInterface.Parent is not null)
