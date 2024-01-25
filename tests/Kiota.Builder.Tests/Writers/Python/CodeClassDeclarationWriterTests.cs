@@ -241,7 +241,6 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         parentClass.Deprecation = new("This class is deprecated", DateTimeOffset.Parse("2024-01-01T00:00:00Z"), DateTimeOffset.Parse("2024-01-01T00:00:00Z"), "v2.0");
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("from warnings import warn");
         Assert.Contains("@dataclass", result);
         Assert.Contains("class ParentClass()", result);
         Assert.Contains("warn(", result);
