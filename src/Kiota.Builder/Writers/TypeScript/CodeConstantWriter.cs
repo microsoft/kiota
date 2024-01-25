@@ -229,6 +229,6 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             conventions.WriteShortDescription(x.Documentation.Description, writer);
             writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
         });
-        writer.CloseBlock("}  as const;");
+        writer.CloseBlock("} as const;");
     }
 }
