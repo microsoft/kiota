@@ -51,6 +51,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                 _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
             }
             conventions.WriteLongDescription(parent.Documentation, writer);
+            conventions.WriteDeprecationWarning(parent, writer);
         }
     }
 }
