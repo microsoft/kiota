@@ -53,7 +53,7 @@ The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.
 
 ## Commands
 
-* [kiota config init](../cli/init.md)
+* [kiota config init](../cli/config-init.md)
 * [kiota client add](../cli/client-add.md)
 * [kiota client edit](../cli/client-edit.md)
 * [kiota client generate](../cli/client-generate.md)
