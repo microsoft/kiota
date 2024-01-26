@@ -239,7 +239,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             node.documentationUrl
         );
     }
-    getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
+    getChildren(element?: OpenApiTreeNode): vscode.ProviderResult<OpenApiTreeNode[]> {
         if (!this.rawRootNode) {
             return [];
         }
