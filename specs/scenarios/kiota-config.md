@@ -22,7 +22,7 @@ Here is an example of what the kiota-config.json file could look like.
 {
   "version": "1.0.0",
   "clients": {
-    "graphDelegated": {
+    "GraphClient": {
       "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -71,7 +71,7 @@ kiota config migrate
 
 ```bash
 kiota client init
-kiota client add --client-name "graphDelegated" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --language csharp --output "./csharpClient"
+kiota client add --client-name "GraphClient" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --language csharp --output "./csharpClient"
 ```
 
 ### Add a second API client
@@ -83,7 +83,7 @@ kiota client add  --clientName "graphPython" --openapi "https://aka.ms/graph/v1.
 ### Edit an API client
 
 ```bash
-kiota client edit --client-name "graphDelegated" --class-name "GraphServiceClient" --exclude-path "/users/$count"
+kiota client edit --client-name "GraphClient" --exclude-path "/users/$count"
 ```
 
 ### Remove a language and delete the generated code

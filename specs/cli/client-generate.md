@@ -20,7 +20,7 @@ In general cases, the `kiota client generate` command will generate the code for
 ### Using `kiota client generate` for a single API client
 
 ```bash
-kiota client generate --client-name "graphDelegated"
+kiota client generate --client-name "GraphClient"
 ```
 
 ### Using `kiota client generate` for all API clients
