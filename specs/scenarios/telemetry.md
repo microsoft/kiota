@@ -1,0 +1,68 @@
+# Telemetry
+
+Kiota is a tool that generates code for interacting with an API. It is used by developers to create applications that interact with an API. It is also used by API owners to create SDKs for their API. In both cases, it is important to understand how the tool is being used and what are the scenarios leveraged by our community. This document describes the telemetry we plan to collect and how we use it.
+
+## Current Challenges
+
+- Kiota doesn't have a telemetry component as part of its CLI experience.
+- The Kiota team doesn't have visibility on how the tool is being used and what are the scenarios that are important to our community.
+- When planning for future investments, the Kiota team doesn't have a way to prioritize scenarios based on their importance to our community.
+
+## Goals
+
+- Understand how Kiota is being used.
+- Understand what scenarios are important to our community.
+- Understand what are the preferred experiences for using Kiota.
+
+## Non-goals
+
+- We are not trying to collect any personally identifiable information.
+- We are not trying to collect any information about the API being used.
+- We are not trying to collect any information about the application using the API.
+- We are not trying to collect any information during the runtime of the application.
+
+## Proposal
+
+We should introduce a new telemetry component to Kiota. This component should be enabled by default and should be able to be disabled by the user, in a very similar way that the `dotnet` CLI does (https://learn.microsoft.com/en-us/dotnet/core/tools/telemetry). The telemetry component should be able to collect information about the following scenarios:
+
+- Adoption of the CLI in general.
+- Adoption of the different commands.
+- Adoption of the different parameters for each command (without values that could be considered sensitive like the OpenAPI description, include / exclude paths, etc.).
+- Adoption of the different languages.
+- Adoption of the different platforms we offer support for.
+
+### Privacy
+
+We should be very careful about the information we collect. Before rolling out this feature, we should have full agreement with CELA on our approach, the way we collect and protect the data. In general:
+
+- We should offer a way to opt-out of the telemetry collection.
+- We should not collect any information that could be considered sensitive. 
+- We should not collect any information that could be used to identify a person, an application, or an API. 
+- We should not collect any information during the runtime of the application.
+
+### Data collected
+
+#### Basic data being collected
+
+For every command, we should collect the following information:
+
+- Hashed MAC address
+- Operating system
+- Operating system version
+- Source (CLI or extension)
+- Kiota version
+- VS Code extension version (if applicable)
+- Command name
+- Command parameters being used (without their values)
+- Command execution time
+- Command result (success or failure)
+
+#### Command-specific data being collected
+
+Every command has a different set of parameters. We should collect relevant parameters (and their values) for each command. The data collected shouldn't include any information that could be considered sensitive, only system-related information. Each command specification should include the list of parameters that should be collected and whether their values should be collected or not.
+
+The list of commands and their parameters can be found in the [CLI Commands](../cli/index.md) section. Each parameter indicates whether its value should be collected or not.
+
+### Opting-out
+
+We should offer a way to opt-out of the telemetry collection. This should be done in a very similar way that the `dotnet` CLI does (https://learn.microsoft.com/en-us/dotnet/core/tools/telemetry). To opt out of the telemetry feature, set the KIOTA_CLI_TELEMETRY_OPTOUT environment variable to 1 or true.

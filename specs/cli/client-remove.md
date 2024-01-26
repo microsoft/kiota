@@ -6,10 +6,10 @@
 
 The command also has one optional parameter, the ability to remove the generated client. If provided, kiota will delete the folder and its content specified at the `outputPath` from the client configuration. It will also remove the local version of the OpenAPI description file (specified by the `descriptionHash` property). The API Manifest is also updated to remove the dependency from the list of dependencies.
 
-| Parameters | Required | Example | Description |
+| Parameters | Required | Example | Description | Telemetry | 
 | -- | -- | -- | -- |
-| `--client-name \| --cn` | Yes | graphDelegated | Name of the client |
-| `--clean-output \| --co` | No |  | Cleans the generated client |
+| `--client-name \| --cn` | Yes | graphDelegated | Name of the client | Yes, without its value |
+| `--clean-output \| --co` | No |  | Cleans the generated client | Yes |
 
 #### Using kiota client remove
 
