@@ -228,12 +228,12 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         return vscode.TreeItemCollapsibleState.Collapsed;
     }
-    getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
+    getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, collapsibleStateOverride: vscode.TreeItemCollapsibleState | undefined = undefined): OpenApiTreeNode {
         return new OpenApiTreeNode(
-            node.path, 
+            node.path,
             node.segment === pathSeparator && this.apiTitle ? pathSeparator + " (" + this.apiTitle + ")" : node.segment,
             node.selected ?? false,
-            this.getCollapsedState(node),
+            collapsibleStateOverride ?? this.getCollapsedState(node),
             node.isOperation ?? false,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
             node.documentationUrl
@@ -246,8 +246,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (element) {
             return element.children.filter(x => x.isNodeVisible(this.tokenizedFilter));
         } else {
-            const result = this.getTreeNodeFromKiotaNode(this.rawRootNode);
-            result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            const result = this.getTreeNodeFromKiotaNode(this.rawRootNode, vscode.TreeItemCollapsibleState.Expanded);
             return [result];
         }
     }
@@ -269,7 +268,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public readonly path: string,
         public readonly label: string,
         selected: boolean,
-        public collapsibleState: vscode.TreeItemCollapsibleState,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
         public readonly children: OpenApiTreeNode[] = [],
         public readonly documentationUrl?: string,
