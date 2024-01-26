@@ -40,12 +40,27 @@ We should be very careful about the information we collect. Before rolling out t
 - We should not collect any information that could be used to identify a person, an application, or an API. 
 - We should not collect any information during the runtime of the application.
 
+### Examples of questions we want to answer
+
+- How many users are using the CLI?
+- How many users are using the CLI via the extension?
+- What is the current growth trajectory of the usage of kiota?
+- What are the most used commands?
+- How are the commands used? Which parameters are being used?
+- What are the most used languages?
+- What are the most used platforms?
+- Is there a difference in how the CLI is being used between platforms?
+- Do we have users using old versions of kiota? Why?
+- When launching new capabilities, what is the adoption rate? How long does it take for users to adopt the new capabilities?
+- Can we identify a spike in error being returned by Kiota? What is the impact of the error? What command generates the error? What parameters are being used?
+
 ### Data collected
 
 #### Basic data being collected
 
 For every command, we should collect the following information:
 
+- Timestamp
 - Hashed MAC address
 - Operating system
 - Operating system version
