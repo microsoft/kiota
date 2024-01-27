@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Dart;
 
@@ -10,6 +11,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
 
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        throw new System.NotImplementedException();
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
+
+        writer.WriteLine("class " + codeElement.Name + " {");
     }
 }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
@@ -14,6 +11,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
+
+        var returnType = conventions.TranslateType(codeElement.ReturnType);
+        var methodName = codeElement.Name.ToFirstCharacterUpperCase();
+        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {methodName}() {{");
+        writer.IncreaseIndent();
+        writer.WriteLine("throw \"not implemented\";");
+        writer.DecreaseIndent();
+        writer.WriteLine("}");
     }
 }

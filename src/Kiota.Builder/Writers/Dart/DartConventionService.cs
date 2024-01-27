@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Dart;
 
@@ -6,12 +7,20 @@ public class DartConventionService : CommonLanguageConventionService
 {
     public override string GetAccessModifier(AccessModifier access)
     {
-        throw new System.NotImplementedException();
+        return access switch
+        {
+            AccessModifier.Private => "_",
+            AccessModifier.Protected => "",
+            AccessModifier.Public => "",
+            _ => throw new ArgumentOutOfRangeException(nameof(access), access, null),
+        };
     }
 
     public override string TranslateType(CodeType type)
     {
-        throw new System.NotImplementedException();
+        ArgumentNullException.ThrowIfNull(type);
+
+        return type.Name;
     }
 
     public override void WriteShortDescription(string description, LanguageWriter writer)
@@ -32,7 +41,7 @@ public class DartConventionService : CommonLanguageConventionService
 
     public override string StreamTypeName
     {
-        get;
+        get => "Stream";
     }
 
     public override string VoidTypeName => "void";
@@ -41,11 +50,11 @@ public class DartConventionService : CommonLanguageConventionService
 
     public override string ParseNodeInterfaceName
     {
-        get;
+        get => "IParseNode";
     }
 
     public override string TempDictionaryVarName
     {
-        get;
+        get => "tempDictionary";
     }
 }
