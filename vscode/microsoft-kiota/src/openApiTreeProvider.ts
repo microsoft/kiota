@@ -215,18 +215,11 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {
-        const hasChildren = node.children.length > 0;
-        if (!hasChildren) {
-            return vscode.TreeItemCollapsibleState.None;
-        }
-        if (this.tokenizedFilter.length === 0) {
-            return vscode.TreeItemCollapsibleState.Expanded;
-        }
-
-        if (this.tokenizedFilter.some(x => node.children.some(c => c.segment.includes(x) || this.getCollapsedState(c) === vscode.TreeItemCollapsibleState.Expanded))) {
-            return vscode.TreeItemCollapsibleState.Expanded;
-        }
-        return vscode.TreeItemCollapsibleState.Collapsed;
+        return node.children.length === 0 ?
+                vscode.TreeItemCollapsibleState.None :
+                (this.tokenizedFilter.length === 0 ?
+                    vscode.TreeItemCollapsibleState.Collapsed : 
+                    vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, collapsibleStateOverride: vscode.TreeItemCollapsibleState | undefined = undefined): OpenApiTreeNode {
         return new OpenApiTreeNode(
