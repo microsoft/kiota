@@ -6,7 +6,7 @@ In the case where conflicting API client names would be migrated, the command wi
 
 ## Parameters
 
-| Parameters | Required | Example | Description |
+| Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- |
 | `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. | Yes, without its value |
 | `--client-name \| --cn` | No | graphDelegated | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. | Yes, without its value |
