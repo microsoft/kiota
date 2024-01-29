@@ -42,9 +42,9 @@ pluggy==1.4.0 ; python_version >= '3.7'
 
 pylint==3.0.3
 
-pytest==7.4.4
+pytest==8.0.0
 
-pytest-asyncio==0.23.3
+pytest-asyncio==0.23.4
 
 requests==2.31.0 ; python_version >= '3.7'
 
@@ -66,7 +66,7 @@ yapf==0.40.2
 
 zipp==3.17.0 ; python_version >= '3.7'
 
-aiohttp==3.9.1 ; python_version >= '3.6'
+aiohttp==3.9.2 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
@@ -98,7 +98,7 @@ httpx[http2]==0.26.0
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.0.0
+microsoft-kiota-abstractions==1.1.0
 
 microsoft-kiota-authentication-azure==1.0.0
 
