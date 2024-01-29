@@ -156,7 +156,7 @@ public class DartConventionService : CommonLanguageConventionService
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             if (currentType.ActionOf && includeActionInformation)
-                return $"Action<{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}>";
+                return $"Func<{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}>";
             return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
         }
 
@@ -234,21 +234,23 @@ public class DartConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(type);
         return type.Name switch
         {
-            "integer" => "int",
+            "integer" or "sbyte" or "byte"  => "int",
             "boolean" => "bool",
-            "int64" => "long",
-            "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
+            "string" => "String",
+            "double" or "float" or "decimal" or "int64" => "double",
+            "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
+
     public bool IsPrimitiveType(string typeName)
     {
         if (string.IsNullOrEmpty(typeName)) return false;
         typeName = typeName.StripArraySuffix().TrimEnd('?').ToLowerInvariant();
         return typeName switch
         {
-            "string" => true,
+            "String" => true,
             _ when NullableTypes.Contains(typeName) => true,
             _ => false,
         };
@@ -273,7 +275,7 @@ public class DartConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"[Obsolete(\"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}\")]";
+        return $"@obsolete(\"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}\")";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

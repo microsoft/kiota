@@ -32,18 +32,18 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             throw new InvalidOperationException("The parent of a property should be a class");
 
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
-        var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
-        var simpleBody = $"get; {setterAccessModifier}set;";
+        var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "_" : string.Empty;
         var defaultValue = string.Empty;
+        var getterModifier = string.Empty;
 
-        var attributes = conventions.GetAccessModifierAttribute(codeElement.Access);
-        if (!string.IsNullOrEmpty(attributes))
-            writer.WriteLine(attributes);
+        var accessModifierAttribute = conventions.GetAccessModifierAttribute(codeElement.Access);
+        if (!string.IsNullOrEmpty(accessModifierAttribute))
+            writer.WriteLine(accessModifierAttribute);
 
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"get {propertyType} {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterUpperCase()} {{");
+                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()} {{");
                 writer.IncreaseIndent();
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer, prefix: "return ");
                 writer.DecreaseIndent();
@@ -52,27 +52,38 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
+                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\"); }}");
-                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(\"{backingStoreKey}\", value); }}");
+                writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\");");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+                writer.WriteLine();
+                writer.WriteLine($"set {setterAccessModifier}{codeElement.Name.ToCamelCase()}({propertyType} value) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(\"{backingStoreKey}\", value);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
-                if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
-                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
+                writer.WriteLine("@override");
+
+                if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(),
+                        static x => x.Name.ToFirstCharacterUpperCase(), "?.") is { } primaryMessageCodePath &&
+                    !string.IsNullOrEmpty(primaryMessageCodePath))
+                    defaultValue = $"=> {primaryMessageCodePath} ?? \"\";";
                 else
-                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => base.Message; }}");
-                break;
+                    defaultValue = "=> super.Message;";
+
+                getterModifier = "get ";
+                goto default;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
+                writer.WriteLine($"/// @QueryParameter(\"{codeElement.SerializationName}\")");
                 goto default;
             case CodePropertyKind.QueryParameters:
-                defaultValue = $" = new {propertyType}();";
+                defaultValue = $" = {propertyType}()";
                 goto default;
             default:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
+                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()}{defaultValue};");
                 break;
         }
     }
