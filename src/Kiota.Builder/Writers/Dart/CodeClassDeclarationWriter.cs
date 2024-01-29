@@ -12,7 +12,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
+
+        if (codeElement.Parent is not CodeClass parentClass)
+            throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
 
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
@@ -26,7 +28,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");
+            writer.WriteLine($"part of {codeElement.Parent.Parent.Name};");
+            writer.WriteLine();
         }
 
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })
