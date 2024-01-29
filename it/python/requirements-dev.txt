@@ -44,7 +44,7 @@ pylint==3.0.3
 
 pytest==7.4.4
 
-pytest-asyncio==0.23.3
+pytest-asyncio==0.23.4
 
 requests==2.31.0 ; python_version >= '3.7'
 
