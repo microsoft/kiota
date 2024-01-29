@@ -20,30 +20,32 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
         {
-            DartConventionService.WriteNullableOpening(writer);
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            DartConventionService.WriteNullableMiddle(writer);
         }
 
         WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
-
-        if (isNullableReferenceType)
-            DartConventionService.WriteNullableClosing(writer);
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
     {
-        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
+        if (codeElement.Parent is not CodeClass parentClass)
+            throw new InvalidOperationException("The parent of a property should be a class");
+
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
+
+        var attributes = conventions.GetAccessModifierAttribute(codeElement.Access);
+        if (!string.IsNullOrEmpty(attributes))
+            writer.WriteLine(attributes);
+
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");
+                writer.WriteLine($"get {propertyType} {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
-                conventions.AddRequestBuilderBody(parentClass, propertyType, writer);
+                conventions.AddRequestBuilderBody(parentClass, propertyType, writer, prefix: "return ");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;

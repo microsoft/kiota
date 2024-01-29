@@ -611,16 +611,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                                                         GetParameterSignatureWithNullableRefType(p, code) :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            DartConventionService.WriteNullableOpening(writer);
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
-            DartConventionService.WriteNullableMiddle(writer);
         }
 
         writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
-
-        if (includeNullableReferenceType)
-            DartConventionService.WriteNullableClosing(writer);
-
     }
 
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)

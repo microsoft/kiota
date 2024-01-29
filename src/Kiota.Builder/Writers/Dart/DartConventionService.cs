@@ -14,58 +14,55 @@ public class DartConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date", "Time", "sbyte", "byte" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "byte" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "IParseNode";
 
-    public static void WriteNullableOpening(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER", false);
-        writer.WriteLine($"#nullable enable", false);
-    }
-    public static void WriteNullableMiddle(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine($"#nullable restore", false);
-        writer.WriteLine("#else", false);
-    }
-    public static void WriteNullableClosing(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine("#endif", false);
-    }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
+            writer.WriteLine($"{DocCommentPrefix}{description.CleanupXMLString()}");
     }
     public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
-        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable)
-        {
-            writer.WriteLine($"{DocCommentPrefix}<summary>");
-            if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
-            if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
-            writer.WriteLine($"{DocCommentPrefix}</summary>");
-        }
+        ArgumentNullException.ThrowIfNull(documentation);
+
+        if (documentation is { DescriptionAvailable: false, ExternalDocumentationAvailable: false })
+            return;
+
+        if (documentation.DescriptionAvailable)
+            writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
+        if (documentation.ExternalDocumentationAvailable)
+            writer.WriteLine($"{DocCommentPrefix}[{documentation.DocumentationLabel}]({documentation.DocumentationLink})");
     }
     public override string GetAccessModifier(AccessModifier access)
     {
+        // Dart does not support access modifiers
+        return "";
+    }
+    
+#pragma warning disable CA1822 // Method should be static
+    public string GetAccessModifierPrefix(AccessModifier access)
+    {
         return access switch
         {
-            AccessModifier.Public => "public",
-            AccessModifier.Protected => "protected",
-            _ => "private",
+            AccessModifier.Private => "_",
+            _ => string.Empty,
         };
     }
-#pragma warning disable CA1822 // Method should be static
+
+    public string GetAccessModifierAttribute(AccessModifier access)
+    {
+        return access switch
+        {
+            AccessModifier.Protected => "@protected",
+            _ => string.Empty,
+        };
+    }
+
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
@@ -73,7 +70,7 @@ public class DartConventionService : CommonLanguageConventionService
         {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterUpperCase() : urlTemplateVarName;
-            writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
+            writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
