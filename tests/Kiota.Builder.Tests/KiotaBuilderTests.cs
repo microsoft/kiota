@@ -1243,8 +1243,8 @@ paths:
         var valueProp = userResponseClass.FindChildByName<CodeProperty>("value", false);
         Assert.NotNull(valueProp);
         var unknownProp = userResponseClass.FindChildByName<CodeProperty>("unknown", false);
-        Assert.Null(unknownProp);
-        Assert.Equal(1, mockLogger.Count.First(static x => x.Key == LogLevel.Warning).Value);
+        Assert.NotNull(unknownProp);
+        Assert.Equal("UntypedNode", unknownProp.Type.Name);// left out property is an UntypedNode
     }
     [Fact]
     public void TextPlainEndpointsAreSupported()
@@ -6816,7 +6816,10 @@ paths:
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
         var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
-        Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
+        var propertiesToValidate = resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)).ToArray();
+        Assert.NotNull(propertiesToValidate);
+        Assert.NotEmpty(propertiesToValidate);
+        Assert.Equal(keysToCheck.Count, propertiesToValidate.Length);// all the properties are present
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]

@@ -686,6 +686,7 @@ public partial class KiotaBuilder
     private const string CoreInterfaceType = "IRequestAdapter";
     private const string RequestAdapterParameterName = "requestAdapter";
     private const string ConstructorMethodName = "constructor";
+    private const string UntypedNodeName = "UntypedNode";
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
     /// </summary>
@@ -1207,7 +1208,7 @@ public partial class KiotaBuilder
         if (typeSchema?.OneOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.OneOf.Select(x => x.Type)); // double is sometimes an oneof string, number and enum
                                                                       // first value that's not null, and not "object" for primitive collections, the items type matters
-        var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
+        var typeName = typeNames.Find(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
 
         var isExternal = false;
         if (typeSchema?.Items?.IsEnum() ?? false)
@@ -1784,7 +1785,7 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
-    private CodeTypeBase? CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
+    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
@@ -1829,13 +1830,13 @@ public partial class KiotaBuilder
         }
 
         if (!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
-            return GetPrimitiveType(schema, string.Empty);
+            return GetPrimitiveType(schema, string.Empty) ?? new CodeType { Name = UntypedNodeName, IsExternal = true };
         if ((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) &&
            (schema.AnyOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
-        return null;
+        return new CodeType { Name = UntypedNodeName ,IsExternal = true};
     }
-    private CodeTypeBase? CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
+    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
         CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
         var isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
@@ -1847,7 +1848,8 @@ public partial class KiotaBuilder
             var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
         }
-        if (type is null) return null;
+        if (type is null) 
+            return new CodeType { Name = UntypedNodeName,IsExternal = true};
         type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         return type;
     }
