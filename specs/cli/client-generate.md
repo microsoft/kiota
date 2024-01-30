@@ -12,7 +12,7 @@ In general cases, the `kiota client generate` command will generate the code for
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--client-name \| --cn` | No | graphDelegated | Name of the client. Unique within the parent API. |
+| `--client-name \| --cn` | No | GraphClient | Name of the client. Unique within the parent API. |
 | `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. |
 
 ## Usage
@@ -20,7 +20,7 @@ In general cases, the `kiota client generate` command will generate the code for
 ### Using `kiota client generate` for a single API client
 
 ```bash
-kiota client generate --client-name "graphDelegated"
+kiota client generate --client-name "GraphClient"
 ```
 
 ### Using `kiota client generate` for all API clients

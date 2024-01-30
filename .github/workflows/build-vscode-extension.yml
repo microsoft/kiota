@@ -4,23 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore:
-      - "abstractions/**"
-      - "authentication/**"
-      - "serialization/**"
-      - "http/**"
-      - "**.md"
-      - ".vscode/**"
-      - "**.svg"
   pull_request:
-    paths-ignore:
-      - "abstractions/**"
-      - "authentication/**"
-      - "serialization/**"
-      - "http/**"
-      - "**.md"
-      - ".vscode/**"
-      - "**.svg"
 
 jobs:
   build_extension:
