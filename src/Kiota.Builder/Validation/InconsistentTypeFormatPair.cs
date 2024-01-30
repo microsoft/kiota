@@ -49,7 +49,7 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
         "null",
         "object",
     };
-    public InconsistentTypeFormatPair() : base(static (context, schema) =>
+    public InconsistentTypeFormatPair() : base(nameof(InconsistentTypeFormatPair), static (context, schema) =>
     {
         if (string.IsNullOrEmpty(schema?.Type) || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type))
             return;
