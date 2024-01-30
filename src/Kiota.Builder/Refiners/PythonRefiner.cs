@@ -16,10 +16,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            AddPrimaryErrorMessage(generatedCode,
-                "primary_message",
-                () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
-                true
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                true,
+                $"{AbstractionsPackageName}.composed_type_wrapper",
+                "ComposedTypeWrapper"
             );
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
@@ -41,17 +43,9 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                static s => s,
-                true,
-                $"{AbstractionsPackageName}.composed_type_wrapper",
-                "ComposedTypeWrapper"
-            );
             cancellationToken.ThrowIfCancellationRequested();
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
@@ -81,7 +75,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
 
             cancellationToken.ThrowIfCancellationRequested();
-
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
 
             ReplacePropertyNames(generatedCode,
                 new() {
@@ -144,7 +138,11 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
-
+            AddPrimaryErrorMessage(generatedCode,
+                "primary_message",
+                () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
+                true
+            );
         }, cancellationToken);
     }
 
