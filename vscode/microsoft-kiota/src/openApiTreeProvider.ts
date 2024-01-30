@@ -170,7 +170,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return;
         }
-        this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase());
+        this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase()).sort();
         this.refreshView();
     }
     public get filter(): string {
@@ -228,6 +228,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             node.selected ?? false,
             collapsibleStateOverride ?? this.getCollapsedState(node),
             node.isOperation ?? false,
+            this.tokenizedFilter,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
             node.documentationUrl
         );
@@ -263,10 +264,12 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         selected: boolean,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
+        filterTokens: string[],
         public readonly children: OpenApiTreeNode[] = [],
         public readonly documentationUrl?: string,
     ) {
         super(label, collapsibleState);
+        this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
         this.contextValue = documentationUrl;
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
