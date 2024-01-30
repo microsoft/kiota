@@ -23,6 +23,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 $"{SerializationModuleName}.composed_type_wrapper",
                 "ComposedTypeWrapper"
             );
+            CorrectCommonNames(generatedCode);
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
+            DisableActionOf(generatedCode,
+            CodeParameterKind.RequestConfiguration);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -33,29 +37,14 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 }, AccessModifier.Public);
-            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = $"{AbstractionsPackageName}.base_request_configuration",
-                        IsExternal = true
-                    }
-                });
             cancellationToken.ThrowIfCancellationRequested();
-            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            DisableActionOf(generatedCode,
-            CodeParameterKind.RequestConfiguration);
-            CorrectCommonNames(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
-            cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
@@ -73,10 +62,18 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonExceptionsReservedNamesProvider(),
                 static x => $"{x}_"
             );
-
+            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
+                        IsExternal = true
+                    }
+                });
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.AdditionalData,
