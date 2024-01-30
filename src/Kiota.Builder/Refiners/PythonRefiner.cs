@@ -48,6 +48,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
+            CorrectCommonNames(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
@@ -55,7 +56,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 GenerationLanguage.Python);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
-            CorrectCommonNames(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
