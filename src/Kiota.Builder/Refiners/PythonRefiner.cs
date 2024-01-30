@@ -175,7 +175,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             StoreModuleName, "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
         new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) || x.Parent is CodeClass), "dataclasses", "dataclass, field"),
-        new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             SerializationModuleName, "ParseNodeHelper"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
             "warnings", "warn"),
