@@ -32,7 +32,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
 
     private void WritePropertyDocComment(CodeProperty codeProperty, LanguageWriter writer)
     {
-        var propertyDescription = codeProperty.Documentation.Description;
+        var propertyDescription = codeProperty.Documentation.DescriptionTemplate;
         var hasDescription = codeProperty.Documentation.DescriptionAvailable;
 
         var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
@@ -63,7 +63,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
 
     private void WriteRequestBuilderBody(CodeProperty codeElement, LanguageWriter writer, string returnType, string propertyAccess, string propertyName)
     {
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
         writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
         writer.IncreaseIndent();
         conventions.AddRequestBuilderBody(returnType, writer);

@@ -742,7 +742,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.DescriptionTemplate)}")
                                             .Union(new[] { returnRemark }));
         if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");

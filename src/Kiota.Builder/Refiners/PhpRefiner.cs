@@ -266,7 +266,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 if (x.IsOfKind(CodeParameterKind.ParseNode))
                     x.Type.Name = "ParseNode";
                 else
-                    x.Documentation.Description += " or a String representing the raw URL.";
+                    x.Documentation.DescriptionTemplate += " or a String representing the raw URL.";
             });
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
                                                 && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(static x =>
@@ -356,7 +356,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     IsAsync = false,
                     Documentation = new()
                     {
-                        Description = $"Instantiates a new {codeClass.Name} and sets the default values.",
+                        DescriptionTemplate = $"Instantiates a new {codeClass.Name} and sets the default values.",
                     },
                     ReturnType = new CodeType { Name = "void" },
                 };
@@ -417,7 +417,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     Kind = CodeMethodKind.Factory,
                     Documentation = new CodeDocumentation
                     {
-                        Description = $"Instantiates a new {queryParameterProperty.Type.Name}."
+                        DescriptionTemplate = $"Instantiates a new {queryParameterProperty.Type.Name}."
                     },
                     ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
                 };

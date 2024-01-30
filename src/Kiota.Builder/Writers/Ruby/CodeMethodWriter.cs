@@ -358,15 +358,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.DescriptionTemplate);
+        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.DescriptionTemplate)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (isDescriptionPresent || parametersWithDescription.Length != 0)
         {
             writer.WriteLine(conventions.DocCommentStart);
             if (isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.DescriptionTemplate)}");
             foreach (var paramWithDescription in parametersWithDescription)
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.DescriptionTemplate)}");
 
             if (code.IsAsync)
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a Fiber of {code.ReturnType.Name.ToSnakeCase()}");

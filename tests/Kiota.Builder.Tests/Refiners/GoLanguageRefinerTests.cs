@@ -663,7 +663,7 @@ public class GoLanguageRefinerTests
             Kind = CodeParameterKind.Cancellation,
             Documentation = new()
             {
-                Description = "Cancellation token to use when cancelling requests",
+                DescriptionTemplate = "Cancellation token to use when cancelling requests",
             },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };

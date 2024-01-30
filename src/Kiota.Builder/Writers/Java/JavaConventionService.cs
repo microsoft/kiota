@@ -110,7 +110,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.DescriptionTemplate)}");
             foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
             if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)

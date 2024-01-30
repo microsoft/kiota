@@ -134,7 +134,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             DefaultValue = "test",
             Documentation = new()
             {
-                Description = "The q option",
+                DescriptionTemplate = "The q option",
             },
             Optional = true
         });
@@ -151,7 +151,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             Type = stringType,
             Documentation = new()
             {
-                Description = "The test header",
+                DescriptionTemplate = "The test header",
             },
         });
     }
@@ -252,7 +252,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesMatchingIndexerCommandsIntoExecutableCommand()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -438,7 +438,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandThatReusesMatchingNavCommandInstance()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType { Name = "string" };
@@ -715,7 +715,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandWithRelatedLinksInDescription()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.Documentation.DocumentationLink = new Uri("https://test.com/help/description");
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
@@ -768,7 +768,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "Documentation label2",
+                DescriptionTemplate = "Documentation label2",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
         });
@@ -783,7 +783,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "Documentation label3",
+                DescriptionTemplate = "Documentation label3",
                 DocumentationLabel = "Test label",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
@@ -823,7 +823,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandForGetRequestPrimitive()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -893,7 +893,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -966,7 +966,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -1142,7 +1142,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             Name = "contentType",
             Kind = CodeParameterKind.RequestBodyContentType,
             Type = stringType,
-            Documentation = new() { Description = "The request content type." },
+            Documentation = new() { DescriptionTemplate = "The request content type." },
             PossibleValues = new List<string> { "application/json", "text/plain" }
         };
         method.OriginalMethod.AddParameter(contentTypeParam);

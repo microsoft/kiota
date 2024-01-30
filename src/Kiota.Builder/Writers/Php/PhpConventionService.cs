@@ -160,7 +160,7 @@ public class PhpConventionService : CommonLanguageConventionService
         {
             writer.WriteLine(DocCommentStart);
             if (codeDocumentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(codeDocumentation.Description)}");
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(codeDocumentation.DescriptionTemplate)}");
             foreach (var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 

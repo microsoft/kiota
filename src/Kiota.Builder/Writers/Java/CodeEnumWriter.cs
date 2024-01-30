@@ -27,7 +27,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         var lastEnumOption = enumOptions.Last();
         foreach (var enumOption in enumOptions)
         {
-            conventions.WriteShortDescription(enumOption.Documentation.Description, writer);
+            conventions.WriteShortDescription(enumOption.Documentation.DescriptionTemplate, writer);
             writer.WriteLine($"{enumOption.Name}(\"{enumOption.SerializationName}\"){(enumOption == lastEnumOption ? ";" : ",")}");
         }
         writer.WriteLines("public final String value;",

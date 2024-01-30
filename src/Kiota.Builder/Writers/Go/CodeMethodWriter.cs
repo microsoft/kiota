@@ -291,7 +291,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer)
     {
         if (code.Documentation.DescriptionAvailable)
-            conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+            conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Documentation.DescriptionTemplate.ToFirstCharacterLowerCase()}", writer);
         conventions.WriteDeprecation(code, writer);
         conventions.WriteLinkDescription(code.Documentation, writer);
     }

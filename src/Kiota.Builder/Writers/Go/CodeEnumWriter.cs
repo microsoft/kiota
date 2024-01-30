@@ -22,7 +22,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock(")");
 
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
         conventions.WriteDeprecation(codeElement, writer);
         writer.WriteLines($"type {typeName} int",
                         string.Empty,
@@ -34,8 +34,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         int power = 0;
         foreach (var item in enumOptions)
         {
-            if (!string.IsNullOrEmpty(item.Documentation.Description))
-                writer.WriteLine($"// {item.Documentation.Description}");
+            if (!string.IsNullOrEmpty(item.Documentation.DescriptionTemplate))
+                writer.WriteLine($"// {item.Documentation.DescriptionTemplate}");
 
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");

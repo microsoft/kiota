@@ -16,7 +16,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
         {

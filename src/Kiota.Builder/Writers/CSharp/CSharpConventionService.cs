@@ -50,7 +50,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         {
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
+                writer.WriteLine($"{DocCommentPrefix}{documentation.DescriptionTemplate.CleanupXMLString()}");
             if (documentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
             writer.WriteLine($"{DocCommentPrefix}</summary>");

@@ -81,7 +81,7 @@ public sealed class CodePropertyWriterTests : IDisposable
     public void WritesRequestBuilder()
     {
         property.Kind = CodePropertyKind.RequestBuilder;
-        property.Documentation.Description = "This is a request builder";
+        property.Documentation.DescriptionTemplate = "This is a request builder";
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("@property", result);
@@ -126,7 +126,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         var cls = new CodeClass
         {
             Name = "MainError",
-            Documentation = new CodeDocumentation { Description = "Some documentation" }
+            Documentation = new CodeDocumentation { DescriptionTemplate = "Some documentation" }
         };
         cls.AddProperty(new CodeProperty { Name = "message", Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
         property.Type.Name = "str";

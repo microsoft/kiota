@@ -87,14 +87,14 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = "Some option description",
+                DescriptionTemplate = "Some option description",
             },
             Name = "option1",
         };
         currentEnum.AddOption(option);
         codeConstantWriter.WriteCodeElement(currentEnum.CodeEnumObject, writer);
         var result = tw.ToString();
-        Assert.Contains($"/** {option.Documentation.Description} */", result);
+        Assert.Contains($"/** {option.Documentation.DescriptionTemplate} */", result);
         AssertExtensions.CurlyBracesAreClosed(result, 0);
     }
 

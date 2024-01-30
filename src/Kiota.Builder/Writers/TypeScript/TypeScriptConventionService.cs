@@ -150,7 +150,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             writer.WriteLine(DocCommentStart);
             if (documentedElement.Documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentedElement.Documentation.Description)}");
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentedElement.Documentation.DescriptionTemplate)}");
             foreach (var additionalRemark in remarks)
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 

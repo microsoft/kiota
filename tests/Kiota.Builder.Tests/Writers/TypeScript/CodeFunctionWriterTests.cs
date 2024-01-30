@@ -692,12 +692,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Factory;
         method.IsStatic = true;
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -731,13 +731,13 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Factory;
         method.IsStatic = true;
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -764,7 +764,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Factory;
         method.IsStatic = true;
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
         method.IsAsync = false;
@@ -772,7 +772,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType

@@ -188,7 +188,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Optional = false,
                     Documentation = new()
                     {
-                        Description = "Discriminator value from the payload",
+                        DescriptionTemplate = "Discriminator value from the payload",
                     },
                     Name = "discriminatorValue"
                 });
@@ -539,7 +539,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Kind = CodeMethodKind.QueryParametersMapper,
                 Documentation = new()
                 {
-                    Description = "Extracts the query parameters into a map for the URI template parsing.",
+                    DescriptionTemplate = "Extracts the query parameters into a map for the URI template parsing.",
                 },
             });
         }

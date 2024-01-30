@@ -43,7 +43,7 @@ public sealed class CodeIndexerWriterTests : IDisposable
                 SerializationName = "id",
                 Documentation = new()
                 {
-                    Description = "some description"
+                    DescriptionTemplate = "some description"
                 }
             }
         };

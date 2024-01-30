@@ -294,7 +294,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Union[str, Dict[str, Any]]";
-                urlTplParams.Documentation.Description = "The raw url or the url-template parameters for the request.";
+                urlTplParams.Documentation.DescriptionTemplate = "The raw url or the url-template parameters for the request.";
             }
         }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters

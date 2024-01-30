@@ -24,7 +24,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         {
             codeElement.Options.ToList().ForEach(x =>
             {
-                conventions.WriteInLineDescription(x.Documentation.Description, writer);
+                conventions.WriteInLineDescription(x.Documentation.DescriptionTemplate, writer);
                 writer.WriteLine($"{x.Name} = \"{x.WireName}\",");
             });
         }

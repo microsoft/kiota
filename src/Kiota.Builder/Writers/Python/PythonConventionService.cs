@@ -176,7 +176,7 @@ public class PythonConventionService : CommonLanguageConventionService
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+                writer.WriteLine($"{RemoveInvalidDescriptionCharacters(documentation.DescriptionTemplate)}");
             foreach (var additionalRemark in additionalRemarksArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{additionalRemark}");
             if (documentation.ExternalDocumentationAvailable)
