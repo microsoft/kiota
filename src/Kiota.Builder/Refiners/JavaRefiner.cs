@@ -108,6 +108,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            RemoveUntypedNodePropertyValues(generatedCode);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();

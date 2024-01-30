@@ -686,7 +686,7 @@ public partial class KiotaBuilder
     private const string CoreInterfaceType = "IRequestAdapter";
     private const string RequestAdapterParameterName = "requestAdapter";
     private const string ConstructorMethodName = "constructor";
-    private const string UntypedNodeName = "UntypedNode";
+    internal const string UntypedNodeName = "UntypedNode";
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
     /// </summary>

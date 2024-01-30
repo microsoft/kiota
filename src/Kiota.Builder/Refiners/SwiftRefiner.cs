@@ -44,6 +44,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             AddDefaultImports(
                 generatedCode,
                 defaultUsingEvaluators);
+            RemoveUntypedNodePropertyValues(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreType(
                 generatedCode,

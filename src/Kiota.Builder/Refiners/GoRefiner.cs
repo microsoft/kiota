@@ -107,6 +107,7 @@ public class GoRefiner : CommonLanguageRefiner
             AddDefaultImports(
                 generatedCode,
                 defaultUsingEvaluators);
+            RemoveUntypedNodePropertyValues(generatedCode);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,

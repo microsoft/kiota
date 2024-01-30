@@ -52,6 +52,7 @@ public class PhpRefiner : CommonLanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddRequestConfigurationConstructors(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            RemoveUntypedNodePropertyValues(generatedCode);
             AddCollectionValidationUtilImportToModels(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddGetterAndSetterMethods(generatedCode,
