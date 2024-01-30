@@ -10,7 +10,7 @@ using Microsoft.OpenApi.Validations;
 namespace Kiota.Builder.Validation;
 public class MissingDiscriminator : ValidationRule<OpenApiDocument>
 {
-    public MissingDiscriminator(GenerationConfiguration configuration) : base(nameof(MissingDiscriminator),(context, document) =>
+    public MissingDiscriminator(GenerationConfiguration configuration) : base(nameof(MissingDiscriminator), (context, document) =>
     {
         var idx = new ConcurrentDictionary<string, ConcurrentDictionary<string, bool>>(StringComparer.OrdinalIgnoreCase);
         document.InitializeInheritanceIndex(idx);

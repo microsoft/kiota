@@ -11,7 +11,7 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
     private static readonly StructuredMimeTypesCollection validContentTypes = new() {
         "application/x-www-form-urlencoded",
     };
-    public UrlFormEncodedComplex() : base(nameof(UrlFormEncodedComplex),static (context, operation) =>
+    public UrlFormEncodedComplex() : base(nameof(UrlFormEncodedComplex), static (context, operation) =>
     {
         if (operation.GetRequestSchema(validContentTypes) is OpenApiSchema requestSchema)
             ValidateSchema(requestSchema, context, operation.OperationId, "request body");
