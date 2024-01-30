@@ -724,12 +724,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine("@staticmethod");
         var accessModifier = conventions.GetAccessModifier(code.Access);
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
-        var methodName = (code.Kind switch
+        var methodName = code.Kind switch
         {
             _ when code.IsAccessor => code.AccessedProperty?.Name,
             _ when isConstructor => "__init__",
             _ => code.Name,
-        });
+        };
         var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async " : string.Empty;
         var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty : "self,";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)

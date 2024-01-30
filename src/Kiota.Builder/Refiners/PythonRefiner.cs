@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +16,11 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            CorrectCommonNames(generatedCode);
-            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            DisableActionOf(generatedCode,
-            CodeParameterKind.RequestConfiguration);
+            AddPrimaryErrorMessage(generatedCode,
+                "primary_message",
+                () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
+                true
+            );
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -32,13 +31,37 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 }, AccessModifier.Public);
+            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
+                        IsExternal = true
+                    }
+                });
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                true,
+                $"{AbstractionsPackageName}.composed_type_wrapper",
+                "ComposedTypeWrapper"
+            );
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
+            DisableActionOf(generatedCode,
+            CodeParameterKind.RequestConfiguration);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
+            cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
+            CorrectCommonNames(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
@@ -56,25 +79,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonExceptionsReservedNamesProvider(),
                 static x => $"{x}_"
             );
-            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = $"{AbstractionsPackageName}.base_request_configuration",
-                        IsExternal = true
-                    }
-                });
+
             cancellationToken.ThrowIfCancellationRequested();
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                static s => s,
-                true,
-                $"{AbstractionsPackageName}.composed_type_wrapper",
-                "ComposedTypeWrapper"
-            );
+
+
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.AdditionalData,
@@ -136,11 +144,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
-            AddPrimaryErrorMessage(generatedCode,
-                "primary_message",
-                () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
-                true
-            );
+
         }, cancellationToken);
     }
 
@@ -267,7 +271,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
             currentProperty.Type.IsNullable = false;
-            currentProperty.Type.Name = "Dict[str, Any]";
+            currentProperty.Type.Name = "Union[str, Dict[str, Any]]";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
@@ -290,20 +294,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType)
             {
-                originalType.Name = "Dict[str, Any]";
-                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeUnionType
-                {
-                    Name = "raw_url_or_template_parameters",
-                    IsNullable = true,
-                };
-                unionType.AddType(originalType, new()
-                {
-                    Name = "str",
-                    IsNullable = true,
-                    IsExternal = true,
-                });
-                urlTplParams.Type = unionType;
+                originalType.Name = "Union[str, Dict[str, Any]]";
+                urlTplParams.Documentation.Description = "The raw url or the url-template parameters for the request.";
             }
         }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
