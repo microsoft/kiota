@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where scalar error mappings would be generated even though it's not supported by the http request adapter. [#4018](https://github.com/microsoft/kiota/issues/4018)
 - Switched to proxy generation for TypeScript, leading to about ~44% bundle sizes reduction. [#3642](https://github.com/microsoft/kiota/issues/3642)
 - Fixed a bug where TypeScript models factory methods would be missing return types.
+- Fixed a bug where generated paths would possibly get too long. [#3854](https://github.com/microsoft/kiota/issues/3854)
+- The vscode extension now also displays the children nodes when filtering. [#3998](https://github.com/microsoft/kiota/issues/3998)
 
 ## [1.10.1] - 2024-01-12
 

@@ -9,7 +9,7 @@ In the case where conflicting API client names would be migrated, the command wi
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
 | `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
-| `--client-name \| --cn` | No | graphDelegated | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
+| `--client-name \| --cn` | No | GraphClient | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
 
 ## Using `kiota config migrate`
 
@@ -77,7 +77,6 @@ _The resulting `apimanifest.json` file will look like this:_
   "apiDependencies": {
     "csharpGraphServiceClient": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
-      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -110,7 +109,6 @@ _The resulting `apimanifest.json` file will look like this:_
     },
     "pythonGraphServiceClient": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
-      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -183,7 +181,7 @@ Assuming the following folder structure:
 ```
 
 ```bash
-kiota config migrate --lock-location ./generated/graph/csharp/kiota-lock.json --client-name graphDelegated
+kiota config migrate --lock-location ./generated/graph/csharp/kiota-lock.json --client-name GraphClient
 ```
 
 _The resulting `kiota-config.json` file will look like this:_
@@ -192,7 +190,7 @@ _The resulting `kiota-config.json` file will look like this:_
 {
   "version": "1.0.0",
   "clients": {
-    "graphDelegated": {
+    "GraphClient": {
       "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
@@ -215,7 +213,7 @@ _The resulting `kiota-config.json` file will look like this:_
 /
   └─.kiota
     └─definitions
-       └─graphDelegated.yaml
+       └─GraphClient.yaml
   └─generated
     └─graph
        └─csharp

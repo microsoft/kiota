@@ -2,13 +2,13 @@
 
 ## Description 
 
-`kiota client add` allows a developer to add a new API client to the `kiota-config.json` file. If no `kiota-config.json` file is found, a new `kiota-config.json` file would be created in thr current working directory. The command will add a new entry to the `clients` section of the `kiota-config.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/descriptions` folder.
+`kiota client add` allows a developer to add a new API client to the `kiota-config.json` file. If no `kiota-config.json` file is found, a new `kiota-config.json` file would be created in the current working directory. The command will add a new entry to the `clients` section of the `kiota-config.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/descriptions` folder. If a client with the same name already exists, the command will fail and display an actionnable error message.
 
 When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
 
 Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/{client-name}` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
 
-At the same time, an [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3) file will be generated (if non existing) or edited (if already existing) to represent the surface of the API being used. This file will be named `apimanifest.json` and next to the `kiota-config.json`. This file will be used to generate the code files.
+At the same time, an [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3) file will be generated (if non existing) or edited (if already existing) to represent the surface of the API being used. This file will be named `apimanifest.json` and next to the `kiota-config.json`. This file will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI description location and the properties of the client will be generated and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3).
 
 Once the `kiota-config.json` file is generated and the OpenAPI description file is saved locally, the code generation will be executed and then the API Manifest would become available.
 
@@ -16,7 +16,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--client-name \| --cn` | Yes | graphDelegated | Name of the client and the client class. Unique within the parent API. Defaults to `Client` |
+| `--client-name \| --cn` | Yes | GraphClient | Name of the client and the client class. Unique within the parent API. Defaults to `Client` |
 | `--openapi \| -d` | Yes | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. |
 | `--search-key \| --sk` | No | github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0 | The search key used to locate the OpenAPI description. |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
@@ -35,7 +35,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 ## Using `kiota client add`
 
 ```bash
-kiota client add --client-name "graphDelegated" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --include-path "**/users/**" --language csharp --class-name "GraphClient" --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
+kiota client add --client-name "GraphClient" --openapi "https://aka.ms/graph/v1.0/openapi.yaml" --include-path "**/users/**" --language csharp --namespace-name "Contoso.GraphApp" --backing-store --exclude-backward-compatible --serializer "Contoso.Json.CustomSerializer" --deserializer "Contoso.Json.CustomDeserializer" -structured-mime-types "application/json" --output "./generated/graph/csharp"
 ```
 
 _The resulting `kiota-config.json` file will look like this:_
@@ -44,13 +44,12 @@ _The resulting `kiota-config.json` file will look like this:_
 {
   "version": "1.0.0",
   "clients": {
-    "graphDelegated": {
+    "GraphClient": {
       "descriptionLocation": "https://aka.ms/graph/v1.0/openapi.yaml",
       "includePatterns": ["**/users/**"],
       "excludePatterns": [],
       "language": "csharp",
       "outputPath": "./generated/graph/csharp",
-      "clientClassName": "GraphClient",
       "clientNamespaceName": "Contoso.GraphApp",
       "structuredMediaTypes": [
         "application/json"
@@ -67,9 +66,8 @@ _The resulting `apimanifest.json` file will look like this:_
 ```jsonc
 {
   "apiDependencies": {
-    "graphDelegated": {
+    "GraphClient": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
-      "x-ms-kiotaVersion": "1.11.0",
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
@@ -109,7 +107,7 @@ _The resulting `apimanifest.json` file will look like this:_
 /
  └─.kiota
     └─definitions
-       └─graphDelegated.yaml
+       └─GraphClient.yaml
  └─generated
     └─graph
        └─csharp

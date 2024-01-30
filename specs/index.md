@@ -16,7 +16,7 @@ config.md)
 
 ## Scenarios
 
-* [Kiota Config](./scenarios/kiota.config.md)
+* [Kiota Config](./scenarios/kiota-config.md)
 
 ## Schemas
 
