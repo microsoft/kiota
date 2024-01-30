@@ -355,15 +355,15 @@ public static partial class KiotaHost
 
         var serializerOption = new Option<List<string>>(
             "--serializer",
-            () => defaultConfiguration.Serializers.ToList(),
-            "The fully qualified class names for serializers. Accepts multiple values.");
+            () => [.. defaultConfiguration.Serializers],
+            "The fully qualified class names for serializers. Accepts multiple values. Use `none` to generate a client without any serializer.");
         serializerOption.AddAlias("-s");
         serializerOption.ArgumentHelpName = "classes";
 
         var deserializerOption = new Option<List<string>>(
             "--deserializer",
-            () => defaultConfiguration.Deserializers.ToList(),
-            "The fully qualified class names for deserializers. Accepts multiple values.");
+            () => [.. defaultConfiguration.Deserializers],
+            "The fully qualified class names for deserializers. Accepts multiple values. Use `none` to generate a client without any deserializer.");
         deserializerOption.AddAlias("--ds");
         deserializerOption.ArgumentHelpName = "classes";
 
@@ -371,7 +371,7 @@ public static partial class KiotaHost
 
         var structuredMimeTypesOption = new Option<List<string>>(
             "--structured-mime-types",
-            () => defaultConfiguration.StructuredMimeTypes.ToList(),
+            () => [.. defaultConfiguration.StructuredMimeTypes],
         "The MIME types with optional priorities as defined in RFC9110 Accept header to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
