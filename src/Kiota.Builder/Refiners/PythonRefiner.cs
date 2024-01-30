@@ -20,7 +20,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 true,
-                $"{AbstractionsPackageName}.composed_type_wrapper",
+                $"{SerializationModuleName}.composed_type_wrapper",
                 "ComposedTypeWrapper"
             );
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
