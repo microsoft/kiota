@@ -6,7 +6,7 @@ using Microsoft.OpenApi.Validations;
 namespace Kiota.Builder.Validation;
 public class MultipleServerEntries : ValidationRule<OpenApiDocument>
 {
-    public MultipleServerEntries() : base(static (context, document) =>
+    public MultipleServerEntries() : base(nameof(MultipleServerEntries),static (context, document) =>
     {
         if (document.Servers.GroupBy(static x => x.Url, StringComparer.OrdinalIgnoreCase).Count() > 1)
             context.CreateWarning(nameof(MultipleServerEntries),

@@ -6,7 +6,7 @@ namespace Kiota.Builder.Validation;
 
 public class NoServerEntry : ValidationRule<OpenApiDocument>
 {
-    public NoServerEntry() : base(static (context, document) =>
+    public NoServerEntry() : base(nameof(NoServerEntry),static (context, document) =>
     {
         if (!document.Servers.Any() || string.IsNullOrEmpty(document.Servers.First().Url?.TrimEnd('/')))
             context.CreateWarning(nameof(NoServerEntry),
