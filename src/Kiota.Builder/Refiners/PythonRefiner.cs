@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,9 +16,15 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                true,
+                $"{SerializationModuleName}.composed_type_wrapper",
+                "ComposedTypeWrapper"
+            );
             CorrectCommonNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -39,6 +44,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
@@ -138,6 +144,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private const string AbstractionsPackageName = "kiota_abstractions";
+    private const string SerializationModuleName = $"{AbstractionsPackageName}.serialization";
+    private const string StoreModuleName = $"{AbstractionsPackageName}.store";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
         new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union"),
@@ -150,25 +158,25 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            $"{AbstractionsPackageName}.serialization", "SerializationWriter"),
+            SerializationModuleName, "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            $"{AbstractionsPackageName}.serialization", "ParseNode"),
+            SerializationModuleName, "ParseNode"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             $"{AbstractionsPackageName}.get_path_parameters", "get_path_parameters"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            $"{AbstractionsPackageName}.serialization", "Parsable", "ParsableFactory"),
+            SerializationModuleName, "Parsable", "ParsableFactory"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            $"{AbstractionsPackageName}.serialization", "Parsable"),
+            SerializationModuleName, "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            $"{AbstractionsPackageName}.serialization", "AdditionalDataHolder"),
+            SerializationModuleName, "AdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            StoreModuleName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            $"{AbstractionsPackageName}.store", "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
+            StoreModuleName, "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
         new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) || x.Parent is CodeClass), "dataclasses", "dataclass, field"),
-        new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
-            $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
+         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
+            SerializationModuleName, "ParseNodeHelper"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
             "warnings", "warn"),
     };
@@ -258,7 +266,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
             currentProperty.Type.IsNullable = false;
-            currentProperty.Type.Name = "Dict[str, Any]";
+            currentProperty.Type.Name = "Union[str, Dict[str, Any]]";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
@@ -281,20 +289,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType)
             {
-                originalType.Name = "Dict[str, Any]";
-                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeUnionType
-                {
-                    Name = "raw_url_or_template_parameters",
-                    IsNullable = true,
-                };
-                unionType.AddType(originalType, new()
-                {
-                    Name = "str",
-                    IsNullable = true,
-                    IsExternal = true,
-                });
-                urlTplParams.Type = unionType;
+                originalType.Name = "Union[str, Dict[str, Any]]";
+                urlTplParams.Documentation.Description = "The raw url or the url-template parameters for the request.";
             }
         }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
