@@ -1840,7 +1840,7 @@ public partial class KiotaBuilder
         if ((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) &&
            (schema.AnyOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
-        return new CodeType { Name = UntypedNodeName ,IsExternal = true};
+        return new CodeType { Name = UntypedNodeName, IsExternal = true };
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
@@ -1854,8 +1854,8 @@ public partial class KiotaBuilder
             var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
         }
-        if (type is null) 
-            return new CodeType { Name = UntypedNodeName,IsExternal = true};
+        if (type is null)
+            return new CodeType { Name = UntypedNodeName, IsExternal = true };
         type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         return type;
     }

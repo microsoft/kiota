@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -1433,9 +1433,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void RemoveUntypedNodePropertyValues(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProperty 
+        if (currentElement is CodeProperty currentProperty
             && currentElement.Parent is CodeClass parentClass
-            && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName,StringComparison.OrdinalIgnoreCase)) 
+            && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
         {
             parentClass.RemoveChildElement(currentProperty);
         }
