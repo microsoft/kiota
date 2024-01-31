@@ -57,7 +57,7 @@ public class CodeDocumentation : ICloneable
     /// Keys MUST match the description template tokens or they will be ignored.
     /// </summary>
     public ConcurrentDictionary<string, CodeTypeBase> TypeReferences { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
-    public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver)
+    public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
     {
         ArgumentNullException.ThrowIfNull(typeReferenceResolver);
         if (string.IsNullOrEmpty(DescriptionTemplate))
@@ -67,9 +67,9 @@ public class CodeDocumentation : ICloneable
         {
             var resolvedValue = value switch
             {
-                CodeComposedTypeBase codeComposedTypeBase => string.Join(", ", codeComposedTypeBase.Types.Select(x => typeReferenceResolver(x)).Order(StringComparer.OrdinalIgnoreCase)) is string s && !string.IsNullOrEmpty(s) ?
+                CodeComposedTypeBase codeComposedTypeBase => string.Join(", ", codeComposedTypeBase.Types.Select(x => $"{typeReferencePrefix}{typeReferenceResolver(x)}{typeReferenceSuffix}").Order(StringComparer.OrdinalIgnoreCase)) is string s && !string.IsNullOrEmpty(s) ?
                                                                     s : typeReferenceResolver(value),
-                _ => typeReferenceResolver(value),
+                _ => $"{typeReferencePrefix}{typeReferenceResolver(value)}{typeReferenceSuffix}",
             };
             if (!string.IsNullOrEmpty(resolvedValue))
                 description = description.Replace($"{{{key}}}", resolvedValue, StringComparison.OrdinalIgnoreCase);
