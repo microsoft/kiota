@@ -186,7 +186,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
                 ReturnType = (CodeTypeBase)currentProperty.Type.Clone(),
-                Documentation = new()
+                Documentation = new(currentProperty.Documentation.TypeReferences.ToDictionary(static x => x.Key, static x => x.Value))
                 {
                     DescriptionTemplate = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.DescriptionTemplate}",
                 },
@@ -201,7 +201,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Setter,
-                Documentation = new()
+                Documentation = new(currentProperty.Documentation.TypeReferences.ToDictionary(static x => x.Key, static x => x.Value))
                 {
                     DescriptionTemplate = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.DescriptionTemplate}",
                 },
