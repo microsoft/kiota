@@ -942,8 +942,8 @@ public partial class KiotaBuilder
         currentClass.AddProperty(pathParametersProperty);
         if (isApiClientClass)
         {
-            constructor.SerializerModules = config.Serializers;
-            constructor.DeserializerModules = config.Deserializers;
+            constructor.SerializerModules = ReplaceNoneSerializersByEmptySet(config.Serializers);
+            constructor.DeserializerModules = ReplaceNoneSerializersByEmptySet(config.Deserializers);
             constructor.BaseUrl = config.ApiRootUrl ?? string.Empty;
             pathParametersProperty.DefaultValue = $"new {pathParametersProperty.Type.Name}()";
         }
@@ -1008,6 +1008,12 @@ public partial class KiotaBuilder
             currentClass.AddMethod(overloadCtor);
         }
     }
+    private static HashSet<string> ReplaceNoneSerializersByEmptySet(HashSet<string> serializers)
+    {
+        if (serializers.Count == 1 && serializers.Contains("none")) return [];
+        return serializers;
+    }
+
     private static readonly Func<CodeClass, int> shortestNamespaceOrder = x => x.GetNamespaceDepth();
     /// <summary>
     /// Remaps definitions to custom types so they can be used later in generation or in refiners

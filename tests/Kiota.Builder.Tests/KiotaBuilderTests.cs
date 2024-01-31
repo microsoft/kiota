@@ -73,6 +73,42 @@ paths:
         Assert.Equal(expected, constructor.BaseUrl);
     }
     [Fact]
+    public async Task HonoursNoneKeyForSerialization()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://graph.microsoft.com/description.yaml", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Graph", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+    }
+    [Fact]
     public async Task DeduplicatesHostNames()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
