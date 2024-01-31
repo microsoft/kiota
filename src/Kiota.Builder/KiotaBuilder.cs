@@ -1721,7 +1721,7 @@ public partial class KiotaBuilder
                 codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
         }
         if (codeDeclaration is CodeClass currentClass &&
-            string.IsNullOrEmpty(currentClass.Documentation.DescriptionTemplate) &&
+            !currentClass.Documentation.DescriptionAvailable &&
             string.IsNullOrEmpty(schema.AllOf.LastOrDefault()?.Description) &&
             !string.IsNullOrEmpty(schema.Description))
             currentClass.Documentation.DescriptionTemplate = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
