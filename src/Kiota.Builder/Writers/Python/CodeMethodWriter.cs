@@ -612,13 +612,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-        writer.WriteLine($"{RequestInfoVarName} = RequestInformation()");
-        UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
-        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
-            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
-                                $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
-        writer.WriteLine($"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("path parameters cannot be null");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template cannot be null");
+        writer.WriteLine($"{RequestInfoVarName} = RequestInformation(Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "''")}, {GetPropertyCall(urlTemplateParamsProperty, "''")})");
+        if (requestParams.requestConfiguration != null)
+            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name})");
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.headers.try_add(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
@@ -820,23 +818,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
         return "send_async";
     }
-
-    private static void UpdateRequestInformationFromRequestConfiguration(RequestParams requestParams, LanguageWriter writer)
-    {
-        if (requestParams.requestConfiguration != null)
-        {
-            writer.StartBlock($"if {requestParams.requestConfiguration.Name}:");
-            var headers = requestParams.Headers?.Name ?? "headers";
-            writer.WriteLine($"{RequestInfoVarName}.headers.add_all({requestParams.requestConfiguration.Name}.{headers})");
-            var queryString = requestParams.QueryParameters;
-            if (queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name})");
-            var options = requestParams.Options?.Name ?? "options";
-            writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name}.{options})");
-            writer.DecreaseIndent();
-        }
-    }
-
     private void UpdateRequestInformationFromRequestBody(CodeMethod codeElement, RequestParams requestParams, CodeProperty requestAdapterProperty, LanguageWriter writer)
     {
         if (requestParams.requestBody != null)

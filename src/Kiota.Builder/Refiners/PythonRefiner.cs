@@ -20,7 +20,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 true,
-                $"{SerializationModuleName}.composed_type_wrapper",
+                $"{SerializationModuleName}",
                 "ComposedTypeWrapper"
             );
             CorrectCommonNames(generatedCode);
@@ -44,6 +44,21 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.request_configuration",
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "QueryParameters",
+                    IsExternal = true,
+                });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
