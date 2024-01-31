@@ -36,7 +36,7 @@ mypy-extensions==1.0.0 ; python_version >= '3.5'
 
 packaging==23.2 ; python_version >= '3.7'
 
-platformdirs==4.1.0 ; python_version >= '3.7'
+platformdirs==4.2.0 ; python_version >= '3.7'
 
 pluggy==1.4.0 ; python_version >= '3.7'
 
@@ -58,7 +58,7 @@ tomlkit==0.12.3 ; python_version >= '3.7'
 
 typing-extensions==4.9.0 ; python_version >= '3.7'
 
-urllib3==2.1.0 ; python_version >= '3.7'
+urllib3==2.2.0 ; python_version >= '3.7'
 
 wrapt==1.15.0 ; python_version < '3.11'
 
@@ -82,7 +82,7 @@ azure-identity==1.15.0
 
 cffi==1.16.0
 
-cryptography==42.0.1 ; python_version >= '3.7'
+cryptography==42.0.2 ; python_version >= '3.7'
 
 frozenlist==1.4.1 ; python_version >= '3.7'
 
