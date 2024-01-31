@@ -272,6 +272,66 @@ public class PythonLanguageRefinerTests
         Assert.Contains("response_status_code_", exception.Properties.Select(x => x.Name));
     }
     [Fact]
+    public async Task ConvertsUnionTypesToWrapper()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var union = new CodeUnionType
+        {
+            Name = "union",
+        };
+        union.AddType(new()
+        {
+            Name = "type1",
+        }, new()
+        {
+            Name = "type2"
+        });
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "deserialize",
+            Kind = CodePropertyKind.Custom,
+            Type = union.Clone() as CodeTypeBase,
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            ReturnType = union.Clone() as CodeTypeBase
+        }).First();
+        var parameter = new CodeParameter
+        {
+            Name = "param1",
+            Type = union.Clone() as CodeTypeBase
+        };
+        var indexer = new CodeIndexer
+        {
+            Name = "idx",
+            ReturnType = union.Clone() as CodeTypeBase,
+            IndexParameter = new()
+            {
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
+        };
+        model.AddIndexer(indexer);
+        method.AddParameter(parameter);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        Assert.True(property.Type is CodeType);
+        Assert.True(parameter.Type is CodeType);
+        Assert.True(method.ReturnType is CodeType);
+        var resultingWrapper = root.FindChildByName<CodeClass>("union");
+        Assert.NotNull(resultingWrapper);
+        Assert.NotNull(resultingWrapper.OriginalComposedType);
+        Assert.Contains("ComposedTypeWrapper", resultingWrapper.StartBlock.Implements.Select(static x => x.Name));
+        Assert.Null(resultingWrapper.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.ComposedTypeMarker)));
+    }
+    [Fact]
     public async Task CorrectsCoreType()
     {
 
@@ -369,7 +429,7 @@ public class PythonLanguageRefinerTests
         Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
+        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeTypeBase));
     }
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType()

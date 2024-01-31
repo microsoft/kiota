@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed serialization of scalar members in union types for Python. [#2828](https://github.com/microsoft/kiota/issues/2828)
 - Fixed a bug where scalar error mappings would be generated even though it's not supported by the http request adapter. [#4018](https://github.com/microsoft/kiota/issues/4018)
 - Switched to proxy generation for TypeScript, leading to about ~44% bundle sizes reduction. [#3642](https://github.com/microsoft/kiota/issues/3642)
 - Fixed a bug where TypeScript models factory methods would be missing return types.
