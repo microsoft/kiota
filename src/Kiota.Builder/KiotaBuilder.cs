@@ -1334,7 +1334,7 @@ public partial class KiotaBuilder
                     {
                         Kind = CodeClassKind.Model,
                         Name = obsoleteTypeName,
-                        Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true),
+                        Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", codeType } }),
                         Documentation = (CodeDocumentation)codeClass.Documentation.Clone()
                     };
                     var originalFactoryMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Factory);
@@ -1362,7 +1362,7 @@ public partial class KiotaBuilder
                         _ => throw new InvalidOperationException("Could not create an obsolete composed type"),
                     };
                     obsoleteComposedType.Name = obsoleteTypeName;
-                    obsoleteComposedType.Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true);
+                    obsoleteComposedType.Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", modelType } });
                     return (modelType, obsoleteComposedType);
                 }
             }
@@ -1463,7 +1463,7 @@ public partial class KiotaBuilder
                 additionalExecutorMethod.ReturnType = returnTypes.Item2;
                 additionalExecutorMethod.OriginalMethod = executorMethod;
                 var newName = $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}";
-                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
+                additionalExecutorMethod.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = executorMethod, IsExternal = false } } });
                 parentClass.RenameChildElement(executorMethod.Name, newName);
                 parentClass.AddMethod(additionalExecutorMethod);
             }
@@ -2463,7 +2463,7 @@ public partial class KiotaBuilder
                 var modernProp = (CodeProperty)prop.Clone();
                 modernProp.Name = $"{prop.Name}As{modernProp.Type.Name.ToFirstCharacterUpperCase()}";
                 modernProp.SerializationName = prop.WireName;
-                prop.Deprecation = new($"This property is deprecated, use {modernProp.Name} instead", IsDeprecated: true);
+                prop.Deprecation = new("This property is deprecated, use {TypeName} instead", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = modernProp, IsExternal = false } } });
                 prop.Type = GetDefaultQueryParameterType();
                 prop.Type.CollectionKind = modernProp.Type.CollectionKind;
                 parameterClass.AddProperty(modernProp, prop);

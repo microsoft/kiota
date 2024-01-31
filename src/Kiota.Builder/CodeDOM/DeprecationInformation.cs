@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Kiota.Builder.CodeDOM;
 
-public record DeprecationInformation(string? DescriptionTemplate, DateTimeOffset? Date = null, DateTimeOffset? RemovalDate = null, string? Version = "", bool IsDeprecated = true, IDictionary<string, CodeTypeBase>? TypeReferences = null)
+public record DeprecationInformation(string? DescriptionTemplate, DateTimeOffset? Date = null, DateTimeOffset? RemovalDate = null, string? Version = "", bool IsDeprecated = true, Dictionary<string, CodeTypeBase>? TypeReferences = null)
 {
     public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
     {
