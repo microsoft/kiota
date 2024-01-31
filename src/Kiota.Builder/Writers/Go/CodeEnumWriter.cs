@@ -22,7 +22,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock(")");
 
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
+        conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecation(codeElement, writer);
         writer.WriteLines($"type {typeName} int",
                         string.Empty,

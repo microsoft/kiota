@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
                 writer.WriteLine(x);
             writer.StartBlock($"namespace {codeNamespace.Name} {{");
         }
-        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
+        conventions.WriteShortDescription(codeElement, writer);
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
@@ -37,7 +37,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         var idx = 0;
         foreach (var option in codeElement.Options)
         {
-            conventions.WriteShortDescription(option.Documentation.DescriptionTemplate, writer);
+            conventions.WriteShortDescription(option, writer);
 
             if (option.IsNameEscaped)
             {

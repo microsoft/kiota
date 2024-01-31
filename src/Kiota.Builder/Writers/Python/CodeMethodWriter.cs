@@ -387,7 +387,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
                 defaultValue = $"{enumDefinition.Name}({defaultValue})";
             }
-            conventions.WriteInLineDescription(propWithDefault.Documentation.DescriptionTemplate, writer);
+            conventions.WriteInLineDescription(propWithDefault, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
                 writer.WriteLine($"{propWithDefault.Name}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
@@ -416,7 +416,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 defaultValue = $"{enumDefinition.Name}({defaultValue})";
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
-            conventions.WriteInLineDescription(propWithDefault.Documentation.DescriptionTemplate, writer);
+            conventions.WriteInLineDescription(propWithDefault, writer);
             var setterString = $"{propWithDefault.Name}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}";
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
@@ -434,7 +434,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
-            conventions.WriteInLineDescription(propWithoutDefault.Documentation.DescriptionTemplate, writer);
+            conventions.WriteInLineDescription(propWithoutDefault, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
                 writer.WriteLine($"{propWithoutDefault.Name}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
             else
@@ -706,13 +706,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
         var returnRemark = isVoid ? "Returns: None" : $"Returns: {nullablePrefix}{returnType}{nullableSuffix}";
-        conventions.WriteLongDescription(code.Documentation,
+        conventions.WriteLongDescription(code,
                                            writer,
                                            code.Parameters
                                                .Where(static x => x.Documentation.DescriptionAvailable)
                                                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                               .Select(x => $"param {x.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.DescriptionTemplate)}")
-                                               .Union(new[] { returnRemark }));
+                                               .Select(x => $"param {x.Name}: {x.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: PythonConventionService.RemoveInvalidDescriptionCharacters)}")
+                                               .Union([returnRemark]));
         conventions.WriteDeprecationWarning(code, writer);
     }
     private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();

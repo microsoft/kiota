@@ -541,11 +541,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        conventions.WriteLongDescription(code.Documentation, writer);
+        conventions.WriteLongDescription(code, writer);
         foreach (var paramWithDescription in code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.DescriptionTemplate.CleanupXMLString()}</param>");
+            conventions.WriteShortDescription(paramWithDescription, writer, $"<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">", "</param>");
         conventions.WriteDeprecationAttribute(code, writer);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();

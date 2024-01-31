@@ -11,7 +11,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
-        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
+        conventions.WriteShortDescription(codeElement, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         switch (codeElement.Kind)

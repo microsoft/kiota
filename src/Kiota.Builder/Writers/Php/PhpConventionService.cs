@@ -135,37 +135,44 @@ public class PhpConventionService : CommonLanguageConventionService
         return codeParameter.Optional ? $"{doc}|null" : doc;
     }
 
-    private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-        {
-            writer.WriteLine(DocCommentStart);
-            writer.WriteLine(
-                $"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(description)}");
-            writer.WriteLine(DocCommentEnd);
-        }
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+
+        writer.WriteLine(DocCommentStart);
+        writer.WriteLine($"{DocCommentPrefix}{description}");
+        writer.WriteLine(DocCommentEnd);
     }
 
-    public void WriteLongDescription(CodeDocumentation codeDocumentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
+    public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeDocumentation is null) return;
-        additionalRemarks ??= Enumerable.Empty<string>();
+        ArgumentNullException.ThrowIfNull(element);
+        if (element.Documentation is not { } documentation) return;
+        if (element is not CodeElement codeElement) return;
+        additionalRemarks ??= [];
 
         var enumerableArray = additionalRemarks as string[] ?? additionalRemarks.ToArray();
-        if (codeDocumentation.DescriptionAvailable || codeDocumentation.ExternalDocumentationAvailable ||
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable ||
             enumerableArray.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
-            if (codeDocumentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(codeDocumentation.DescriptionTemplate)}");
+            if (documentation.DescriptionAvailable)
+            {
+                var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
             foreach (var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
-            if (codeDocumentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@link {codeDocumentation.DocumentationLink} {codeDocumentation.DocumentationLabel}");
+            if (documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@link {documentation.DocumentationLink} {documentation.DocumentationLabel}");
             writer.WriteLine(DocCommentEnd);
         }
 

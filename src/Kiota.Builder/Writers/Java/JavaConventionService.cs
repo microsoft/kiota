@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java;
@@ -93,24 +92,34 @@ public partial class JavaConventionService : CommonLanguageConventionService
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    private const string ReferenceTypePrefix = "{@link #";
+    private const string ReferenceTypeSuffix = "}";
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+
+        writer.WriteLine($"{DocCommentStart} {description}{DocCommentEnd}");
     }
     public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
         if (element is not IDocumentedElement documentedElement || documentedElement.Documentation is not CodeDocumentation documentation) return;
         if (additionalRemarks == default)
-            additionalRemarks = Enumerable.Empty<string>();
+            additionalRemarks = [];
         var remarks = additionalRemarks.ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.DescriptionTemplate)}");
+            {
+                var description = documentedElement.Documentation.GetDescription(x => GetTypeString(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
             foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
             if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)

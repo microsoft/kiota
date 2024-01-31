@@ -57,16 +57,16 @@ public class CodeDocumentation : ICloneable
     /// Keys MUST match the description template tokens or they will be ignored.
     /// </summary>
     public ConcurrentDictionary<string, CodeTypeBase> TypeReferences { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
-    public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
+    public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver, string? typeReferencePrefix = null, string? typeReferenceSuffix = null, Func<string, string>? normalizationFunc = null)
     {
-        return GetDescriptionInternal(DescriptionTemplate, typeReferenceResolver, TypeReferences, typeReferencePrefix, typeReferenceSuffix);
+        return GetDescriptionInternal(DescriptionTemplate, typeReferenceResolver, TypeReferences, typeReferencePrefix, typeReferenceSuffix, normalizationFunc);
     }
-    internal static string GetDescriptionInternal(string descriptionTemplate, Func<CodeTypeBase, string> typeReferenceResolver, IDictionary<string, CodeTypeBase>? typeReferences = null, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
+    internal static string GetDescriptionInternal(string descriptionTemplate, Func<CodeTypeBase, string> typeReferenceResolver, IDictionary<string, CodeTypeBase>? typeReferences = null, string? typeReferencePrefix = null, string? typeReferenceSuffix = null, Func<string, string>? normalizationFunc = null)
     {
         ArgumentNullException.ThrowIfNull(typeReferenceResolver);
         if (string.IsNullOrEmpty(descriptionTemplate))
             return string.Empty;
-        var description = descriptionTemplate;
+        var description = normalizationFunc is null ? descriptionTemplate : normalizationFunc(descriptionTemplate);
         if (typeReferences is not null)
             foreach (var (key, value) in typeReferences)
             {

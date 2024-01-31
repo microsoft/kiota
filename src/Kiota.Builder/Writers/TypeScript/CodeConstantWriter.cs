@@ -226,7 +226,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeEnum.Options.ToList().ForEach(x =>
         {
-            conventions.WriteShortDescription(x.Documentation.DescriptionTemplate, writer);
+            conventions.WriteShortDescription(x, writer);
             writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
         });
         writer.CloseBlock("} as const;");

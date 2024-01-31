@@ -36,21 +36,31 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("#endif", false);
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    private const string ReferenceTypePrefix = "<see cref=\"";
+    private const string ReferenceTypeSuffix = "\"/>";
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
+        ArgumentNullException.ThrowIfNull(element);
+        if (element is not CodeElement codeElement) return;
+        if (!element.Documentation.DescriptionAvailable) return;
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+        writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer)
+    public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
+        ArgumentNullException.ThrowIfNull(element);
+        if (element.Documentation is not { } documentation) return;
+        if (element is not CodeElement codeElement) return;
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable)
         {
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.DescriptionTemplate.CleanupXMLString()}");
+            {
+                var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
             if (documentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
             writer.WriteLine($"{DocCommentPrefix}</summary>");

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -742,8 +743,8 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.DescriptionTemplate)}")
-                                            .Union(new[] { returnRemark }));
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(y => conventions.GetTypeString(y, code), normalizationFunc: JavaConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Union([returnRemark]));
         if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }

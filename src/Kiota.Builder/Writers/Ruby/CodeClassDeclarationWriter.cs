@@ -54,7 +54,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
 
         var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetNormalizedNamespacePrefixForType(codeElement.Inherits)}{codeElement.Inherits.Name.ToFirstCharacterUpperCase()}";
         if (codeElement.Parent is CodeClass parentClass)
-            conventions.WriteShortDescription(parentClass.Documentation.DescriptionTemplate, writer);
+            conventions.WriteShortDescription(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
         var mixins = !codeElement.Implements.Any() ? string.Empty : $"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}";
         writer.WriteLine($"{mixins}");

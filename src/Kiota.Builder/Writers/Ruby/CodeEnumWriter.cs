@@ -12,11 +12,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (!(codeElement?.Options.Any() ?? false))
+        if (!codeElement.Options.Any())
             return;
         if (codeElement.Parent is CodeNamespace ns)
             conventions.WriteNamespaceModules(ns, writer);
-        conventions.WriteShortDescription(codeElement.Documentation.DescriptionTemplate, writer);
+        conventions.WriteShortDescription(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));
         writer.CloseBlock();

@@ -42,8 +42,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.DescriptionTemplate)}")
-                                            .Union(new[] { returnRemark }));
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => typeScriptConventionService.GetTypeString(type, code), TypeScriptConventionService.ReferenceTypePrefix, TypeScriptConventionService.ReferenceTypeSuffix, TypeScriptConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Union([returnRemark]));
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
