@@ -183,7 +183,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
-            AbstractionsNamespaceName, "RequestHeaders"),
+            AbstractionsNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
             "System.Runtime.Serialization", "EnumMemberAttribute"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
