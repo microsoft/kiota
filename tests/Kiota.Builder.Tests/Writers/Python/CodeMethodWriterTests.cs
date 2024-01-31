@@ -668,14 +668,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info = RequestInformation()", result);
-        Assert.Contains("request_info.http_method = Method", result);
-        Assert.Contains("request_info.url_template = ", result);
-        Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info = RequestInformation(Method.GET, self.url_template, self.path_parameters)", result);
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json, text/plain\")", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.add_request_options", result);
-        Assert.Contains("request_info.set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("request_info.configure(c)", result);
         Assert.Contains("set_content_from_scalar", result);
         Assert.Contains("return request_info", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -692,16 +687,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info = RequestInformation()", result);
-        Assert.Contains("request_info.http_method = Method", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.headers.add_all(c.h)", result);
-        Assert.Contains("request_info.url_template = ", result);
-        Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info = RequestInformation(Method.GET, self.url_template, self.path_parameters", result);
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json, text/plain\")", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.add_request_options", result);
-        Assert.Contains("request_info.set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("request_info.configure(c)", result);
         Assert.Contains("set_content_from_parsable", result);
         Assert.Contains("return request_info", result);
     }
