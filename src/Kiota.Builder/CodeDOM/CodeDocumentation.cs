@@ -59,21 +59,26 @@ public class CodeDocumentation : ICloneable
     public ConcurrentDictionary<string, CodeTypeBase> TypeReferences { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
     public string GetDescription(Func<CodeTypeBase, string> typeReferenceResolver, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
     {
+        return GetDescriptionInternal(DescriptionTemplate, typeReferenceResolver, TypeReferences, typeReferencePrefix, typeReferenceSuffix);
+    }
+    internal static string GetDescriptionInternal(string descriptionTemplate, Func<CodeTypeBase, string> typeReferenceResolver, IDictionary<string, CodeTypeBase>? typeReferences = null, string? typeReferencePrefix = null, string? typeReferenceSuffix = null)
+    {
         ArgumentNullException.ThrowIfNull(typeReferenceResolver);
-        if (string.IsNullOrEmpty(DescriptionTemplate))
+        if (string.IsNullOrEmpty(descriptionTemplate))
             return string.Empty;
-        var description = DescriptionTemplate;
-        foreach (var (key, value) in TypeReferences)
-        {
-            var resolvedValue = value switch
+        var description = descriptionTemplate;
+        if (typeReferences is not null)
+            foreach (var (key, value) in typeReferences)
             {
-                CodeComposedTypeBase codeComposedTypeBase => string.Join(", ", codeComposedTypeBase.Types.Select(x => $"{typeReferencePrefix}{typeReferenceResolver(x)}{typeReferenceSuffix}").Order(StringComparer.OrdinalIgnoreCase)) is string s && !string.IsNullOrEmpty(s) ?
-                                                                    s : typeReferenceResolver(value),
-                _ => $"{typeReferencePrefix}{typeReferenceResolver(value)}{typeReferenceSuffix}",
-            };
-            if (!string.IsNullOrEmpty(resolvedValue))
-                description = description.Replace($"{{{key}}}", resolvedValue, StringComparison.OrdinalIgnoreCase);
-        }
+                var resolvedValue = value switch
+                {
+                    CodeComposedTypeBase codeComposedTypeBase => string.Join(", ", codeComposedTypeBase.Types.Select(x => $"{typeReferencePrefix}{typeReferenceResolver(x)}{typeReferenceSuffix}").Order(StringComparer.OrdinalIgnoreCase)) is string s && !string.IsNullOrEmpty(s) ?
+                                                                        s : typeReferenceResolver(value),
+                    _ => $"{typeReferencePrefix}{typeReferenceResolver(value)}{typeReferenceSuffix}",
+                };
+                if (!string.IsNullOrEmpty(resolvedValue))
+                    description = description.Replace($"{{{key}}}", resolvedValue, StringComparison.OrdinalIgnoreCase);
+            }
         return description;
     }
     public bool DescriptionAvailable
