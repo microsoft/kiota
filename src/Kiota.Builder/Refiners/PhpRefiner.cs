@@ -354,9 +354,11 @@ public class PhpRefiner : CommonLanguageRefiner
                     Name = "constructor",
                     Kind = CodeMethodKind.Constructor,
                     IsAsync = false,
-                    Documentation = new()
+                    Documentation = new(new() {
+                        { "TypeName", new CodeType { TypeDefinition = codeClass, IsExternal = false }}
+                    })
                     {
-                        DescriptionTemplate = $"Instantiates a new {codeClass.Name} and sets the default values.",
+                        DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
                     },
                     ReturnType = new CodeType { Name = "void" },
                 };
@@ -415,9 +417,11 @@ public class PhpRefiner : CommonLanguageRefiner
                     IsStatic = true,
                     Access = AccessModifier.Public,
                     Kind = CodeMethodKind.Factory,
-                    Documentation = new CodeDocumentation
+                    Documentation = new(new() {
+                        { "TypeName", queryParameterProperty.Type }
+                    })
                     {
-                        DescriptionTemplate = $"Instantiates a new {queryParameterProperty.Type.Name}."
+                        DescriptionTemplate = "Instantiates a new {TypeName}."
                     },
                     ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
                 };

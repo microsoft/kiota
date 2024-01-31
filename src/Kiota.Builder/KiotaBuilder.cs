@@ -926,9 +926,15 @@ public partial class KiotaBuilder
             Kind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
             IsAsync = false,
             IsStatic = false,
-            Documentation = new()
+            Documentation = new(new() {
+                                {"TypeName", new CodeType {
+                                    IsExternal = false,
+                                    TypeDefinition = currentClass,
+                                }
+                            }
+            })
             {
-                DescriptionTemplate = $"Instantiates a new {currentClass.Name.ToFirstCharacterUpperCase()} and sets the default values.",
+                DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
             },
             Access = AccessModifier.Public,
             ReturnType = new CodeType { Name = VoidType, IsExternal = true },

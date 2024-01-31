@@ -249,9 +249,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = "void"
                 },
                 IsAsync = false,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypeName", new CodeType() {
+                        IsExternal = false,
+                        TypeDefinition = current,
+                    }}
+                })
                 {
-                    DescriptionTemplate = $"Instantiates a new {current.Name} and sets the default values.",
+                    DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
                 },
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
@@ -472,7 +477,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}";
+            "Composed type wrapper for classes {TypesList}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
@@ -481,7 +486,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = @namespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
                     DescriptionTemplate = description,
                 },
@@ -493,7 +500,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = targetNamespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
                     DescriptionTemplate = description
                 },
@@ -513,7 +522,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = codeClass.AddInnerClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
                     DescriptionTemplate = description
                 },
@@ -526,9 +537,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 {
                                     Name = x.Name,
                                     Type = x,
-                                    Documentation = new()
+                                    Documentation = new(new() {
+                                        { "TypeName", x }
+                                    })
                                     {
-                                        DescriptionTemplate = $"Composed type representation for type {x.Name}"
+                                        DescriptionTemplate = "Composed type representation for type {TypeName}"
                                     },
                                 }).ToArray());
         if (codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
