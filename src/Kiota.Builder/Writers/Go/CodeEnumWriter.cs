@@ -34,7 +34,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         int power = 0;
         foreach (var item in enumOptions)
         {
-            if (!string.IsNullOrEmpty(item.Documentation.DescriptionTemplate))
+            if (item.Documentation.DescriptionAvailable)
                 writer.WriteLine($"// {item.Documentation.DescriptionTemplate}");
 
             if (isMultiValue)
@@ -53,7 +53,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         WriteMultiValueFunction(codeElement, writer, isMultiValue);
     }
 
-    private void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, bool isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         var enumOptions = codeElement.Options.ToList();
