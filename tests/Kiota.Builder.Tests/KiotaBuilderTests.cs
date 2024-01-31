@@ -1280,7 +1280,7 @@ paths:
         Assert.NotNull(valueProp);
         var unknownProp = userResponseClass.FindChildByName<CodeProperty>("unknown", false);
         Assert.NotNull(unknownProp);
-        Assert.Equal("UntypedNode", unknownProp.Type.Name);// left out property is an UntypedNode
+        Assert.Equal(KiotaBuilder.UntypedNodeName, unknownProp.Type.Name);// left out property is an UntypedNode
     }
     [Fact]
     public void TextPlainEndpointsAreSupported()
