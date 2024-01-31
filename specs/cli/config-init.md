@@ -30,6 +30,5 @@ _The resulting `kiota-config.json` file will look like this:_
 ## File structure
 ```bash
 /
- └─.kiota
-    └─kiota-config.json
+ └─kiota-config.json
 ```

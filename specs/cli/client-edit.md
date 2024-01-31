@@ -101,7 +101,7 @@ _The resulting `apimanifest.json` file will look like this:_
 ```bash
 /
  └─.kiota
-    └─definitions
+    └─clients
        └─GraphClient.yaml
  └─generated
     └─graph
