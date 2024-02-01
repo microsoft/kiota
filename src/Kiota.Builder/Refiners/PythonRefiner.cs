@@ -47,16 +47,16 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing
                 {
-                    Name = "RequestConfiguration",
+                    Name = "BaseRequestConfiguration",
                     Declaration = new CodeType
                     {
-                        Name = $"{AbstractionsPackageName}.request_configuration",
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
                         IsExternal = true
                     }
                 },
                 new CodeType
                 {
-                    Name = "QueryParameters",
+                    Name = "GetQueryParameters",
                     IsExternal = true,
                 });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
