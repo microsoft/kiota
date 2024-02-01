@@ -56,7 +56,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 new CodeType
                 {
-                    Name = "GetQueryParameters",
+                    Name = "QueryParameters",
                     IsExternal = true,
                 });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
@@ -77,17 +77,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonExceptionsReservedNamesProvider(),
                 static x => $"{x}_"
             );
-            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = $"{AbstractionsPackageName}.base_request_configuration",
-                        IsExternal = true
-                    }
-                });
-            cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ReplacePropertyNames(generatedCode,
                 new() {
