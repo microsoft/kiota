@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.11.0] - 2024-02-01
+
+### Added
+
 - Added 'none' key for serializer and deserializer arguments to enable portable clients generation. [#3796](https://github.com/microsoft/kiota/issues/3796)
 - Added Japanese translations to vscode extension.
 - Added support for deprecation annotations in Python. [#2798](https://github.com/microsoft/kiota/issues/2798)
@@ -1232,5 +1238,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
