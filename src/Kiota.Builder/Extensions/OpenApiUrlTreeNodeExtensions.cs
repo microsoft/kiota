@@ -194,16 +194,23 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                         pathItem.Operations
                                                 .SelectMany(static x => x.Value.Parameters)
                                                 .Where(static x => x.In == ParameterLocation.Query))
-                                    .DistinctBy(static x => x.Name)
+                                    .DistinctBy(static x => x.Name, StringComparer.Ordinal)
+                                    .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                     .ToArray();
             if (parameters.Length != 0)
-                queryStringParameters = "{?" +
-                                        parameters.Select(static x =>
+            {
+                var requiredParameters = string.Join("&", parameters.Where(static x => x.Required)
+                                                .Select(static x =>
+                                                            $"{x.Name}={{{x.Name.SanitizeParameterNameForUrlTemplate()}}}"));
+                var optionalParameters = string.Join(",", parameters.Where(static x => !x.Required)
+                                                .Select(static x =>
                                                             x.Name.SanitizeParameterNameForUrlTemplate() +
                                                             (x.Explode ?
-                                                                "*" : string.Empty))
-                                                .Aggregate(static (x, y) => $"{x},{y}") +
-                                        '}';
+                                                                "*" : string.Empty)));
+                var hasRequiredParameters = !string.IsNullOrEmpty(requiredParameters);
+                var hasOptionalParameters = !string.IsNullOrEmpty(optionalParameters);
+                queryStringParameters = $"{(hasRequiredParameters ? "?" : string.Empty)}{requiredParameters}{(hasOptionalParameters ? "{" : string.Empty)}{(hasOptionalParameters && hasRequiredParameters ? "&" : string.Empty)}{(hasOptionalParameters && !hasRequiredParameters ? "?" : string.Empty)}{optionalParameters}{(hasOptionalParameters ? "}" : string.Empty)}";
+            }
         }
         var pathReservedPathParametersIds = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pItem) ?
                                                 pItem.Parameters

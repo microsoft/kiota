@@ -131,13 +131,13 @@ public class OpenApiUrlTreeNodeExtensionsTests
     {
         var doc = new OpenApiDocument
         {
-            Paths = new(),
+            Paths = [],
         };
         doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
-                        Parameters = new List<OpenApiParameter> {
+                        Parameters = [
                             new() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
@@ -155,12 +155,12 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 },
                                 Style = ParameterStyle.Simple,
                             }
-                        }
+                        ]
                     }
                 },
                 {
                     OperationType.Put, new() {
-                        Parameters = new List<OpenApiParameter> {
+                        Parameters = [
                             new() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
@@ -178,7 +178,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 },
                                 Style = ParameterStyle.Simple,
                             }
-                        }
+                        ]
                     }
                 }
             }
@@ -187,19 +187,280 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
+    [Fact]
+    public void GeneratesRequiredQueryParametersAndOptionalMixInPathItem()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Parameters = {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "filter",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "apikey",
+                            In = ParameterLocation.Query,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    },
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}{&filter*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesRequiredQueryParametersAndOptionalMixInOperation()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                              Parameters = {
+                                new OpenApiParameter {
+                                    Name = "id",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "filter",
+                                    In = ParameterLocation.Query,
+                                    Required = false,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "apikey",
+                                    In = ParameterLocation.Query,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                }
+                            },
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}{&filter*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesOnlyOptionalQueryParametersInPathItem()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Parameters = {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "filter",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "apikey",
+                            In = ParameterLocation.Query,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    },
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager{?apikey*,filter*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesOnlyOptionalQueryParametersInOperation()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                              Parameters = {
+                                new OpenApiParameter {
+                                    Name = "id",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "filter",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "apikey",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                }
+                            },
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager{?apikey*,filter*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesOnlyRequiredQueryParametersInPathItem()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Parameters = {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "filter",
+                            In = ParameterLocation.Query,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "apikey",
+                            Required = true,
+                            In = ParameterLocation.Query,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    },
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}&filter={filter}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesOnlyRequiredQueryParametersInOperation()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                              Parameters = {
+                                new OpenApiParameter {
+                                    Name = "id",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "filter",
+                                    Required = true,
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                                new OpenApiParameter {
+                                    Name = "apikey",
+                                    Required = true,
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                }
+                            },
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}&filter={filter}", node.Children.First().Value.GetUrlTemplate());
+    }
 
     [Fact]
     public void GetUrlTemplateCleansInvalidParameters()
     {
         var doc = new OpenApiDocument
         {
-            Paths = new(),
+            Paths = [],
         };
         doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
-                        Parameters = new List<OpenApiParameter> {
+                        Parameters = [
                             new() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
@@ -241,13 +502,13 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 },
                                 Style = ParameterStyle.Simple,
                             }
-                        }
+                        ]
                     }
                 }
             }
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select,api%2Dversion,api%7Etopic,api%2Eencoding}", node.Children.First().Value.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select,api%2Dversion,api%2Eencoding,api%7Etopic}", node.Children.First().Value.GetUrlTemplate());
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
     [InlineData("\\reviews\\search.json", "reviews.searchJson")]
