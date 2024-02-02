@@ -715,7 +715,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("@param ", result);
         Assert.Contains(ParamName, result);
         Assert.Contains(ParamDescription, result);
-        Assert.Contains("@returns a Promise of", result);
+        Assert.Contains("@returns {Promise<", result);
         Assert.Contains("*/", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
@@ -750,7 +750,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
         var result = tw.ToString();
-        Assert.DoesNotContain("@returns a Promise of", result);
+        Assert.DoesNotContain("@returns {Promise<", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
