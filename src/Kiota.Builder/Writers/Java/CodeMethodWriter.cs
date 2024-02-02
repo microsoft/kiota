@@ -737,13 +737,13 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     {
         var returnVoid = baseReturnType.Equals("void", StringComparison.OrdinalIgnoreCase);
         // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
-        var returnRemark = returnVoid ? string.Empty : $"@return a {finalReturnType}";
+        var returnRemark = returnVoid ? string.Empty : conventions.GetReturnDocComment(finalReturnType);
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(y => conventions.GetTypeString(y, code), normalizationFunc: JavaConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(y => conventions.GetTypeReferenceForDocComment(y, code), normalizationFunc: JavaConventionService.RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark]));
         if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");

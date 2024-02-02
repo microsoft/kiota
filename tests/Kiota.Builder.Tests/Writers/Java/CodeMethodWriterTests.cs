@@ -654,6 +654,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"401\", Error401::createFromDiscriminatorValue);", result);
         Assert.Contains("send", result);
+        Assert.Contains("@return", result);
+        Assert.Contains("@link", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

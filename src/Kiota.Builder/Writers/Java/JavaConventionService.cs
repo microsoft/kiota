@@ -92,7 +92,11 @@ public partial class JavaConventionService : CommonLanguageConventionService
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
-    private const string ReferenceTypePrefix = "{@link #";
+    internal string GetReturnDocComment(string returnType)
+    {
+        return $"@return a {ReferenceTypePrefix}{returnType}{ReferenceTypeSuffix}";
+    }
+    private const string ReferenceTypePrefix = "{@link ";
     private const string ReferenceTypeSuffix = "}";
     public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
@@ -101,9 +105,15 @@ public partial class JavaConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return;
         if (element is not CodeElement codeElement) return;
 
-        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
 
         writer.WriteLine($"{DocCommentStart} {description}{DocCommentEnd}");
+    }
+    internal string GetTypeReferenceForDocComment(CodeTypeBase code, CodeElement targetElement)
+    {
+        if (code is CodeType codeType && codeType.TypeDefinition is CodeMethod method)
+            return $"{GetTypeString(new CodeType { TypeDefinition = method.Parent, IsExternal = false }, targetElement)}#{GetTypeString(code, targetElement)}";
+        return $"{GetTypeString(code, targetElement)}";
     }
     public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
@@ -111,16 +121,16 @@ public partial class JavaConventionService : CommonLanguageConventionService
         if (element is not IDocumentedElement documentedElement || documentedElement.Documentation is not CodeDocumentation documentation) return;
         if (additionalRemarks == default)
             additionalRemarks = [];
-        var remarks = additionalRemarks.ToArray();
+        var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
             {
-                var description = documentedElement.Documentation.GetDescription(x => GetTypeString(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+                var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
-            foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
+            foreach (var additionalRemark in remarks)
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
             if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)
                 foreach (var additionalComment in GetDeprecationInformationForDocumentationComment(deprecableElement))
