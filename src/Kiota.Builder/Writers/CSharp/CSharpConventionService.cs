@@ -47,6 +47,12 @@ public class CSharpConventionService : CommonLanguageConventionService
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
     }
+    public void WriteAdditionalDescriptionItem(string description, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(description);
+        writer.WriteLine($"{DocCommentPrefix}{description}");
+    }
     public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);

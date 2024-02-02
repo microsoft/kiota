@@ -546,7 +546,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
             conventions.WriteShortDescription(paramWithDescription, writer, $"<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">", "</param>");
+        WriteThrownExceptions(code, writer);
         conventions.WriteDeprecationAttribute(code, writer);
+    }
+    private void WriteThrownExceptions(CodeMethod element, LanguageWriter writer)
+    {
+        if (element.Kind is not CodeMethodKind.RequestExecutor) return;
+        foreach (var exception in element.ErrorMappings)
+        {
+            var statusCode = exception.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => exception.Key,
+            };
+            conventions.WriteAdditionalDescriptionItem($"<exception cref=\"{conventions.GetTypeString(exception.Value, element)}\">When receiving a {statusCode} status code</exception>", writer);
+        }
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod)

@@ -470,6 +470,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("<exception cref=", result);
         Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
         Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
         Assert.Contains("{\"401\", Error401.CreateFromDiscriminatorValue},", result);
@@ -1412,6 +1413,8 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Kind = CodeMethodKind.Constructor;
+        method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
+        method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
         var defaultValue = "someVal";
         var propName = "propWithDefaultValue";
         parentClass.AddProperty(new CodeProperty
@@ -1426,6 +1429,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
+        Assert.Contains("<summary>", result);
+        Assert.Contains("<see cref=", result);
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
     }
