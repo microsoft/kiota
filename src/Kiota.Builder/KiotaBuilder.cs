@@ -12,6 +12,7 @@ using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncKeyedLock;
 using DotNet.Globbing;
 using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
@@ -396,6 +397,11 @@ public partial class KiotaBuilder
         sw.Reset();
     }
 
+    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
+    {
+        o.PoolSize = 20;
+        o.PoolInitialFill = 1;
+    });
 
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
@@ -424,7 +430,14 @@ public partial class KiotaBuilder
             try
             {
 #pragma warning disable CA2000 // disposed by caller
-                input = new FileStream(inputPath, FileMode.Open);
+                var inMemoryStream = new MemoryStream();
+                using (await localFilesLock.LockAsync(inputPath, cancellationToken).ConfigureAwait(false))
+                {// To avoid deadlocking on update with multiple clients for the same local description
+                    using var fileStream = new FileStream(inputPath, FileMode.Open);
+                    await fileStream.CopyToAsync(inMemoryStream, cancellationToken).ConfigureAwait(false);
+                }
+                inMemoryStream.Position = 0;
+                input = inMemoryStream;
 #pragma warning restore CA2000
             }
             catch (Exception ex) when (ex is FileNotFoundException ||
