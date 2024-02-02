@@ -11,13 +11,12 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 ## Parameters
 
 | Parameters | Required | Example | Description | Telemetry | 
-| -- | -- | -- | -- |
+| -- | -- | -- | -- | -- |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client. Unique within the parent API. If not provided, defaults to --class-name or its default. | Yes, without its value |
 | `--openapi \| -d` | No | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | Yes, without its value |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--language \| -l` | No | csharp | The target language for the generated code files or for the information. | Yes |
-| `--class-name \| -c` | No | GraphClient | The name of the client class. Defaults to `Client`. | Yes, without its value |
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. | Yes, without its value |
 | `--backing-store \| -b` | No | | Defaults to `false` | Yes, without its value |
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. | Yes |

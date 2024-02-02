@@ -61,10 +61,10 @@ We should be very careful about the information we collect. Before rolling out t
 For every command, we should collect the following information:
 
 - Timestamp
-- Hashed MAC address
 - Operating system
 - Operating system version
 - Source (CLI or extension)
+- Acquisition channel (dotnet tool, binaries, homebrew, asdf, extension, etc.)
 - Kiota version
 - VS Code extension version (if applicable)
 - Command name
@@ -81,3 +81,13 @@ The list of commands and their parameters can be found in the [CLI Commands](../
 ### Opting-out
 
 We should offer a way to opt-out of the telemetry collection. This should be done in a very similar way that the `dotnet` CLI does (https://learn.microsoft.com/en-us/dotnet/core/tools/telemetry). To opt out of the telemetry feature, set the KIOTA_CLI_TELEMETRY_OPTOUT environment variable to 1 or true.
+
+Every time the CLI is installed and updated, we should inform the user about the telemetry feature and how to opt-out of it.
+
+```bash
+Telemetry
+---------
+Kiota collect usage data in order to help us improve your experience. You can opt-out of telemetry by setting the KIOTA_CLI_TELEMETRY_OPTOUT environment variable to '1' or 'true' using your favorite shell.
+
+Read more about Kiota telemetry: https://aka.ms/kiota/docs/telemetry
+```
