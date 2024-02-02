@@ -851,7 +851,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
         var result = tw.ToString();
-        Assert.DoesNotContain("| undefined", result.Substring(result.IndexOf("Promise<", StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain("| undefined", result[result.IndexOf(": Promise<", StringComparison.OrdinalIgnoreCase)..]);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
