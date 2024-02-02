@@ -54,7 +54,7 @@ public class GoConventionService : CommonLanguageConventionService
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
         {
-            var importSymbol = GetImportSymbol(code, targetElement);
+            var importSymbol = includeImportSymbol ? GetImportSymbol(code, targetElement) : string.Empty;
             if (!string.IsNullOrEmpty(importSymbol))
                 importSymbol += ".";
             var typeName = TranslateType(currentType, includeImportSymbol);

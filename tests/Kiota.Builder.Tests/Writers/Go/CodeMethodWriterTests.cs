@@ -718,6 +718,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return nil, err", result);
         Assert.Contains("if res == nil", result);
         Assert.Contains("return nil, nil", result);
+        Assert.Contains("returns", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

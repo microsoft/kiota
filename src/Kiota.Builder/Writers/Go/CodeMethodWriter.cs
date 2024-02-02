@@ -292,7 +292,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         conventions.WriteShortDescription(code, writer, $"{methodName.ToFirstCharacterUpperCase()} ");
         conventions.WriteDeprecation(code, writer);
+        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var shortReturnTypeName = conventions.GetTypeString(code.ReturnType, code, true, true, false);
+            conventions.WriteDescriptionItem($"returns a {shortReturnTypeName} when successful", writer);
+        }
+        WriteThrownExceptions(code, writer);
         conventions.WriteLinkDescription(code.Documentation, writer);
+    }
+    private void WriteThrownExceptions(CodeMethod code, LanguageWriter writer)
+    {
+        if (code.Kind is not CodeMethodKind.RequestExecutor) return;
+        foreach (var errorMapping in code.ErrorMappings)
+        {
+            var statusCode = errorMapping.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => errorMapping.Key,
+            };
+            var errorTypeString = conventions.GetTypeString(errorMapping.Value, code, false, false, false);
+            conventions.WriteDescriptionItem($"returns a {errorTypeString} error when the service returns a {statusCode} status code", writer);
+        }
     }
     private const string TempParamsVarName = "urlParams";
     private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
