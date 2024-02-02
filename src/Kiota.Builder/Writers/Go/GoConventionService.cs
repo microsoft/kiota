@@ -173,7 +173,7 @@ public class GoConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return;
         if (element is not CodeElement codeElement) return;
 
-        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement));
+        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false));
         if (!string.IsNullOrEmpty(prefix))
         {
             description = description.ToFirstCharacterLowerCase();
