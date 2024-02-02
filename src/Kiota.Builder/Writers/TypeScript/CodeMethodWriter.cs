@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -34,8 +35,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnRemark = (isVoid, code.IsAsync) switch
         {
             (true, _) => string.Empty,
-            (false, true) => $"@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}",
-            (false, false) => $"@returns a {code.ReturnType.Name}",
+            (false, true) => $"@returns {{Promise<{typeScriptConventionService.GetTypeString(code.ReturnType, code)}>}}",
+            (false, false) => $"@returns {{{typeScriptConventionService.GetTypeString(code.ReturnType, code)}}}",
         };
         typeScriptConventionService.WriteLongDescription(code,
                                         writer,
@@ -43,7 +44,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
                                             .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => typeScriptConventionService.GetTypeString(type, code), TypeScriptConventionService.ReferenceTypePrefix, TypeScriptConventionService.ReferenceTypeSuffix, TypeScriptConventionService.RemoveInvalidDescriptionCharacters)}")
-                                            .Union([returnRemark]));
+                                            .Union([returnRemark])
+                                            .Union(GetThrownExceptionsRemarks(code, typeScriptConventionService)));
+    }
+    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code, TypeScriptConventionService typeScriptConventionService)
+    {
+        if (code.Kind is not CodeMethodKind.RequestExecutor) yield break;
+        foreach (var errorMapping in code.ErrorMappings)
+        {
+            var statusCode = errorMapping.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => errorMapping.Key,
+            };
+            var errorTypeString = typeScriptConventionService.GetTypeString(errorMapping.Value, code, false);
+            yield return $"@throws {{{errorTypeString}}} error when the service returns a {statusCode} status code";
+        }
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
