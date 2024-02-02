@@ -656,6 +656,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("send", result);
         Assert.Contains("@return", result);
         Assert.Contains("@link", result);
+        Assert.Contains("@throws", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
