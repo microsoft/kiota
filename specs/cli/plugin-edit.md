@@ -56,7 +56,55 @@ _The resulting `github-apimanifest.json` file will look like this:_
 ```jsonc
 {
   "apiDependencies": {
-    "GraphClient": {
+    "GitHub": {
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
+      "apiDescriptionUrl": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+      "apiDeploymentBaseUrl": "https://api.github.com/",
+      "apiDescriptionVersion": "v1.0",
+      "requests": [
+        {
+          "method": "GET",
+          "uriTemplate": "/repos/{owner}/{repo}"
+        },
+        {
+          "method": "PATCH",
+          "uriTemplate": "/repos/{owner}/{repo}"
+        },,
+        {
+          "method": "DELETE",
+          "uriTemplate": "/repos/{owner}/{repo}"
+        },
+        {
+          "method": "GET",
+          "uriTemplate": "/repos/{owner}/{repo}/actions/artifacts"
+        },
+        {
+          "method": "GET",
+          "uriTemplate": "/repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
+        },
+        {
+          "method": "DELETE",
+          "uriTemplate": "/repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
+        }
+      ]
+    }
+  }
+}
+```
+
+_The resulting `apimanifest.json` file (concatenated surface of all APIs) will look like this:_
+
+```jsonc
+{
+  "apiDependencies": {
+    "GraphPlugin": {
+      "x-ms-kiotaHash": "1GFCD345RF3DD98...",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
+      "apiDeploymentBaseUrl": "https://graph.microsoft.com",
+      "apiDescriptionVersion": "v1.0",
+      "requests": [ ... ]
+    },
+    "GitHub": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "apiDescriptionUrl": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "apiDeploymentBaseUrl": "https://api.github.com/",
@@ -96,9 +144,13 @@ _The resulting `github-apimanifest.json` file will look like this:_
 ```bash
  └─.kiota
     └─plugins
+       └─GraphPlugin.yaml
        └─GitHub.json
  └─generated
     └─plugins
+       └─graphplugin
+          └─graphplugin-typeb.json
+          └─graphplugin-apimanifest.json
        └─github
           └─github-typea.json
           └─github-apimanifest.json
