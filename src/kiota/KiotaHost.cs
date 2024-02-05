@@ -404,7 +404,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
         };
-        command.Handler = new KiotaGenerationCommandHandler
+        command.Handler = new KiotaGenerateCommandHandler
         {
             DescriptionOption = descriptionOption,
             ManifestOption = manifestOption,

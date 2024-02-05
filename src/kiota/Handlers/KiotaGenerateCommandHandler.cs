@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
 
-internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
+internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
 {
     public required Option<string> DescriptionOption
     {
