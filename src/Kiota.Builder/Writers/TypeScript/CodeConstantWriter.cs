@@ -81,7 +81,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
     }
     private static string GetErrorMappingKey(string original) =>
-    original.Equals("4XX", StringComparison.OrdinalIgnoreCase) || original.Equals("5XX", StringComparison.OrdinalIgnoreCase) ?
+    original.Equals(CodeMethod.ErrorMappingClientRange, StringComparison.OrdinalIgnoreCase) || original.Equals(CodeMethod.ErrorMappingServerRange, StringComparison.OrdinalIgnoreCase) ?
         $"_{original.ToUpperInvariant()}" : // to avoid emitting strings that can't be minified
         original.ToUpperInvariant();
 

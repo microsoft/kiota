@@ -257,8 +257,23 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// Avoids regex operations
     /// </summary>
     public string SimpleName { get; set; } = string.Empty;
+    /// <summary>
+    /// Deduplicates 4XX and 5XX error mappings into a single XXX mapping if they are the same.
+    /// </summary>
+    public void DeduplicateErrorMappings()
+    {
+        if (!errorMappings.TryGetValue(ErrorMappingClientRange, out var clientError) || !errorMappings.TryGetValue(ErrorMappingServerRange, out var serverError)) return;
+        if (clientError == serverError && errorMappings.TryAdd(ErrorMappingAllRange, clientError))
+        {
+            errorMappings.TryRemove(ErrorMappingServerRange, out var _);
+            errorMappings.TryRemove(ErrorMappingClientRange, out var _);
+        }
+    }
+    internal const string ErrorMappingClientRange = "4XX";
+    internal const string ErrorMappingServerRange = "5XX";
+    internal const string ErrorMappingAllRange = "XXX";
 
-    private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new();
+    private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mapping of the error code and response types for this method.
