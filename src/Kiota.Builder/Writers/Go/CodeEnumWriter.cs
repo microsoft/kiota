@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                         "const (");
         writer.IncreaseIndent();
         var isMultiValue = codeElement.Flags;
-        
+
         var enumOptions = codeElement.Options;
         int power = 0;
         foreach (var item in enumOptions)
