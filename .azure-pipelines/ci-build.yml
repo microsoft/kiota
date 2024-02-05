@@ -51,9 +51,6 @@ extends:
       - stage: build
         jobs:
           - job: update_appsettings
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             steps:
               - checkout: self
                 clean: true
@@ -447,9 +444,6 @@ extends:
 
           - job: build_vscode_extension
             dependsOn: [build_binaries]
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             steps:
               - checkout: self
                 clean: true
@@ -502,9 +496,6 @@ extends:
               - group: kiota-vscode-extension-publish
             dependsOn: 
               - github_release
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             steps:
               - download: none
               - checkout: self
@@ -537,9 +528,6 @@ extends:
           - deployment: github_release
             dependsOn: []
             environment: kiota-github-releases
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             strategy:
               runOnce:
                 deploy:
@@ -605,9 +593,6 @@ extends:
           - deployment: deploy_kiota
             dependsOn: []
             environment: nuget-org
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             strategy:
               runOnce:
                 deploy:
@@ -631,9 +616,6 @@ extends:
           - deployment: deploy_builder
             dependsOn: []
             environment: nuget-org
-            pool:
-              name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
             strategy:
               runOnce:
                 deploy:
