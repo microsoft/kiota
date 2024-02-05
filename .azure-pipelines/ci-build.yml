@@ -52,7 +52,8 @@ extends:
         jobs:
           - job: update_appsettings
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             steps:
               - checkout: self
                 clean: true
@@ -75,7 +76,8 @@ extends:
           - job: build
             dependsOn: [update_appsettings]
             pool:
-              vmImage: windows-latest # needed for compliance tasks
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: windows # needed for compliance tasks
             steps:
               - checkout: self
                 clean: true
@@ -259,24 +261,25 @@ extends:
           - job: build_binaries
             dependsOn: [update_appsettings]
             pool:
-              vmImage: $(vmImage)
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: $(os)
             strategy:
               matrix:
                 win-x86:
                   architecture: 'win-x86'
-                  vmImage: 'ubuntu-latest'
+                  os: 'ubuntu'
                 win-x64:
                   architecture: 'win-x64'
-                  vmImage: 'ubuntu-latest'
+                  os: 'ubuntu'
                 linux-x64:
                   architecture: 'linux-x64'
-                  vmImage: 'ubuntu-latest'
+                  os: 'ubuntu'
                 osx-x64:
                   architecture: 'osx-x64'
-                  vmImage: 'macOS-latest'
+                  os: 'macOS'
                 osx-arm64:
                   architecture: 'osx-arm64'
-                  vmImage: 'macOS-latest'
+                  os: 'macOS'
             steps:
               - checkout: self
                 clean: true
@@ -445,7 +448,8 @@ extends:
           - job: build_vscode_extension
             dependsOn: [build_binaries]
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             steps:
               - checkout: self
                 clean: true
@@ -499,7 +503,8 @@ extends:
             dependsOn: 
               - github_release
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             steps:
               - download: none
               - checkout: self
@@ -533,7 +538,8 @@ extends:
             dependsOn: []
             environment: kiota-github-releases
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             strategy:
               runOnce:
                 deploy:
@@ -600,7 +606,8 @@ extends:
             dependsOn: []
             environment: nuget-org
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             strategy:
               runOnce:
                 deploy:
@@ -625,7 +632,8 @@ extends:
             dependsOn: []
             environment: nuget-org
             pool:
-              vmImage: ubuntu-latest
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: ubuntu
             strategy:
               runOnce:
                 deploy:
