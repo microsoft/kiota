@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace kiota;
 public static partial class KiotaHost
 {
+    private static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();
@@ -26,6 +27,8 @@ public static partial class KiotaHost
         rootCommand.AddCommand(GetLoginCommand());
         rootCommand.AddCommand(GetLogoutCommand());
         rootCommand.AddCommand(GetRpcCommand());
+        if (IsConfigPreviewEnabled.Value)
+            rootCommand.AddCommand(KiotaConfigCommands.GetConfigNodeCommand());
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand()
