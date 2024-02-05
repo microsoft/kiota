@@ -47,7 +47,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing
                 {
-                    Name = "BaseRequestConfiguration",
+                    Name = "RequestConfiguration",
                     Declaration = new CodeType
                     {
                         Name = $"{AbstractionsPackageName}.base_request_configuration",
