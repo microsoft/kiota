@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.11.1] - 2024-02-05
+
+### Added
+
+### Changed
+
 - Fixed a deadlock on update for multiple clients targeting the same local file.
 - Fixed a deadlock when evicting cached descriptions.
 
@@ -1241,6 +1247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
 
