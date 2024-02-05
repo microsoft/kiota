@@ -53,7 +53,7 @@ extends:
           - job: update_appsettings
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             steps:
               - checkout: self
                 clean: true
@@ -267,13 +267,13 @@ extends:
               matrix:
                 win-x86:
                   architecture: 'win-x86'
-                  os: 'ubuntu'
+                  os: 'linux'
                 win-x64:
                   architecture: 'win-x64'
-                  os: 'ubuntu'
+                  os: 'linux'
                 linux-x64:
                   architecture: 'linux-x64'
-                  os: 'ubuntu'
+                  os: 'linux'
                 osx-x64:
                   architecture: 'osx-x64'
                   os: 'macOS'
@@ -449,7 +449,7 @@ extends:
             dependsOn: [build_binaries]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             steps:
               - checkout: self
                 clean: true
@@ -504,7 +504,7 @@ extends:
               - github_release
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             steps:
               - download: none
               - checkout: self
@@ -539,7 +539,7 @@ extends:
             environment: kiota-github-releases
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             strategy:
               runOnce:
                 deploy:
@@ -607,7 +607,7 @@ extends:
             environment: nuget-org
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             strategy:
               runOnce:
                 deploy:
@@ -633,7 +633,7 @@ extends:
             environment: nuget-org
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: ubuntu
+              os: linux
             strategy:
               runOnce:
                 deploy:
