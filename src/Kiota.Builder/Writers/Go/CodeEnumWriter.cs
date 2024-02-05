@@ -29,8 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                         "const (");
         writer.IncreaseIndent();
         var isMultiValue = codeElement.Flags;
-
-        var iotaSuffix = $" {typeName} = iota";
+        
         var enumOptions = codeElement.Options;
         int power = 0;
         foreach (var item in enumOptions)
@@ -41,10 +40,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
             else
-                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
-
-            if (!string.IsNullOrEmpty(iotaSuffix))
-                iotaSuffix = string.Empty;
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{(power == 0 ? $" {typeName} = iota" : string.Empty)}");
 
             power++;
         }
