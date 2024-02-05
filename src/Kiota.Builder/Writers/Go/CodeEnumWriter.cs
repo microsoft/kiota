@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                         "const (");
         writer.IncreaseIndent();
         var isMultiValue = codeElement.Flags;
-        
+
         var iotaSuffix = $" {typeName} = iota";
         var enumOptions = codeElement.Options;
         int power = 0;
@@ -37,12 +37,12 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         {
             if (!string.IsNullOrEmpty(item.Documentation.Description))
                 writer.WriteLine($"// {item.Documentation.Description}");
-            
+
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
-            else 
+            else
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
-            
+
             if (!string.IsNullOrEmpty(iotaSuffix))
                 iotaSuffix = string.Empty;
 
@@ -70,7 +70,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 .Select(x => $"\"{x.WireName}\"")
                 .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"options := []string{{{literalOptions}}}");
-            writer.StartBlock($"for p := 0; p < { enumOptions.Count }; p++ {{");
+            writer.StartBlock($"for p := 0; p < {enumOptions.Count}; p++ {{");
             writer.WriteLine($"mantis := {typeName}(int(math.Pow(2, float64(p))))");
             writer.StartBlock($"if i&mantis == mantis {{");
             writer.WriteLine($"values = append(values, options[p])");
