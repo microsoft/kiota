@@ -28,20 +28,29 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                         string.Empty,
                         "const (");
         writer.IncreaseIndent();
+        var isMultiValue = codeElement.Flags;
+        
         var iotaSuffix = $" {typeName} = iota";
         var enumOptions = codeElement.Options;
+        int power = 0;
         foreach (var item in enumOptions)
         {
             if (!string.IsNullOrEmpty(item.Documentation.Description))
                 writer.WriteLine($"// {item.Documentation.Description}");
-            writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
+            
+            if (isMultiValue)
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
+            else 
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
+            
             if (!string.IsNullOrEmpty(iotaSuffix))
                 iotaSuffix = string.Empty;
+
+            power++;
         }
         writer.DecreaseIndent();
         writer.WriteLines(")", string.Empty);
 
-        var isMultiValue = codeElement.Flags;
         WriteStringFunction(codeElement, writer, isMultiValue);
         WriteParsableEnum(codeElement, writer, isMultiValue);
         WriteSerializeFunction(codeElement, writer, isMultiValue);
@@ -51,7 +60,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
     private void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        var enumOptions = codeElement.Options;
+        var enumOptions = codeElement.Options.ToList();
 
         if (isMultiValue)
         {
@@ -60,9 +69,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             var literalOptions = enumOptions
                 .Select(x => $"\"{x.WireName}\"")
                 .Aggregate((x, y) => x + ", " + y);
-            writer.StartBlock($"for p := {typeName}(1); p <= {enumOptions.Last().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}; p <<= 1 {{");
-            writer.StartBlock($"if i&p == p {{");
-            writer.WriteLine($"values = append(values, []string{{{literalOptions}}}[p])");
+            writer.WriteLine($"options := []string{{{literalOptions}}}");
+            writer.StartBlock($"for p := 0; p < { enumOptions.Count }; p++ {{");
+            writer.WriteLine($"mantis := {typeName}(int(math.Pow(2, float64(p))))");
+            writer.StartBlock($"if i&mantis == mantis {{");
+            writer.WriteLine($"values = append(values, options[p])");
             writer.CloseBlock();
             writer.CloseBlock();
             writer.WriteLine("return strings.Join(values, \",\")");
