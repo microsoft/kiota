@@ -69,8 +69,8 @@ extends:
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: AppSettings"
                 inputs:
-                  ArtifactName: AppSettings
-                  PathtoPublish: "$(Build.ArtifactStagingDirectory)/AppSettings"
+                  artifactName: AppSettings
+                  targetPath: "$(Build.ArtifactStagingDirectory)/AppSettings"
 
           - job: build
             dependsOn: [update_appsettings]
@@ -252,8 +252,8 @@ extends:
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: Nugets"
                 inputs:
-                  ArtifactName: Nugets
-                  PathtoPublish: "$(Build.ArtifactStagingDirectory)/Nugets"
+                  artifactName: Nugets
+                  targetPath: "$(Build.ArtifactStagingDirectory)/Nugets"
 
 
           - job: build_binaries
@@ -438,8 +438,8 @@ extends:
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: binaries"
                 inputs:
-                  ArtifactName: Binaries
-                  PathToPublish: "$(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip"
+                  artifactName: Binaries
+                  targetPath: "$(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip"
 
 
           - job: build_vscode_extension
@@ -486,8 +486,8 @@ extends:
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: VSCode"
                 inputs:
-                  ArtifactName: VSCode
-                  PathToPublish: "$(Build.ArtifactStagingDirectory)/VSCode"
+                  artifactName: VSCode
+                  targetPath: "$(Build.ArtifactStagingDirectory)/VSCode"
 
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], variables['previewBranch'])), succeeded())
