@@ -2,11 +2,11 @@
 
 ## Description 
 
-`kiota client add` allows a developer to add a new API client to the `kiota-config.json` file. If no `kiota-config.json` file is found, a new `kiota-config.json` file would be created in the current working directory. The command will add a new entry to the `clients` section of the `kiota-config.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/descriptions` folder. If a client with the same name already exists, the command will fail and display an actionnable error message.
+`kiota client add` allows a developer to add a new API client to the `kiota-config.json` file. If no `kiota-config.json` file is found, a new `kiota-config.json` file would be created in the current working directory. The command will add a new entry to the `clients` section of the `kiota-config.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/clients` folder. If a client with the same name already exists, the command will fail and display an actionnable error message.
 
 When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
 
-Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/{client-name}` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
+Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/clients/{client-name}.yaml|json` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
 
 At the same time, an [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3) file will be generated (if non existing) or edited (if already existing) to represent the surface of the API being used. This file will be named `apimanifest.json` and next to the `kiota-config.json`. This file will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI description location and the properties of the client will be generated and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3).
 
@@ -106,7 +106,7 @@ _The resulting `apimanifest.json` file will look like this:_
 ```bash
 /
  └─.kiota
-    └─definitions
+    └─clients
        └─GraphClient.yaml
  └─generated
     └─graph

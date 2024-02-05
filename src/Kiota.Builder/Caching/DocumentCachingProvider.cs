@@ -62,8 +62,8 @@ public class DocumentCachingProvider
                     Logger.LogWarning("could not delete cache file {CacheFile}, reason: {Reason}", target, ex.Message);
                 }
             }
-            return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
         }
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
     }
     private static readonly AsyncKeyedLocker<string> _locks = new(o =>
     {
