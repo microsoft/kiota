@@ -614,7 +614,7 @@ extends:
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
-                    - task: 1ES.PublishNuget@2
+                    - task: 1ES.PublishNuget@1
                       displayName: "NuGet push"
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
@@ -639,7 +639,7 @@ extends:
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
-                    - task: 1ES.PublishNuget@2
+                    - task: 1ES.PublishNuget@1
                       displayName: "NuGet push"
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
