@@ -66,7 +66,7 @@ extends:
                   Copy-Item $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
                 displayName: Prepare staging folder for upload
 
-              - task: PublishBuildArtifacts@1
+              - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: AppSettings"
                 inputs:
                   ArtifactName: AppSettings
@@ -249,7 +249,7 @@ extends:
                   sourceFolder: $(Build.ArtifactStagingDirectory)
                   content: "*.nupkg"
 
-              - task: PublishBuildArtifacts@1
+              - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: Nugets"
                 inputs:
                   ArtifactName: Nugets
@@ -435,7 +435,7 @@ extends:
                   SessionTimeout: 20
                   Pattern: |
                     **/*.zip
-              - task: PublishBuildArtifacts@1
+              - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: binaries"
                 inputs:
                   ArtifactName: Binaries
@@ -483,7 +483,7 @@ extends:
                   targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
                   sourceFolder: $(Build.SourcesDirectory)/vscode/microsoft-kiota
                   contents: "*.vsix"
-              - task: PublishBuildArtifacts@1
+              - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: VSCode"
                 inputs:
                   ArtifactName: VSCode
@@ -614,10 +614,9 @@ extends:
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
-                    - task: NuGetCommand@2
+                    - task: 1ES.PublishNuget@2
                       displayName: "NuGet push"
                       inputs:
-                        command: push
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
@@ -640,10 +639,9 @@ extends:
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
-                    - task: NuGetCommand@2
+                    - task: 1ES.PublishNuget@2
                       displayName: "NuGet push"
                       inputs:
-                        command: push
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
