@@ -88,18 +88,6 @@ stages:
             inputs:
               version: 8.x
 
-          - task: PoliCheck@2
-            displayName: 'Run PoliCheck "/src"'
-            inputs:
-              inputType: CmdLine
-              cmdLineArgs: '/F:$(Build.SourcesDirectory)/src /T:9 /Sev:"1|2" /PE:2 /O:poli_result_src.xml'
-
-          - task: PoliCheck@2
-            displayName: 'Run PoliCheck "/tests"'
-            inputs:
-              inputType: CmdLine
-              cmdLineArgs: '/F:$(Build.SourcesDirectory)/tests /T:9 /Sev:"1|2" /PE:2 /O:poli_result_test.xml'
-
           # Install the nuget tool.
           - task: NuGetToolInstaller@0
             displayName: "Use NuGet >=6.1.0"
@@ -146,49 +134,6 @@ stages:
               command: test
               projects: '$(Build.SourcesDirectory)\kiota.sln'
               arguments: "--configuration $(BuildConfiguration) --no-build"
-
-          # CredScan
-          - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
-            displayName: "Run CredScan - Src"
-            inputs:
-              toolMajorVersion: "V2"
-              scanFolder: '$(Build.SourcesDirectory)\src'
-              debugMode: false
-
-          - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
-            displayName: "Run CredScan - Tests"
-            inputs:
-              toolMajorVersion: "V2"
-              scanFolder: '$(Build.SourcesDirectory)\tests'
-              debugMode: false
-
-          - task: AntiMalware@3
-            displayName: "Run MpCmdRun.exe - ProductBinPath"
-            inputs:
-              FileDirPath: "$(ProductBinPath)"
-            enabled: false
-
-          - task: BinSkim@4
-            displayName: "Run BinSkim - Product Binaries"
-            inputs:
-              InputType: Basic
-              AnalyzeTargetGlob: '$(ProductBinPath)\**\kiota.dll'
-              AnalyzeSymPath: "$(ProductBinPath)"
-              AnalyzeVerbose: true
-              AnalyzeHashes: true
-              AnalyzeEnvironment: true
-
-          - task: PublishSecurityAnalysisLogs@3
-            displayName: "Publish Security Analysis Logs"
-            inputs:
-              ArtifactName: SecurityLogs
-
-          - task: PostAnalysis@2
-            displayName: "Post Analysis"
-            inputs:
-              BinSkim: true
-              CredScan: true
-              PoliCheck: true
 
           - task: EsrpCodeSigning@2
             displayName: "ESRP CodeSigning"
