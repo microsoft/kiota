@@ -48,7 +48,9 @@ public class GoLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(2, requestBuilder.GetChildElements(true).Count());
     }
-    [Theory(Skip = "Fixing this test is a breaking change - https://github.com/microsoft/kiota/issues/2877")]
+
+
+    [Theory]
     [InlineData("break")]
     [InlineData("case")]
     public async Task EnumWithReservedName_IsNotRenamed(string input)
