@@ -71,6 +71,12 @@ extends:
       - stage: build
         jobs:
           - job: update_appsettings
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)\guardian\SDL\build_update_appsettings\.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)\guardian\SDL\build_update_appsettings\.gdnsuppress
             steps:
               - checkout: self
                 clean: true
