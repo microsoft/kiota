@@ -449,7 +449,7 @@ extends:
 
 
           - job: build_vscode_extension
-            dependsOn: [build_binaries]
+            dependsOn: [win_x64_build_binaries, win_x86_build_binaries, linux_x64_build_binaries, osx_x64_build_binaries, osx_arm64_build_binaries]
             steps:
               - checkout: self
                 clean: true
