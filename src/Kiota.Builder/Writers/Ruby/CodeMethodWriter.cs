@@ -331,7 +331,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName}\", @{otherProp.Name.ToSnakeCase()}) unless @{otherProp.Name.ToSnakeCase()}.nil?");
         }
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
