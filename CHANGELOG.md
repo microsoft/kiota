@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
 - Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
+- Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
 
 ## [1.11.1] - 2024-02-05
 
@@ -39,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where TypeScript models factory methods would be missing return types.
 - Fixed a bug where generated paths would possibly get too long. [#3854](https://github.com/microsoft/kiota/issues/3854)
 - The vscode extension now also displays the children nodes when filtering. [#3998](https://github.com/microsoft/kiota/issues/3998)
-- Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
 
 ## [1.10.1] - 2024-01-12
 
