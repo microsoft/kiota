@@ -64,19 +64,19 @@ resources:
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
-    pool:
-      name: Azure-Pipelines-1ESPT-ExDShared
-    
     stages:
       - stage: build
         jobs:
           - job: update_appsettings
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             templateContext:
               sdl:
                 baseline:
-                  baselineFile: $(Build.SourcesDirectory)\guardian\SDL\build_update_appsettings\.gdnbaselines
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/build_update_appsettings/.gdnbaselines
                 suppression:
-                  suppressionFile: $(Build.SourcesDirectory)\guardian\SDL\build_update_appsettings\.gdnsuppress
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/build_update_appsettings/.gdnsuppress
             steps:
               - checkout: self
                 clean: true
@@ -456,6 +456,9 @@ extends:
 
           - job: build_vscode_extension
             dependsOn: [win_x64_build_binaries, win_x86_build_binaries, linux_x64_build_binaries, osx_x64_build_binaries, osx_arm64_build_binaries]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             steps:
               - checkout: self
                 clean: true
@@ -504,6 +507,9 @@ extends:
         dependsOn: build
         jobs:
           - job: vs_marketplace
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             variables:
               - group: kiota-vscode-extension-publish
             dependsOn: 
@@ -538,6 +544,9 @@ extends:
                 env:
                   isPrerelease: $(isPrerelease)
           - deployment: github_release
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             dependsOn: []
             environment: kiota-github-releases
             strategy:
@@ -603,6 +612,9 @@ extends:
                         isPreRelease: true
 
           - deployment: deploy_kiota
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             dependsOn: []
             environment: nuget-org
             strategy:
@@ -626,6 +638,9 @@ extends:
                         publishFeedCredentials: "OpenAPI Nuget Connection"
 
           - deployment: deploy_builder
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
             dependsOn: []
             environment: nuget-org
             strategy:
