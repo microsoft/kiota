@@ -20,11 +20,15 @@ public class SwiftConventionService : CommonLanguageConventionService
     public static readonly char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
+        writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{prefix}");
     }
     public override string GetAccessModifier(AccessModifier access)
     {

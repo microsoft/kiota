@@ -266,7 +266,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 if (x.IsOfKind(CodeParameterKind.ParseNode))
                     x.Type.Name = "ParseNode";
                 else
-                    x.Documentation.Description += " or a String representing the raw URL.";
+                    x.Documentation.DescriptionTemplate += " or a String representing the raw URL.";
             });
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
                                                 && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(static x =>
@@ -354,9 +354,11 @@ public class PhpRefiner : CommonLanguageRefiner
                     Name = "constructor",
                     Kind = CodeMethodKind.Constructor,
                     IsAsync = false,
-                    Documentation = new()
+                    Documentation = new(new() {
+                        { "TypeName", new CodeType { TypeDefinition = codeClass, IsExternal = false }}
+                    })
                     {
-                        Description = $"Instantiates a new {codeClass.Name} and sets the default values.",
+                        DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
                     },
                     ReturnType = new CodeType { Name = "void" },
                 };
@@ -415,9 +417,11 @@ public class PhpRefiner : CommonLanguageRefiner
                     IsStatic = true,
                     Access = AccessModifier.Public,
                     Kind = CodeMethodKind.Factory,
-                    Documentation = new CodeDocumentation
+                    Documentation = new(new() {
+                        { "TypeName", queryParameterProperty.Type }
+                    })
                     {
-                        Description = $"Instantiates a new {queryParameterProperty.Type.Name}."
+                        DescriptionTemplate = "Instantiates a new {TypeName}."
                     },
                     ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
                 };

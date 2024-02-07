@@ -654,6 +654,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"401\", Error401::createFromDiscriminatorValue);", result);
         Assert.Contains("send", result);
+        Assert.Contains("@return", result);
+        Assert.Contains("@link", result);
+        Assert.Contains("@throws", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1490,13 +1493,13 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodSyncDescription()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -1514,7 +1517,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodDescriptionLink()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
         method.IsAsync = false;
@@ -1522,7 +1525,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType

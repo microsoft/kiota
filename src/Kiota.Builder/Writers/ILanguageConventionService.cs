@@ -27,5 +27,5 @@ public interface ILanguageConventionService
     string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null);
     string TranslateType(CodeType type);
     string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null);
-    void WriteShortDescription(string description, LanguageWriter writer);
+    void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "");
 }

@@ -17,7 +17,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ph
         conventions.WritePhpDocumentStart(writer);
         conventions.WriteNamespaceAndImports(codeElement, writer);
         if (codeElement.Parent is CodeClass parentClass)
-            conventions.WriteLongDescription(parentClass.Documentation, writer);
+            conventions.WriteLongDescription(parentClass, writer);
         var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}");
         writer.WriteLine($"class {codeElement.Name.Split('.').Last().ToFirstCharacterUpperCase()}{derivation} ");

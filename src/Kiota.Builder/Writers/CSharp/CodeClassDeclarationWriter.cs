@@ -35,7 +35,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                                         .Select(static x => x.ToFirstCharacterUpperCase())
                                         .ToArray();
         var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
-        conventions.WriteLongDescription(parentClass.Documentation, writer);
+        conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
     }

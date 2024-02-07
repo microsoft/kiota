@@ -32,7 +32,7 @@ public class CodePropertyWriterTests
             Name = "ParentClass",
             Documentation = new()
             {
-                Description = "This is an amazing class",
+                DescriptionTemplate = "This is an amazing class",
             },
             Kind = CodeClassKind.Model
         };
@@ -68,7 +68,7 @@ public class CodePropertyWriterTests
             Access = AccessModifier.Public,
             Documentation = new()
             {
-                Description = "I can get your messages.",
+                DescriptionTemplate = "I can get your messages.",
             },
             Type = new CodeType
             {
@@ -91,7 +91,7 @@ public class CodePropertyWriterTests
         {
             Documentation = new()
             {
-                Description = "Additional data dictionary",
+                DescriptionTemplate = "Additional data dictionary",
             },
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,

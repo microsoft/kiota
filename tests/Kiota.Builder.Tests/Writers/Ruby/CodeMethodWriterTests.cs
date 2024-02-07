@@ -704,13 +704,13 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodSyncDescription()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
