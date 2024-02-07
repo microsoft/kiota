@@ -197,11 +197,13 @@ public class OpenApiUrlTreeNodeExtensionsTests
         doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
         {
             Parameters = [
-                new() {
+                new()
+                {
                     Name = "param-with-dashes",
                     In = ParameterLocation.Path,
                     Required = true,
-                    Schema = new() {
+                    Schema = new()
+                    {
                         Type = "string"
                     },
                     Style = ParameterStyle.Simple,
