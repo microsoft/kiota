@@ -614,7 +614,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("path parameters cannot be null");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template cannot be null");
-        writer.WriteLine($"{RequestInfoVarName} = RequestInformation(Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "''")}, {GetPropertyCall(urlTemplateParamsProperty, "''")})");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+        writer.WriteLine($"{RequestInfoVarName} = RequestInformation(Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "''")})");
         if (requestParams.requestConfiguration != null)
             writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name})");
         if (codeElement.ShouldAddAcceptHeader)
