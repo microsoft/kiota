@@ -85,9 +85,9 @@ extends:
             templateContext:
               sdl:
                 baseline:
-                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/build_update_appsettings/.gdnbaselines
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
-                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/build_update_appsettings/.gdnsuppress
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             steps:
               - checkout: self
                 clean: true
@@ -113,6 +113,12 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: windows # needed for compliance tasks
               image: windows-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             steps:
               - checkout: self
                 clean: true
@@ -301,6 +307,12 @@ extends:
                 name: Azure-Pipelines-1ESPT-ExDShared
                 os: ${{ distribution.os }}
                 image: ${{ distribution.image }}
+              templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
 
               steps:
                 - checkout: self
@@ -473,6 +485,12 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
               image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             steps:
               - checkout: self
                 clean: true
@@ -525,6 +543,12 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
               image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             variables:
               - group: kiota-vscode-extension-publish
             dependsOn: 
@@ -563,6 +587,12 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
               image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             dependsOn: []
             environment: kiota-github-releases
             strategy:
