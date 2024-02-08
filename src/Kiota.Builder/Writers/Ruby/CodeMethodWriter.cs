@@ -314,8 +314,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
             parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
-            writer.WriteLines($"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
-                                $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
+        {
+            var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+            writer.WriteLines($"request_info.url_template = {urlTemplateValue}",
+                            $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
+        }
         writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"request_info.headers.try_add('Accept', '{codeElement.AcceptHeaderValue}')");
