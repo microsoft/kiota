@@ -234,7 +234,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             parentNamespace.Parent is CodeNamespace parentLevelNamespace &&
             parentLevelNamespace.Files.SelectMany(static x => x.Interfaces).FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface parentLevelInterface &&
             codeFile.Constants
-                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.UriTemplate or CodeConstantKind.RequestsMetadata)
+                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.RequestsMetadata)
                 .Select(static x => new CodeUsing
                 {
                     Name = x.Name,
