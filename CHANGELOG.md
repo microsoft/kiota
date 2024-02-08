@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed type names in doc comments and deprecation noticed across languages.
 - Added thrown exceptions in doc comments for Go/CSharp/Java/TypeScript. [#3811](https://github.com/microsoft/kiota/issues/3811)
 - Deduplicates 4XX and 5XX error mappings when they map to the same type to reduce emitted code. [#4025](https://github.com/microsoft/kiota/issues/4025)
+- 📢📢📢 Java generation is now stable! 🚀🚀🚀 special thanks to @andreaTP (Red Hat) for all the help.
 
 ## [1.11.1] - 2024-02-05
 
