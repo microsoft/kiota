@@ -108,7 +108,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddEnumSetImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -264,6 +263,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 AbstractionsNamespaceName, "QueryParameters"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             SerializationNamespaceName, "ParseNodeHelper"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName)
     };
