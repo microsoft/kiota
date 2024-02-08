@@ -6592,6 +6592,113 @@ paths:
         Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor/{id}", careerAdvisorItemUrlTemplate.DefaultValue.Trim('"'));
     }
     [Fact]
+    public void SinglePathParametersAreDeduplicatedAndOrderIsRespected()
+    {
+        var ownerSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/owner"
+            },
+            UnresolvedReference = false
+        };
+        var repoSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/repo"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/repos/{owner}/{repo}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = repoSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/repos/{template_owner}/{template_repo}/generate"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = repoSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {"owner", ownerSchema},
+                    {"repo", repoSchema}
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "GitHub", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Expected
+        var reposRB = codeModel.FindNamespaceByName("ApiSdk.repos.item.item").FindChildByName<CodeClass>("ReposItemRequestBuilder", false);
+        Assert.NotNull(reposRB);
+        var repoUrlTemplate = reposRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(repoUrlTemplate);
+        Assert.Equal("{+baseurl}/repos/{owner}/{repos%2Did}", repoUrlTemplate.DefaultValue.Trim('"'));
+        Console.WriteLine(repoUrlTemplate.DefaultValue.Trim('"'));
+
+        // Current behavior
+        // var reposRB = codeModel.FindNamespaceByName("ApiSdk.repos.item.item").FindChildByName<CodeClass>("OwnerItemRequestBuilder", false);
+        // Assert.NotNull(reposRB);
+        // var repoUrlTemplate = reposRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        // Assert.NotNull(repoUrlTemplate);
+        // Assert.Equal("{+baseurl}/repos/{repos%2Did}/{Owner%2Did}", repoUrlTemplate.DefaultValue.Trim('"'));
+        // Console.WriteLine(repoUrlTemplate.DefaultValue.Trim('"'));
+    }
+    [Fact]
     public void AddReservedPathParameterSymbol()
     {
         var userSchema = new OpenApiSchema
