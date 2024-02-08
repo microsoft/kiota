@@ -263,7 +263,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public void DeduplicateErrorMappings()
     {
         if (!errorMappings.TryGetValue(ErrorMappingClientRange, out var clientError) || !errorMappings.TryGetValue(ErrorMappingServerRange, out var serverError)) return;
-        if (clientError == serverError && errorMappings.TryAdd(ErrorMappingAllRange, clientError))
+        if ((clientError == serverError || clientError is CodeType clientErrorType && serverError is CodeType serverErrorType && clientErrorType.TypeDefinition == serverErrorType.TypeDefinition && clientErrorType.TypeDefinition is not null) &&
+            errorMappings.TryAdd(ErrorMappingAllRange, clientError))
         {
             errorMappings.TryRemove(ErrorMappingServerRange, out var _);
             errorMappings.TryRemove(ErrorMappingClientRange, out var _);
