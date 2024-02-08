@@ -18,6 +18,7 @@ public class GoRefiner : CommonLanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            DeduplicateErrorMappings(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
