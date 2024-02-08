@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+- Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
+- Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
+- Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
+
+- Fixed return doc comments for Go/Java/CSharp/TypeScript.
+- Fixed type names in doc comments and deprecation noticed across languages.
+- Added thrown exceptions in doc comments for Go/CSharp/Java/TypeScript. [#3811](https://github.com/microsoft/kiota/issues/3811)
+- 📢📢📢 Java generation is now stable! 🚀🚀🚀 special thanks to @andreaTP (Red Hat) for all the help.
+
+## [1.11.1] - 2024-02-05
+
+### Added
+
+### Changed
+
+- Fixed a deadlock on update for multiple clients targeting the same local file.
+- Fixed a deadlock when evicting cached descriptions.
+
+## [1.11.0] - 2024-02-01
+
+### Added
+
 - Added 'none' key for serializer and deserializer arguments to enable portable clients generation. [#3796](https://github.com/microsoft/kiota/issues/3796)
 - Added Japanese translations to vscode extension.
 - Added support for deprecation annotations in Python. [#2798](https://github.com/microsoft/kiota/issues/2798)
@@ -18,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed serialization of scalar members in union types for Python. [#2828](https://github.com/microsoft/kiota/issues/2828)
 - Fixed a bug where scalar error mappings would be generated even though it's not supported by the http request adapter. [#4018](https://github.com/microsoft/kiota/issues/4018)
 - Switched to proxy generation for TypeScript, leading to about ~44% bundle sizes reduction. [#3642](https://github.com/microsoft/kiota/issues/3642)
+- Required query parameters are now projected as `{baseurl+}foo/bar?required={required}` instead of `{baseurl+}foo/bar{?required}` so they are automatically populated if no value is provided. [#3989](https://github.com/microsoft/kiota/issues/3989)
 - Fixed a bug where TypeScript models factory methods would be missing return types.
 - Fixed a bug where generated paths would possibly get too long. [#3854](https://github.com/microsoft/kiota/issues/3854)
 - The vscode extension now also displays the children nodes when filtering. [#3998](https://github.com/microsoft/kiota/issues/3998)
@@ -1231,5 +1255,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+
 
 

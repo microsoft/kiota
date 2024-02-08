@@ -49,7 +49,7 @@ public class RubyLanguageRefinerTests
             Kind = CodeParameterKind.Cancellation,
             Documentation = new()
             {
-                Description = "Cancellation token to use when cancelling requests",
+                DescriptionTemplate = "Cancellation token to use when cancelling requests",
             },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };

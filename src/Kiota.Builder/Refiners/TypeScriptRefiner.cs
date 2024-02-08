@@ -581,7 +581,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter urlTplParams && urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Record<string, unknown>";
-                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.DescriptionTemplate = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType
                 {
                     Name = "rawUrlOrTemplateParameters",

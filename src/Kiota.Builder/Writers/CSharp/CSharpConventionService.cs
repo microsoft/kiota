@@ -36,21 +36,37 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("#endif", false);
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    private const string ReferenceTypePrefix = "<see cref=\"";
+    private const string ReferenceTypeSuffix = "\"/>";
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
+        ArgumentNullException.ThrowIfNull(element);
+        if (element is not CodeElement codeElement) return;
+        if (!element.Documentation.DescriptionAvailable) return;
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+        writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer)
+    public void WriteAdditionalDescriptionItem(string description, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
+        ArgumentNullException.ThrowIfNull(description);
+        writer.WriteLine($"{DocCommentPrefix}{description}");
+    }
+    public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(element);
+        if (element.Documentation is not { } documentation) return;
+        if (element is not CodeElement codeElement) return;
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable)
         {
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
+            {
+                var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
             if (documentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
             writer.WriteLine($"{DocCommentPrefix}</summary>");
@@ -276,7 +292,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"[Obsolete(\"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}\")]";
+        return $"[Obsolete(\"{element.Deprecation.DescriptionTemplate}{versionComment}{dateComment}{removalComment}\")]";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

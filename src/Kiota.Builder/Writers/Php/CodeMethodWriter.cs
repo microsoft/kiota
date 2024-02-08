@@ -258,7 +258,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer)
     {
-        var methodDescription = codeMethod.Documentation.Description;
+        var methodDescription = codeMethod.Documentation.GetDescription(x => conventions.GetTypeString(x, codeMethod), normalizationFunc: PhpConventionService.RemoveInvalidDescriptionCharacters);
         var methodThrows = codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
         var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim());
         if (!hasMethodDescription && !codeMethod.Parameters.Any())
@@ -274,15 +274,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var returnDocString = GetDocCommentReturnType(codeMethod);
         if (!isVoidable)
         {
-            var nullableSuffix = (codeMethod.ReturnType.IsNullable ? "|null" : "");
+            var nullableSuffix = codeMethod.ReturnType.IsNullable ? "|null" : "";
             returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
                 ? $"@return Promise<{returnDocString}|null>"
                 : $"@return {returnDocString}{nullableSuffix}";
         }
-        else returnDocString = String.Empty;
+        else returnDocString = string.Empty;
 
-        var throwsArray = methodThrows ? new[] { "@throws Exception" } : Array.Empty<string>();
-        conventions.WriteLongDescription(codeMethod.Documentation,
+        var throwsArray = methodThrows ? ["@throws Exception"] : Array.Empty<string>();
+        conventions.WriteLongDescription(codeMethod,
             writer,
             parametersWithOrWithoutDescription.Union(new[] { returnDocString }).Union(throwsArray)
             );
@@ -306,9 +306,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (codeMethod.IsOfKind(CodeMethodKind.Setter)
             && (codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false))
         {
-            return $"@param array<string,mixed> $value {x?.Documentation.Description}";
+            return $"@param array<string,mixed> $value {x?.Documentation.GetDescription(x => conventions.GetTypeString(x, codeMethod), normalizationFunc: PhpConventionService.RemoveInvalidDescriptionCharacters)}";
         }
-        return $"@param {conventions.GetParameterDocNullable(x, x)} {x?.Documentation.Description}";
+        return $"@param {conventions.GetParameterDocNullable(x, x)} {x?.Documentation.GetDescription(x => conventions.GetTypeString(x, codeMethod), normalizationFunc: PhpConventionService.RemoveInvalidDescriptionCharacters)}";
     }
 
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();

@@ -20,7 +20,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 true,
-                $"{SerializationModuleName}.composed_type_wrapper",
+                $"{SerializationModuleName}",
                 "ComposedTypeWrapper"
             );
             CorrectCommonNames(generatedCode);
@@ -45,6 +45,21 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "QueryParameters",
+                    IsExternal = true,
+                });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -63,17 +78,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonExceptionsReservedNamesProvider(),
                 static x => $"{x}_"
             );
-            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = $"{AbstractionsPackageName}.base_request_configuration",
-                        IsExternal = true
-                    }
-                });
-            cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ReplacePropertyNames(generatedCode,
                 new() {
@@ -291,7 +295,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Union[str, Dict[str, Any]]";
-                urlTplParams.Documentation.Description = "The raw url or the url-template parameters for the request.";
+                urlTplParams.Documentation.DescriptionTemplate = "The raw url or the url-template parameters for the request.";
             }
         }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters

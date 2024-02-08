@@ -132,25 +132,34 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     }
 #pragma warning restore CA1822 // Method should be static
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+        writer.WriteLine($"{DocCommentStart} {description}{DocCommentEnd}");
     }
+    internal const string ReferenceTypePrefix = "{@link ";
+    internal const string ReferenceTypeSuffix = "}";
     public void WriteLongDescription(IDocumentedElement documentedElement, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(documentedElement);
         if (documentedElement.Documentation is null) return;
-        if (additionalRemarks == default)
-            additionalRemarks = Enumerable.Empty<string>();
+        if (documentedElement is not CodeElement codeElement) return;
+        additionalRemarks ??= [];
         var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
         if (documentedElement.Documentation.DescriptionAvailable || documentedElement.Documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentedElement.Documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentedElement.Documentation.Description)}");
+            {
+                var description = documentedElement.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
             foreach (var additionalRemark in remarks)
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
@@ -169,6 +178,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"@deprecated {element.Deprecation.Description}{versionComment}{dateComment}{removalComment}";
+        return $"@deprecated {element.Deprecation.DescriptionTemplate}{versionComment}{dateComment}{removalComment}";
     }
 }

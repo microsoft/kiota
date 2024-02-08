@@ -27,7 +27,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.WriteLine("@property");
                 writer.WriteLine($"def {codeElement.Name}(self) -> {returnType}:");
                 writer.IncreaseIndent();
-                conventions.WriteLongDescription(codeElement.Documentation, writer);
+                conventions.WriteLongDescription(codeElement, writer);
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Type.Name, writer);
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock(string.Empty);
@@ -38,14 +38,14 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
             case CodePropertyKind.QueryParameter:
-                conventions.WriteInLineDescription(codeElement.Documentation.Description, writer);
+                conventions.WriteInLineDescription(codeElement, writer);
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                 writer.WriteLine();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 writer.WriteLine("@property");
                 writer.StartBlock($"def {codeElement.Name}(self) -> {codeElement.Type.Name}:");
-                conventions.WriteLongDescription(codeElement.Documentation, writer);
+                conventions.WriteLongDescription(codeElement, writer);
                 if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(),
                         static x => x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
                     !string.IsNullOrEmpty(primaryMessageCodePath))

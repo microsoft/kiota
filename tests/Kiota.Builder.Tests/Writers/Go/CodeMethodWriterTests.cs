@@ -718,6 +718,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return nil, err", result);
         Assert.Contains("if res == nil", result);
         Assert.Contains("return nil, nil", result);
+        Assert.Contains("returns", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1563,13 +1564,13 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodSyncDescription()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription
+                DescriptionTemplate = ParamDescription
             },
             Name = ParamName,
             Type = new CodeType
@@ -1587,7 +1588,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodDescriptionLink()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
         method.IsAsync = false;
@@ -1595,7 +1596,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -1748,7 +1749,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "string"
             }
         });
-        method.Documentation.Description = "Some description";
+        method.Documentation.DescriptionTemplate = "Some description";
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);

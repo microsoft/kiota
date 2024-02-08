@@ -70,18 +70,22 @@ public sealed class CodeEnumWriterTests : IDisposable
             Flags = true
         }).First();
         const string optionName = "option1";
-        myEnum.AddOption(new CodeEnumOption { Name = optionName });
+        myEnum.AddOption(new CodeEnumOption { Name = optionName }, new CodeEnumOption { Name = "option2" }, new CodeEnumOption { Name = "option3" });
         writer.Write(myEnum);
 
         var result = tw.ToString();
         Assert.Contains($"type MultiValueEnum int", result);
         Assert.Contains("const (", result);
-        Assert.Contains("OPTION1_MULTIVALUEENUM MultiValueEnum = iota", result);
+        Assert.Contains("OPTION1_MULTIVALUEENUM = 1", result);
+        Assert.Contains("OPTION2_MULTIVALUEENUM = 2", result);
+        Assert.Contains("OPTION3_MULTIVALUEENUM = 4", result);
         Assert.Contains("func (i", result);
         Assert.Contains("String() string {", result);
-        Assert.Contains("for p := MultiValueEnum(1); p <= OPTION1_MULTIVALUEENUM; p <<= 1 {", result);
-        Assert.Contains("if i&p == p {", result);
-        Assert.Contains("values = append(values, []string{\"option1\"}[p])", result);
+        Assert.Contains("options := []string{\"option1\", \"option2\", \"option3\"}", result);
+        Assert.Contains("for p := 0; p < 3; p++ {", result);
+        Assert.Contains("mantis := MultiValueEnum(int(math.Pow(2, float64(p))))", result);
+        Assert.Contains("if i&mantis == mantis {", result);
+        Assert.Contains("values = append(values, options[p])", result);
         Assert.Contains("for _, str := range values {", result);
         Assert.Contains("strings.Join(values", result);
         Assert.Contains("result |= OPTION1_MULTIVALUEENUM", result);
@@ -124,14 +128,14 @@ public sealed class CodeEnumWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = "Some option description",
+                DescriptionTemplate = "Some option description",
             },
             Name = "option1",
         };
         currentEnum.AddOption(option);
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains($"// {option.Documentation.Description}", result);
+        Assert.Contains($"// {option.Documentation.DescriptionTemplate}", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

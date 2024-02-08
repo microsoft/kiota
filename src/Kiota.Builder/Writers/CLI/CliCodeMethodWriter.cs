@@ -476,7 +476,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var builder = new StringBuilder();
         if (documentation.DescriptionAvailable)
         {
-            builder.Append(documentation.Description);
+            builder.Append(documentation.GetDescription(static type => type.Name));
         }
 
         // Add content type values to description.

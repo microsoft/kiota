@@ -155,28 +155,35 @@ public class PythonConventionService : CommonLanguageConventionService
             return "object";
         return $"{{{innerDeclaration}}}";
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-        {
-            writer.WriteLine(DocCommentStart);
-            writer.WriteLine($"{RemoveInvalidDescriptionCharacters(description)}");
-            writer.WriteLine(DocCommentEnd);
-        }
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+        writer.WriteLine(DocCommentStart);
+        writer.WriteLine(description);
+        writer.WriteLine(DocCommentEnd);
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
+    public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
-        if (additionalRemarks == default)
-            additionalRemarks = Enumerable.Empty<string>();
+        ArgumentNullException.ThrowIfNull(element);
+        if (element.Documentation is not { } documentation) return;
+        if (element is not CodeElement codeElement) return;
+        additionalRemarks ??= [];
+
         var additionalRemarksArray = additionalRemarks.ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarksArray.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            {
+                var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+                writer.WriteLine($"{description}");
+            }
             foreach (var additionalRemark in additionalRemarksArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{additionalRemark}");
             if (documentation.ExternalDocumentationAvailable)
@@ -185,13 +192,14 @@ public class PythonConventionService : CommonLanguageConventionService
         }
     }
 
-    public void WriteInLineDescription(string description, LanguageWriter writer)
+    public void WriteInLineDescription(IDocumentedElement element, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-        {
-            writer.WriteLine($"{InLineCommentPrefix}{RemoveInvalidDescriptionCharacters(description)}");
-        }
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+        writer.WriteLine($"{InLineCommentPrefix}{description}");
     }
 
     private static string GetDeprecationInformation(IDeprecableElement element)
@@ -201,7 +209,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}";
+        return $"{element.Deprecation.DescriptionTemplate}{versionComment}{dateComment}{removalComment}";
     }
     internal void WriteDeprecationWarning(IDeprecableElement element, LanguageWriter writer)
     {

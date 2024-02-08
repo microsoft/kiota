@@ -93,10 +93,11 @@ public class GoRefiner : CommonLanguageRefiner
                 generatedCode,
                 new GoReservedNamesProvider(),
                 x => $"{x}Escaped",
-                shouldReplaceCallback: x => x is not CodeProperty currentProp ||
+                shouldReplaceCallback: x => (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
+                                            (x is not CodeProperty currentProp ||
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
-                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+                                            currentProp.Access == AccessModifier.Public))); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
             ReplaceReservedExceptionPropertyNames(generatedCode, new GoExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(
@@ -444,7 +445,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
             parameter.Name = ContextParameterName;
-            parameter.Documentation.Description = ContextVarDescription;
+            parameter.Documentation.DescriptionTemplate = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
@@ -469,7 +470,7 @@ public class GoRefiner : CommonLanguageRefiner
                 Kind = CodeParameterKind.Cancellation,
                 Optional = false,
                 Documentation = {
-                    Description = ContextVarDescription,
+                    DescriptionTemplate = ContextVarDescription,
                 },
             });
         CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
@@ -595,6 +596,7 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
+        new (static x => x is CodeEnum @enum && @enum.Flags,"", "math"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";

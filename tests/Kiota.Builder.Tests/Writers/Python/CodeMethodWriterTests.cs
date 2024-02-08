@@ -668,14 +668,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info = RequestInformation()", result);
-        Assert.Contains("request_info.http_method = Method", result);
-        Assert.Contains("request_info.url_template = ", result);
-        Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info = RequestInformation(Method.GET, self.url_template, self.path_parameters)", result);
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json, text/plain\")", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.add_request_options", result);
-        Assert.Contains("request_info.set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("request_info.configure(c)", result);
         Assert.Contains("set_content_from_scalar", result);
         Assert.Contains("return request_info", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -692,16 +687,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info = RequestInformation()", result);
-        Assert.Contains("request_info.http_method = Method", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.headers.add_all(c.h)", result);
-        Assert.Contains("request_info.url_template = ", result);
-        Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info = RequestInformation(Method.GET, self.url_template, self.path_parameters", result);
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json, text/plain\")", result);
-        Assert.Contains("if c:", result);
-        Assert.Contains("request_info.add_request_options", result);
-        Assert.Contains("request_info.set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("request_info.configure(c)", result);
         Assert.Contains("set_content_from_parsable", result);
         Assert.Contains("return request_info", result);
     }
@@ -957,14 +945,14 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodAsyncDescription()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://example.org/docs");
         var parameter = new CodeParameter
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -988,7 +976,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WritesMethodSyncDescription()
     {
         setup();
-        method.Documentation.Description = MethodDescription;
+        method.Documentation.DescriptionTemplate = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://example.org/docs");
         method.IsAsync = false;
@@ -996,7 +984,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = ParamDescription,
+                DescriptionTemplate = ParamDescription,
             },
             Name = ParamName,
             Type = new CodeType
@@ -1529,7 +1517,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.Custom,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1581,7 +1569,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.UrlTemplate,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1612,7 +1600,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.UrlTemplate,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1654,7 +1642,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.UrlTemplate,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1722,7 +1710,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.AdditionalData,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1773,7 +1761,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.Custom,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1857,7 +1845,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.Custom,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {
@@ -1874,7 +1862,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.UrlTemplate,
             Documentation = new()
             {
-                Description = "This property has a description",
+                DescriptionTemplate = "This property has a description",
             },
             Type = new CodeType
             {

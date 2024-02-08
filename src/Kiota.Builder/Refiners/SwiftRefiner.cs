@@ -205,7 +205,7 @@ public class SwiftRefiner : CommonLanguageRefiner
                 Kind = CodeClassKind.BarrelInitializer,
                 Documentation = new()
                 {
-                    Description = "Root class for extensions",
+                    DescriptionTemplate = "Root class for extensions",
                 },
             });
         }
