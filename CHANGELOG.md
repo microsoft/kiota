@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
 - Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
 - Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
+- Fixed a bug with URI template generation for required parameters when they differ between operations. [#4148](https://github.com/microsoft/kiota/issues/4148)
 - Fixed return doc comments for Go/Java/CSharp/TypeScript.
 - Fixed type names in doc comments and deprecation noticed across languages.
 - Added thrown exceptions in doc comments for Go/CSharp/Java/TypeScript. [#3811](https://github.com/microsoft/kiota/issues/3811)
