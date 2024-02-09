@@ -766,17 +766,17 @@ public partial class KiotaBuilder
             }
         }
 
+        CreateUrlManagement(codeClass, currentNode, isApiClientClass);
         // Add methods for Operations
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
-            if (!isApiClientClass) // do not generate for API client clas with operations as the class won't have the rawUrl constructor.
+            if (!isApiClientClass) // do not generate for API client class with operations as the class won't have the rawUrl constructor.
                 CreateWithUrlMethod(currentNode, codeClass);
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
         }
-        CreateUrlManagement(codeClass, currentNode, isApiClientClass);
 
         if (rootNamespace != null)
             Parallel.ForEach(currentNode.Children.Values, parallelOptions, childNode =>
@@ -1482,6 +1482,10 @@ public partial class KiotaBuilder
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
+            var operationUrlTemplate = currentNode.GetUrlTemplate(operationType);
+            if (!operationUrlTemplate.Equals(parentClass.Properties.FirstOrDefault(static x => x.Kind is CodePropertyKind.UrlTemplate)?.DefaultValue?.Trim('"'), StringComparison.Ordinal))
+                generatorMethod.UrlTemplateOverride = operationUrlTemplate;
+
             var mediaTypes = schema switch
             {
                 null => operation.Responses

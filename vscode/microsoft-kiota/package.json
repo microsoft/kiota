@@ -432,7 +432,7 @@
     "@vscode/test-electron": "^2.3.9",
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
-    "mocha": "^10.1.0",
+    "mocha": "^10.3.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.1",

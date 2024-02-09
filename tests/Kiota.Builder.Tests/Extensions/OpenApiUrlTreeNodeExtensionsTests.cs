@@ -188,6 +188,54 @@ public class OpenApiUrlTreeNodeExtensionsTests
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
     [Fact]
+    public void DifferentUrlTemplatesPerOperation()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        {
+            Parameters = [
+                new()
+                {
+                    Name = "param-with-dashes",
+                    In = ParameterLocation.Path,
+                    Required = true,
+                    Schema = new()
+                    {
+                        Type = "string"
+                    },
+                    Style = ParameterStyle.Simple,
+                },
+            ],
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                        Parameters = [
+
+                            new (){
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                {
+                    OperationType.Put, new() {}
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate(OperationType.Get));
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment", node.Children.First().Value.GetUrlTemplate(OperationType.Put));
+        // the query parameters will be decoded by a middleware at runtime before the request is executed
+    }
+    [Fact]
     public void GeneratesRequiredQueryParametersAndOptionalMixInPathItem()
     {
         var doc = new OpenApiDocument

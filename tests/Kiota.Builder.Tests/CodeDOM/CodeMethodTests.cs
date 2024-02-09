@@ -132,6 +132,28 @@ public class CodeMethodTests
         Assert.Single(method.ErrorMappings);
     }
     [Fact]
+    public void DeduplicatesErrorMappingsCommonDefinition()
+    {
+        var method = new CodeMethod
+        {
+            Name = "method1",
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        var codeClass = new CodeClass
+        {
+            Name = "class1"
+        };
+        var commonType = new CodeType { TypeDefinition = codeClass };
+        var commonType2 = new CodeType { TypeDefinition = codeClass };
+        method.AddErrorMapping("4XX", commonType);
+        method.AddErrorMapping("5XX", commonType2);
+        method.DeduplicateErrorMappings();
+        Assert.Single(method.ErrorMappings);
+    }
+    [Fact]
     public void DoesNotDeduplicateErrorMappingsOnDifferentTypes()
     {
         var method = new CodeMethod

@@ -605,12 +605,33 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(
             "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
+        Assert.Contains("$requestInfo->urlTemplate = $this->urlTemplate;", result);
         Assert.Contains("if ($requestConfiguration !== null", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
         Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"\", $body);", result);
         Assert.Contains("return $requestInfo;", result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Name = "createPostRequestInformation";
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.ReturnType = new CodeType()
+        {
+            Name = "RequestInformation",
+            IsNullable = false
+        };
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.UrlTemplateOverride = "{baseurl+}/foo/bar";
+        _codeMethodWriter.WriteCodeElement(method, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("$requestInfo->urlTemplate = '{baseurl+}/foo/bar';", result);
     }
 
     [Fact]

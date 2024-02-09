@@ -694,6 +694,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return request_info", result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        method.AcceptedResponseTypes.Add("text/plain");
+        method.UrlTemplateOverride = "{baseurl+}/foo/bar";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("request_info = RequestInformation(Method.GET, '{baseurl+}/foo/bar', self.path_parameters", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyKnownRequestBodyType()
     {
         setup();

@@ -1245,6 +1245,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public async Task WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        var executor = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "executor",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            }
+        }).First();
+        AddRequestBodyParameters(executor, true);
+        AddRequestBodyParameters(useComplexTypeForBody: true);
+        AddRequestProperties();
+        method.UrlTemplateOverride = "{baseurl+}/foo/bar";
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({AbstractionsPackageHash}.GET, \"{{baseurl+}}/foo/bar\", m.pathParameters)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public async Task WritesRequestGeneratorBodyForParsableCollection()
     {
         setup();
