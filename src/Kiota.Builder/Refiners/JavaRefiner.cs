@@ -19,6 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCommonNames(generatedCode);
+            DeduplicateErrorMappings(generatedCode);
             AddQueryParameterExtractorMethod(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing

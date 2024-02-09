@@ -1538,4 +1538,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddPrimaryErrorMessage(x, name, type, asProperty));
     }
+    protected static void DeduplicateErrorMappings(CodeElement codeElement)
+    {
+        if (codeElement is CodeMethod { Kind: CodeMethodKind.RequestExecutor } requestExecutorMethod)
+        {
+            requestExecutorMethod.DeduplicateErrorMappings();
+        }
+        CrawlTree(codeElement, DeduplicateErrorMappings);
+    }
 }

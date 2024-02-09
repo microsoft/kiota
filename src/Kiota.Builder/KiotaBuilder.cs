@@ -1280,9 +1280,7 @@ public partial class KiotaBuilder
     private const string RequestBodyPlainTextContentType = "text/plain";
     private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
-                                                                                 .Concat(new[] { FourXXError, FiveXXError }), StringComparer.OrdinalIgnoreCase);
-    private const string FourXXError = "4XX";
-    private const string FiveXXError = "5XX";
+                                                                                 .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
     {
         foreach (var response in operation.Responses.Where(x => errorStatusCodes.Contains(x.Key)))
@@ -1294,10 +1292,10 @@ public partial class KiotaBuilder
         }
         if (operation.Responses.TryGetValue("default", out var defaultResponse) && defaultResponse.GetResponseSchema(config.StructuredMimeTypes) is { } errorSchema)
         {
-            if (!executorMethod.HasErrorMappingCode(FourXXError))
-                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FourXXError);
-            if (!executorMethod.HasErrorMappingCode(FiveXXError))
-                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FiveXXError);
+            if (!executorMethod.HasErrorMappingCode(CodeMethod.ErrorMappingClientRange))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, CodeMethod.ErrorMappingClientRange);
+            if (!executorMethod.HasErrorMappingCode(CodeMethod.ErrorMappingServerRange))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, CodeMethod.ErrorMappingServerRange);
         }
     }
     private void AddErrorMappingToExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod, OpenApiSchema errorSchema, OpenApiResponse response, string errorCode)

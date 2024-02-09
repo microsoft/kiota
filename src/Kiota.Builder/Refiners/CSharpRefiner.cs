@@ -21,6 +21,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
                 true
             );
+            DeduplicateErrorMappings(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {

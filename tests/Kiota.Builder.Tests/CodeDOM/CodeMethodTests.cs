@@ -114,4 +114,54 @@ public class CodeMethodTests
         Assert.NotNull(method.Parameters.OfKind(CodeParameterKind.Custom));
         Assert.Null(method.Parameters.OfKind(CodeParameterKind.RequestBody));
     }
+    [Fact]
+    public void DeduplicatesErrorMappings()
+    {
+        var method = new CodeMethod
+        {
+            Name = "method1",
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        var commonType = new CodeType { Name = "string" };
+        method.AddErrorMapping("4XX", commonType);
+        method.AddErrorMapping("5XX", commonType);
+        method.DeduplicateErrorMappings();
+        Assert.Single(method.ErrorMappings);
+    }
+    [Fact]
+    public void DoesNotDeduplicateErrorMappingsOnDifferentTypes()
+    {
+        var method = new CodeMethod
+        {
+            Name = "method1",
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddErrorMapping("4XX", new CodeType { Name = "string" });
+        method.AddErrorMapping("5XX", new CodeType { Name = "string" });
+        method.DeduplicateErrorMappings();
+        Assert.Equal(2, method.ErrorMappings.Count());
+    }
+    [Fact]
+    public void DoesNotDeduplicatesErrorMappingsWithSpecificCodes()
+    {
+        var method = new CodeMethod
+        {
+            Name = "method1",
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        var commonType = new CodeType { Name = "string" };
+        method.AddErrorMapping("404", commonType);
+        method.AddErrorMapping("5XX", commonType);
+        method.DeduplicateErrorMappings();
+        Assert.Equal(2, method.ErrorMappings.Count());
+    }
 }
