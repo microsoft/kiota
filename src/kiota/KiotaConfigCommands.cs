@@ -1,4 +1,5 @@
 using System.CommandLine;
+using kiota.Handlers.Config;
 
 namespace kiota;
 
@@ -14,7 +15,11 @@ public static class KiotaConfigCommands
     private static Command GetInitCommand()
     {
         var command = new Command("init", "Initializes the Kiota configuration");
-        //TODO map the handler
+        var logLevelOption = KiotaHost.GetLogLevelOption();
+        command.Handler = new InitHandler
+        {
+            LogLevelOption = logLevelOption,
+        };
         return command;
     }
     private static Command GetMigrateCommand()

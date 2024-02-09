@@ -1,15 +1,31 @@
+using System;
 using System.CommandLine.Invocation;
 using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.WorkspaceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Config;
 
 internal class InitHandler : BaseKiotaCommandHandler
 {
-    public override Task<int> InvokeAsync(InvocationContext context)
+    public async override Task<int> InvokeAsync(InvocationContext context)
     {
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        throw new System.NotImplementedException();
+        var workspaceStorageService = new WorkspaceConfigurationStorageService();
+        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceConfigurationStorageService>(context, Configuration.Generation.OutputPath);
+        using (loggerFactory)
+        {
+            try
+            {
+                await workspaceStorageService.InitializeAsync(cancellationToken).ConfigureAwait(false);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                logger.LogCritical(ex, "error initializing the workspace configuration");
+                return 1;
+            }
+        }
     }
 }

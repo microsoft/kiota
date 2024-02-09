@@ -14,6 +14,10 @@ public class WorkspaceConfigurationStorageService
         get; private set;
     }
     private readonly string targetConfigurationFilePath;
+    public WorkspaceConfigurationStorageService() : this(Directory.GetCurrentDirectory())
+    {
+
+    }
     public WorkspaceConfigurationStorageService(string targetDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
@@ -22,6 +26,8 @@ public class WorkspaceConfigurationStorageService
     }
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        if (File.Exists(targetConfigurationFilePath))
+            return Task.FromException(new InvalidOperationException("The workspace configuration already exists"));
         return UpdateWorkspaceConfigurationAsync(new WorkspaceConfiguration(), cancellationToken);
     }
     public async Task UpdateWorkspaceConfigurationAsync(WorkspaceConfiguration configuration, CancellationToken cancellationToken = default)

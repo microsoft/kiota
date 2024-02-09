@@ -468,7 +468,7 @@ public static partial class KiotaHost
         excludePatterns.AddAlias("-e");
         return (includePatterns, excludePatterns);
     }
-    private static Option<LogLevel> GetLogLevelOption()
+    internal static Option<LogLevel> GetLogLevelOption()
     {
         var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
         logLevelOption.AddAlias("--ll");
