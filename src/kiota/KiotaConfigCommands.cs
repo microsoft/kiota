@@ -14,8 +14,10 @@ public static class KiotaConfigCommands
     }
     private static Command GetInitCommand()
     {
-        var command = new Command("init", "Initializes the Kiota configuration");
         var logLevelOption = KiotaHost.GetLogLevelOption();
+        var command = new Command("init", "Initializes the Kiota configuration"){
+            logLevelOption,
+        };
         command.Handler = new InitHandler
         {
             LogLevelOption = logLevelOption,
