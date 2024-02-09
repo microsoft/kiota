@@ -1,4 +1,4 @@
-namespace Kiota.Builder.WorkspaceManagement;
+﻿namespace Kiota.Builder.WorkspaceManagement;
 
 public class WorkspaceConfiguration
 {

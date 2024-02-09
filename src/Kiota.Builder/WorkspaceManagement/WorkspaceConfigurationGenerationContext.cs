@@ -1,4 +1,4 @@
-
+﻿
 using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.WorkspaceManagement;
