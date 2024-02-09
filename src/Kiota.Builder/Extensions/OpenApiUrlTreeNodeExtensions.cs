@@ -181,21 +181,24 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.DeduplicatedSegment()?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
-    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
+    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, OperationType? operationType = null)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
         var queryStringParameters = string.Empty;
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+            var operationQueryParameters = (operationType, pathItem.Operations.Any()) switch
+            {
+                (OperationType ot, _) when pathItem.Operations.TryGetValue(ot, out var operation) => operation.Parameters,
+                (null, true) => pathItem.Operations.OrderBy(static x => x.Key).FirstOrDefault().Value.Parameters,
+                _ => Enumerable.Empty<OpenApiParameter>(),
+            };
             var parameters = pathItem.Parameters
+                                    .Union(operationQueryParameters)
                                     .Where(static x => x.In == ParameterLocation.Query)
-                                    .Union(
-                                        pathItem.Operations
-                                                .SelectMany(static x => x.Value.Parameters)
-                                                .Where(static x => x.In == ParameterLocation.Query))
                                     .DistinctBy(static x => x.Name, StringComparer.Ordinal)
-                                    .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                    .OrderBy(static x => x.Name, StringComparer.Ordinal)
                                     .ToArray();
             if (parameters.Length != 0)
             {

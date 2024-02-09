@@ -44,7 +44,7 @@ public class CodeElementComparerPythonTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, -1100),
+            }, -10100),
             new(new CodeIndexer() {
                 ReturnType = new CodeType {
                     Name = "string"
@@ -60,14 +60,14 @@ public class CodeElementComparerPythonTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, -1100),
+            }, -10100),
             new(method, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, -899),
-            new(method, codeClass, -699),
+            }, -9899),
+            new(method, codeClass, -9699),
             new(new CodeMethod() {
                 Kind = CodeMethodKind.Constructor,
                 ReturnType = new CodeType

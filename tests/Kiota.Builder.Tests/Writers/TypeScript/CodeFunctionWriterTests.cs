@@ -596,7 +596,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
         Assert.Contains($"apiClientProxifier<", result);
         Assert.Contains($"pathParameters", result);
-        Assert.Contains($"UriTemplate", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()

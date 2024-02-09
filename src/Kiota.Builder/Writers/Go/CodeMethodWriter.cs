@@ -873,7 +873,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
 
         if (ExcludeBackwardCompatible && requestParams.requestConfiguration is not null)
             writer.WriteLine($"{conventions.AbstractionsHash}.ConfigureRequestInformation({RequestInfoVarName}, {requestParams.requestConfiguration.Name})");

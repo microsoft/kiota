@@ -71,8 +71,6 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
 
     private static void WriteNavigationMetadataEntry(CodeNamespace parentNamespace, LanguageWriter writer, string requestBuilderName, string[]? pathParameters = null)
     {
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.UriTemplateSuffix}", 3) is CodeConstant uriTemplateConstant && uriTemplateConstant.Kind is CodeConstantKind.UriTemplate)
-            writer.WriteLine($"uriTemplate: {uriTemplateConstant.Name.ToFirstCharacterUpperCase()},");
         if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
             writer.WriteLine($"requestsMetadata: {requestsMetadataConstant.Name.ToFirstCharacterUpperCase()},");
         if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
@@ -93,6 +91,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                     .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                     .ToArray() is not { Length: > 0 } executorMethods)
             return;
+        var uriTemplateConstant = codeElement.Parent is CodeFile parentFile && parentFile.Constants.FirstOrDefault(static x => x.Kind is CodeConstantKind.UriTemplate) is CodeConstant tplct ?
+            tplct : throw new InvalidOperationException("Couldn't find the associated uri template constant for the requests metadata constant");
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: RequestsMetadata = {{");
         foreach (var executorMethod in executorMethods)
         {
@@ -101,6 +101,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
+            var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"uriTemplate: {urlTemplateValue},");
             if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
                  generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
                 writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");
