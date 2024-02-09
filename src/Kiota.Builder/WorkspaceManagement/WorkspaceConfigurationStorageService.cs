@@ -24,11 +24,11 @@ public class WorkspaceConfigurationStorageService
         TargetDirectory = targetDirectory;
         targetConfigurationFilePath = Path.Combine(TargetDirectory, ConfigurationFileName);
     }
-    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if (File.Exists(targetConfigurationFilePath))
-            return Task.FromException(new InvalidOperationException("The workspace configuration already exists"));
-        return UpdateWorkspaceConfigurationAsync(new WorkspaceConfiguration(), cancellationToken);
+        if (await IsInitializedAsync(cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException("The workspace configuration already exists");
+        await UpdateWorkspaceConfigurationAsync(new WorkspaceConfiguration(), cancellationToken).ConfigureAwait(false);
     }
     public async Task UpdateWorkspaceConfigurationAsync(WorkspaceConfiguration configuration, CancellationToken cancellationToken = default)
     {

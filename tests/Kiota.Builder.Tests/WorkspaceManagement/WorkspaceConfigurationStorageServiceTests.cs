@@ -44,6 +44,21 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         var result = await service.GetWorkspaceConfigurationAsync();
         Assert.NotNull(result);
     }
+    [Fact]
+    public async Task ReturnsIsInitialized()
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await service.InitializeAsync();
+        var result = await service.IsInitializedAsync();
+        Assert.True(result);
+    }
+    [Fact]
+    public async Task DoesNotReturnIsInitialized()
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        var result = await service.IsInitializedAsync();
+        Assert.False(result);
+    }
     public void Dispose()
     {
         if (Directory.Exists(tempPath))
