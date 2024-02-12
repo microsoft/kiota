@@ -21,7 +21,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Lock;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
@@ -51,7 +51,7 @@ public partial class KiotaBuilder
     private OpenApiDocument? openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -63,6 +63,7 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
+        workspaceManagementService = new WorkspaceManagementService(logger, useKiotaConfig);
     }
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
@@ -72,7 +73,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
                                             .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
@@ -173,7 +174,7 @@ public partial class KiotaBuilder
 
         // Should Generate
         sw.Start();
-        var shouldGenerate = await ShouldGenerate(cancellationToken).ConfigureAwait(false);
+        var shouldGenerate = await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument?.HashCode ?? string.Empty, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
         OpenApiUrlTreeNode? openApiTree = null;
@@ -204,21 +205,6 @@ public partial class KiotaBuilder
             GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
 
         config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
-    }
-    private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
-    {
-        if (config.CleanOutput) return true;
-        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        var comparer = new KiotaLockComparer();
-        if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
-        }
-        return !comparer.Equals(existingLock, configurationLock);
     }
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
@@ -283,25 +269,17 @@ public partial class KiotaBuilder
 
             // Write lock file
             sw.Start();
-            await UpdateLockFile(cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
-            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
     }
-    private readonly LockManagementService lockManagementService = new();
-    private async Task UpdateLockFile(CancellationToken cancellationToken)
-    {
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
-    }
+    private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
     [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();

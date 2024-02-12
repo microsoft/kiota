@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
 
@@ -110,8 +112,38 @@ internal class AddHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
-            await Task.Delay(0).ConfigureAwait(false);
-            throw new NotImplementedException();
+            await CheckForNewVersionAsync(logger, cancellationToken);
+            logger.AppendInternalTracing();
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+
+            try
+            {
+                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
+                //TODO implement skip generation
+                var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
+                if (result)
+                    DisplaySuccess("Generation completed successfully");
+                else
+                {
+                    DisplaySuccess("Generation skipped as no changes were detected");
+                    DisplayCleanHint("generate");
+                }
+                var manifestResult = await builder.GetApiManifestDetailsAsync(true, cancellationToken).ConfigureAwait(false);
+                var manifestPath = manifestResult is null ? string.Empty : Configuration.Generation.ApiManifestPath;
+                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath, manifestPath);
+                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath, manifestPath);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                logger.LogCritical(ex, "error generating the client: {exceptionMessage}", ex.Message);
+                throw; // so debug tools go straight to the source of the exception when attached
+#else
+                logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
+                return 1;
+#endif
+            }
         }
     }
 }
