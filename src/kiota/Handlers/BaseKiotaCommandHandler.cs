@@ -328,6 +328,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
                         "Example: kiota login github");
         }
     }
+    protected void WarnShouldUseKiotaConfigClientsCommands()
+    {
+        if (KiotaHost.IsConfigPreviewEnabled.Value)
+            DisplayWarning("Warning: the kiota generate and update commands are deprecated, use kiota client commands instead.");
+    }
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");

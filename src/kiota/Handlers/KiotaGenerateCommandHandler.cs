@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
 
-internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
+internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
 {
     public required Option<string> DescriptionOption
     {
@@ -66,6 +66,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
+        WarnShouldUseKiotaConfigClientsCommands();
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
+
 ### Changed
 
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
