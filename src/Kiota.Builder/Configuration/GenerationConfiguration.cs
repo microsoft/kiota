@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Kiota.Builder.Lock;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Configuration;
 #pragma warning disable CA2227
@@ -152,6 +154,19 @@ public class GenerationConfiguration : ICloneable
             comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
             !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
+    }
+    public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
+    public ApiDependency ToApiDependency(string configurationHash, string version = "1.0")
+    {
+        var dependency = new ApiDependency()
+        {
+            ApiDescriptionUrl = OpenAPIFilePath,
+            ApiDescriptionVersion = version,
+            Extensions = new() {
+                { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
+            }
+        };
+        return dependency;
     }
 }
 #pragma warning restore CA1056

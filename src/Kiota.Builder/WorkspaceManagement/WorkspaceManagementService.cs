@@ -5,6 +5,8 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Extensions;
+using Kiota.Builder.Manifest;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
@@ -25,11 +27,13 @@ public class WorkspaceManagementService
         ArgumentNullException.ThrowIfNull(generationConfiguration);
         if (UseKiotaConfig)
         {
-            var wsConfig = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false) ??
-                            new WorkspaceConfiguration();
+            var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+            wsConfig ??= new WorkspaceConfiguration();
+            manifest ??= new ApiManifestDocument("application"); //TODO get the application name
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, new ApiClientConfiguration(generationConfiguration));
-            await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, cancellationToken).ConfigureAwait(false);
-            //TODO generate API manifest
+            //TODO set the version from something, set the kiota hash config configuration + description
+            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency("foo"));
+            await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -54,18 +58,22 @@ public class WorkspaceManagementService
         else
             await lockManagementService.BackupLockFileAsync(outputPath, cancellationToken).ConfigureAwait(false);
     }
+    private static readonly KiotaLockComparer lockComparer = new();
+    private static readonly ApiClientConfigurationComparer clientConfigurationComparer = new();
+    private static readonly ApiDependencyComparer apiDependencyComparer = new();
     public async Task<bool> ShouldGenerateAsync(GenerationConfiguration inputConfig, string descriptionHash, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(inputConfig);
         if (inputConfig.CleanOutput) return true;
         if (UseKiotaConfig)
         {
-            var wsConfig = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            if (wsConfig?.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) ?? false)
+            var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+            if ((wsConfig?.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) ?? false) &&
+                (apiManifest?.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest) ?? false))
             {
-                var comparer = new ApiClientConfigurationComparer();
-                //TODO also compare the api manifest file
-                return !comparer.Equals(existingClientConfig, new ApiClientConfiguration(inputConfig));
+                //TODO set version from something, generate the hash for kiota config and get the list of requests
+                return !clientConfigurationComparer.Equals(existingClientConfig, new ApiClientConfiguration(inputConfig)) ||
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency("foo"), existingApiManifest);
             }
             return true;
         }
@@ -76,12 +84,11 @@ public class WorkspaceManagementService
             {
                 DescriptionHash = descriptionHash,
             };
-            var comparer = new KiotaLockComparer();
             if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
             {
                 Logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
             }
-            return !comparer.Equals(existingLock, configurationLock);
+            return !lockComparer.Equals(existingLock, configurationLock);
         }
 
     }

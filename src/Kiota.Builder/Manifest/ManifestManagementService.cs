@@ -21,4 +21,19 @@ public class ManifestManagementService
         var jsonDocument = await JsonDocument.ParseAsync(jsonValue).ConfigureAwait(false);
         return ApiManifestDocument.Load(jsonDocument.RootElement);
     }
+    /// <summary>
+    /// Serializes the API manifest document to a JSON representation.
+    /// </summary>
+    /// <param name="manifestDocument">The API manifest document to serialize</param>
+    /// <param name="stream">The stream to write the serialized JSON representation</param>
+    /// <returns>The serialized JSON representation</returns>
+    public async Task SerializeManifestDocumentAsync(ApiManifestDocument manifestDocument, Stream stream)
+    {
+        ArgumentNullException.ThrowIfNull(manifestDocument);
+#pragma warning disable CA2007
+        await using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+#pragma warning restore CA2007
+        manifestDocument.Write(writer);
+        await writer.FlushAsync().ConfigureAwait(false);
+    }
 }
