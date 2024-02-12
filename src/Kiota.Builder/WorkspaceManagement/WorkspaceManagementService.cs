@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
+using Kiota.Builder.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Extensions;
-using Kiota.Builder.Manifest;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
