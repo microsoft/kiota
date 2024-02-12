@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,5 +62,43 @@ public class WorkspaceConfigurationStorageService
             return await JsonSerializer.DeserializeAsync(fileStream, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
         }
         return null;
+    }
+    public Task BackupConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        var lockFilePath = Path.Combine(directoryPath, ConfigurationFileName);
+        //TODO backup the manifest file as well
+        if (File.Exists(lockFilePath))
+        {
+            var backupFilePath = GetBackupFilePath(directoryPath);
+            var targetDirectory = Path.GetDirectoryName(backupFilePath);
+            if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
+            if (!Directory.Exists(targetDirectory))
+                Directory.CreateDirectory(targetDirectory);
+            File.Copy(lockFilePath, backupFilePath, true);
+        }
+        return Task.CompletedTask;
+    }
+    public Task RestoreConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        //TODO backup the manifest file as well
+        var lockFilePath = Path.Combine(directoryPath, ConfigurationFileName);
+        var targetDirectory = Path.GetDirectoryName(lockFilePath);
+        if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
+        if (!Directory.Exists(targetDirectory))
+            Directory.CreateDirectory(targetDirectory);
+        var backupFilePath = GetBackupFilePath(directoryPath);
+        if (File.Exists(backupFilePath))
+        {
+            File.Copy(backupFilePath, lockFilePath, true);
+        }
+        return Task.CompletedTask;
+    }
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
+    private static string GetBackupFilePath(string outputPath)
+    {
+        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "backup", hashedPath, ConfigurationFileName);
     }
 }
