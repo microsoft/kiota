@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -31,9 +36,10 @@ public class WorkspaceManagementService
             var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
             wsConfig ??= new WorkspaceConfiguration();
             manifest ??= new ApiManifestDocument("application"); //TODO get the application name
-            wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, new ApiClientConfiguration(generationConfiguration));
-            //TODO set the kiota hash config configuration + description
-            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency("foo", templatesWithOperations));
+            var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
+            wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
+            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
+            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         }
         else
@@ -72,9 +78,10 @@ public class WorkspaceManagementService
             if ((wsConfig?.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) ?? false) &&
                 (apiManifest?.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest) ?? false))
             {
-                //TODO generate the hash for kiota config
-                return !clientConfigurationComparer.Equals(existingClientConfig, new ApiClientConfiguration(inputConfig)) ||
-                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency("foo", []), existingApiManifest);
+                var inputClientConfig = new ApiClientConfiguration(inputConfig);
+                var inputConfigurationHash = await GetConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
+                return !clientConfigurationComparer.Equals(existingClientConfig, inputClientConfig) ||
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingApiManifest);
             }
             return true;
         }
@@ -92,5 +99,35 @@ public class WorkspaceManagementService
             return !lockComparer.Equals(existingLock, configurationLock);
         }
 
+    }
+    private static readonly JsonSerializerOptions options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+    };
+    private static readonly WorkspaceConfigurationGenerationContext context = new(options);
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
+    private async Task<string> GetConfigurationHashAsync(ApiClientConfiguration apiClientConfiguration, string descriptionHash)
+    {
+        using var stream = new MemoryStream();
+        JsonSerializer.Serialize(stream, apiClientConfiguration, context.ApiClientConfiguration);
+        await stream.WriteAsync(Encoding.UTF8.GetBytes(descriptionHash)).ConfigureAwait(false);
+        stream.Position = 0;
+        if (HashAlgorithm.Value is null)
+            throw new InvalidOperationException("Hash algorithm is not available");
+        return ConvertByteArrayToString(await HashAlgorithm.Value.ComputeHashAsync(stream).ConfigureAwait(false));
+    }
+    private static string ConvertByteArrayToString(byte[] hash)
+    {
+        // Build the final string by converting each byte
+        // into hex and appending it to a StringBuilder
+        var sbLength = hash.Length * 2;
+        var sb = new StringBuilder(sbLength, sbLength);
+        for (var i = 0; i < hash.Length; i++)
+        {
+            sb.Append(hash[i].ToString("X2", CultureInfo.InvariantCulture));
+        }
+
+        return sb.ToString();
     }
 }
