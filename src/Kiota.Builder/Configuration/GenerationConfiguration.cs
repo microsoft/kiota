@@ -156,15 +156,16 @@ public class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
     }
     public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
-    public ApiDependency ToApiDependency(string configurationHash, string version = "1.0")
+    public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations)
     {
         var dependency = new ApiDependency()
         {
             ApiDescriptionUrl = OpenAPIFilePath,
-            ApiDescriptionVersion = version,
+            ApiDeploymentBaseUrl = ApiRootUrl?.EndsWith('/') ?? false ? ApiRootUrl : $"{ApiRootUrl}/",
             Extensions = new() {
                 { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
-            }
+            },
+            Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key })).ToList(),
         };
         return dependency;
     }

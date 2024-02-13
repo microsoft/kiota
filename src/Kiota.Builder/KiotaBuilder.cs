@@ -172,22 +172,23 @@ public partial class KiotaBuilder
         UpdateConfigurationFromOpenApiDocument();
         StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
-        // Should Generate
-        sw.Start();
-        var shouldGenerate = await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument?.HashCode ?? string.Empty, cancellationToken).ConfigureAwait(false);
-        StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
-
         OpenApiUrlTreeNode? openApiTree = null;
+        var shouldGenerate = true;
         if (openApiDocument != null)
         {
             // filter paths
             sw.Start();
             FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            SetApiRootUrl();
+
+            // Should Generate
+            sw.Start();
+            shouldGenerate = await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
+
             if (shouldGenerate && generating)
             {
-                SetApiRootUrl();
-
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
@@ -269,7 +270,7 @@ public partial class KiotaBuilder
 
             // Write lock file
             sw.Start();
-            await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch

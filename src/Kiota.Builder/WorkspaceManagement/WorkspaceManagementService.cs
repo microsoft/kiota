@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -22,7 +23,7 @@ public class WorkspaceManagementService
     }
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService = new();
-    public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, CancellationToken cancellationToken = default)
+    public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);
         if (UseKiotaConfig)
@@ -31,8 +32,8 @@ public class WorkspaceManagementService
             wsConfig ??= new WorkspaceConfiguration();
             manifest ??= new ApiManifestDocument("application"); //TODO get the application name
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, new ApiClientConfiguration(generationConfiguration));
-            //TODO set the version from something, set the kiota hash config configuration + description
-            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency("foo"));
+            //TODO set the kiota hash config configuration + description
+            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency("foo", templatesWithOperations));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         }
         else
@@ -71,9 +72,9 @@ public class WorkspaceManagementService
             if ((wsConfig?.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) ?? false) &&
                 (apiManifest?.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest) ?? false))
             {
-                //TODO set version from something, generate the hash for kiota config and get the list of requests
+                //TODO generate the hash for kiota config
                 return !clientConfigurationComparer.Equals(existingClientConfig, new ApiClientConfiguration(inputConfig)) ||
-                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency("foo"), existingApiManifest);
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency("foo", []), existingApiManifest);
             }
             return true;
         }
