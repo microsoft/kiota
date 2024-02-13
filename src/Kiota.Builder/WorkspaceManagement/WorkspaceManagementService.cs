@@ -20,14 +20,18 @@ public class WorkspaceManagementService
 {
     private readonly bool UseKiotaConfig;
     private readonly ILogger Logger;
-    public WorkspaceManagementService(ILogger logger, bool useKiotaConfig = false)
+    public WorkspaceManagementService(ILogger logger, bool useKiotaConfig = false, string workingDirectory = "")
     {
         ArgumentNullException.ThrowIfNull(logger);
         Logger = logger;
         UseKiotaConfig = useKiotaConfig;
+        if (string.IsNullOrEmpty(workingDirectory))
+            workingDirectory = Directory.GetCurrentDirectory();
+        WorkingDirectory = workingDirectory;
+        workspaceConfigurationStorageService = new(workingDirectory);
     }
     private readonly LockManagementService lockManagementService = new();
-    private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService = new();
+    private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
     public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);
@@ -37,6 +41,7 @@ public class WorkspaceManagementService
             wsConfig ??= new WorkspaceConfiguration();
             manifest ??= new ApiManifestDocument("application"); //TODO get the application name
             var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
+            generationClientConfig.NormalizePaths(WorkingDirectory);
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
             var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
             manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations));
@@ -79,6 +84,7 @@ public class WorkspaceManagementService
                 (apiManifest?.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest) ?? false))
             {
                 var inputClientConfig = new ApiClientConfiguration(inputConfig);
+                inputClientConfig.NormalizePaths(WorkingDirectory);
                 var inputConfigurationHash = await GetConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
                 return !clientConfigurationComparer.Equals(existingClientConfig, inputClientConfig) ||
                        !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingApiManifest);
@@ -107,6 +113,8 @@ public class WorkspaceManagementService
     };
     private static readonly WorkspaceConfigurationGenerationContext context = new(options);
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
+    private readonly string WorkingDirectory;
+
     private async Task<string> GetConfigurationHashAsync(ApiClientConfiguration apiClientConfiguration, string descriptionHash)
     {
         using var stream = new MemoryStream();

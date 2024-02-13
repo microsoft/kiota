@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
@@ -7,7 +8,7 @@ using Kiota.Builder.Lock;
 namespace Kiota.Builder.WorkspaceManagement;
 
 #pragma warning disable CA2227 // Collection properties should be read only
-public class ApiClientConfiguration
+public class ApiClientConfiguration : ICloneable
 {
     /// <summary>
     /// The location of the OpenAPI description file.
@@ -138,5 +139,26 @@ public class ApiClientConfiguration
         config.Deserializers.Clear();
     }
 
+    public object Clone()
+    {
+        return new ApiClientConfiguration
+        {
+            DescriptionLocation = DescriptionLocation,
+            Language = Language,
+            StructuredMimeTypes = [.. StructuredMimeTypes],
+            IncludePatterns = new(IncludePatterns, StringComparer.OrdinalIgnoreCase),
+            ExcludePatterns = new(ExcludePatterns, StringComparer.OrdinalIgnoreCase),
+            OutputPath = OutputPath,
+            ClientNamespaceName = ClientNamespaceName,
+            UsesBackingStore = UsesBackingStore,
+            IncludeAdditionalData = IncludeAdditionalData,
+            ExcludeBackwardCompatible = ExcludeBackwardCompatible,
+            DisabledValidationRules = new(DisabledValidationRules, StringComparer.OrdinalIgnoreCase),
+        };
+    }
+    public void NormalizePaths(string targetDirectory)
+    {
+        OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+    }
 }
 #pragma warning restore CA2227 // Collection properties should be read only

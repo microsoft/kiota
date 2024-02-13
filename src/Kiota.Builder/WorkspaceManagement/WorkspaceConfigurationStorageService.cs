@@ -21,10 +21,6 @@ public class WorkspaceConfigurationStorageService
     private readonly string targetConfigurationFilePath;
     private readonly string targetManifestFilePath;
     private readonly ManifestManagementService manifestManagementService = new();
-    public WorkspaceConfigurationStorageService() : this(Directory.GetCurrentDirectory())
-    {
-
-    }
     public WorkspaceConfigurationStorageService(string targetDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);

@@ -11,7 +11,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     public async Task DefensiveProgramming()
     {
         Assert.Throws<ArgumentException>(() => new WorkspaceConfigurationStorageService(string.Empty));
-        var service = new WorkspaceConfigurationStorageService();
+        var service = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
         await Assert.ThrowsAsync<ArgumentNullException>(() => service.UpdateWorkspaceConfigurationAsync(null, null));
     }
     private readonly string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
