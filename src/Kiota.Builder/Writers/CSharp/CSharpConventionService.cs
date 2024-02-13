@@ -44,7 +44,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(element);
         if (element is not CodeElement codeElement) return;
         if (!element.Documentation.DescriptionAvailable) return;
-        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+        var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
     }
     public void WriteAdditionalDescriptionItem(string description, LanguageWriter writer)
@@ -64,7 +64,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
             {
-                var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, static x => x.CleanupXMLString());
+                var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
             if (documentation.ExternalDocumentationAvailable)
@@ -150,6 +150,14 @@ public class CSharpConventionService : CommonLanguageConventionService
             foreach (var childNsSegment in GetAllNamespaces(childNs))
                 yield return childNsSegment;
         }
+    }
+    public string GetTypeStringForDocumentation(CodeTypeBase code, CodeElement targetElement)
+    {
+        var typeString = GetTypeString(code, targetElement, true, false);// dont include nullable markers
+        if (typeString.EndsWith('>'))
+            return typeString.CleanupXMLString(); // don't generate cref links for generic types as concrete types generate invalid links
+
+        return $"{ReferenceTypePrefix}{typeString.CleanupXMLString()}{ReferenceTypeSuffix}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {

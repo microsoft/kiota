@@ -14,7 +14,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         conventions.WriteShortDescription(codeElement, writer);//TODO make the parameter name dynamic in v2
         conventions.WriteShortDescription(codeElement.IndexParameter, writer, $"<param name=\"position\">", "</param>");
-        conventions.WriteAdditionalDescriptionItem($"<returns>A <cref=\"{conventions.GetTypeString(codeElement.ReturnType, codeElement)}\"></returns>", writer);
+        conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(codeElement.ReturnType, codeElement)}</returns>", writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexParameter.Type, codeElement)} position] {{ get {{");
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp)
