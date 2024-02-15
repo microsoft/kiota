@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-
+using System.Net.Http;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.OpenApi.Models;
@@ -9,7 +11,7 @@ using Microsoft.OpenApi.Services;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
-public class OpenApiUrlTreeNodeExtensionsTests
+public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
 {
     [Fact]
     public void Defensive()
@@ -673,4 +675,266 @@ public class OpenApiUrlTreeNodeExtensionsTests
         // validate that we get a valid class name
         Assert.Equal("json", responseClassName);
     }
+    [Fact]
+    public void SinglePathParametersAreDeduplicated()
+    {
+        var userSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "displayName", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/microsoft.graph.user"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{foo}/careerAdvisor/{id}"] = new OpenApiPathItem
+                {
+                    Parameters = {
+                        new OpenApiParameter {
+                            Name = "foo",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["users/{id}/careerAdvisor"] = new OpenApiPathItem
+                {
+                    Parameters = {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["users/{user-id}/manager"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = {
+                                new OpenApiParameter {
+                                    Name = "user-id",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                },
+                            },
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        node.MergeIndexNodesAtSameLevel(mockLogger);
+        var usersCollectionIndexNode = GetChildNodeByPath(node, "users/{users-id}");
+        Assert.NotNull(usersCollectionIndexNode);
+        Assert.Equal("{+baseurl}/users/{users%2Did}", usersCollectionIndexNode.GetUrlTemplate());
+
+        var managerNode = GetChildNodeByPath(node, "users/{users-id}/manager");
+        Assert.NotNull(managerNode);
+        Assert.Equal("{+baseurl}/users/{users%2Did}/manager", managerNode.GetUrlTemplate());
+
+        var careerAdvisorNode = GetChildNodeByPath(node, "users/{users-id}/careerAdvisor");
+        Assert.NotNull(careerAdvisorNode);
+        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor", careerAdvisorNode.GetUrlTemplate());
+
+        var careerAdvisorIndexNode = GetChildNodeByPath(node, "users/{users-id}/careerAdvisor/{id}");
+        Assert.NotNull(careerAdvisorIndexNode);
+        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor/{id}", careerAdvisorIndexNode.GetUrlTemplate());
+        var pathItem = careerAdvisorIndexNode.PathItems[Constants.DefaultOpenApiLabel];
+        Assert.NotNull(pathItem);
+        var parameter = pathItem.Parameters.FirstOrDefault(static p => p.Name == "users-id");
+        Assert.NotNull(parameter);
+    }
+    [Fact]
+    public void SinglePathParametersAreDeduplicatedAndOrderIsRespected()
+    {
+        var ownerSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/owner"
+            },
+            UnresolvedReference = false
+        };
+        var repoSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/repo"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/repos/{owner}/{repo}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = repoSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/repos/{template_owner}/{template_repo}/generate"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = repoSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {"owner", ownerSchema},
+                    {"repo", repoSchema}
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "GitHub", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        node.MergeIndexNodesAtSameLevel(mockLogger);
+
+        // Expected
+        var resultNode = GetChildNodeByPath(node, "repos/{owner}/{repos%2Did}/generate");
+        Assert.NotNull(resultNode);
+        Assert.Equal("{+baseurl}/repos/{owner}/{repos%2Did}/generate", resultNode.GetUrlTemplate());
+    }
+    private static OpenApiUrlTreeNode GetChildNodeByPath(OpenApiUrlTreeNode node, string path)
+    {
+        var pathSegments = path.Split('/');
+        if (pathSegments.Length == 0)
+            return null;
+        if (pathSegments.Length == 1 && node.Children.TryGetValue(pathSegments[0], out var result))
+            return result;
+        if (node.Children.TryGetValue(pathSegments[0], out var currentNode))
+            return GetChildNodeByPath(currentNode, string.Join('/', pathSegments.Skip(1)));
+        return null;
+    }
+    public void Dispose()
+    {
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
+    private static readonly HttpClient _httpClient = new();
 }

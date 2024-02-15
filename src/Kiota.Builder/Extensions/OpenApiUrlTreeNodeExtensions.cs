@@ -80,7 +80,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                             .Where(static x => x.Value.PathItems.ContainsKey(Constants.DefaultOpenApiLabel))
                             .SelectMany(x => GetParametersForPathItem(x.Value.PathItems[Constants.DefaultOpenApiLabel], node.DeduplicatedSegment()))
                             .Distinct();
-        return Enumerable.Empty<OpenApiParameter>();
+        return [];
     }
     private const char PathNameSeparator = '\\';
     [GeneratedRegex(@"-?id\d?}?$", RegexOptions.Singleline | RegexOptions.IgnoreCase, 500)]
