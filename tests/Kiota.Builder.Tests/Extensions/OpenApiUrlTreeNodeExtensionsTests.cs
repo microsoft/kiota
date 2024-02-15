@@ -804,24 +804,24 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         node.MergeIndexNodesAtSameLevel(mockLogger);
-        var usersCollectionIndexNode = GetChildNodeByPath(node, "users/{users-id}");
+        var usersCollectionIndexNode = GetChildNodeByPath(node, "users/{foo-id}");
         Assert.NotNull(usersCollectionIndexNode);
-        Assert.Equal("{+baseurl}/users/{users%2Did}", usersCollectionIndexNode.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/users/{foo%2Did}", usersCollectionIndexNode.GetUrlTemplate());
 
-        var managerNode = GetChildNodeByPath(node, "users/{users-id}/manager");
+        var managerNode = GetChildNodeByPath(node, "users/{foo-id}/manager");
         Assert.NotNull(managerNode);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/manager", managerNode.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/users/{foo%2Did}/manager", managerNode.GetUrlTemplate());
 
-        var careerAdvisorNode = GetChildNodeByPath(node, "users/{users-id}/careerAdvisor");
+        var careerAdvisorNode = GetChildNodeByPath(node, "users/{foo-id}/careerAdvisor");
         Assert.NotNull(careerAdvisorNode);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor", careerAdvisorNode.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/users/{foo%2Did}/careerAdvisor", careerAdvisorNode.GetUrlTemplate());
 
-        var careerAdvisorIndexNode = GetChildNodeByPath(node, "users/{users-id}/careerAdvisor/{id}");
+        var careerAdvisorIndexNode = GetChildNodeByPath(node, "users/{foo-id}/careerAdvisor/{id}");
         Assert.NotNull(careerAdvisorIndexNode);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor/{id}", careerAdvisorIndexNode.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/users/{foo%2Did}/careerAdvisor/{id}", careerAdvisorIndexNode.GetUrlTemplate());
         var pathItem = careerAdvisorIndexNode.PathItems[Constants.DefaultOpenApiLabel];
         Assert.NotNull(pathItem);
-        var parameter = pathItem.Parameters.FirstOrDefault(static p => p.Name == "users-id");
+        var parameter = pathItem.Parameters.FirstOrDefault(static p => p.Name == "foo-id");
         Assert.NotNull(parameter);
     }
     [Fact]
@@ -916,9 +916,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         node.MergeIndexNodesAtSameLevel(mockLogger);
 
         // Expected
-        var resultNode = GetChildNodeByPath(node, "repos/{owner}/{repos%2Did}/generate");
+        var resultNode = GetChildNodeByPath(node, "repos/{owner-id}/{repo-id}/generate");
         Assert.NotNull(resultNode);
-        Assert.Equal("{+baseurl}/repos/{owner}/{repos%2Did}/generate", resultNode.GetUrlTemplate());
+        Assert.Equal("\\repos\\{owner-id}\\{repo-id}\\generate", resultNode.Path);
+        Assert.Equal("{+baseurl}/repos/{owner%2Did}/{repo%2Did}/generate", resultNode.GetUrlTemplate());
     }
     private static OpenApiUrlTreeNode GetChildNodeByPath(OpenApiUrlTreeNode node, string path)
     {

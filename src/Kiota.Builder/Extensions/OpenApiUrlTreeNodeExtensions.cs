@@ -279,7 +279,9 @@ public static partial class OpenApiUrlTreeNodeExtensions
         {
             var indexNode = indexNodes[0];
             node.Children.Remove(indexNode.Key);
-            var newSegmentParameterName = $"{{{node.Segment.CleanupSymbolName()}-id}}";
+            var oldSegmentName = indexNode.Value.Segment.Trim('{', '}').CleanupSymbolName();
+            var segmentIndex = indexNode.Value.Path.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList().IndexOf(indexNode.Value.Segment);
+            var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName}-id}}";
             indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
             indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
             node.Children.Add(newSegmentParameterName, indexNode.Value);
@@ -289,10 +291,36 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 node.Children.Remove(child.Key);
                 CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, newSegmentParameterName, logger);
             }
+            ReplaceParameterInPathForAllChildNodes(indexNode.Value, segmentIndex, newSegmentParameterName);
         }
 
         foreach (var child in node.Children.Values)
             MergeIndexNodesAtSameLevel(child, logger);
+    }
+    private static void ReplaceParameterInPathForAllChildNodes(OpenApiUrlTreeNode node, int parameterIndex, string newParameterName)
+    {
+        if (parameterIndex < 0)
+            return;
+        foreach (var child in node.Children.Values)
+        {
+            var splatPath = child.Path.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+            if (splatPath.Length > parameterIndex)
+            {
+                var oldName = splatPath[parameterIndex];
+                splatPath[parameterIndex] = newParameterName;
+                child.Path = "\\" + string.Join('\\', splatPath);
+                if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                {
+                    foreach (var pathParameter in pathItem.Parameters
+                                                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters))
+                                                    .Where(x => x.In == ParameterLocation.Path && oldName.Equals(x.Name, StringComparison.Ordinal)))
+                    {
+                        pathParameter.Name = newParameterName;
+                    }
+                }
+            }
+            ReplaceParameterInPathForAllChildNodes(child, parameterIndex, newParameterName);
+        }
     }
     private static void CopyNodeIntoOtherNode(OpenApiUrlTreeNode source, OpenApiUrlTreeNode destination, string pathParameterNameToReplace, string pathParameterNameReplacement, ILogger logger)
     {
