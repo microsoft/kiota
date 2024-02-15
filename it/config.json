@@ -53,6 +53,9 @@
       }
     ]
   },
+  "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml": {
+    "MockServerITFolder": "todo"
+  },
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
     "MockServerITFolder": "basic",
     "Suppressions": [
