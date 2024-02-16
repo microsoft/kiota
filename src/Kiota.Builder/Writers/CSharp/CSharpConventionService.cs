@@ -38,7 +38,9 @@ public class CSharpConventionService : CommonLanguageConventionService
     }
     private const string ReferenceTypePrefix = "<see cref=\"";
     private const string ReferenceTypeSuffix = "\"/>";
+#pragma warning disable S1006 // Method overrides should not change parameter defaults
     public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
+#pragma warning restore S1006 // Method overrides should not change parameter defaults
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
@@ -293,14 +295,14 @@ public class CSharpConventionService : CommonLanguageConventionService
         };
         return $"{GetDeprecationInformation(parameter)}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
     }
-    private static string GetDeprecationInformation(IDeprecableElement element)
+    private string GetDeprecationInformation(IDeprecableElement element)
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return string.Empty;
 
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"[Obsolete(\"{element.Deprecation.DescriptionTemplate}{versionComment}{dateComment}{removalComment}\")]";
+        return $"[Obsolete(\"{element.Deprecation.GetDescription(type => GetTypeStringForDocumentation(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}\")]";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

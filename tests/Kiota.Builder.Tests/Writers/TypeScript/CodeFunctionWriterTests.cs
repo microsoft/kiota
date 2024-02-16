@@ -677,6 +677,25 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("v2.0", result);
         Assert.Contains("@deprecated", result);
     }
+    [Fact]
+    public void WritesDeprecationInformationFromBuilder()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Name = "NewAwesomeMethod";// new method replacement
+        method.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = method, IsExternal = false } } });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
+    }
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "paramName";

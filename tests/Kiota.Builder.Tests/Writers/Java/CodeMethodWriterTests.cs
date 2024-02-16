@@ -2070,6 +2070,17 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("@Deprecated", result);
     }
     [Fact]
+    public void WritesDeprecationInformationFromBuilder()
+    {
+        setup();
+        var newMethod = method.Clone() as CodeMethod;
+        newMethod.Name = "NewAwesomeMethod";// new method replacement
+        method.Deprecation = new("This method is obsolete. Use NewAwesomeMethod instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = newMethod, IsExternal = false } } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
+    }
+    [Fact]
     public void WritesMessageOverrideOnPrimary()
     {
         // Given
