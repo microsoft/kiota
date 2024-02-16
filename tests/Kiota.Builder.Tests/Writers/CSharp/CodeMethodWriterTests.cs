@@ -1848,6 +1848,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = newMethod, IsExternal = false } } });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("This method is obsolete. Use <see cref=\"NewAwesomeMethod\"/> instead.", result);
+        Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
     }
 }
