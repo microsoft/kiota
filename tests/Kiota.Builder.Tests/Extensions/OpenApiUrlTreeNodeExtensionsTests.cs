@@ -921,6 +921,75 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         Assert.Equal("\\repos\\{owner-id}\\{repo-id}\\generate", resultNode.Path);
         Assert.Equal("{+baseurl}/repos/{owner%2Did}/{repo%2Did}/generate", resultNode.GetUrlTemplate());
     }
+    [Fact]
+    public void repro4085()
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/path/{thingId}/abc/{second}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema {
+                                                Type = "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/path/{differentThingId}/def/{second}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema {
+                                                Type = "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "GitHub", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        node.MergeIndexNodesAtSameLevel(mockLogger);
+
+        // Expected
+        var resultNode = GetChildNodeByPath(node, "path");
+        Assert.NotNull(resultNode);
+        Assert.Equal("\\path", resultNode.Path);
+
+        var thingId = GetChildNodeByPath(resultNode, "{thingId}");
+        Assert.Equal("\\path\\{thingId}", thingId.Path);
+        Assert.Equal("{+baseurl}/path/{thingId}", thingId.GetUrlTemplate());
+
+        var differentThingId = GetChildNodeByPath(resultNode, "{differentThingId}");
+        Assert.Equal("\\path\\{differentThingId}", differentThingId.Path);
+        Assert.Equal("{+baseurl}/path/{differentThingId}", differentThingId.GetUrlTemplate());
+    }
     private static OpenApiUrlTreeNode GetChildNodeByPath(OpenApiUrlTreeNode node, string path)
     {
         var pathSegments = path.Split('/');
