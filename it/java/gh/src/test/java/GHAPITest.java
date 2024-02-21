@@ -16,8 +16,8 @@ public class BasicAPITest {
         adapter.setBaseUrl("http://127.0.0.1:1080");
         var client = new ApiClient(adapter);
 
-        client.repos().byOwnerId("my-owner").byReposId("my-repo").get();
-        client.repos().byTemplateOwner("my-template-owner").byTemplateRepo("my-repo").post(null);
+        client.repos().byOrgId("my-owner").byRepoId("my-repo").get();
+        client.repos().byOrgId("my-owner").byRepoId("my-repo").generate().post(null);
     }
 
 }
