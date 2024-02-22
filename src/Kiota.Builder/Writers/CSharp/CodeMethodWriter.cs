@@ -418,11 +418,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{SanitizeString(codeElement.AcceptHeaderValue)}\");");
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            var sanitizedRequestBodyContentType = SanitizeString(codeElement.RequestBodyContentType);
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
@@ -670,12 +670,4 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : string.Empty)}>",
         };
     }
-
-    /// <summary>
-    /// Sanitize a string for direct writing.
-    /// </summary>
-    /// <param name="input">The string to sanitize.</param>
-    /// <returns>The sanitized string.</returns>
-    private static string SanitizeString(string input)
-        => input.Replace("\"", "\\\"", StringComparison.Ordinal);
 }
