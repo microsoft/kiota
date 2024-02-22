@@ -1096,7 +1096,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters();
-        method.RequestBodyContentType = "application/json; profile=\"CamelCase\"";
+        method.RequestBodyContentType = "application/json; profile='CamelCase'";
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
