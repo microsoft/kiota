@@ -702,7 +702,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         {
             writer.WriteLine($"await {RequestAdapterParamName}.{SendNoContent}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {CancellationTokenParamName});");
         }
-        else if (!isStreamResp && !conventions.IsPrimitiveType(returnType) && codeElement.PagingInformation is {} pi)
+        else if (!isStreamResp && !conventions.IsPrimitiveType(returnType) && codeElement.PagingInformation is { } pi)
         {
             writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pi.ItemName}\", nextLinkName: \"{pi.NextLinkName}\");");
             writer.WriteLine($"var pageResponse = await {PagingServiceParamName}.GetPagedDataAsync((info, token) => {RequestAdapterParamName}.{SendNoContent}(info, cancellationToken: token), pagingData, {AllParamName}, {CancellationTokenParamName});");
