@@ -639,7 +639,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             if (requestBodyParamType?.TypeDefinition is CodeClass)
             {
                 writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
-                writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType}\", stream);");
+                writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType.SanitizeDoubleQuote()}\", stream);");
 
                 var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
 
@@ -757,9 +757,10 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             // Set the content type header. Will not add the code if the method is a stream, has no RequestBodyContentType or if there's no body parameter.
             if (!isStream && generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
             {
-                if (!string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+                var sanitizedRequestBodyContentType = generatorMethod.RequestBodyContentType.SanitizeDoubleQuote();
+                if (!string.IsNullOrWhiteSpace(sanitizedRequestBodyContentType))
                 {
-                    writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
+                    writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{sanitizedRequestBodyContentType}\", model);");
                 }
                 else
                 {
