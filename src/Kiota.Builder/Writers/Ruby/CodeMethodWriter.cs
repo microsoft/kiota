@@ -301,16 +301,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             if (requestParams.requestBody != null)
             {
-                var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
+                var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (requestParams.requestContentType is not null)
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
                     else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
-                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, \"{sanitizedRequestBodyContentType}\")");
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
                 }
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
             }
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&

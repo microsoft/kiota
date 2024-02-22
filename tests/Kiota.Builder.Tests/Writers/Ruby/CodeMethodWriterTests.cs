@@ -1099,6 +1099,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.RequestBodyContentType = "application/json; profile=\"CamelCase\"";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
+        Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
     }
 }
