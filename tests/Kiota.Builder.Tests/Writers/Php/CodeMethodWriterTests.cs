@@ -2481,7 +2481,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return $this->requestAdapter->sendAsync($requestInfo, [\\Microsoft\\Graph\\Models\\Security\\ModelA::class, 'createFromDiscriminatorValue'], null);", result);
         Assert.Contains("return $this->requestAdapter->sendCollectionAsync($requestInfo, [Component::class, 'createFromDiscriminatorValue'], null);", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorAcceptHeaderQuotes()
     {
@@ -2494,7 +2494,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("$requestInfo->tryAddHeader('Accept', \"application/json; profile=\\\"CamelCase\\\"\");", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorContentTypeQuotes()
     {

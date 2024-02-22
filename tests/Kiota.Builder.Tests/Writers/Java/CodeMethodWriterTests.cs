@@ -2132,7 +2132,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("String getErrorMessage() ", result);
         Assert.Contains("return this.getProp1()", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorAcceptHeaderQuotes()
     {
@@ -2145,7 +2145,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("requestInfo.headers.tryAdd(\"Accept\", \"application/json; profile=\\\"CamelCase\\\"\");", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorContentTypeQuotes()
     {

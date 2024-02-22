@@ -16,7 +16,7 @@ public static class StringExtensions
         => string.IsNullOrEmpty(original)
             ? original
             : original.Replace("\"", "\\\"", StringComparison.Ordinal);
-    
+
     /// <summary>
     /// Sanitize a string for direct writing.
     /// </summary>

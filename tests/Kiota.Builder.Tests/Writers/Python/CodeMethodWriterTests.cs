@@ -2202,7 +2202,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorAcceptHeaderQuotes()
     {
@@ -2215,7 +2215,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json; profile=\\\"CamelCase\\\"\")", result);
     }
-    
+
     [Fact]
     public void WritesRequestGeneratorContentTypeQuotes()
     {
