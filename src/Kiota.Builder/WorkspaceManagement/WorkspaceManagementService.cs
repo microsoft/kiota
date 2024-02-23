@@ -32,6 +32,12 @@ public class WorkspaceManagementService
     }
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
+    public async Task<bool> IsClientPresent(string clientName, CancellationToken cancellationToken = default)
+    {
+        if (!UseKiotaConfig) return false;
+        var (wsConfig, _) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        return wsConfig?.Clients.ContainsKey(clientName) ?? false;
+    }
     public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);

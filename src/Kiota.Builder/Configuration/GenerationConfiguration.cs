@@ -25,6 +25,14 @@ public class GenerationConfiguration : ICloneable
                 (ApiManifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) || File.Exists(ApiManifestPath));
         }
     }
+    public bool SkipGeneration
+    {
+        get; set;
+    }
+    public ClientOperation? Operation
+    {
+        get; set;
+    }
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
@@ -134,6 +142,8 @@ public class GenerationConfiguration : ICloneable
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
+            SkipGeneration = SkipGeneration,
+            Operation = Operation,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();

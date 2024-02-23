@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -92,6 +93,8 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
+        Configuration.Generation.SkipGeneration = skipGeneration;
+        Configuration.Generation.Operation = ClientOperation.Add;
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)
@@ -119,14 +122,12 @@ internal class AddHandler : BaseKiotaCommandHandler
             try
             {
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
-                //TODO implement skip generation
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
                 else
                 {
-                    DisplaySuccess("Generation skipped as no changes were detected");
-                    DisplayCleanHint("generate");
+                    DisplaySuccess("Generation skipped as no changes were detected or --skip-generation was passed");
                 }
                 var manifestResult = await builder.GetApiManifestDetailsAsync(true, cancellationToken).ConfigureAwait(false);
                 var manifestPath = manifestResult is null ? string.Empty : Configuration.Generation.ApiManifestPath;

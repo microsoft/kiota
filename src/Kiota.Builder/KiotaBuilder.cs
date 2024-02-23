@@ -173,7 +173,7 @@ public partial class KiotaBuilder
         StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
         OpenApiUrlTreeNode? openApiTree = null;
-        var shouldGenerate = true;
+        var shouldGenerate = !config.SkipGeneration;
         if (openApiDocument != null)
         {
             // filter paths
@@ -184,7 +184,7 @@ public partial class KiotaBuilder
 
             // Should Generate
             sw.Start();
-            shouldGenerate = await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
             if (shouldGenerate && generating)
@@ -234,6 +234,9 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
+        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
+
         try
         {
             await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
@@ -248,30 +251,40 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            if (!shouldGenerate)
+            if (shouldGenerate)
+            {
+                // Create Source Model
+                sw.Start();
+                var generatedCode = CreateSourceModel(openApiTree);
+                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+                // RefineByLanguage
+                sw.Start();
+                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+                // Write language source
+                sw.Start();
+                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+                // Write lock file
+                sw.Start();
+                await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+            }
+            else
             {
                 logger.LogInformation("No changes detected, skipping generation");
+                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                {
+                    // Write lock file
+                    sw.Start();
+                    await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
+                    StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+                }
                 return false;
             }
-            // Create Source Model
-            sw.Start();
-            var generatedCode = CreateSourceModel(openApiTree);
-            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-            // RefineByLanguage
-            sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-            // Write language source
-            sw.Start();
-            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
-
-            // Write lock file
-            sw.Start();
-            await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
