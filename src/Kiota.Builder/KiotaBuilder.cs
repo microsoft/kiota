@@ -63,8 +63,12 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
-        workspaceManagementService = new WorkspaceManagementService(logger, useKiotaConfig);
+        var workingDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, useKiotaConfig, workingDirectory);
+        descriptionStorageService = new DescriptionStorageService(workingDirectory);
+        this.useKiotaConfig = useKiotaConfig;
     }
+    private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
@@ -268,20 +272,14 @@ public partial class KiotaBuilder
                 await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
                 StopLogAndReset(sw, $"step {++stepId} - writing files - took");
 
-                // Write lock file
-                sw.Start();
-                await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+                await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 logger.LogInformation("No changes detected, skipping generation");
                 if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
                 {
-                    // Write lock file
-                    sw.Start();
-                    await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
-                    StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+                    await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
                 }
                 return false;
             }
@@ -292,6 +290,22 @@ public partial class KiotaBuilder
             throw;
         }
         return true;
+    }
+    private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
+    {
+        // Write lock file
+        sw.Start();
+        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], cancellationToken).ConfigureAwait(false);
+        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+
+        if (!isDescriptionFromWorkspaceCopy)
+        {
+            // Store description in the workspace copy
+            sw.Start();
+            using var descriptionStream = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);
+            await descriptionStorageService.UpdateDescriptionAsync(config.ClientClassName, descriptionStream, new Uri(config.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - storing description in the workspace copy - took");
+        }
     }
     private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
@@ -394,7 +408,8 @@ public partial class KiotaBuilder
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
-
+    private readonly DescriptionStorageService descriptionStorageService;
+    private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
         var stopwatch = new Stopwatch();
@@ -403,7 +418,15 @@ public partial class KiotaBuilder
         inputPath = inputPath.Trim();
 
         Stream input;
-        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        if (useKiotaConfig &&
+            config.Operation is ClientOperation.Edit or ClientOperation.Add &&
+            await descriptionStorageService.GetDescriptionAsync(config.ClientClassName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false) is { } descriptionStream)
+        {
+            logger.LogInformation("loaded description from the workspace copy");
+            input = descriptionStream;
+            isDescriptionFromWorkspaceCopy = true;
+        }
+        else if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             try
             {
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger)
@@ -413,6 +436,7 @@ public partial class KiotaBuilder
                 var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
                 var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
                 input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
+                logger.LogInformation("loaded description from remote source");
             }
             catch (HttpRequestException ex)
             {
@@ -430,6 +454,7 @@ public partial class KiotaBuilder
                 }
                 inMemoryStream.Position = 0;
                 input = inMemoryStream;
+                logger.LogInformation("loaded description from local source");
 #pragma warning restore CA2000
             }
             catch (Exception ex) when (ex is FileNotFoundException ||

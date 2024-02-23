@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncKeyedLock;
 using Kiota.Builder.Manifest;
 using Microsoft.OpenApi.ApiManifest;
 
@@ -28,6 +29,11 @@ public class WorkspaceConfigurationStorageService
         targetConfigurationFilePath = Path.Combine(TargetDirectory, ConfigurationFileName);
         targetManifestFilePath = Path.Combine(TargetDirectory, ManifestFileName);
     }
+    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
+    {
+        o.PoolSize = 20;
+        o.PoolInitialFill = 1;
+    });
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (await IsInitializedAsync(cancellationToken).ConfigureAwait(false))
@@ -37,18 +43,24 @@ public class WorkspaceConfigurationStorageService
     public async Task UpdateWorkspaceConfigurationAsync(WorkspaceConfiguration configuration, ApiManifestDocument? manifestDocument, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        if (!Directory.Exists(TargetDirectory))
-            Directory.CreateDirectory(TargetDirectory);
-#pragma warning disable CA2007
-        await using var configStream = File.Open(targetConfigurationFilePath, FileMode.Create);
-#pragma warning restore CA2007
-        await JsonSerializer.SerializeAsync(configStream, configuration, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
-        if (manifestDocument != null)
+        using (await localFilesLock.LockAsync(targetConfigurationFilePath, cancellationToken).ConfigureAwait(false))
         {
+            if (!Directory.Exists(TargetDirectory))
+                Directory.CreateDirectory(TargetDirectory);
 #pragma warning disable CA2007
-            await using var manifestStream = File.Open(targetManifestFilePath, FileMode.Create);
+            await using var configStream = File.Open(targetConfigurationFilePath, FileMode.Create);
 #pragma warning restore CA2007
-            await manifestManagementService.SerializeManifestDocumentAsync(manifestDocument, manifestStream).ConfigureAwait(false);
+            await JsonSerializer.SerializeAsync(configStream, configuration, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
+            if (manifestDocument != null)
+            {
+                using (await localFilesLock.LockAsync(targetManifestFilePath, cancellationToken).ConfigureAwait(false))
+                {
+#pragma warning disable CA2007
+                    await using var manifestStream = File.Open(targetManifestFilePath, FileMode.Create);
+#pragma warning restore CA2007
+                    await manifestManagementService.SerializeManifestDocumentAsync(manifestDocument, manifestStream).ConfigureAwait(false);
+                }
+            }
         }
     }
     public Task<bool> IsInitializedAsync(CancellationToken cancellationToken = default)
@@ -64,51 +76,54 @@ public class WorkspaceConfigurationStorageService
     public async Task<(WorkspaceConfiguration?, ApiManifestDocument?)> GetWorkspaceConfigurationAsync(CancellationToken cancellationToken = default)
     {
         if (File.Exists(targetConfigurationFilePath))
-        {
-#pragma warning disable CA2007
-            await using var configStream = File.OpenRead(targetConfigurationFilePath);
-#pragma warning restore CA2007
-            var config = await JsonSerializer.DeserializeAsync(configStream, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
-            if (File.Exists(targetManifestFilePath))
+            using (await localFilesLock.LockAsync(targetConfigurationFilePath, cancellationToken).ConfigureAwait(false))
             {
 #pragma warning disable CA2007
-                await using var manifestStream = File.OpenRead(targetManifestFilePath);
+                await using var configStream = File.OpenRead(targetConfigurationFilePath);
 #pragma warning restore CA2007
-                var manifest = await manifestManagementService.DeserializeManifestDocumentAsync(manifestStream).ConfigureAwait(false);
-                return (config, manifest);
+                var config = await JsonSerializer.DeserializeAsync(configStream, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
+                if (File.Exists(targetManifestFilePath))
+                    using (await localFilesLock.LockAsync(targetManifestFilePath, cancellationToken).ConfigureAwait(false))
+                    {
+#pragma warning disable CA2007
+                        await using var manifestStream = File.OpenRead(targetManifestFilePath);
+#pragma warning restore CA2007
+                        var manifest = await manifestManagementService.DeserializeManifestDocumentAsync(manifestStream).ConfigureAwait(false);
+                        return (config, manifest);
+                    }
+                return (config, null);
             }
-            return (config, null);
-        }
         return (null, null);
     }
-    public Task BackupConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    public async Task BackupConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        BackupFile(directoryPath, ConfigurationFileName);
-        BackupFile(directoryPath, ManifestFileName);
-        return Task.CompletedTask;
+        await BackupFile(directoryPath, ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await BackupFile(directoryPath, ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private static void BackupFile(string directoryPath, string fileName)
+    private static async Task BackupFile(string directoryPath, string fileName, CancellationToken cancellationToken = default)
     {
         var sourceFilePath = Path.Combine(directoryPath, fileName);
         if (File.Exists(sourceFilePath))
         {
             var backupFilePath = GetBackupFilePath(directoryPath, fileName);
-            var targetDirectory = Path.GetDirectoryName(backupFilePath);
-            if (string.IsNullOrEmpty(targetDirectory)) return;
-            if (!Directory.Exists(targetDirectory))
-                Directory.CreateDirectory(targetDirectory);
-            File.Copy(sourceFilePath, backupFilePath, true);
+            using (await localFilesLock.LockAsync(backupFilePath, cancellationToken).ConfigureAwait(false))
+            {
+                var targetDirectory = Path.GetDirectoryName(backupFilePath);
+                if (string.IsNullOrEmpty(targetDirectory)) return;
+                if (!Directory.Exists(targetDirectory))
+                    Directory.CreateDirectory(targetDirectory);
+                File.Copy(sourceFilePath, backupFilePath, true);
+            }
         }
     }
-    public Task RestoreConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    public async Task RestoreConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        RestoreFile(directoryPath, ConfigurationFileName);
-        RestoreFile(directoryPath, ManifestFileName);
-        return Task.CompletedTask;
+        await RestoreFile(directoryPath, ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await RestoreFile(directoryPath, ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private static void RestoreFile(string directoryPath, string fileName)
+    private static async Task RestoreFile(string directoryPath, string fileName, CancellationToken cancellationToken = default)
     {
         var sourceFilePath = Path.Combine(directoryPath, fileName);
         var targetDirectory = Path.GetDirectoryName(sourceFilePath);
@@ -118,7 +133,10 @@ public class WorkspaceConfigurationStorageService
         var backupFilePath = GetBackupFilePath(directoryPath, fileName);
         if (File.Exists(backupFilePath))
         {
-            File.Copy(backupFilePath, sourceFilePath, true);
+            using (await localFilesLock.LockAsync(sourceFilePath, cancellationToken).ConfigureAwait(false))
+            {
+                File.Copy(backupFilePath, sourceFilePath, true);
+            }
         }
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
