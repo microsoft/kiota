@@ -339,17 +339,17 @@ public sealed class CodeFunctionWriterTests : IDisposable
             Parent = parentClass,
         };
         var enumOption = new CodeEnumOption() { Name = "SomeOption" };
-        propertyEnum.AddOption(enumOption);        
+        propertyEnum.AddOption(enumOption);
         var codeNamespace = parentClass.Parent as CodeNamespace;
         codeNamespace.AddEnum(propertyEnum);
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "propWithDefaultEnum",            
+            Name = "propWithDefaultEnum",
             DefaultValue = enumOption.Name,
             Type = new CodeType
             {
                 Name = "EnumTypeWithOption",
-                TypeDefinition = propertyEnum,                
+                TypeDefinition = propertyEnum,
             }
         });
 
