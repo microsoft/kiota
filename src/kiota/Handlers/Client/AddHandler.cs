@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
@@ -125,14 +126,14 @@ internal class AddHandler : BaseKiotaCommandHandler
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
-                else
+                else if (skipGeneration)
                 {
-                    DisplaySuccess("Generation skipped as no changes were detected or --skip-generation was passed");
-                }
-                var manifestResult = await builder.GetApiManifestDetailsAsync(true, cancellationToken).ConfigureAwait(false);
-                var manifestPath = manifestResult is null ? string.Empty : Configuration.Generation.ApiManifestPath;
-                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath, manifestPath);
-                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath, manifestPath);
+                    DisplaySuccess("Generation skipped as --skip-generation was passed");
+                    DisplayGenerateCommandHint();
+                } // else we get an error because we're adding a client that already exists
+                var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
+                DisplayInfoHint(language, string.Empty, manifestPath);
+                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
                 return 0;
             }
             catch (Exception ex)
