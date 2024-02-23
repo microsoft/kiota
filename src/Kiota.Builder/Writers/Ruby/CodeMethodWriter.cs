@@ -301,15 +301,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             if (requestParams.requestBody != null)
             {
+                var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (requestParams.requestContentType is not null)
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
-                    else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\")");
+                    else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
                 }
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
             }
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
@@ -321,7 +322,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"request_info.headers.try_add('Accept', '{codeElement.AcceptHeaderValue}')");
+            writer.WriteLine($"request_info.headers.try_add('Accept', '{codeElement.AcceptHeaderValue.SanitizeSingleQuote()}')");
         writer.WriteLine("return request_info");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";
