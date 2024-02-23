@@ -333,6 +333,26 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 Name = "string",
             },
         });
+        var propertyEnum = new CodeEnum
+        {
+            Name = "EnumTypeWithOption",
+            Parent = parentClass,
+        };
+        var enumOption = new CodeEnumOption() { Name = "SomeOption" };
+        propertyEnum.AddOption(enumOption);
+        var codeNamespace = parentClass.Parent as CodeNamespace;
+        codeNamespace.AddEnum(propertyEnum);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultEnum",
+            DefaultValue = enumOption.Name,
+            Type = new CodeType
+            {
+                Name = "EnumTypeWithOption",
+                TypeDefinition = propertyEnum,
+            }
+        });
+
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(deserializerFunction);
@@ -342,6 +362,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains("?? \"Test Value\"", result);
+        Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
     [Fact]
     public async Task WritesInheritedSerializerBody()
@@ -1032,6 +1053,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains($" ?? {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($" ?? {codeEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
 }

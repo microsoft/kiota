@@ -255,8 +255,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
     {
         if (string.IsNullOrEmpty(codeProperty.DefaultValue)) return string.Empty;
-        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
-            return $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition && enumDefinition.CodeEnumObject is not null)
+            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
         return codeProperty.DefaultValue;
     }
     private static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
