@@ -110,7 +110,7 @@ microsoft-kiota-serialization-text==1.0.0
 
 microsoft-kiota-serialization-form==0.1.0
 
-msal==1.26.0
+msal==1.27.0
 
 msal-extensions==1.1.0
 
