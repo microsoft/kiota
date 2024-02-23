@@ -1,4 +1,4 @@
-namespace Kiota.Builder.Configuration;
+﻿namespace Kiota.Builder.Configuration;
 public enum ClientOperation
 {
     Add,
