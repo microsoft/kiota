@@ -12,6 +12,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.MicrosoftExtensions;
@@ -7612,5 +7613,84 @@ components:
         Assert.NotNull(postMethod);
         var linkIssueRequestJsonBeanClass = codeModel.FindChildByName<CodeClass>("LinkIssueRequestJsonBean");
         Assert.NotNull(linkIssueRequestJsonBeanClass);
+    }
+
+    [Fact]
+    public async Task EnumArrayQueryParameter()
+    {
+        const string schemaDocument = """
+                     openapi: 3.0.2
+                     info:
+                       title: Enum
+                       version: 1.0.0
+                     paths:
+                       /EnumQuery:
+                         get:
+                           parameters:
+                             - name: enumValues
+                               in: query
+                               schema:
+                                 type: array
+                                 items:
+                                   $ref: '#/components/schemas/EnumValue'
+                             - name: enumValues2
+                               in: query
+                               schema:
+                                 $ref: '#/components/schemas/EnumValue'
+                           responses:
+                             '200':
+                               description: response
+                               content:
+                                 application/json:
+                                   schema:
+                                     $ref: '#/components/schemas/EnumObject'
+                     components:
+                       schemas:
+                         EnumValue:
+                           type: string
+                           enum:
+                             - Value1
+                             - Value2
+                             - Value3
+                         EnumObject:
+                           type: object
+                           properties:
+                             enumArray:
+                               type: array
+                               items:
+                                 $ref: '#/components/schemas/EnumValue'
+                     """;
+
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(schemaDocument);
+
+        var builder = new KiotaBuilder(
+            NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration
+            {
+                ClientClassName = "EnumTest",
+                OpenAPIFilePath = tempFilePath,
+                IncludeAdditionalData = false
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        Assert.NotNull(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var enumRequestBuilder = codeModel.FindChildByName<CodeClass>("EnumQueryRequestBuilder");
+        Assert.NotNull(enumRequestBuilder);
+        var queryParameters = enumRequestBuilder.FindChildByName<CodeClass>("EnumQueryRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+
+        Assert.Contains(queryParameters.Properties, p =>
+            p.Type is
+            {
+                IsCollection: true,
+                IsArray: true,
+                CollectionKind: CodeTypeBase.CodeTypeCollectionKind.Array,
+                Name: "EnumValue"
+            });
     }
 }

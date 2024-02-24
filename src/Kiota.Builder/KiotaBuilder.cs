@@ -1905,7 +1905,7 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeEnum existingDeclaration) // we can find it in the components
         {
-            return AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace);
+            return AddEnumDeclaration(currentNode, schema.GetSchema() ?? schema, declarationName, currentNamespace);
         }
         return existingDeclaration;
     }
@@ -2412,9 +2412,9 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        if (parameter.Schema.IsEnum())
+        var schema = parameter.Schema.GetSchema() ?? parameter.Schema;
+        if (schema.IsEnum())
         {
-            var schema = parameter.Schema;
             var codeNamespace = schema.IsReferencedSchema() switch
             {
                 true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
@@ -2429,11 +2429,12 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
+                    IsNullable = !parameter.Schema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }
         }
-        resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
+        resultType ??= GetPrimitiveType(schema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
             // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
