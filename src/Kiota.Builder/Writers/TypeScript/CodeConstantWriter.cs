@@ -105,7 +105,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
             if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
                  generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
-                writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");
+                writer.WriteLine($"responseBodyContentType: \"{acceptHeader.SanitizeDoubleQuote()}\",");
             if (executorMethod.ErrorMappings.Any())
             {
                 writer.StartBlock("errorMappings: {");
@@ -118,8 +118,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol)}\",");
             if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
-            if (!string.IsNullOrEmpty(executorMethod.RequestBodyContentType))
-                writer.WriteLine($"requestBodyContentType: \"{executorMethod.RequestBodyContentType}\",");
+            var sanitizedRequestBodyContentType = executorMethod.RequestBodyContentType.SanitizeDoubleQuote();
+            if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                writer.WriteLine($"requestBodyContentType: \"{sanitizedRequestBodyContentType}\",");
             if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody)
             {
                 if (GetBodySerializer(requestBody) is string bodySerializer)

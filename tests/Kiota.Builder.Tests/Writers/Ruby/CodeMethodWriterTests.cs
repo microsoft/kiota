@@ -1074,4 +1074,31 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("ReadOnlyProperty", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
+    [Fact]
+    public void WritesRequestGeneratorAcceptHeaderQuotes()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        method.AcceptedResponseTypes.Add("application/json; profile='CamelCase'");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("request_info.headers.try_add('Accept', 'application/json; profile=\\'CamelCase\\'')", result);
+    }
+
+    [Fact]
+    public void WritesRequestGeneratorContentTypeQuotes()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.RequestBodyContentType = "application/json; profile='CamelCase'";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
+    }
 }
