@@ -57,9 +57,8 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsReferencedSchema(this OpenApiSchema schema)
     {
-        var currentSchema = schema.GetSchema();
-        var isReference = currentSchema?.Reference != null;
-        if (isReference && currentSchema!.Reference.IsExternal)
+        var isReference = schema?.Reference != null;
+        if (isReference && schema!.Reference.IsExternal)
             throw new NotSupportedException("External references are not supported in this version of Kiota. While Kiota awaits on OpenAPI.Net to support inlining external references, you can use https://www.nuget.org/packages/Microsoft.OpenApi.Hidi to generate an OpenAPI description with inlined external references and then use this new reference with Kiota.");
         return isReference;
     }

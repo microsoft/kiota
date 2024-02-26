@@ -1905,7 +1905,7 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeEnum existingDeclaration) // we can find it in the components
         {
-            return AddEnumDeclaration(currentNode, schema.GetSchema() ?? schema, declarationName, currentNamespace);
+            return AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace);
         }
         return existingDeclaration;
     }
@@ -2412,19 +2412,20 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        var schema = parameter.Schema.GetSchema() ?? parameter.Schema;
-        if (schema.IsEnum())
+
+        if (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum()))
         {
-            var codeNamespace = schema.IsReferencedSchema() switch
+            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items : parameter.Schema;
+            var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
-                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
+                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
                 false => parameterClass.GetImmediateParentOfType<CodeNamespace>(), // Inline schema, i.e. specific to the Operation
             };
-            var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
-            var enumName = schema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, enumSchema);
+            var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
                 enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
-            if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
+            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType
                 {
@@ -2434,7 +2435,7 @@ public partial class KiotaBuilder
                 addBackwardCompatibleParameter = true;
             }
         }
-        resultType ??= GetPrimitiveType(schema) ?? new CodeType()
+        resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
             // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
