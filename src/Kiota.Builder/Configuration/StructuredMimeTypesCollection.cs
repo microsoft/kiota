@@ -33,7 +33,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
         }
         else
         {
-            return null;
+            throw new InvalidOperationException($"The provided media type {rawFormat} is not valid");
         }
     }
     private static string formatMediaType(MediaTypeHeaderValue value)
