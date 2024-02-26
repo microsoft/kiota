@@ -80,10 +80,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 logger.LogError("no description provided");
                 return 1;
             }
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ApiManifestPath = manifest;
-            Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
-            Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
+            Configuration.Generation.IncludePatterns = [.. includePatterns];
+            Configuration.Generation.ExcludePatterns = [.. excludePatterns];
             Configuration.Generation.ClearCache = clearCache;
             try
             {
