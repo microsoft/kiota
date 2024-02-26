@@ -47,14 +47,6 @@ public static class OpenApiSchemaExtensions
         return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
     }
 
-    public static OpenApiSchema? GetSchema(this OpenApiSchema schema)
-    {
-        if (schema is null)
-            return null;
-
-        return schema.IsArray() ? schema.Items : schema;
-    }
-
     public static bool IsReferencedSchema(this OpenApiSchema schema)
     {
         var isReference = schema?.Reference != null;
