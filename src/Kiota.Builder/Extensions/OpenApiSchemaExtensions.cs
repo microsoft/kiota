@@ -54,7 +54,7 @@ public static class OpenApiSchemaExtensions
 
         return schema.IsArray() ? schema.Items : schema;
     }
-    
+
     public static bool IsReferencedSchema(this OpenApiSchema schema)
     {
         var currentSchema = schema.GetSchema();
