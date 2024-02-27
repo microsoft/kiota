@@ -35,7 +35,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Kind = CodeConstantKind.QueryParametersMapper,
             OriginalCodeElement = source,
         };
-        result.Documentation.Description = "Mapper for query parameters from symbol name to serialization name represented as a constant.";
+        result.Documentation.DescriptionTemplate = "Mapper for query parameters from symbol name to serialization name represented as a constant.";
         return result;
     }
     public static CodeConstant? FromCodeEnum(CodeEnum source)
@@ -63,7 +63,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             UriTemplate = urlTemplateProperty.DefaultValue,
             OriginalCodeElement = codeClass
         };
-        result.Documentation.Description = "Uri template for the request builder.";
+        result.Documentation.DescriptionTemplate = "Uri template for the request builder.";
         return result;
     }
     public static CodeConstant? FromRequestBuilderToNavigationMetadata(CodeClass codeClass, CodeUsing[]? usingsToAdd = default)
@@ -79,7 +79,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Kind = CodeConstantKind.NavigationMetadata,
             OriginalCodeElement = codeClass,
         };
-        result.Documentation.Description = "Metadata for all the navigation properties in the request builder.";
+        result.Documentation.DescriptionTemplate = "Metadata for all the navigation properties in the request builder.";
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
         return result;
@@ -96,7 +96,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Kind = CodeConstantKind.RequestsMetadata,
             OriginalCodeElement = codeClass,
         };
-        result.Documentation.Description = "Metadata for all the requests in the request builder.";
+        result.Documentation.DescriptionTemplate = "Metadata for all the requests in the request builder.";
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
             result.AddUsing(usingsToAddList);
         return result;

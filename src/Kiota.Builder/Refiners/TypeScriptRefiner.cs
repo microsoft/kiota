@@ -17,6 +17,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            DeduplicateErrorMappings(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
@@ -233,7 +234,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             parentNamespace.Parent is CodeNamespace parentLevelNamespace &&
             parentLevelNamespace.Files.SelectMany(static x => x.Interfaces).FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface parentLevelInterface &&
             codeFile.Constants
-                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.UriTemplate or CodeConstantKind.RequestsMetadata)
+                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.RequestsMetadata)
                 .Select(static x => new CodeUsing
                 {
                     Name = x.Name,
@@ -580,7 +581,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter urlTplParams && urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Record<string, unknown>";
-                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.DescriptionTemplate = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType
                 {
                     Name = "rawUrlOrTemplateParameters",

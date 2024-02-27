@@ -87,14 +87,14 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Documentation = new()
             {
-                Description = "Some option description",
+                DescriptionTemplate = "Some option description",
             },
             Name = "option1",
         };
         currentEnum.AddOption(option);
         codeConstantWriter.WriteCodeElement(currentEnum.CodeEnumObject, writer);
         var result = tw.ToString();
-        Assert.Contains($"/** {option.Documentation.Description} */", result);
+        Assert.Contains($"/** {option.Documentation.DescriptionTemplate} */", result);
         AssertExtensions.CurlyBracesAreClosed(result, 0);
     }
 
@@ -130,7 +130,13 @@ public sealed class CodeConstantWriterTests : IDisposable
 
         AddRequestBodyParameters();
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.DoesNotContain("errorMappings", result);
@@ -146,9 +152,16 @@ public sealed class CodeConstantWriterTests : IDisposable
         AddRequestBodyParameters();
         method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
+        Assert.Contains("uriTemplate:", result);
         Assert.Contains("setContentFromParsable", result);
         Assert.Contains("serializeMultipartBody", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -161,7 +174,13 @@ public sealed class CodeConstantWriterTests : IDisposable
         method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
         AddRequestBodyParameters();
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        parentClass.GetImmediateParentOfType<CodeNamespace>().AddConstant(constant);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("sendCollectionAsync", result);
@@ -188,7 +207,13 @@ public sealed class CodeConstantWriterTests : IDisposable
         }).First();
         generatorMethod.AcceptedResponseTypes.Add("application/json");
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
@@ -228,7 +253,13 @@ public sealed class CodeConstantWriterTests : IDisposable
         };
         generatorMethod.AcceptedResponseTypes.Add("application/json");
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
@@ -252,7 +283,13 @@ public sealed class CodeConstantWriterTests : IDisposable
         };
         method.RequestBodyContentType = "application/json";
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
@@ -285,7 +322,13 @@ public sealed class CodeConstantWriterTests : IDisposable
             Kind = CodeParameterKind.RequestBodyContentType,
         });
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("export const", result);
@@ -318,7 +361,13 @@ public sealed class CodeConstantWriterTests : IDisposable
         method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error403 });
         AddRequestBodyParameters();
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
-        root.TryAddCodeFile("foo", constant);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("errorMappings: {", result);
@@ -393,7 +442,6 @@ public sealed class CodeConstantWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("export const ParentClassNavigationMetadata: Record<Exclude<keyof ParentClass, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {", result);
         Assert.Contains("methodName", result);
-        Assert.Contains("uriTemplate: SomecustomtypeUriTemplate", result);
         Assert.Contains("requestsMetadata: SomecustomtypeRequestsMetadata", result);
         Assert.Contains("navigationMetadata: SomecustomtypeNavigationMetadata", result);
         Assert.Contains("pathParametersMappings: [\"foo-id\"]", result);

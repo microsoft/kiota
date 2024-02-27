@@ -186,9 +186,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
                 ReturnType = (CodeTypeBase)currentProperty.Type.Clone(),
-                Documentation = new()
+                Documentation = new(currentProperty.Documentation.TypeReferences.ToDictionary(static x => x.Key, static x => x.Value))
                 {
-                    Description = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
+                    DescriptionTemplate = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.DescriptionTemplate}",
                 },
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
@@ -201,9 +201,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Setter,
-                Documentation = new()
+                Documentation = new(currentProperty.Documentation.TypeReferences.ToDictionary(static x => x.Key, static x => x.Value))
                 {
-                    Description = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
+                    DescriptionTemplate = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.DescriptionTemplate}",
                 },
                 AccessedProperty = currentProperty,
                 ReturnType = new CodeType
@@ -223,7 +223,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeParameterKind.SetterValue,
                 Documentation = new()
                 {
-                    Description = $"Value to set for the {currentProperty.WireName} property.",
+                    DescriptionTemplate = $"Value to set for the {currentProperty.WireName} property.",
                 },
                 Optional = parameterAsOptional,
                 Type = (CodeTypeBase)currentProperty.Type.Clone(),
@@ -249,9 +249,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = "void"
                 },
                 IsAsync = false,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypeName", new CodeType() {
+                        IsExternal = false,
+                        TypeDefinition = current,
+                    }}
+                })
                 {
-                    Description = $"Instantiates a new {current.Name} and sets the default values.",
+                    DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
                 },
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
@@ -472,7 +477,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}";
+            "Composed type wrapper for classes {TypesList}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
@@ -481,9 +486,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = @namespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
-                    Description = description,
+                    DescriptionTemplate = description,
                 },
                 Deprecation = codeComposedType.Deprecation,
             }).Last();
@@ -493,9 +500,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = targetNamespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
-                    Description = description
+                    DescriptionTemplate = description
                 },
             })
             .First();
@@ -513,9 +522,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = codeClass.AddInnerClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Documentation = new()
+                Documentation = new(new() {
+                    { "TypesList", codeComposedType }
+                })
                 {
-                    Description = description
+                    DescriptionTemplate = description
                 },
             })
                                 .First();
@@ -526,9 +537,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 {
                                     Name = x.Name,
                                     Type = x,
-                                    Documentation = new()
+                                    Documentation = new(new() {
+                                        { "TypeName", x }
+                                    })
                                     {
-                                        Description = $"Composed type representation for type {x.Name}"
+                                        DescriptionTemplate = "Composed type representation for type {TypeName}"
                                     },
                                 }).ToArray());
         if (codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
@@ -570,7 +583,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsStatic = false,
                 Documentation = new()
                 {
-                    Description = "Determines if the current object is a wrapper around a composed type",
+                    DescriptionTemplate = "Determines if the current object is a wrapper around a composed type",
                 },
             });
         }
@@ -1324,7 +1337,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeMethodKind.QueryParametersMapper,
                 Documentation = new()
                 {
-                    Description = "Maps the query parameters names to their encoded names for the URI template parsing.",
+                    DescriptionTemplate = "Maps the query parameters names to their encoded names for the URI template parsing.",
                 },
             }).First();
             method.AddParameter(new CodeParameter
@@ -1339,7 +1352,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Optional = false,
                 Documentation = new()
                 {
-                    Description = "The original query parameter name in the class.",
+                    DescriptionTemplate = "The original query parameter name in the class.",
                 },
             });
         }
@@ -1491,7 +1504,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Type = type(),
                     Documentation = new()
                     {
-                        Description = "The primary error message.",
+                        DescriptionTemplate = "The primary error message.",
                     },
                 });
             }
@@ -1507,11 +1520,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     IsStatic = false,
                     Documentation = new()
                     {
-                        Description = "The primary error message.",
+                        DescriptionTemplate = "The primary error message.",
                     },
                 });
             }
         }
         CrawlTree(currentElement, x => AddPrimaryErrorMessage(x, name, type, asProperty));
+    }
+    protected static void DeduplicateErrorMappings(CodeElement codeElement)
+    {
+        if (codeElement is CodeMethod { Kind: CodeMethodKind.RequestExecutor } requestExecutorMethod)
+        {
+            requestExecutorMethod.DeduplicateErrorMappings();
+        }
+        CrawlTree(codeElement, DeduplicateErrorMappings);
     }
 }

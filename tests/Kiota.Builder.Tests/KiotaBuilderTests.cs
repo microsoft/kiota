@@ -294,15 +294,15 @@ components:
         var firstOption = enumDef.Options.First();
         Assert.Equal("+1", firstOption.SerializationName);
         Assert.Equal("plus_1", firstOption.Name);
-        Assert.Empty(firstOption.Documentation.Description);
+        Assert.Empty(firstOption.Documentation.DescriptionTemplate);
         var secondOption = enumDef.Options.ElementAt(1);
         Assert.Equal("-1", secondOption.SerializationName);
         Assert.Equal("minus_1", secondOption.Name);
-        Assert.Empty(secondOption.Documentation.Description);
+        Assert.Empty(secondOption.Documentation.DescriptionTemplate);
         var thirdOption = enumDef.Options.ElementAt(2);
         Assert.Equal("Standard_LRS", thirdOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
-        Assert.NotEmpty(thirdOption.Documentation.Description);
+        Assert.NotEmpty(thirdOption.Documentation.DescriptionTemplate);
         Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
     }
 
@@ -4888,7 +4888,7 @@ components:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Empty(responseClass.Documentation.Description);
+        Assert.Empty(responseClass.Documentation.DescriptionTemplate);
     }
     [Fact]
     public void CleansUpInvalidDescriptionCharacters()
@@ -4952,7 +4952,7 @@ components:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Equal("some description with invalid characters: ", responseClass.Documentation.Description);
+        Assert.Equal("some description with invalid characters: ", responseClass.Documentation.DescriptionTemplate);
     }
     [InlineData("application/json")]
     [InlineData("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8")]
@@ -5072,7 +5072,7 @@ components:
         Assert.NotNull(modelsSubNS);
         var responseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerGetResponse", false);
         Assert.NotNull(responseClass);
-        Assert.Equal("some description", responseClass.Documentation.Description);
+        Assert.Equal("some description", responseClass.Documentation.DescriptionTemplate);
 
         var obsoleteResponseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerResponse", false);
         if (excludeBackwardCompatible)
@@ -5080,13 +5080,13 @@ components:
         else
         {
             Assert.NotNull(obsoleteResponseClass);
-            Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
+            Assert.Equal("some description", obsoleteResponseClass.Documentation.DescriptionTemplate);
             Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
         }
 
         var requestBuilderClass = modelsSubNS.Classes.FirstOrDefault(static c => c.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(requestBuilderClass);
-        Assert.Equal("some path item description", requestBuilderClass.Documentation.Description);
+        Assert.Equal("some path item description", requestBuilderClass.Documentation.DescriptionTemplate);
 
         if (excludeBackwardCompatible)
             Assert.Single(requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor));
@@ -5095,7 +5095,7 @@ components:
 
         var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(static p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);
-        Assert.Equal("some path item description", responseProperty.Documentation.Description);
+        Assert.Equal("some path item description", responseProperty.Documentation.DescriptionTemplate);
     }
 
     [Fact]
@@ -6219,7 +6219,7 @@ components:
         var collectionIndexer = collectionRequestBuilder.Indexer;
         Assert.NotNull(collectionIndexer);
         Assert.Equal("string", collectionIndexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal("Unique identifier of the item", collectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("Unique identifier of the item", collectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(collectionIndexer.Deprecation.IsDeprecated);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
         Assert.NotNull(itemRequestBuilderNamespace);
@@ -6309,7 +6309,7 @@ components:
         var postsCollectionIndexer = postsCollectionRequestBuilder.Indexer;
         Assert.NotNull(postsCollectionIndexer);
         Assert.Equal("integer", postsCollectionIndexer.IndexParameter.Type.Name);
-        Assert.Equal("The id of the pet to retrieve", postsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("The id of the pet to retrieve", postsCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(postsCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(postsCollectionIndexer.Deprecation.IsDeprecated);
         var postsCollectionStringIndexer = postsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{postsCollectionIndexer.Name}-string");
@@ -6328,7 +6328,7 @@ components:
         var authorsCollectionIndexer = authorsCollectionRequestBuilder.Indexer;
         Assert.NotNull(authorsCollectionIndexer);
         Assert.Equal("Guid", authorsCollectionIndexer.IndexParameter.Type.Name);
-        Assert.Equal("The id of the author's posts to retrieve", authorsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("The id of the author's posts to retrieve", authorsCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(authorsCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(authorsCollectionIndexer.Deprecation.IsDeprecated);
         var authorsCllectionStringIndexer = authorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{authorsCollectionIndexer.Name}-string");
@@ -6347,7 +6347,7 @@ components:
         var actorsCollectionIndexer = actorsCollectionRequestBuilder.Indexer;
         Assert.NotNull(actorsCollectionIndexer);
         Assert.Equal("Guid", actorsCollectionIndexer.IndexParameter.Type.Name);
-        Assert.Equal("The id of the actor", actorsCollectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("The id of the actor", actorsCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(actorsCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(actorsCollectionIndexer.Deprecation.IsDeprecated);
         var actorsCllectionStringIndexer = actorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{actorsCollectionIndexer.Name}-string");
@@ -6470,126 +6470,6 @@ paths:
         Assert.NotNull(rootNS);
         var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationGetResponse_{expected}", true);
         Assert.NotNull(inlineType);
-    }
-    [Fact]
-    public void SinglePathParametersAreDeduplicated()
-    {
-        var userSchema = new OpenApiSchema
-        {
-            Type = "object",
-            Properties = new Dictionary<string, OpenApiSchema> {
-                {
-                    "id", new OpenApiSchema {
-                        Type = "string"
-                    }
-                },
-                {
-                    "displayName", new OpenApiSchema {
-                        Type = "string"
-                    }
-                }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.user"
-            },
-            UnresolvedReference = false
-        };
-        var document = new OpenApiDocument
-        {
-            Paths = new OpenApiPaths
-            {
-                ["users/{foo}/careerAdvisor/{id}"] = new OpenApiPathItem
-                {
-                    Operations = {
-                        [OperationType.Get] = new OpenApiOperation
-                        {
-                            Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse
-                                {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType
-                                        {
-                                            Schema = userSchema
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                ["users/{id}/careerAdvisor"] = new OpenApiPathItem
-                {
-                    Operations = {
-                        [OperationType.Get] = new OpenApiOperation
-                        {
-                            Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse
-                                {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType
-                                        {
-                                            Schema = userSchema
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                ["users/{user-id}/manager"] = new OpenApiPathItem
-                {
-                    Operations = {
-                        [OperationType.Get] = new OpenApiOperation
-                        {
-                            Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse
-                                {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType
-                                        {
-                                            Schema = userSchema
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-            },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, OpenApiSchema> {
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                }
-            }
-        };
-        var mockLogger = new CountLogger<KiotaBuilder>();
-        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
-        var node = builder.CreateUriSpace(document);
-        var codeModel = builder.CreateSourceModel(node);
-        var usersRB = codeModel.FindNamespaceByName("ApiSdk.users").FindChildByName<CodeClass>("UsersRequestBuilder", false);
-        Assert.NotNull(usersRB);
-        var usersIndexer = usersRB.Indexer;
-        Assert.NotNull(usersIndexer);
-        Assert.Equal("users%2Did", usersIndexer.IndexParameter.SerializationName);
-        var managerRB = codeModel.FindNamespaceByName("ApiSdk.users.item.manager").FindChildByName<CodeClass>("ManagerRequestBuilder", false);
-        Assert.NotNull(managerRB);
-        var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);
-        Assert.NotNull(managerUrlTemplate);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
-        var careerAdvisorRB = codeModel.FindNamespaceByName("ApiSdk.users.item.careerAdvisor").FindChildByName<CodeClass>("CareerAdvisorRequestBuilder", false);
-        Assert.NotNull(careerAdvisorRB);
-        var careerAdvisorUrlTemplate = careerAdvisorRB.FindChildByName<CodeProperty>("UrlTemplate", false);
-        Assert.NotNull(careerAdvisorUrlTemplate);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor", careerAdvisorUrlTemplate.DefaultValue.Trim('"'));
-        var careerAdvisorItemRB = codeModel.FindNamespaceByName("ApiSdk.users.item.careerAdvisor.item").FindChildByName<CodeClass>("CareerAdvisorItemRequestBuilder", false);
-        Assert.NotNull(careerAdvisorItemRB);
-        var careerAdvisorItemUrlTemplate = careerAdvisorItemRB.FindChildByName<CodeProperty>("UrlTemplate", false);
-        Assert.NotNull(careerAdvisorItemUrlTemplate);
-        Assert.Equal("{+baseurl}/users/{users%2Did}/careerAdvisor/{id}", careerAdvisorItemUrlTemplate.DefaultValue.Trim('"'));
     }
     [Fact]
     public void AddReservedPathParameterSymbol()
@@ -6922,10 +6802,10 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.Description);
-        Assert.Equal("directory object", codeModel.FindChildByName<CodeClass>("directoryObject").Documentation.Description);
-        Assert.Equal("sub1", codeModel.FindChildByName<CodeClass>("sub1").Documentation.Description);
-        Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.Description);
+        Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.DescriptionTemplate);
+        Assert.Equal("directory object", codeModel.FindChildByName<CodeClass>("directoryObject").Documentation.DescriptionTemplate);
+        Assert.Equal("sub1", codeModel.FindChildByName<CodeClass>("sub1").Documentation.DescriptionTemplate);
+        Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.DescriptionTemplate);
     }
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflicts()

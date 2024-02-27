@@ -79,7 +79,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             IsAsync = true,
             Documentation = new()
             {
-                Description = "This is a very good method to try all the good things",
+                DescriptionTemplate = "This is a very good method to try all the good things",
             },
             ReturnType = new CodeType
             {
@@ -100,7 +100,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 DefaultValue = "https://graph.microsoft.com/v1.0/",
                 Documentation = new()
                 {
-                    Description = "The URL template",
+                    DescriptionTemplate = "The URL template",
                 },
                 Kind = CodePropertyKind.UrlTemplate,
                 Type = new CodeType { Name = "string" }
@@ -112,7 +112,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 DefaultValue = "[]",
                 Documentation = new()
                 {
-                    Description = "The Path parameters.",
+                    DescriptionTemplate = "The Path parameters.",
                 },
                 Kind = CodePropertyKind.PathParameters,
                 Type = new CodeType { Name = "array" }
@@ -123,7 +123,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Access = AccessModifier.Protected,
                 Documentation = new()
                 {
-                    Description = "The request Adapter",
+                    DescriptionTemplate = "The request Adapter",
                 },
                 Kind = CodePropertyKind.RequestAdapter,
                 Type = new CodeType
@@ -213,7 +213,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void WriteMethodWithNoDescription()
     {
         setup();
-        method.Documentation.Description = string.Empty;
+        method.Documentation.DescriptionTemplate = string.Empty;
         _codeMethodWriter.WriteCodeElement(method, languageWriter);
         var result = stringWriter.ToString();
 
@@ -248,7 +248,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "This will send a POST request",
+                DescriptionTemplate = "This will send a POST request",
                 DocumentationLink = new Uri("https://learn.microsoft.com/"),
                 DocumentationLabel = "Learning"
             },
@@ -342,7 +342,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "This will send a POST request",
+                DescriptionTemplate = "This will send a POST request",
                 DocumentationLink = new Uri("https://learn.microsoft.com/"),
                 DocumentationLabel = "Learning"
             },
@@ -410,7 +410,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "Status",
                 Documentation = new() {
-                    Description = "Status Enum",
+                    DescriptionTemplate = "Status Enum",
                 },
             }}, Access = AccessModifier.Private },
             "$writer->writeEnumValue('status', $this->getStatus());"
@@ -421,7 +421,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "Architecture", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = new CodeEnum { Name = "Architecture",
                 Documentation = new() {
-                    Description = "Arch Enum, accepts x64, x86, hybrid"
+                    DescriptionTemplate = "Arch Enum, accepts x64, x86, hybrid"
                 },
                 }
             }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
@@ -605,12 +605,33 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(
             "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
+        Assert.Contains("$requestInfo->urlTemplate = $this->urlTemplate;", result);
         Assert.Contains("if ($requestConfiguration !== null", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
         Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"\", $body);", result);
         Assert.Contains("return $requestInfo;", result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Name = "createPostRequestInformation";
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.ReturnType = new CodeType()
+        {
+            Name = "RequestInformation",
+            IsNullable = false
+        };
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.UrlTemplateOverride = "{baseurl+}/foo/bar";
+        _codeMethodWriter.WriteCodeElement(method, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("$requestInfo->urlTemplate = '{baseurl+}/foo/bar';", result);
     }
 
     [Fact]
@@ -736,7 +757,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
             Documentation = new()
             {
-                Description = "Get messages by a specific ID.",
+                DescriptionTemplate = "Get messages by a specific ID.",
             },
             OriginalIndexer = new CodeIndexer
             {
@@ -838,7 +859,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 {
                     Name = "EmailAddress", Kind = CodeClassKind.Model,
                     Documentation = new() {
-                        Description = "Email",
+                        DescriptionTemplate = "Email",
                     }, Parent = GetParentClassInStaticContext()
                 }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
             "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues([EmailAddress::class, 'createFromDiscriminatorValue'])),"
@@ -873,7 +894,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodeMethodKind.Deserializer,
             Documentation = new()
             {
-                Description = "Just some random method",
+                DescriptionTemplate = "Just some random method",
             },
             ReturnType = new CodeType
             {
@@ -1049,7 +1070,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodeMethodKind.Deserializer,
             Documentation = new()
             {
-                Description = "Just some random method",
+                DescriptionTemplate = "Just some random method",
             },
             ReturnType = new CodeType
             {
@@ -1077,7 +1098,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Access = AccessModifier.Public,
             Documentation = new()
             {
-                Description = "The constructor for this class",
+                DescriptionTemplate = "The constructor for this class",
             },
             ReturnType = new CodeType { Name = "void" },
             Kind = CodeMethodKind.Constructor
@@ -1165,7 +1186,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Name = "getEmailAddress",
             Documentation = new()
             {
-                Description = "This method gets the emailAddress",
+                DescriptionTemplate = "This method gets the emailAddress",
             },
             ReturnType = new CodeType
             {
@@ -1619,7 +1640,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Optional = true,
             Documentation = new()
             {
-                Description = "The backing store to use for the models.",
+                DescriptionTemplate = "The backing store to use for the models.",
             },
             Kind = CodeParameterKind.BackingStore,
             Type = new CodeType
@@ -1670,7 +1691,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Access = AccessModifier.Public,
             Documentation = new()
             {
-                Description = "The constructor for this class",
+                DescriptionTemplate = "The constructor for this class",
             },
             ReturnType = new CodeType { Name = "void" },
             Kind = CodeMethodKind.Constructor
@@ -2292,7 +2313,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "queryParameters",
                 Kind = CodePropertyKind.QueryParameters,
-                Documentation = new() { Description = "Request query parameters", },
+                Documentation = new() { DescriptionTemplate = "Request query parameters", },
                 Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
             },
             new CodeProperty
@@ -2300,14 +2321,14 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "headers",
                 Access = AccessModifier.Public,
                 Kind = CodePropertyKind.Headers,
-                Documentation = new() { Description = "Request headers", },
+                Documentation = new() { DescriptionTemplate = "Request headers", },
                 Type = new CodeType { Name = "RequestHeaders", IsExternal = true },
             },
             new CodeProperty
             {
                 Name = "options",
                 Kind = CodePropertyKind.Options,
-                Documentation = new() { Description = "Request options", },
+                Documentation = new() { DescriptionTemplate = "Request options", },
                 Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
             }
         });
@@ -2336,21 +2357,21 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "select",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Select properties to be returned", },
+                Documentation = new() { DescriptionTemplate = "Select properties to be returned", },
                 Type = new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             },
             new CodeProperty
             {
                 Name = "count",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Include count of items", },
+                Documentation = new() { DescriptionTemplate = "Include count of items", },
                 Type = new CodeType { Name = "boolean" },
             },
             new CodeProperty
             {
                 Name = "top",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Show only the first n items", },
+                Documentation = new() { DescriptionTemplate = "Show only the first n items", },
                 Type = new CodeType { Name = "integer" },
             }
         });
@@ -2361,7 +2382,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "queryParameters",
                 Kind = CodePropertyKind.QueryParameters,
-                Documentation = new() { Description = "Request query parameters", },
+                Documentation = new() { DescriptionTemplate = "Request query parameters", },
                 Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
             }
         });
@@ -2386,21 +2407,21 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 Name = "select",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Select properties to be returned", },
+                Documentation = new() { DescriptionTemplate = "Select properties to be returned", },
                 Type = new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             },
             new CodeProperty
             {
                 Name = "count",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Include count of items", },
+                Documentation = new() { DescriptionTemplate = "Include count of items", },
                 Type = new CodeType { Name = "boolean" },
             },
             new CodeProperty
             {
                 Name = "Top",
                 Kind = CodePropertyKind.QueryParameter,
-                Documentation = new() { Description = "Show only the first n items", },
+                Documentation = new() { DescriptionTemplate = "Show only the first n items", },
                 Type = new CodeType { Name = "integer" },
             }
         });
@@ -2461,4 +2482,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return $this->requestAdapter->sendCollectionAsync($requestInfo, [Component::class, 'createFromDiscriminatorValue'], null);", result);
     }
 
+    [Fact]
+    public void WritesRequestGeneratorAcceptHeaderQuotes()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        method.AcceptedResponseTypes.Add("application/json; profile=\"CamelCase\"");
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("$requestInfo->tryAddHeader('Accept', \"application/json; profile=\\\"CamelCase\\\"\");", result);
+    }
+
+    [Fact]
+    public void WritesRequestGeneratorContentTypeQuotes()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.RequestBodyContentType = "application/json; profile=\"CamelCase\"";
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
+    }
 }

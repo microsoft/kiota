@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -574,7 +575,8 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("url template params property cannot be null");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
-        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "null")});");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "null")});");
 
         if (requestParams.requestConfiguration != null)
         {
@@ -583,24 +585,25 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         }
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.tryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
 
         if (requestParams.requestBody != null &&
             currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
         {
             var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name}[0])" : string.Empty;
             var collectionPostfix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
             else
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{collectionPostfix}({requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{collectionPostfix}({requestAdapterProperty.Name}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name}{toArrayPostfix});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
@@ -736,16 +739,33 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     {
         var returnVoid = baseReturnType.Equals("void", StringComparison.OrdinalIgnoreCase);
         // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
-        var returnRemark = returnVoid ? string.Empty : $"@return a {finalReturnType}";
+        var returnRemark = returnVoid ? string.Empty : conventions.GetReturnDocComment(finalReturnType);
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
-                                            .Union(new[] { returnRemark }));
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(y => conventions.GetTypeReferenceForDocComment(y, code), normalizationFunc: JavaConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Union([returnRemark])
+                                            .Union(GetExceptionDocRemarks(code)));
         if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
+    }
+    private IEnumerable<string> GetExceptionDocRemarks(CodeMethod code)
+    {
+        if (code.Kind is not CodeMethodKind.RequestExecutor)
+            yield break;
+
+        foreach (var errorMapping in code.ErrorMappings)
+        {
+            var statusCode = errorMapping.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => errorMapping.Key,
+            };
+            var errorTypeString = conventions.GetTypeString(errorMapping.Value, code);
+            yield return $"@throws {errorTypeString} When receiving a {statusCode} status code";
+        }
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {

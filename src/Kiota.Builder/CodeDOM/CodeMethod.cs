@@ -257,8 +257,31 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// Avoids regex operations
     /// </summary>
     public string SimpleName { get; set; } = string.Empty;
+    /// <summary>
+    /// Deduplicates 4XX and 5XX error mappings into a single XXX mapping if they are the same.
+    /// </summary>
+    public void DeduplicateErrorMappings()
+    {
+        if (!errorMappings.TryGetValue(ErrorMappingClientRange, out var clientError) || !errorMappings.TryGetValue(ErrorMappingServerRange, out var serverError)) return;
+        if ((clientError == serverError || clientError is CodeType clientErrorType && serverError is CodeType serverErrorType && clientErrorType.TypeDefinition == serverErrorType.TypeDefinition && clientErrorType.TypeDefinition is not null) &&
+            errorMappings.TryAdd(ErrorMappingAllRange, clientError))
+        {
+            errorMappings.TryRemove(ErrorMappingServerRange, out var _);
+            errorMappings.TryRemove(ErrorMappingClientRange, out var _);
+        }
+    }
+    internal const string ErrorMappingClientRange = "4XX";
+    internal const string ErrorMappingServerRange = "5XX";
+    internal const string ErrorMappingAllRange = "XXX";
+#pragma warning disable CA1056 // URI-like properties should not be strings
+    /// <summary>
+    /// The URL template override for the method when it's different for the operation
+    /// </summary>
+    public string UrlTemplateOverride { get; set; } = string.Empty;
+#pragma warning restore CA1056 // URI-like properties should not be strings
+    public bool HasUrlTemplateOverride => !string.IsNullOrEmpty(UrlTemplateOverride);
 
-    private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new();
+    private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mapping of the error code and response types for this method.
@@ -313,6 +336,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Deprecation = Deprecation,
+            UrlTemplateOverride = UrlTemplateOverride,
         };
         if (Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => (CodeParameter)x.Clone()).ToArray());

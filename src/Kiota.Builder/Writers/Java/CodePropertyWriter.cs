@@ -1,6 +1,5 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConventionService>
@@ -13,8 +12,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
         if (codeElement.ExistsInExternalBaseType)
             return;
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
-        conventions.WriteLongDescription(codeElement, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
+        var returnRemark = codeElement.Kind is CodePropertyKind.RequestBuilder ?
+                            conventions.GetReturnDocComment(returnType) :
+                            string.Empty;
+        conventions.WriteLongDescription(codeElement, writer, [returnRemark]);
         var defaultValue = string.Empty;
         conventions.WriteDeprecatedAnnotation(codeElement, writer);
         switch (codeElement.Kind)

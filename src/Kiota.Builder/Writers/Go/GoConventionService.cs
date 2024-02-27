@@ -54,7 +54,7 @@ public class GoConventionService : CommonLanguageConventionService
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
         {
-            var importSymbol = GetImportSymbol(code, targetElement);
+            var importSymbol = includeImportSymbol ? GetImportSymbol(code, targetElement) : string.Empty;
             if (!string.IsNullOrEmpty(importSymbol))
                 importSymbol += ".";
             var typeName = TranslateType(currentType, includeImportSymbol);
@@ -166,7 +166,21 @@ public class GoConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false));
+        if (!string.IsNullOrEmpty(prefix))
+        {
+            description = description.ToFirstCharacterLowerCase();
+        }
+        WriteDescriptionItem($"{prefix}{description}{suffix}", writer);
+    }
+    public void WriteDescriptionItem(string description, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine($"{DocCommentPrefix}{description}");
@@ -176,9 +190,9 @@ public class GoConventionService : CommonLanguageConventionService
         if (documentation is null) return;
         if (documentation.ExternalDocumentationAvailable)
         {
-            WriteShortDescription($"[{documentation.DocumentationLabel}]", writer);
-            WriteShortDescription(string.Empty, writer);
-            WriteShortDescription($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+            WriteDescriptionItem($"[{documentation.DocumentationLabel}]", writer);
+            WriteDescriptionItem(string.Empty, writer);
+            WriteDescriptionItem($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
         }
     }
 #pragma warning disable CA1822 // Method should be static
@@ -252,6 +266,6 @@ public class GoConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        WriteShortDescription($"Deprecated: {element.Deprecation.Description}{versionComment}{dateComment}{removalComment}", writer);
+        WriteDescriptionItem($"Deprecated: {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).TrimStart('*'))}{versionComment}{dateComment}{removalComment}", writer);
     }
 }

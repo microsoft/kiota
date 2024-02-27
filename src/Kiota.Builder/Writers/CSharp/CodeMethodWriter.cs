@@ -411,28 +411,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "string.Empty");
+        writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null)
             writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
-                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+                else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
@@ -541,12 +543,28 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        conventions.WriteLongDescription(code.Documentation, writer);
+        conventions.WriteLongDescription(code, writer);
+        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase) && code.Kind is not CodeMethodKind.ClientConstructor or CodeMethodKind.Constructor)
+            conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(code.ReturnType, code)}</returns>", writer);
         foreach (var paramWithDescription in code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
+            conventions.WriteShortDescription(paramWithDescription, writer, $"<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">", "</param>");
+        WriteThrownExceptions(code, writer);
         conventions.WriteDeprecationAttribute(code, writer);
+    }
+    private void WriteThrownExceptions(CodeMethod element, LanguageWriter writer)
+    {
+        if (element.Kind is not CodeMethodKind.RequestExecutor) return;
+        foreach (var exception in element.ErrorMappings)
+        {
+            var statusCode = exception.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => exception.Key,
+            };
+            conventions.WriteAdditionalDescriptionItem($"<exception cref=\"{conventions.GetTypeString(exception.Value, element)}\">When receiving a {statusCode} status code</exception>", writer);
+        }
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod)

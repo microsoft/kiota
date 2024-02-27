@@ -13,6 +13,7 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
             (null, _) => -1,
             (_, null) => 1,
             _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * TypeWeight +
+                GetConstantKindFactor(x).CompareTo(GetConstantKindFactor(y)) * constantKindWeight +
 #pragma warning disable CA1062
                 CompareStrings(x.Name, y.Name, StringComparer.InvariantCultureIgnoreCase) * NameWeight +
 #pragma warning restore CA1062
@@ -21,7 +22,7 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
         };
     }
     private const int NameWeight = 100;
-    private const int TypeWeight = 1000;
+    private const int TypeWeight = 10000;
     protected virtual int GetTypeFactor(CodeElement element)
     {
         return element switch
@@ -50,6 +51,17 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
                 CodeMethodKind.Constructor => 2,
                 CodeMethodKind.RawUrlConstructor => 3,
                 _ => 0,
+            };
+        return 0;
+    }
+    protected virtual int constantKindWeight { get; } = 1000;
+    protected virtual int GetConstantKindFactor(CodeElement element)
+    {
+        if (element is CodeConstant constant)
+            return constant.Kind switch
+            {
+                CodeConstantKind.UriTemplate => 1, // in typescript uri templates need to go first before the request metadata constants
+                _ => 2,
             };
         return 0;
     }

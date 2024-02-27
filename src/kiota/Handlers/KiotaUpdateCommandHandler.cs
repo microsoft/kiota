@@ -27,6 +27,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
     }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
+        WarnShouldUseKiotaConfigClientsCommands();
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
