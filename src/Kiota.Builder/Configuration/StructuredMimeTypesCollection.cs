@@ -13,7 +13,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     private readonly Dictionary<string, float> _mimeTypes;
     public int Count => _mimeTypes.Count;
     public bool IsReadOnly => false;
-    public StructuredMimeTypesCollection() : this(Array.Empty<string>()) { }
+    public StructuredMimeTypesCollection() : this([]) { }
     public StructuredMimeTypesCollection(IEnumerable<string> mimeTypes)
     {
         ArgumentNullException.ThrowIfNull(mimeTypes);
@@ -21,20 +21,15 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
                                 .OfType<KeyValuePair<string, float>>()
                                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
-    private static Func<string, bool> isPriorityParameterName = static x => x.Equals("q", StringComparison.OrdinalIgnoreCase);
+    private static readonly Func<string, bool> isPriorityParameterName = static x => x.Equals("q", StringComparison.OrdinalIgnoreCase);
     private static KeyValuePair<string, float>? GetKeyAndPriority(string rawFormat)
     {
-        if (string.IsNullOrEmpty(rawFormat))
-            return null;
-        if (MediaTypeHeaderValue.TryParse(rawFormat, out var parsedFormat) && parsedFormat.MediaType is not null)
+        if (!string.IsNullOrEmpty(rawFormat) && MediaTypeHeaderValue.TryParse(rawFormat, out var parsedFormat) && parsedFormat.MediaType is not null)
         {
             var priority = parsedFormat.Parameters.FirstOrDefault(static x => isPriorityParameterName(x.Name)) is { } priorityParameter && float.TryParse(priorityParameter.Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
             return new KeyValuePair<string, float>(formatMediaType(parsedFormat), priority);
         }
-        else
-        {
-            throw new InvalidOperationException($"The provided media type {rawFormat} is not valid");
-        }
+        throw new ArgumentException($"The provided media type {rawFormat} is not valid");
     }
     private static string formatMediaType(MediaTypeHeaderValue value)
     {
