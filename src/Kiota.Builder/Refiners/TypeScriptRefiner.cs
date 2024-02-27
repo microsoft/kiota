@@ -64,7 +64,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
             // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
             DisableActionOf(generatedCode,
                 CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
