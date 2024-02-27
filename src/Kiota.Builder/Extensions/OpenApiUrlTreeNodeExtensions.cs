@@ -230,7 +230,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static IEnumerable<KeyValuePair<string, HashSet<string>>> GetRequestInfo(this OpenApiUrlTreeNode currentNode)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
-        foreach (var childInfo in currentNode.Children.Values.SelectMany(static x => x.GetRequestInfo()))
+        return currentNode.GetRequestInfoInternal();
+    }
+    private static IEnumerable<KeyValuePair<string, HashSet<string>>> GetRequestInfoInternal(this OpenApiUrlTreeNode currentNode)
+    {
+        foreach (var childInfo in currentNode.Children.Values.SelectMany(static x => x.GetRequestInfoInternal()))
         {
             yield return childInfo;
         }
