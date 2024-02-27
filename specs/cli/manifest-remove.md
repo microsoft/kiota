@@ -1,21 +1,22 @@
-# kiota plugin remove
+# kiota manifest remove
 
 ## Description
 
-`kiota plugin remove` allows a developer to remove an existing plugin from the `kiota-config.json` file. The command will remove the entry from the `plugins` section of `kiota-config.json` file. The command has a single required parameters; the name of the plugin. 
+`kiota manifest remove` allows a developer to remove an existing plugin manifest from the `kiota-config.json` file. The command will remove the entry from the `plugins` section of `kiota-config.json` file. The command has a single required parameters; the name of the plugin manifest. 
 
-The command also has one optional parameter, the ability to remove the generated plugin. If provided, kiota will delete the folder and its content specified at the `outputPath` from the plugin configuration. It will also remove the local version of the OpenAPI description file (specified by the `x-ms-kiotaHash` property in the API Manifests). The API Manifests are also updated to remove the dependency from the list of dependencies.
+The command also has one optional parameter, the ability to remove the generated plugin manifest. If provided, kiota will delete the folder and its content specified at the `outputPath` from the plugin configuration. It will also remove the local version of the OpenAPI description file (specified by the `x-ms-kiotaHash` property in the API Manifests). The API Manifests are also updated to remove the dependency from the list of dependencies.
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
 | `--plugin-name \| --cn` | Yes | GitHub | Name of the plugin |
 | `--clean-output \| --co` | No |  | Cleans the generated plugin |
 
-#### Using kiota plugin remove
+#### Using kiota manifest remove and deleting all the content
 
 ```bash
-kiota plugin remove --plugin-name "GitHub" --clean-output
+kiota manifest remove --plugin-name "GitHub" --clean-output
 ```
+_The resulting `github-apimanifest.json` and `github-typea.json` files will be deleted._
 
 The resulting `kiota-config.json` file will look like this:
 
@@ -23,14 +24,6 @@ The resulting `kiota-config.json` file will look like this:
 {
   "version": "1.0.0",
   "plugins": { }
-}
-```
-
-_The resulting `github-apimanifest.json` file will look like this:_
-
-```jsonc
-{
-  "apiDependencies": { }
 }
 ```
 
@@ -47,7 +40,7 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
       "requests": [ ... ]
     }
   }
-} //GitHub plugin was removed
+} //GitHub plugin manifest was removed
 ```
 
 ## File structure
@@ -59,7 +52,6 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
  └─generated
     └─plugins
        └─graphplugin
-          └─graphplugin-typeb.json
           └─graphplugin-apimanifest.json
        └─github
  └─kiota-config.json
