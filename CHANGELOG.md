@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- BREAKING - Removed the async suffix from request adapter methods in TypeScript. [microsoft/kiota-typescript#992](https://github.com/microsoft/kiota-typescript/issues/992)
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
 - Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
 - Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
