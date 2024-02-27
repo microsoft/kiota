@@ -61,6 +61,18 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         var result = await service.IsInitializedAsync();
         Assert.False(result);
     }
+    [Fact]
+    public async Task BackupsAndRestores()
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await service.InitializeAsync();
+        await service.BackupConfigAsync();
+        var targetConfigFile = Path.Combine(tempPath, "kiota-config.json");
+        File.Delete(targetConfigFile);
+        Assert.False(File.Exists(targetConfigFile));
+        await service.RestoreConfigAsync();
+        Assert.True(File.Exists(targetConfigFile));
+    }
     public void Dispose()
     {
         if (Directory.Exists(tempPath))

@@ -95,42 +95,40 @@ public class WorkspaceConfigurationStorageService
             }
         return (null, null);
     }
-    public async Task BackupConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    public async Task BackupConfigAsync(CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        await BackupFile(directoryPath, ConfigurationFileName, cancellationToken).ConfigureAwait(false);
-        await BackupFile(directoryPath, ManifestFileName, cancellationToken).ConfigureAwait(false);
+        await BackupFile(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await BackupFile(ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private static async Task BackupFile(string directoryPath, string fileName, CancellationToken cancellationToken = default)
+    private async Task BackupFile(string fileName, CancellationToken cancellationToken = default)
     {
-        var sourceFilePath = Path.Combine(directoryPath, fileName);
+        var sourceFilePath = Path.Combine(TargetDirectory, fileName);
         if (File.Exists(sourceFilePath))
         {
-            var backupFilePath = GetBackupFilePath(directoryPath, fileName);
+            var backupFilePath = GetBackupFilePath(TargetDirectory, fileName);
             using (await localFilesLock.LockAsync(backupFilePath, cancellationToken).ConfigureAwait(false))
             {
-                var targetDirectory = Path.GetDirectoryName(backupFilePath);
-                if (string.IsNullOrEmpty(targetDirectory)) return;
-                if (!Directory.Exists(targetDirectory))
-                    Directory.CreateDirectory(targetDirectory);
+                var backupStorageDirectory = Path.GetDirectoryName(backupFilePath);
+                if (string.IsNullOrEmpty(backupStorageDirectory)) return;
+                if (!Directory.Exists(backupStorageDirectory))
+                    Directory.CreateDirectory(backupStorageDirectory);
                 File.Copy(sourceFilePath, backupFilePath, true);
             }
         }
     }
-    public async Task RestoreConfigAsync(string directoryPath, CancellationToken cancellationToken = default)
+    public async Task RestoreConfigAsync(CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        await RestoreFile(directoryPath, ConfigurationFileName, cancellationToken).ConfigureAwait(false);
-        await RestoreFile(directoryPath, ManifestFileName, cancellationToken).ConfigureAwait(false);
+        await RestoreFile(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await RestoreFile(ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private static async Task RestoreFile(string directoryPath, string fileName, CancellationToken cancellationToken = default)
+    private async Task RestoreFile(string fileName, CancellationToken cancellationToken = default)
     {
-        var sourceFilePath = Path.Combine(directoryPath, fileName);
+        var sourceFilePath = Path.Combine(TargetDirectory, fileName);
         var targetDirectory = Path.GetDirectoryName(sourceFilePath);
         if (string.IsNullOrEmpty(targetDirectory)) return;
         if (!Directory.Exists(targetDirectory))
             Directory.CreateDirectory(targetDirectory);
-        var backupFilePath = GetBackupFilePath(directoryPath, fileName);
+        var backupFilePath = GetBackupFilePath(TargetDirectory, fileName);
         if (File.Exists(backupFilePath))
         {
             using (await localFilesLock.LockAsync(sourceFilePath, cancellationToken).ConfigureAwait(false))

@@ -65,14 +65,14 @@ public class WorkspaceManagementService
     public async Task RestoreStateAsync(string outputPath, CancellationToken cancellationToken = default)
     {
         if (UseKiotaConfig)
-            await workspaceConfigurationStorageService.RestoreConfigAsync(outputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceConfigurationStorageService.RestoreConfigAsync(cancellationToken).ConfigureAwait(false);
         else
             await lockManagementService.RestoreLockFileAsync(outputPath, cancellationToken).ConfigureAwait(false);
     }
     public async Task BackupStateAsync(string outputPath, CancellationToken cancellationToken = default)
     {
         if (UseKiotaConfig)
-            await workspaceConfigurationStorageService.BackupConfigAsync(outputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceConfigurationStorageService.BackupConfigAsync(cancellationToken).ConfigureAwait(false);
         else
             await lockManagementService.BackupLockFileAsync(outputPath, cancellationToken).ConfigureAwait(false);
     }
