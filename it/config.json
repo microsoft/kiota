@@ -73,6 +73,9 @@
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
     "MockServerITFolder": "query-params"
   },
+  "apisguru::github.com:api.github.com": {
+    "MockServerITFolder": "gh"
+  },
   "apisguru::notion.com": {
     "ExcludePatterns": [
       {

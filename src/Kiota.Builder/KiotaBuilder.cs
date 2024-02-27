@@ -549,79 +549,10 @@ public partial class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
-        MergeIndexNodesAtSameLevel(node);
+        node.MergeIndexNodesAtSameLevel(logger);
         stopwatch.Stop();
         logger.LogTrace("{Timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
         return node;
-    }
-    private void MergeIndexNodesAtSameLevel(OpenApiUrlTreeNode node)
-    {
-        var indexNodes = node.Children
-                        .Where(static x => x.Value.IsPathSegmentWithSingleSimpleParameter())
-                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                        .ToArray();
-        if (indexNodes.Length > 1)
-        {
-            var indexNode = indexNodes[0];
-            node.Children.Remove(indexNode.Key);
-            var newSegmentParameterName = $"{{{node.Segment.CleanupSymbolName()}-id}}";
-            indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
-            indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
-            node.Children.Add(newSegmentParameterName, indexNode.Value);
-            CopyNodeIntoOtherNode(indexNode.Value, indexNode.Value, indexNode.Key, newSegmentParameterName);
-            foreach (var child in indexNodes.Except(new[] { indexNode }))
-            {
-                node.Children.Remove(child.Key);
-                CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, newSegmentParameterName);
-            }
-        }
-
-        foreach (var child in node.Children.Values)
-            MergeIndexNodesAtSameLevel(child);
-    }
-    private void CopyNodeIntoOtherNode(OpenApiUrlTreeNode source, OpenApiUrlTreeNode destination, string pathParameterNameToReplace, string pathParameterNameReplacement)
-    {
-        foreach (var child in source.Children)
-        {
-            child.Value.Path = child.Value.Path.Replace(pathParameterNameToReplace, pathParameterNameReplacement, StringComparison.OrdinalIgnoreCase);
-            if (!destination.Children.TryAdd(child.Key, child.Value))
-                CopyNodeIntoOtherNode(child.Value, destination.Children[child.Key], pathParameterNameToReplace, pathParameterNameReplacement);
-        }
-        pathParameterNameToReplace = pathParameterNameToReplace.Trim('{', '}');
-        pathParameterNameReplacement = pathParameterNameReplacement.Trim('{', '}');
-        foreach (var pathItem in source.PathItems)
-        {
-            foreach (var pathParameter in pathItem
-                                        .Value
-                                        .Parameters
-                                        .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        .Union(
-                                            pathItem
-                                                .Value
-                                                .Operations
-                                                .SelectMany(static x => x.Value.Parameters)
-                                                .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        ))
-            {
-                pathParameter.Name = pathParameterNameReplacement;
-            }
-            if (source != destination && !destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
-            {
-                var destinationPathItem = destination.PathItems[pathItem.Key];
-                foreach (var operation in pathItem.Value.Operations)
-                    if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
-                    {
-                        logger.LogWarning("Duplicate operation {Operation} in path {Path}", operation.Key, pathItem.Key);
-                    }
-                foreach (var pathParameter in pathItem.Value.Parameters)
-                    destinationPathItem.Parameters.Add(pathParameter);
-                foreach (var extension in pathItem.Value.Extensions)
-                    if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
-                    {
-                        logger.LogWarning("Duplicate extension {Extension} in path {Path}", extension.Key, pathItem.Key);
-                    }
-            }
-        }
     }
     private CodeNamespace? rootNamespace;
     private CodeNamespace? modelsNamespace;
