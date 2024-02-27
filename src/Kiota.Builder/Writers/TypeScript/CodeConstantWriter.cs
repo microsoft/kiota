@@ -188,15 +188,15 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
     {
-        if (isVoid) return "sendNoResponseContentAsync";
+        if (isVoid) return "sendNoResponseContent";
         if (isCollection)
         {
-            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync";
-            return $"sendCollectionAsync";
+            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitive";
+            return $"sendCollection";
         }
 
-        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync";
-        return $"sendAsync";
+        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitive";
+        return $"send";
     }
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)
