@@ -619,7 +619,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (requestParams.requestConfiguration != null)
             writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name})");
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.headers.try_add(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
+            writer.WriteLine($"{RequestInfoVarName}.headers.try_add(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\")");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");
@@ -823,17 +823,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         if (requestParams.requestBody != null)
         {
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
-                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\")");
+                else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name}, \"{sanitizedRequestBodyContentType}\")");
             }
             else
             {
                 var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "set_content_from_parsable" : "set_content_from_scalar";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
+                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
         }
     }

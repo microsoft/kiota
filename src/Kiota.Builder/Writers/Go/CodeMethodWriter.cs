@@ -882,17 +882,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             WriteLegacyRequestConfiguration(requestParams, writer);
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\")");
         if (requestParams.requestBody != null)
         {
             var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
             var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, *{requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
-                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
+                else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{sanitizedRequestBodyContentType}\")");
             }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
             {
@@ -902,11 +903,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
                     bodyParamReference = "cast";
                 }
-                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{sanitizedRequestBodyContentType}\", {bodyParamReference})");
                 writer.WriteBlock("if err != nil {", "}", "return nil, err");
             }
             else
-                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{sanitizedRequestBodyContentType}\", {bodyParamReference})");
         }
 
         writer.WriteLine($"return {RequestInfoVarName}, nil");

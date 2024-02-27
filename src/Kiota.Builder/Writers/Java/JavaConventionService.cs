@@ -181,7 +181,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         return [
             $"@deprecated",
-            $"{element.Deprecation.DescriptionTemplate}{versionComment}{dateComment}{removalComment}"
+            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}"
         ];
     }
     internal void WriteDeprecatedAnnotation(CodeElement element, LanguageWriter writer)

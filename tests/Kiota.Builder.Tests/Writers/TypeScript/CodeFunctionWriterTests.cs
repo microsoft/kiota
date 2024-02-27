@@ -333,6 +333,26 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 Name = "string",
             },
         });
+        var propertyEnum = new CodeEnum
+        {
+            Name = "EnumTypeWithOption",
+            Parent = parentClass,
+        };
+        var enumOption = new CodeEnumOption() { Name = "SomeOption" };
+        propertyEnum.AddOption(enumOption);
+        var codeNamespace = parentClass.Parent as CodeNamespace;
+        codeNamespace.AddEnum(propertyEnum);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultEnum",
+            DefaultValue = enumOption.Name,
+            Type = new CodeType
+            {
+                Name = "EnumTypeWithOption",
+                TypeDefinition = propertyEnum,
+            }
+        });
+
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(deserializerFunction);
@@ -342,6 +362,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains("?? \"Test Value\"", result);
+        Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
     [Fact]
     public async Task WritesInheritedSerializerBody()
@@ -676,6 +697,25 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("@deprecated", result);
+    }
+    [Fact]
+    public void WritesDeprecationInformationFromBuilder()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Name = "NewAwesomeMethod";// new method replacement
+        method.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = method, IsExternal = false } } });
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
     }
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
@@ -1013,6 +1053,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains($" ?? {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($" ?? {codeEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
 }

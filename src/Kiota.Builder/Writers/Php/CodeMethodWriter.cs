@@ -568,18 +568,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, {conventions.GetParameterName(requestParams.requestContentType)});");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{codeElement.RequestBodyContentType}\");");
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
@@ -612,7 +613,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
     {
         if (codeMethod.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{codeMethod.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{codeMethod.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false)
     {

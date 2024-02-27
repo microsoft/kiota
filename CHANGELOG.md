@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
+- Added uri-form encoded serialization for Python. [#2075](https://github.com/microsoft/kiota/issues/2075)
+
 ### Changed
 
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
@@ -18,8 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed return doc comments for Go/Java/CSharp/TypeScript.
 - Fixed type names in doc comments and deprecation noticed across languages.
 - Added thrown exceptions in doc comments for Go/CSharp/Java/TypeScript. [#3811](https://github.com/microsoft/kiota/issues/3811)
+- Fixed missing type/method names in deprecation comments.[#4186](https://github.com/microsoft/kiota/issues/4186)
+- Fixed `cref` tags not closed in doc comments in CSharp generation.
 - Deduplicates 4XX and 5XX error mappings when they map to the same type to reduce emitted code. [#4025](https://github.com/microsoft/kiota/issues/4025)
 - 📢📢📢 Java generation is now stable! 🚀🚀🚀 special thanks to @andreaTP (Red Hat) for all the help.
+- Fixed bug where stream responses would generate incorrect partial paging code. [#4207](https://github.com/microsoft/kiota/issues/4207)
+- Sanitize Accept and Content-Type headers during generation. [#4211](https://github.com/microsoft/kiota/issues/4211)
+- Fixed a bug in enum default value generator for TypeScript. [#4216](https://github.com/microsoft/kiota/issues/4216)
 
 ## [1.11.1] - 2024-02-05
 

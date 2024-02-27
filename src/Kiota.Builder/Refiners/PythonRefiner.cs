@@ -112,7 +112,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
-                    "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
+                    "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory",
+                    "kiota_serialization_form.form_serialization_writer_factory.FormSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -120,7 +121,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
-                    "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
+                    "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory",
+                    "kiota_serialization_form.form_parse_node_factory.FormParseNodeFactory",
                 }
             );
             AddSerializationModulesImport(generatedCode,

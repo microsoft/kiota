@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace kiota;
 public static partial class KiotaHost
 {
+    internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();
@@ -26,6 +27,8 @@ public static partial class KiotaHost
         rootCommand.AddCommand(GetLoginCommand());
         rootCommand.AddCommand(GetLogoutCommand());
         rootCommand.AddCommand(GetRpcCommand());
+        if (IsConfigPreviewEnabled.Value)
+            rootCommand.AddCommand(KiotaConfigCommands.GetConfigNodeCommand());
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand()
@@ -401,7 +404,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
         };
-        command.Handler = new KiotaGenerationCommandHandler
+        command.Handler = new KiotaGenerateCommandHandler
         {
             DescriptionOption = descriptionOption,
             ManifestOption = manifestOption,
@@ -465,7 +468,7 @@ public static partial class KiotaHost
         excludePatterns.AddAlias("-e");
         return (includePatterns, excludePatterns);
     }
-    private static Option<LogLevel> GetLogLevelOption()
+    internal static Option<LogLevel> GetLogLevelOption()
     {
         var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
         logLevelOption.AddAlias("--ll");
