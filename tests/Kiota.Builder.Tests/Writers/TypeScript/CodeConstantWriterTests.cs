@@ -183,7 +183,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         });
         writer.Write(constant);
         var result = tw.ToString();
-        Assert.Contains("sendCollectionAsync", result);
+        Assert.Contains("sendCollection", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
