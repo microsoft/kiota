@@ -39,7 +39,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
             case CodePropertyKind.Options:
             case CodePropertyKind.QueryParameter:
                 conventions.WriteInLineDescription(codeElement, writer);
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
+                var isNonNullableCollection = !codeElement.Type.IsNullable && codeElement.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} {(isNonNullableCollection ? "= []" : "= None")}");
                 writer.WriteLine();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
