@@ -49,7 +49,6 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                 });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
