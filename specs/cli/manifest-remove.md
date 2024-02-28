@@ -16,7 +16,7 @@ The command also has one optional parameter, the ability to remove the generated
 ```bash
 kiota manifest remove --plugin-name "GitHub" --clean-output
 ```
-_The resulting `github-apimanifest.json` and `github-typea.json` files will be deleted._
+_The resulting `github-apimanifest.json` and `github-openai.json` files will be deleted._
 
 The resulting `kiota-config.json` file will look like this:
 

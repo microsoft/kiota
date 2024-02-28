@@ -7,7 +7,7 @@
 When `kiota config init` is executed, a `kiota-config.json` file would be created in the current directory where the command is being executed. If the user wants to create the file in a different directory, they should use the `--config-file` global parameter.
 
 > [!NOTE] 
-> If a project only needs a single API, using `kiota config init` is not mandatory as generating code using the `kiota client generate` or `kiota plugin generate` command could generate a `kiota-config.json` file with values coming from the `kiota client generate` or `kiota plugin generate` commands (if no `kiota-config.json` is present). See [kiota client generate](./client-generate.md) or [kiota plugin generate](./plugin-generate.md) for more information.
+> If a project only needs a single API, using `kiota config init` is not mandatory as generating code using the `kiota client generate` or `kiota manifest generate` command could generate a `kiota-config.json` file with values coming from the `kiota client generate` or `kiota manifest generate` commands (if no `kiota-config.json` is present). See [kiota client generate](./client-generate.md) or [kiota manifest generate](./manifest-generate.md) for more information.
 
 ## Parameters
 

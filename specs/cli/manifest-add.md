@@ -10,7 +10,7 @@ Every time a plugin manifest is added, a copy of the OpenAPI description file wi
 
 An [API Manifest][def] file named `apimanifest-plugins` will be generated (if non existing) or updated (if already existing) in the root folder next to `kiota-config.json`. This file will represent a concatenated surface of all APIs used across plugins. A new hash composed of the Kiota version, the OpenAPI description location and the properties of the plugins will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `typea` and `apimanifest` plugin manifests. By generating `typea`, two outputs will be generated: a\) the manifest type you have choosen that will be named `{plugin-name}-{type}.json` and b\) an [API Manifest][def] which will be named `{plugin-name}-apimanifest.json` that will include only the information for this specific plugin. `apimanifest` will generate only an API Manifest.
+Developers can generate `openai` and `apimanifest` plugin manifests. By generating `openai`, two outputs will be generated: a\) the manifest type you have choosen that will be named `{plugin-name}-{type}.json` and b\) an [API Manifest][def] which will be named `{plugin-name}-apimanifest.json` that will include only the information for this specific plugin. `apimanifest` will generate only an API Manifest.
 > [!NOTE] 
 > There will be two different [API Manifests][def]. One in the root folder representing a concatenated surface of all APIs and a second one specific to each plugin saved in the choosen output directory.
 
@@ -24,7 +24,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI description in JSON or YAML format to use to generate the manifest. Accepts a URL or a local directory. |
 | `--include-path \| -i` | No | /repos/\*\* | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
 | `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. |
-| `--type \| -t` | Yes | typea | The target type of manifest for the generated output files. Possible values are `typea` and `apimanifest`. Defaults to `apimanifest`|
+| `--type \| -t` | Yes | openai | The target type of manifest for the generated output files. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`|
 | `--overlayDirectory \| --od` | No | ./overlay/plugins/{plugin-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the plugin manifest. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the location of `kiota-config.json`. Defaults to `./output`. |
@@ -35,7 +35,7 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 ## Using `kiota manifest add`
 
 ```bash
-kiota manifest add --plugin-name "GitHub" --openapi "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json" --include-path "/repos/**" --type typea --output "./generated/plugins/github"
+kiota manifest add --plugin-name "GitHub" --openapi "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json" --include-path "/repos/**" --type openai --output "./generated/plugins/github"
 ```
 
 _The resulting `kiota-config.json` file will look like this:_
@@ -49,7 +49,7 @@ _The resulting `kiota-config.json` file will look like this:_
       "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "includePatterns": ["/repos/**"],
       "excludePatterns": [],
-      "type": "typea",
+      "type": "openai",
       "outputDirectory": "./generated/plugins/github",
       "overlayDirectory": "./overlays/plugins/github/overlay.yaml"
     }
@@ -57,7 +57,7 @@ _The resulting `kiota-config.json` file will look like this:_
 }
 ```
 
-_The resulting `github-typea.json` file will look like this:_
+_The resulting `github-openai.json` file will look like this:_
 
 ```jsonc
 
@@ -169,10 +169,9 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
  └─generated
     └─plugins
        └─graphplugin
-          └─graphplugin-typeb.json
           └─graphplugin-apimanifest.json
        └─github
-          └─github-typea.json
+          └─github-openai.json
           └─github-apimanifest.json
  └─kiota-config.json
  └─apimanifest.json
