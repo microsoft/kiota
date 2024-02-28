@@ -23,7 +23,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             try
