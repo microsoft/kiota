@@ -20,6 +20,17 @@ public sealed class DescriptionStorageServiceTests
         Assert.NotNull(result);
     }
     [Fact]
+    public async Task DeletesAStoredDescription()
+    {
+        var service = new DescriptionStorageService(tempPath);
+        using var stream = new MemoryStream();
+        stream.WriteByte(0x1);
+        await service.UpdateDescriptionAsync("clientNameA", stream);
+        service.RemoveDescription("clientNameA");
+        var result = await service.GetDescriptionAsync("clientNameA");
+        Assert.Null(result);
+    }
+    [Fact]
     public async Task ReturnsNothingIfNoDescriptionIsPresent()
     {
         var service = new DescriptionStorageService(tempPath);

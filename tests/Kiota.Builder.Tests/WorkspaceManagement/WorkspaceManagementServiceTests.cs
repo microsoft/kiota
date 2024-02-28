@@ -65,6 +65,25 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var result = await service.ShouldGenerateAsync(configuration, "foo");
         Assert.False(result);
     }
+    [Fact]
+    public async Task RemovesAClient()
+    {
+        var mockLogger = new Mock<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger.Object, true, tempPath);
+        var configuration = new GenerationConfiguration
+        {
+            ClientClassName = "clientName",
+            OutputPath = tempPath,
+            OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
+            ApiRootUrl = "https://graph.microsoft.com",
+        };
+        Directory.CreateDirectory(tempPath);
+        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
+        await service.RemoveClientAsync("clientName");
+        var result = await service.IsClientPresent("clientName");
+        Assert.False(result);
+    }
 
     public void Dispose()
     {
