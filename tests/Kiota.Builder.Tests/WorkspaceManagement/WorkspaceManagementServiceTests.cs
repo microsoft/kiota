@@ -23,7 +23,8 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     public async Task IsClientPresentReturnsFalseOnNoClient(bool usesConfig)
     {
         var mockLogger = new Mock<ILogger>();
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig);
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
         var result = await service.IsClientPresent("clientName");
         Assert.False(result);
     }
@@ -33,7 +34,8 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     public async Task ShouldGenerateReturnsTrue(bool usesConfig)
     {
         var mockLogger = new Mock<ILogger>();
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig);
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
@@ -49,7 +51,8 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     public async Task ShouldGenerateReturnsFalse(bool usesConfig)
     {
         var mockLogger = new Mock<ILogger>();
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig);
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
@@ -58,7 +61,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             ApiRootUrl = "https://graph.microsoft.com",
         };
         Directory.CreateDirectory(tempPath);
-        await service.UpdateStateFromConfigurationAsync(configuration, "foo", []);
+        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
         var result = await service.ShouldGenerateAsync(configuration, "foo");
         Assert.False(result);
     }

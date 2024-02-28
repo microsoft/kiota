@@ -50,4 +50,12 @@ public class DescriptionStorageService
             return ms;
         }
     }
+    public void RemoveDescription(string clientName, string extension = "yml")
+    {
+        ArgumentNullException.ThrowIfNull(clientName);
+        ArgumentNullException.ThrowIfNull(extension);
+        var descriptionFilePath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, $"{clientName}.{extension}");
+        if (File.Exists(descriptionFilePath))
+            File.Delete(descriptionFilePath);
+    }
 }
