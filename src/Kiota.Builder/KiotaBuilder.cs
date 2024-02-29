@@ -2343,25 +2343,23 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-
-        if (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum()))
+        if (parameter.Schema.IsEnum())
         {
-            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items : parameter.Schema;
-            var codeNamespace = enumSchema.IsReferencedSchema() switch
+            var schema = parameter.Schema;
+            var codeNamespace = schema.IsReferencedSchema() switch
             {
-                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
+                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
                 false => parameterClass.GetImmediateParentOfType<CodeNamespace>(), // Inline schema, i.e. specific to the Operation
             };
-            var shortestNamespace = GetShortestNamespace(codeNamespace, enumSchema);
-            var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
+            var enumName = schema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
                 enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
-            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
+            if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !parameter.Schema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }

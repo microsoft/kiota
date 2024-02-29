@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where stream responses would generate incorrect partial paging code. [#4207](https://github.com/microsoft/kiota/issues/4207)
 - Sanitize Accept and Content-Type headers during generation. [#4211](https://github.com/microsoft/kiota/issues/4211)
 - Fixed a bug in enum default value generator for TypeScript. [#4216](https://github.com/microsoft/kiota/issues/4216)
-- Generate enum array for query parameters. [#4225](https://github.com/microsoft/kiota/issues/4225)
 
 ## [1.11.1] - 2024-02-05
 

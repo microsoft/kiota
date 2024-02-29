@@ -251,8 +251,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             for (var i = 0; i < parameters.Count; i++)
             {
-                var isNonNullableCollection = !parameters[i].Type.IsNullable && parameters[i].Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[i].Name.ToFirstCharacterLowerCase()}{(isNonNullableCollection ? "?? []" : string.Empty)};");
+                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[i].Name.ToFirstCharacterLowerCase()};");
             }
         }
     }
