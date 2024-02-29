@@ -78,7 +78,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 openapi = searchResultDescription;
             }
 
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
 

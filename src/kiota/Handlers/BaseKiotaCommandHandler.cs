@@ -265,18 +265,23 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var example = $"Example: kiota generate -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
         DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
-    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest)
+    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest, string commandName = "generate")
     {
         if (!includePaths.Any() && !excludePaths.Any())
         {
             var sourceArg = GetSourceArg(path, manifest);
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
-                        $"Example: kiota generate --include-path \"**/foo\" {sourceArg}");
+                        $"Example: kiota {commandName} --include-path \"**/foo\" {sourceArg}");
         }
     }
     private static string GetSourceArg(string path, string manifest)
     {
-        return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-m \"{manifest}\"";
+        return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-a \"{manifest}\"";
+    }
+    protected void DisplayGenerateCommandHint()
+    {
+        DisplayHint("Hint: use the client generate command to generate the code.",
+                    "Example: kiota client generate");
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path, string manifest)
     {

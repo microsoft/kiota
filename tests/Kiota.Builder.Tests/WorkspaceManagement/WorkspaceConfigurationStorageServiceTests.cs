@@ -11,8 +11,8 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     public async Task DefensiveProgramming()
     {
         Assert.Throws<ArgumentException>(() => new WorkspaceConfigurationStorageService(string.Empty));
-        var service = new WorkspaceConfigurationStorageService();
-        await Assert.ThrowsAsync<ArgumentNullException>(() => service.UpdateWorkspaceConfigurationAsync(null));
+        var service = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.UpdateWorkspaceConfigurationAsync(null, null));
     }
     private readonly string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     [Fact]
@@ -33,16 +33,18 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     public async Task ReturnsNullOnNonInitialized()
     {
         var service = new WorkspaceConfigurationStorageService(tempPath);
-        var result = await service.GetWorkspaceConfigurationAsync();
-        Assert.Null(result);
+        var (config, manifest) = await service.GetWorkspaceConfigurationAsync();
+        Assert.Null(config);
+        Assert.Null(manifest);
     }
     [Fact]
     public async Task ReturnsConfigurationWhenInitialized()
     {
         var service = new WorkspaceConfigurationStorageService(tempPath);
         await service.InitializeAsync();
-        var result = await service.GetWorkspaceConfigurationAsync();
+        var (result, manifest) = await service.GetWorkspaceConfigurationAsync();
         Assert.NotNull(result);
+        Assert.Null(manifest);
     }
     [Fact]
     public async Task ReturnsIsInitialized()
@@ -58,6 +60,18 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         var service = new WorkspaceConfigurationStorageService(tempPath);
         var result = await service.IsInitializedAsync();
         Assert.False(result);
+    }
+    [Fact]
+    public async Task BackupsAndRestores()
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await service.InitializeAsync();
+        await service.BackupConfigAsync();
+        var targetConfigFile = Path.Combine(tempPath, "kiota-config.json");
+        File.Delete(targetConfigFile);
+        Assert.False(File.Exists(targetConfigFile));
+        await service.RestoreConfigAsync();
+        Assert.True(File.Exists(targetConfigFile));
     }
     public void Dispose()
     {
