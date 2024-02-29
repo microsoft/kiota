@@ -603,6 +603,7 @@ public class GoRefiner : CommonLanguageRefiner
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";
     private const string SerializationNamespaceName = "github.com/microsoft/kiota-abstractions-go/serialization";
+    internal const string UntypedNodeName = "UntypedNodeable";
 
     private void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -700,6 +701,13 @@ public class GoRefiner : CommonLanguageRefiner
                             IsExternal = true,
                         },
                     })},
+        {KiotaBuilder.UntypedNodeName, (GoRefiner.UntypedNodeName, new CodeUsing {
+                                Name = GoRefiner.UntypedNodeName,
+                                Declaration = new CodeType {
+                                    Name = SerializationNamespaceName,
+                                    IsExternal = true,
+                                },
+                            })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
