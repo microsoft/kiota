@@ -708,6 +708,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
             (CodeInterface, true) => ("res", string.Empty, false),
             (_, true) => ("res", "*", true),
+            (null, false) when property.Type.AllTypes.First().Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase) => (GetTypeAssertion("val", $"*{propertyTypeImportName}"), string.Empty, true),
             _ => ("val", string.Empty, true),
         };
         if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
@@ -978,7 +979,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         serializationKey = $"\"{serializationKey}\"";
         var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
         var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
-        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface);
+        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase));
         var isInterface = propType is CodeType iType && iType.TypeDefinition is CodeInterface;
         if (addBlockForErrorScope)
             if (isEnum || propType.IsCollection)
