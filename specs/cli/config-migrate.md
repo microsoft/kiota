@@ -8,8 +8,8 @@ In the case where conflicting API client names would be migrated, the command wi
 
 | Parameters | Required | Example | Description |
 | -- | -- | -- | -- |
-| `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
-| `--client-name \| --cn` | No | GraphClient | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
+| `--lock-directory \| --ld` | No | ./output/pythonClient/ | Relative path to the directory containing the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
+| `--client-name \| --cn` | No | GraphClient | Used with `--lock-directory`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
 
 ## Using `kiota config migrate`
 
@@ -181,7 +181,7 @@ Assuming the following folder structure:
 ```
 
 ```bash
-kiota config migrate --lock-location ./generated/graph/csharp/kiota-lock.json --client-name GraphClient
+kiota config migrate --lock-directory ./generated/graph/csharp --client-name GraphClient
 ```
 
 _The resulting `kiota-config.json` file will look like this:_
