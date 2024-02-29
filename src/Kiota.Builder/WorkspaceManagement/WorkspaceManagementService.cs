@@ -124,7 +124,7 @@ public class WorkspaceManagementService
     private async Task<string> GetConfigurationHashAsync(ApiClientConfiguration apiClientConfiguration, string descriptionHash)
     {
         using var stream = new MemoryStream();
-        JsonSerializer.Serialize(stream, apiClientConfiguration, context.ApiClientConfiguration);
+        await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiClientConfiguration).ConfigureAwait(false);
         await stream.WriteAsync(Encoding.UTF8.GetBytes(descriptionHash)).ConfigureAwait(false);
         stream.Position = 0;
         if (HashAlgorithm.Value is null)
