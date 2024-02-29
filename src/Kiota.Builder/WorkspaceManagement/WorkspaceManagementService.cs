@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -171,5 +172,71 @@ public class WorkspaceManagementService
         }
 
         return sb.ToString();
+    }
+
+    public async Task<IEnumerable<string>> MigrateFromLockFileAsync(string clientName, string lockDirectory, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(lockDirectory);
+        if (!UseKiotaConfig)
+            throw new InvalidOperationException("Cannot migrate from lock file in kiota config mode");
+        if (!Path.IsPathRooted(lockDirectory))
+            lockDirectory = Path.Combine(WorkingDirectory, lockDirectory);
+        if (Path.GetRelativePath(WorkingDirectory, lockDirectory).StartsWith("..", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The lock directory must be a subdirectory of the working directory");
+        var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        wsConfig ??= new WorkspaceConfiguration();
+        apiManifest ??= new ApiManifestDocument("application"); //TODO get the application name
+        var lockFiles = Directory.GetFiles(lockDirectory, LockManagementService.LockFileName, SearchOption.AllDirectories);
+        if (lockFiles.Length == 0)
+            throw new InvalidOperationException("No lock file found in the specified directory");
+        var clientNamePassed = !string.IsNullOrEmpty(clientName);
+        if (lockFiles.Length > 1 && clientNamePassed)
+            throw new InvalidOperationException("Multiple lock files found in the specified directory and the client name was specified");
+        var clientsGenerationConfigurations = new List<GenerationConfiguration?>();
+        if (lockFiles.Length == 1)
+            clientsGenerationConfigurations.Add(await LoadConfigurationFromLockAsync(clientNamePassed ? clientName : string.Empty, lockFiles[0], cancellationToken).ConfigureAwait(false));
+        else
+            clientsGenerationConfigurations.AddRange(await Task.WhenAll(lockFiles.Select(x => LoadConfigurationFromLockAsync(string.Empty, x, cancellationToken))).ConfigureAwait(false));
+        var loadedConfigurations = clientsGenerationConfigurations.OfType<GenerationConfiguration>().ToArray();
+        foreach (var configuration in loadedConfigurations)
+        {
+            var generationClientConfig = new ApiClientConfiguration(configuration);
+            generationClientConfig.NormalizePaths(WorkingDirectory);
+            if (wsConfig.Clients.ContainsKey(configuration.ClientClassName))
+            {
+                Logger.LogError("The client {ClientName} is already present in the configuration", configuration.ClientClassName);
+                clientsGenerationConfigurations.Remove(configuration);
+                continue;
+            }
+            wsConfig.Clients.Add(configuration.ClientClassName, generationClientConfig);
+            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, "migrated").ConfigureAwait(false);
+            // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
+            apiManifest.ApiDependencies.Add(configuration.ClientClassName, configuration.ToApiDependency(inputConfigurationHash, new()));//TODO get the resolved operations?
+            //TODO copy the description file
+            lockManagementService.DeleteLockFile(Path.GetDirectoryName(configuration.OpenAPIFilePath)!);
+        }
+        await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
+        return clientsGenerationConfigurations.OfType<GenerationConfiguration>().Select(static x => x.ClientClassName);
+    }
+    private async Task<GenerationConfiguration?> LoadConfigurationFromLockAsync(string clientName, string lockFilePath, CancellationToken cancellationToken)
+    {
+        if (Path.GetDirectoryName(lockFilePath) is not string lockFileDirectory)
+        {
+            Logger.LogWarning("The lock file {LockFilePath} is not in a directory, it will be skipped", lockFilePath);
+            return null;
+        }
+        var lockInfo = await lockManagementService.GetLockFromDirectoryAsync(lockFileDirectory, cancellationToken).ConfigureAwait(false);
+        if (lockInfo is null)
+        {
+            Logger.LogWarning("The lock file {LockFilePath} is not valid, it will be skipped", lockFilePath);
+            return null;
+        }
+        var generationConfiguration = new GenerationConfiguration();
+        lockInfo.UpdateGenerationConfigurationFromLock(generationConfiguration);
+        if (!string.IsNullOrEmpty(clientName))
+        {
+            generationConfiguration.ClientClassName = clientName;
+        }
+        return generationConfiguration;
     }
 }

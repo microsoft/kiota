@@ -15,7 +15,7 @@ namespace Kiota.Builder.Lock;
 /// </summary>
 public class LockManagementService : ILockManagementService
 {
-    private const string LockFileName = "kiota-lock.json";
+    internal const string LockFileName = "kiota-lock.json";
     /// <inheritdoc/>
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory)
     {
@@ -131,5 +131,12 @@ public class LockManagementService : ILockManagementService
     {
         var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "backup", hashedPath, LockFileName);
+    }
+    public void DeleteLockFile(string directoryPath)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        var lockFilePath = Path.Combine(directoryPath, LockFileName);
+        if (File.Exists(lockFilePath))
+            File.Delete(lockFilePath);
     }
 }
