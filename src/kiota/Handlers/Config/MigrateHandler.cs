@@ -28,7 +28,7 @@ internal class MigrateHandler : BaseKiotaCommandHandler
         string clientName = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         lockDirectory = NormalizeSlashesInPath(lockDirectory);
-        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceManagementService>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceManagementService>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             try
@@ -37,10 +37,11 @@ internal class MigrateHandler : BaseKiotaCommandHandler
                 var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(clientName, lockDirectory, cancellationToken).ConfigureAwait(false);
                 if (!clientNames.Any())
                 {
-                    logger.LogWarning("no client configuration was migrated");
+                    DisplayWarning("no client configuration was migrated");
                     return 1;
                 }
-                logger.LogInformation("client configurations migrated successfully: {clientNames}", string.Join(", ", clientNames));
+                DisplaySuccess($"Client configurations migrated successfully: {string.Join(", ", clientNames)}");
+                DisplayGenerateAfterMigrateHint();
                 return 0;
             }
             catch (Exception ex)

@@ -243,6 +243,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
+    protected void DisplayGenerateAfterMigrateHint()
+    {
+        DisplayHint("Hint: use the generate command to update the client and the manifest requests.",
+                    "Example: kiota client generate");
+    }
     protected void DisplaySearchAddHint()
     {
         DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
