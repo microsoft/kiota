@@ -357,33 +357,11 @@ public partial class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        if (openApiDocument == null) return;
-        var candidateUrl = openApiDocument.Servers
-                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
-                                        .FirstOrDefault()
-                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
-                                        ?.FirstOrDefault()
-                                        ?.Url;
-        if (string.IsNullOrEmpty(candidateUrl))
-        {
+        var candidateUrl = openApiDocument?.GetAPIRootUrl(config.OpenAPIFilePath);
+        if (candidateUrl is null)
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
-            return;
-        }
-        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && config.OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            try
-            {
-                candidateUrl = new Uri(new Uri(config.OpenAPIFilePath), candidateUrl).ToString();
-            }
-#pragma warning disable CA1031
-            catch (Exception ex)
-#pragma warning restore CA1031
-            {
-                logger.LogWarning(ex, "Could not resolve the server url from the OpenAPI document. The base url will need to be set when using the client.");
-                return;
-            }
-        }
-        config.ApiRootUrl = candidateUrl.TrimEnd(ForwardSlash);
+        else
+            config.ApiRootUrl = candidateUrl;
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
@@ -399,8 +377,8 @@ public partial class KiotaBuilder
         return input;
     }
 
-    private const char ForwardSlash = '/';
-    public async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
+    internal const char ForwardSlash = '/';
+    internal async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
