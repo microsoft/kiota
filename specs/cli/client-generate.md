@@ -12,7 +12,7 @@ In general cases, the `kiota client generate` command will generate the code for
 
 | Parameters | Required | Example | Description | Telemetry | 
 | -- | -- | -- | -- | -- |
-| `--client-name \| --cn` | No | graphDelegated | Name of the client. Unique within the parent API. | Yes |
+| `--client-name \| --cn` | No | graphDelegated | Name of the client. Unique within the parent API. | Yes, without it's value |
 | `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. | Yes |
 
 ## Usage
