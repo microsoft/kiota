@@ -833,7 +833,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
             else
             {
-                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "set_content_from_parsable" : "set_content_from_scalar";
+                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)) ? "set_content_from_parsable" : "set_content_from_scalar";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
         }
