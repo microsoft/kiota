@@ -244,7 +244,7 @@ public class WorkspaceManagementService
                 continue;
             }
             generationConfiguration.ApiRootUrl = document.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
-            await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, string.Empty, cancellationToken).ConfigureAwait(false);
+            await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
 
             var clientConfiguration = new ApiClientConfiguration(generationConfiguration);
             clientConfiguration.NormalizePaths(WorkingDirectory);
