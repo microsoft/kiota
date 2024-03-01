@@ -28,7 +28,7 @@ public static class KiotaConfigCommands
     {
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var lockDirectoryOption = GetLockDirectoryOption();
-        var classOption = KiotaClientCommands.GetClientNameOption();
+        var classOption = KiotaClientCommands.GetClientNameOption(false);
         var command = new Command("migrate", "Migrates a kiota lock file to a Kiota configuration")
         {
             logLevelOption,
