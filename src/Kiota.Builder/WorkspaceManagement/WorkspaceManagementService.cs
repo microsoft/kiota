@@ -54,7 +54,7 @@ public class WorkspaceManagementService
         {
             var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
             wsConfig ??= new WorkspaceConfiguration();
-            manifest ??= new ApiManifestDocument("application"); //TODO get the application name
+            manifest ??= defaultManifest;
             var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
             generationClientConfig.NormalizePaths(WorkingDirectory);
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
@@ -73,6 +73,7 @@ public class WorkspaceManagementService
             await lockManagementService.WriteLockFileAsync(generationConfiguration.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
         }
     }
+    private static ApiManifestDocument defaultManifest => new("application"); //TODO get the application name
     public async Task RestoreStateAsync(string outputPath, CancellationToken cancellationToken = default)
     {
         if (UseKiotaConfig)
@@ -195,8 +196,7 @@ public class WorkspaceManagementService
         var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
         if (wsConfig is null)
             throw new InvalidOperationException("The workspace configuration is not initialized");
-        if (apiManifest is null)
-            throw new InvalidOperationException("The API manifest is not initialized");
+        apiManifest ??= defaultManifest;
 
         var lockFiles = Directory.GetFiles(lockDirectory, LockManagementService.LockFileName, SearchOption.AllDirectories);
         if (lockFiles.Length == 0)
