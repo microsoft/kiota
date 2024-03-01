@@ -355,11 +355,10 @@ public partial class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        var candidateUrl = openApiDocument?.GetAPIRootUrl(config.OpenAPIFilePath);
-        if (candidateUrl is null)
-            logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
-        else
+        if (openApiDocument is not null && openApiDocument.GetAPIRootUrl(config.OpenAPIFilePath) is string candidateUrl)
             config.ApiRootUrl = candidateUrl;
+        else
+            logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {

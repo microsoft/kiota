@@ -52,4 +52,20 @@ public class LockManagementServiceTests
         await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile);
         Assert.Equal($"..{Path.DirectorySeparatorChar}information{Path.DirectorySeparatorChar}description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
     }
+    [Fact]
+    public async Task DeletesALock()
+    {
+        var lockManagementService = new LockManagementService();
+        var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");
+        var lockFile = new KiotaLock
+        {
+            ClientClassName = "foo",
+            ClientNamespaceName = "bar",
+            DescriptionLocation = descriptionPath,
+        };
+        var path = Path.GetTempPath();
+        await lockManagementService.WriteLockFileAsync(path, lockFile);
+        lockManagementService.DeleteLockFile(path);
+        Assert.Null(await lockManagementService.GetLockFromDirectoryAsync(path));
+    }
 }

@@ -237,7 +237,13 @@ public class WorkspaceManagementService
             ms.Seek(0, SeekOrigin.Begin);
             msForOpenAPIDocument.Seek(0, SeekOrigin.Begin);
             var document = await openApiDocumentDownloadService.GetDocumentFromStreamAsync(msForOpenAPIDocument, generationConfiguration, false, cancellationToken).ConfigureAwait(false);
-            generationConfiguration.ApiRootUrl = document?.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
+            if (document is null)
+            {
+                Logger.LogError("The client {ClientName} could not be migrated because the OpenAPI document could not be loaded", generationConfiguration.ClientClassName);
+                clientsGenerationConfigurations.Remove(generationConfiguration);
+                continue;
+            }
+            generationConfiguration.ApiRootUrl = document.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
             await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, string.Empty, cancellationToken).ConfigureAwait(false);
 
             var clientConfiguration = new ApiClientConfiguration(generationConfiguration);

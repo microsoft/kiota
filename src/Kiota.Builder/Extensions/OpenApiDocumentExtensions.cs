@@ -29,11 +29,11 @@ internal static class OpenApiDocumentExtensions
     }
     internal static string? GetAPIRootUrl(this OpenApiDocument openApiDocument, string openAPIFilePath)
     {
-        if (openApiDocument == null) return null;
+        ArgumentNullException.ThrowIfNull(openApiDocument);
         var candidateUrl = openApiDocument.Servers
                                         .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
                                         .FirstOrDefault()
-                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
+                                        ?.OrderByDescending(static x => x.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
                                         ?.FirstOrDefault()
                                         ?.Url;
         if (string.IsNullOrEmpty(candidateUrl))
