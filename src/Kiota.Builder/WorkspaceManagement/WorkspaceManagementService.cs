@@ -221,7 +221,7 @@ public class WorkspaceManagementService
                 continue;
             }
             wsConfig.Clients.Add(configuration.ClientClassName, generationClientConfig);
-            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, "migrated").ConfigureAwait(false);
+            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
             apiManifest.ApiDependencies.Add(configuration.ClientClassName, configuration.ToApiDependency(inputConfigurationHash, new()));//TODO get the resolved operations?
             var (stream, _) = await DownloadHelper.LoadStream(configuration.OpenAPIFilePath, HttpClient, Logger, configuration, localFilesLock, null, false, cancellationToken).ConfigureAwait(false);

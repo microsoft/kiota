@@ -2,6 +2,8 @@
 
 This command is valuable in cases where a code base was created with Kiota v1.0 and needs to be migrated to the latest version of Kiota. The `kiota config migrate` command will identify and locate the closest `kiota-config.json` file available. If a file can't be found, it would initialize a new `kiota-config.json` file. Then, it would identify all `kiota-lock.json` files that are within this folder structure and add each of them to the `kiota-config.json` file. Adding the clients to the `kiota-config.json` file would not trigger the generation as it only affects the `kiota-config.json` file. The `kiota client generate` command would need to be executed to generate the code for the clients.
 
+The API manifest won't contain any request after the migration since it could lead to misalignments between the generated client and the reported requests if the description has changed between the initial generation of the client and the migration. To get the requests populated, the user will need to use the generate command.
+
 In the case where conflicting API client names would be migrated, the command will error out and invite the user to re-run the command providing more context for the `--client-name` parameter.
 
 ## Parameters
@@ -80,64 +82,14 @@ _The resulting `apimanifest.json` file will look like this:_
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
-      "requests": [
-        {
-          "method": "GET",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "POST",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/$count"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "PATCH",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "DELETE",
-          "uriTemplate": "/users/{user-id}"
-        }
-      ]
+      "requests": []
     },
     "pythonGraphServiceClient": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
-      "requests": [
-        {
-          "method": "GET",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "POST",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/$count"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "PATCH",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "DELETE",
-          "uriTemplate": "/users/{user-id}"
-        }
-      ]
+      "requests": []
     }
   }
 }
