@@ -37,7 +37,9 @@ public class WorkspaceManagementService
         WorkingDirectory = workingDirectory;
         workspaceConfigurationStorageService = new(workingDirectory);
         descriptionStorageService = new(workingDirectory);
+        openApiDocumentDownloadService = new(HttpClient, Logger);
     }
+    private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
     private readonly DescriptionStorageService descriptionStorageService;
@@ -215,23 +217,36 @@ public class WorkspaceManagementService
         var (wsConfig, apiManifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
 
         var clientsGenerationConfigurations = await LoadGenerationConfigurationsFromLockFilesAsync(lockDirectory, clientName, cancellationToken).ConfigureAwait(false);
-        foreach (var configuration in clientsGenerationConfigurations.ToArray()) //to avoid modifying the collection as we iterate and remove some entries
+        foreach (var generationConfiguration in clientsGenerationConfigurations.ToArray()) //to avoid modifying the collection as we iterate and remove some entries
         {
-            var generationClientConfig = new ApiClientConfiguration(configuration);
-            generationClientConfig.NormalizePaths(WorkingDirectory);
-            if (wsConfig.Clients.ContainsKey(configuration.ClientClassName))
+
+            if (wsConfig.Clients.ContainsKey(generationConfiguration.ClientClassName))
             {
-                Logger.LogError("The client {ClientName} is already present in the configuration", configuration.ClientClassName);
-                clientsGenerationConfigurations.Remove(configuration);
+                Logger.LogError("The client {ClientName} is already present in the configuration", generationConfiguration.ClientClassName);
+                clientsGenerationConfigurations.Remove(generationConfiguration);
                 continue;
             }
-            wsConfig.Clients.Add(configuration.ClientClassName, generationClientConfig);
-            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, "migrated-pending-generate").ConfigureAwait(false);
+            var (stream, _) = await openApiDocumentDownloadService.LoadStreamAsync(generationConfiguration.OpenAPIFilePath, generationConfiguration, null, false, cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+            await using var msForOpenAPIDocument = new MemoryStream(); // openapi.net doesn't honour leave open
+            await using var ms = new MemoryStream();
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+            await stream.CopyToAsync(msForOpenAPIDocument, cancellationToken).ConfigureAwait(false);
+            msForOpenAPIDocument.Seek(0, SeekOrigin.Begin);
+            await msForOpenAPIDocument.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+            ms.Seek(0, SeekOrigin.Begin);
+            msForOpenAPIDocument.Seek(0, SeekOrigin.Begin);
+            var document = await openApiDocumentDownloadService.GetDocumentFromStreamAsync(msForOpenAPIDocument, generationConfiguration, false, cancellationToken).ConfigureAwait(false);
+            generationConfiguration.ApiRootUrl = document?.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
+            await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, string.Empty, cancellationToken).ConfigureAwait(false);
+
+            var clientConfiguration = new ApiClientConfiguration(generationConfiguration);
+            clientConfiguration.NormalizePaths(WorkingDirectory);
+            wsConfig.Clients.Add(generationConfiguration.ClientClassName, clientConfiguration);
+            var inputConfigurationHash = await GetConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
-            apiManifest.ApiDependencies.Add(configuration.ClientClassName, configuration.ToApiDependency(inputConfigurationHash, new()));//TODO get the resolved operations?
-            var (stream, _) = await DownloadHelper.LoadStream(configuration.OpenAPIFilePath, HttpClient, Logger, configuration, null, false, cancellationToken).ConfigureAwait(false);
-            await descriptionStorageService.UpdateDescriptionAsync(configuration.ClientClassName, stream, string.Empty, cancellationToken).ConfigureAwait(false);
-            lockManagementService.DeleteLockFile(Path.GetDirectoryName(configuration.OpenAPIFilePath)!);
+            apiManifest.ApiDependencies.Add(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, new()));
+            lockManagementService.DeleteLockFile(Path.GetDirectoryName(generationConfiguration.OpenAPIFilePath)!);
         }
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
         return clientsGenerationConfigurations.OfType<GenerationConfiguration>().Select(static x => x.ClientClassName);

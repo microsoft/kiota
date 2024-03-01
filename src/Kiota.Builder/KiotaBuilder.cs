@@ -11,7 +11,6 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncKeyedLock;
 using DotNet.Globbing;
 using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
@@ -24,7 +23,6 @@ using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
@@ -32,9 +30,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 [assembly: InternalsVisibleTo("Kiota.Builder.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100957cb48387b2a5f54f5ce39255f18f26d32a39990db27cf48737afc6bc62759ba996b8a2bfb675d4e39f3d06ecb55a178b1b4031dcb2a767e29977d88cce864a0d16bfc1b3bebb0edf9fe285f10fffc0a85f93d664fa05af07faa3aad2e545182dbf787e3fd32b56aca95df1a3c4e75dec164a3f1a4c653d971b01ffc39eb3c4")]
 
@@ -64,7 +60,9 @@ public partial class KiotaBuilder
         var workingDirectory = Directory.GetCurrentDirectory();
         workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
         this.useKiotaConfig = useKiotaConfig;
+        openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
     }
+    private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
@@ -372,64 +370,15 @@ public partial class KiotaBuilder
     private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
-        var (input, isCopy) = await DownloadHelper.LoadStream(inputPath, httpClient, logger, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
+        var (input, isCopy) = await openApiDocumentDownloadService.LoadStreamAsync(inputPath, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
         isDescriptionFromWorkspaceCopy = isCopy;
         return input;
     }
 
     internal const char ForwardSlash = '/';
-    internal async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
+    internal Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-        logger.LogTrace("Parsing OpenAPI file");
-        var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
-                    ValidationRuleSet.GetEmptyRuleSet() :
-                    ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
-        if (generating)
-            ruleSet.AddKiotaValidationRules(config);
-        var settings = new OpenApiReaderSettings
-        {
-            RuleSet = ruleSet,
-        };
-        settings.AddMicrosoftExtensionParsers();
-        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
-        try
-        {
-            var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
-            var lastSlashIndex = rawUri.LastIndexOf(ForwardSlash);
-            if (lastSlashIndex < 0)
-                lastSlashIndex = rawUri.Length - 1;
-            var documentUri = new Uri(rawUri[..lastSlashIndex]);
-            settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-        }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
-        {
-            // couldn't parse the URL, it's probably a local file
-        }
-        var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input, cancellationToken).ConfigureAwait(false);
-        stopwatch.Stop();
-        if (generating)
-            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
-                logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.OpenApiDiagnostic.Errors.Any())
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
-            {
-                logger.LogError("OpenAPI error: {Pointer} - {Message}", parsingError.Pointer, parsingError.Message);
-            }
-        }
-        else
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-        }
-
-        return readResult.OpenApiDocument;
+        return openApiDocumentDownloadService.GetDocumentFromStreamAsync(input, config, generating, cancellationToken);
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
