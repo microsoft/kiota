@@ -16,7 +16,12 @@ using Microsoft.Extensions.Logging;
 namespace Kiota.Builder;
 internal static class DownloadHelper
 {
-    internal static async Task<(Stream, bool)> LoadStream(string inputPath, HttpClient httpClient, ILogger logger, GenerationConfiguration config, AsyncKeyedLocker<string> localFilesLock, WorkspaceManagementService? workspaceManagementService = default, bool useKiotaConfig = false, CancellationToken cancellationToken = default)
+    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
+    {
+        o.PoolSize = 20;
+        o.PoolInitialFill = 1;
+    });
+    internal static async Task<(Stream, bool)> LoadStream(string inputPath, HttpClient httpClient, ILogger logger, GenerationConfiguration config, WorkspaceManagementService? workspaceManagementService = default, bool useKiotaConfig = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();

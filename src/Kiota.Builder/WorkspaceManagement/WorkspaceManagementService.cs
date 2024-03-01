@@ -229,18 +229,13 @@ public class WorkspaceManagementService
             var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
             apiManifest.ApiDependencies.Add(configuration.ClientClassName, configuration.ToApiDependency(inputConfigurationHash, new()));//TODO get the resolved operations?
-            var (stream, _) = await DownloadHelper.LoadStream(configuration.OpenAPIFilePath, HttpClient, Logger, configuration, localFilesLock, null, false, cancellationToken).ConfigureAwait(false);
+            var (stream, _) = await DownloadHelper.LoadStream(configuration.OpenAPIFilePath, HttpClient, Logger, configuration, null, false, cancellationToken).ConfigureAwait(false);
             await descriptionStorageService.UpdateDescriptionAsync(configuration.ClientClassName, stream, string.Empty, cancellationToken).ConfigureAwait(false);
             lockManagementService.DeleteLockFile(Path.GetDirectoryName(configuration.OpenAPIFilePath)!);
         }
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
         return clientsGenerationConfigurations.OfType<GenerationConfiguration>().Select(static x => x.ClientClassName);
     }
-    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
-    {
-        o.PoolSize = 20;
-        o.PoolInitialFill = 1;
-    });
     private async Task<GenerationConfiguration?> LoadConfigurationFromLockAsync(string clientName, string lockFilePath, CancellationToken cancellationToken)
     {
         if (Path.GetDirectoryName(lockFilePath) is not string lockFileDirectory)

@@ -391,16 +391,10 @@ public partial class KiotaBuilder
         logger.LogDebug("{Prefix} {SwElapsed}", prefix, sw.Elapsed);
         sw.Reset();
     }
-
-    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
-    {
-        o.PoolSize = 20;
-        o.PoolInitialFill = 1;
-    });
     private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
-        var (input, isCopy) = await DownloadHelper.LoadStream(inputPath, httpClient, logger, config, localFilesLock, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
+        var (input, isCopy) = await DownloadHelper.LoadStream(inputPath, httpClient, logger, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
         isDescriptionFromWorkspaceCopy = isCopy;
         return input;
     }
