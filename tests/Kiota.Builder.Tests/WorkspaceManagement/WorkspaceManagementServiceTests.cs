@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
@@ -12,19 +13,21 @@ namespace Kiota.Builder.Tests.WorkspaceManagement;
 public sealed class WorkspaceManagementServiceTests : IDisposable
 {
     private readonly string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+    private readonly HttpClient httpClient = new();
     [Fact]
     public void Defensive()
     {
-        Assert.Throws<ArgumentNullException>(() => new WorkspaceManagementService(null));
+        Assert.Throws<ArgumentNullException>(() => new WorkspaceManagementService(null, httpClient));
+        Assert.Throws<ArgumentNullException>(() => new WorkspaceManagementService(Mock.Of<ILogger>(), null));
     }
     [InlineData(true)]
     [InlineData(false)]
     [Theory]
     public async Task IsClientPresentReturnsFalseOnNoClient(bool usesConfig)
     {
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
         var result = await service.IsClientPresent("clientName");
         Assert.False(result);
     }
@@ -33,9 +36,9 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [Theory]
     public async Task ShouldGenerateReturnsTrue(bool usesConfig)
     {
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
@@ -50,9 +53,9 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [Theory]
     public async Task ShouldGenerateReturnsFalse(bool usesConfig)
     {
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
-        var service = new WorkspaceManagementService(mockLogger.Object, usesConfig, tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
@@ -68,9 +71,9 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [Fact]
     public async Task RemovesAClient()
     {
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
-        var service = new WorkspaceManagementService(mockLogger.Object, true, tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
@@ -89,5 +92,6 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     {
         if (Directory.Exists(tempPath))
             Directory.Delete(tempPath, true);
+        httpClient.Dispose();
     }
 }

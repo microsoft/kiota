@@ -33,7 +33,7 @@ internal class MigrateHandler : BaseKiotaCommandHandler
         {
             try
             {
-                var workspaceManagementService = new WorkspaceManagementService(logger, true, workingDirectory);
+                var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true, workingDirectory);
                 var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(clientName, lockDirectory, cancellationToken).ConfigureAwait(false);
                 if (!clientNames.Any())
                 {

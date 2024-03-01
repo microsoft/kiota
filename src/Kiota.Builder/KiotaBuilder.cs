@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
@@ -64,7 +62,7 @@ public partial class KiotaBuilder
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
         var workingDirectory = Directory.GetCurrentDirectory();
-        workspaceManagementService = new WorkspaceManagementService(logger, useKiotaConfig, workingDirectory);
+        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
         this.useKiotaConfig = useKiotaConfig;
     }
     private readonly bool useKiotaConfig;
@@ -402,63 +400,8 @@ public partial class KiotaBuilder
     private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        inputPath = inputPath.Trim();
-
-        Stream input;
-        if (useKiotaConfig &&
-            config.Operation is ClientOperation.Edit or ClientOperation.Add &&
-            await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
-        {
-            logger.LogInformation("loaded description from the workspace copy");
-            input = descriptionStream;
-            isDescriptionFromWorkspaceCopy = true;
-        }
-        else if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            try
-            {
-                var cachingProvider = new DocumentCachingProvider(httpClient, logger)
-                {
-                    ClearCache = config.ClearCache,
-                };
-                var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
-                var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
-                logger.LogInformation("loaded description from remote source");
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        else
-            try
-            {
-#pragma warning disable CA2000 // disposed by caller
-                var inMemoryStream = new MemoryStream();
-                using (await localFilesLock.LockAsync(inputPath, cancellationToken).ConfigureAwait(false))
-                {// To avoid deadlocking on update with multiple clients for the same local description
-                    using var fileStream = new FileStream(inputPath, FileMode.Open);
-                    await fileStream.CopyToAsync(inMemoryStream, cancellationToken).ConfigureAwait(false);
-                }
-                inMemoryStream.Position = 0;
-                input = inMemoryStream;
-                logger.LogInformation("loaded description from local source");
-#pragma warning restore CA2000
-            }
-            catch (Exception ex) when (ex is FileNotFoundException ||
-                ex is PathTooLongException ||
-                ex is DirectoryNotFoundException ||
-                ex is IOException ||
-                ex is UnauthorizedAccessException ||
-                ex is SecurityException ||
-                ex is NotSupportedException)
-            {
-                throw new InvalidOperationException($"Could not open the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Read OpenAPI file {File}", stopwatch.ElapsedMilliseconds, inputPath);
+        var (input, isCopy) = await DownloadHelper.LoadStream(inputPath, httpClient, logger, config, localFilesLock, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
+        isDescriptionFromWorkspaceCopy = isCopy;
         return input;
     }
 
