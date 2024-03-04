@@ -44,14 +44,21 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     return 1;
                 }
                 var clientNameWasNotProvided = string.IsNullOrEmpty(className);
-                foreach (var clientEntry in config
+                var clientEntries = config
                                             .Clients
-                                            .Where(x => clientNameWasNotProvided || x.Key.Equals(className, StringComparison.OrdinalIgnoreCase)))
+                                            .Where(x => clientNameWasNotProvided || x.Key.Equals(className, StringComparison.OrdinalIgnoreCase))
+                                            .ToArray();
+                if (clientEntries.Length == 0 && !clientNameWasNotProvided)
+                {
+                    DisplayError($"No client found with the provided name {className}");
+                    return 1;
+                }
+                foreach (var clientEntry in clientEntries)
                 {
                     var generationConfiguration = new GenerationConfiguration();
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key);
                     generationConfiguration.ClearCache = refresh;
-                    generationConfiguration.ClearCache = refresh;
+                    generationConfiguration.CleanOutput = refresh;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
