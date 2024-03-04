@@ -21,7 +21,6 @@ Show the API paths tree for an API description.
 
 ```bash
 kiota show -d https://aka.ms/graph/v1.0/openapi.yaml -i **/messages
-
 ```
 
 ```bash

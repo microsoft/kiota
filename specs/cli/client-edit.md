@@ -18,11 +18,11 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--language \| -l` | No | csharp | The target language for the generated code files or for the information. | Yes |
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. | Yes, without its value |
-| `--backing-store \| -b` | No | | Defaults to `false` | Yes, without its value |
+| `--backing-store \| -b` | No | | Defaults to `false` | Yes |
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. | Yes |
 | `--structured-media-types \| -m` | No | `application/json` |Any valid media type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). | Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
-| `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. Defaults to `./output`. | Yes |
+| `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. Defaults to `./output`. | Yes, without its value |
 
 > [!NOTE] 
 > It is not required to use the CLI to edit clients. It is possible to edit a client by modifying its entry in the `clients` section of the `kiota-config.json` file. See the [kiota-config.json schema](../schemas/kiota-config.json.md) for more information.

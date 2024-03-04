@@ -82,7 +82,7 @@ The list of commands and their parameters can be found in the [CLI Commands](../
 
 We should offer a way to opt-out of the telemetry collection. This should be done in a very similar way that the `dotnet` CLI does (https://learn.microsoft.com/en-us/dotnet/core/tools/telemetry). To opt out of the telemetry feature, set the KIOTA_CLI_TELEMETRY_OPTOUT environment variable to 1 or true.
 
-Every time the CLI is installed and updated, we should inform the user about the telemetry feature and how to opt-out of it.
+Every time the CLI is installed and updated, we should inform the user about the telemetry feature and how to opt-out of it. If the users already opted-out, we should not inform the user and respect their choice.
 
 ```bash
 Telemetry
