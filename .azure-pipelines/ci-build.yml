@@ -485,6 +485,7 @@ extends:
                     displayName: "Publish Artifact: binaries"
                     inputs:
                       artifactName: Binaries_${{ distribution.jobPrefix }}
+                      sbomBuildDropPath: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
