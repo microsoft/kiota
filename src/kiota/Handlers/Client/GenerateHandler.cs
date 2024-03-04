@@ -60,6 +60,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
+                    generationConfiguration.Operation = ClientOperation.Generate;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
