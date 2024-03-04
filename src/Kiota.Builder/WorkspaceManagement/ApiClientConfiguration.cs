@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
@@ -117,9 +118,9 @@ public class ApiClientConfiguration : ICloneable
     /// </summary>
     /// <param name="config">Generation configuration to update.</param>
     /// <param name="clientName">Client name serving as class name.</param>
-    public void UpdateGenerationConfigurationFromApiClientConfiguration(GenerationConfiguration config, string clientName)
+    /// <param name="requests">The requests to use when updating an existing client.</param>
+    public void UpdateGenerationConfigurationFromApiClientConfiguration(GenerationConfiguration config, string clientName, IList<RequestInfo>? requests = default)
     {
-        //TODO lock the api manifest as well to have accurate path resolution
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(clientName);
         config.ClientNamespaceName = ClientNamespaceName;
@@ -137,6 +138,12 @@ public class ApiClientConfiguration : ICloneable
         config.ClientClassName = clientName;
         config.Serializers.Clear();
         config.Deserializers.Clear();
+        if (requests is { Count: > 0 })
+        {
+            config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
+                                            .Select(static x => $"/{x.UriTemplate}#{x.Method!.ToUpperInvariant()}")
+                                            .ToHashSet();
+        }
     }
 
     public object Clone()

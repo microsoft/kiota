@@ -1,6 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
+using Microsoft.OpenApi.ApiManifest;
 using Xunit;
 
 namespace Kiota.Builder.Tests.WorkspaceManagement;
@@ -91,7 +92,18 @@ public sealed class ApiClientConfigurationTests
             UsesBackingStore = true,
         };
         var generationConfiguration = new GenerationConfiguration();
-        clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, "client");
+        clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, "client", [
+            new RequestInfo
+            {
+                Method = "GET",
+                UriTemplate = "path/bar",
+            },
+            new RequestInfo
+            {
+                Method = "PATH",
+                UriTemplate = "path/baz",
+            },
+        ]);
         Assert.Equal(clientConfiguration.ClientNamespaceName, generationConfiguration.ClientNamespaceName);
         Assert.Equal(GenerationLanguage.CSharp, generationConfiguration.Language);
         Assert.Equal(clientConfiguration.DescriptionLocation, generationConfiguration.OpenAPIFilePath);
@@ -104,6 +116,7 @@ public sealed class ApiClientConfigurationTests
         Assert.Equal(clientConfiguration.UsesBackingStore, generationConfiguration.UsesBackingStore);
         Assert.Empty(generationConfiguration.Serializers);
         Assert.Empty(generationConfiguration.Deserializers);
+        Assert.Equal(2, generationConfiguration.PatternsOverride.Count);
     }
 
 }

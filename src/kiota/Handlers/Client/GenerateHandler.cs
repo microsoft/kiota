@@ -37,7 +37,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             try
             {
                 var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
-                var (config, _) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+                var (config, manifest) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
                 if (config == null)
                 {
                     DisplayError("The workspace configuration is missing, please run the init command first.");
@@ -56,7 +56,8 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 foreach (var clientEntry in clientEntries)
                 {
                     var generationConfiguration = new GenerationConfiguration();
-                    clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key);
+                    var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
+                    clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
