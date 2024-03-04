@@ -160,7 +160,7 @@ extends:
                   versionSpec: ">=6.1.0"
                   checkLatest: true
 
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ previewBranch }} -excludeHeadingDash
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }} -excludeHeadingDash
                 displayName: "Set version suffix"
 
               - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
@@ -346,7 +346,7 @@ extends:
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
                     displayName: Copy the appsettings.json
 
-                  - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ previewBranch }} -excludeHeadingDash
+                  - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }} -excludeHeadingDash
                     displayName: "Set version suffix"
 
                   - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
@@ -518,7 +518,7 @@ extends:
                   artifact: Binaries
                   source: current
                   targetPath: $(Build.ArtifactStagingDirectory)/Binaries
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ previewBranch }}
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
@@ -581,7 +581,7 @@ extends:
                 inputs:
                   versionSpec: "18.x"
               - pwsh: npm i -g @vscode/vsce
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ previewBranch }}
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: |
                   Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
@@ -630,7 +630,7 @@ extends:
                       inputs:
                         artifact: Nugets
                         source: current
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ previewBranch }}
+                    - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                       displayName: "Set version suffix"
                     - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                       displayName: "Get Kiota's version-number from .csproj"
