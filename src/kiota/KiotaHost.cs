@@ -336,6 +336,13 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<GenerationLanguage?> GetOptionalLanguageOption()
+    {
+        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the generated code files.");
+        languageOption.AddAlias("-l");
+        AddEnumValidator(languageOption, "language");
+        return languageOption;
+    }
     internal static Option<string> GetNamespaceOption(GenerationConfiguration defaultConfiguration)
     {
         var namespaceOption = new Option<string>("--namespace-name", () => defaultConfiguration.ClientNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
