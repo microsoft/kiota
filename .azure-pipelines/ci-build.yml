@@ -550,7 +550,7 @@ extends:
                   targetPath: "$(Build.ArtifactStagingDirectory)/VSCode"
 
       - stage: deploy
-        condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], ${{ parameters.previewBranch }})), succeeded())
+        condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
         dependsOn: build
         jobs:
           - job: vs_marketplace
