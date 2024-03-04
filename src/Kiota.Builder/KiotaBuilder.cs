@@ -21,13 +21,13 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
@@ -51,7 +51,7 @@ public partial class KiotaBuilder
     private OpenApiDocument? openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -63,7 +63,11 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
+        var workingDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, useKiotaConfig, workingDirectory);
+        this.useKiotaConfig = useKiotaConfig;
     }
+    private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
@@ -72,7 +76,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
                                             .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
@@ -171,22 +175,23 @@ public partial class KiotaBuilder
         UpdateConfigurationFromOpenApiDocument();
         StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
-        // Should Generate
-        sw.Start();
-        var shouldGenerate = await ShouldGenerate(cancellationToken).ConfigureAwait(false);
-        StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
-
         OpenApiUrlTreeNode? openApiTree = null;
+        var shouldGenerate = !config.SkipGeneration;
         if (openApiDocument != null)
         {
             // filter paths
             sw.Start();
             FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            SetApiRootUrl();
+
+            // Should Generate
+            sw.Start();
+            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
+
             if (shouldGenerate && generating)
             {
-                SetApiRootUrl();
-
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
@@ -204,21 +209,6 @@ public partial class KiotaBuilder
             GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
 
         config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
-    }
-    private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
-    {
-        if (config.CleanOutput) return true;
-        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        var comparer = new KiotaLockComparer();
-        if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
-        }
-        return !comparer.Equals(existingLock, configurationLock);
     }
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
@@ -247,6 +237,9 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
+        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
+
         try
         {
             await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
@@ -261,47 +254,51 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            if (!shouldGenerate)
+            if (shouldGenerate)
+            {
+                // Create Source Model
+                sw.Start();
+                var generatedCode = CreateSourceModel(openApiTree);
+                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+                // RefineByLanguage
+                sw.Start();
+                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+                // Write language source
+                sw.Start();
+                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+                await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+            }
+            else
             {
                 logger.LogInformation("No changes detected, skipping generation");
+                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                {
+                    await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+                }
                 return false;
             }
-            // Create Source Model
-            sw.Start();
-            var generatedCode = CreateSourceModel(openApiTree);
-            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-            // RefineByLanguage
-            sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-            // Write language source
-            sw.Start();
-            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
-
-            // Write lock file
-            sw.Start();
-            await UpdateLockFile(cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
-            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
     }
-    private readonly LockManagementService lockManagementService = new();
-    private async Task UpdateLockFile(CancellationToken cancellationToken)
+    private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
     {
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
+        // Write lock file
+        sw.Start();
+        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStream(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
+        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
+        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
+    private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
     [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();
@@ -402,7 +399,7 @@ public partial class KiotaBuilder
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
-
+    private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
         var stopwatch = new Stopwatch();
@@ -411,7 +408,15 @@ public partial class KiotaBuilder
         inputPath = inputPath.Trim();
 
         Stream input;
-        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        if (useKiotaConfig &&
+            config.Operation is ClientOperation.Edit or ClientOperation.Add &&
+            await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
+        {
+            logger.LogInformation("loaded description from the workspace copy");
+            input = descriptionStream;
+            isDescriptionFromWorkspaceCopy = true;
+        }
+        else if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             try
             {
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger)
@@ -421,6 +426,7 @@ public partial class KiotaBuilder
                 var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
                 var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
                 input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
+                logger.LogInformation("loaded description from remote source");
             }
             catch (HttpRequestException ex)
             {
@@ -438,6 +444,7 @@ public partial class KiotaBuilder
                 }
                 inMemoryStream.Position = 0;
                 input = inMemoryStream;
+                logger.LogInformation("loaded description from local source");
 #pragma warning restore CA2000
             }
             catch (Exception ex) when (ex is FileNotFoundException ||

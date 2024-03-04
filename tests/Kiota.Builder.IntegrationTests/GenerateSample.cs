@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Kiota.Builder.IntegrationTests;
-public class GenerateSample : IDisposable
+public sealed class GenerateSample : IDisposable
 {
     public void Dispose()
     {
@@ -36,7 +36,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "ToDoApi.yaml",
+            OpenAPIFilePath = GetAbsolutePath("ToDoApi.yaml"),
             OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
@@ -62,7 +62,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "ModelWithDictionary.yaml",
+            OpenAPIFilePath = GetAbsolutePath("ModelWithDictionary.yaml"),
             OutputPath = $".\\Generated\\ModelWithDictionary\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
@@ -88,7 +88,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "ResponseWithMultipleReturnFormats.yaml",
+            OpenAPIFilePath = GetAbsolutePath("ResponseWithMultipleReturnFormats.yaml"),
             OutputPath = $".\\Generated\\ResponseWithMultipleReturnFormats\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
@@ -111,7 +111,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "InheritingErrors.yaml",
+            OpenAPIFilePath = GetAbsolutePath("InheritingErrors.yaml"),
             OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
@@ -128,7 +128,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "NoUnderscoresInModel.yaml",
+            OpenAPIFilePath = GetAbsolutePath("NoUnderscoresInModel.yaml"),
             OutputPath = OutputPath,
             CleanOutput = true,
         };
@@ -162,7 +162,7 @@ public class GenerateSample : IDisposable
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "GeneratesUritemplateHints.yaml",
+            OpenAPIFilePath = GetAbsolutePath("GeneratesUritemplateHints.yaml"),
             OutputPath = OutputPath,
             CleanOutput = true,
         };
@@ -201,4 +201,5 @@ public class GenerateSample : IDisposable
 
         }
     }
+    private static string GetAbsolutePath(string relativePath) => Path.Combine(Directory.GetCurrentDirectory(), relativePath);
 }

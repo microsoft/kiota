@@ -60,7 +60,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             if (!language.HasValue)
             {
                 ShowLanguagesTable();
@@ -78,7 +78,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 openapi = searchResultDescription;
             }
 
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
 
