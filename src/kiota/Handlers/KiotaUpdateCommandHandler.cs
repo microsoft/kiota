@@ -46,7 +46,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)

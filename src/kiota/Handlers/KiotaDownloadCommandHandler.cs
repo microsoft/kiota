@@ -55,7 +55,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try

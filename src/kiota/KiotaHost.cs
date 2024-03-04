@@ -265,7 +265,7 @@ public static partial class KiotaHost
         };
         return searchCommand;
     }
-    private static Option<bool> GetCleanOutputOption(bool defaultValue)
+    internal static Option<bool> GetCleanOutputOption(bool defaultValue)
     {
         var cleanOutputOption = new Option<bool>("--clean-output", () => defaultValue, "Removes all files from the output directory before generating the code files.");
         cleanOutputOption.AddAlias("--co");
