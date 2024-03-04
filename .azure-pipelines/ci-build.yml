@@ -484,7 +484,7 @@ extends:
                   - task: 1ES.PublishPipelineArtifact@1
                     displayName: "Publish Artifact: binaries"
                     inputs:
-                      artifactName: Binaries
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
@@ -513,11 +513,12 @@ extends:
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
-              - task: DownloadPipelineArtifact@2
-                inputs:
-                  artifact: Binaries
-                  source: current
-                  targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+              - ${{ each distribution in parameters.distributions }}:
+                  - task: DownloadPipelineArtifact@2
+                    inputs:
+                      artifact: Binaries_${{ distribution.jobPrefix }}
+                      source: current
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
