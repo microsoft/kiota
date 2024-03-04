@@ -42,7 +42,7 @@ pluggy==1.4.0 ; python_version >= '3.7'
 
 pylint==3.1.0
 
-pytest==8.0.2
+pytest==8.1.0
 
 pytest-asyncio==0.23.5
 
