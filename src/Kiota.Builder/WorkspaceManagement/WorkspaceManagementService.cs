@@ -123,9 +123,9 @@ public class WorkspaceManagementService
         }
 
     }
-    public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, CancellationToken cancellationToken = default)
+    public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, bool cleanOutput, CancellationToken cancellationToken = default)
     {
-        if (!UseKiotaConfig)
+        if (!UseKiotaConfig || cleanOutput)
             return null;
         return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
     }

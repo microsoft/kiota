@@ -48,7 +48,7 @@ internal class OpenApiDocumentDownloadService
         if (useKiotaConfig &&
             config.Operation is ClientOperation.Edit or ClientOperation.Add &&
             workspaceManagementService is not null &&
-            await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
+            await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, config.CleanOutput, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
         {
             Logger.LogInformation("loaded description from the workspace copy");
             input = descriptionStream;
