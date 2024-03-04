@@ -619,10 +619,11 @@ extends:
                     - checkout: self
                       clean: true
                       submodules: true
-                    - task: DownloadPipelineArtifact@2
-                      inputs:
-                        artifact: Binaries
-                        source: current
+                    - ${{ each distribution in parameters.distributions }}:
+                        - task: DownloadPipelineArtifact@2
+                          inputs:
+                            artifact: Binaries_${{ distribution.jobPrefix }}
+                            source: current
                     - task: DownloadPipelineArtifact@2
                       inputs:
                         artifact: VSCode
