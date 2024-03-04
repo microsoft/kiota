@@ -110,8 +110,27 @@ public static class KiotaClientCommands
     }
     public static Command GetGenerateCommand()
     {
-        var command = new Command("generate", "Generates one or all clients from the Kiota configuration");
-        //TODO map the handler
+        var clientNameOption = GetClientNameOption(false);
+        var logLevelOption = KiotaHost.GetLogLevelOption();
+        var refreshOption = GetRefreshOption();
+        var command = new Command("generate", "Generates one or all clients from the Kiota configuration")
+        {
+            clientNameOption,
+            logLevelOption,
+            refreshOption,
+        };
+        command.Handler = new GenerateHandler
+        {
+            ClassOption = clientNameOption,
+            LogLevelOption = logLevelOption,
+            RefreshOption = refreshOption,
+        };
         return command;
+    }
+    private static Option<bool> GetRefreshOption()
+    {
+        var refresh = new Option<bool>("--refresh", "Refreshes the client OpenAPI description before generating the client");
+        refresh.AddAlias("--r");
+        return refresh;
     }
 }

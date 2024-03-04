@@ -304,10 +304,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
                     languageDependencies.Select(x => "   " + string.Format(languageInformation.DependencyInstallCommand, x.Name, x.Version))).ToArray());
         }
     }
-    protected void DisplayCleanHint(string commandName)
+    protected void DisplayCleanHint(string commandName, string argumentName = "--clean-output")
     {
-        DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                    $"Example: kiota {commandName} --clean-output");
+        DisplayHint($"Hint: to force the generation to overwrite an existing client pass the {argumentName} switch.",
+                    $"Example: kiota {commandName} {argumentName}");
     }
     protected void DisplayInfoAdvancedHint()
     {
