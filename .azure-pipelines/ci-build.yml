@@ -515,6 +515,7 @@ extends:
                   versionSpec: "18.x"
               - ${{ each distribution in parameters.distributions }}:
                 - task: DownloadPipelineArtifact@2
+                  displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
                   inputs:
                     artifact: Binaries_${{ distribution.jobPrefix }}
                     source: current
@@ -621,6 +622,7 @@ extends:
                       submodules: true
                     - ${{ each distribution in parameters.distributions }}:
                       - task: DownloadPipelineArtifact@2
+                        displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
                         inputs:
                           artifact: Binaries_${{ distribution.jobPrefix }}
                           source: current
