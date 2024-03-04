@@ -700,6 +700,7 @@ extends:
                       displayName: "NuGet push"
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
+                        packageParentPath: '$(Pipeline.Workspace)'
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
 
@@ -727,5 +728,6 @@ extends:
                       displayName: "NuGet push"
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
+                        packageParentPath: '$(Pipeline.Workspace)'
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
