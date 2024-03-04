@@ -802,5 +802,26 @@ public class TypeScriptLanguageRefinerTests
         Assert.Null(root.FindChildByName<CodeInterface>($"{model.Name.ToFirstCharacterUpperCase()}", false));
 
     }
+    [Fact]
+    public async Task AddsUsingForUntypedNode()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var model = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root);
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = new CodeType
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);// type is renamed
+        Assert.NotEmpty(model.StartBlock.Usings);
+        var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
+    }
     #endregion
 }
