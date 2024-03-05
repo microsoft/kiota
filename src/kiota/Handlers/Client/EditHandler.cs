@@ -146,7 +146,12 @@ internal class EditHandler : BaseKiotaCommandHandler
                 {
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
-                } // else we get an error because we're adding a client that already exists
+                }
+                else
+                {
+                    DisplayWarning("Generation skipped as no changes were detected");
+                    DisplayCleanHint("client generate", "--refresh");
+                }
                 var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "client edit");
