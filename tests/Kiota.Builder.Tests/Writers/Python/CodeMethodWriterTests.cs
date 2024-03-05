@@ -694,6 +694,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return request_info", result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters(false);
+        method.Parameters.OfKind(CodeParameterKind.RequestBody).Type = new CodeType
+        {
+            Name = "MultipartBody",
+            IsExternal = true,
+        };
+        method.RequestBodyContentType = "multipart/form-data";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_content_from_parsable", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
     {
         setup();

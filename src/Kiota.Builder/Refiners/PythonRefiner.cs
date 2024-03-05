@@ -113,6 +113,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
                     "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory",
                     "kiota_serialization_form.form_serialization_writer_factory.FormSerializationWriterFactory",
+                    "kiota_serialization_multipart.multipart_serialization_writer_factory.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -150,6 +151,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }, cancellationToken);
     }
 
+    private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsPackageName = "kiota_abstractions";
     private const string SerializationModuleName = $"{AbstractionsPackageName}.serialization";
     private const string StoreModuleName = $"{AbstractionsPackageName}.store";
@@ -160,6 +162,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.method", "Method"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            $"{AbstractionsPackageName}.multipart_body", MultipartBodyClassName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
