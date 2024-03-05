@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Manifest;
 using Microsoft.Extensions.Logging;
@@ -29,16 +30,18 @@ public class WorkspaceManagementService
             workingDirectory = Directory.GetCurrentDirectory();
         WorkingDirectory = workingDirectory;
         workspaceConfigurationStorageService = new(workingDirectory);
+        descriptionStorageService = new(workingDirectory);
     }
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
+    private readonly DescriptionStorageService descriptionStorageService;
     public async Task<bool> IsClientPresent(string clientName, CancellationToken cancellationToken = default)
     {
         if (!UseKiotaConfig) return false;
         var (wsConfig, _) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
         return wsConfig?.Clients.ContainsKey(clientName) ?? false;
     }
-    public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, CancellationToken cancellationToken = default)
+    public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, Stream descriptionStream, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);
         if (UseKiotaConfig)
@@ -52,6 +55,8 @@ public class WorkspaceManagementService
             var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
             manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
+            if (descriptionStream != Stream.Null)
+                await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, descriptionStream, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -111,6 +116,29 @@ public class WorkspaceManagementService
             return !lockComparer.Equals(existingLock, configurationLock);
         }
 
+    }
+    public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, CancellationToken cancellationToken = default)
+    {
+        if (!UseKiotaConfig)
+            return null;
+        return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
+    }
+    public async Task RemoveClientAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    {
+        if (!UseKiotaConfig)
+            throw new InvalidOperationException("Cannot remove a client in lock mode");
+        var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        if (wsConfig is null)
+            throw new InvalidOperationException("Cannot remove a client without a configuration");
+
+        if (cleanOutput && wsConfig.Clients.TryGetValue(clientName, out var clientConfig) && Directory.Exists(clientConfig.OutputPath))
+            Directory.Delete(clientConfig.OutputPath, true);
+
+        if (!wsConfig.Clients.Remove(clientName))
+            throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
+        manifest?.ApiDependencies.Remove(clientName);
+        await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
+        descriptionStorageService.RemoveDescription(clientName);
     }
     private static readonly JsonSerializerOptions options = new()
     {

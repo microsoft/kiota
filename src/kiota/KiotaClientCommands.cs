@@ -85,8 +85,21 @@ public static class KiotaClientCommands
     }
     public static Command GetRemoveCommand()
     {
-        var command = new Command("remove", "Removes a client from the Kiota configuration");
-        //TODO map the handler
+        var clientNameOption = GetClientNameOption();
+        var cleanOutputOption = KiotaHost.GetCleanOutputOption(false);
+        var logLevelOption = KiotaHost.GetLogLevelOption();
+        var command = new Command("remove", "Removes a client from the Kiota configuration")
+        {
+            clientNameOption,
+            cleanOutputOption,
+            logLevelOption,
+        };
+        command.Handler = new RemoveHandler
+        {
+            ClassOption = clientNameOption,
+            CleanOutputOption = cleanOutputOption,
+            LogLevelOption = logLevelOption,
+        };
         return command;
     }
     public static Command GetEditCommand()

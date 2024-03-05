@@ -8,7 +8,8 @@ namespace Kiota.Builder.WorkspaceManagement;
 
 public class DescriptionStorageService
 {
-    private const string DescriptionsSubDirectoryRelativePath = ".kiota/clients";
+    public const string KiotaDirectorySegment = ".kiota";
+    private const string DescriptionsSubDirectoryRelativePath = $"{KiotaDirectorySegment}/clients";
     private readonly string TargetDirectory;
     public DescriptionStorageService(string targetDirectory)
     {
@@ -49,5 +50,13 @@ public class DescriptionStorageService
             ms.Seek(0, SeekOrigin.Begin);
             return ms;
         }
+    }
+    public void RemoveDescription(string clientName, string extension = "yml")
+    {
+        ArgumentNullException.ThrowIfNull(clientName);
+        ArgumentNullException.ThrowIfNull(extension);
+        var descriptionFilePath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, $"{clientName}.{extension}");
+        if (File.Exists(descriptionFilePath))
+            File.Delete(descriptionFilePath);
     }
 }
