@@ -24,20 +24,18 @@ public class WorkspaceManagementService
 {
     private readonly bool UseKiotaConfig;
     private readonly ILogger Logger;
-    private readonly HttpClient HttpClient;
     public WorkspaceManagementService(ILogger logger, HttpClient httpClient, bool useKiotaConfig = false, string workingDirectory = "")
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(httpClient);
         Logger = logger;
-        HttpClient = httpClient;
         UseKiotaConfig = useKiotaConfig;
         if (string.IsNullOrEmpty(workingDirectory))
             workingDirectory = Directory.GetCurrentDirectory();
         WorkingDirectory = workingDirectory;
         workspaceConfigurationStorageService = new(workingDirectory);
         descriptionStorageService = new(workingDirectory);
-        openApiDocumentDownloadService = new(HttpClient, Logger);
+        openApiDocumentDownloadService = new(httpClient, Logger);
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly LockManagementService lockManagementService = new();
