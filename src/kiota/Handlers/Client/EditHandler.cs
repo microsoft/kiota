@@ -125,10 +125,6 @@ internal class EditHandler : BaseKiotaCommandHandler
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
                 AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
-                //TODO probably not needed anymore
-                // Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
-                // Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
-                // Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
                 if (includePatterns is { Count: > 0 })
                     Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (excludePatterns is { Count: > 0 })
