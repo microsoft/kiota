@@ -21,7 +21,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public required Option<bool> BackingStoreOption
+    public required Option<bool?> BackingStoreOption
     {
         get; init;
     }
@@ -41,7 +41,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public required Option<bool> AdditionalDataOption
+    public required Option<bool?> AdditionalDataOption
     {
         get; init;
     }
@@ -53,7 +53,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public required Option<bool> ExcludeBackwardCompatibleOption
+    public required Option<bool?> ExcludeBackwardCompatibleOption
     {
         get;
         set;
@@ -76,9 +76,9 @@ internal class EditHandler : BaseKiotaCommandHandler
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage? language = context.ParseResult.GetValueForOption(LanguageOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
-        bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
-        bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
-        bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
+        bool? backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
+        bool? excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
+        bool? includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
@@ -87,10 +87,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        Configuration.Generation.UsesBackingStore = backingStore; //TODO since it's a switch people can never disable it when it was previously enabled
-        Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
-        Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ClientOperation.Edit;
@@ -119,6 +115,12 @@ internal class EditHandler : BaseKiotaCommandHandler
                 clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(Configuration.Generation, className);
                 if (language.HasValue)
                     Configuration.Generation.Language = language.Value;
+                if (backingStore.HasValue)
+                    Configuration.Generation.UsesBackingStore = backingStore.Value;
+                if (excludeBackwardCompatible.HasValue)
+                    Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
+                if (includeAdditionalData.HasValue)
+                    Configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
@@ -127,16 +129,16 @@ internal class EditHandler : BaseKiotaCommandHandler
                 // Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
                 // Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
                 // Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
-                if (includePatterns is not null)
+                if (includePatterns is { Count: > 0 })
                     Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                if (excludePatterns is not null)
+                if (excludePatterns is { Count: > 0 })
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                if (disabledValidationRules is not null)
+                if (disabledValidationRules is { Count: > 0 })
                     Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                             .Select(static x => x.TrimQuotes())
                                                                             .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-                if (structuredMimeTypes is not null)
+                if (structuredMimeTypes is { Count: > 0 })
                     Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                                     .Select(static x => x.TrimQuotes()));
 

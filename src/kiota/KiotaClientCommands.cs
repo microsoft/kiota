@@ -35,12 +35,12 @@ public static class KiotaClientCommands
         var languageOption = KiotaHost.GetLanguageOption();
         var outputOption = KiotaHost.GetOutputPathOption(defaultConfiguration.OutputPath);
         var descriptionOption = KiotaHost.GetDescriptionOption(defaultConfiguration.OpenAPIFilePath, true);
-        var namespaceOption = KiotaHost.GetNamespaceOption(defaultConfiguration);
+        var namespaceOption = KiotaHost.GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
         var logLevelOption = KiotaHost.GetLogLevelOption();
-        var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration);
-        var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration);
-        var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration);
-        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption(defaultConfiguration);
+        var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
+        var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration.ExcludeBackwardCompatible);
+        var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration.IncludeAdditionalData);
+        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([.. defaultConfiguration.StructuredMimeTypes]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
@@ -103,17 +103,16 @@ public static class KiotaClientCommands
     }
     public static Command GetEditCommand()
     {
-        var defaultConfiguration = new GenerationConfiguration();
         var languageOption = KiotaHost.GetOptionalLanguageOption();
-        var outputOption = KiotaHost.GetOutputPathOption(defaultConfiguration.OutputPath);
-        var descriptionOption = KiotaHost.GetDescriptionOption(defaultConfiguration.OpenAPIFilePath, true);
-        var namespaceOption = KiotaHost.GetNamespaceOption(defaultConfiguration);
+        var outputOption = KiotaHost.GetOutputPathOption(string.Empty);
+        var descriptionOption = KiotaHost.GetDescriptionOption(string.Empty);
+        var namespaceOption = KiotaHost.GetNamespaceOption(string.Empty);
         var logLevelOption = KiotaHost.GetLogLevelOption();
-        var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration);
-        var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration);
-        var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration);
-        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption(defaultConfiguration);
-        var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
+        var backingStoreOption = KiotaHost.GetOptionalBackingStoreOption();
+        var excludeBackwardCompatible = KiotaHost.GetOptionalExcludeBackwardCompatibleOption();
+        var additionalDataOption = KiotaHost.GetOptionalAdditionalDataOption();
+        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([]);
+        var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions([], []);
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
