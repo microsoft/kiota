@@ -26,8 +26,27 @@ public static class KiotaConfigCommands
     }
     private static Command GetMigrateCommand()
     {
-        var command = new Command("migrate", "Migrates a kiota lock file to a Kiota configuration");
-        //TODO map the handler
+        var logLevelOption = KiotaHost.GetLogLevelOption();
+        var lockDirectoryOption = GetLockDirectoryOption();
+        var classOption = KiotaClientCommands.GetClientNameOption(false);
+        var command = new Command("migrate", "Migrates a kiota lock file to a Kiota configuration")
+        {
+            logLevelOption,
+            lockDirectoryOption,
+            classOption,
+        };
+        command.Handler = new MigrateHandler
+        {
+            LogLevelOption = logLevelOption,
+            LockDirectoryOption = lockDirectoryOption,
+            ClassOption = classOption,
+        };
         return command;
+    }
+    private static Option<string> GetLockDirectoryOption()
+    {
+        var option = new Option<string>("--lock-directory", "The directory containing a kiota-lock.json file");
+        option.AddAlias("--ld");
+        return option;
     }
 }

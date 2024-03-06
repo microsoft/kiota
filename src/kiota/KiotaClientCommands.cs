@@ -20,11 +20,11 @@ public static class KiotaClientCommands
         skipGeneration.AddAlias("--sg");
         return skipGeneration;
     }
-    private static Option<string> GetClientNameOption()
+    internal static Option<string> GetClientNameOption(bool required = true)
     {
         var clientName = new Option<string>("--client-name", "The name of the client to manage")
         {
-            IsRequired = true,
+            IsRequired = required,
         };
         clientName.AddAlias("--cn");
         return clientName;

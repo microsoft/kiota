@@ -158,7 +158,8 @@ public class ApiClientConfiguration : ICloneable
     }
     public void NormalizePaths(string targetDirectory)
     {
-        OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+        if (Path.IsPathRooted(OutputPath))
+            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
     }
 }
 #pragma warning restore CA2227 // Collection properties should be read only
