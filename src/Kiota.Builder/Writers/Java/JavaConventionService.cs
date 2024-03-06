@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java;
@@ -93,25 +92,45 @@ public partial class JavaConventionService : CommonLanguageConventionService
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    internal string GetReturnDocComment(string returnType)
+    {
+        return $"@return a {ReferenceTypePrefix}{returnType}{ReferenceTypeSuffix}";
+    }
+    private const string ReferenceTypePrefix = "{@link ";
+    private const string ReferenceTypeSuffix = "}";
+    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return;
+
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+
+        writer.WriteLine($"{DocCommentStart} {description}{DocCommentEnd}");
+    }
+    internal string GetTypeReferenceForDocComment(CodeTypeBase code, CodeElement targetElement)
+    {
+        if (code is CodeType codeType && codeType.TypeDefinition is CodeMethod method)
+            return $"{GetTypeString(new CodeType { TypeDefinition = method.Parent, IsExternal = false }, targetElement)}#{GetTypeString(code, targetElement)}";
+        return $"{GetTypeString(code, targetElement)}";
     }
     public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
         if (element is not IDocumentedElement documentedElement || documentedElement.Documentation is not CodeDocumentation documentation) return;
         if (additionalRemarks == default)
-            additionalRemarks = Enumerable.Empty<string>();
-        var remarks = additionalRemarks.ToArray();
+            additionalRemarks = [];
+        var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
-            foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
+            {
+                var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
+            foreach (var additionalRemark in remarks)
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
             if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)
                 foreach (var additionalComment in GetDeprecationInformationForDocumentationComment(deprecableElement))
@@ -160,10 +179,10 @@ public partial class JavaConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return new string[] {
+        return [
             $"@deprecated",
-            $"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}"
-        };
+            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}"
+        ];
     }
     internal void WriteDeprecatedAnnotation(CodeElement element, LanguageWriter writer)
     {

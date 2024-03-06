@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncKeyedLock;
 using Microsoft.Extensions.Logging;
-using NeoSmart.AsyncLock;
 
 namespace Kiota.Builder.Caching;
 
@@ -39,8 +38,7 @@ public class DocumentCachingProvider
     {
         var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         var target = Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "cache", intermediateFolderName, hashedUrl, fileName);
-        var currentLock = _locks.GetOrAdd(target, _ => new AsyncLock());
-        using (await currentLock.LockAsync(token).ConfigureAwait(false))
+        using (await _locks.LockAsync(target, token).ConfigureAwait(false))
         {// if multiple clients are being updated for the same description, we'll have concurrent download of the file without the lock
             if (!File.Exists(target) || couldNotDelete)
                 return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token).ConfigureAwait(false);
@@ -64,10 +62,14 @@ public class DocumentCachingProvider
                     Logger.LogWarning("could not delete cache file {CacheFile}, reason: {Reason}", target, ex.Message);
                 }
             }
-            return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
         }
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
     }
-    private static readonly ConcurrentDictionary<string, AsyncLock> _locks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly AsyncKeyedLocker<string> _locks = new(o =>
+    {
+        o.PoolSize = 20;
+        o.PoolInitialFill = 1;
+    });
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
         Logger.LogDebug("cache file {CacheFile} not found, downloading from {Url}", target, documentUri);

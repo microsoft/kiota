@@ -27,6 +27,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
     }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
+        WarnShouldUseKiotaConfigClientsCommands();
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
@@ -45,7 +46,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
@@ -69,7 +70,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach (var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
-                if (results.Any(x => x))
+                if (Array.Exists(results, static x => x))
                     DisplayCleanHint("update");
                 return 0;
             }

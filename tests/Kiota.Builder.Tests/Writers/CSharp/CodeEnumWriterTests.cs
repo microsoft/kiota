@@ -113,11 +113,11 @@ public sealed class CodeEnumWriterTests : IDisposable
     [Fact]
     public void WritesEnumOptionDescription()
     {
-        Option.Documentation.Description = "Some option description";
+        Option.Documentation.DescriptionTemplate = "Some option description";
         currentEnum.AddOption(Option);
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains($"<summary>{Option.Documentation.Description}</summary>", result);
+        Assert.Contains($"<summary>{Option.Documentation.DescriptionTemplate}</summary>", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]

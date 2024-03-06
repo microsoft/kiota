@@ -64,7 +64,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             var descriptionProvided = (!string.IsNullOrEmpty(openapi) || !string.IsNullOrEmpty(manifest)) && string.IsNullOrEmpty(searchTerm);
             var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
@@ -80,10 +80,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 logger.LogError("no description provided");
                 return 1;
             }
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ApiManifestPath = manifest;
-            Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
-            Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
+            Configuration.Generation.IncludePatterns = [.. includePatterns];
+            Configuration.Generation.ExcludePatterns = [.. excludePatterns];
             Configuration.Generation.ClearCache = clearCache;
             try
             {

@@ -71,7 +71,22 @@
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
-    "MockServerITFolder": "query-params"
+    "MockServerITFolder": "query-params",
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/4262"
+      }
+    ]
+  },
+  "apisguru::github.com:api.github.com": {
+    "MockServerITFolder": "gh",
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/4241"
+      }
+    ]
   },
   "apisguru::notion.com": {
     "ExcludePatterns": [

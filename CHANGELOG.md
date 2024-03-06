@@ -9,12 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added Japanese translations to vscode extension.
+- Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
+- Added uri-form encoded serialization for Python. [#2075](https://github.com/microsoft/kiota/issues/2075)
+- Added support for multipart form data request body in Python. [#3030](https://github.com/microsoft/kiota/issues/3030)
 
 ### Changed
 
+- BREAKING - Removed the async suffix from request adapter methods in TypeScript. [microsoft/kiota-typescript#992](https://github.com/microsoft/kiota-typescript/issues/992)
+- Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
+- Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
+- Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
+- Fixed a bug with URI template generation for required parameters when they differ between operations. [#4148](https://github.com/microsoft/kiota/issues/4148)
+- Fixed return doc comments for Go/Java/CSharp/TypeScript.
+- Fixed type names in doc comments and deprecation noticed across languages.
+- Added thrown exceptions in doc comments for Go/CSharp/Java/TypeScript. [#3811](https://github.com/microsoft/kiota/issues/3811)
+- Fixed missing type/method names in deprecation comments.[#4186](https://github.com/microsoft/kiota/issues/4186)
+- Fixed `cref` tags not closed in doc comments in CSharp generation.
+- Deduplicates 4XX and 5XX error mappings when they map to the same type to reduce emitted code. [#4025](https://github.com/microsoft/kiota/issues/4025)
+- 📢📢📢 Java generation is now stable! 🚀🚀🚀 special thanks to @andreaTP (Red Hat) for all the help.
+- Fixed bug where stream responses would generate incorrect partial paging code. [#4207](https://github.com/microsoft/kiota/issues/4207)
+- Sanitize Accept and Content-Type headers during generation. [#4211](https://github.com/microsoft/kiota/issues/4211)
+- Fixed a bug in enum default value generator for TypeScript. [#4216](https://github.com/microsoft/kiota/issues/4216)
+- Generate enum array for query parameters. [#4225](https://github.com/microsoft/kiota/issues/4225)
+
+## [1.11.1] - 2024-02-05
+
+### Added
+
+### Changed
+
+- Fixed a deadlock on update for multiple clients targeting the same local file.
+- Fixed a deadlock when evicting cached descriptions.
+
+## [1.11.0] - 2024-02-01
+
+### Added
+
+- Added 'none' key for serializer and deserializer arguments to enable portable clients generation. [#3796](https://github.com/microsoft/kiota/issues/3796)
+- Added Japanese translations to vscode extension.
+- Added support for deprecation annotations in Python. [#2798](https://github.com/microsoft/kiota/issues/2798)
+
+### Changed
+
+- Fixed serialization of scalar members in union types for Python. [#2828](https://github.com/microsoft/kiota/issues/2828)
 - Fixed a bug where scalar error mappings would be generated even though it's not supported by the http request adapter. [#4018](https://github.com/microsoft/kiota/issues/4018)
 - Switched to proxy generation for TypeScript, leading to about ~44% bundle sizes reduction. [#3642](https://github.com/microsoft/kiota/issues/3642)
+- Required query parameters are now projected as `{baseurl+}foo/bar?required={required}` instead of `{baseurl+}foo/bar{?required}` so they are automatically populated if no value is provided. [#3989](https://github.com/microsoft/kiota/issues/3989)
+- Fixed a bug where TypeScript models factory methods would be missing return types.
+- Fixed a bug where generated paths would possibly get too long. [#3854](https://github.com/microsoft/kiota/issues/3854)
+- The vscode extension now also displays the children nodes when filtering. [#3998](https://github.com/microsoft/kiota/issues/3998)
 
 ## [1.10.1] - 2024-01-12
 
@@ -1225,5 +1268,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+
 
 

@@ -26,7 +26,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         var codeMethod = codeElement.OriginalLocalMethod;
 
-        var returnType = codeMethod.Kind != CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
+        var returnType = codeMethod.Kind is CodeMethodKind.Factory ?
+            "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)" :
+            conventions.GetTypeString(codeMethod.ReturnType, codeElement);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         CodeMethodWriter.WriteMethodDocumentationInternal(codeElement.OriginalLocalMethod, writer, isVoid, conventions);
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, isVoid, conventions, true);
@@ -69,10 +71,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             writer.WriteLine($"{requestAdapterArgumentName}.enableBackingStore({backingStoreParameterName.ToFirstCharacterLowerCase()});");
         if (parentFile.Interfaces.FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface codeInterface)
         {
-            var uriTemplateConstantName = $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.UriTemplateSuffix}";
             var navigationMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.NavigationMetadataSuffix}", false) is { } navConstant ? navConstant.Name.ToFirstCharacterUpperCase() : "undefined";
             var requestsMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}", false) is { } reqConstant ? reqConstant.Name.ToFirstCharacterUpperCase() : "undefined";
-            writer.WriteLine($"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {uriTemplateConstantName}, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
+            writer.WriteLine($"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
         }
     }
     private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
@@ -254,8 +255,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
     {
         if (string.IsNullOrEmpty(codeProperty.DefaultValue)) return string.Empty;
-        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
-            return $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition && enumDefinition.CodeEnumObject is not null)
+            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
         return codeProperty.DefaultValue;
     }
     private static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)

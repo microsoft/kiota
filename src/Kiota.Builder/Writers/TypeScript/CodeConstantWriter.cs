@@ -71,8 +71,6 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
 
     private static void WriteNavigationMetadataEntry(CodeNamespace parentNamespace, LanguageWriter writer, string requestBuilderName, string[]? pathParameters = null)
     {
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.UriTemplateSuffix}", 3) is CodeConstant uriTemplateConstant && uriTemplateConstant.Kind is CodeConstantKind.UriTemplate)
-            writer.WriteLine($"uriTemplate: {uriTemplateConstant.Name.ToFirstCharacterUpperCase()},");
         if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
             writer.WriteLine($"requestsMetadata: {requestsMetadataConstant.Name.ToFirstCharacterUpperCase()},");
         if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
@@ -81,7 +79,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
     }
     private static string GetErrorMappingKey(string original) =>
-    original.Equals("4XX", StringComparison.OrdinalIgnoreCase) || original.Equals("5XX", StringComparison.OrdinalIgnoreCase) ?
+    original.Equals(CodeMethod.ErrorMappingClientRange, StringComparison.OrdinalIgnoreCase) || original.Equals(CodeMethod.ErrorMappingServerRange, StringComparison.OrdinalIgnoreCase) ?
         $"_{original.ToUpperInvariant()}" : // to avoid emitting strings that can't be minified
         original.ToUpperInvariant();
 
@@ -93,6 +91,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                     .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                     .ToArray() is not { Length: > 0 } executorMethods)
             return;
+        var uriTemplateConstant = codeElement.Parent is CodeFile parentFile && parentFile.Constants.FirstOrDefault(static x => x.Kind is CodeConstantKind.UriTemplate) is CodeConstant tplct ?
+            tplct : throw new InvalidOperationException("Couldn't find the associated uri template constant for the requests metadata constant");
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: RequestsMetadata = {{");
         foreach (var executorMethod in executorMethods)
         {
@@ -101,9 +101,11 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
+            var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"uriTemplate: {urlTemplateValue},");
             if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
                  generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
-                writer.WriteLine($"responseBodyContentType: \"{acceptHeader}\",");
+                writer.WriteLine($"responseBodyContentType: \"{acceptHeader.SanitizeDoubleQuote()}\",");
             if (executorMethod.ErrorMappings.Any())
             {
                 writer.StartBlock("errorMappings: {");
@@ -116,8 +118,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol)}\",");
             if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
-            if (!string.IsNullOrEmpty(executorMethod.RequestBodyContentType))
-                writer.WriteLine($"requestBodyContentType: \"{executorMethod.RequestBodyContentType}\",");
+            var sanitizedRequestBodyContentType = executorMethod.RequestBodyContentType.SanitizeDoubleQuote();
+            if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                writer.WriteLine($"requestBodyContentType: \"{sanitizedRequestBodyContentType}\",");
             if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody)
             {
                 if (GetBodySerializer(requestBody) is string bodySerializer)
@@ -185,15 +188,15 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
     {
-        if (isVoid) return "sendNoResponseContentAsync";
+        if (isVoid) return "sendNoResponseContent";
         if (isCollection)
         {
-            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync";
-            return $"sendCollectionAsync";
+            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitive";
+            return $"sendCollection";
         }
 
-        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync";
-        return $"sendAsync";
+        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitive";
+        return $"send";
     }
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)
@@ -226,9 +229,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeEnum.Options.ToList().ForEach(x =>
         {
-            conventions.WriteShortDescription(x.Documentation.Description, writer);
+            conventions.WriteShortDescription(x, writer);
             writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
         });
-        writer.CloseBlock("}  as const;");
+        writer.CloseBlock("} as const;");
     }
 }

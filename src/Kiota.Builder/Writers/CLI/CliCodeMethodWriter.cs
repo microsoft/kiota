@@ -317,7 +317,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             parameters.Add((OutputFilterQueryParamType, OutputFilterQueryParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputFilterQueryOptionName})");
 
-            // Add --all option
+            // Add --all option for pageable data
             if (isPageable)
             {
                 var allOptionName = $"{AllParamName}Option";
@@ -476,7 +476,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         var builder = new StringBuilder();
         if (documentation.DescriptionAvailable)
         {
-            builder.Append(documentation.Description.Replace("\\", "\\\\", StringComparison.Ordinal));
+            builder.Append(documentation.GetDescription(static type => type.Name));
         }
 
         // Add content type values to description.
@@ -657,14 +657,14 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         if (parentClass
                     .UnorderedMethods
                     .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod) return;
-        bool isStream = false;
+        bool isStreamReq = false;
         if (requestParams.requestBody is CodeParameter requestBodyParam)
         {
             var requestBodyParamType = requestBodyParam.Type as CodeType;
             if (requestBodyParamType?.TypeDefinition is CodeClass)
             {
                 writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
-                writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType}\", stream);");
+                writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType.SanitizeDoubleQuote()}\", stream);");
 
                 var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
 
@@ -688,7 +688,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             }
             else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
             {
-                isStream = true;
+                isStreamReq = true;
                 var pName = requestBodyParam.Name;
                 requestBodyParam.Name = "stream";
                 // Check for file existence
@@ -705,7 +705,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                             .Select(static x => x?.Name).Where(static x => x != null));
         var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
 
-        WriteRequestInformation(writer, generatorMethod, parametersList, separator, isStream);
+        WriteRequestInformation(writer, generatorMethod, parametersList, separator, isStreamReq);
 
         var errorMappingVarName = "default";
         if (codeElement.ErrorMappings.Any())
@@ -720,24 +720,24 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             writer.CloseBlock("};");
         }
 
-        var requestMethod = "SendPrimitiveAsync<Stream>";
-        var pageInfo = codeElement?.PagingInformation;
-        if (isVoid || pageInfo != null)
+        var isStreamResp = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+        const string SendNoContent = "SendNoContentAsync";
+        const string SendStream = "SendPrimitiveAsync<Stream>";
+        if (isVoid)
         {
-            requestMethod = "SendNoContentAsync";
+            writer.WriteLine($"await {RequestAdapterParamName}.{SendNoContent}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {CancellationTokenParamName});");
         }
-
-        if (pageInfo != null)
+        else if (!isStreamResp && !conventions.IsPrimitiveType(returnType) && codeElement.PagingInformation is { } pi)
         {
-            writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
-            writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {PagingServiceParamName}.GetPagedDataAsync((info, token) => {RequestAdapterParamName}.{requestMethod}(info, cancellationToken: token), pagingData, {AllParamName}, {CancellationTokenParamName});");
+            writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pi.ItemName}\", nextLinkName: \"{pi.NextLinkName}\");");
+            writer.WriteLine($"var pageResponse = await {PagingServiceParamName}.GetPagedDataAsync((info, token) => {RequestAdapterParamName}.{SendNoContent}(info, cancellationToken: token), pagingData, {AllParamName}, {CancellationTokenParamName});");
             writer.WriteLine("var response = pageResponse?.Response;");
         }
         else
         {
-            string suffix = string.Empty;
-            if (!isVoid) suffix = " ?? Stream.Null";
-            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {RequestAdapterParamName}.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {CancellationTokenParamName}){suffix};");
+            // TODO: Warn when paging information is available on a stream response
+            // https://github.com/microsoft/kiota/issues/4208
+            writer.WriteLine($"var response = await {RequestAdapterParamName}.{SendStream}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {CancellationTokenParamName}) ?? Stream.Null;");
         }
     }
 
@@ -782,9 +782,10 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             // Set the content type header. Will not add the code if the method is a stream, has no RequestBodyContentType or if there's no body parameter.
             if (!isStream && generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
             {
-                if (!string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+                var sanitizedRequestBodyContentType = generatorMethod.RequestBodyContentType.SanitizeDoubleQuote();
+                if (!string.IsNullOrWhiteSpace(sanitizedRequestBodyContentType))
                 {
-                    writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
+                    writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{sanitizedRequestBodyContentType}\", model);");
                 }
                 else
                 {

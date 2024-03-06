@@ -243,6 +243,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
+    protected void DisplayGenerateAfterMigrateHint()
+    {
+        DisplayHint("Hint: use the generate command to update the client and the manifest requests.",
+                    "Example: kiota client generate");
+    }
     protected void DisplaySearchAddHint()
     {
         DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
@@ -265,18 +270,23 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var example = $"Example: kiota generate -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
         DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
-    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest)
+    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest, string commandName = "generate")
     {
         if (!includePaths.Any() && !excludePaths.Any())
         {
             var sourceArg = GetSourceArg(path, manifest);
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
-                        $"Example: kiota generate --include-path \"**/foo\" {sourceArg}");
+                        $"Example: kiota {commandName} --include-path \"**/foo\" {sourceArg}");
         }
     }
     private static string GetSourceArg(string path, string manifest)
     {
-        return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-m \"{manifest}\"";
+        return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-a \"{manifest}\"";
+    }
+    protected void DisplayGenerateCommandHint()
+    {
+        DisplayHint("Hint: use the client generate command to generate the code.",
+                    "Example: kiota client generate");
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path, string manifest)
     {
@@ -294,10 +304,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
                     languageDependencies.Select(x => "   " + string.Format(languageInformation.DependencyInstallCommand, x.Name, x.Version))).ToArray());
         }
     }
-    protected void DisplayCleanHint(string commandName)
+    protected void DisplayCleanHint(string commandName, string argumentName = "--clean-output")
     {
-        DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                    $"Example: kiota {commandName} --clean-output");
+        DisplayHint($"Hint: to force the generation to overwrite an existing client pass the {argumentName} switch.",
+                    $"Example: kiota {commandName} {argumentName}");
     }
     protected void DisplayInfoAdvancedHint()
     {
@@ -327,6 +337,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: use the login command to sign in to GitHub and access private OpenAPI descriptions.",
                         "Example: kiota login github");
         }
+    }
+    protected void WarnShouldUseKiotaConfigClientsCommands()
+    {
+        if (KiotaHost.IsConfigPreviewEnabled.Value)
+            DisplayWarning("Warning: the kiota generate and update commands are deprecated, use kiota client commands instead.");
     }
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {

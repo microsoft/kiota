@@ -15,7 +15,7 @@ public sealed class StructuredMimeTypesCollectionTests
     [Fact]
     public void ParsesWithOrWithoutPriorities()
     {
-        var mimeTypes = new StructuredMimeTypesCollection(new[] { "application/json", "application/xml;q=0.8" });
+        var mimeTypes = new StructuredMimeTypesCollection(["application/json", "application/xml;q=0.8"]);
         Assert.Equal("application/json", mimeTypes.First(), StringComparer.OrdinalIgnoreCase);
         Assert.Equal("application/xml;q=0.8", mimeTypes.Last(), StringComparer.OrdinalIgnoreCase);
         Assert.DoesNotContain("application/atom+xml", mimeTypes);
@@ -26,7 +26,7 @@ public sealed class StructuredMimeTypesCollectionTests
     [Fact]
     public void DoesNotAddDuplicates()
     {
-        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection(new[] { "application/json", "application/json;q=0.8" }));
+        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection(["application/json", "application/json;q=0.8"]));
     }
     [Fact]
     public void ClearsEntries()
@@ -66,5 +66,11 @@ public sealed class StructuredMimeTypesCollectionTests
         var deserializedExpectedTypes = expectedTypes.Split(',').Select(static x => x.Trim());
         foreach (var expectedType in deserializedExpectedTypes)
             Assert.Contains(expectedType, result);
+    }
+    [Fact]
+    public void ThrowsOnInvalidMimeType()
+    {
+        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection(["application"]));
+        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection([null]));
     }
 }

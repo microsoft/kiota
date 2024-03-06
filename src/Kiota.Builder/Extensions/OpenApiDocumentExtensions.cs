@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Kiota.Builder.EqualityComparers;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
@@ -25,5 +26,25 @@ internal static class OpenApiDocumentExtensions
                     }
             });
         }
+    }
+    internal static string? GetAPIRootUrl(this OpenApiDocument openApiDocument, string openAPIFilePath)
+    {
+        ArgumentNullException.ThrowIfNull(openApiDocument);
+        var candidateUrl = openApiDocument.Servers
+                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
+                                        .FirstOrDefault()
+                                        ?.OrderByDescending(static x => x.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
+                                        ?.FirstOrDefault()
+                                        ?.Url;
+        if (string.IsNullOrEmpty(candidateUrl))
+            return null;
+        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
+                openAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
+                Uri.TryCreate(openAPIFilePath, new(), out var filePathUri) &&
+                Uri.TryCreate(filePathUri, candidateUrl, out var candidateUri))
+        {
+            candidateUrl = candidateUri.ToString();
+        }
+        return candidateUrl.TrimEnd(KiotaBuilder.ForwardSlash);
     }
 }

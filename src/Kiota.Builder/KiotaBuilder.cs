@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,22 +19,18 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.SearchProviders.APIsGuru;
-using Kiota.Builder.Validation;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 [assembly: InternalsVisibleTo("Kiota.Builder.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100957cb48387b2a5f54f5ce39255f18f26d32a39990db27cf48737afc6bc62759ba996b8a2bfb675d4e39f3d06ecb55a178b1b4031dcb2a767e29977d88cce864a0d16bfc1b3bebb0edf9fe285f10fffc0a85f93d664fa05af07faa3aad2e545182dbf787e3fd32b56aca95df1a3c4e75dec164a3f1a4c653d971b01ffc39eb3c4")]
 
@@ -50,7 +45,7 @@ public partial class KiotaBuilder
     private OpenApiDocument? openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -62,7 +57,13 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
+        var workingDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
+        this.useKiotaConfig = useKiotaConfig;
+        openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
     }
+    private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
+    private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
@@ -71,7 +72,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
                                             .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
@@ -170,22 +171,23 @@ public partial class KiotaBuilder
         UpdateConfigurationFromOpenApiDocument();
         StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
-        // Should Generate
-        sw.Start();
-        var shouldGenerate = await ShouldGenerate(cancellationToken).ConfigureAwait(false);
-        StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
-
         OpenApiUrlTreeNode? openApiTree = null;
+        var shouldGenerate = !config.SkipGeneration;
         if (openApiDocument != null)
         {
             // filter paths
             sw.Start();
             FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            SetApiRootUrl();
+
+            // Should Generate
+            sw.Start();
+            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
+
             if (shouldGenerate && generating)
             {
-                SetApiRootUrl();
-
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
@@ -203,21 +205,6 @@ public partial class KiotaBuilder
             GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
 
         config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
-    }
-    private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
-    {
-        if (config.CleanOutput) return true;
-        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        var comparer = new KiotaLockComparer();
-        if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
-        }
-        return !comparer.Equals(existingLock, configurationLock);
     }
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
@@ -246,6 +233,9 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
+        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
+
         try
         {
             await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
@@ -260,47 +250,51 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            if (!shouldGenerate)
+            if (shouldGenerate)
+            {
+                // Create Source Model
+                sw.Start();
+                var generatedCode = CreateSourceModel(openApiTree);
+                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+                // RefineByLanguage
+                sw.Start();
+                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+                // Write language source
+                sw.Start();
+                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+                await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+            }
+            else
             {
                 logger.LogInformation("No changes detected, skipping generation");
+                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                {
+                    await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+                }
                 return false;
             }
-            // Create Source Model
-            sw.Start();
-            var generatedCode = CreateSourceModel(openApiTree);
-            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-            // RefineByLanguage
-            sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-            // Write language source
-            sw.Start();
-            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
-
-            // Write lock file
-            sw.Start();
-            await UpdateLockFile(cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
-            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
     }
-    private readonly LockManagementService lockManagementService = new();
-    private async Task UpdateLockFile(CancellationToken cancellationToken)
+    private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
     {
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
+        // Write lock file
+        sw.Start();
+        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStream(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
+        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
+        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
+    private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
     [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();
@@ -327,6 +321,11 @@ public partial class KiotaBuilder
     {
         var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
         var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
+        if (config.PatternsOverride.Count != 0)
+        { // loading the patterns from the manifest as we don't want to take the user input one and have new operation creep in from the description being updated since last generation
+            includePatterns = GetFilterPatternsFromConfiguration(config.PatternsOverride);
+            excludePatterns = [];
+        }
         if (includePatterns.Count == 0 && excludePatterns.Count == 0) return;
 
         var nonOperationIncludePatterns = includePatterns.Where(static x => x.Value.Count == 0).Select(static x => x.Key).ToList();
@@ -361,33 +360,10 @@ public partial class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        if (openApiDocument == null) return;
-        var candidateUrl = openApiDocument.Servers
-                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
-                                        .FirstOrDefault()
-                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
-                                        ?.FirstOrDefault()
-                                        ?.Url;
-        if (string.IsNullOrEmpty(candidateUrl))
-        {
+        if (openApiDocument is not null && openApiDocument.GetAPIRootUrl(config.OpenAPIFilePath) is string candidateUrl)
+            config.ApiRootUrl = candidateUrl;
+        else
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
-            return;
-        }
-        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && config.OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            try
-            {
-                candidateUrl = new Uri(new Uri(config.OpenAPIFilePath), candidateUrl).ToString();
-            }
-#pragma warning disable CA1031
-            catch (Exception ex)
-#pragma warning restore CA1031
-            {
-                logger.LogWarning(ex, "Could not resolve the server url from the OpenAPI document. The base url will need to be set when using the client.");
-                return;
-            }
-        }
-        config.ApiRootUrl = candidateUrl.TrimEnd(ForwardSlash);
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
@@ -395,106 +371,18 @@ public partial class KiotaBuilder
         logger.LogDebug("{Prefix} {SwElapsed}", prefix, sw.Elapsed);
         sw.Reset();
     }
-
-
+    private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        inputPath = inputPath.Trim();
-
-        Stream input;
-        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            try
-            {
-                var cachingProvider = new DocumentCachingProvider(httpClient, logger)
-                {
-                    ClearCache = config.ClearCache,
-                };
-                var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
-                var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        else
-            try
-            {
-#pragma warning disable CA2000 // disposed by caller
-                input = new FileStream(inputPath, FileMode.Open);
-#pragma warning restore CA2000
-            }
-            catch (Exception ex) when (ex is FileNotFoundException ||
-                ex is PathTooLongException ||
-                ex is DirectoryNotFoundException ||
-                ex is IOException ||
-                ex is UnauthorizedAccessException ||
-                ex is SecurityException ||
-                ex is NotSupportedException)
-            {
-                throw new InvalidOperationException($"Could not open the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Read OpenAPI file {File}", stopwatch.ElapsedMilliseconds, inputPath);
+        var (input, isCopy) = await openApiDocumentDownloadService.LoadStreamAsync(inputPath, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
+        isDescriptionFromWorkspaceCopy = isCopy;
         return input;
     }
 
-    private const char ForwardSlash = '/';
-    public async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
+    internal const char ForwardSlash = '/';
+    internal Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-        logger.LogTrace("Parsing OpenAPI file");
-        var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
-                    ValidationRuleSet.GetEmptyRuleSet() :
-                    ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
-        if (generating)
-            ruleSet.AddKiotaValidationRules(config);
-        var settings = new OpenApiReaderSettings
-        {
-            RuleSet = ruleSet,
-        };
-        settings.AddMicrosoftExtensionParsers();
-        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
-        try
-        {
-            var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
-            var lastSlashIndex = rawUri.LastIndexOf(ForwardSlash);
-            if (lastSlashIndex < 0)
-                lastSlashIndex = rawUri.Length - 1;
-            var documentUri = new Uri(rawUri[..lastSlashIndex]);
-            settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-        }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
-        {
-            // couldn't parse the URL, it's probably a local file
-        }
-        var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input, cancellationToken).ConfigureAwait(false);
-        stopwatch.Stop();
-        if (generating)
-            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
-                logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.OpenApiDiagnostic.Errors.Any())
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
-            {
-                logger.LogError("OpenAPI error: {Pointer} - {Message}", parsingError.Pointer, parsingError.Message);
-            }
-        }
-        else
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-        }
-
-        return readResult.OpenApiDocument;
+        return openApiDocumentDownloadService.GetDocumentFromStreamAsync(input, config, generating, cancellationToken);
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
@@ -536,79 +424,10 @@ public partial class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
-        MergeIndexNodesAtSameLevel(node);
+        node.MergeIndexNodesAtSameLevel(logger);
         stopwatch.Stop();
         logger.LogTrace("{Timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
         return node;
-    }
-    private void MergeIndexNodesAtSameLevel(OpenApiUrlTreeNode node)
-    {
-        var indexNodes = node.Children
-                        .Where(static x => x.Value.IsPathSegmentWithSingleSimpleParameter())
-                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                        .ToArray();
-        if (indexNodes.Length > 1)
-        {
-            var indexNode = indexNodes[0];
-            node.Children.Remove(indexNode.Key);
-            var newSegmentParameterName = $"{{{node.Segment.CleanupSymbolName()}-id}}";
-            indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
-            indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
-            node.Children.Add(newSegmentParameterName, indexNode.Value);
-            CopyNodeIntoOtherNode(indexNode.Value, indexNode.Value, indexNode.Key, newSegmentParameterName);
-            foreach (var child in indexNodes.Except(new[] { indexNode }))
-            {
-                node.Children.Remove(child.Key);
-                CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, newSegmentParameterName);
-            }
-        }
-
-        foreach (var child in node.Children.Values)
-            MergeIndexNodesAtSameLevel(child);
-    }
-    private void CopyNodeIntoOtherNode(OpenApiUrlTreeNode source, OpenApiUrlTreeNode destination, string pathParameterNameToReplace, string pathParameterNameReplacement)
-    {
-        foreach (var child in source.Children)
-        {
-            child.Value.Path = child.Value.Path.Replace(pathParameterNameToReplace, pathParameterNameReplacement, StringComparison.OrdinalIgnoreCase);
-            if (!destination.Children.TryAdd(child.Key, child.Value))
-                CopyNodeIntoOtherNode(child.Value, destination.Children[child.Key], pathParameterNameToReplace, pathParameterNameReplacement);
-        }
-        pathParameterNameToReplace = pathParameterNameToReplace.Trim('{', '}');
-        pathParameterNameReplacement = pathParameterNameReplacement.Trim('{', '}');
-        foreach (var pathItem in source.PathItems)
-        {
-            foreach (var pathParameter in pathItem
-                                        .Value
-                                        .Parameters
-                                        .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        .Union(
-                                            pathItem
-                                                .Value
-                                                .Operations
-                                                .SelectMany(static x => x.Value.Parameters)
-                                                .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        ))
-            {
-                pathParameter.Name = pathParameterNameReplacement;
-            }
-            if (source != destination && !destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
-            {
-                var destinationPathItem = destination.PathItems[pathItem.Key];
-                foreach (var operation in pathItem.Value.Operations)
-                    if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
-                    {
-                        logger.LogWarning("Duplicate operation {Operation} in path {Path}", operation.Key, pathItem.Key);
-                    }
-                foreach (var pathParameter in pathItem.Value.Parameters)
-                    destinationPathItem.Parameters.Add(pathParameter);
-                foreach (var extension in pathItem.Value.Extensions)
-                    if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
-                    {
-                        logger.LogWarning("Duplicate extension {Extension} in path {Path}", extension.Key, pathItem.Key);
-                    }
-            }
-        }
     }
     private CodeNamespace? rootNamespace;
     private CodeNamespace? modelsNamespace;
@@ -701,7 +520,7 @@ public partial class KiotaBuilder
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
-                    Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
+                    DescriptionTemplate = "The main entry point of the SDK, exposes the configuration and the fluent API."
                 },
             }).First();
         else
@@ -714,7 +533,7 @@ public partial class KiotaBuilder
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
-                    Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
+                    DescriptionTemplate = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
                 },
             }).First();
         }
@@ -746,23 +565,23 @@ public partial class KiotaBuilder
                 prop.Deprecation = currentNode.GetDeprecationInformation();
                 if (!string.IsNullOrWhiteSpace(description))
                 {
-                    prop.Documentation.Description = description;
+                    prop.Documentation.DescriptionTemplate = description;
                 }
                 codeClass.AddProperty(prop);
             }
         }
 
+        CreateUrlManagement(codeClass, currentNode, isApiClientClass);
         // Add methods for Operations
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
-            if (!isApiClientClass) // do not generate for API client clas with operations as the class won't have the rawUrl constructor.
+            if (!isApiClientClass) // do not generate for API client class with operations as the class won't have the rawUrl constructor.
                 CreateWithUrlMethod(currentNode, codeClass);
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
         }
-        CreateUrlManagement(codeClass, currentNode, isApiClientClass);
 
         if (rootNamespace != null)
             Parallel.ForEach(currentNode.Children.Values, parallelOptions, childNode =>
@@ -783,7 +602,7 @@ public partial class KiotaBuilder
             Kind = CodeMethodKind.RawUrlBuilder,
             Documentation = new()
             {
-                Description = "Returns a request builder with the provided arbitrary URL. Using this method means any other path or query parameters are ignored.",
+                DescriptionTemplate = "Returns a request builder with the provided arbitrary URL. Using this method means any other path or query parameters are ignored.",
             },
             Access = AccessModifier.Public,
             IsAsync = false,
@@ -804,7 +623,7 @@ public partial class KiotaBuilder
             Optional = false,
             Documentation = new()
             {
-                Description = "The raw URL to use for the request builder.",
+                DescriptionTemplate = "The raw URL to use for the request builder.",
             },
             Kind = CodeParameterKind.RawUrl,
         });
@@ -818,7 +637,7 @@ public partial class KiotaBuilder
             Kind = CodeMethodKind.RequestBuilderWithParameters,
             Documentation = new()
             {
-                Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
+                DescriptionTemplate = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
             },
             Access = AccessModifier.Public,
             IsAsync = false,
@@ -855,7 +674,7 @@ public partial class KiotaBuilder
                 Optional = asOptional,
                 Documentation = new()
                 {
-                    Description = parameter.Description.CleanupDescription(),
+                    DescriptionTemplate = parameter.Description.CleanupDescription(),
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName, StringComparison.OrdinalIgnoreCase) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),
@@ -877,7 +696,7 @@ public partial class KiotaBuilder
             ReadOnly = true,
             Documentation = new()
             {
-                Description = "Url template to use to build the URL for the current request builder",
+                DescriptionTemplate = "Url template to use to build the URL for the current request builder",
             },
             Kind = CodePropertyKind.UrlTemplate,
             Type = new CodeType
@@ -894,7 +713,7 @@ public partial class KiotaBuilder
             Name = RequestAdapterParameterName,
             Documentation = new()
             {
-                Description = "The request adapter to use to execute the requests.",
+                DescriptionTemplate = "The request adapter to use to execute the requests.",
             },
             Kind = CodePropertyKind.RequestAdapter,
             Access = AccessModifier.Private,
@@ -913,9 +732,15 @@ public partial class KiotaBuilder
             Kind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
             IsAsync = false,
             IsStatic = false,
-            Documentation = new()
+            Documentation = new(new() {
+                                {"TypeName", new CodeType {
+                                    IsExternal = false,
+                                    TypeDefinition = currentClass,
+                                }
+                            }
+            })
             {
-                Description = $"Instantiates a new {currentClass.Name.ToFirstCharacterUpperCase()} and sets the default values.",
+                DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
             },
             Access = AccessModifier.Public,
             ReturnType = new CodeType { Name = VoidType, IsExternal = true },
@@ -926,7 +751,7 @@ public partial class KiotaBuilder
             Name = PathParametersParameterName,
             Documentation = new()
             {
-                Description = "Path parameters for the request",
+                DescriptionTemplate = "Path parameters for the request",
             },
             Kind = CodePropertyKind.PathParameters,
             Access = AccessModifier.Private,
@@ -941,8 +766,8 @@ public partial class KiotaBuilder
         currentClass.AddProperty(pathParametersProperty);
         if (isApiClientClass)
         {
-            constructor.SerializerModules = config.Serializers;
-            constructor.DeserializerModules = config.Deserializers;
+            constructor.SerializerModules = ReplaceNoneSerializersByEmptySet(config.Serializers);
+            constructor.DeserializerModules = ReplaceNoneSerializersByEmptySet(config.Deserializers);
             constructor.BaseUrl = config.ApiRootUrl ?? string.Empty;
             pathParametersProperty.DefaultValue = $"new {pathParametersProperty.Type.Name}()";
         }
@@ -975,7 +800,7 @@ public partial class KiotaBuilder
                 Optional = true,
                 Documentation = new()
                 {
-                    Description = "The backing store to use for the models.",
+                    DescriptionTemplate = "The backing store to use for the models.",
                 },
                 Kind = CodeParameterKind.BackingStore,
                 Type = new CodeType
@@ -1000,13 +825,19 @@ public partial class KiotaBuilder
                 Optional = false,
                 Documentation = new()
                 {
-                    Description = "The raw URL to use for the request builder.",
+                    DescriptionTemplate = "The raw URL to use for the request builder.",
                 },
                 Kind = CodeParameterKind.RawUrl,
             });
             currentClass.AddMethod(overloadCtor);
         }
     }
+    private static HashSet<string> ReplaceNoneSerializersByEmptySet(HashSet<string> serializers)
+    {
+        if (serializers.Count == 1 && serializers.Contains("none")) return [];
+        return serializers;
+    }
+
     private static readonly Func<CodeClass, int> shortestNamespaceOrder = x => x.GetNamespaceDepth();
     /// <summary>
     /// Remaps definitions to custom types so they can be used later in generation or in refiners
@@ -1105,7 +936,7 @@ public partial class KiotaBuilder
             Name = segment.CleanupSymbolName(),
             Documentation = new()
             {
-                Description = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
+                DescriptionTemplate = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
             },
         };
         return result;
@@ -1134,7 +965,7 @@ public partial class KiotaBuilder
             Name = childIdentifier,
             Documentation = new()
             {
-                Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
+                DescriptionTemplate = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
             },
             ReturnType = new CodeType { Name = childType },
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.')[^1],
@@ -1170,7 +1001,7 @@ public partial class KiotaBuilder
             Kind = kind,
             Documentation = new()
             {
-                Description = propertySchema?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
+                DescriptionTemplate = propertySchema?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
                     description :
                     $"The {propertyName} property",
             },
@@ -1254,9 +1085,7 @@ public partial class KiotaBuilder
     private const string RequestBodyPlainTextContentType = "text/plain";
     private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
-                                                                                 .Concat(new[] { FourXXError, FiveXXError }), StringComparer.OrdinalIgnoreCase);
-    private const string FourXXError = "4XX";
-    private const string FiveXXError = "5XX";
+                                                                                 .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
     {
         foreach (var response in operation.Responses.Where(x => errorStatusCodes.Contains(x.Key)))
@@ -1268,10 +1097,10 @@ public partial class KiotaBuilder
         }
         if (operation.Responses.TryGetValue("default", out var defaultResponse) && defaultResponse.GetResponseSchema(config.StructuredMimeTypes) is { } errorSchema)
         {
-            if (!executorMethod.HasErrorMappingCode(FourXXError))
-                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FourXXError);
-            if (!executorMethod.HasErrorMappingCode(FiveXXError))
-                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FiveXXError);
+            if (!executorMethod.HasErrorMappingCode(CodeMethod.ErrorMappingClientRange))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, CodeMethod.ErrorMappingClientRange);
+            if (!executorMethod.HasErrorMappingCode(CodeMethod.ErrorMappingServerRange))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, CodeMethod.ErrorMappingServerRange);
         }
     }
     private void AddErrorMappingToExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod, OpenApiSchema errorSchema, OpenApiResponse response, string errorCode)
@@ -1309,7 +1138,7 @@ public partial class KiotaBuilder
                     {
                         Kind = CodeClassKind.Model,
                         Name = obsoleteTypeName,
-                        Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true),
+                        Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", codeType } }),
                         Documentation = (CodeDocumentation)codeClass.Documentation.Clone()
                     };
                     var originalFactoryMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Factory);
@@ -1337,7 +1166,7 @@ public partial class KiotaBuilder
                         _ => throw new InvalidOperationException("Could not create an obsolete composed type"),
                     };
                     obsoleteComposedType.Name = obsoleteTypeName;
-                    obsoleteComposedType.Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true);
+                    obsoleteComposedType.Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", modelType } });
                     return (modelType, obsoleteComposedType);
                 }
             }
@@ -1377,7 +1206,7 @@ public partial class KiotaBuilder
                 Kind = CodeClassKind.RequestConfiguration,
                 Documentation = new()
                 {
-                    Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+                    DescriptionTemplate = "Configuration for the request such as headers, query parameters, and middleware options.",
                 },
             }).First();
 
@@ -1395,7 +1224,7 @@ public partial class KiotaBuilder
                 {
                     DocumentationLink = operation.ExternalDocs?.Url,
                     DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
-                    Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                    DescriptionTemplate = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
                                     description :
                                     operation.Summary)
                                     .CleanupDescription(),
@@ -1426,7 +1255,7 @@ public partial class KiotaBuilder
                 Kind = CodeParameterKind.Cancellation,
                 Documentation = new()
                 {
-                    Description = "Cancellation token to use when cancelling requests",
+                    DescriptionTemplate = "Cancellation token to use when cancelling requests",
                 },
                 Type = new CodeType { Name = "CancellationToken", IsExternal = true },
             };
@@ -1438,7 +1267,7 @@ public partial class KiotaBuilder
                 additionalExecutorMethod.ReturnType = returnTypes.Item2;
                 additionalExecutorMethod.OriginalMethod = executorMethod;
                 var newName = $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}";
-                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
+                additionalExecutorMethod.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = executorMethod, IsExternal = false } } });
                 parentClass.RenameChildElement(executorMethod.Name, newName);
                 parentClass.AddMethod(additionalExecutorMethod);
             }
@@ -1452,12 +1281,16 @@ public partial class KiotaBuilder
                 HttpMethod = method,
                 Documentation = new()
                 {
-                    Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+                    DescriptionTemplate = (operation.Description ?? operation.Summary).CleanupDescription(),
                 },
                 ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
+            var operationUrlTemplate = currentNode.GetUrlTemplate(operationType);
+            if (!operationUrlTemplate.Equals(parentClass.Properties.FirstOrDefault(static x => x.Kind is CodePropertyKind.UrlTemplate)?.DefaultValue?.Trim('"'), StringComparison.Ordinal))
+                generatorMethod.UrlTemplateOverride = operationUrlTemplate;
+
             var mediaTypes = schema switch
             {
                 null => operation.Responses
@@ -1495,7 +1328,7 @@ public partial class KiotaBuilder
             Type = x.Schema is null ? GetDefaultQueryParameterType() : GetQueryParameterType(x.Schema),
             Documentation = new()
             {
-                Description = x.Description.CleanupDescription(),
+                DescriptionTemplate = x.Description.CleanupDescription(),
             },
             Kind = x.In switch
             {
@@ -1533,7 +1366,7 @@ public partial class KiotaBuilder
                 Kind = CodePropertyKind.QueryParameters,
                 Documentation = new()
                 {
-                    Description = "Request query parameters",
+                    DescriptionTemplate = "Request query parameters",
                 },
                 Type = new CodeType { TypeDefinition = parameterClass },
             });
@@ -1544,7 +1377,7 @@ public partial class KiotaBuilder
             Kind = CodePropertyKind.Headers,
             Documentation = new()
             {
-                Description = "Request headers",
+                DescriptionTemplate = "Request headers",
             },
             Type = new CodeType { Name = "RequestHeaders", IsExternal = true },
         },
@@ -1554,7 +1387,7 @@ public partial class KiotaBuilder
             Kind = CodePropertyKind.Options,
             Documentation = new()
             {
-                Description = "Request options",
+                DescriptionTemplate = "Request options",
             },
             Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
         });
@@ -1594,7 +1427,7 @@ public partial class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Documentation = new()
                 {
-                    Description = requestBodySchema.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
+                    DescriptionTemplate = requestBodySchema.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
                                     description :
                                     "The request body"
                 },
@@ -1611,7 +1444,7 @@ public partial class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Documentation = new()
                 {
-                    Description = "Binary request body",
+                    DescriptionTemplate = "Binary request body",
                 },
                 Type = new CodeType
                 {
@@ -1638,7 +1471,7 @@ public partial class KiotaBuilder
                     },
                     Documentation = new()
                     {
-                        Description = "The request body content type."
+                        DescriptionTemplate = "The request body content type."
                     },
                     PossibleValues = contentTypes.ToList()
                 });
@@ -1651,7 +1484,7 @@ public partial class KiotaBuilder
             Kind = CodeParameterKind.RequestConfiguration,
             Documentation = new()
             {
-                Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+                DescriptionTemplate = "Configuration for the request such as headers, query parameters, and middleware options.",
             },
         });
     }
@@ -1696,10 +1529,10 @@ public partial class KiotaBuilder
                 codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
         }
         if (codeDeclaration is CodeClass currentClass &&
-            string.IsNullOrEmpty(currentClass.Documentation.Description) &&
+            !currentClass.Documentation.DescriptionAvailable &&
             string.IsNullOrEmpty(schema.AllOf.LastOrDefault()?.Description) &&
             !string.IsNullOrEmpty(schema.Description))
-            currentClass.Documentation.Description = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
+            currentClass.Documentation.DescriptionTemplate = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
 
         return new CodeType
         {
@@ -1899,7 +1732,7 @@ public partial class KiotaBuilder
                 Flags = enumFlagsExtension?.IsFlags ?? false,
                 Documentation = new()
                 {
-                    Description = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?
+                    DescriptionTemplate = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?
                                         schemaDescription : // if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
                                         currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 },
@@ -1930,7 +1763,7 @@ public partial class KiotaBuilder
                                 SerializationName = x,
                                 Documentation = new()
                                 {
-                                    Description = optionDescription?.Description ?? string.Empty,
+                                    DescriptionTemplate = optionDescription?.Description ?? string.Empty,
                                 },
                             };
                         })
@@ -1961,7 +1794,7 @@ public partial class KiotaBuilder
             {
                 DocumentationLabel = schema.ExternalDocs?.Description ?? string.Empty,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                Description = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
+                DescriptionTemplate = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
         };
@@ -2158,7 +1991,7 @@ public partial class KiotaBuilder
             Name = refineMethodName("CreateFromDiscriminatorValue"),
             Documentation = new()
             {
-                Description = "Creates a new instance of the appropriate class based on discriminator value",
+                DescriptionTemplate = "Creates a new instance of the appropriate class based on discriminator value",
             },
             ReturnType = new CodeType { TypeDefinition = newClass, IsNullable = false },
             Kind = CodeMethodKind.Factory,
@@ -2174,7 +2007,7 @@ public partial class KiotaBuilder
             Kind = CodeParameterKind.ParseNode,
             Documentation = new()
             {
-                Description = "The parse node to use to read the discriminator value and create the object",
+                DescriptionTemplate = "The parse node to use to read the discriminator value and create the object",
             },
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
@@ -2257,7 +2090,7 @@ public partial class KiotaBuilder
                 Access = AccessModifier.Public,
                 Documentation = new()
                 {
-                    Description = "The deserialization information for the current model",
+                    DescriptionTemplate = "The deserialization information for the current model",
                 },
                 IsAsync = false,
                 ReturnType = new CodeType
@@ -2279,7 +2112,7 @@ public partial class KiotaBuilder
                 IsAsync = false,
                 Documentation = new()
                 {
-                    Description = "Serializes information the current object",
+                    DescriptionTemplate = "Serializes information the current object",
                 },
                 ReturnType = new CodeType { Name = VoidType, IsNullable = false, IsExternal = true },
                 Parent = model,
@@ -2289,7 +2122,7 @@ public partial class KiotaBuilder
                 Name = "writer",
                 Documentation = new()
                 {
-                    Description = "Serialization writer to use to serialize this model",
+                    DescriptionTemplate = "Serialization writer to use to serialize this model",
                 },
                 Kind = CodeParameterKind.Serializer,
                 Type = new CodeType { Name = "ISerializationWriter", IsExternal = true, IsNullable = false },
@@ -2311,7 +2144,7 @@ public partial class KiotaBuilder
                 Kind = CodePropertyKind.AdditionalData,
                 Documentation = new()
                 {
-                    Description = "Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.",
+                    DescriptionTemplate = "Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.",
                 },
                 Type = new CodeType
                 {
@@ -2339,7 +2172,7 @@ public partial class KiotaBuilder
                 Kind = CodePropertyKind.BackingStore,
                 Documentation = new()
                 {
-                    Description = "Stores model information.",
+                    DescriptionTemplate = "Stores model information.",
                 },
                 ReadOnly = true,
                 Type = new CodeType
@@ -2368,7 +2201,7 @@ public partial class KiotaBuilder
                 Kind = CodeClassKind.QueryParameters,
                 Documentation = new()
                 {
-                    Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                    DescriptionTemplate = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
                                     description :
                                     operation.Summary).CleanupDescription(),
                 },
@@ -2385,23 +2218,25 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        if (parameter.Schema.IsEnum())
+
+        if (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum()))
         {
-            var schema = parameter.Schema;
-            var codeNamespace = schema.IsReferencedSchema() switch
+            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items : parameter.Schema;
+            var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
-                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
+                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
                 false => parameterClass.GetImmediateParentOfType<CodeNamespace>(), // Inline schema, i.e. specific to the Operation
             };
-            var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
-            var enumName = schema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, enumSchema);
+            var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
                 enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
-            if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
+            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
+                    IsNullable = !parameter.Schema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }
@@ -2419,7 +2254,7 @@ public partial class KiotaBuilder
             Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
             Documentation = new()
             {
-                Description = parameter.Description.CleanupDescription(),
+                DescriptionTemplate = parameter.Description.CleanupDescription(),
             },
             Kind = CodePropertyKind.QueryParameter,
             Type = resultType,
@@ -2438,7 +2273,7 @@ public partial class KiotaBuilder
                 var modernProp = (CodeProperty)prop.Clone();
                 modernProp.Name = $"{prop.Name}As{modernProp.Type.Name.ToFirstCharacterUpperCase()}";
                 modernProp.SerializationName = prop.WireName;
-                prop.Deprecation = new($"This property is deprecated, use {modernProp.Name} instead", IsDeprecated: true);
+                prop.Deprecation = new("This property is deprecated, use {TypeName} instead", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = modernProp, IsExternal = false } } });
                 prop.Type = GetDefaultQueryParameterType();
                 prop.Type.CollectionKind = modernProp.Type.CollectionKind;
                 parameterClass.AddProperty(modernProp, prop);

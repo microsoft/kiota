@@ -14,6 +14,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         writer.WriteLine("from enum import Enum");
         writer.WriteLine();
         writer.WriteLine($"class {codeElement.Name}(str, Enum):");
+        conventions.WriteDeprecationWarning(codeElement, writer);
         writer.IncreaseIndent();
         if (!codeElement.Options.Any())
         {
@@ -23,7 +24,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         {
             codeElement.Options.ToList().ForEach(x =>
             {
-                conventions.WriteInLineDescription(x.Documentation.Description, writer);
+                conventions.WriteInLineDescription(x, writer);
                 writer.WriteLine($"{x.Name} = \"{x.WireName}\",");
             });
         }
