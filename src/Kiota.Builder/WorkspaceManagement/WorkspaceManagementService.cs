@@ -143,6 +143,8 @@ public class WorkspaceManagementService
         manifest?.ApiDependencies.Remove(clientName);
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         descriptionStorageService.RemoveDescription(clientName);
+        if (wsConfig.Clients.Count == 0)
+            descriptionStorageService.Clean();
     }
     private static readonly JsonSerializerOptions options = new()
     {
