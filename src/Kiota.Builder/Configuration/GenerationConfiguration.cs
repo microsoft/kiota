@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Microsoft.OpenApi.ApiManifest;
 
@@ -113,6 +114,10 @@ public class GenerationConfiguration : ICloneable
     };
     public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The overrides loaded from the api manifest when refreshing a client, as opposed to the user provided ones.
+    /// </summary>
+    public HashSet<string> PatternsOverride { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public bool ClearCache
     {
         get; set;
@@ -144,6 +149,7 @@ public class GenerationConfiguration : ICloneable
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
             Operation = Operation,
+            PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -175,7 +181,7 @@ public class GenerationConfiguration : ICloneable
             Extensions = new() {
                 { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
             },
-            Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key })).ToList(),
+            Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key.DeSanitizeUrlTemplateParameter() })).ToList(),
         };
         return dependency;
     }

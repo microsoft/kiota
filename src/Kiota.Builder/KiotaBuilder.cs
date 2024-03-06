@@ -321,6 +321,11 @@ public partial class KiotaBuilder
     {
         var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
         var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
+        if (config.PatternsOverride.Count != 0)
+        { // loading the patterns from the manifest as we don't want to take the user input one and have new operation creep in from the description being updated since last generation
+            includePatterns = GetFilterPatternsFromConfiguration(config.PatternsOverride);
+            excludePatterns = [];
+        }
         if (includePatterns.Count == 0 && excludePatterns.Count == 0) return;
 
         var nonOperationIncludePatterns = includePatterns.Where(static x => x.Value.Count == 0).Select(static x => x.Key).ToList();

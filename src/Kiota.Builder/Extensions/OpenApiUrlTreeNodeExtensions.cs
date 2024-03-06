@@ -266,6 +266,13 @@ public static partial class OpenApiUrlTreeNodeExtensions
                     .Replace(".", "%2E", StringComparison.OrdinalIgnoreCase)
                     .Replace("~", "%7E", StringComparison.OrdinalIgnoreCase);// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
     }
+    public static string DeSanitizeUrlTemplateParameter(this string original)
+    {
+        if (string.IsNullOrEmpty(original)) return original;
+        return Uri.UnescapeDataString(original.Replace("%2D", "-", StringComparison.OrdinalIgnoreCase)
+                    .Replace("%2E", ".", StringComparison.OrdinalIgnoreCase)
+                    .Replace("%7E", "~", StringComparison.OrdinalIgnoreCase));
+    }
     [GeneratedRegex(@"%[0-9A-F]{2}", RegexOptions.Singleline, 500)]
     private static partial Regex removePctEncodedCharacters();
     public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "")

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
+using Kiota.Builder.Tests.Manifest;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -33,10 +34,12 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var result = await service.IsClientPresent("clientName");
         Assert.False(result);
     }
-    [InlineData(true)]
-    [InlineData(false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
     [Theory]
-    public async Task ShouldGenerateReturnsTrue(bool usesConfig)
+    public async Task ShouldGenerateReturnsTrue(bool usesConfig, bool cleanOutput)
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -46,6 +49,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             ClientClassName = "clientName",
             OutputPath = tempPath,
             OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
+            CleanOutput = cleanOutput,
         };
         var result = await service.ShouldGenerateAsync(configuration, "foo");
         Assert.True(result);
@@ -171,6 +175,48 @@ paths:
         Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.ConfigurationFileName)));
         Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(tempPath, DescriptionStorageService.DescriptionsSubDirectoryRelativePath, "clientName.yml")));
+    }
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [Theory]
+    public async Task GetsADescription(bool usesConfig, bool cleanOutput)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
+        var descriptionPath = Path.Combine(tempPath, $"{DescriptionStorageService.DescriptionsSubDirectoryRelativePath}/clientName.yml");
+        var outputPath = Path.Combine(tempPath, "client");
+        Directory.CreateDirectory(outputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(descriptionPath));
+        await File.WriteAllTextAsync(descriptionPath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://localhost:443
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bar:
+                    type: object
+                    properties:
+                      foo:
+                        type: string");
+        var descriptionCopy = await service.GetDescriptionCopyAsync("clientName", descriptionPath, cleanOutput);
+        if (!usesConfig || cleanOutput)
+            Assert.Null(descriptionCopy);
+        else
+            Assert.NotNull(descriptionCopy);
     }
 
     public void Dispose()
