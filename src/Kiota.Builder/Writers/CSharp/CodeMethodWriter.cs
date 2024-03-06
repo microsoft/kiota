@@ -215,8 +215,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
-        if (method.Parameters.Any(static p => string.Equals(p.Name, "args", StringComparison.Ordinal))) {
-            writer.WriteLine("Arguments = args.TakeWhile(static x => !string.IsNullOrEmpty(x) && !x.StartsWith('-')).ToArray();");
+        if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true) {
+            writer.WriteLine("Arguments = Environment.GetCommandLineArgs().Skip(1).TakeWhile(static x => !string.IsNullOrEmpty(x) && !x.StartsWith('-')).ToArray();");
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProperty) return;
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);

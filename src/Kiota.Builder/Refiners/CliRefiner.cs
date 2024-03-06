@@ -103,36 +103,9 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             RenameDuplicateIndexerNavProperties(generatedCode);
             // Must be called after the more specific RenameDuplicateIndexerNavProperties
             RenameMatchingSubsequentNavCommands(generatedCode);
-            AddArgsParameterToClientConstructor(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CreateCommandBuilders(generatedCode);
         }, cancellationToken);
-    }
-    private static void AddArgsParameterToClientConstructor(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass && currentClass.Kind is CodeClassKind.RequestBuilder)
-        {
-            var clientConstructor = currentClass.UnorderedMethods.SingleOrDefault(static m => m.Kind is CodeMethodKind.ClientConstructor);
-            if (clientConstructor is { } m)
-            {
-                m.AddParameter(new CodeParameter
-                {
-                    Name = "args",
-                    Optional = false,
-                    Kind = CodeParameterKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "string",
-                        IsExternal = true,
-                        IsNullable = false,
-                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
-                    }
-                });
-                return;
-            }
-        }
-
-        CrawlTree(currentElement, AddArgsParameterToClientConstructor);
     }
     private static void RemoveBackwardCompatibleIndexers(CodeElement currentElement)
     {
