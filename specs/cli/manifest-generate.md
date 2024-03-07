@@ -10,10 +10,10 @@ In general cases, the `kiota manifest generate` command will generate the output
 
 ## Parameters
 
-| Parameters | Required | Example | Description |
-| -- | -- | -- | -- |
-| `--manifest-name \| --cn` | No | GitHub | Name of the manifest. Unique within the parent API. |
-| `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. |
+| Parameters | Required | Example | Description | Telemetry |
+| -- | -- | -- | -- | -- |
+| `--manifest-name \| --mn` | No | GitHub | Name of the manifest. Unique within the parent API. | Yes, without its value |
+| `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. | Yes |
 
 ## Usage
 

@@ -6,10 +6,10 @@
 
 The command also has one optional parameter, the ability to remove the all generated files. If provided, kiota will delete the folder and its content specified at the `outputPath` from the manifest configuration. It will also remove the local version of the OpenAPI description file (specified by the `x-ms-kiotaHash` property in the API Manifests). The API Manifests are also updated to remove the dependency from the list of dependencies.
 
-| Parameters | Required | Example | Description |
-| -- | -- | -- | -- |
-| `--manifest-name \| --cn` | Yes | GitHub | Name of the manifest |
-| `--clean-output \| --co` | No |  | Cleans the generated manifest files |
+| Parameters | Required | Example | Description | Telemetry |
+| -- | -- | -- | -- | -- |
+| `--manifest-name \| --mn` | Yes | GitHub | Name of the manifest | No |
+| `--clean-output \| --co` | No |  | Cleans the generated manifest files | Yes |
 
 #### Using kiota manifest remove and deleting all the content
 

@@ -1,6 +1,6 @@
 # Telemetry
 
-Kiota is a tool that generates code for interacting with an API. It is used by developers to create applications that interact with an API. It is also used by API owners to create SDKs for their API. In both cases, it is important to understand how the tool is being used and what are the scenarios leveraged by our community. This document describes the telemetry we plan to collect and how we use it.
+Kiota is a tool that generates code for interacting with an API. It is used by developers and API owners to create code clients that interact with APIs. And with the new commands that generate manifests, it will also be used for developers to create AI manifests. In both cases, it is important to understand how the tool is being used and what are the scenarios leveraged by our community. This document describes the telemetry we plan to collect and how we use it.
 
 ## Current Challenges
 
@@ -48,6 +48,8 @@ We should be very careful about the information we collect. Before rolling out t
 - What are the most used commands?
 - How are the commands used? Which parameters are being used?
 - What are the most used languages?
+- Are users levaring Kiota for AI?
+- What are the most used type of manifest?
 - What are the most used platforms?
 - Is there a difference in how the CLI is being used between platforms?
 - Do we have users using old versions of kiota? Why?

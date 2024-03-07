@@ -18,16 +18,17 @@ Once the `kiota-config.json` file is generated and the OpenAPI description file 
 
 ## Parameters
 
-| Parameters | Required | Example | Description |
-| -- | -- | -- | -- |
-| `--manifest-name \| --pn` | Yes | GitHub | Name of the manifest. Unique within the parent API. Defaults to `Manifest` |
-| `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI description in JSON or YAML format to use to generate the manifest. Accepts a URL or a local directory. |
-| `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. |
-| `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. |
-| `--type \| -t` | Yes | openai | The target type of manifest for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`|
-| `--overlayDirectory \| --od` | No | ./overlay/manifest/{manifest-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the manifest. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. |
-| `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |
-| `--output \| -o` | No | ./generated/manifest/github | The output directory or file path for the generated output files. This is relative to the location of `kiota-config.json`. Defaults to `./output`. |
+| Parameters | Required | Example | Description | Telemetry |
+| -- | -- | -- | -- | -- |
+| `--manifest-name \| --mn` | Yes | GitHub | Name of the manifest. Unique within the parent API. Defaults to `Manifest` | No |
+| `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI description in JSON or YAML format to use to generate the manifest. Accepts a URL or a local directory. | No |
+| `--search-key \| --sk` | No | apisguru::github.com:api.github.com | The search key used to locate the OpenAPI description. | Yes, without its value |
+| `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
+| `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
+| `--type \| -t` | Yes | openai | The target type of manifest for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
+| `--overlayDirectory \| --od` | No | ./overlay/manifest/{manifest-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the manifest. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. | Yes, without its value |
+| `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
+| `--output \| -o` | No | ./generated/manifest/github | The output directory or file path for the generated output files. This is relative to the location of `kiota-config.json`. Defaults to `./output`. | Yes, without its value |
 
 > [!NOTE] 
 > It is not required to use the CLI to add new manifests. It is possible to add a new manifest by adding a new entry in the `manifests` section of the `kiota-config.json` file. See the [kiota-config.json schema](../schemas/kiota-config.json) for more information. Using `kiota manifest generate --manifest-name myManifest` would be required to generate the manifests.
@@ -159,4 +160,4 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
  └─apimanifest.json # Single artifact with all APIs info
 ```
 
-[def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3
+[def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html

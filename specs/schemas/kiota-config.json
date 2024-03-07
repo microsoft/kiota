@@ -63,7 +63,7 @@
         }
       }
     },
-    "plugins": {
+    "manifests": {
       "type": "object",
       "patternProperties": {
         ".*": {
