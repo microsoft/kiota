@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.12.0] - 2024-03-06
+
+### Added
+
+- Added support for the new kiota config commands under a feature flag. [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added uri-form encoded serialization for Python. [#2075](https://github.com/microsoft/kiota/issues/2075)
 - Added support for multipart form data request body in Python. [#3030](https://github.com/microsoft/kiota/issues/3030)
@@ -1268,6 +1275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
 
