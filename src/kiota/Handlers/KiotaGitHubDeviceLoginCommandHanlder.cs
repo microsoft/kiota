@@ -21,10 +21,10 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<DeviceCodeAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                return await LoginAsync(logger, cancellationToken);
+                return await LoginAsync(logger, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

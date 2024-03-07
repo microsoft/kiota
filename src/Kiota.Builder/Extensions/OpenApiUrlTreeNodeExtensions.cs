@@ -182,11 +182,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.DeduplicatedSegment()?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
-    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, OperationType? operationType = null)
+    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, OperationType? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
         var queryStringParameters = string.Empty;
-        if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
+        if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
             var operationQueryParameters = (operationType, pathItem.Operations.Any()) switch
@@ -222,10 +222,28 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                                         .Where(static x => x.In == ParameterLocation.Path && x.Extensions.TryGetValue(OpenApiReservedParameterExtension.Name, out var ext) && ext is OpenApiReservedParameterExtension reserved && reserved.IsReserved.HasValue && reserved.IsReserved.Value)
                                                         .Select(static x => x.Name)
                                                         .ToHashSet(StringComparer.OrdinalIgnoreCase) :
-                                                new HashSet<string>();
-        return "{+baseurl}" +
+                                                [];
+        return (includeBaseUrl ? "{+baseurl}" : string.Empty) +
                 SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
                 queryStringParameters;
+    }
+    public static IEnumerable<KeyValuePair<string, HashSet<string>>> GetRequestInfo(this OpenApiUrlTreeNode currentNode)
+    {
+        ArgumentNullException.ThrowIfNull(currentNode);
+        return currentNode.GetRequestInfoInternal();
+    }
+    private static IEnumerable<KeyValuePair<string, HashSet<string>>> GetRequestInfoInternal(this OpenApiUrlTreeNode currentNode)
+    {
+        foreach (var childInfo in currentNode.Children.Values.SelectMany(static x => x.GetRequestInfoInternal()))
+        {
+            yield return childInfo;
+        }
+        if (currentNode.PathItems
+                            .SelectMany(static x => x.Value.Operations)
+                            .ToArray() is { Length: > 0 } operations)
+        {
+            yield return new KeyValuePair<string, HashSet<string>>(currentNode.GetUrlTemplate(null, false, false).TrimStart('/'), operations.Select(static x => x.Key.ToString().ToUpperInvariant()).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        }
     }
     [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 500)]
     private static partial Regex pathParamMatcher();
@@ -247,6 +265,13 @@ public static partial class OpenApiUrlTreeNodeExtensions
                     .Replace("-", "%2D", StringComparison.OrdinalIgnoreCase)
                     .Replace(".", "%2E", StringComparison.OrdinalIgnoreCase)
                     .Replace("~", "%7E", StringComparison.OrdinalIgnoreCase);// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
+    }
+    public static string DeSanitizeUrlTemplateParameter(this string original)
+    {
+        if (string.IsNullOrEmpty(original)) return original;
+        return Uri.UnescapeDataString(original.Replace("%2D", "-", StringComparison.OrdinalIgnoreCase)
+                    .Replace("%2E", ".", StringComparison.OrdinalIgnoreCase)
+                    .Replace("%7E", "~", StringComparison.OrdinalIgnoreCase));
     }
     [GeneratedRegex(@"%[0-9A-F]{2}", RegexOptions.Singleline, 500)]
     private static partial Regex removePctEncodedCharacters();

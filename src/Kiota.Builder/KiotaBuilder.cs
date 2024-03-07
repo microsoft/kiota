@@ -8,11 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncKeyedLock;
 using DotNet.Globbing;
 using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
@@ -21,22 +19,18 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.SearchProviders.APIsGuru;
-using Kiota.Builder.Validation;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 [assembly: InternalsVisibleTo("Kiota.Builder.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100957cb48387b2a5f54f5ce39255f18f26d32a39990db27cf48737afc6bc62759ba996b8a2bfb675d4e39f3d06ecb55a178b1b4031dcb2a767e29977d88cce864a0d16bfc1b3bebb0edf9fe285f10fffc0a85f93d664fa05af07faa3aad2e545182dbf787e3fd32b56aca95df1a3c4e75dec164a3f1a4c653d971b01ffc39eb3c4")]
 
@@ -51,7 +45,7 @@ public partial class KiotaBuilder
     private OpenApiDocument? openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -63,7 +57,13 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
+        var workingDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
+        this.useKiotaConfig = useKiotaConfig;
+        openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
     }
+    private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
+    private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
@@ -72,7 +72,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
                                             .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
@@ -171,22 +171,23 @@ public partial class KiotaBuilder
         UpdateConfigurationFromOpenApiDocument();
         StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
-        // Should Generate
-        sw.Start();
-        var shouldGenerate = await ShouldGenerate(cancellationToken).ConfigureAwait(false);
-        StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
-
         OpenApiUrlTreeNode? openApiTree = null;
+        var shouldGenerate = !config.SkipGeneration;
         if (openApiDocument != null)
         {
             // filter paths
             sw.Start();
             FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            SetApiRootUrl();
+
+            // Should Generate
+            sw.Start();
+            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
+
             if (shouldGenerate && generating)
             {
-                SetApiRootUrl();
-
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
@@ -204,21 +205,6 @@ public partial class KiotaBuilder
             GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
 
         config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
-    }
-    private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
-    {
-        if (config.CleanOutput) return true;
-        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        var comparer = new KiotaLockComparer();
-        if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
-        }
-        return !comparer.Equals(existingLock, configurationLock);
     }
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
@@ -247,6 +233,9 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
+        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
+
         try
         {
             await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
@@ -261,47 +250,51 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            if (!shouldGenerate)
+            if (shouldGenerate)
+            {
+                // Create Source Model
+                sw.Start();
+                var generatedCode = CreateSourceModel(openApiTree);
+                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+                // RefineByLanguage
+                sw.Start();
+                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+                // Write language source
+                sw.Start();
+                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+                await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+            }
+            else
             {
                 logger.LogInformation("No changes detected, skipping generation");
+                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                {
+                    await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
+                }
                 return false;
             }
-            // Create Source Model
-            sw.Start();
-            var generatedCode = CreateSourceModel(openApiTree);
-            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-            // RefineByLanguage
-            sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-            // Write language source
-            sw.Start();
-            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
-
-            // Write lock file
-            sw.Start();
-            await UpdateLockFile(cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
-            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
     }
-    private readonly LockManagementService lockManagementService = new();
-    private async Task UpdateLockFile(CancellationToken cancellationToken)
+    private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
     {
-        var configurationLock = new KiotaLock(config)
-        {
-            DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
-        };
-        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
+        // Write lock file
+        sw.Start();
+        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStream(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
+        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
+        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
+    private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
     [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();
@@ -328,6 +321,11 @@ public partial class KiotaBuilder
     {
         var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
         var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
+        if (config.PatternsOverride.Count != 0)
+        { // loading the patterns from the manifest as we don't want to take the user input one and have new operation creep in from the description being updated since last generation
+            includePatterns = GetFilterPatternsFromConfiguration(config.PatternsOverride);
+            excludePatterns = [];
+        }
         if (includePatterns.Count == 0 && excludePatterns.Count == 0) return;
 
         var nonOperationIncludePatterns = includePatterns.Where(static x => x.Value.Count == 0).Select(static x => x.Key).ToList();
@@ -362,33 +360,10 @@ public partial class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        if (openApiDocument == null) return;
-        var candidateUrl = openApiDocument.Servers
-                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
-                                        .FirstOrDefault()
-                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
-                                        ?.FirstOrDefault()
-                                        ?.Url;
-        if (string.IsNullOrEmpty(candidateUrl))
-        {
+        if (openApiDocument is not null && openApiDocument.GetAPIRootUrl(config.OpenAPIFilePath) is string candidateUrl)
+            config.ApiRootUrl = candidateUrl;
+        else
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
-            return;
-        }
-        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && config.OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            try
-            {
-                candidateUrl = new Uri(new Uri(config.OpenAPIFilePath), candidateUrl).ToString();
-            }
-#pragma warning disable CA1031
-            catch (Exception ex)
-#pragma warning restore CA1031
-            {
-                logger.LogWarning(ex, "Could not resolve the server url from the OpenAPI document. The base url will need to be set when using the client.");
-                return;
-            }
-        }
-        config.ApiRootUrl = candidateUrl.TrimEnd(ForwardSlash);
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
@@ -396,118 +371,18 @@ public partial class KiotaBuilder
         logger.LogDebug("{Prefix} {SwElapsed}", prefix, sw.Elapsed);
         sw.Reset();
     }
-
-    private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
-    {
-        o.PoolSize = 20;
-        o.PoolInitialFill = 1;
-    });
-
+    private bool isDescriptionFromWorkspaceCopy;
     private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        inputPath = inputPath.Trim();
-
-        Stream input;
-        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            try
-            {
-                var cachingProvider = new DocumentCachingProvider(httpClient, logger)
-                {
-                    ClearCache = config.ClearCache,
-                };
-                var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
-                var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        else
-            try
-            {
-#pragma warning disable CA2000 // disposed by caller
-                var inMemoryStream = new MemoryStream();
-                using (await localFilesLock.LockAsync(inputPath, cancellationToken).ConfigureAwait(false))
-                {// To avoid deadlocking on update with multiple clients for the same local description
-                    using var fileStream = new FileStream(inputPath, FileMode.Open);
-                    await fileStream.CopyToAsync(inMemoryStream, cancellationToken).ConfigureAwait(false);
-                }
-                inMemoryStream.Position = 0;
-                input = inMemoryStream;
-#pragma warning restore CA2000
-            }
-            catch (Exception ex) when (ex is FileNotFoundException ||
-                ex is PathTooLongException ||
-                ex is DirectoryNotFoundException ||
-                ex is IOException ||
-                ex is UnauthorizedAccessException ||
-                ex is SecurityException ||
-                ex is NotSupportedException)
-            {
-                throw new InvalidOperationException($"Could not open the file at {inputPath}, reason: {ex.Message}", ex);
-            }
-        stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Read OpenAPI file {File}", stopwatch.ElapsedMilliseconds, inputPath);
+        var (input, isCopy) = await openApiDocumentDownloadService.LoadStreamAsync(inputPath, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
+        isDescriptionFromWorkspaceCopy = isCopy;
         return input;
     }
 
-    private const char ForwardSlash = '/';
-    public async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
+    internal const char ForwardSlash = '/';
+    internal Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-        logger.LogTrace("Parsing OpenAPI file");
-        var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
-                    ValidationRuleSet.GetEmptyRuleSet() :
-                    ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
-        if (generating)
-            ruleSet.AddKiotaValidationRules(config);
-        var settings = new OpenApiReaderSettings
-        {
-            RuleSet = ruleSet,
-        };
-        settings.AddMicrosoftExtensionParsers();
-        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
-        try
-        {
-            var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
-            var lastSlashIndex = rawUri.LastIndexOf(ForwardSlash);
-            if (lastSlashIndex < 0)
-                lastSlashIndex = rawUri.Length - 1;
-            var documentUri = new Uri(rawUri[..lastSlashIndex]);
-            settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-        }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
-        {
-            // couldn't parse the URL, it's probably a local file
-        }
-        var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input, cancellationToken).ConfigureAwait(false);
-        stopwatch.Stop();
-        if (generating)
-            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
-                logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.OpenApiDiagnostic.Errors.Any())
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
-            {
-                logger.LogError("OpenAPI error: {Pointer} - {Message}", parsingError.Pointer, parsingError.Message);
-            }
-        }
-        else
-        {
-            logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-        }
-
-        return readResult.OpenApiDocument;
+        return openApiDocumentDownloadService.GetDocumentFromStreamAsync(input, config, generating, cancellationToken);
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
@@ -2343,23 +2218,25 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        if (parameter.Schema.IsEnum())
+
+        if (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum()))
         {
-            var schema = parameter.Schema;
-            var codeNamespace = schema.IsReferencedSchema() switch
+            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items : parameter.Schema;
+            var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
-                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), schema), // referenced schema
+                true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
                 false => parameterClass.GetImmediateParentOfType<CodeNamespace>(), // Inline schema, i.e. specific to the Operation
             };
-            var shortestNamespace = GetShortestNamespace(codeNamespace, schema);
-            var enumName = schema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, enumSchema);
+            var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
                 enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
-            if (AddEnumDeclarationIfDoesntExist(node, schema, enumName, shortestNamespace) is { } enumDeclaration)
+            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
+                    IsNullable = !parameter.Schema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }

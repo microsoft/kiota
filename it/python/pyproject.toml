@@ -13,6 +13,7 @@ dependencies = [
     "microsoft-kiota-serialization-json >= 1.0.0",
     "microsoft-kiota-serialization-text >= 1.0.0",
     "microsoft-kiota-serialization-form >= 0.1.0",
+    "microsoft-kiota-serialization-multipart >= 0.1.0",
 ]
 license = {file = "LICENSE"}
 readme = "README.md"

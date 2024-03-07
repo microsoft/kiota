@@ -2,14 +2,16 @@
 
 This command is valuable in cases where a code base was created with Kiota v1.0 and needs to be migrated to the latest version of Kiota. The `kiota config migrate` command will identify and locate the closest `kiota-config.json` file available. If a file can't be found, it would initialize a new `kiota-config.json` file. Then, it would identify all `kiota-lock.json` files that are within this folder structure and add each of them to the `kiota-config.json` file. Adding the clients to the `kiota-config.json` file would not trigger the generation as it only affects the `kiota-config.json` file. The `kiota client generate` command would need to be executed to generate the code for the clients.
 
+The API manifest won't contain any request after the migration since it could lead to misalignments between the generated client and the reported requests if the description has changed between the initial generation of the client and the migration. To get the requests populated, the user will need to use the generate command.
+
 In the case where conflicting API client names would be migrated, the command will error out and invite the user to re-run the command providing more context for the `--client-name` parameter.
 
 ## Parameters
 
-| Parameters | Required | Example | Description |
-| -- | -- | -- | -- |
-| `--lock-location \| --ll` | No | ./output/pythonClient/kiota-lock.json | Location of the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. |
-| `--client-name \| --cn` | No | GraphClient | Used with `--lock-location`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. |
+| Parameters | Required | Example | Description | Telemetry | 
+| -- | -- | -- | -- | -- |
+| `--lock-directory \| --ld` | No | ./output/pythonClient/ | Relative path to the directory containing the `kiota-lock.json` file. If not specified, all `kiota-lock.json` files within in the current directory tree will be used. | Yes, without its value |
+| `--client-name \| --cn` | No | graphDelegated | Used with `--lock-directory`, it would allow to specify a name for the API client. Else, name is auto-generated as a concatenation of the `language` and `clientClassName`. | Yes, without its value |
 
 ## Using `kiota config migrate`
 
@@ -80,64 +82,14 @@ _The resulting `apimanifest.json` file will look like this:_
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
-      "requests": [
-        {
-          "method": "GET",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "POST",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/$count"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "PATCH",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "DELETE",
-          "uriTemplate": "/users/{user-id}"
-        }
-      ]
+      "requests": []
     },
     "pythonGraphServiceClient": {
       "x-ms-kiotaHash": "9EDF8506CB74FE44...",
       "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
       "apiDeploymentBaseUrl": "https://graph.microsoft.com",
       "apiDescriptionVersion": "v1.0",
-      "requests": [
-        {
-          "method": "GET",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "POST",
-          "uriTemplate": "/users"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/$count"
-        },
-        {
-          "method": "GET",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "PATCH",
-          "uriTemplate": "/users/{user-id}"
-        },
-        {
-          "method": "DELETE",
-          "uriTemplate": "/users/{user-id}"
-        }
-      ]
+      "requests": []
     }
   }
 }
@@ -181,7 +133,7 @@ Assuming the following folder structure:
 ```
 
 ```bash
-kiota config migrate --lock-location ./generated/graph/csharp/kiota-lock.json --client-name GraphClient
+kiota config migrate --lock-directory ./generated/graph/csharp --client-name GraphClient
 ```
 
 _The resulting `kiota-config.json` file will look like this:_

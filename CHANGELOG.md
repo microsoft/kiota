@@ -9,11 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.12.0] - 2024-03-06
+
+### Added
+
+- Added support for the new kiota config commands under a feature flag. [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added uri-form encoded serialization for Python. [#2075](https://github.com/microsoft/kiota/issues/2075)
+- Added support for multipart form data request body in Python. [#3030](https://github.com/microsoft/kiota/issues/3030)
 
 ### Changed
 
+- BREAKING - Removed the async suffix from request adapter methods in TypeScript. [microsoft/kiota-typescript#992](https://github.com/microsoft/kiota-typescript/issues/992)
 - Fixed mantis for bitwise enums in Go. [#3936](https://github.com/microsoft/kiota/issues/3936)
 - Keyword in enum names for go should not be escaped. [#2877](https://github.com/microsoft/kiota/issues/2877)
 - Generator method code reduction in Python. [#3695](https://github.com/microsoft/kiota/issues/3695)
@@ -28,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where stream responses would generate incorrect partial paging code. [#4207](https://github.com/microsoft/kiota/issues/4207)
 - Sanitize Accept and Content-Type headers during generation. [#4211](https://github.com/microsoft/kiota/issues/4211)
 - Fixed a bug in enum default value generator for TypeScript. [#4216](https://github.com/microsoft/kiota/issues/4216)
+- Generate enum array for query parameters. [#4225](https://github.com/microsoft/kiota/issues/4225)
 
 ## [1.11.1] - 2024-02-05
 
@@ -1265,6 +1275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
 

@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Configuration;
 #pragma warning disable CA2227
@@ -22,6 +25,14 @@ public class GenerationConfiguration : ICloneable
                 (!string.IsNullOrEmpty(ApiManifestPath) || !ApiManifestPath.Equals(DefaultConfiguration.ApiManifestPath, StringComparison.OrdinalIgnoreCase)) &&
                 (ApiManifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) || File.Exists(ApiManifestPath));
         }
+    }
+    public bool SkipGeneration
+    {
+        get; set;
+    }
+    public ClientOperation? Operation
+    {
+        get; set;
     }
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string ApiManifestPath { get; set; } = "apimanifest.json";
@@ -103,6 +114,10 @@ public class GenerationConfiguration : ICloneable
     };
     public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The overrides loaded from the api manifest when refreshing a client, as opposed to the user provided ones.
+    /// </summary>
+    public HashSet<string> PatternsOverride { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public bool ClearCache
     {
         get; set;
@@ -132,6 +147,9 @@ public class GenerationConfiguration : ICloneable
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
+            SkipGeneration = SkipGeneration,
+            Operation = Operation,
+            PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -152,6 +170,20 @@ public class GenerationConfiguration : ICloneable
             comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
             !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
+    }
+    public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
+    public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations)
+    {
+        var dependency = new ApiDependency()
+        {
+            ApiDescriptionUrl = OpenAPIFilePath,
+            ApiDeploymentBaseUrl = ApiRootUrl?.EndsWith('/') ?? false ? ApiRootUrl : $"{ApiRootUrl}/",
+            Extensions = new() {
+                { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
+            },
+            Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key.DeSanitizeUrlTemplateParameter() })).ToList(),
+        };
+        return dependency;
     }
 }
 #pragma warning restore CA1056

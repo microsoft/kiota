@@ -18,17 +18,22 @@ public static partial class KiotaHost
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();
-        rootCommand.AddCommand(GetGenerateCommand());
+        if (!IsConfigPreviewEnabled.Value)
+            rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
         rootCommand.AddCommand(GetDownloadCommand());
         rootCommand.AddCommand(GetShowCommand());
         rootCommand.AddCommand(GetInfoCommand());
-        rootCommand.AddCommand(GetUpdateCommand());
+        if (!IsConfigPreviewEnabled.Value)
+            rootCommand.AddCommand(GetUpdateCommand());
         rootCommand.AddCommand(GetLoginCommand());
         rootCommand.AddCommand(GetLogoutCommand());
         rootCommand.AddCommand(GetRpcCommand());
         if (IsConfigPreviewEnabled.Value)
+        {
             rootCommand.AddCommand(KiotaConfigCommands.GetConfigNodeCommand());
+            rootCommand.AddCommand(KiotaClientCommands.GetClientNodeCommand());
+        }
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand()
@@ -260,23 +265,23 @@ public static partial class KiotaHost
         };
         return searchCommand;
     }
-    private static Option<bool> GetCleanOutputOption(bool defaultValue)
+    internal static Option<bool> GetCleanOutputOption(bool defaultValue)
     {
         var cleanOutputOption = new Option<bool>("--clean-output", () => defaultValue, "Removes all files from the output directory before generating the code files.");
         cleanOutputOption.AddAlias("--co");
         return cleanOutputOption;
     }
-    private static Option<string> GetOutputPathOption(string defaultValue)
+    internal static Option<string> GetOutputPathOption(string defaultValue)
     {
         var outputOption = new Option<string>("--output", () => defaultValue, "The output directory path for the generated code files.");
         outputOption.AddAlias("-o");
         outputOption.ArgumentHelpName = "path";
         return outputOption;
     }
-    private static Option<List<string>> GetDisableValidationRulesOption()
+    internal static Option<List<string>> GetDisableValidationRulesOption()
     {
         var parameterName = "--disable-validation-rules";
-        var option = new Option<List<string>>(parameterName, () => new List<string>(), "The OpenAPI description validation rules to disable. Accepts multiple values.");
+        var option = new Option<List<string>>(parameterName, () => [], "The OpenAPI description validation rules to disable. Accepts multiple values.");
         option.AddAlias("--dvr");
         var validationRules = new[] {
                                     nameof(DivergentResponseSchema),
@@ -301,13 +306,14 @@ public static partial class KiotaHost
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
         return !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
     });
-    private static Option<string> GetDescriptionOption(string defaultValue)
+    internal static Option<string> GetDescriptionOption(string defaultValue, bool isRequired = false)
     {
         var descriptionOption = new Option<string>("--openapi", "The path or URI to the OpenAPI description file used to generate the code files.");
-        if (isRunningInContainer.Value)
+        if (isRunningInContainer.Value && !isRequired)
             descriptionOption.SetDefaultValue(defaultValue);
         descriptionOption.AddAlias("-d");
         descriptionOption.ArgumentHelpName = "path";
+        descriptionOption.IsRequired = isRequired;
         return descriptionOption;
     }
     private static Option<string> GetManifestOption(string defaultValue)
@@ -322,6 +328,74 @@ public static partial class KiotaHost
     private static partial Regex classNameRegex();
     [GeneratedRegex(@"^[\w][\w\._-]+", RegexOptions.Singleline, 500)]
     private static partial Regex namespaceNameRegex();
+    internal static Option<GenerationLanguage> GetLanguageOption()
+    {
+        var languageOption = new Option<GenerationLanguage>("--language", "The target language for the generated code files.");
+        languageOption.AddAlias("-l");
+        languageOption.IsRequired = true;
+        AddEnumValidator(languageOption, "language");
+        return languageOption;
+    }
+    internal static Option<GenerationLanguage?> GetOptionalLanguageOption()
+    {
+        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the generated code files.");
+        languageOption.AddAlias("-l");
+        AddEnumValidator(languageOption, "language");
+        return languageOption;
+    }
+    internal static Option<string> GetNamespaceOption(string defaultNamespaceName)
+    {
+        var namespaceOption = new Option<string>("--namespace-name", () => defaultNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
+        namespaceOption.AddAlias("-n");
+        namespaceOption.ArgumentHelpName = "name";
+        AddStringRegexValidator(namespaceOption, namespaceNameRegex(), "namespace name", string.IsNullOrEmpty(defaultNamespaceName));
+        return namespaceOption;
+    }
+    internal static Option<bool> GetBackingStoreOption(bool defaultValue = false)
+    {
+        var backingStoreOption = new Option<bool>("--backing-store", () => defaultValue, "Enables backing store for models.");
+        backingStoreOption.AddAlias("-b");
+        return backingStoreOption;
+    }
+    internal static Option<bool?> GetOptionalBackingStoreOption()
+    {
+        var backingStoreOption = new Option<bool?>("--backing-store", "Enables backing store for models.");
+        backingStoreOption.AddAlias("-b");
+        return backingStoreOption;
+    }
+    internal static Option<bool> GetExcludeBackwardCompatibleOption(bool defaultValue = false)
+    {
+        var excludeBackwardCompatible = new Option<bool>("--exclude-backward-compatible", () => defaultValue, "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients.");
+        excludeBackwardCompatible.AddAlias("--ebc");
+        return excludeBackwardCompatible;
+    }
+    internal static Option<bool?> GetOptionalExcludeBackwardCompatibleOption()
+    {
+        var excludeBackwardCompatible = new Option<bool?>("--exclude-backward-compatible", "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients.");
+        excludeBackwardCompatible.AddAlias("--ebc");
+        return excludeBackwardCompatible;
+    }
+    internal static Option<bool> GetAdditionalDataOption(bool defaultValue = true)
+    {
+        var additionalDataOption = new Option<bool>("--additional-data", () => defaultValue, "Will include the 'AdditionalData' property for models.");
+        additionalDataOption.AddAlias("--ad");
+        return additionalDataOption;
+    }
+    internal static Option<bool?> GetOptionalAdditionalDataOption()
+    {
+        var additionalDataOption = new Option<bool?>("--additional-data", "Will include the 'AdditionalData' property for models.");
+        additionalDataOption.AddAlias("--ad");
+        return additionalDataOption;
+    }
+    internal static Option<List<string>> GetStructuredMimeTypesOption(List<string> defaultValue)
+    {
+        var structuredMimeTypesOption = new Option<List<string>>(
+            "--structured-mime-types",
+            () => defaultValue,
+        "The MIME types with optional priorities as defined in RFC9110 Accept header to use for structured data model generation. Accepts multiple values.");
+        structuredMimeTypesOption.AddAlias("-m");
+        return structuredMimeTypesOption;
+    }
     private static Command GetGenerateCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -330,31 +404,22 @@ public static partial class KiotaHost
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
-        var languageOption = new Option<GenerationLanguage>("--language", "The target language for the generated code files.");
-        languageOption.AddAlias("-l");
-        languageOption.IsRequired = true;
-        AddEnumValidator(languageOption, "language");
+        var languageOption = GetLanguageOption();
 
         var classOption = new Option<string>("--class-name", () => defaultConfiguration.ClientClassName, "The class name to use for the core client class.");
         classOption.AddAlias("-c");
         classOption.ArgumentHelpName = "name";
         AddStringRegexValidator(classOption, classNameRegex(), "class name");
 
-        var namespaceOption = new Option<string>("--namespace-name", () => defaultConfiguration.ClientNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
-        namespaceOption.AddAlias("-n");
-        namespaceOption.ArgumentHelpName = "name";
-        AddStringRegexValidator(namespaceOption, namespaceNameRegex(), "namespace name");
+        var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
         var logLevelOption = GetLogLevelOption();
 
-        var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
-        backingStoreOption.AddAlias("-b");
+        var backingStoreOption = GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
 
-        var excludeBackwardCompatible = new Option<bool>("--exclude-backward-compatible", () => defaultConfiguration.ExcludeBackwardCompatible, "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients.");
-        excludeBackwardCompatible.AddAlias("--ebc");
+        var excludeBackwardCompatible = GetExcludeBackwardCompatibleOption(defaultConfiguration.ExcludeBackwardCompatible);
 
-        var additionalDataOption = new Option<bool>("--additional-data", () => defaultConfiguration.IncludeAdditionalData, "Will include the 'AdditionalData' property for models.");
-        additionalDataOption.AddAlias("--ad");
+        var additionalDataOption = GetAdditionalDataOption(defaultConfiguration.IncludeAdditionalData);
 
         var serializerOption = new Option<List<string>>(
             "--serializer",
@@ -372,11 +437,7 @@ public static partial class KiotaHost
 
         var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
 
-        var structuredMimeTypesOption = new Option<List<string>>(
-            "--structured-mime-types",
-            () => [.. defaultConfiguration.StructuredMimeTypes],
-        "The MIME types with optional priorities as defined in RFC9110 Accept header to use for structured data model generation. Accepts multiple values.");
-        structuredMimeTypesOption.AddAlias("-m");
+        var structuredMimeTypesOption = GetStructuredMimeTypesOption([.. defaultConfiguration.StructuredMimeTypes]);
 
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
 
@@ -453,7 +514,7 @@ public static partial class KiotaHost
         };
         return command;
     }
-    private static (Option<List<string>>, Option<List<string>>) GetIncludeAndExcludeOptions(HashSet<string> defaultIncludePatterns, HashSet<string> defaultExcludePatterns)
+    internal static (Option<List<string>>, Option<List<string>>) GetIncludeAndExcludeOptions(HashSet<string> defaultIncludePatterns, HashSet<string> defaultExcludePatterns)
     {
         var includePatterns = new Option<List<string>>(
             "--include-path",
@@ -481,11 +542,12 @@ public static partial class KiotaHost
         clearCacheOption.AddAlias("--cc");
         return clearCacheOption;
     }
-    private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName)
+    private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
     {
         option.AddValidator(input =>
         {
             var value = input.GetValueForOption(option);
+            if (string.IsNullOrEmpty(value) && allowEmpty) return;
             if (string.IsNullOrEmpty(value) ||
                 !validator.IsMatch(value))
                 input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {validator}";
