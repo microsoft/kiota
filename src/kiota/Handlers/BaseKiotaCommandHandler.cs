@@ -20,7 +20,7 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
 {
-    protected void DefaultSerializersAndDeserializers(GenerationConfiguration generationConfiguration)
+    protected static void DefaultSerializersAndDeserializers(GenerationConfiguration generationConfiguration)
     { // needed until we have rollup packages
         var defaultGenerationConfiguration = new GenerationConfiguration();
         generationConfiguration.Serializers = defaultGenerationConfiguration.Serializers;
