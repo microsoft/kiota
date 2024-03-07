@@ -64,13 +64,13 @@ We will provide manifest commands:
 ### Add a manifest
 
 ```bash
-kiota manifest add --manifest-name "GitHub" --openapi "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json" --include-path "/repos/**" --type typea --output "./generated/manifests/github"
+kiota manifest add --manifest-name "GitHub" --openapi "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json" --include-path "/repos/{owner}/{repo}" --type openai --output "./generated/manifests/github"
 ```
 
 ### Edit a manifest
 
 ```bash
-kiota manifest edit --manifest-name "GitHub" --exclude-path "/repos/{owner}/{repo}/actions/cache/usage"
+kiota manifest edit --manifest-name "GitHub" --exclude-path "/repos/{owner}/{repo}#DELETE"
 ```
 
 ### Remove a manifest
