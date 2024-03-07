@@ -31,6 +31,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
                 await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
                 var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true);
                 await workspaceManagementService.RemoveClientAsync(className, cleanOutput, cancellationToken).ConfigureAwait(false);
+                DisplaySuccess($"Client {className} removed successfully!");
                 return 0;
             }
             catch (Exception ex)

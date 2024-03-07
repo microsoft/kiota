@@ -35,17 +35,16 @@ public static class KiotaClientCommands
         var languageOption = KiotaHost.GetLanguageOption();
         var outputOption = KiotaHost.GetOutputPathOption(defaultConfiguration.OutputPath);
         var descriptionOption = KiotaHost.GetDescriptionOption(defaultConfiguration.OpenAPIFilePath, true);
-        var namespaceOption = KiotaHost.GetNamespaceOption(defaultConfiguration);
+        var namespaceOption = KiotaHost.GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
         var logLevelOption = KiotaHost.GetLogLevelOption();
-        var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration);
-        var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration);
-        var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration);
-        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption(defaultConfiguration);
+        var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
+        var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration.ExcludeBackwardCompatible);
+        var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration.IncludeAdditionalData);
+        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([.. defaultConfiguration.StructuredMimeTypes]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
-
 
         var command = new Command("add", "Adds a new client to the Kiota configuration"){
             descriptionOption,
@@ -104,8 +103,53 @@ public static class KiotaClientCommands
     }
     public static Command GetEditCommand()
     {
-        var command = new Command("edit", "Edits a client from the Kiota configuration");
-        //TODO map the handler
+        var languageOption = KiotaHost.GetOptionalLanguageOption();
+        var outputOption = KiotaHost.GetOutputPathOption(string.Empty);
+        var descriptionOption = KiotaHost.GetDescriptionOption(string.Empty);
+        var namespaceOption = KiotaHost.GetNamespaceOption(string.Empty);
+        var logLevelOption = KiotaHost.GetLogLevelOption();
+        var backingStoreOption = KiotaHost.GetOptionalBackingStoreOption();
+        var excludeBackwardCompatible = KiotaHost.GetOptionalExcludeBackwardCompatibleOption();
+        var additionalDataOption = KiotaHost.GetOptionalAdditionalDataOption();
+        var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([]);
+        var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions([], []);
+        var dvrOption = KiotaHost.GetDisableValidationRulesOption();
+        var skipGenerationOption = GetSkipGenerationOption();
+        var clientNameOption = GetClientNameOption();
+
+        var command = new Command("edit", "Edits a client from the Kiota configuration") {
+            descriptionOption,
+            outputOption,
+            languageOption,
+            clientNameOption,
+            namespaceOption,
+            logLevelOption,
+            backingStoreOption,
+            excludeBackwardCompatible,
+            additionalDataOption,
+            structuredMimeTypesOption,
+            includePatterns,
+            excludePatterns,
+            dvrOption,
+            skipGenerationOption,
+        };
+        command.Handler = new EditHandler
+        {
+            DescriptionOption = descriptionOption,
+            OutputOption = outputOption,
+            LanguageOption = languageOption,
+            ClassOption = clientNameOption,
+            NamespaceOption = namespaceOption,
+            LogLevelOption = logLevelOption,
+            BackingStoreOption = backingStoreOption,
+            ExcludeBackwardCompatibleOption = excludeBackwardCompatible,
+            AdditionalDataOption = additionalDataOption,
+            StructuredMimeTypesOption = structuredMimeTypesOption,
+            IncludePatternsOption = includePatterns,
+            ExcludePatternsOption = excludePatterns,
+            DisabledValidationRulesOption = dvrOption,
+            SkipGenerationOption = skipGenerationOption,
+        };
         return command;
     }
     public static Command GetGenerateCommand()

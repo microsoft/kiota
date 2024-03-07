@@ -143,6 +143,8 @@ public class WorkspaceManagementService
         manifest?.ApiDependencies.Remove(clientName);
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         descriptionStorageService.RemoveDescription(clientName);
+        if (wsConfig.Clients.Count == 0)
+            descriptionStorageService.Clean();
     }
     private static readonly JsonSerializerOptions options = new()
     {
@@ -226,15 +228,11 @@ public class WorkspaceManagementService
             }
             var (stream, _) = await openApiDocumentDownloadService.LoadStreamAsync(generationConfiguration.OpenAPIFilePath, generationConfiguration, null, false, cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var msForOpenAPIDocument = new MemoryStream(); // openapi.net doesn't honour leave open
             await using var ms = new MemoryStream();
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-            await stream.CopyToAsync(msForOpenAPIDocument, cancellationToken).ConfigureAwait(false);
-            msForOpenAPIDocument.Seek(0, SeekOrigin.Begin);
-            await msForOpenAPIDocument.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+            await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
             ms.Seek(0, SeekOrigin.Begin);
-            msForOpenAPIDocument.Seek(0, SeekOrigin.Begin);
-            var document = await openApiDocumentDownloadService.GetDocumentFromStreamAsync(msForOpenAPIDocument, generationConfiguration, false, cancellationToken).ConfigureAwait(false);
+            var document = await openApiDocumentDownloadService.GetDocumentFromStreamAsync(ms, generationConfiguration, false, cancellationToken).ConfigureAwait(false);
             if (document is null)
             {
                 Logger.LogError("The client {ClientName} could not be migrated because the OpenAPI document could not be loaded", generationConfiguration.ClientClassName);
@@ -242,6 +240,7 @@ public class WorkspaceManagementService
                 continue;
             }
             generationConfiguration.ApiRootUrl = document.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
+            ms.Seek(0, SeekOrigin.Begin);
             await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
 
             var clientConfiguration = new ApiClientConfiguration(generationConfiguration);

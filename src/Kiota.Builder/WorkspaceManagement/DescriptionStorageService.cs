@@ -59,4 +59,10 @@ public class DescriptionStorageService
         if (File.Exists(descriptionFilePath))
             File.Delete(descriptionFilePath);
     }
+    public void Clean()
+    {
+        var kiotaDirectoryPath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath);
+        if (Path.Exists(kiotaDirectoryPath))
+            Directory.Delete(kiotaDirectoryPath, true);
+    }
 }

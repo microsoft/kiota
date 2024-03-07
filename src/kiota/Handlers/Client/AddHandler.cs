@@ -81,10 +81,10 @@ internal class AddHandler : BaseKiotaCommandHandler
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
-        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? new List<string>();
-        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? new List<string>();
+        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? [];
+        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? [];
+        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? [];
+        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? [];
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
