@@ -4,7 +4,7 @@
 
 `kiota client update` allows a developer to edit an existing API client int the `kiota-config.json` file. If either the `kiota-config.json` file or if the `--client-name` client can't be found within the `kiota-config.json` file, the command should error out and let the developer know.
 
-When executing, the API entry defined by the `--client-name` parameter will be modified. All parameters should be supported and the only required one is `--client-name`. All others are optional as they would only modify the configuration of the API client. If the OpenAPI description location changed or any properties of the client entry in `kiota-config.json`, a new hash composed of the Kiota version, the OpenAPI description location and the properties of the client will be generated and and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html#section-2.5-3).
+When executing, the API entry defined by the `--client-name` parameter will be modified. All parameters should be supported and the only required one is `--client-name`. All others are optional as they would only modify the configuration of the API client. If the OpenAPI description location changed or any properties of the client entry in `kiota-config.json`, a new hash composed of the Kiota version, the OpenAPI description location and the properties of the client will be generated and and would trigger an update to the [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html).
 
 Once the `kiota-config.json` file and the API Manifest are updated, the code generation will be executed based on the newly updated API client configuration.
 

@@ -1,0 +1,55 @@
+# kiota plugin remove
+
+## Description
+
+`kiota plugin remove` allows a developer to remove an existing plugin from the `kiota-config.json` file. The command will remove the entry from the `plugins` section of `kiota-config.json` file. The command has a single required parameters; the name of the plugin. 
+
+The command also has one optional parameter, the ability to remove the all generated files. If provided, kiota will delete the folder and its content specified at the `outputPath` from the plugin configuration. It will also remove the local version of the OpenAPI description file (specified by the `x-ms-kiotaHash` property in the API plugins). The API plugins are also updated to remove the dependency from the list of dependencies.
+
+| Parameters | Required | Example | Description | Telemetry |
+| -- | -- | -- | -- | -- |
+| `--plugin-name \| --mn` | Yes | GitHub | Name of the plugin | No |
+| `--clean-output \| --co` | No |  | Cleans the generated plugin files | Yes |
+
+#### Using kiota plugin remove and deleting all the content
+
+```bash
+kiota plugin remove --plugin-name "GitHub" --clean-output
+```
+_The resulting `github-apiplugin.json` and `github-openai.json` files will be deleted._
+
+The resulting `kiota-config.json` file will look like this:
+
+```jsonc
+{
+  "version": "1.0.0",
+  "plugins": { }
+}
+```
+
+_The resulting `apiplugin.json` file (concatenated surface of all APIs) will look like this:_
+
+```jsonc
+{
+  "apiDependencies": {
+    "GraphClient": { //for example, an existing API client for Microsoft Graph
+      "x-ms-kiotaHash": "9EDF8506CB74FE44...",
+      "apiDescriptionUrl": "https://aka.ms/graph/v1.0/openapi.yaml",
+      "apiDeploymentBaseUrl": "https://graph.microsoft.com",
+      "apiDescriptionVersion": "v1.0",
+      "requests": [ ...]
+    }
+  }
+} //GitHub plugin was removed
+```
+
+## File structure
+```bash
+/
+ └─.kiota
+ └─generated
+    └─plugins
+       └─github
+ └─kiota-config.json
+ └─apiplugin.json
+```
