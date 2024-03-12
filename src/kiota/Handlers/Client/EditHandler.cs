@@ -153,7 +153,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayWarning("Generation skipped as no changes were detected");
                     DisplayCleanHint("client generate", "--refresh");
                 }
-                var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "client edit");
                 return 0;

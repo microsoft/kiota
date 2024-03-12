@@ -172,8 +172,8 @@ paths:
         Assert.Single(clientNames);
         Assert.Equal("clientName", clientNames.First());
         Assert.False(File.Exists(Path.Combine(tempPath, LockManagementService.LockFileName)));
-        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.ConfigurationFileName)));
-        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ConfigurationFileName)));
+        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(tempPath, DescriptionStorageService.DescriptionsSubDirectoryRelativePath, "clientName.yml")));
     }
     [InlineData(true, true)]

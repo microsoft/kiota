@@ -20,7 +20,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     {
         var service = new WorkspaceConfigurationStorageService(tempPath);
         await service.InitializeAsync();
-        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.ConfigurationFileName)));
+        Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ConfigurationFileName)));
     }
     [Fact]
     public async Task FailsOnDoubleInit()
@@ -67,7 +67,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         var service = new WorkspaceConfigurationStorageService(tempPath);
         await service.InitializeAsync();
         await service.BackupConfigAsync();
-        var targetConfigFile = Path.Combine(tempPath, WorkspaceConfigurationStorageService.ConfigurationFileName);
+        var targetConfigFile = Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ConfigurationFileName);
         File.Delete(targetConfigFile);
         Assert.False(File.Exists(targetConfigFile));
         await service.RestoreConfigAsync();
