@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace kiota.Handlers.Config;
+namespace kiota.Handlers.Workspace;
 
 internal class InitHandler : BaseKiotaCommandHandler
 {

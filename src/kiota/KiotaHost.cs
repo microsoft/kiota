@@ -31,7 +31,7 @@ public static partial class KiotaHost
         rootCommand.AddCommand(GetRpcCommand());
         if (IsConfigPreviewEnabled.Value)
         {
-            rootCommand.AddCommand(KiotaConfigCommands.GetConfigNodeCommand());
+            rootCommand.AddCommand(KiotaWorkspaceCommands.GetWorkspaceNodeCommand());
             rootCommand.AddCommand(KiotaClientCommands.GetClientNodeCommand());
         }
         return rootCommand;
