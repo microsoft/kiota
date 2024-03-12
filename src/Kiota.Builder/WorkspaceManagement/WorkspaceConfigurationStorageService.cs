@@ -13,7 +13,7 @@ namespace Kiota.Builder.WorkspaceManagement;
 
 public class WorkspaceConfigurationStorageService
 {
-    public const string ConfigurationFileName = "kiota-config.json";
+    public const string ConfigurationFileName = "workspace.json";
     public const string ManifestFileName = "apimanifest.json";
     public string TargetDirectory
     {
