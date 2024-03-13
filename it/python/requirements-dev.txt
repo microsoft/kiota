@@ -64,7 +64,7 @@ wrapt==1.15.0 ; python_version < '3.11'
 
 yapf==0.40.2
 
-zipp==3.17.0 ; python_version >= '3.7'
+zipp==3.18.0 ; python_version >= '3.7'
 
 aiohttp==3.9.3 ; python_version >= '3.6'
 
