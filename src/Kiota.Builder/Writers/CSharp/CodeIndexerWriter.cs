@@ -16,10 +16,14 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         conventions.WriteShortDescription(codeElement.IndexParameter, writer, $"<param name=\"position\">", "</param>");
         conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(codeElement.ReturnType, codeElement)}</returns>", writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        writer.StartBlock($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexParameter.Type, codeElement)} position] {{ get {{");
+        writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexParameter.Type, codeElement)} position]");
+        writer.StartBlock();
+        writer.WriteLine("get");
+        writer.StartBlock();
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp)
             conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), string.Empty, (codeElement.IndexParameter.Type, codeElement.IndexParameter.SerializationName, "position"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, "return ");
-        writer.CloseBlock("} }");
+        writer.CloseBlock();
+        writer.CloseBlock();
     }
 }
