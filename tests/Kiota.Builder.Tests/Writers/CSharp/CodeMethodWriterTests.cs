@@ -560,7 +560,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
-        Assert.DoesNotContain("return mappingValue switch {", result);
+        Assert.DoesNotContain("return mappingValue switch", result);
         Assert.Contains("var result = new UnionTypeWrapper()", result);
         Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
@@ -600,7 +600,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
-        Assert.DoesNotContain("return mappingValue switch {", result);
+        Assert.DoesNotContain("return mappingValue switch", result);
         Assert.Contains("var result = new IntersectionTypeWrapper()", result);
         Assert.DoesNotContain("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("if(parseNode.GetStringValue() is string stringValueValue)", result);
@@ -710,7 +710,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
-        Assert.Contains("return mappingValue switch {", result);
+        Assert.Contains("return mappingValue switch", result);
         Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
         Assert.Contains("_ => new ConflictingModelBaseClass()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -765,7 +765,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
-        Assert.Contains("return mappingValue switch {", result);
+        Assert.Contains("return mappingValue switch", result);
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("_ => new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -859,7 +859,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("var mappingValue = mappingValueNode?.GetStringValue()", result);
-        Assert.DoesNotContain("return mappingValue switch {", result);
+        Assert.DoesNotContain("return mappingValue switch", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -900,7 +900,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("var mappingValue = mappingValueNode?.GetStringValue()", result);
-        Assert.DoesNotContain("return mappingValue switch {", result);
+        Assert.DoesNotContain("return mappingValue switch", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);

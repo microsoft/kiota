@@ -33,7 +33,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
+        writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()}");
+        writer.StartBlock();
         var idx = 0;
         foreach (var option in codeElement.Options)
         {
