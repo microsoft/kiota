@@ -67,7 +67,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     if (result)
                     {
                         DisplaySuccess($"Update of {clientEntry.Key} client completed");
-                        var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{clientEntry.Key}";
+                        var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
                         DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
                     }
                     else

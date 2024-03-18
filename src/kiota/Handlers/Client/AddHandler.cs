@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -131,7 +132,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
                 return 0;
