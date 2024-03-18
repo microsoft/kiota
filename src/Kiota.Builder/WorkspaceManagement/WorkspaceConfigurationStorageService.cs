@@ -13,8 +13,9 @@ namespace Kiota.Builder.WorkspaceManagement;
 
 public class WorkspaceConfigurationStorageService
 {
-    public const string ConfigurationFileName = "kiota-config.json";
+    public const string ConfigurationFileName = "workspace.json";
     public const string ManifestFileName = "apimanifest.json";
+    public static string KiotaDirectorySegment => DescriptionStorageService.KiotaDirectorySegment;
     public string TargetDirectory
     {
         get; private set;
@@ -25,7 +26,7 @@ public class WorkspaceConfigurationStorageService
     public WorkspaceConfigurationStorageService(string targetDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
-        TargetDirectory = targetDirectory;
+        TargetDirectory = Path.Combine(targetDirectory, KiotaDirectorySegment);
         targetConfigurationFilePath = Path.Combine(TargetDirectory, ConfigurationFileName);
         targetManifestFilePath = Path.Combine(TargetDirectory, ManifestFileName);
     }

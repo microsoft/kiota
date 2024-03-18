@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- PREVIEW: Renamed the config commands to workspace. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Moved preview configuration files to the .kiota directory. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Renamed the config to workspace file. [#4310](https://github.com/microsoft/kiota/issues/4310)
+
 ## [1.12.0] - 2024-03-06
 
 ### Added
