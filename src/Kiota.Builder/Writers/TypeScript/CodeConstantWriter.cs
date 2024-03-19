@@ -99,7 +99,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var returnType = conventions.GetTypeString(executorMethod.ReturnType, codeElement);
             var isVoid = "void".EqualsIgnoreCase(returnType);
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
+            var isPrimitive = conventions.IsPrimitiveType(returnTypeWithoutCollectionSymbol);
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
@@ -115,10 +117,13 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 }
                 writer.CloseBlock("},");
             }
-            writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol)}\",");
-            if (!isVoid)
+            writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, isPrimitive, isEnum)}\",");
+            if (isEnum)
+                writer.WriteLine($"enumObject: \"{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}\",");
+            else if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
             var sanitizedRequestBodyContentType = executorMethod.RequestBodyContentType.SanitizeDoubleQuote();
+            
             if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
                 writer.WriteLine($"requestBodyContentType: \"{sanitizedRequestBodyContentType}\",");
             if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody)
@@ -186,17 +191,25 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
-    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
-    {
-        if (isVoid) return "sendNoResponseContent";
-        if (isCollection)
-        {
-            if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitive";
-            return $"sendCollection";
-        }
 
-        if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitive";
-        return $"send";
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, bool isPrimitive, bool isEnum)
+    {
+        if (isVoid)
+        {
+            return "sendNoResponseContent";
+        }
+        else if (isEnum)
+        {
+            return isCollection ? "sendCollectionOfEnum" : "sendEnum";
+        }
+        else if (isPrimitive)
+        {
+            return isCollection ? "sendCollectionOfPrimitive" : "sendPrimitive";
+        } 
+        else
+        {
+            return isCollection ? "sendCollection" : isStream ? "sendPrimitive" : "send";
+        }
     }
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)

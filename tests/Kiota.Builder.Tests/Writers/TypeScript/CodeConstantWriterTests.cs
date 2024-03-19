@@ -187,6 +187,108 @@ public sealed class CodeConstantWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorForEnum()
+    {
+        AddCodeEnum();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "SomeComplexTypeForRequestBody",
+            TypeDefinition = currentEnum,
+        };
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("sendEnum", result);
+        Assert.Contains("enumObject:", result);
+        Assert.Contains(EnumName.ToFirstCharacterUpperCase(), result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorForEnumCollection()
+    {
+        AddCodeEnum();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "SomeComplexTypeForRequestBody",
+            TypeDefinition = currentEnum,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+        };
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("sendCollectionOfEnum", result);
+        Assert.Contains("enumObject:", result);
+        Assert.Contains(EnumName.ToFirstCharacterUpperCase(), result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorForPrimitive()
+    {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "string",
+        };
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("sendPrimitive", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorForPrimitiveCollection()
+    {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "string",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+        };
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("sendCollectionOfPrimitive", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyForScalar()
     {
         parentClass.Kind = CodeClassKind.RequestBuilder;
