@@ -123,7 +123,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             else if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
             var sanitizedRequestBodyContentType = executorMethod.RequestBodyContentType.SanitizeDoubleQuote();
-            
+
             if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
                 writer.WriteLine($"requestBodyContentType: \"{sanitizedRequestBodyContentType}\",");
             if (executorMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.RequestBody) is CodeParameter requestBody)
@@ -205,7 +205,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         else if (isPrimitive)
         {
             return isCollection ? "sendCollectionOfPrimitive" : "sendPrimitive";
-        } 
+        }
         else
         {
             return isCollection ? "sendCollection" : isStream ? "sendPrimitive" : "send";
