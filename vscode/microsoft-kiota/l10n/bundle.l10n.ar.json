@@ -23,7 +23,7 @@
   "Enter an output path relative to the root of the project": "أدخل مسار إخراج في جذر المشروع",
   "Pick a language": "اختر لغة",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "يتطلب تنزيل kiota اتصالا بالإنترنت. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
-  "Kiota download failed. Check the extension host logs for more information.": "فشل تنزيل Kiota. تحقق من سجلات مضيف الإضافة للحصول على مزيد من المعلومات.",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "فشل تنزيل Kiota. تحقق من سجلات مضيف الإضافة للحصول على مزيد من المعلومات.",
   "Downloading kiota...": "جاري تنزيل Kiota...",
   "Generating client...": "انشاء العميل...",
   "Loading...": "جاري التحميل...",
