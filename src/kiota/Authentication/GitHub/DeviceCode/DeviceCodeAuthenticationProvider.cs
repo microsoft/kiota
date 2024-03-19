@@ -1,8 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using Kiota.Builder.SearchProviders.GitHub.Authentication;
+﻿using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
 

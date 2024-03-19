@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace kiota.Rpc;
+﻿namespace kiota.Rpc;
 
 public record PathItem(string path, string segment, PathItem[] children, bool selected, bool isOperation = false, Uri? documentationUrl = null);
 

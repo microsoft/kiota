@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;

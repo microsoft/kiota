@@ -1,10 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 

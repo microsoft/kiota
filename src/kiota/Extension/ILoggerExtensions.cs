@@ -1,23 +1,22 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace kiota;
 
 internal static class ILoggerExtensions
 {
-    /// <summary>
-    /// Appends internal logging information to the logger
-    /// </summary>
-    /// <param name="logger">The logger to append to</param>
-    public static void AppendInternalTracing(this ILogger logger)
-    {
-        // This is a special message for Kiota's birthday
-        // If you're reading this, move along, nothing to see here and keep quiet about it
-        // Otherwise, you'll be cursed with a lifetime of bad luck
-        if (logger == null) return;
-        var currentDateTime = DateTime.UtcNow;
-        if (currentDateTime.Month != 3 || currentDateTime.Day != 9 || currentDateTime.Year < 2024) return;
-        logger.LogWarning(
+  /// <summary>
+  /// Appends internal logging information to the logger
+  /// </summary>
+  /// <param name="logger">The logger to append to</param>
+  public static void AppendInternalTracing(this ILogger logger)
+  {
+    // This is a special message for Kiota's birthday
+    // If you're reading this, move along, nothing to see here and keep quiet about it
+    // Otherwise, you'll be cursed with a lifetime of bad luck
+    if (logger == null) return;
+    var currentDateTime = DateTime.UtcNow;
+    if (currentDateTime.Month != 3 || currentDateTime.Day != 9 || currentDateTime.Year < 2024) return;
+    logger.LogWarning(
 @"                  ▒▒░░▒▒        ░░        ▒▒░░▒▒                  
                     ▒▒        ██████        ▒▒                    
                   ██████      ██▒▒██      ██████                  
@@ -106,5 +105,5 @@ internal static class ILoggerExtensions
  |                       Waldek Mastykarz                       | 
  |                                                              | 
  |--------------------------------------------------------------| ");
-    }
+  }
 }
