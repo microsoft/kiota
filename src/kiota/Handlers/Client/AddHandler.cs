@@ -89,6 +89,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
+        WarnUsingPreviewLanguage(language);
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ClientOperation.Add;
         if (includePatterns.Count != 0)

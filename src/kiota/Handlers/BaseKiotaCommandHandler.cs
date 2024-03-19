@@ -342,6 +342,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         if (KiotaHost.IsConfigPreviewEnabled.Value)
             DisplayWarning("Warning: the kiota generate and update commands are deprecated, use kiota client commands instead.");
     }
+    protected void WarnUsingPreviewLanguage(GenerationLanguage language)
+    {
+        if (Configuration.Languages.TryGetValue(language.ToString(), out var languageInformation) && languageInformation.MaturityLevel is not LanguageMaturityLevel.Stable)
+            DisplayWarning($"Warning: the {language} language is in preview ({languageInformation.MaturityLevel}) some features are not fully supported and source breaking changes will happen with future updates.");
+    }
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
