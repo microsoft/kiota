@@ -22,7 +22,7 @@
   "Enter an output path relative to the root of the project": "Введите путь вывода относительно корня проекта",
   "Pick a language": "Выберите язык",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Для загрузки Kiota требуется подключение к интернету. Пожалуйста, проверьте ваше подключение и попробуйте еще раз.",
-  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Скачивание Kiota не удалось. Для получения дополнительной информации проверьте журналы хост-процесс для расширений.",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Загрузка Kiota не удалась. Попробуйте закрыть все окна Visual Studio Code и открыть только одно. Проверьте журналы хоста расширений для получения дополнительной информации.",
   "Downloading kiota...": "Идет загрузка Kiota...",
   "Generating client...": "Генерирование клиента...",
   "Updating clients...": "Обновление клиентов...",

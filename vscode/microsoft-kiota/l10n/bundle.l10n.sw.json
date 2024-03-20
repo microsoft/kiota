@@ -23,7 +23,7 @@
   "Enter an output path relative to the root of the project": "Ingiza eneo inayohusiana na mzizi wa mradi",
   "Pick a language": "Chagua lugha",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Kupakua Kiota inahitaji muunganisho wa intaneti. Tafadhali angalia muunganisho wako kisha ujaribu tena.",
-  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Upakuaji wa Kiota haukufaulu. Angalia kumbukumbu za seva kwa maelezo zaidi..",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Upakuaji wa Kiota haukufaulu. Jaribu kufunga dirisha zote za Visual Studio Code kisha ufungue moja tu. Angalia kumbukumbu za seva kwa maelezo zaidi",
   "Downloading kiota...": "Inapakua Kiota...",
   "Generating client...": "Inatengeneza mteja...",
   "Updating clients...": "Inasasisha wateja...",
