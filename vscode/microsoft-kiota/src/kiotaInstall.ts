@@ -6,16 +6,34 @@ import * as admZip from 'adm-zip';
 import * as vscode from "vscode";
 import isOnline from 'is-online';
 
+
+const kiotaInstallStatusKey = "kiotaInstallStatus";
+const installDelayInMs = 30000; // 30 seconds
+async function runIfNotLocked(context: vscode.ExtensionContext, action: () => Promise<void>) {
+  const installStartTimeStamp = context.globalState.get<number>(kiotaInstallStatusKey);
+  const currentTimeStamp = new Date().getTime();
+  if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
+    //locking the context to prevent multiple downloads across multiple instances of vscode
+    //overriding after 30 seconds to prevent stale locks
+    await context.globalState.update(kiotaInstallStatusKey, currentTimeStamp);
+    try {
+      await action();
+    } finally {
+      await context.globalState.update(kiotaInstallStatusKey, undefined);
+    }
+  }
+}
 export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
     const runtimeDependencies = getRuntimeDependenciesPackages(context);
     const currentPlatform = getCurrentPlatform();
     const installPath = getKiotaPathInternal(context, false);
     if (installPath) {
-        if (!fs.existsSync(installPath)) {
+        if (!fs.existsSync(installPath) || fs.readdirSync(installPath).length === 0) {
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 cancellable: false,
                 title: vscode.l10n.t("Downloading kiota...")
+
             }, async (progress, _) => {
               const online = await isOnline();
               if (!online) {
@@ -24,29 +42,31 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 );
                 return;
               }
-              try {
-                const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
-                if (!packageToInstall) {
-                  throw new Error("Could not find package to install");
-                }
-                fs.mkdirSync(installPath, { recursive: true });
-                const zipFilePath = `${installPath}.zip`;
-                await downloadFileFromUrl(getDownloadUrl(context, currentPlatform), zipFilePath);
-                if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
-                    unzipFile(zipFilePath, installPath);
-                    const kiotaPath = getKiotaPathInternal(context);
-                    if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
-                      makeExecutable(kiotaPath);
+              await runIfNotLocked(context, async () => {
+                try {
+                        const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
+                        if (!packageToInstall) {
+                            throw new Error("Could not find package to install");
+                        }
+                        fs.mkdirSync(installPath, { recursive: true });
+                        const zipFilePath = `${installPath}.zip`;
+                        await downloadFileFromUrl(getDownloadUrl(context, currentPlatform), zipFilePath);
+                        if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+                            unzipFile(zipFilePath, installPath);
+                            const kiotaPath = getKiotaPathInternal(context);
+                            if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
+                                makeExecutable(kiotaPath);
+                            }
+                        } else {
+                            throw new Error("Hash mismatch");
+                        }
+                    } catch(error) {
+                        await vscode.window.showErrorMessage(
+                            vscode.l10n.t("Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.")
+                        );
+                        fs.rmdirSync(installPath, { recursive: true });
                     }
-                } else {
-                  throw new Error("Hash mismatch");
-                }
-              } catch(error) {
-                await vscode.window.showErrorMessage(
-                  vscode.l10n.t("Kiota download failed. Check the extension host logs for more information.")
-                );
-                fs.rmdirSync(installPath, { recursive: true });
-              }
+                });
             });
         }
     }

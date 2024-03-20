@@ -23,7 +23,7 @@
   "Enter an output path relative to the root of the project": "Proje köküne göre bir çıktı yolu girin",
   "Pick a language": "Bir dil seçin",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Kiota'nın indirilmesi bir internet bağlantısı gerektirir. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.",
-  "Kiota download failed. Check the extension host logs for more information.": "Kiota indirme başarısız oldu. Daha fazla bilgi için uzantı log kayıtlarını kontrol edin.",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Kiota indirme başarısız oldu. Daha fazla bilgi için uzantı log kayıtlarını kontrol edin.",
   "Downloading kiota...": "Kiota indiriliyor...",
   "Generating client...": "İstemci oluşturuluyor...",
   "Updating clients...": "İstemciler güncelleniyor...",

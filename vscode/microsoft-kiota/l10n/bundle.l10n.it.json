@@ -23,7 +23,7 @@
   "Enter an output path relative to the root of the project": "Inserisci un path di output relativo alla root del progetto",
   "Pick a language": "Seleziona un linguaggio",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Il download di kiota richiede una connessione internet. Controlla la tua connessione e riprova.",
-  "Kiota download failed. Check the extension host logs for more information.": "Il download di kiota è fallito. Controlla i log dell'host per maggiori informazioni.",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Il download di Kiota è fallito. Prova a chiudere tutte le finestre di Visual Studio Code ed aprirne una sola. Controlla i log per maggiori informazioni.",
   "Downloading kiota...": "Download di kiota in corso...",
   "Generating client...": "Generazione del client in corso...",
   "Updating clients...": "Aggiornamento dei client in corso...",
