@@ -41,11 +41,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");
-                writer.IncreaseIndent();
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
+                writer.StartBlock();
+                writer.Write("get => ");
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer);
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:

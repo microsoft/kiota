@@ -271,7 +271,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["config", "migrate"],
+      "args": ["workspace", "migrate"],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",
       "stopAtEntry": false,

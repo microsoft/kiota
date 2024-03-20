@@ -1,8 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Logging;
 

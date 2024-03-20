@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -94,6 +89,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
+        WarnUsingPreviewLanguage(language);
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ClientOperation.Add;
         if (includePatterns.Count != 0)
@@ -131,7 +127,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
                 return 0;

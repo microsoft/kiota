@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Parsing;
-using System.Linq;
 using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
@@ -31,7 +28,7 @@ public static partial class KiotaHost
         rootCommand.AddCommand(GetRpcCommand());
         if (IsConfigPreviewEnabled.Value)
         {
-            rootCommand.AddCommand(KiotaConfigCommands.GetConfigNodeCommand());
+            rootCommand.AddCommand(KiotaWorkspaceCommands.GetWorkspaceNodeCommand());
             rootCommand.AddCommand(KiotaClientCommands.GetClientNodeCommand());
         }
         return rootCommand;

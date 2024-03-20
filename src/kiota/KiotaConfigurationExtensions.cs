@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Kiota.Builder;
+﻿using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Configuration;
 

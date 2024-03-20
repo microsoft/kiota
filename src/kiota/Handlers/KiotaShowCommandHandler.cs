@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;

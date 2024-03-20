@@ -1,11 +1,6 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
@@ -67,7 +62,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     if (result)
                     {
                         DisplaySuccess($"Update of {clientEntry.Key} client completed");
-                        var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{clientEntry.Key}";
+                        var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
                         DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
                     }
                     else
