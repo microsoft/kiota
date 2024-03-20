@@ -9,8 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a warning message in the CLI when using preview languages. [#4316](https://github.com/microsoft/kiota/issues/4316)
+
+### Changed
+
+- PREVIEW: Renamed the config commands to workspace. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Moved preview configuration files to the .kiota directory. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- PREVIEW: Renamed the config to workspace file. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- Changed Csharp code generation to put braces on new lines (where it makes sense). [#4347](https://github.com/microsoft/kiota/issues/4347)
+
+## [1.12.0] - 2024-03-06
+
+### Added
+
+- Added support for the new kiota config commands under a feature flag. [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added the init command as part of the experience revamp of [#3356](https://github.com/microsoft/kiota/issues/3356)
 - Added uri-form encoded serialization for Python. [#2075](https://github.com/microsoft/kiota/issues/2075)
+- Added support for multipart form data request body in Python. [#3030](https://github.com/microsoft/kiota/issues/3030)
 
 ### Changed
 
@@ -1267,6 +1283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
 

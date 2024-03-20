@@ -1,8 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
@@ -29,8 +26,9 @@ internal class RemoveHandler : BaseKiotaCommandHandler
             try
             {
                 await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
-                var workspaceManagementService = new WorkspaceManagementService(logger, true);
+                var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true);
                 await workspaceManagementService.RemoveClientAsync(className, cleanOutput, cancellationToken).ConfigureAwait(false);
+                DisplaySuccess($"Client {className} removed successfully!");
                 return 0;
             }
             catch (Exception ex)

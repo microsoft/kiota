@@ -266,6 +266,55 @@
       "stopAtEntry": false
     },
     {
+      "name": "Launch Client Migrate",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": ["workspace", "migrate"],
+      "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "KIOTA_CONFIG_PREVIEW": "true"
+      }
+    },
+    {
+      "name": "Launch Client Generate",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": ["client", "generate"],
+      "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "KIOTA_CONFIG_PREVIEW": "true"
+      }
+    },
+    {
+      "name": "Launch Client Edit",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": [
+        "client",
+        "edit",
+        "--client-name",
+        "GraphClient",
+        "--additional-data",
+        "true"
+      ],
+      "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "KIOTA_CONFIG_PREVIEW": "true"
+      }
+    },
+    {
       "name": "Launch Login (github - device)",
       "type": "coreclr",
       "request": "launch",

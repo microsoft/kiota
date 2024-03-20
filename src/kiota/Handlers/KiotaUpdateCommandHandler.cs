@@ -1,9 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
@@ -70,7 +66,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach (var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
-                if (results.Any(x => x))
+                if (Array.Exists(results, static x => x))
                     DisplayCleanHint("update");
                 return 0;
             }

@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Kiota.Builder;
+﻿using Kiota.Builder;
 using Kiota.Builder.Configuration;
 
 namespace kiota.Rpc;

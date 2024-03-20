@@ -1,12 +1,8 @@
-﻿using System;
-using System.CommandLine.Invocation;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.CommandLine.Invocation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace kiota.Handlers.Config;
+namespace kiota.Handlers.Workspace;
 
 internal class InitHandler : BaseKiotaCommandHandler
 {

@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
@@ -20,6 +13,12 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
 {
+    protected static void DefaultSerializersAndDeserializers(GenerationConfiguration generationConfiguration)
+    { // needed until we have rollup packages
+        var defaultGenerationConfiguration = new GenerationConfiguration();
+        generationConfiguration.Serializers = defaultGenerationConfiguration.Serializers;
+        generationConfiguration.Deserializers = defaultGenerationConfiguration.Deserializers;
+    }
     protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(ILogger logger) => new()
     {
         Logger = logger,
@@ -243,6 +242,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
+    protected void DisplayGenerateAfterMigrateHint()
+    {
+        DisplayHint("Hint: use the generate command to update the client and the manifest requests.",
+                    "Example: kiota client generate");
+    }
     protected void DisplaySearchAddHint()
     {
         DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
@@ -299,10 +303,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
                     languageDependencies.Select(x => "   " + string.Format(languageInformation.DependencyInstallCommand, x.Name, x.Version))).ToArray());
         }
     }
-    protected void DisplayCleanHint(string commandName)
+    protected void DisplayCleanHint(string commandName, string argumentName = "--clean-output")
     {
-        DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                    $"Example: kiota {commandName} --clean-output");
+        DisplayHint($"Hint: to force the generation to overwrite an existing client pass the {argumentName} switch.",
+                    $"Example: kiota {commandName} {argumentName}");
     }
     protected void DisplayInfoAdvancedHint()
     {
@@ -337,6 +341,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     {
         if (KiotaHost.IsConfigPreviewEnabled.Value)
             DisplayWarning("Warning: the kiota generate and update commands are deprecated, use kiota client commands instead.");
+    }
+    protected void WarnUsingPreviewLanguage(GenerationLanguage language)
+    {
+        if (Configuration.Languages.TryGetValue(language.ToString(), out var languageInformation) && languageInformation.MaturityLevel is not LanguageMaturityLevel.Stable)
+            DisplayWarning($"Warning: the {language} language is in preview ({languageInformation.MaturityLevel}) some features are not fully supported and source breaking changes will happen with future updates.");
     }
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {

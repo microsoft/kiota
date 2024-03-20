@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -81,10 +76,10 @@ internal class AddHandler : BaseKiotaCommandHandler
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
-        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? new List<string>();
-        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? new List<string>();
+        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? [];
+        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? [];
+        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? [];
+        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? [];
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
@@ -94,6 +89,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
+        WarnUsingPreviewLanguage(language);
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ClientOperation.Add;
         if (includePatterns.Count != 0)
@@ -131,7 +127,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                var manifestPath = $"{GetAbsolutePath(WorkspaceConfigurationStorageService.ManifestFileName)}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
                 return 0;

@@ -9,7 +9,7 @@ namespace Kiota.Builder.WorkspaceManagement;
 public class DescriptionStorageService
 {
     public const string KiotaDirectorySegment = ".kiota";
-    private const string DescriptionsSubDirectoryRelativePath = $"{KiotaDirectorySegment}/clients";
+    internal const string DescriptionsSubDirectoryRelativePath = $"{KiotaDirectorySegment}/clients";
     private readonly string TargetDirectory;
     public DescriptionStorageService(string targetDirectory)
     {
@@ -21,12 +21,13 @@ public class DescriptionStorageService
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
+    private string GetDescriptionFilePath(string clientName, string extension) => Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, clientName, $"description.{extension}");
     public async Task UpdateDescriptionAsync(string clientName, Stream description, string extension = "yml", CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(clientName);
         ArgumentNullException.ThrowIfNull(description);
         ArgumentNullException.ThrowIfNull(extension);
-        var descriptionFilePath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, $"{clientName}.{extension}");
+        var descriptionFilePath = GetDescriptionFilePath(clientName, extension);
         using (await localFilesLock.LockAsync(descriptionFilePath, cancellationToken).ConfigureAwait(false))
         {
             Directory.CreateDirectory(Path.GetDirectoryName(descriptionFilePath) ?? throw new InvalidOperationException("The target path is invalid"));
@@ -39,7 +40,7 @@ public class DescriptionStorageService
     {
         ArgumentNullException.ThrowIfNull(clientName);
         ArgumentNullException.ThrowIfNull(extension);
-        var descriptionFilePath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, $"{clientName}.{extension}");
+        var descriptionFilePath = GetDescriptionFilePath(clientName, extension);
         if (!File.Exists(descriptionFilePath))
             return null;
         using (await localFilesLock.LockAsync(descriptionFilePath, cancellationToken).ConfigureAwait(false))
@@ -55,8 +56,14 @@ public class DescriptionStorageService
     {
         ArgumentNullException.ThrowIfNull(clientName);
         ArgumentNullException.ThrowIfNull(extension);
-        var descriptionFilePath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, $"{clientName}.{extension}");
+        var descriptionFilePath = GetDescriptionFilePath(clientName, extension);
         if (File.Exists(descriptionFilePath))
             File.Delete(descriptionFilePath);
+    }
+    public void Clean()
+    {
+        var kiotaDirectoryPath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath);
+        if (Path.Exists(kiotaDirectoryPath))
+            Directory.Delete(kiotaDirectoryPath, true);
     }
 }

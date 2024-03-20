@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncKeyedLock;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
@@ -21,9 +24,10 @@ public class WorkspaceManagementService
 {
     private readonly bool UseKiotaConfig;
     private readonly ILogger Logger;
-    public WorkspaceManagementService(ILogger logger, bool useKiotaConfig = false, string workingDirectory = "")
+    public WorkspaceManagementService(ILogger logger, HttpClient httpClient, bool useKiotaConfig = false, string workingDirectory = "")
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(httpClient);
         Logger = logger;
         UseKiotaConfig = useKiotaConfig;
         if (string.IsNullOrEmpty(workingDirectory))
@@ -31,7 +35,9 @@ public class WorkspaceManagementService
         WorkingDirectory = workingDirectory;
         workspaceConfigurationStorageService = new(workingDirectory);
         descriptionStorageService = new(workingDirectory);
+        openApiDocumentDownloadService = new(httpClient, Logger);
     }
+    private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
     private readonly DescriptionStorageService descriptionStorageService;
@@ -46,9 +52,7 @@ public class WorkspaceManagementService
         ArgumentNullException.ThrowIfNull(generationConfiguration);
         if (UseKiotaConfig)
         {
-            var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            wsConfig ??= new WorkspaceConfiguration();
-            manifest ??= new ApiManifestDocument("application"); //TODO get the application name
+            var (wsConfig, manifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
             var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
             generationClientConfig.NormalizePaths(WorkingDirectory);
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
@@ -117,9 +121,9 @@ public class WorkspaceManagementService
         }
 
     }
-    public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, CancellationToken cancellationToken = default)
+    public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, bool cleanOutput, CancellationToken cancellationToken = default)
     {
-        if (!UseKiotaConfig)
+        if (!UseKiotaConfig || cleanOutput)
             return null;
         return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
     }
@@ -139,6 +143,8 @@ public class WorkspaceManagementService
         manifest?.ApiDependencies.Remove(clientName);
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         descriptionStorageService.RemoveDescription(clientName);
+        if (wsConfig.Clients.Count == 0)
+            descriptionStorageService.Clean();
     }
     private static readonly JsonSerializerOptions options = new()
     {
@@ -171,5 +177,103 @@ public class WorkspaceManagementService
         }
 
         return sb.ToString();
+    }
+    private async Task<(WorkspaceConfiguration, ApiManifestDocument)> LoadConfigurationAndManifestAsync(CancellationToken cancellationToken)
+    {
+        if (!await workspaceConfigurationStorageService.IsInitializedAsync(cancellationToken).ConfigureAwait(false))
+            await workspaceConfigurationStorageService.InitializeAsync(cancellationToken).ConfigureAwait(false);
+
+        var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        if (wsConfig is null)
+            throw new InvalidOperationException("The workspace configuration is not initialized");
+        apiManifest ??= new("application"); //TODO get the application name
+        return (wsConfig, apiManifest);
+    }
+    private async Task<List<GenerationConfiguration>> LoadGenerationConfigurationsFromLockFilesAsync(string lockDirectory, string clientName, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(lockDirectory);
+        if (!UseKiotaConfig)
+            throw new InvalidOperationException("Cannot migrate from lock file in kiota config mode");
+        if (!Path.IsPathRooted(lockDirectory))
+            lockDirectory = Path.Combine(WorkingDirectory, lockDirectory);
+        if (Path.GetRelativePath(WorkingDirectory, lockDirectory).StartsWith("..", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The lock directory must be a subdirectory of the working directory");
+
+        var lockFiles = Directory.GetFiles(lockDirectory, LockManagementService.LockFileName, SearchOption.AllDirectories);
+        if (lockFiles.Length == 0)
+            throw new InvalidOperationException("No lock file found in the specified directory");
+        var clientNamePassed = !string.IsNullOrEmpty(clientName);
+        if (lockFiles.Length > 1 && clientNamePassed)
+            throw new InvalidOperationException("Multiple lock files found in the specified directory and the client name was specified");
+        var clientsGenerationConfigurations = new List<GenerationConfiguration?>();
+        if (lockFiles.Length == 1)
+            clientsGenerationConfigurations.Add(await LoadConfigurationFromLockAsync(clientNamePassed ? clientName : string.Empty, lockFiles[0], cancellationToken).ConfigureAwait(false));
+        else
+            clientsGenerationConfigurations.AddRange(await Task.WhenAll(lockFiles.Select(x => LoadConfigurationFromLockAsync(string.Empty, x, cancellationToken))).ConfigureAwait(false));
+        return clientsGenerationConfigurations.OfType<GenerationConfiguration>().ToList();
+    }
+    public async Task<IEnumerable<string>> MigrateFromLockFileAsync(string clientName, string lockDirectory, CancellationToken cancellationToken = default)
+    {
+        var (wsConfig, apiManifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
+
+        var clientsGenerationConfigurations = await LoadGenerationConfigurationsFromLockFilesAsync(lockDirectory, clientName, cancellationToken).ConfigureAwait(false);
+        foreach (var generationConfiguration in clientsGenerationConfigurations.ToArray()) //to avoid modifying the collection as we iterate and remove some entries
+        {
+
+            if (wsConfig.Clients.ContainsKey(generationConfiguration.ClientClassName))
+            {
+                Logger.LogError("The client {ClientName} is already present in the configuration", generationConfiguration.ClientClassName);
+                clientsGenerationConfigurations.Remove(generationConfiguration);
+                continue;
+            }
+            var (stream, _) = await openApiDocumentDownloadService.LoadStreamAsync(generationConfiguration.OpenAPIFilePath, generationConfiguration, null, false, cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+            await using var ms = new MemoryStream();
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+            await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+            ms.Seek(0, SeekOrigin.Begin);
+            var document = await openApiDocumentDownloadService.GetDocumentFromStreamAsync(ms, generationConfiguration, false, cancellationToken).ConfigureAwait(false);
+            if (document is null)
+            {
+                Logger.LogError("The client {ClientName} could not be migrated because the OpenAPI document could not be loaded", generationConfiguration.ClientClassName);
+                clientsGenerationConfigurations.Remove(generationConfiguration);
+                continue;
+            }
+            generationConfiguration.ApiRootUrl = document.GetAPIRootUrl(generationConfiguration.OpenAPIFilePath);
+            ms.Seek(0, SeekOrigin.Begin);
+            await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
+
+            var clientConfiguration = new ApiClientConfiguration(generationConfiguration);
+            clientConfiguration.NormalizePaths(WorkingDirectory);
+            wsConfig.Clients.Add(generationConfiguration.ClientClassName, clientConfiguration);
+            var inputConfigurationHash = await GetConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
+            // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
+            apiManifest.ApiDependencies.Add(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, []));
+            lockManagementService.DeleteLockFile(Path.Combine(WorkingDirectory, clientConfiguration.OutputPath));
+        }
+        await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
+        return clientsGenerationConfigurations.OfType<GenerationConfiguration>().Select(static x => x.ClientClassName);
+    }
+    private async Task<GenerationConfiguration?> LoadConfigurationFromLockAsync(string clientName, string lockFilePath, CancellationToken cancellationToken)
+    {
+        if (Path.GetDirectoryName(lockFilePath) is not string lockFileDirectory)
+        {
+            Logger.LogWarning("The lock file {LockFilePath} is not in a directory, it will be skipped", lockFilePath);
+            return null;
+        }
+        var lockInfo = await lockManagementService.GetLockFromDirectoryAsync(lockFileDirectory, cancellationToken).ConfigureAwait(false);
+        if (lockInfo is null)
+        {
+            Logger.LogWarning("The lock file {LockFilePath} is not valid, it will be skipped", lockFilePath);
+            return null;
+        }
+        var generationConfiguration = new GenerationConfiguration();
+        lockInfo.UpdateGenerationConfigurationFromLock(generationConfiguration);
+        generationConfiguration.OutputPath = "./" + Path.GetRelativePath(WorkingDirectory, lockFileDirectory);
+        if (!string.IsNullOrEmpty(clientName))
+        {
+            generationConfiguration.ClientClassName = clientName;
+        }
+        return generationConfiguration;
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Lock;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
@@ -92,34 +92,13 @@ public class ApiClientConfiguration : ICloneable
         OutputPath = config.OutputPath;
     }
     /// <summary>
-    /// Initializes a new instance of the <see cref="ApiClientConfiguration"/> class from an existing <see cref="KiotaLock"/> to enable migrations.
-    /// </summary>
-    /// <param name="kiotaLock">The kiota lock to migrate.</param>
-    /// <param name="relativeOutputPath">The relative output path to output folder from the configuration file.</param>
-    public ApiClientConfiguration(KiotaLock kiotaLock, string relativeOutputPath)
-    {
-        ArgumentNullException.ThrowIfNull(kiotaLock);
-        ArgumentNullException.ThrowIfNull(relativeOutputPath);
-        Language = kiotaLock.Language;
-        ClientNamespaceName = kiotaLock.ClientNamespaceName;
-        UsesBackingStore = kiotaLock.UsesBackingStore;
-        ExcludeBackwardCompatible = kiotaLock.ExcludeBackwardCompatible;
-        IncludeAdditionalData = kiotaLock.IncludeAdditionalData;
-        StructuredMimeTypes = kiotaLock.StructuredMimeTypes.ToList();
-        IncludePatterns = kiotaLock.IncludePatterns;
-        ExcludePatterns = kiotaLock.ExcludePatterns;
-        DescriptionLocation = kiotaLock.DescriptionLocation;
-        DisabledValidationRules = kiotaLock.DisabledValidationRules;
-        OutputPath = relativeOutputPath;
-    }
-    /// <summary>
     /// Updates the passed configuration with the values from the config file.
     /// </summary>
     /// <param name="config">Generation configuration to update.</param>
     /// <param name="clientName">Client name serving as class name.</param>
-    public void UpdateGenerationConfigurationFromApiClientConfiguration(GenerationConfiguration config, string clientName)
+    /// <param name="requests">The requests to use when updating an existing client.</param>
+    public void UpdateGenerationConfigurationFromApiClientConfiguration(GenerationConfiguration config, string clientName, IList<RequestInfo>? requests = default)
     {
-        //TODO lock the api manifest as well to have accurate path resolution
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(clientName);
         config.ClientNamespaceName = ClientNamespaceName;
@@ -137,6 +116,12 @@ public class ApiClientConfiguration : ICloneable
         config.ClientClassName = clientName;
         config.Serializers.Clear();
         config.Deserializers.Clear();
+        if (requests is { Count: > 0 })
+        {
+            config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
+                                            .Select(static x => $"/{x.UriTemplate}#{x.Method!.ToUpperInvariant()}")
+                                            .ToHashSet();
+        }
     }
 
     public object Clone()
@@ -158,7 +143,8 @@ public class ApiClientConfiguration : ICloneable
     }
     public void NormalizePaths(string targetDirectory)
     {
-        OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+        if (Path.IsPathRooted(OutputPath))
+            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
     }
 }
 #pragma warning restore CA2227 // Collection properties should be read only
