@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
@@ -94,6 +89,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
+        WarnUsingPreviewLanguage(language);
         if (serializer.Count != 0)
             Configuration.Generation.Serializers = serializer.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (deserializer.Count != 0)

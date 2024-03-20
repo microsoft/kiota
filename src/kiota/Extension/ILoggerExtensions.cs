@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace kiota;
 
@@ -18,7 +17,7 @@ internal static class ILoggerExtensions
         var currentDateTime = DateTime.UtcNow;
         if (currentDateTime.Month != 3 || currentDateTime.Day != 9 || currentDateTime.Year < 2024) return;
         logger.LogWarning(
-@"                  ▒▒░░▒▒        ░░        ▒▒░░▒▒                  
+    @"                  ▒▒░░▒▒        ░░        ▒▒░░▒▒                  
                     ▒▒        ██████        ▒▒                    
                   ██████      ██▒▒██      ██████                  
                   ██▒▒██      ██▒▒██      ██▒▒██                  

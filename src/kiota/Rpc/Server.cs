@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
