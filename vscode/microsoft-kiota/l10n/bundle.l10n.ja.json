@@ -24,7 +24,7 @@
   "Enter an output path relative to the root of the project": "出力先をプロジェクトのルートからの相対パスで入力",
   "Pick a language": "言語を選択",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Kiotaのダウンロードにはインターネット接続が必要です。インターネット接続を確認して再試行してください。",
-  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Kiotaのダウンロードに失敗しました。拡張機能のホストログを確認してください。",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Kiotaのダウンロードに失敗しました。Visual Studio Code のすべてのウィンドウを閉じ、1つだけ開いてみてください。拡張機能のホストログを確認してください。",
   "Downloading kiota...": "Kiotaをダウンロード中...",
   "Generating client...": "クライアントを生成中...",
   "Updating clients...": "クライアントを更新中...",
