@@ -2,13 +2,13 @@
 
 ## Description 
 
-`kiota plugin update` allows a developer to edit an existing plugin in the `kiota-config.json` file. If either the `kiota-config.json` file or if the `--plugin-name` plugin can't be found within the `kiota-config.json` file, the command should error out and let the developer know.
+`kiota plugin update` allows a developer to edit an existing plugin in the `workspace.json` file. If either the `workspace.json` file or if the `--plugin-name` plugin can't be found within the `workspace.json` file, the command should error out and let the developer know.
 
-When executing, the plugin entry defined by the `--plugin-name` parameter will be modified. All parameters should be supported and the only required one is `--plugin-name`. All others are optional as they would only modify the configuration of the plugin. If the OpenAPI description location changed or any properties of the plugin entry in `kiota-config.json`, a new hash composed of the Kiota version, the OpenAPI description location and the properties of the manifest will be generated and and would trigger an update to the [API Manifest][def] located in the root folder (the).
+When executing, the plugin entry defined by the `--plugin-name` parameter will be modified. All parameters should be supported and the only required one is `--plugin-name`. All others are optional as they would only modify the configuration of the plugin. If the OpenAPI description location changed or any properties of the plugin entry in `workspace.json`, a new hash composed of the Kiota version, the OpenAPI description location and the properties of the manifest will be generated and and would trigger an update to the [API Manifest][def] located in the root folder (the).
 > [!NOTE] 
 > > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the root folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin, will be named `{plugin-name}-apimanifest.json` and saved in the choosen output directory when `apimanifest` value is used as the plugin type.
 
-Once the `kiota-config.json` file and the API Manifest are updated, the code generation will be executed based on the newly updated API client configuration.
+Once the `workspace.json` file and the API Manifest are updated, the code generation will be executed based on the newly updated API client configuration.
 
 ## Parameters
 
@@ -21,10 +21,10 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
 | `--overlayDirectory \| --od` | No | ./overlays/plugins/{plugin-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the plugin. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. | Yes, without its value |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
-| `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the location of `kiota-config.json`. Defaults to `./output`. | Yes, without its value |
+| `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the current working directory. Defaults to `./output`. | Yes, without its value |
 
 > [!NOTE] 
-> It is not required to use the CLI to edit plugins. It is possible to edit a plugin by modifying its entry in the `plugins` section of the `kiota-config.json` file. See the [kiota-config.json schema](../schemas/kiota-config.json) for more information.
+> It is not required to use the CLI to edit plugins. It is possible to edit a plugin by modifying its entry in the `plugins` section of the `workspace.json` file. See the [workspace.json schema](../schemas/workspace.json) for more information.
 
 ## Using `kiota plugin edit`
 
@@ -32,7 +32,7 @@ Once the `kiota-config.json` file and the API Manifest are updated, the code gen
 kiota plugin edit --plugin-name "GitHub" --exclude-path "/repos/{owner}/{repo}#DELETE"
 ```
 
-_The resulting `kiota-config.json` file will look like this:_
+_The resulting `workspace.json` file will look like this:_
 
 ```jsonc
 {
@@ -133,6 +133,8 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
 ## File structure
 ```bash
  └─.kiota
+    └─workspace.json
+    └─apimanifest.json
     └─plugins
        └─GitHub.json # OpenAPI description
  └─generated
@@ -141,8 +143,6 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs) will l
           └─github-apimanifest.json # Specific API Manifest
           └─github-openai.json #OpenAI Plugin
           └─sliced-openapi-github.json # Sliced OpenAPI description
- └─kiota-config.json
- └─apimanifest.json
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html

@@ -2,7 +2,7 @@
 
 ## Description
 
-`kiota plugin remove` allows a developer to remove an existing plugin from the `kiota-config.json` file. The command will remove the entry from the `plugins` section of `kiota-config.json` file. The command has a single required parameters; the name of the plugin. 
+`kiota plugin remove` allows a developer to remove an existing plugin from the `workspace.json` file. The command will remove the entry from the `plugins` section of `workspace.json` file. The command has a single required parameters; the name of the plugin. 
 
 The command also has one optional parameter, the ability to remove the all generated files. If provided, kiota will delete the folder and its content specified at the `outputPath` from the plugin configuration. It will also remove the local version of the OpenAPI description file (specified by the `x-ms-kiotaHash` property in the API plugins). The API plugins are also updated to remove the dependency from the list of dependencies.
 
@@ -18,7 +18,7 @@ kiota plugin remove --plugin-name "GitHub" --clean-output
 ```
 _The resulting `github-apiplugin.json` and `github-openai.json` files will be deleted._
 
-The resulting `kiota-config.json` file will look like this:
+The resulting `workspace.json` file will look like this:
 
 ```jsonc
 {
@@ -47,9 +47,9 @@ _The resulting `apiplugin.json` file (concatenated surface of all APIs) will loo
 ```bash
 /
  └─.kiota
+    └─workspace.json
  └─generated
     └─plugins
        └─github
- └─kiota-config.json
  └─apiplugin.json
 ```

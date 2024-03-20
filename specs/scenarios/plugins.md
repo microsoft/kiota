@@ -23,9 +23,9 @@ https://learn.microsoft.com/en-us/semantic-kernel/overview/) as their AI orchest
 
 ## Proposal
 
-We should introduce new commands to manage different types of plugins. Also a `plugins` entry should be added to [Kiota config](kiota-config.md).
+We should introduce new commands to manage different types of plugins. Also a `plugins` entry should be added to [Kiota workspace](kiota-workspace.md).
 
-Here is an example of what the kiota-config.json file could look like.
+Here is an example of what the `workspace.json` file could look like.
 
 ```jsonc
 {
