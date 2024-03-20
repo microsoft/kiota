@@ -202,13 +202,13 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         {
             return isCollection ? "sendCollectionOfEnum" : "sendEnum";
         }
-        else if (isPrimitive)
+        else if (isPrimitive || isStream)
         {
             return isCollection ? "sendCollectionOfPrimitive" : "sendPrimitive";
         }
         else
         {
-            return isCollection ? "sendCollection" : isStream ? "sendPrimitive" : "send";
+            return isCollection ? "sendCollection" : "send";
         }
     }
 
