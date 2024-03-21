@@ -1084,7 +1084,7 @@ public partial class KiotaBuilder
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
-    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205" };
+    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "301", "302", "303", "304", "307" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
