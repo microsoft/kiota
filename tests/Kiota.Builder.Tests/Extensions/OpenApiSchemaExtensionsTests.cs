@@ -89,10 +89,12 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.entity"
                 },
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.user"
                 }
             ]
@@ -107,13 +109,17 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.entity"
                     }
                 },
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.user"
                     }
                 }
@@ -130,12 +136,15 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new() {
+                new()
+                {
                     AllOf = [
-                        new() {
+                        new()
+                        {
                             Title = "microsoft.graph.entity"
                         },
-                        new() {
+                        new()
+                        {
                             Title = "microsoft.graph.user"
                         }
                     ]
@@ -152,15 +161,20 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new() {
+                new()
+                {
                     AllOf = [
-                        new() {
-                            Reference = new() {
+                        new()
+                        {
+                            Reference = new()
+                            {
                                 Id = "microsoft.graph.entity"
                             }
                         },
-                        new() {
-                            Reference = new() {
+                        new()
+                        {
+                            Reference = new()
+                            {
                                 Id = "microsoft.graph.user"
                             }
                         }
@@ -179,10 +193,12 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AnyOf = [
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.entity"
                 },
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.user"
                 }
             ]
@@ -197,13 +213,17 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AnyOf = [
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.entity"
                     }
                 },
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.user"
                     }
                 }
@@ -220,10 +240,12 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             OneOf = [
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.entity"
                 },
-                new() {
+                new()
+                {
                     Title = "microsoft.graph.user"
                 }
             ]
@@ -238,13 +260,17 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             OneOf = [
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.entity"
                     }
                 },
-                new() {
-                    Reference = new() {
+                new()
+                {
+                    Reference = new()
+                    {
                         Id = "microsoft.graph.user"
                     }
                 }
