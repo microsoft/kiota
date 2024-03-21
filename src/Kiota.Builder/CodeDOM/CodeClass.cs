@@ -167,7 +167,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
         if (BaseClass is CodeClass currentParentClass)
-            if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+            if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType && currentProperty.Kind is not CodePropertyKind.AdditionalData or CodePropertyKind.BackingStore)
                 return currentProperty;
             else
                 return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
