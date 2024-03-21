@@ -1550,18 +1550,18 @@ public partial class KiotaBuilder
     }
     private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
-        var allOfs = (schema.IsSemanticallyMeaningful() ? new OpenApiSchema[] { schema } : []).Union(schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf));
+        var rootSchemaIsMeaningful = schema.IsSemanticallyMeaningful();
+        var allOfs = (rootSchemaIsMeaningful ? new OpenApiSchema[] { schema } : []).Union(schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf));
         CodeElement? codeDeclaration = null;
-        var className = string.Empty;
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
         foreach (var currentSchema in allOfs)
         {
             var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
             var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
             var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
-            className = (currentSchema.GetSchemaName() is string cName && !string.IsNullOrEmpty(cName) ?
+            var className = (currentSchema.GetSchemaName(rootSchemaIsMeaningful && currentSchema == schema) is string cName && !string.IsNullOrEmpty(cName) ?
                             cName :
-                            (string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(typeNameForInlineSchema) ?
+                            (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
                                 typeNameForInlineSchema :
                                 currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: currentSchema, requestBody: isRequestBody)))
                         .CleanupSymbolName();
@@ -1919,6 +1919,7 @@ public partial class KiotaBuilder
             if (relatedModels.Contains(x) || classesInUse.Contains(x)) return;
             if (x is CodeClass currentClass)
             {
+                //TODO this is trimming mailboxsettingsbase when it shouldn't. Most likely because one of the indices is now broken
                 var parents = currentClass.GetInheritanceTree(false, false);
                 if (parents.Any(y => classesDirectlyInUse.Contains(y))) return; // to support the inheritance recursive downcast
                 foreach (var baseClass in parents) // discriminator might also be in grand parent types

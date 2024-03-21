@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where multiple Visual Studio Code instances would make the extension install/update fail. [#3686](https://github.com/microsoft/kiota/issues/3686)
 - Fixed a bug where models properties named "additionalData" or "backingstore" would be ignored. [#4224](https://github.com/microsoft/kiota/issues/4224)
 - Fixed a bug where multiple allOf entries type would not get merged if they were part of a discriminator. [#4325](https://github.com/microsoft/kiota/issues/4325)
+- Fixed a bug where allOf structure with one entry and properties would not be considered as inheritance case. [#4346](https://github.com/microsoft/kiota/issues/4346)
 - PREVIEW: Renamed the config commands to workspace. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved preview configuration files to the .kiota directory. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)

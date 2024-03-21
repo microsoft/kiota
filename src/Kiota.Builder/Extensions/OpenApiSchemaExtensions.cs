@@ -10,41 +10,37 @@ public static class OpenApiSchemaExtensions
 {
     private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = x =>
     (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-    public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema)
+    public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema, bool directOnly = false)
     {
         if (schema == null)
-            return Enumerable.Empty<string>();
-        if (schema.Items != null)
+            return [];
+        if (!directOnly && schema.Items != null)
             return schema.Items.GetSchemaNames();
         if (!string.IsNullOrEmpty(schema.Reference?.Id))
-            return new[] { schema.Reference.Id.Split('/')[^1].Split('.')[^1] };
-        if (schema.AnyOf.Any())
+            return [schema.Reference.Id.Split('/')[^1].Split('.')[^1]];
+        if (!directOnly && schema.AnyOf.Any())
             return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
-        if (schema.AllOf.Any())
+        if (!directOnly && schema.AllOf.Any())
             return schema.AllOf.FlattenIfRequired(classNamesFlattener);
-        if (schema.OneOf.Any())
+        if (!directOnly && schema.OneOf.Any())
             return schema.OneOf.FlattenIfRequired(classNamesFlattener);
-        if (!string.IsNullOrEmpty(schema.Title))
-            return new[] { schema.Title };
-        if (!string.IsNullOrEmpty(schema.Xml?.Name))
-            return new[] { schema.Xml.Name };
-        return Enumerable.Empty<string>();
+        return [];
     }
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        if (schemas is null) return Enumerable.Empty<OpenApiSchema>();
+        if (schemas is null) return [];
         return schemas.Count == 1 ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        return schemas.FlattenSchemaIfRequired(subsequentGetter).Where(static x => !string.IsNullOrEmpty(x.Title)).Select(static x => x.Title);
+        return schemas.FlattenSchemaIfRequired(subsequentGetter).SelectMany(static x => x.GetSchemaNames());
     }
 
-    public static string GetSchemaName(this OpenApiSchema schema)
+    public static string GetSchemaName(this OpenApiSchema schema, bool directOnly = false)
     {
-        return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
+        return schema.GetSchemaNames(directOnly).LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
     }
 
     public static bool IsReferencedSchema(this OpenApiSchema schema)
@@ -173,7 +169,7 @@ public static class OpenApiSchemaExtensions
             return result.Distinct();
         }
 
-        return Enumerable.Empty<string>();
+        return [];
     }
     private static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
     {
@@ -188,7 +184,7 @@ public static class OpenApiSchemaExtensions
         foreach (var item in result)
         {
             var subsequentItems = subsequentGetter(item);
-            if (string.IsNullOrEmpty(item.Title) && subsequentItems.Any())
+            if (subsequentItems.Any())
                 permutations.Add(item, subsequentItems.FlattenEmptyEntries(subsequentGetter, maxDepth.HasValue ? --maxDepth : default));
         }
         if (permutations.Count > 0)
