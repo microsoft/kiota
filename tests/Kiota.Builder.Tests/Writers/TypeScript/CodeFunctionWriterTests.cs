@@ -717,6 +717,63 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("This method is obsolete. Use NewAwesomeMethod instead.", result);
     }
+    [Fact]
+    public void WritesDefensiveStatements()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("string", new CodeType() { Name = "string" });
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.AddParameter(new CodeParameter
+        {
+            Name = "param1",
+            Type = new CodeType()
+            {
+                Name = "string",
+                IsNullable = false,
+            },
+        });
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Name = "NewAwesomeMethod";// new method replacement
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("cannot be undefined", result);
+    }
+    [Fact]
+    public void DoesNotWriteDefensiveStatementsForBooleanParameters()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.AddParameter(new CodeParameter
+        {
+            Name = "param1",
+            Type = new CodeType()
+            {
+                Name = "boolean",
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Name = "NewAwesomeMethod";// new method replacement
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("cannot be undefined", result);
+    }
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "paramName";

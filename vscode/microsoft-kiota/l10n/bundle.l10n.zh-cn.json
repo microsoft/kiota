@@ -22,7 +22,7 @@
   "Enter an output path relative to the root of the project": "请输入相对根路径的输出路径",
   "Pick a language": "请选择一个语言",
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "下载Kiota需要网络连接。请检查您是否成功连接网络。",
-  "Kiota download failed. Check the extension host logs for more information.": "Kiota下载失败。请检查托管扩展记录。",
+  "Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.": "Kiota 下载失败。请尝试关闭所有 Visual Studio Code 窗口并仅打开一个窗口。查看扩展主机日志以获取更多信息。",
   "Downloading kiota...": "正在下载Kiota...",
   "Generating client...": "正在生成客户端...",
   "Updating clients...": "正在更新客户端...",
