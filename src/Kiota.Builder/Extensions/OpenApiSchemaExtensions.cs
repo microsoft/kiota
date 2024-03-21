@@ -78,7 +78,9 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is null) return false;
         var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
-        return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
+        return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
+            (meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
+            schema.IsSemanticallyMeaningful());
     }
 
     internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)

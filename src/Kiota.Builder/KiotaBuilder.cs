@@ -1548,9 +1548,9 @@ public partial class KiotaBuilder
             TypeDefinition = codeDeclaration,
         };
     }
-    private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
+    private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
-        var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf);
+        var allOfs = (schema.IsSemanticallyMeaningful() ? new OpenApiSchema[] { schema } : []).Union(schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf));
         CodeElement? codeDeclaration = null;
         var className = string.Empty;
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
@@ -1561,7 +1561,9 @@ public partial class KiotaBuilder
             var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
             className = (currentSchema.GetSchemaName() is string cName && !string.IsNullOrEmpty(cName) ?
                             cName :
-                            currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody))
+                            (string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(typeNameForInlineSchema) ?
+                                typeNameForInlineSchema :
+                                currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: currentSchema, requestBody: isRequestBody)))
                         .CleanupSymbolName();
             if (shortestNamespace != null)
                 codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
@@ -1672,7 +1674,7 @@ public partial class KiotaBuilder
 
         if (schema.IsInherited())
         {
-            return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
+            return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
         if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is OpenApiSchema mergedSchema)
@@ -1821,8 +1823,9 @@ public partial class KiotaBuilder
     }
     private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
-        if (inheritsFrom == null && schema.AllOf.FirstOrDefault(static x => x.Reference != null) is OpenApiSchema parentSchema)
+        if (inheritsFrom == null && schema.AllOf.Where(static x => x.Reference != null).ToArray() is { Length: 1 } referencedSchemas)
         {// any non-reference would be the current class in some description styles
+            var parentSchema = referencedSchemas[0];
             var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
             inheritsFrom = (CodeClass)AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace);
         }
@@ -2065,6 +2068,11 @@ public partial class KiotaBuilder
         }
         var className = currentNode.GetClassName(config.StructuredMimeTypes, schema: discriminatorSchema).CleanupSymbolName();
         var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference?.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase) ?? false);
+        if (baseClass is not null && !discriminatorSchema.IsInherited())
+        {
+            logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
+            return null;
+        }
         var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, GetShortestNamespace(currentNamespace, discriminatorSchema), shouldInherit ? baseClass : null);
         return new CodeType
         {

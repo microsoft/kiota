@@ -1878,7 +1878,7 @@ paths:
                                                             Type = "object",
                                                             Properties = new Dictionary<string, OpenApiSchema> {
                                                                 {
-                                                                    "info", new OpenApiSchema {
+                                                                    "info2", new OpenApiSchema {
                                                                         Type = "object",
                                                                         Properties = new Dictionary<string, OpenApiSchema> {
                                                                             {
@@ -1923,12 +1923,12 @@ paths:
         var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
         var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse");
         var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource");
-        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info");
+        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info2");
 
 
         Assert.NotNull(resourceClass);
         Assert.NotNull(derivedResourceClass);
-        Assert.NotNull(derivedResourceClass.StartBlock);
+        Assert.NotNull(derivedResourceClass.StartBlock.Inherits);
         Assert.Equal(derivedResourceClass.StartBlock.Inherits.TypeDefinition, resourceClass);
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
@@ -7396,7 +7396,7 @@ components:
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Group"));
     }
     [Fact]
-    public async Task InheritanceWithAllOfWith3Parts()
+    public async Task InheritanceWithAllOfWith3Parts3Schema()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStream(@"openapi: 3.0.1
@@ -7411,7 +7411,82 @@ paths:
     get:
       responses: 
         '200':
-          description: Example response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+  /group:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.group'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: 'directoryObject'
+      required: ['@odata.type']
+      type: 'object'
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.groupFacet1:
+      title: 'group part 1'
+      type: 'object'
+      properties:
+        groupprop1:
+          type: 'string'
+    microsoft.graph.groupFacet2:
+      title: 'group part 2'
+      type: 'object'
+      properties:
+        groupprop2:
+          type: 'string'
+    microsoft.graph.group:
+      title: 'group'
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
+        - '$ref': '#/components/schemas/microsoft.graph.groupFacet1'
+        - '$ref': '#/components/schemas/microsoft.graph.groupFacet2'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
+        Assert.NotNull(directoryObjectClass);
+        var resultClass = codeModel.FindChildByName<CodeClass>("Group");
+        Assert.NotNull(resultClass);
+        Assert.Equal(4, resultClass.Properties.Count());
+        Assert.Null(resultClass.StartBlock.Inherits);
+        Assert.Single(resultClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task InheritanceWithAllOfWith3Parts1Schema2Inline()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses: 
+        '200':
           content:
             application/json:
               schema:
@@ -7429,7 +7504,6 @@ components:
       discriminator:
         propertyName: '@odata.type'
         mapping:
-          '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
           '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
     microsoft.graph.group:
       allOf:
@@ -7451,9 +7525,11 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Group");
         Assert.NotNull(resultClass);
+        Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(2, resultClass.Properties.Count());
-        Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Empty(resultClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineType()
