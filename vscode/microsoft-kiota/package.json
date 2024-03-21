@@ -439,7 +439,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.3",
+    "@vscode/extension-telemetry": "^0.9.5",
     "@vscode/l10n": "^0.0.18",
     "adm-zip": "^0.5.12",
     "is-online": "^10.0.0",
