@@ -702,5 +702,30 @@ public class JavaLanguageRefinerTests
         Assert.Equal(4, model.Methods.Count());
         Assert.Equal("String", model.Methods.First(static x => x.IsOverload).Parameters.First().Type.Name);
     }
+
+    [Fact]
+    public async Task AddsUsingForUntypedNode()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = new CodeType
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
+        Assert.NotEmpty(model.StartBlock.Usings);
+        var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
+    }
     #endregion
 }

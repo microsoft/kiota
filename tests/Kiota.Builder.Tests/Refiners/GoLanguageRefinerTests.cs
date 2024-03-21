@@ -1074,5 +1074,29 @@ public class GoLanguageRefinerTests
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 3);// ctx + body + query config
         Assert.Equal(2, childMethods.Count());
     }
+    [Fact]
+    public async Task AddsUsingForUntypedNode()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = new CodeType
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(GoRefiner.UntypedNodeName, property.Type.Name);// type is renamed
+        Assert.NotEmpty(model.StartBlock.Usings);
+        var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("github.com/microsoft/kiota-abstractions-go/serialization", nodeUsing[0].Declaration.Name);
+    }
     #endregion
 }

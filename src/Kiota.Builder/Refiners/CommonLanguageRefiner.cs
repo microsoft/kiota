@@ -1444,6 +1444,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
+    protected static void RemoveUntypedNodePropertyValues(CodeElement currentElement)
+    {
+        if (currentElement is CodeProperty currentProperty
+            && currentElement.Parent is CodeClass parentClass
+            && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+        {
+            parentClass.RemoveChildElement(currentProperty);
+        }
+        CrawlTree(currentElement, RemoveUntypedNodePropertyValues);
+    }
     protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&
@@ -1490,6 +1500,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         newType.GenericTypeParameterValues.Add(genericTypeParamValue);
         return newType;
     }
+
     internal static void AddPrimaryErrorMessage(CodeElement currentElement, string name, Func<CodeType> type, bool asProperty = false)
     {
         if (currentElement is CodeClass { IsErrorDefinition: true } currentClass)

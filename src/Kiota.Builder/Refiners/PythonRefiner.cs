@@ -26,6 +26,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             CorrectCommonNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
+            RemoveUntypedNodePropertyValues(generatedCode);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,

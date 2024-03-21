@@ -339,5 +339,11 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       }
     ]
+  },
+  "apisguru::apis.guru": {
+    "Suppressions": [
+    ],
+    "IdempotencySuppressions": [
+    ]
   }
 }

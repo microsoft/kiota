@@ -570,7 +570,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+            SerializationNamespaceName, "Parsable"),
         new (static x => x is CodeMethod method &&
                          method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                          method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
@@ -578,16 +578,16 @@ public class GoRefiner : CommonLanguageRefiner
                                                     x.Type is CodeType pType &&
                                                     (pType.TypeDefinition is CodeClass ||
                                                      pType.TypeDefinition is CodeInterface)),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+            SerializationNamespaceName, "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) &&
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
+            SerializationNamespaceName, "AdditionalDataHolder"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal) && unionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "strings", "EqualFold"),
         new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
-            "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
+            SerializationNamespaceName, "MergeDeserializersForIntersectionWrapper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
@@ -596,10 +596,14 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeEnum @enum && @enum.Flags,"", "math"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";
+    private const string SerializationNamespaceName = "github.com/microsoft/kiota-abstractions-go/serialization";
+    internal const string UntypedNodeName = "UntypedNodeable";
 
     private void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -672,21 +676,21 @@ public class GoRefiner : CommonLanguageRefiner
         {"TimeSpan", ("ISODuration", new CodeUsing {
                                         Name = "ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                            Name = SerializationNamespaceName,
                                             IsExternal = true,
                                         },
                                     })},
         {"DateOnly", (string.Empty, new CodeUsing {
                                 Name = "DateOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                    Name = SerializationNamespaceName,
                                     IsExternal = true,
                                 },
                             })},
         {"TimeOnly", (string.Empty, new CodeUsing {
                                 Name = "TimeOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                    Name = SerializationNamespaceName,
                                     IsExternal = true,
                                 },
                             })},
@@ -697,6 +701,13 @@ public class GoRefiner : CommonLanguageRefiner
                             IsExternal = true,
                         },
                     })},
+        {KiotaBuilder.UntypedNodeName, (GoRefiner.UntypedNodeName, new CodeUsing {
+                                Name = GoRefiner.UntypedNodeName,
+                                Declaration = new CodeType {
+                                    Name = SerializationNamespaceName,
+                                    IsExternal = true,
+                                },
+                            })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {

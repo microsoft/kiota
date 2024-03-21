@@ -662,5 +662,30 @@ public class CSharpLanguageRefinerTests
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnlyObject", method.ReturnType.Name);
     }
+    [Fact]
+    public async Task AddsUsingForUntypedNode()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = new CodeType
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
+        Assert.NotEmpty(model.StartBlock.Usings);
+        var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("Microsoft.Kiota.Abstractions.Serialization", nodeUsing[0].Declaration.Name);
+
+    }
     #endregion
 }

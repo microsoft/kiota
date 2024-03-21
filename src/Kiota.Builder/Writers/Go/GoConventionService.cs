@@ -5,6 +5,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Go;
 public class GoConventionService : CommonLanguageConventionService
@@ -62,6 +63,7 @@ public class GoConventionService : CommonLanguageConventionService
                                  currentType.IsNullable &&
                                  currentType.TypeDefinition is not CodeInterface &&
                                  currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
+                                 !currentType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase) &&
                                  !IsScalarType(currentType.Name) ? "*"
                 : string.Empty;
             var collectionPrefix = currentType.CollectionKind switch

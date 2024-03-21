@@ -1,89 +1,99 @@
 version: 2
 updates:
-- package-ecosystem: nuget
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - generator
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
-- package-ecosystem: github-actions
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    labels:
+      - generator
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
 
 
-- package-ecosystem: nuget
-  directory: "/it/csharp"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: nuget
+    directory: "/it/csharp"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: gomod
-  directory: "/it/go"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: gomod
+    directory: "/it/go"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: composer
-  directory: "/it/php"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: composer
+    directory: "/it/php"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: pip
-  directory: "/it/python"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: pip
+    directory: "/it/python"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: bundler
-  directory: "/it/ruby"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: bundler
+    directory: "/it/ruby"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: npm
-  directory: "/it/typescript"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    kiota-dependencies:
-      patterns:
-        - "*kiota*"
+  - package-ecosystem: maven
+    directory: "/it/java"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
 
-- package-ecosystem: npm
-  directory: "/vscode/microsoft-kiota"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  groups:
-    eslint:
-      patterns:
-        - "*eslint*"
+  - package-ecosystem: npm
+    directory: "/it/typescript"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
+
+  - package-ecosystem: npm
+    directory: "/vscode/microsoft-kiota"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      eslint:
+        patterns:
+          - "*eslint*"

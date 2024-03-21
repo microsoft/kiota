@@ -527,7 +527,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
         new (static x => x is CodeMethod m && HasMultipartBody(m),
-            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
+            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            AbstractionsPackageName, KiotaBuilder.UntypedNodeName, "createUntypedNodeFromDiscriminatorValue"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
