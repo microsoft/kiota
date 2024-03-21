@@ -1,4 +1,4 @@
-# Kiota Config
+# Kiota Workspace
 
 Kiota generates client code for an API and stores parameters in a kiota-lock.json file. A project can contain multiple API clients, but they are independently managed. Kiota has no awareness that an app has a dependency on multiple APIs, even though that is a core use case.
 
@@ -12,11 +12,11 @@ We have previously described Kiota's approach to managing API dependencies as co
 
 ## Proposal
 
-We should introduce a new Kiota.config file that holds the input parameters required to generate the API Client code. Currently kiota-lock.json is used to capture what the parameters were at the time of generation and can be used to regenerate based on the parameters in the file. This creates a mixture of purposes for the file.
+We should introduce a new Kiota workspace file that holds the input parameters required to generate the API Client code. Currently kiota-lock.json is used to capture what the parameters were at the time of generation and can be used to regenerate based on the parameters in the file. This creates a mixture of purposes for the file.
 
-We did consider creating one kiota-config.json file as a peer of the language project file, however, for someone who wants to generate multiple clients for an API in different languages, this would be a bit annoying. An alternative would be to allow the kiota-config.json file to move further up the folder structure and support generation in multiple languages from a single file. This is more consistent with what [TypeSpec](https://aka.ms/typespec) are doing and would be helpful for generating CLI and docs as well as a library.
+We did consider creating one workspace.json file as a peer of the language project file, however, for someone who wants to generate multiple clients for an API in different languages, this would be a bit annoying. An alternative would be to allow the workspace.json file to move further up the folder structure and support generation in multiple languages from a single file. This is more consistent with what [TypeSpec](https://aka.ms/typespec) are doing and would be helpful for generating CLI and docs as well as a library.
 
-Here is an example of what the kiota-config.json file could look like.
+Here is an example of what the workspace.json file could look like.
 
 ```jsonc
 {
@@ -53,7 +53,7 @@ The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.
 
 ## Commands
 
-* [kiota config init](../cli/config-init.md)
+* [kiota workspace init](../cli/workspace-init.md)
 * [kiota client add](../cli/client-add.md)
 * [kiota client edit](../cli/client-edit.md)
 * [kiota client generate](../cli/client-generate.md)
@@ -64,7 +64,7 @@ The [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.
 ### Migrate a project that uses Kiota v1.x for API client
 
 ```bash
-kiota config migrate
+kiota workspace migrate
 ```
 
 ### Get started to generate an API client
