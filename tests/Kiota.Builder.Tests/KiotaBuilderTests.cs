@@ -697,6 +697,83 @@ components:
         Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false)); //unused type
     }
     [Fact]
+    public async Task DisambiguatesReservedProperties()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: v1.0
+  x-ms-generated-by:
+    toolName: Microsoft.OpenApi.OData
+    toolVersion: 1.0.9.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  '/security/alerts_v2/{alert-id}':
+    get:
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.alert'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          type: string
+        '@odata.type':
+          type: string
+    microsoft.graph.dictionary:
+      title: dictionary
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        '@odata.type':
+          type: string
+    microsoft.graph.alert:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: alert
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            actorDisplayName:
+              type: string
+              nullable: true
+            additionalData:
+              anyOf:
+                - $ref: '#/components/schemas/microsoft.graph.dictionary'
+                - type: object
+                  nullable: true");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        var entityClass = modelsNS.FindChildByName<CodeClass>("Entity", false);
+        Assert.NotNull(entityClass);
+        var additionalDataProperty = entityClass.FindChildByName<CodeProperty>("AdditionalData", false);
+        Assert.NotNull(additionalDataProperty);
+        Assert.True(additionalDataProperty.Kind is CodePropertyKind.AdditionalData);
+        var alertClass = modelsNS.FindChildByName<CodeClass>("Alert", false);
+        Assert.NotNull(alertClass);
+        var additionalDataEscapedProperty = alertClass.FindChildByName<CodeProperty>("AdditionalDataProperty", false);
+        Assert.NotNull(additionalDataEscapedProperty);
+        Assert.True(additionalDataEscapedProperty.Kind is CodePropertyKind.Custom);
+    }
+    [Fact]
     public async Task TrimsInheritanceUnusedModelsWithUnion()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());

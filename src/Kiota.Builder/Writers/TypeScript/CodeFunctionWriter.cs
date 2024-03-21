@@ -259,7 +259,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
         return codeProperty.DefaultValue;
     }
-    private static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
+    private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {
         if (codeElement.IsOfKind(CodeMethodKind.Setter)) return;
 
@@ -271,7 +271,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                                         .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
+            if (!"boolean".Equals(conventions.TranslateType(parameter.Type), StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
         }
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeFunction codeFunction)

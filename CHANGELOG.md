@@ -14,12 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where multiple Visual Studio Code instances would make the extension install/update fail. [#3686](https://github.com/microsoft/kiota/issues/3686)
+- Fixed a bug where models properties named "additionalData" or "backingstore" would be ignored. [#4224](https://github.com/microsoft/kiota/issues/4224)
 - PREVIEW: Renamed the config commands to workspace. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved preview configuration files to the .kiota directory. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Renamed the config to workspace file. [#4310](https://github.com/microsoft/kiota/issues/4310)
+- Fixed a bug where TypeScript generation would consider boolean argument as empty when false. [#4103](https://github.com/microsoft/kiota/issues/4103)
 - Changed Csharp code generation to put braces on new lines (where it makes sense). [#4347](https://github.com/microsoft/kiota/issues/4347)
 - Fixed a bug where some no-content status codes would be considered structured (301, 302, 303, 307) when described. [#4190](https://github.com/microsoft/kiota/issues/4190)
+- TypeScript is now a preview language!
 
 ## [1.12.0] - 2024-03-06
 

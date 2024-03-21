@@ -434,12 +434,12 @@
     "glob": "^10.3.10",
     "mocha": "^10.3.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.2",
-    "webpack": "^5.90.3",
+    "typescript": "^5.4.3",
+    "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.3",
+    "@vscode/extension-telemetry": "^0.9.5",
     "@vscode/l10n": "^0.0.18",
     "adm-zip": "^0.5.12",
     "is-online": "^10.0.0",
