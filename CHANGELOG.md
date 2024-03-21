@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Renamed the config to workspace file. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - Changed Csharp code generation to put braces on new lines (where it makes sense). [#4347](https://github.com/microsoft/kiota/issues/4347)
+- TypeScript is now a preview language!
 
 ## [1.12.0] - 2024-03-06
 
