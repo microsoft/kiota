@@ -44,7 +44,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
                 writer.StartBlock();
                 writer.Write("get => ");
-                conventions.AddRequestBuilderBody(parentClass, propertyType, writer);
+                conventions.AddRequestBuilderBody(parentClass, propertyType, writer, includeIndent: false);
                 writer.CloseBlock();
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
