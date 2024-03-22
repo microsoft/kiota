@@ -16,6 +16,29 @@ Developers can generate `openai` and `apimanifest` type of plugins. By generatin
 
 Once the `workspace.json` file is generated and the OpenAPI description file is saved locally, the generation will be executed and the plugin and the sliced OpenAPI description will become available.
 
+For `openai` plugins, the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
+
+| OpenAI field | Default value |
+| -- | -- |
+| name_for_human | Defaults to the OpenAPI document title. |
+| name_for_model | Defaults to `{name_for_human}`. |
+| description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
+| description_for_model | Defaults to `{description_for_human}`. |
+| contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
+| logo_url | Dummy URL? |
+| legal_info_url | Dummy URL? |
+|  |  |
+
+For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](https://github.com/microsoft/OpenApi.ApiManifest/blob/main/docs/OpenApiToApiManifestMapping.md). Requiring fields are as the following:
+
+| API Manifest field | Default value |
+| -- | -- |
+| apiDependencies.Key | Defaults to the plugin name. |
+| publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
+| publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
+| publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
+|  |  |
+
 ## Parameters
 
 | Parameters | Required | Example | Description | Telemetry |
