@@ -1205,6 +1205,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
+        Assert.Contains("cast := make([]interface{}, ", result);
+        Assert.Contains("cast[i] = v, ", result);
         Assert.Contains("requestInfo.SetContentFromScalarCollection(ctx, m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
