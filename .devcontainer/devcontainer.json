@@ -3,8 +3,8 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "VARIANT": "7.0",
-      "NODE_VERSION": "18"
+      "VARIANT": "8.0",
+      "NODE_VERSION": "20"
     }
   },
   "customizations": {
