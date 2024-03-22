@@ -2,7 +2,7 @@
 
 ## Description 
 
-`kiota client add` allows a developer to add a new API client to the `workspace.json` file. If no `workspace.json` file is found, a new `workspace.json` file would be created in the `.kiota` directory in current working directory. The command will add a new entry to the `clients` section of the `workspace.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/clients` folder. If a client with the same name already exists, the command will fail and display an actionable error message.
+`kiota client add` allows a developer to add a new API client to the `workspace.json` file. If no `workspace.json` file is found, a new `workspace.json` file would be created in the `.kiota` directory in current working directory. The command will add a new entry to the `clients` section of the `workspace.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/clients` folder. If a client or plugin with the same name already exists, the command will fail and display an actionable error message.
 
 When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
 

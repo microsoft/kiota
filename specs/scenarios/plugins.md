@@ -36,7 +36,7 @@ Here is an example of what the `workspace.json` file could look like.
       "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "includePatterns": ["/repos/{owner}/{repo}"],
       "excludePatterns": [],
-      "type": "openai",
+      "type": ["openai"],
       "outputDirectory": "./generated/plugins/github",
       "overlayDirectory": "./overlays/plugins/github/overlay.yaml"
     }

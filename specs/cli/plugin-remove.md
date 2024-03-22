@@ -8,7 +8,7 @@ The command also has one optional parameter, the ability to remove the all gener
 
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
-| `--plugin-name \| --mn` | Yes | GitHub | Name of the plugin | No |
+| `--plugin-name \| --pn` | Yes | GitHub | Name of the plugin | No |
 | `--clean-output \| --co` | No |  | Cleans the generated plugin files | Yes |
 
 #### Using kiota plugin remove and deleting all the content

@@ -12,7 +12,7 @@ In general cases, the `kiota plugin generate` command will generate the output f
 
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
-| `--plugin-name \| --mn` | No | GitHub | Name of the plugin. Unique within the parent API. | Yes, without its value |
+| `--plugin-name \| --pn` | No | GitHub | Name of the plugin. Unique within the parent API. | Yes, without its value |
 | `--refresh \| -r` | No | true | Provided when refreshing the description(s) is required. | Yes |
 
 ## Usage

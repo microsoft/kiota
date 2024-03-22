@@ -14,12 +14,12 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
-| `--plugin-name \| --mn` | Yes | GitHub | Name of the plugin. Unique within the parent API. Defaults to `Plugin` | No |
+| `--plugin-name \| --pn` | Yes | GitHub | Name of the plugin. Unique within the parent API. Defaults to `Plugin` | No |
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI description in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | Yes, without its value |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /repos/{owner}/{repo}#DELETE | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
-| `--overlayDirectory \| --od` | No | ./overlays/plugins/{plugin-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the plugin. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. | Yes, without its value |
+| `--overlay-directory \| --od` | No | ./overlays/plugins/{plugin-name}/overlay.yaml | The location of the overlay file in JSON or YAML format to be used to generate the plugin. [Overlay](https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md) defines a way of creating documents that contain additional information to be merged with an OpenAPI description. Defaults to no value which uses the OpenAPI description as it is. | Yes, without its value |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the current working directory. Defaults to `./output`. | Yes, without its value |
 
@@ -43,7 +43,7 @@ _The resulting `workspace.json` file will look like this:_
       "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "includePatterns": ["/repos/{owner}/{repo}"],
       "excludePatterns": ["/repos/{owner}/{repo}#DELETE"],
-      "type": "openai",
+      "type": ["openai"],
       "outputDirectory": "./generated/plugins/github",
       "overlayDirectory": "./overlays/plugins/github/overlay.yaml"
     }
