@@ -166,6 +166,8 @@ _The resulting `workspace.json` file will look like this:_
   └─.kiota
     └─definitions
        └─GraphClient.yaml
+    └─apimanifest.json
+    └─workspace.json 
   └─generated
     └─graph
        └─csharp
@@ -174,7 +176,5 @@ _The resulting `workspace.json` file will look like this:_
         └─python
           └─... # Generated code files
           └─graph_client.py   
-          └─kiota-lock.json    
-  └─apimanifest.json
-  └─workspace.json 
+          └─kiota-lock.json
 ```

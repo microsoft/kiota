@@ -30,5 +30,6 @@ _The resulting `workspace.json` file will look like this:_
 ## File structure
 ```bash
 /
- └─workspace.json
+ └─.kiota
+    └─workspace.json
 ```
