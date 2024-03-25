@@ -221,6 +221,21 @@ public partial class KiotaBuilder
             return kiotaExt.LanguagesInformation;
         return null;
     }
+    /// <summary>
+    /// Generates the API plugins from the OpenAPI document
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>Whether the generated plugin was updated or not</returns>
+    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken)
+    {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        {
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            logger.LogCritical("Plugins generation is not implemented yet");
+            //TODO implement generation logic
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Generates the code from the OpenAPI document
@@ -228,6 +243,27 @@ public partial class KiotaBuilder
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>Whether the generated code was updated or not</returns>
     public async Task<bool> GenerateClientAsync(CancellationToken cancellationToken)
+    {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        {
+            // Create Source Model
+            sw.Start();
+            var generatedCode = CreateSourceModel(openApiTree);
+            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+            // RefineByLanguage
+            sw.Start();
+            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+            // Write language source
+            sw.Start();
+            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    private async Task<bool> GenerateConsumerAsync(Func<Stopwatch, int, OpenApiUrlTreeNode?, CancellationToken, Task<int>> innerGenerationSteps, CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         // Read input stream
@@ -252,20 +288,7 @@ public partial class KiotaBuilder
 
             if (shouldGenerate)
             {
-                // Create Source Model
-                sw.Start();
-                var generatedCode = CreateSourceModel(openApiTree);
-                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-                // RefineByLanguage
-                sw.Start();
-                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-                // Write language source
-                sw.Start();
-                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+                stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
 
                 await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
             }

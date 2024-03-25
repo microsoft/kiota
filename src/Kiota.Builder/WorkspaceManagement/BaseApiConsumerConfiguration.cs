@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Configuration;
+using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
@@ -43,6 +45,24 @@ public abstract class BaseApiConsumerConfiguration
         target.DescriptionLocation = DescriptionLocation;
         target.IncludePatterns = new HashSet<string>(IncludePatterns, StringComparer.OrdinalIgnoreCase);
         target.ExcludePatterns = new HashSet<string>(ExcludePatterns, StringComparer.OrdinalIgnoreCase);
+    }
+    protected void UpdateGenerationConfigurationFromBase(GenerationConfiguration config, string clientName, IList<RequestInfo>? requests)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentException.ThrowIfNullOrEmpty(clientName);
+        config.IncludePatterns = IncludePatterns;
+        config.ExcludePatterns = ExcludePatterns;
+        config.OpenAPIFilePath = DescriptionLocation;
+        config.OutputPath = OutputPath;
+        config.ClientClassName = clientName;
+        config.Serializers.Clear();
+        config.Deserializers.Clear();
+        if (requests is { Count: > 0 })
+        {
+            config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
+                                            .Select(static x => $"/{x.UriTemplate}#{x.Method!.ToUpperInvariant()}")
+                                            .ToHashSet();
+        }
     }
 }
 #pragma warning restore CA2227 // Collection properties should be read only

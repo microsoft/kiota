@@ -88,20 +88,8 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.StructuredMimeTypes = new(StructuredMimeTypes);
-        config.IncludePatterns = IncludePatterns;
-        config.ExcludePatterns = ExcludePatterns;
-        config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules;
-        config.OutputPath = OutputPath;
-        config.ClientClassName = clientName;
-        config.Serializers.Clear();
-        config.Deserializers.Clear();
-        if (requests is { Count: > 0 })
-        {
-            config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
-                                            .Select(static x => $"/{x.UriTemplate}#{x.Method!.ToUpperInvariant()}")
-                                            .ToHashSet();
-        }
+        UpdateGenerationConfigurationFromBase(config, clientName, requests);
     }
 
     public object Clone()
