@@ -9,7 +9,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncKeyedLock;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
@@ -41,11 +40,28 @@ public class WorkspaceManagementService
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
     private readonly DescriptionStorageService descriptionStorageService;
-    public async Task<bool> IsClientPresent(string clientName, CancellationToken cancellationToken = default)
+    public async Task<bool> IsConsumerPresent(string clientName, CancellationToken cancellationToken = default)
     {
         if (!UseKiotaConfig) return false;
         var (wsConfig, _) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-        return wsConfig?.Clients.ContainsKey(clientName) ?? false;
+        return wsConfig is not null && (wsConfig.Clients.ContainsKey(clientName) || wsConfig.Plugins.ContainsKey(clientName));
+    }
+    private BaseApiConsumerConfiguration UpdateConsumerConfiguration(GenerationConfiguration generationConfiguration, WorkspaceConfiguration wsConfig)
+    {
+        if (generationConfiguration.IsPluginConfiguration)
+        {
+            var generationPluginConfig = new ApiPluginConfiguration(generationConfiguration);
+            generationPluginConfig.NormalizePaths(WorkingDirectory);
+            wsConfig.Plugins.AddOrReplace(generationConfiguration.ClientClassName, generationPluginConfig);
+            return generationPluginConfig;
+        }
+        else
+        {
+            var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
+            generationClientConfig.NormalizePaths(WorkingDirectory);
+            wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
+            return generationClientConfig;
+        }
     }
     public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, Stream descriptionStream, CancellationToken cancellationToken = default)
     {
@@ -53,10 +69,8 @@ public class WorkspaceManagementService
         if (UseKiotaConfig)
         {
             var (wsConfig, manifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
-            var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
-            generationClientConfig.NormalizePaths(WorkingDirectory);
-            wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
-            var inputConfigurationHash = await GetConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
+            var generationClientConfig = UpdateConsumerConfiguration(generationConfiguration, wsConfig);
+            var inputConfigurationHash = await GetConsumerConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
             manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
             if (descriptionStream != Stream.Null)
@@ -100,7 +114,7 @@ public class WorkspaceManagementService
             {
                 var inputClientConfig = new ApiClientConfiguration(inputConfig);
                 inputClientConfig.NormalizePaths(WorkingDirectory);
-                var inputConfigurationHash = await GetConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
+                var inputConfigurationHash = await GetConsumerConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
                 return !clientConfigurationComparer.Equals(existingClientConfig, inputClientConfig) ||
                        !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingApiManifest);
             }
@@ -177,11 +191,13 @@ public class WorkspaceManagementService
     private static readonly WorkspaceConfigurationGenerationContext context = new(options);
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     private readonly string WorkingDirectory;
-
-    private async Task<string> GetConfigurationHashAsync(ApiClientConfiguration apiClientConfiguration, string descriptionHash)
+    private async Task<string> GetConsumerConfigurationHashAsync<T>(T apiClientConfiguration, string descriptionHash) where T : BaseApiConsumerConfiguration
     {
         using var stream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiClientConfiguration).ConfigureAwait(false);
+        if (apiClientConfiguration is ApiClientConfiguration)
+            await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiClientConfiguration).ConfigureAwait(false);
+        else
+            await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiPluginConfiguration).ConfigureAwait(false);
         await stream.WriteAsync(Encoding.UTF8.GetBytes(descriptionHash)).ConfigureAwait(false);
         stream.Position = 0;
         if (HashAlgorithm.Value is null)
@@ -269,7 +285,7 @@ public class WorkspaceManagementService
             var clientConfiguration = new ApiClientConfiguration(generationConfiguration);
             clientConfiguration.NormalizePaths(WorkingDirectory);
             wsConfig.Clients.Add(generationConfiguration.ClientClassName, clientConfiguration);
-            var inputConfigurationHash = await GetConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
+            var inputConfigurationHash = await GetConsumerConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
             apiManifest.ApiDependencies.Add(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, []));
             lockManagementService.DeleteLockFile(Path.Combine(WorkingDirectory, clientConfiguration.OutputPath));

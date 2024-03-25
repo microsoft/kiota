@@ -29,7 +29,7 @@ public class GenerationConfiguration : ICloneable
     {
         get; set;
     }
-    public ClientOperation? Operation
+    public ConsumerOperation? Operation
     {
         get; set;
     }
@@ -186,6 +186,7 @@ public class GenerationConfiguration : ICloneable
         };
         return dependency;
     }
+    public bool IsPluginConfiguration => PluginTypes.Count != 0;
 }
 #pragma warning restore CA1056
 #pragma warning restore CA2227

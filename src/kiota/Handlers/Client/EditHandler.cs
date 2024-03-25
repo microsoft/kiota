@@ -83,7 +83,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ClientOperation.Edit;
+        Configuration.Generation.Operation = ConsumerOperation.Edit;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.ApiManifest;
@@ -37,7 +38,11 @@ public abstract class BaseApiConsumerConfiguration
     /// The output path for the generated code, related to the configuration file.
     /// </summary>
     public string OutputPath { get; set; } = string.Empty;
-
+    public void NormalizePaths(string targetDirectory)
+    {
+        if (Path.IsPathRooted(OutputPath))
+            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+    }
     protected void CloneBase(BaseApiConsumerConfiguration target)
     {
         ArgumentNullException.ThrowIfNull(target);

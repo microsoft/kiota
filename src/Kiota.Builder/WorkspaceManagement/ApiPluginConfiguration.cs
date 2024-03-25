@@ -16,6 +16,15 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
     {
 
     }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiPluginConfiguration"/> class from an existing <see cref="GenerationConfiguration"/>.
+    /// </summary>
+    /// <param name="config">The configuration to use to initialize the client configuration</param>
+    public ApiPluginConfiguration(GenerationConfiguration config) : base(config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        Types = config.PluginTypes.Select(x => x.ToString()).ToHashSet();
+    }
     public HashSet<string> Types { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public object Clone()
     {

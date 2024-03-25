@@ -269,7 +269,7 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
-        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
 
         try
@@ -295,7 +295,7 @@ public partial class KiotaBuilder
             else
             {
                 logger.LogInformation("No changes detected, skipping generation");
-                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                if (config.Operation is ConsumerOperation.Add or ConsumerOperation.Edit && config.SkipGeneration)
                 {
                     await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
                 }

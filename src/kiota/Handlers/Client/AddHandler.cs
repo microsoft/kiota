@@ -91,7 +91,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.Language = language;
         WarnUsingPreviewLanguage(language);
         Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ClientOperation.Add;
+        Configuration.Generation.Operation = ConsumerOperation.Add;
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)

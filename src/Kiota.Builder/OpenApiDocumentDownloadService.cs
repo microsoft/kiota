@@ -46,7 +46,7 @@ internal class OpenApiDocumentDownloadService
         Stream input;
         var isDescriptionFromWorkspaceCopy = false;
         if (useKiotaConfig &&
-            config.Operation is ClientOperation.Edit or ClientOperation.Add &&
+            config.Operation is ConsumerOperation.Edit or ConsumerOperation.Add &&
             workspaceManagementService is not null &&
             await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, config.CleanOutput, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
         {

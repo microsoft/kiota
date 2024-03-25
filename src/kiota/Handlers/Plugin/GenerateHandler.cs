@@ -56,7 +56,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     DefaultSerializersAndDeserializers(generationConfiguration);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
-                    generationConfiguration.Operation = ClientOperation.Generate;
+                    generationConfiguration.Operation = ConsumerOperation.Generate;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
