@@ -723,16 +723,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private static string GetTypeAssertion(string originalReference, string typeImportName, string? assignVarName = default, string? statusVarName = default) =>
         $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", " : string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
 
-    private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true)
+    private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true, bool scalar = false)
     {
         writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
             $"for i, v := range {sourceVarName} {{");
         writer.IncreaseIndent();
-        writer.StartBlock("if v != nil {");
-        var derefPrefix = dereference ? "*(" : string.Empty;
-        var derefSuffix = dereference ? ")" : string.Empty;
-        writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
-        writer.CloseBlock();
+        if (!scalar)
+        {
+            writer.StartBlock("if v != nil {");
+            var derefPrefix = dereference ? "*(" : string.Empty;
+            var derefSuffix = dereference ? ")" : string.Empty;
+            writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
+            writer.CloseBlock();
+        }
+        else
+        {
+            writer.WriteLine($"{targetVarName}[i] = v");
+        }
         writer.CloseBlock();
     }
 
@@ -909,7 +916,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteBlock("if err != nil {", "}", "return nil, err");
             }
             else
+            {
+                if (requestParams.requestBody.Type.IsCollection)
+                {
+                    WriteCollectionCast("interface{}", bodyParamReference, "cast", writer, string.Empty, false, true);
+                    bodyParamReference = "cast";
+                }
                 writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{sanitizedRequestBodyContentType}\", {bodyParamReference})");
+            }
         }
 
         writer.WriteLine($"return {RequestInfoVarName}, nil");
