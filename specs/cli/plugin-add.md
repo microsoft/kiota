@@ -35,7 +35,6 @@ For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](h
 | -- | -- |
 | apiDependencies.Key | Defaults to the plugin name. |
 | publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
-| publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
 | publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
 |  |  |
 
