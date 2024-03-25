@@ -24,20 +24,18 @@ public static class KiotaPluginCommands
         clientName.AddAlias("--pn");
         return clientName;
     }
-    internal static Option<PluginType> GetPluginTypeOption()
+    internal static Option<List<PluginType>> GetPluginTypeOption(bool isRequired = true)
     {
-        var languageOption = new Option<PluginType>("--type", "The type of manifest to generate.");
-        languageOption.AddAlias("-t");
-        languageOption.IsRequired = true;
-        KiotaHost.AddEnumValidator(languageOption, "language");
-        return languageOption;
-    }
-    internal static Option<PluginType?> GetPluginOptionalTypeOption()
-    {
-        var languageOption = new Option<PluginType?>("--type", "The type of manifest to generate.");
-        languageOption.AddAlias("-t");
-        KiotaHost.AddEnumValidator(languageOption, "language");
-        return languageOption;
+        var typeOption = new Option<List<PluginType>>("--type", "The type of manifest to generate. Accepts multiple values.");
+        typeOption.AddAlias("-t");
+        if (isRequired)
+        {
+            typeOption.IsRequired = true;
+            typeOption.Arity = ArgumentArity.OneOrMore;
+            typeOption.SetDefaultValue(new List<PluginType> { PluginType.OpenAI });
+        }
+        typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
+        return typeOption;
     }
     public static Command GetAddCommand()
     {
@@ -64,7 +62,7 @@ public static class KiotaPluginCommands
         {
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
-            PluginTypeOption = pluginType,
+            PluginTypesOption = pluginType,
             DescriptionOption = descriptionOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
@@ -81,7 +79,7 @@ public static class KiotaPluginCommands
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
         var pluginNameOption = GetPluginNameOption();
-        var pluginType = GetPluginOptionalTypeOption();
+        var pluginTypes = GetPluginTypeOption(false);
         var command = new Command("edit", "Edits a plugin configuration and updates the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -90,7 +88,7 @@ public static class KiotaPluginCommands
             skipGenerationOption,
             outputOption,
             pluginNameOption,
-            pluginType,
+            pluginTypes,
             //TODO overlay when we have support for it in OAI.net
         };
         //TODO map handler
@@ -107,7 +105,12 @@ public static class KiotaPluginCommands
             cleanOutputOption,
             logLevelOption,
         };
-        //TODO map handler
+        command.Handler = new RemoveHandler
+        {
+            ClassOption = pluginNameOption,
+            CleanOutputOption = cleanOutputOption,
+            LogLevelOption = logLevelOption,
+        };
         return command;
     }
     public static Command GetGenerateCommand()
@@ -121,7 +124,12 @@ public static class KiotaPluginCommands
             logLevelOption,
             refreshOption,
         };
-        //TODO map handler
+        command.Handler = new GenerateHandler
+        {
+            ClassOption = pluginNameOption,
+            LogLevelOption = logLevelOption,
+            RefreshOption = refreshOption,
+        };
         return command;
     }
 }

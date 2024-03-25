@@ -129,21 +129,44 @@ public class WorkspaceManagementService
     }
     public async Task RemoveClientAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
     {
+        await RemoveConsumerInternalAsync(clientName,
+        wsConfig =>
+        {
+            if (cleanOutput && wsConfig.Clients.TryGetValue(clientName, out var clientConfig) && Directory.Exists(clientConfig.OutputPath))
+                Directory.Delete(clientConfig.OutputPath, true);
+
+            if (!wsConfig.Clients.Remove(clientName))
+                throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
+        },
+        cleanOutput, cancellationToken).ConfigureAwait(false);
+    }
+    public async Task RemovePluginAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    {
+        await RemoveConsumerInternalAsync(clientName,
+        wsConfig =>
+        {
+            if (cleanOutput && wsConfig.Plugins.TryGetValue(clientName, out var pluginConfig) && Directory.Exists(pluginConfig.OutputPath))
+                Directory.Delete(pluginConfig.OutputPath, true);
+
+            if (!wsConfig.Plugins.Remove(clientName))
+                throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
+        },
+        cleanOutput, cancellationToken).ConfigureAwait(false);
+    }
+    private async Task RemoveConsumerInternalAsync(string clientName, Action<WorkspaceConfiguration> consumerRemoval, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    {
         if (!UseKiotaConfig)
             throw new InvalidOperationException("Cannot remove a client in lock mode");
         var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
         if (wsConfig is null)
             throw new InvalidOperationException("Cannot remove a client without a configuration");
 
-        if (cleanOutput && wsConfig.Clients.TryGetValue(clientName, out var clientConfig) && Directory.Exists(clientConfig.OutputPath))
-            Directory.Delete(clientConfig.OutputPath, true);
+        consumerRemoval(wsConfig);
 
-        if (!wsConfig.Clients.Remove(clientName))
-            throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
         manifest?.ApiDependencies.Remove(clientName);
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
         descriptionStorageService.RemoveDescription(clientName);
-        if (wsConfig.Clients.Count == 0)
+        if (wsConfig.AnyConsumerPresent)
             descriptionStorageService.Clean();
     }
     private static readonly JsonSerializerOptions options = new()

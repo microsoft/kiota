@@ -551,7 +551,7 @@ public static partial class KiotaHost
                 input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {validator}";
         });
     }
-    private static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues)
+    internal static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues)
     {
         var knownValuesHash = new HashSet<string>(knownValues, StringComparer.OrdinalIgnoreCase);
         if (input.Tokens.Any() && input.Tokens.Select(static x => x.Value).SelectMany(static x => x.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)).FirstOrDefault(x => !knownValuesHash.Contains(x)) is string unknownValue)
@@ -568,14 +568,14 @@ public static partial class KiotaHost
             input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
         }
     }
-    internal static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
+    private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
             ValidateEnumValue<T>(input, parameterName);
         });
     }
-    internal static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
+    private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {

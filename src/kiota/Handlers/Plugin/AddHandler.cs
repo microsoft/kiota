@@ -19,7 +19,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public required Option<PluginType> PluginTypeOption
+    public required Option<List<PluginType>> PluginTypesOption
     {
         get; init;
     }
@@ -42,7 +42,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
-        PluginType pluginType = context.ParseResult.GetValueForOption(PluginTypeOption);
+        List<PluginType> pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption) ?? [];
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
@@ -55,6 +55,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ClientOperation.Add;
         //TODO do something with the plugin type
+        // if (pluginTypes.Count != 0)
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)
