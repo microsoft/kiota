@@ -30,6 +30,7 @@ public static partial class KiotaHost
         {
             rootCommand.AddCommand(KiotaWorkspaceCommands.GetWorkspaceNodeCommand());
             rootCommand.AddCommand(KiotaClientCommands.GetClientNodeCommand());
+            rootCommand.AddCommand(KiotaPluginCommands.GetPluginNodeCommand());
         }
         return rootCommand;
     }
@@ -567,14 +568,14 @@ public static partial class KiotaHost
             input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
         }
     }
-    private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
+    internal static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
             ValidateEnumValue<T>(input, parameterName);
         });
     }
-    private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
+    internal static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
