@@ -26,7 +26,10 @@ public class CodeUsingWriter
                                                 .GroupBy(static x => x.Path)
                                                 .OrderBy(static x => x.Key);
         foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key)))
+        {
+            writer.WriteLine("// @ts-ignore");
             writer.WriteLine($"import {{ {codeUsing.Select(static x => GetAliasedSymbol(x.Symbol, x.Alias, x.ShouldUseTypeImport)).Distinct().OrderBy(static x => x).Aggregate(static (x, y) => x + ", " + y)} }} from '{codeUsing.Key}';");
+        }
 
         writer.WriteLine();
     }
