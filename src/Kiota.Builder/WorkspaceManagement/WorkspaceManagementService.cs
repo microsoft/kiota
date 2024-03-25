@@ -101,6 +101,7 @@ public class WorkspaceManagementService
     }
     private static readonly KiotaLockComparer lockComparer = new();
     private static readonly ApiClientConfigurationComparer clientConfigurationComparer = new();
+    private static readonly ApiPluginConfigurationComparer pluginConfigurationComparer = new();
     private static readonly ApiDependencyComparer apiDependencyComparer = new();
     public async Task<bool> ShouldGenerateAsync(GenerationConfiguration inputConfig, string descriptionHash, CancellationToken cancellationToken = default)
     {
@@ -109,14 +110,25 @@ public class WorkspaceManagementService
         if (UseKiotaConfig)
         {
             var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            if ((wsConfig?.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) ?? false) &&
-                (apiManifest?.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest) ?? false))
+            if (wsConfig is null || apiManifest is null)
+                return true;
+            if (wsConfig.Clients.TryGetValue(inputConfig.ClientClassName, out var existingClientConfig) &&
+                apiManifest.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest))
             {
                 var inputClientConfig = new ApiClientConfiguration(inputConfig);
                 inputClientConfig.NormalizePaths(WorkingDirectory);
                 var inputConfigurationHash = await GetConsumerConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
                 return !clientConfigurationComparer.Equals(existingClientConfig, inputClientConfig) ||
                        !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingApiManifest);
+            }
+            if (wsConfig.Plugins.TryGetValue(inputConfig.ClientClassName, out var existingPluginConfig) &&
+                apiManifest.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingPluginApiManifest))
+            {
+                var inputClientConfig = new ApiPluginConfiguration(inputConfig);
+                inputClientConfig.NormalizePaths(WorkingDirectory);
+                var inputConfigurationHash = await GetConsumerConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
+                return !pluginConfigurationComparer.Equals(existingPluginConfig, inputClientConfig) ||
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingPluginApiManifest);
             }
             return true;
         }
