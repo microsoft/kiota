@@ -84,6 +84,5 @@ internal class GenerateHandler : BaseKiotaCommandHandler
 #endif
             }
         }
-        throw new System.NotImplementedException();
     }
 }
