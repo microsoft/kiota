@@ -41,6 +41,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { Bar as baz } from", result);
     }
     [Fact]
@@ -62,6 +63,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { Bar } from", result);
     }
 
@@ -86,6 +88,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -109,6 +112,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -132,6 +136,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -155,6 +160,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -178,6 +184,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 }

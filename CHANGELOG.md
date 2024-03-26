@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a warning message in the CLI when using preview languages. [#4316](https://github.com/microsoft/kiota/issues/4316)
 - Added support for handling untyped Json content in C#,Golang, TypeScript and Java. [#2319](https://github.com/microsoft/kiota/issues/2319)
+- Added TypeScript typecheck suppression to `.ts` files where unused imports cause build fail in projects which use `noUnusedLocals: true` compiler option. [#4397](https://github.com/microsoft/kiota/issues/4397)
 
 ### Changed
 
@@ -96,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Java -  Self-extraction of query parameters instead of using reflection. [#3965](https://github.com/microsoft/kiota/issues/3965)
+- Java - Self-extraction of query parameters instead of using reflection. [#3965](https://github.com/microsoft/kiota/issues/3965)
 - Fixed a bug where the discriminator validation rule would report false positives on nullable union types.
 - Fixed a bug where constructors and model names where clashing in Go. [#3920](https://github.com/microsoft/kiota/issues/3920)
 - Fixed a bug where the order of enum declaration might results in a missing enum type. [#3935](https://github.com/microsoft/kiota/issues/3935)
