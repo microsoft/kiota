@@ -62,6 +62,46 @@
           "type": "string"
         }
       }
+    },
+    "plugins": {
+      "type": "object",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "descriptionLocation": {
+              "type": "string"
+            },
+            "includePatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "excludePatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "type": "string"
+            },
+            "outputPath": {
+              "type": "string"
+            },
+            "overlayDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "disabledValidationRules": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     }
   }
 }

@@ -8,8 +8,8 @@ This repository contains the specifications for the Kiota project. The goal of t
 * [kiota client edit](./cli/client-edit.md)
 * [kiota client remove](./cli/client-remove.md)
 * [kiota client generate](./cli/client-generate.md)
-* [kiota config init](./cli/config-init.md)
-* [kiota config migrate](./cli/config-migrate.md)
+* [kiota workspace init](./cli/workspace-init.md)
+* [kiota workspace migrate](./cli/workspace-migrate.md)
 * [kiota download](./cli/download.md)
 * [kiota info](./cli/info.md)
 * [kiota login](./cli/login.md)
@@ -21,9 +21,9 @@ This repository contains the specifications for the Kiota project. The goal of t
 
 ## Scenarios
 
-* [Kiota Config](./scenarios/kiota-config.md)
+* [Kiota Config](./scenarios/kiota-workspace.md)
 * [Telemetry](./scenarios/telemetry.md)
 
 ## Schemas
 
-* [kiota-config.json](./schemas/kiota-config.json)
+* [workspace.json](./schemas/workspace.json)
