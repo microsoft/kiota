@@ -21,19 +21,19 @@ For `openai` plugins, the mapping should follow [Hidi logic to generate OpenAI P
 | OpenAI field | Default value |
 | -- | -- |
 | name_for_human | Defaults to the OpenAPI document title. |
-| name_for_model | Defaults to `{name_for_human}`. |
+| name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
-| description_for_model | Defaults to `{description_for_human}`. |
+| description_for_model | Defaults to x-ai-description extension from the OpenAPI document.  If the x-ai-description is not available, it defaults to `description_for_human` or `Description for {name_for_human}`. |
 | contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
-| logo_url | Dummy URL? |
-| legal_info_url | Dummy URL? |
+| logo_url | Defaults to x-logo extension from the OpenAPI document. If the x-logo is not available, the logo_url will not be added in the plugin. |
+| legal_info_url | Defaults to x-legal-info-url extension from the OpenAPI document. If the x-legal-info-url is not availabe, the legal_info_url will not be added in the plugin. |
 |  |  |
 
 For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](https://github.com/microsoft/OpenApi.ApiManifest/blob/main/docs/OpenApiToApiManifestMapping.md). Requiring fields are as the following:
 
 | API Manifest field | Default value |
 | -- | -- |
-| apiDependencies.Key | Defaults to the plugin name. |
+| apiDependencies.Key | Defaults to `{plugin-name}`. |
 | publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
 | publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
 |  |  |
