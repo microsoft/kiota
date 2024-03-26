@@ -49,6 +49,14 @@ dotnet test ./tests/Kiota.Tests/
 dotnet test ./tests/Kiota.Builder.Tests
 ```
 
+## Try out the generator
+
+You can try out the generator including your local changes by running:
+
+```sh
+dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would pass>
+```
+
 ## Contributing Code
 
 1. Fork the repository and clone it to your local machine.
