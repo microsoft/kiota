@@ -119,7 +119,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             }
             writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, isPrimitive, isEnum)}\",");
             if (isEnum)
-                writer.WriteLine($"enumObject: \"{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}\",");
+                writer.WriteLine($"enumObject: {executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()},");
             else if (!isVoid)
                 writer.WriteLine($"responseBodyFactory: {GetTypeFactory(isVoid, isStream, executorMethod, writer)},");
             var sanitizedRequestBodyContentType = executorMethod.RequestBodyContentType.SanitizeDoubleQuote();

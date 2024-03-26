@@ -209,8 +209,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("sendEnum", result);
-        Assert.Contains("enumObject:", result);
-        Assert.Contains(EnumName.ToFirstCharacterUpperCase(), result);
+        Assert.Contains("enumObject: " + EnumName.ToFirstCharacterUpperCase(), result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -237,8 +236,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("sendCollectionOfEnum", result);
-        Assert.Contains("enumObject:", result);
-        Assert.Contains(EnumName.ToFirstCharacterUpperCase(), result);
+        Assert.Contains("enumObject: " + EnumName.ToFirstCharacterUpperCase(), result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
