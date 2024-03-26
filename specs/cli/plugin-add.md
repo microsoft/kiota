@@ -44,7 +44,6 @@ For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](h
 | -- | -- | -- | -- | -- |
 | `--plugin-name \| --pn` | Yes | GitHub | Name of the plugin. Unique within the parent API. Defaults to `Plugin` | No |
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI description in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
-| `--search-key \| --sk` | No | apisguru::github.com:api.github.com | The search key used to locate the OpenAPI description. | Yes, without its value |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
