@@ -22,6 +22,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
+using Kiota.Builder.Plugins;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
@@ -230,9 +231,13 @@ public partial class KiotaBuilder
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
-            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-            logger.LogCritical("Plugins generation is not implemented yet");
-            //TODO implement generation logic
+            if (openApiDocument is null || openApiTree is null)
+                throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
+            // generate plugin
+            sw.Start();
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config);
+            await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }
