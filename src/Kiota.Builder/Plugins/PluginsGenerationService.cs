@@ -66,17 +66,28 @@ public class PluginsGenerationService
                     Spec = new Dictionary<string, string> { { "url", "./openapi.yaml" } }, //TODO update from context once the slice copy is implemented
                     RunForFunctions = [operation.OperationId]
                 });
+                var oasParameters = operation.Parameters
+                                        .Union(pathItem.Parameters.Where(static x => x.In is ParameterLocation.Path))
+                                        .Where(static x => x.Schema?.Type is not null && scalarTypes.Contains(x.Schema.Type))
+                                        .ToArray();
+                //TODO add request body
+
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
-                    //TODO map parameters
                     Description = operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary) ? summary : operation.Description.CleanupXMLString(),
-                    // Parameters = operation.Parameters.Select(static x => new Parameter
-                    // {
-                    //     Name = x.Name,
-                    //     Type = x.Schema.Type,
-                    //     Required = x.Required
-                    // }).ToArray()
+                    Parameters = oasParameters.Length == 0 ? null :
+                                    new Parameters(
+                                        "object",
+                                        new Properties(oasParameters.ToDictionary(
+                                                                        static x => x.Name,
+                                                                        static x => new Property(
+                                                                                        x.Schema.Type ?? string.Empty,
+                                                                                        x.Description.CleanupXMLString(),
+                                                                                        x.Schema.Default?.ToString() ?? string.Empty,
+                                                                                        null), //TODO enums
+                                                                        StringComparer.OrdinalIgnoreCase)),
+                                        oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()),
                 });
             }
         }
@@ -88,4 +99,6 @@ public class PluginsGenerationService
         }
         return (runtimes.ToArray(), functions.ToArray());
     }
+    private static readonly HashSet<string> scalarTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "number", "integer", "boolean" };
+    //TODO validate this is right, in OAS integer are under type number for the json schema, but integer is ok for query parameters
 }
