@@ -2,11 +2,11 @@
 
 ## Description 
 
-`kiota client add` allows a developer to add a new API client to the `workspace.json` file. If no `workspace.json` file is found, a new `workspace.json` file would be created in the `.kiota` directory in current working directory. The command will add a new entry to the `clients` section of the `workspace.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/clients` folder. If a client or plugin with the same name already exists, the command will fail and display an actionable error message.
+`kiota client add` allows a developer to add a new API client to the `workspace.json` file. If no `workspace.json` file is found, a new `workspace.json` file would be created in the `.kiota` directory in current working directory. The command will add a new entry to the `clients` section of the `workspace.json` file. Once this is done, a local copy of the OpenAPI description is generated and kept in the `.kiota/documents/{client-name}` folder. If a client or plugin with the same name already exists, the command will fail and display an actionable error message.
 
 When executing, a new API entry will be added and will use the `--client-name` parameter as the key for the map. When loading the OpenAPI description, it will store the location of the description in the `descriptionLocation` property. If `--include-path` or `--exclude-path` are provided, they will be stored in the `includePatterns` and `excludePatterns` properties respectively.
 
-Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/clients/{client-name}.yaml|json` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
+Every time an API client is added, a copy of the OpenAPI description file will be stored in the `./.kiota/documents/{client-name}/{client-name}.yaml|json` folder. The files will be named using the API client name. This will allow the CLI to detect changes in the description and avoid downloading the description again if it hasn't changed. 
 
 At the same time, an [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) file will be generated (if non existing) or edited (if already existing) in the `.kiota` folder next to `workspace.json`. API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI description location and the properties of the client will be generated and would trigger an update to the [API Manifest][https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html].
 
@@ -18,7 +18,6 @@ Once the `workspace.json` file is generated and the OpenAPI description file is 
 | -- | -- | -- | -- | -- |
 | `--client-name \| --cn` | Yes | graphDelegated | Name of the client and the client class. Unique within the parent API. Defaults to `Client` | No |
 | `--openapi \| -d` | Yes | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | No |
-| `--search-key \| --sk` | No | github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0 | The search key used to locate the OpenAPI description. | Yes, without its value |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--language \| -l` | Yes | csharp | The target language for the generated code files or for the information. | Yes |
@@ -109,11 +108,11 @@ _The resulting `apimanifest.json` file will look like this:_
 ```bash
 /
  └─.kiota
-    └─clients
-       └─GraphClient
-         └─description.yaml
     └─apimanifest.json
     └─workspace.json 
+    └─documents
+       └─GraphClient
+         └─GraphClient.yaml
  └─generated
     └─graph
        └─csharp

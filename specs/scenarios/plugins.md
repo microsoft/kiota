@@ -6,7 +6,7 @@ Today's AI models can easily generate messages and images for users. While this 
 
 OpenAI has defined [OpenAI plugins](https://platform.openai.com/docs/plugins/introduction), one way to enable GPT to interact with APIs, allowing it to perform several actions. To build a plugin, it's necessary to create a [plugin manifest file](https://platform.openai.com/docs/plugins/getting-started/plugin-manifest) that defines relevant metadata information that allows GPT to call an API.
 
-In addition to OpenAI plugin manifest, [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) is another way to declare dependencies of APIs and their characteristics. API Manifest addresses a limitation present in both the OpenAI plugin manifest and OpenAPI document, it can references one or more OpenAPI descriptions as dependencies.
+In addition to OpenAI plugin manifest, [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) is another way to declare dependencies of APIs and their characteristics. API Manifest addresses a limitation present in both the OpenAI plugin manifest and OpenAPI document, it can references one or more OpenAPI documents as dependencies.
 For developers using [Semantic Kernel](
 https://learn.microsoft.com/en-us/semantic-kernel/overview/) as their AI orchestractor, [API Manifest is supported as a input format](https://github.com/microsoft/semantic-kernel/pull/4961), in preview state, for plugin generation.
 
@@ -38,7 +38,7 @@ Here is an example of what the `workspace.json` file could look like.
       "excludePatterns": [],
       "type": ["openai"],
       "outputDirectory": "./generated/plugins/github",
-      "overlayDirectory": "./overlays/plugins/github/overlay.yaml"
+      "overlayDirectory": "./kiota/documents/github/overlay.yaml"
     }
   }
 }
