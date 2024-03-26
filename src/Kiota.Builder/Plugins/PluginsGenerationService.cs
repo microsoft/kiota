@@ -33,10 +33,13 @@ public class PluginsGenerationService
         var pluginDocument = new ManifestDocument
         {
             SchemaVersion = "v2",
-            //TODO name for human
-            //TODO description for human
-            //TODO contact email
+            NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
+            // TODO name for model
+            DescriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}",
+            DescriptionForModel = OAIDocument.Info?.Description.CleanupXMLString() is string e && !string.IsNullOrEmpty(e) ? e : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}",
+            ContactEmail = OAIDocument.Info?.Contact?.Email,
             //TODO namespace
+            //TODO logo
             Runtimes = [.. runtimes.OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
@@ -88,6 +91,7 @@ public class PluginsGenerationService
                                                                                         null), //TODO enums
                                                                         StringComparer.OrdinalIgnoreCase)),
                                         oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()),
+                    //TODO states with reasoning and instructions from OAS extensions
                 });
             }
         }
