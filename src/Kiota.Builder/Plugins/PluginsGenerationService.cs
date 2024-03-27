@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.Plugins.Manifest;
@@ -31,13 +32,20 @@ public class PluginsGenerationService
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode);
+        var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
+        var descriptionForModel = descriptionForHuman;
+        if (OAIDocument.Info is not null &&
+                OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
+                descriptionExtension is OpenApiDescriptionForModelExtension extension &&
+                !string.IsNullOrEmpty(extension.Description))
+            descriptionForModel = extension.Description.CleanupXMLString();
         var pluginDocument = new ManifestDocument
         {
             SchemaVersion = "v2",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             // TODO name for model
-            DescriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}",
-            DescriptionForModel = OAIDocument.Info?.Description.CleanupXMLString() is string e && !string.IsNullOrEmpty(e) ? e : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}",
+            DescriptionForHuman = descriptionForHuman,
+            DescriptionForModel = descriptionForModel,
             ContactEmail = OAIDocument.Info?.Contact?.Email,
             //TODO namespace
             //TODO logo
