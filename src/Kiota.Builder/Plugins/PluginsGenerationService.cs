@@ -10,6 +10,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.Plugins;
@@ -29,9 +30,33 @@ public class PluginsGenerationService
         Configuration = configuration;
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
+    private const string ManifestFileName = "manifest.json";
+    private const string DescriptionRelativePath = "./openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode);
+        var manifestOutputPath = Path.Combine(Configuration.OutputPath, ManifestFileName);
+        var directory = Path.GetDirectoryName(manifestOutputPath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+
+        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+        await using var descriptionStream = File.Create(descriptionFullPath, 4096);
+        await using var fileWriter = new StreamWriter(descriptionStream);
+        var descriptionWriter = new OpenApiYamlWriter(fileWriter);
+        OAIDocument.SerializeAsV3(descriptionWriter);
+        descriptionWriter.Flush();
+
+        var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+        await using var fileStream = File.Create(manifestOutputPath, 4096);
+        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+        pluginDocument.Write(writer);
+        await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+    private ManifestDocument GetManifestDocument(string openApiDocumentPath)
+    {
+        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var descriptionForModel = descriptionForHuman;
         if (OAIDocument.Info is not null &&
@@ -39,7 +64,7 @@ public class PluginsGenerationService
                 descriptionExtension is OpenApiDescriptionForModelExtension extension &&
                 !string.IsNullOrEmpty(extension.Description))
             descriptionForModel = extension.Description.CleanupXMLString();
-        var pluginDocument = new ManifestDocument
+        return new ManifestDocument
         {
             SchemaVersion = "v2",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
@@ -47,7 +72,7 @@ public class PluginsGenerationService
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = descriptionForModel,
             ContactEmail = OAIDocument.Info?.Contact?.Email,
-            //TODO namespace
+            Namespace = Configuration.ClientClassName,
             //TODO logo
             Runtimes = [.. runtimes
                             .GroupBy(static x => x, _openAPIRuntimeComparer)
@@ -60,19 +85,8 @@ public class PluginsGenerationService
                             .OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
-        var outputPath = Path.Combine(Configuration.OutputPath, "manifest.json");
-
-        var directory = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            Directory.CreateDirectory(directory);
-#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-        await using var fileStream = File.Create(outputPath, 4096);
-        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
-#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-        pluginDocument.Write(writer);
-        await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
-    private (OpenAPIRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode)
+    private (OpenAPIRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
     {
         var runtimes = new List<OpenAPIRuntime>();
         var functions = new List<Function>();
@@ -83,7 +97,7 @@ public class PluginsGenerationService
                 runtimes.Add(new OpenAPIRuntime
                 {
                     Auth = new Auth("none"),
-                    Spec = new Dictionary<string, string> { { "url", "./openapi.yaml" } }, //TODO update from context once the slice copy is implemented
+                    Spec = new Dictionary<string, string> { { "url", openApiDocumentPath } },
                     RunForFunctions = [operation.OperationId]
                 });
                 var oasParameters = operation.Parameters
@@ -114,7 +128,7 @@ public class PluginsGenerationService
         }
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(node.Value);
+            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(node.Value, openApiDocumentPath);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
         }
