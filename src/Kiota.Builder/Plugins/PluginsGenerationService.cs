@@ -27,6 +27,7 @@ public class PluginsGenerationService
         TreeNode = openApiUrlTreeNode;
         Configuration = configuration;
     }
+    private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode);
@@ -40,7 +41,15 @@ public class PluginsGenerationService
             ContactEmail = OAIDocument.Info?.Contact?.Email,
             //TODO namespace
             //TODO logo
-            Runtimes = [.. runtimes.OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
+            Runtimes = [.. runtimes
+                            .GroupBy(static x => x, _openAPIRuntimeComparer)
+                            .Select(static x =>
+                            {
+                                var result = x.First();
+                                result.RunForFunctions = x.SelectMany(static y => y.RunForFunctions).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                                return result;
+                            })
+                            .OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
         var outputPath = Path.Combine(Configuration.OutputPath, "manifest.json");
@@ -55,9 +64,9 @@ public class PluginsGenerationService
         pluginDocument.Write(writer);
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
-    private (Runtime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode)
+    private (OpenAPIRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode)
     {
-        var runtimes = new List<Runtime>();
+        var runtimes = new List<OpenAPIRuntime>();
         var functions = new List<Function>();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
