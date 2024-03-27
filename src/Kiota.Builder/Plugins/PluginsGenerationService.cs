@@ -43,7 +43,7 @@ public class PluginsGenerationService
         {
             SchemaVersion = "v2",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
-            // TODO name for model
+            // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = descriptionForModel,
             ContactEmail = OAIDocument.Info?.Contact?.Email,
@@ -108,7 +108,7 @@ public class PluginsGenerationService
                                                                                         null), //TODO enums
                                                                         StringComparer.OrdinalIgnoreCase)),
                                         oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()),
-                    //TODO states with reasoning and instructions from OAS extensions
+                    States = GetStatesFromOperation(operation),
                 });
             }
         }
@@ -119,6 +119,40 @@ public class PluginsGenerationService
             functions.AddRange(childFunctions);
         }
         return (runtimes.ToArray(), functions.ToArray());
+    }
+    private static States? GetStatesFromOperation(OpenApiOperation openApiOperation)
+    {
+        return (GetStateFromExtension<OpenApiAiReasoningInstructionsExtension>(openApiOperation, OpenApiAiReasoningInstructionsExtension.Name, static x => x.ReasoningInstructions),
+                GetStateFromExtension<OpenApiAiRespondingInstructionsExtension>(openApiOperation, OpenApiAiRespondingInstructionsExtension.Name, static x => x.RespondingInstructions)) switch
+        {
+            (State reasoning, State responding) => new States
+            {
+                Reasoning = reasoning,
+                Responding = responding
+            },
+            (State reasoning, _) => new States
+            {
+                Reasoning = reasoning
+            },
+            (_, State responding) => new States
+            {
+                Responding = responding
+            },
+            _ => null
+        };
+    }
+    private static State? GetStateFromExtension<T>(OpenApiOperation openApiOperation, string extensionName, Func<T, List<string>> instructionsExtractor)
+    {
+        if (openApiOperation.Extensions.TryGetValue(extensionName, out var rExtRaw) &&
+            rExtRaw is T rExt &&
+            instructionsExtractor(rExt).Exists(static x => !string.IsNullOrEmpty(x)))
+        {
+            return new State
+            {
+                Instructions = instructionsExtractor(rExt).Where(static x => !string.IsNullOrEmpty(x)).Select(static x => x.CleanupXMLString()).ToList()
+            };
+        }
+        return null;
     }
     private static readonly HashSet<string> scalarTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "number", "integer", "boolean" };
     //TODO validate this is right, in OAS integer are under type number for the json schema, but integer is ok for query parameters
