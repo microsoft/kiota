@@ -261,6 +261,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                     ReturnType = new CodeType { Name = "Command", IsExternal = true },
                     OriginalMethod = clientConstructor,
                 };
+
                 currentClass.AddMethod(rootMethod);
             }
         }
