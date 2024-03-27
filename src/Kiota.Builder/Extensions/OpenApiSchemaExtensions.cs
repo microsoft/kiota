@@ -6,10 +6,12 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
+
 public static class OpenApiSchemaExtensions
 {
     private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = x =>
     (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
+
     public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema)
     {
         if (schema == null)
@@ -30,6 +32,7 @@ public static class OpenApiSchemaExtensions
             return new[] { schema.Xml.Name };
         return Enumerable.Empty<string>();
     }
+
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
         if (schemas is null) return Enumerable.Empty<OpenApiSchema>();
@@ -37,6 +40,7 @@ public static class OpenApiSchemaExtensions
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
+
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
         return schemas.FlattenSchemaIfRequired(subsequentGetter).Where(static x => !string.IsNullOrEmpty(x.Title)).Select(static x => x.Title);
@@ -68,6 +72,12 @@ public static class OpenApiSchemaExtensions
     {
         return "object".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase);
     }
+
+    public static bool IsScalar(this OpenApiSchema? schema)
+    {
+        return schema?.IsObject() == false && schema?.Reference?.Id == null;
+    }
+
     public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
         return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
@@ -103,10 +113,12 @@ public static class OpenApiSchemaExtensions
         return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
         // so we don't consider one of object/nullable as a union type
     }
+
     private static readonly HashSet<string> oDataTypes = new(StringComparer.OrdinalIgnoreCase) {
         "number",
         "integer",
     };
+
     public static bool IsODataPrimitiveType(this OpenApiSchema schema)
     {
         return schema.IsExclusiveUnion() &&
@@ -121,18 +133,21 @@ public static class OpenApiSchemaExtensions
                 schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
                 schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1;
     }
+
     public static bool IsEnum(this OpenApiSchema schema)
     {
         if (schema is null) return false;
         return schema.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) &&
                 (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)); // number and boolean enums are not supported
     }
+
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
         if (schema is null) return false;
         return schema.AnyOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
                 schema.OneOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
     }
+
     public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
     {
         if (schema is null) return false;
@@ -145,6 +160,7 @@ public static class OpenApiSchemaExtensions
                 !string.IsNullOrEmpty(schema.Format) ||
                 !string.IsNullOrEmpty(schema.Reference?.Id);
     }
+
     public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema>? visitedSchemas = null)
     {
         visitedSchemas ??= new();
@@ -173,6 +189,7 @@ public static class OpenApiSchemaExtensions
 
         return Enumerable.Empty<string>();
     }
+
     private static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
     {
         if (schemas == null) return Enumerable.Empty<OpenApiSchema>();
@@ -205,6 +222,7 @@ public static class OpenApiSchemaExtensions
         }
         return result;
     }
+
     internal static string GetDiscriminatorPropertyName(this OpenApiSchema schema)
     {
         if (schema == null)
@@ -222,6 +240,7 @@ public static class OpenApiSchemaExtensions
 
         return string.Empty;
     }
+
     internal static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(this OpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
     {
         if (schema == null)
@@ -245,7 +264,9 @@ public static class OpenApiSchemaExtensions
         return schema.Discriminator
                 .Mapping;
     }
+
     private static readonly Func<OpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping.Any() ?? false;
+
     private static IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
     {
         ArgumentException.ThrowIfNullOrEmpty(currentReferenceId);
@@ -255,4 +276,3 @@ public static class OpenApiSchemaExtensions
         return Enumerable.Empty<string>();
     }
 }
-

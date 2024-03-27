@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -8,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
+
 public class MissingDiscriminator : ValidationRule<OpenApiDocument>
 {
     public MissingDiscriminator(GenerationConfiguration configuration) : base(nameof(MissingDiscriminator), (context, document) =>
@@ -17,7 +19,7 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
         if (document.Components != null)
             Parallel.ForEach(document.Components.Schemas, entry =>
             {
-                ValidateSchema(entry.Value, context, idx, entry.Key);
+                ValidateSchemaRecursively(entry.Value, context, idx, entry.Key);
             });
         var inlineSchemasToValidate = document.Paths
                                         ?.SelectMany(static x => x.Value.Operations.Values.Select(y => (x.Key, Operation: y)))
@@ -26,16 +28,47 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
                                         .ToArray() ?? Array.Empty<(string, OpenApiSchema)>();
         Parallel.ForEach(inlineSchemasToValidate, entry =>
         {
-            ValidateSchema(entry.Schema, context, idx, entry.Key);
+            ValidateSchemaRecursively(entry.Schema, context, idx, entry.Key);
         });
     })
     {
     }
+
+    private static void ValidateSchemaRecursively(OpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> idx, string address)
+    {
+        foreach (var property in schema.Properties ?? Enumerable.Empty<KeyValuePair<string, OpenApiSchema>>())
+        {
+            ValidateSchemaRecursively(property.Value, context, idx, $"{address}.Properties.{property.Key}");
+        }
+
+        foreach (var allOfSchema in schema.AllOf)
+        {
+            ValidateSchemaRecursively(allOfSchema, context, idx, $"{address}.AllOf");
+        }
+
+        foreach (var oneOfSchema in schema.OneOf)
+        {
+            ValidateSchemaRecursively(oneOfSchema, context, idx, $"{address}.OneOf");
+        }
+
+        foreach (var anyOfSchema in schema.AnyOf)
+        {
+            ValidateSchemaRecursively(anyOfSchema, context, idx, $"{address}.AnyOf");
+        }
+
+        if (schema.Items != null)
+        {
+            ValidateSchemaRecursively(schema.Items, context, idx, $"{address}.Items");
+        }
+
+        ValidateSchema(schema, context, idx, address);
+    }
+
     private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> idx, string address)
     {
         if (!schema.IsInclusiveUnion() && !schema.IsExclusiveUnion())
             return;
-        if (schema.AnyOf.All(static x => !x.IsObject()) && schema.OneOf.All(static x => !x.IsObject()))
+        if (schema.AnyOf.All(static x => x.IsScalar()) && schema.OneOf.All(static x => x.IsScalar()))
             return;
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName()) || !schema.GetDiscriminatorMappings(idx).Any())
             context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in a serialization errors.");
