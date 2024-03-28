@@ -94,6 +94,26 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         Assert.False(result);
     }
     [Fact]
+    public async Task RemovesAPlugin()
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        var configuration = new GenerationConfiguration
+        {
+            ClientClassName = "clientName",
+            OutputPath = tempPath,
+            OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
+            ApiRootUrl = "https://graph.microsoft.com",
+            PluginTypes = [PluginType.APIManifest],
+        };
+        Directory.CreateDirectory(tempPath);
+        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
+        await service.RemovePluginAsync("clientName");
+        var result = await service.IsConsumerPresent("clientName");
+        Assert.False(result);
+    }
+    [Fact]
     public async Task FailsOnMigrateWithoutKiotaConfigMode()
     {
         var mockLogger = Mock.Of<ILogger>();

@@ -153,46 +153,43 @@ public class WorkspaceManagementService
             return null;
         return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
     }
-    public async Task RemoveClientAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    public Task RemoveClientAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
     {
-        await RemoveConsumerInternalAsync(clientName,
-        wsConfig =>
-        {
-            if (cleanOutput && wsConfig.Clients.TryGetValue(clientName, out var clientConfig) && Directory.Exists(clientConfig.OutputPath))
-                Directory.Delete(clientConfig.OutputPath, true);
-
-            if (!wsConfig.Clients.Remove(clientName))
-                throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
-        },
-        cleanOutput, cancellationToken).ConfigureAwait(false);
+        return RemoveConsumerInternalAsync(clientName,
+            static wsConfig => wsConfig.Clients,
+            cleanOutput,
+            "client",
+            cancellationToken
+        );
     }
-    public async Task RemovePluginAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    public Task RemovePluginAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
     {
-        await RemoveConsumerInternalAsync(clientName,
-        wsConfig =>
-        {
-            if (cleanOutput && wsConfig.Plugins.TryGetValue(clientName, out var pluginConfig) && Directory.Exists(pluginConfig.OutputPath))
-                Directory.Delete(pluginConfig.OutputPath, true);
-
-            if (!wsConfig.Plugins.Remove(clientName))
-                throw new InvalidOperationException($"The client {clientName} was not found in the configuration");
-        },
-        cleanOutput, cancellationToken).ConfigureAwait(false);
+        return RemoveConsumerInternalAsync(clientName,
+            static wsConfig => wsConfig.Plugins,
+            cleanOutput,
+            "plugin",
+            cancellationToken
+        );
     }
-    private async Task RemoveConsumerInternalAsync(string clientName, Action<WorkspaceConfiguration> consumerRemoval, bool cleanOutput = false, CancellationToken cancellationToken = default)
+    private async Task RemoveConsumerInternalAsync<T>(string consumerName, Func<WorkspaceConfiguration, Dictionary<string, T>> consumerRetrieval, bool cleanOutput, string consumerDisplayName, CancellationToken cancellationToken) where T : BaseApiConsumerConfiguration
     {
         if (!UseKiotaConfig)
-            throw new InvalidOperationException("Cannot remove a client in lock mode");
+            throw new InvalidOperationException($"Cannot remove a {consumerDisplayName} in lock mode");
         var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
         if (wsConfig is null)
-            throw new InvalidOperationException("Cannot remove a client without a configuration");
+            throw new InvalidOperationException($"Cannot remove a {consumerDisplayName} without a configuration");
 
-        consumerRemoval(wsConfig);
+        var consumers = consumerRetrieval(wsConfig);
+        if (cleanOutput && consumers.TryGetValue(consumerName, out var consumerConfig) && Directory.Exists(consumerConfig.OutputPath))
+            Directory.Delete(consumerConfig.OutputPath, true);
 
-        manifest?.ApiDependencies.Remove(clientName);
+        if (!consumers.Remove(consumerName))
+            throw new InvalidOperationException($"The {consumerDisplayName} {consumerName} was not found in the configuration");
+
+        manifest?.ApiDependencies.Remove(consumerName);
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
-        descriptionStorageService.RemoveDescription(clientName);
-        if (wsConfig.AnyConsumerPresent)
+        descriptionStorageService.RemoveDescription(consumerName);
+        if (!wsConfig.AnyConsumerPresent)
             descriptionStorageService.Clean();
     }
     private static readonly JsonSerializerOptions options = new()
