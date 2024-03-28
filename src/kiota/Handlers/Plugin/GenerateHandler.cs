@@ -6,7 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace kiota.Handlers.Client;
+namespace kiota.Handlers.Plugin;
 
 internal class GenerateHandler : BaseKiotaCommandHandler
 {
@@ -40,7 +40,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 }
                 var clientNameWasNotProvided = string.IsNullOrEmpty(className);
                 var clientEntries = config
-                                            .Clients
+                                            .Plugins
                                             .Where(x => clientNameWasNotProvided || x.Key.Equals(className, StringComparison.OrdinalIgnoreCase))
                                             .ToArray();
                 if (clientEntries.Length == 0 && !clientNameWasNotProvided)
@@ -52,13 +52,13 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 {
                     var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
-                    clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
+                    clientEntry.Value.UpdateGenerationConfigurationFromApiPluginConfiguration(generationConfiguration, clientEntry.Key, requests);
                     DefaultSerializersAndDeserializers(generationConfiguration);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
                     generationConfiguration.Operation = ConsumerOperation.Generate;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
-                    var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
+                    var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
                     {
                         DisplaySuccess($"Update of {clientEntry.Key} client completed");
@@ -84,5 +84,6 @@ internal class GenerateHandler : BaseKiotaCommandHandler
 #endif
             }
         }
+        throw new NotImplementedException();
     }
 }

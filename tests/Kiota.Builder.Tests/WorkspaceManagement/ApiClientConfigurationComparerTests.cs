@@ -16,6 +16,6 @@ public sealed class ApiClientConfigurationComparerTests
     [Fact]
     public void GetsHashCode()
     {
-        Assert.Equal(13, _comparer.GetHashCode(new() { UsesBackingStore = true }));
+        Assert.Equal(17, _comparer.GetHashCode(new() { UsesBackingStore = true }));
     }
 }

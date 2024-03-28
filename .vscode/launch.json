@@ -315,6 +315,31 @@
       }
     },
     {
+      "name": "Launch Plugin Add",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": [
+        "plugin",
+        "add",
+        "--plugin-name",
+        "MicrosoftGraph",
+        "-d",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "-i",
+        "**/messages",
+        "--type",
+        "APIManifest"
+      ],
+      "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "KIOTA_CONFIG_PREVIEW": "true"
+      }
+    },
+    {
       "name": "Launch Login (github - device)",
       "type": "coreclr",
       "request": "launch",

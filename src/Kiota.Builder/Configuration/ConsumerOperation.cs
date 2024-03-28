@@ -1,5 +1,5 @@
 ﻿namespace Kiota.Builder.Configuration;
-public enum ClientOperation
+public enum ConsumerOperation
 {
     Add,
     Edit,

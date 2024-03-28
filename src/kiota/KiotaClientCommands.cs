@@ -14,7 +14,7 @@ public static class KiotaClientCommands
         command.AddCommand(GetGenerateCommand());
         return command;
     }
-    private static Option<bool> GetSkipGenerationOption()
+    internal static Option<bool> GetSkipGenerationOption()
     {
         var skipGeneration = new Option<bool>("--skip-generation", "Skips the generation of the client");
         skipGeneration.AddAlias("--sg");
@@ -171,7 +171,7 @@ public static class KiotaClientCommands
         };
         return command;
     }
-    private static Option<bool> GetRefreshOption()
+    internal static Option<bool> GetRefreshOption()
     {
         var refresh = new Option<bool>("--refresh", "Refreshes the client OpenAPI description before generating the client");
         refresh.AddAlias("--r");

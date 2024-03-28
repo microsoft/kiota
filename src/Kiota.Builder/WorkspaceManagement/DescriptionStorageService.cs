@@ -9,7 +9,7 @@ namespace Kiota.Builder.WorkspaceManagement;
 public class DescriptionStorageService
 {
     public const string KiotaDirectorySegment = ".kiota";
-    internal const string DescriptionsSubDirectoryRelativePath = $"{KiotaDirectorySegment}/clients";
+    internal const string DescriptionsSubDirectoryRelativePath = $"{KiotaDirectorySegment}/descriptions";
     private readonly string TargetDirectory;
     public DescriptionStorageService(string targetDirectory)
     {
