@@ -91,7 +91,17 @@ public static class KiotaPluginCommands
             pluginTypes,
             //TODO overlay when we have support for it in OAI.net
         };
-        //TODO map handler
+        command.Handler = new EditHandler
+        {
+            ClassOption = pluginNameOption,
+            OutputOption = outputOption,
+            PluginTypesOption = pluginTypes,
+            DescriptionOption = descriptionOption,
+            IncludePatternsOption = includePatterns,
+            ExcludePatternsOption = excludePatterns,
+            SkipGenerationOption = skipGenerationOption,
+            LogLevelOption = logLevelOption,
+        };
         return command;
     }
     public static Command GetRemoveCommand()
