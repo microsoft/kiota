@@ -115,6 +115,9 @@ internal class OpenApiDocumentDownloadService
         settings.AddMicrosoftExtensionParsers();
         settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiDescriptionForModelExtension.Name, static (i, _) => OpenApiDescriptionForModelExtension.Parse(i));
+        settings.ExtensionParsers.TryAdd(OpenApiLogoExtension.Name, static (i, _) => OpenApiLogoExtension.Parse(i));
+        settings.ExtensionParsers.TryAdd(OpenApiPrivacyPolicyUrlExtension.Name, static (i, _) => OpenApiPrivacyPolicyUrlExtension.Parse(i));
+        settings.ExtensionParsers.TryAdd(OpenApiLegalInfoUrlExtension.Name, static (i, _) => OpenApiLegalInfoUrlExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiReasoningInstructionsExtension.Name, static (i, _) => OpenApiAiReasoningInstructionsExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiRespondingInstructionsExtension.Name, static (i, _) => OpenApiAiRespondingInstructionsExtension.Parse(i));
         try

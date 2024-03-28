@@ -59,11 +59,23 @@ public class PluginsGenerationService
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var descriptionForModel = descriptionForHuman;
-        if (OAIDocument.Info is not null &&
-                OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
+        string? legalUrl = null;
+        string? logoUrl = null;
+        string? privacyUrl = null;
+        if (OAIDocument.Info is not null)
+        {
+
+            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
                 descriptionExtension is OpenApiDescriptionForModelExtension extension &&
                 !string.IsNullOrEmpty(extension.Description))
-            descriptionForModel = extension.Description.CleanupXMLString();
+                descriptionForModel = extension.Description.CleanupXMLString();
+            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
+                legalUrl = legal.Legal;
+            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
+                logoUrl = logo.Logo;
+            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
+                privacyUrl = privacy.Privacy;
+        }
         return new ManifestDocument
         {
             SchemaVersion = "v2",
@@ -73,7 +85,9 @@ public class PluginsGenerationService
             DescriptionForModel = descriptionForModel,
             ContactEmail = OAIDocument.Info?.Contact?.Email,
             Namespace = Configuration.ClientClassName,
-            //TODO logo
+            LogoUrl = logoUrl,
+            LegalInfoUrl = legalUrl,
+            PrivacyPolicyUrl = privacyUrl,
             Runtimes = [.. runtimes
                             .GroupBy(static x => x, _openAPIRuntimeComparer)
                             .Select(static x =>
