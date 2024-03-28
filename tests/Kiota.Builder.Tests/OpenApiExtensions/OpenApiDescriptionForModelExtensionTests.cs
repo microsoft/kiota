@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
 
@@ -47,5 +49,20 @@ info:
         Assert.True(document.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension));
         Assert.IsType<OpenApiDescriptionForModelExtension>(descriptionExtension);
         Assert.Equal("This is a description", ((OpenApiDescriptionForModelExtension)descriptionExtension).Description);
+    }
+    [Fact]
+    public void Serializes()
+    {
+        var value = new OpenApiDescriptionForModelExtension
+        {
+            Description = "This is a description",
+        };
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
+
+
+        value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
+        var result = sWriter.ToString();
+        Assert.Equal("\"This is a description\"", result);
     }
 }
