@@ -10,11 +10,11 @@ namespace Kiota.Builder.WorkspaceManagement;
 #pragma warning disable CA2227 // Collection properties should be read only
 public abstract class BaseApiConsumerConfiguration
 {
-    internal BaseApiConsumerConfiguration()
+    private protected BaseApiConsumerConfiguration()
     {
 
     }
-    internal BaseApiConsumerConfiguration(GenerationConfiguration config)
+    private protected BaseApiConsumerConfiguration(GenerationConfiguration config)
     {
         ArgumentNullException.ThrowIfNull(config);
         DescriptionLocation = config.OpenAPIFilePath;
