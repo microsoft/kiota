@@ -36,6 +36,7 @@ info:
 paths:
   /test:
     get:
+      operationId: test
       responses:
         '200':
           description: test";
