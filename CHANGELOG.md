@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a warning message in the CLI when using preview languages. [#4316](https://github.com/microsoft/kiota/issues/4316)
 - Added support for handling untyped Json content in C#,Golang, TypeScript and Java. [#2319](https://github.com/microsoft/kiota/issues/2319)
 - Added TypeScript typecheck suppression to `.ts` files where unused imports cause build fail in projects which use `noUnusedLocals: true` compiler option. [#4397](https://github.com/microsoft/kiota/issues/4397)
+- Fixed TypeScript generation bug when returning enums from endpoints. [#4426](https://github.com/microsoft/kiota/issues/4426)
 
 ### Changed
 
