@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Microsoft.Kiota.Http.HttpClientLibrary;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -1142,7 +1141,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement!, AddEnumObjectUsings);
+        CrawlTree(currentElement, AddEnumObjectUsings);
     }
 
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)
