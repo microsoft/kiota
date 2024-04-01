@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -1103,9 +1104,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddEnumObject);
     }
+    protected static IEnumerable<CodeEnum> selectEnums(IEnumerable<CodeProperty> props)
+    {
+        return props.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>();
+    }
 
     protected static void AddEnumObjectUsings(CodeElement currentElement)
     {
+        if (currentElement is CodeProperty codeProperty && codeProperty.Kind is CodePropertyKind.RequestBuilder && codeProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass)
+        {
+            foreach (var propertyMethod in codeClass.Methods)
+            {
+                if (propertyMethod.ReturnType is CodeType ct && ct.TypeDefinition is CodeEnum codeEnum)
+                {
+                    codeClass.AddUsing(new CodeUsing
+                    {
+                        Name = codeEnum.Name,
+                        Declaration = new CodeType
+                        {
+                            TypeDefinition = codeEnum.CodeEnumObject
+                        }
+                    });
+                }
+            }
+        }
         if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
         {
             foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>())
@@ -1120,7 +1142,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, AddEnumObjectUsings);
+        CrawlTree(currentElement!, AddEnumObjectUsings);
     }
 
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)

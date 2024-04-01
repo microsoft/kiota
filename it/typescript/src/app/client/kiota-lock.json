@@ -1,0 +1,32 @@
+{
+  "descriptionHash": "20EF99AD604AC7A78DCA5739B05E981E373C6EE21B6D1228B4236028E243FF16760BA2A652767B6D19080C0B4AFE03EA43AF77FCB2BEAB51087C1350A0F6647E",
+  "descriptionLocation": "../../../../openapi.yaml",
+  "lockFileVersion": "1.0.0",
+  "kiotaVersion": "1.13.0",
+  "clientClassName": "ApiClient",
+  "clientNamespaceName": "app.client",
+  "language": "TypeScript",
+  "usesBackingStore": false,
+  "excludeBackwardCompatible": true,
+  "includeAdditionalData": true,
+  "serializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Multipart.MultipartSerializationWriterFactory"
+  ],
+  "deserializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory"
+  ],
+  "structuredMimeTypes": [
+    "application/json",
+    "text/plain;q=0.9",
+    "application/x-www-form-urlencoded;q=0.2",
+    "multipart/form-data;q=0.1"
+  ],
+  "includePatterns": [],
+  "excludePatterns": [],
+  "disabledValidationRules": []
+}
