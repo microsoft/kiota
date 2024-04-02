@@ -1,10 +1,12 @@
 name: integration-tests
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
-  pull_request:
+  # TODO: revert me
+  # workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
@@ -49,6 +51,7 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml"
           - "oas::petstore"
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"
