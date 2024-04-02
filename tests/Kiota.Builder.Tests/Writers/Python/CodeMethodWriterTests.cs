@@ -811,7 +811,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super_fields = super()", result);
         Assert.DoesNotContain("return fields", result);
         Assert.DoesNotContain("elif", result);
-        Assert.Contains("if self.complex_type1_value:", result);
+        Assert.Contains("if hasattr(self, \"complex_type1_value\"):", result);
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
     }

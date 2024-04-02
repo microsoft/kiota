@@ -137,7 +137,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private const string ResultVarName = "result";
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {
-        writer.WriteLine($"{ResultVarName} = {parentClass.Name}()");
+        var className = parentClass.Name;
+        if (parentClass.Parent != null && !string.IsNullOrEmpty(parentClass.Parent.Name))
+        {
+            className = $"{parentClass.Parent!.Name}.{parentClass.Name}";
+        }
+        writer.WriteLine($"{ResultVarName} = {className}()");
         var includeElse = false;
         foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .OrderBy(static x => x, CodePropertyTypeForwardComparer)
@@ -508,7 +513,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name)
                                         .Select(static x => x.Name))
         {
-            writer.StartBlock($"if self.{otherPropName}:");
+            writer.StartBlock($"if hasattr(self, \"{otherPropName}\"):");
             writer.WriteLine($"return self.{otherPropName}.{method.Name}()");
             writer.DecreaseIndent();
         }

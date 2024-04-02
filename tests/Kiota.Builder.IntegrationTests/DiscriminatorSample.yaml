@@ -1,0 +1,44 @@
+openapi: 3.0.0
+info:
+  title: "Discriminator API"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /discriminateme:
+    get:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Object1"
+                  - $ref: "#/components/schemas/Object2"
+                discriminator:
+                  propertyName: objectType
+                  mapping:
+                    obj1: "#/components/schemas/Object1"
+                    obj2: "#/components/schemas/Object2"
+components:
+  schemas:
+    Object1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        one:
+          type: string
+    Object2:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        two:
+          type: string
