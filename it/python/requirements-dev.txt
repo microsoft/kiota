@@ -120,7 +120,7 @@ multidict==6.0.5 ; python_version >= '3.7'
 
 portalocker==2.8.2 ; python_version >= '3.5' and platform_system == 'Windows'
 
-pycparser==2.21
+pycparser==2.22
 
 pyjwt[crypto]==2.8.0 ; python_version >= '3.7'
 
