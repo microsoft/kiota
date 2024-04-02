@@ -1103,11 +1103,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddEnumObject);
     }
-    protected static IEnumerable<CodeEnum> selectEnums(IEnumerable<CodeProperty> props)
-    {
-        return props.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>();
-    }
-
     protected static void AddEnumObjectUsings(CodeElement currentElement)
     {
         if (currentElement is CodeProperty codeProperty && codeProperty.Kind is CodePropertyKind.RequestBuilder && codeProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass)
