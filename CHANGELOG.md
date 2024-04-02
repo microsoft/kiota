@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed Csharp code generation to put braces on new lines (where it makes sense). [#4347](https://github.com/microsoft/kiota/issues/4347)
 - Fixed a bug where some no-content status codes would be considered structured (301, 302, 303, 307) when described. [#4190](https://github.com/microsoft/kiota/issues/4190)
 - TypeScript is now a preview language!
+- Fixed a bug where the code generated for Python in presence of discriminator values was not compiling/working. [#4433](https://github.com/microsoft/kiota/issues/4433)
 
 ## [1.12.0] - 2024-03-06
 
