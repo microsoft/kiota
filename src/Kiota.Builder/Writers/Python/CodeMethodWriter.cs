@@ -138,9 +138,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {
         var className = parentClass.Name;
-        if (parentClass.Parent != null && !string.IsNullOrEmpty(parentClass.Parent.Name))
+        if (parentClass.Parent is CodeClass pc &&
+            !string.IsNullOrEmpty(pc.Name) &&
+            pc.InnerClasses.Any(x => x == parentClass))
         {
-            className = $"{parentClass.Parent!.Name}.{parentClass.Name}";
+            className = $"{pc.Name}.{parentClass.Name}";
         }
         writer.WriteLine($"{ResultVarName} = {className}()");
         var includeElse = false;

@@ -54,7 +54,13 @@
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
-    "MockServerITFolder": "discriminator"
+    "MockServerITFolder": "discriminator",
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+      }
+    ]
   },
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
     "MockServerITFolder": "basic",
