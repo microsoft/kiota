@@ -77,8 +77,16 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (properties.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        return properties.Select(property =>
+        return properties.GroupBy(static x => x.Name).Select(static x => x.First()).Select(property =>
         {
+            // Prevent duplicates
+            var otherProp = FindPropertyByNameInTypeHierarchy(property.Name);
+            // if (otherProp != null && (otherProp.SerializationName == null || otherProp.SerializationName == property.Name))
+            if (otherProp != null)
+            {
+                return null; // this property is going to collide, skipping
+            }
+
             if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
                 if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
@@ -98,7 +106,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             }
             var result = base.AddProperty(property).First();
             return PropertiesByWireName.GetOrAdd(result.WireName, result);
-        }).ToArray();
+        }).OfType<CodeProperty>().ToArray();
     }
     public override void RenameChildElement(string oldName, string newName)
     {
