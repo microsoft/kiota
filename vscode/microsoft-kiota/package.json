@@ -190,12 +190,6 @@
         }
       }
     },
-    "viewsWelcome": [
-      {
-        "view": "kiota.openApiExplorer",
-        "contents": "%kiota.openApiExplorer.welcome%"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -214,6 +208,14 @@
     },
     "views": {
       "kiota-openapi-explorer": [
+        {
+          "id": "kiota.apiClients",
+          "name": "%kiota.openApiExplorer.apiClient.name%"
+        },
+        {
+          "id": "kiota.apiPlugins",
+          "name": "%kiota.openApiExplorer.apiPlugin.name%"
+        },
         {
           "id": "kiota.openApiExplorer",
           "name": "%kiota.openApiExplorer.name%",

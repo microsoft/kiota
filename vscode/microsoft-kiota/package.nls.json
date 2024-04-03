@@ -4,7 +4,7 @@
   "kiota.openApiExplorer.name": "Kiota OpenAPI Explorer",
   "kiota.openApiExplorer.contextualTitle": "OpenAPI Explorer",
   "kiota-dependencies-info.panel.title": "Kiota Dependencies Information",
-  "kiota-openapi-explorer.activitybar.title": "Kiota OpenAPI Explorer",
+  "kiota-openapi-explorer.activitybar.title": "Kiota",
   "kiota.selectLock.title": "Select lock file for API explorer view",
   "kiota.updateClients.title": "Update API clients in the current workspace",
   "kiota.openApiExplorer.generateClient.title": "Generate API client",
@@ -15,7 +15,6 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remove all",
   "kiota.openApiExplorer.closeDescription.title": "Close API description",
   "kiota.openApiExplorer.openDescription.title": "Open API description",
-  "kiota.openApiExplorer.welcome": "No API description selected.\n[Search](command:kiota.searchApiDescription)\n[Open API description](command:kiota.openApiExplorer.openDescription)\n[Open a manifest](command:kiota.openApiExplorer.openManifestPath)\n[Paste a manifest](command:kiota.openApiExplorer.pasteManifest)\n[Select lock file](command:kiota.searchLock)",
   "kiota.searchLock.title": "Search for a lock file",
   "kiota.openApiExplorer.filterDescription.title": "Filter API description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Open documentation page",
@@ -29,5 +28,7 @@
   "kiota.generate.serializer.description": "The fully qualified class names for serializers",
   "kiota.generate.deserializer.description": "The fully qualified class names for deserializers",
   "kiota.generate.structuredMimeTypes.description": "The MIME types and preference to use for structured data model generation. As per RFC9110 Accept header notation.",
-  "kiota.generate.includeAdditionalData.description": "Will include the 'AdditionalData' property for models"
+  "kiota.generate.includeAdditionalData.description": "Will include the 'AdditionalData' property for models",
+  "kiota.openApiExplorer.apiClient.name":"My API Clients",
+  "kiota.openApiExplorer.apiPlugin.name":"My API Plugins"
 }
