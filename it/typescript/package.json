@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "MIT",
   "scripts": {
-    "build": "node ./build/esbuild.js --dev",
+    "build": "tsc -noEmit && node ./build/esbuild.js --dev",
     "build:meta": "node ./build/esbuild.js --dev --meta",
     "build:meta:prod": "node ./build/esbuild.js --meta",
     "build:prod": "node ./build/esbuild.js",

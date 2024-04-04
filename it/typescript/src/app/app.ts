@@ -3,7 +3,7 @@ import { Logger } from './common/logger';
 import { DeviceCodeCredential } from '@azure/identity';
 import { FetchRequestAdapter } from '@microsoft/kiota-http-fetchlibrary';
 import { AzureIdentityAuthenticationProvider } from '@microsoft/kiota-authentication-azure';
-import { type ApiClient } from './client/apiClient';
+import { createApiClient } from './client/apiClient';
 
 export class App {
   static run(): App {
@@ -19,7 +19,7 @@ export class App {
     });
     const authProvider = new AzureIdentityAuthenticationProvider(cred, ['Mail.Read']);
     const requestAdapter = new FetchRequestAdapter(authProvider);
-    const client = new ApiClient(requestAdapter);
+    const client = createApiClient(requestAdapter);
     Logger.log(`${client}`);
     return app;
   }
