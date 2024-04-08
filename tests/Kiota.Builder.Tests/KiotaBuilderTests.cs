@@ -7730,4 +7730,294 @@ components:
                 Name: "EnumValue"
             });
     }
+    [Fact]
+    public void SupportsIncludeFilterAndExcludeWithOperation()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["directory/administrativeUnits"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["201"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+                ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Patch] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        },
+                        [OperationType.Delete] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            ClientNamespaceName = "TestSdk",
+            ApiRootUrl = "https://localhost",
+            IncludePatterns = new() {
+                "directory/administrativeUnits",
+                "directory/administrativeUnits/**"
+            },
+            ExcludePatterns = new()
+            {
+                "directory/administrativeUnits/**#DELETE"
+            }
+        }, _httpClient);
+        builder.FilterPathsByPatterns(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
+        var administrativeUnitsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits");
+        Assert.NotNull(administrativeUnitsNS);
+        var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
+        Assert.NotNull(administrativeUnitsRS);
+        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
+        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Empty(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put));
+        var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
+        Assert.NotNull(administrativeUnitsItemsNS);
+        var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
+        Assert.NotNull(administrativeUnitItemsRS);
+        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Empty(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete));
+    }
+    [Fact]
+    public void SupportsIncludeFilterAndExcludeWithOperationForSpecificPath()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["directory/administrativeUnits"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["201"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+                ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Patch] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        },
+                        [OperationType.Delete] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            ClientNamespaceName = "TestSdk",
+            ApiRootUrl = "https://localhost",
+            IncludePatterns = new() {
+                "directory/administrativeUnits",
+                "directory/administrativeUnits/**"
+            },
+            ExcludePatterns = new()
+            {
+                "directory/administrativeUnits/{id}#DELETE"
+            }
+        }, _httpClient);
+        builder.FilterPathsByPatterns(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
+        var administrativeUnitsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits");
+        Assert.NotNull(administrativeUnitsNS);
+        var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
+        Assert.NotNull(administrativeUnitsRS);
+        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
+        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Empty(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put));
+        var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
+        Assert.NotNull(administrativeUnitsItemsNS);
+        var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
+        Assert.NotNull(administrativeUnitItemsRS);
+        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Empty(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete));
+    }
 }
