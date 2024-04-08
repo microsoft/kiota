@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+- Changed URI template generation to reuse templates when required templates are absent across operations.
+
 ## [1.13.0] - 2024-04-04
 
 ### Added

@@ -232,9 +232,90 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             }
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.False(node.HasRequiredQueryParametersAcrossOperations());
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate(OperationType.Get));
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment", node.Children.First().Value.GetUrlTemplate(OperationType.Put));
+        // the query parameters will be decoded by a middleware at runtime before the request is executed
+    }
+    [Fact]
+    public void DifferentUrlTemplatesPerOperationWithRequiredParameter()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        {
+            Parameters = [
+                new()
+                {
+                    Name = "param-with-dashes",
+                    In = ParameterLocation.Path,
+                    Required = true,
+                    Schema = new()
+                    {
+                        Type = "string"
+                    },
+                    Style = ParameterStyle.Simple,
+                },
+            ],
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                        Parameters = [
+
+                            new (){
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                { OperationType.Post, new() {
+                        Parameters = [
+
+                            new (){
+                                Name = "$expand",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                {
+                    OperationType.Put, new() {}
+                },
+                { OperationType.Delete, new() {
+                        Parameters = [
+
+                            new (){
+                                Name = "id",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                                Required = true
+                            }
+                        ]
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.True(node.HasRequiredQueryParametersAcrossOperations());
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment?id={id}{&%24expand,%24select}", node.Children.First().Value.GetUrlTemplate());//the default contains a combination of everything.
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate(OperationType.Get));
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24expand}", node.Children.First().Value.GetUrlTemplate(OperationType.Post));
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment", node.Children.First().Value.GetUrlTemplate(OperationType.Put));
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment?id={id}", node.Children.First().Value.GetUrlTemplate(OperationType.Delete));
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
     [Fact]
