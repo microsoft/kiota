@@ -182,6 +182,16 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static partial Regex stripExtensionForIndexersTestRegex(); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
         (currentNode?.DeduplicatedSegment()?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
+
+    public static bool HasRequiredQueryParametersAcrossOperations(this OpenApiUrlTreeNode currentNode)
+    {
+        ArgumentNullException.ThrowIfNull(currentNode);
+        var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+        var operationQueryParameters = pathItem.Operations.SelectMany(static x => x.Value.Parameters);
+        return operationQueryParameters.Union(pathItem.Parameters).Where(static x => x.In == ParameterLocation.Query)
+            .Any(static x => x.Required);
+    }
+
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, OperationType? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
@@ -192,7 +202,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             var operationQueryParameters = (operationType, pathItem.Operations.Any()) switch
             {
                 (OperationType ot, _) when pathItem.Operations.TryGetValue(ot, out var operation) => operation.Parameters,
-                (null, true) => pathItem.Operations.OrderBy(static x => x.Key).FirstOrDefault().Value.Parameters,
+                (null, true) => pathItem.Operations.SelectMany(static x => x.Value.Parameters).Where(static x => x.In == ParameterLocation.Query),
                 _ => Enumerable.Empty<OpenApiParameter>(),
             };
             var parameters = pathItem.Parameters
