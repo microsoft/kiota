@@ -233,6 +233,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.HasRequiredQueryParametersAcrossOperations());
+        Assert.False(node.Children.First().Value.HasRequiredQueryParametersAcrossOperations());
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate(OperationType.Get));
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment", node.Children.First().Value.GetUrlTemplate(OperationType.Put));
@@ -310,7 +311,8 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             }
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.True(node.HasRequiredQueryParametersAcrossOperations());
+        Assert.False(node.HasRequiredQueryParametersAcrossOperations());
+        Assert.True(node.Children.First().Value.HasRequiredQueryParametersAcrossOperations());
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment?id={id}{&%24expand,%24select}", node.Children.First().Value.GetUrlTemplate());//the default contains a combination of everything.
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate(OperationType.Get));
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24expand}", node.Children.First().Value.GetUrlTemplate(OperationType.Post));

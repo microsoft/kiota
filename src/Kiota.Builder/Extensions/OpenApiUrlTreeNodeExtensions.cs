@@ -186,7 +186,9 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static bool HasRequiredQueryParametersAcrossOperations(this OpenApiUrlTreeNode currentNode)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
-        var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+        if (!currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+            return false;
+
         var operationQueryParameters = pathItem.Operations.SelectMany(static x => x.Value.Parameters);
         return operationQueryParameters.Union(pathItem.Parameters).Where(static x => x.In == ParameterLocation.Query)
             .Any(static x => x.Required);
