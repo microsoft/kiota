@@ -45,6 +45,7 @@ jobs:
           - python
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
@@ -59,7 +60,7 @@ jobs:
           - "apisguru::docusign.net"
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
-          
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

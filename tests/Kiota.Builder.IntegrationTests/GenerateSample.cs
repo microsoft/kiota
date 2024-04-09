@@ -116,6 +116,28 @@ public sealed class GenerateSample : IDisposable
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Ruby)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.PHP)]
+    [Theory]
+    public async Task GeneratesCorrectEnums(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = GetAbsolutePath("EnumHandling.yaml"),
+            OutputPath = $".\\Generated\\EnumHandling\\{language}",
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+    }
     [InlineData(GenerationLanguage.Java)]
     [Theory]
     public async Task GeneratesIdiomaticChildrenNames(GenerationLanguage language)
