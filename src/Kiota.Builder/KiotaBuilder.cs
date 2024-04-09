@@ -2115,7 +2115,7 @@ public partial class KiotaBuilder
                 IsAsync = false,
                 Documentation = new()
                 {
-                    DescriptionTemplate = "",
+                    DescriptionTemplate = "Serializes information the current object",
                 },
                 ReturnType = new CodeType { Name = VoidType, IsNullable = false, IsExternal = true },
                 Parent = model,

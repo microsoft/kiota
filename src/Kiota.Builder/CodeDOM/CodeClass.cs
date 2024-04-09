@@ -80,9 +80,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         return properties.GroupBy(static x => x.Name).Select(static x => x.First()).Select(property =>
         {
             // Prevent duplicates
-            var otherProp = FindPropertyByNameInTypeHierarchy(property.Name);
-            // if (otherProp != null && (otherProp.SerializationName == null || otherProp.SerializationName == property.Name))
-            if (otherProp != null)
+            if (FindPropertyByNameInTypeHierarchy(property.Name) != null)
             {
                 return null; // this property is going to collide, skipping
             }
