@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.87.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Other"
@@ -426,15 +426,15 @@
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
-    "@types/vscode": "^1.87.0",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "@vscode/test-electron": "^2.3.9",
     "eslint": "^8.57.0",
-    "glob": "^10.3.10",
+    "glob": "^10.3.12",
     "mocha": "^10.4.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.3",
+    "typescript": "^5.4.4",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },

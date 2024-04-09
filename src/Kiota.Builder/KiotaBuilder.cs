@@ -1319,7 +1319,8 @@ public partial class KiotaBuilder
                 Deprecation = deprecationInformation,
             };
             var operationUrlTemplate = currentNode.GetUrlTemplate(operationType);
-            if (!operationUrlTemplate.Equals(parentClass.Properties.FirstOrDefault(static x => x.Kind is CodePropertyKind.UrlTemplate)?.DefaultValue?.Trim('"'), StringComparison.Ordinal))
+            if (!operationUrlTemplate.Equals(parentClass.Properties.FirstOrDefault(static x => x.Kind is CodePropertyKind.UrlTemplate)?.DefaultValue?.Trim('"'), StringComparison.Ordinal)
+                && currentNode.HasRequiredQueryParametersAcrossOperations())// no need to generate extra strings/templates as optional parameters will have no effect on resolved url.
                 generatorMethod.UrlTemplateOverride = operationUrlTemplate;
 
             var mediaTypes = schema switch
