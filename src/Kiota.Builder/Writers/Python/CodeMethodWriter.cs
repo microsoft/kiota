@@ -666,7 +666,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name}:");
+            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if hasattr(self, \"{otherProp.Name}\"):");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(None, self.{otherProp.Name})");
             writer.DecreaseIndent();
             if (!includeElse)
@@ -683,7 +683,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name}:");
+            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if hasattr(self, \"{otherProp.Name}\"):");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(None, self.{otherProp.Name})");
             writer.DecreaseIndent();
             if (!includeElse)

@@ -6,7 +6,7 @@ servers:
   - url: https://mytodos.doesnotexist/
 paths:
   /discriminateme:
-    get:
+    post:
       description: Return something
       responses:
         "200":
@@ -14,16 +14,23 @@ paths:
           content:
             application/json:
               schema:
-                type: string -> still generates duplicates
-                # $ref: "#/components/schemas/Object"
+                $ref: "#/components/schemas/Object"
       requestBody:
-        description: A new or existing `Artifact` to be associated with the `ModelVersion`.
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/Object"
 components:
   schemas:
+    Object:
+      oneOf:
+        - $ref: "#/components/schemas/Object1"
+        - $ref: "#/components/schemas/Object2"
+      discriminator:
+        propertyName: objectType
+        mapping:
+          obj1: "#/components/schemas/Object1"
+          obj2: "#/components/schemas/Object2"
     Object1:
       type: object
       required:
