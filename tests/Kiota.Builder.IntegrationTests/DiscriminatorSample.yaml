@@ -14,24 +14,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Object"
+                $ref: "#/components/schemas/Component"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Object"
+              $ref: "#/components/schemas/Component"
 components:
   schemas:
-    Object:
+    Component:
       oneOf:
-        - $ref: "#/components/schemas/Object1"
-        - $ref: "#/components/schemas/Object2"
+        - $ref: "#/components/schemas/Component1"
+        - $ref: "#/components/schemas/Component2"
       discriminator:
         propertyName: objectType
         mapping:
-          obj1: "#/components/schemas/Object1"
-          obj2: "#/components/schemas/Object2"
-    Object1:
+          obj1: "#/components/schemas/Component1"
+          obj2: "#/components/schemas/Component2"
+    Component1:
       type: object
       required:
         - objectType
@@ -40,7 +40,7 @@ components:
           type: string
         one:
           type: string
-    Object2:
+    Component2:
       type: object
       required:
         - objectType
