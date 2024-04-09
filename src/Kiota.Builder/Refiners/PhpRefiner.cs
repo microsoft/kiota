@@ -91,13 +91,19 @@ public class PhpRefiner : CommonLanguageRefiner
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
-                    "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"}
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory",
+                    @"Microsoft\Kiota\Serialization\Form\FormSerializationWriterFactory",
+                    @"Microsoft\Kiota\Serialization\Multipart\MultipartSerializationWriterFactory"
+                    
+                }
             );
             ReplaceDefaultDeserializationModules(generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
-                    "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory",
+                    @"Microsoft\Kiota\Serialization\Form\FormParseNodeFactory"
+                }
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode, ["Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"], null, '\\');
@@ -204,7 +210,12 @@ public class PhpRefiner : CommonLanguageRefiner
         new(static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNodeHelper"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            @"Microsoft\Kiota\Abstractions", MultipartBodyClassName)
     };
+
+    private const string MultipartBodyClassName = "MultipartBody";
+
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))

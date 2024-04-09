@@ -2508,4 +2508,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
     }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.OfKind(CodeParameterKind.RequestBody)!.Type = new CodeType
+        {
+            Name = "MultipartBody",
+            IsExternal = true
+        };
+        method.RequestBodyContentType = "multipart/form-data";
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("MultipartBody $body", result);
+        Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"multipart/form-data\", $body);", result);
+    }
 }
