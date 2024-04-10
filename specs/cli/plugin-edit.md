@@ -6,7 +6,7 @@
 
 When executing, the plugin entry defined by the `--plugin-name` parameter will be modified. All parameters should be supported and the only required one is `--plugin-name`. All others are optional as they would only modify the configuration of the plugin. If the OpenAPI document location changed or any properties of the plugin entry in `workspace.json`, a new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and and would trigger an update to the [API Manifest][def] located in the root folder (the).
 > [!NOTE] 
-> > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin, will be named `{plugin-name}-apimanifest.json` and saved in the choosen output directory when `apimanifest` value is used as the plugin type.
+> > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin when providing `--type apimanifest`, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
 Once the `workspace.json` file and the API Manifest are updated, the code generation will be executed based on the newly updated API client configuration.
 
@@ -18,7 +18,7 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | Yes, without its value |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /repos/{owner}/{repo}#DELETE | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
-| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
+| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`.| Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the current working directory. Defaults to `./output`. | Yes, without its value |
 
@@ -50,7 +50,7 @@ _The resulting `workspace.json` file will look like this:_
 }
 ```
 
-_The resulting `github-openai.json` file will look like this:_
+_The resulting OpenAI plugin named `ai-plugin.json` will look like this:_
 
 ```jsonc
 {
@@ -72,7 +72,7 @@ _The resulting `github-openai.json` file will look like this:_
 }
 ```
 
-_The resulting `github-apimanifest.json` file will look like this:_
+_The resulting API Manifest named `github-apimanifest.json` will look like this:_
 
 ```jsonc
 {
@@ -97,7 +97,7 @@ _The resulting `github-apimanifest.json` file will look like this:_
 }
 ```
 
-_The resulting `apimanifest.json` file (concatenated surface of all APIs dependencies) in the `./kiota` folder will look like this:_
+_The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (concatenated surface of all APIs dependencies across clients and plugins) will look like this:_
 
 ```jsonc
 {
@@ -142,8 +142,8 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs depende
     └─plugins
       └─github
           └─github-apimanifest.json # Specific API Manifest
-          └─github-openai.json #OpenAI Plugin
-          └─sliced-openapi-github.json # Sliced and augmented OpenAPI document
+          └─ai-plugin.json #OpenAI Plugin
+          └─sliced-github.json # Sliced and augmented OpenAPI document
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html
