@@ -3,7 +3,7 @@ module integrationtest
 go 1.20
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.2
 	github.com/microsoft/kiota-abstractions-go v1.6.0
 	github.com/microsoft/kiota-authentication-azure-go v1.0.2
 	github.com/microsoft/kiota-http-go v1.3.3
@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.10.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/cjlapao/common-go v0.0.39 // indirect
