@@ -64,7 +64,7 @@ _The resulting OpenAI plugin named `ai-plugin.json` will look like this:_
     },
     "api": {
         "type": "openapi",
-        "url": "./sliced-openapi-github.json"
+        "url": "./sliced-github.json"
     },
     "logo_url": "https://example.com/logo.png",
     "contact_email": "githubsupport@example.com",
