@@ -92,7 +92,7 @@ _The resulting OpenAI plugin named `ai-plugin.json` will look like this:_
     },
     "api": {
         "type": "openapi",
-        "url": "./generated/plugins/github/sliced-openapi-github.json"
+        "url": "./generated/plugins/github/sliced-github.json"
     },
     "logo_url": "https://example.com/logo.png",
     "contact_email": "githubsupport@example.com",
