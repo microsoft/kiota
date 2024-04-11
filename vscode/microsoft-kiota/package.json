@@ -209,18 +209,12 @@
     "views": {
       "kiota-openapi-explorer": [
         {
-          "id": "kiota.apiClients",
-          "name": "%kiota.openApiExplorer.apiClient.name%"
-        },
-        {
-          "id": "kiota.apiPlugins",
-          "name": "%kiota.openApiExplorer.apiPlugin.name%"
-        },
-        {
           "id": "kiota.openApiExplorer",
-          "name": "%kiota.openApiExplorer.name%",
-          "icon": "media/logo.svg",
-          "contextualTitle": "%kiota.openApiExplorer.contextualTitle%"
+          "name": "%kiota.openApiExplorer.name%"
+        },
+        {
+          "id": "kiota.apiFiles",
+          "name": "%kiota.apiFiles.name%"
         }
       ],
       "kiota-dependencies-info": [
@@ -249,24 +243,9 @@
           "group": "navigation@2"
         },
         {
-          "command": "kiota.searchApiDescription",
-          "when": "view == kiota.openApiExplorer",
-          "group": "navigation@1"
-        },
-        {
           "command": "kiota.openApiExplorer.filterDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@3"
-        },
-        {
-          "command": "kiota.openApiExplorer.generateClient",
-          "when": "view == kiota.openApiExplorer",
-          "group": "navigation@4"
-        },
-        {
-          "command": "kiota.openApiExplorer.closeDescription",
-          "when": "view == kiota.openApiExplorer",
-          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -409,7 +388,15 @@
         "command": "kiota.openApiExplorer.openDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
-        "icon": "$(go-to-file)"
+        "icon": "$(file-add)"
+      },
+     {
+        "command": "kiota.openApiExplorer.newClient",
+        "title": "New client"
+      },
+      {
+        "command": "kiota.openApiExplorer.newPlugin",
+        "title": "New plugin"
       }
     ]
   },

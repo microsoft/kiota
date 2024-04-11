@@ -1,7 +1,7 @@
 {
   "kiota.dependenciesInfo.name": "Kiota Dependencies Information",
   "kiota.dependenciesInfo.contextualTitle": "Dependencies Information",
-  "kiota.openApiExplorer.name": "Kiota OpenAPI Explorer",
+  "kiota.openApiExplorer.name": "API Explorer",
   "kiota.openApiExplorer.contextualTitle": "OpenAPI Explorer",
   "kiota-dependencies-info.panel.title": "Kiota Dependencies Information",
   "kiota-openapi-explorer.activitybar.title": "Kiota",
@@ -29,6 +29,5 @@
   "kiota.generate.deserializer.description": "The fully qualified class names for deserializers",
   "kiota.generate.structuredMimeTypes.description": "The MIME types and preference to use for structured data model generation. As per RFC9110 Accept header notation.",
   "kiota.generate.includeAdditionalData.description": "Will include the 'AdditionalData' property for models",
-  "kiota.openApiExplorer.apiClient.name":"My API Clients",
-  "kiota.openApiExplorer.apiPlugin.name":"My API Plugins"
+  "kiota.apiFiles.Name": "My API Files"
 }
