@@ -10,7 +10,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
 
 dill==0.3.6 ; python_version < '3.11'
 
-docutils==0.20.1 ; python_version >= '3.7'
+docutils==0.21.1 ; python_version >= '3.7'
 
 exceptiongroup==1.1.1 ; python_version < '3.11'
 
@@ -18,7 +18,7 @@ flit==3.9.0
 
 flit-core==3.9.0 ; python_version >= '3.6'
 
-idna==3.6
+idna==3.7
 
 importlib-metadata==6.8.0 ; python_version >= '3.7'
 
@@ -78,7 +78,7 @@ attrs==23.2.0 ; python_version >= '3.7'
 
 azure-core==1.30.1 ; python_version >= '3.7'
 
-azure-identity==1.15.0
+azure-identity==1.16.0
 
 cffi==1.16.0
 

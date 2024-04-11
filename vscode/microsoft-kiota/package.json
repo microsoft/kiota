@@ -434,7 +434,7 @@
     "glob": "^10.3.12",
     "mocha": "^10.4.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.4",
+    "typescript": "^5.4.5",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },
