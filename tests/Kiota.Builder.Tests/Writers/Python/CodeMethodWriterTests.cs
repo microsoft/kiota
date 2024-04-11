@@ -907,11 +907,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(serializationMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("super().serialize", result);
-        Assert.Contains("if self.complex_type1_value:", result);
+        Assert.Contains("if hasattr(self, \"complex_type1_value\"):", result);
         Assert.Contains("writer.write_object_value(None, self.complex_type1_value)", result);
-        Assert.Contains("if self.string_value:", result);
+        Assert.Contains("if hasattr(self, \"string_value\"):", result);
         Assert.Contains("writer.write_str_value(None, self.string_value)", result);
-        Assert.Contains("if self.complex_type2_value:", result);
+        Assert.Contains("if hasattr(self, \"complex_type2_value\"):", result);
         Assert.Contains("writer.write_collection_of_object_values(None, self.complex_type2_value)", result);
     }
     [Fact]
@@ -941,11 +941,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(serializationMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("super().serialize", result);
-        Assert.DoesNotContain("if self.complex_type1_value:", result);
+        Assert.DoesNotContain("if hasattr(self, \"complex_type1_value\"):", result);
         Assert.Contains("writer.write_object_value(None, self.complex_type1_value, self.complex_type3_value)", result);
-        Assert.Contains("if self.string_value:", result);
+        Assert.Contains("if hasattr(self, \"string_value\"):", result);
         Assert.Contains("writer.write_str_value(None, self.string_value)", result);
-        Assert.Contains("if self.complex_type2_value:", result);
+        Assert.Contains("if hasattr(self, \"complex_type2_value\"):", result);
         Assert.Contains("writer.write_collection_of_object_values(None, self.complex_type2_value)", result);
     }
     [Fact]

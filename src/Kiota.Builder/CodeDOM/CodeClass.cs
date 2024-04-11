@@ -80,7 +80,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         return properties.GroupBy(static x => x.Name).Select(static x => x.First()).Select(property =>
         {
             // Prevent duplicates
-            if (FindPropertyByNameInTypeHierarchy(property.Name) != null)
+            var otherProp = FindPropertyByNameInTypeHierarchy(property.Name);
+            if (otherProp != null && otherProp.WireName.Equals(property.WireName, StringComparison.OrdinalIgnoreCase))
             {
                 return null; // this property is going to collide, skipping
             }

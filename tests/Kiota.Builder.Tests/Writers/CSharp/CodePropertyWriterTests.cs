@@ -154,10 +154,8 @@ public sealed class CodePropertyWriterTests : IDisposable
                 Name = "string"
             },
             Kind = CodePropertyKind.Custom,
-        }).First();
-        writer.Write(propertyToWrite);
-        var result = tw.ToString();
-        Assert.Empty(result);
+        });
+        Assert.Empty(propertyToWrite);
     }
 
     [Fact]
