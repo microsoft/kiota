@@ -16,7 +16,7 @@ Developers can generate `openai` and `apimanifest` type of plugins. By generatin
 
 Once the `workspace.json` file is generated and the OpenAPI document file is saved locally, the generation will be executed and the plugin and the sliced OpenAPI document will become available.
 
-For `openai` plugins, the generated plugin will be named `ai-plugin.json` and the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
+For `openai` plugins, the generated plugin will be named `open-ai-puglins.json.json` and the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
 
 | OpenAI field | Default value |
 | -- | -- |
@@ -78,7 +78,7 @@ _The resulting `workspace.json` file will look like this:_
 }
 ```
 
-_The resulting OpenAI plugin named `ai-plugin.json` will look like this:_
+_The resulting OpenAI plugin named `open-ai-puglins.json` will look like this:_
 
 ```jsonc
 {
@@ -178,7 +178,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
     └─plugins
       └─github
           └─github-apimanifest.json # Specific API Manifest
-          └─ai-plugin.json #OpenAI Plugin
+          └─open-ai-puglins.json #OpenAI Plugin
           └─sliced-github.json # Sliced and augmented OpenAPI document
 ```
 
