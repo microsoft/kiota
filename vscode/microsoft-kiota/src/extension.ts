@@ -117,6 +117,7 @@ export async function activate(
       dependenciesInfo,
       dependenciesInfoProvider
     ),
+    vscode.commands.registerCommand(`${treeViewId}.openFile`, () => vscode.window.showInformationMessage(`Successfully called open api file.`)),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter, 
       `${treeViewId}.openDocumentationPage`,

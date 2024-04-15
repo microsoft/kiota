@@ -14,7 +14,7 @@
   "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Add all",
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remove all",
   "kiota.openApiExplorer.closeDescription.title": "Close API description",
-  "kiota.openApiExplorer.openDescription.title": "Open API description",
+  "kiota.openApiExplorer.openDescription.title": "Add API description",
   "kiota.searchLock.title": "Search for a lock file",
   "kiota.openApiExplorer.filterDescription.title": "Filter API description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Open documentation page",
@@ -29,5 +29,6 @@
   "kiota.generate.deserializer.description": "The fully qualified class names for deserializers",
   "kiota.generate.structuredMimeTypes.description": "The MIME types and preference to use for structured data model generation. As per RFC9110 Accept header notation.",
   "kiota.generate.includeAdditionalData.description": "Will include the 'AdditionalData' property for models",
-  "kiota.apiFiles.Name": "My API Files"
+  "kiota.workspace.name": "My Workspace",
+  "kiota.openApiExplorer.openFile.title": "Open file"
 }
