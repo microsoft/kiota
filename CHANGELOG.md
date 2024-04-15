@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed URI template generation to reuse templates when required templates are absent across operations.
+- Updated reserved name providers for Java and Php so that "object" can be escaped. 
 
 ## [1.13.0] - 2024-04-04
 
