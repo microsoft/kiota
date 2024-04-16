@@ -49,7 +49,7 @@ paths:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.APIManifest],
+            PluginTypes = [PluginType.Microsoft],
             ClientClassName = "client",
         };
         var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
@@ -59,7 +59,7 @@ paths:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration);
         await pluginsGenerationService.GenerateManifestAsync();
 
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-microsoft.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "openapi.yml")));
     }
 }
