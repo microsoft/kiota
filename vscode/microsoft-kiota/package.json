@@ -238,7 +238,7 @@
       ],
       "view/title": [
         {
-          "command": "kiota.openApiExplorer.openDescription",
+          "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@2"
         },
@@ -395,7 +395,7 @@
         "icon": "$(close)"
       },
       {
-        "command": "kiota.openApiExplorer.openDescription",
+        "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
         "icon": "$(add)"

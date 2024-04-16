@@ -121,25 +121,46 @@ export async function filterSteps(existingFilter: string, filterCallback: (searc
 }
 
 export async function searchSteps(searchCallBack: (searchQuery: string) => Thenable<Record<string, KiotaSearchResultItem> | undefined>) {
-    const state = {} as Partial<SearchState>;
-    const title = l10n.t('Search for an API description');
+    const state: Partial<SearchState & OpenState> = {};
+    const title = l10n.t('Add an API description');
     let step = 1;
     let totalSteps = 2;
-    async function inputSearchQuery(input: MultiStepInput, state: Partial<SearchState>) {
+    async function inputPathOrSearch(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
         state.searchQuery = await input.showInputBox({
             title,
             step: step++,
             totalSteps: totalSteps,
             value: state.searchQuery || '',
-            prompt: l10n.t('Enter a search query'),
+            prompt: l10n.t('Search or paste a path to an API description'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
 
         state.searchResults = await searchCallBack(state.searchQuery);
-        return (input: MultiStepInput) => pickSearchResult(input, state);
+        if(state.searchResults && Object.keys(state.searchResults).length > 0) {
+            return (input: MultiStepInput) => pickSearchResult(input, state);
+        }
+        else {
+            state.descriptionPath = state.searchQuery;
+            return (input: MultiStepInput) => inputPathOrUrl(input, state);
+        }
     }
-    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState>) {
+
+    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
+       if (state.descriptionPath) {
+        return;
+       }
+       state.descriptionPath = await input.showInputBox({
+        title,
+        step: step++,
+        totalSteps: 1,
+        value: state.descriptionPath || '',
+        prompt: l10n.t('Search or paste a path to an API description'),
+        validate: validateIsNotEmpty,
+        shouldResume: shouldResume
+    });
+    }
+    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
         const items: QuickSearchPickItem[] = [];
         if(state.searchResults) {
             for (const key of Object.keys(state.searchResults)) {
@@ -157,7 +178,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
         });
         state.descriptionPath = items.find(x => x.label === pick?.label)?.descriptionUrl || '';
     }
-    await MultiStepInput.run(input => inputSearchQuery(input, state), () => step-=2);
+    await MultiStepInput.run(input => inputPathOrSearch(input, state), () => step-=2);
     return state;
 }
 

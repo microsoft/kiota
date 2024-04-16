@@ -244,7 +244,7 @@ export async function activate(
       }
     ),
     registerCommandWithTelemetry(reporter, 
-      `${extensionId}.searchApiDescription`,
+      `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
         const config = await searchSteps(x => vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
