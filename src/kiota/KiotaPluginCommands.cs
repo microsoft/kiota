@@ -32,7 +32,6 @@ public static class KiotaPluginCommands
         {
             typeOption.IsRequired = true;
             typeOption.Arity = ArgumentArity.OneOrMore;
-            typeOption.SetDefaultValue(new List<PluginType> { PluginType.OpenAI });
         }
         typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
         return typeOption;

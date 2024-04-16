@@ -72,7 +72,7 @@ public class PluginsGenerationService
             if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
                 legalUrl = legal.Legal;
             if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
-                logoUrl = logo.Logo;
+                logoUrl = logo.Url;
             if (OAIDocument.Info.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
                 privacyUrl = privacy.Privacy;
         }
