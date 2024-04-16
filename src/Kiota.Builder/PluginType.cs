@@ -3,5 +3,6 @@
 public enum PluginType
 {
     OpenAI,
-    APIManifest
+    APIManifest,
+    Microsoft
 }

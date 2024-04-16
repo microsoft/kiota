@@ -17,8 +17,8 @@ public class OpenAPIRuntimeComparerTests
     [Fact]
     public void GetsHashCode()
     {
-        var runtime1 = new OpenAPIRuntime { Spec = new() { { "key1", "value1" } } };
-        var runtime2 = new OpenAPIRuntime { Spec = new() { { "key2", "value2" } }, Auth = new() { Type = "type" } };
+        var runtime1 = new OpenApiRuntime { Spec = new() { Url = "url", ApiDescription = "description" } };
+        var runtime2 = new OpenApiRuntime { Spec = new() { Url = "url", ApiDescription = "description" }, Auth = new AnonymousAuth() };
         Assert.NotEqual(_comparer.GetHashCode(runtime1), _comparer.GetHashCode(runtime2));
     }
 }

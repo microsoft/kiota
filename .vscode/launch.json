@@ -330,7 +330,7 @@
         "-i",
         "**/messages",
         "--type",
-        "APIManifest"
+        "microsoft"
       ],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",

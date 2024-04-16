@@ -94,6 +94,5 @@ internal class AddHandler : BaseKiotaCommandHandler
 #endif
             }
         }
-        throw new NotImplementedException();
     }
 }
