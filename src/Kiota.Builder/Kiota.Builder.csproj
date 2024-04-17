@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.14" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="0.5.4-preview" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.14" />
-    <PackageReference Include="Microsoft.Plugins.Manifest" Version="0.0.5-preview" />
+    <PackageReference Include="Microsoft.Plugins.Manifest" Version="0.0.6-preview" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="YamlDotNet" Version="15.1.2" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer"
