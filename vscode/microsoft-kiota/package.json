@@ -259,9 +259,14 @@
         }
       ],
       "view/item/context": [
+        { 
+          "command": "kiota.openApiExplorer.closeDescription",
+          "when": "view == kiota.openApiExplorer && viewItem == apiTitle", 
+          "group": "inline@6"
+        },
         {
           "command": "kiota.openApiExplorer.openDocumentationPage",
-          "when": "view == kiota.openApiExplorer && (viewItem || false)",
+          "when": "view == kiota.openApiExplorer && (viewItem == documentationUrl)",
           "group": "inline@1"
         },
         {
@@ -392,7 +397,7 @@
         "command": "kiota.openApiExplorer.closeDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.closeDescription.title%",
-        "icon": "$(close)"
+        "icon": "$(trash)"
       },
       {
         "command": "kiota.openApiExplorer.searchOrOpenApiDescription",

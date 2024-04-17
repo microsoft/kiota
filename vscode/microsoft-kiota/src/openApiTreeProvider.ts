@@ -266,11 +266,11 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         private readonly isOperation: boolean,
         filterTokens: string[],
         public readonly children: OpenApiTreeNode[] = [],
-        public readonly documentationUrl?: string,
+        public readonly documentationUrl?: string
     ) {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
-        this.contextValue = documentationUrl;
+        this.contextValue =(this.label.indexOf('(') !== -1) ? 'apiTitle' :  (this.documentationUrl ? 'documentationUrl' : '');
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
