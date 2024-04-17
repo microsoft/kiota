@@ -189,21 +189,38 @@ type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
     const state = {...existingConfiguration} as Partial<GenerateState>;
-    if (existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
-        typeof existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
-        existingConfiguration.clientClassName.length > 0 && existingConfiguration.clientNamespaceName.length > 0 && existingConfiguration.outputPath.length > 0 && existingConfiguration.language.length > 0) {
+    if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
+        typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
+        existingConfiguration.generationType.length > 0 && existingConfiguration.clientClassName.length > 0 && existingConfiguration.clientNamespaceName.length > 0 && existingConfiguration.outputPath.length > 0 && existingConfiguration.language.length > 0) {
         return state;
     }
 
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
-    const title = l10n.t('Generate an API client');
     let step = 1;
     let totalSteps = 4;
+    async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
+        const items = ['Generate an API client', 'Generate a plugin', 'Generate an API manifest'];
+		const option = await input.showQuickPick({
+			title: 'What do you want to generate?',
+			step: 1,
+			totalSteps: 1,
+            placeholder: 'Select an option',
+			items: items.map(x => ({label: x})),
+			validate: validateIsNotEmpty,
+			shouldResume: shouldResume
+		});
+        state.generationType = option.label;
+        if(option.label === 'Generate an API client') {
+		return (input: MultiStepInput) => inputClientClassName(input, state);
+        }
+        else if(option.label === 'Generate a plugin') { return ;}
+        else if(option.label === 'Generate an API manifest') { return; }
+	}
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientClassName = await input.showInputBox({
-			title,
+			title: l10n.t('Create a new API client - class'),
 			step: step++,
 			totalSteps: totalSteps,
 			value: state.clientClassName || '',
@@ -216,7 +233,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputClientNamespaceName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientNamespaceName = await input.showInputBox({
-			title,
+			title: l10n.t('Create a new API client - namespace'),
 			step: step++,
 			totalSteps: totalSteps,
 			value: typeof state.clientNamespaceName === 'string' ? state.clientNamespaceName : '',
@@ -229,7 +246,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title,
+			title: l10n.t('Create a new API client - output path'),
 			step: step++,
 			totalSteps: totalSteps,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -251,7 +268,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             } as (QuickPickItem & {languageName: string});
         });
 		const pick = await input.showQuickPick({
-			title,
+			title: l10n.t('Create a new API client - language'),
 			step: step++,
 			totalSteps: totalSteps,
 			placeholder: l10n.t('Pick a language'),
@@ -261,7 +278,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		});
 		state.language = pick.label.split('-')[0].trim();
 	}
-    await MultiStepInput.run(input => inputClientClassName(input, state), () => step-=2);
+    await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     return state;
 }
 
@@ -305,6 +322,7 @@ interface SelectApiManifestKey extends BaseStepsState {
 }
 
 interface GenerateState extends BaseStepsState {
+    generationType: QuickPickItem | string;
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;
@@ -341,6 +359,7 @@ interface InputBoxParameters {
 	placeholder?: string;
 	shouldResume: () => Thenable<boolean>;
 }
+
 
 class MultiStepInput {
 
