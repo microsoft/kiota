@@ -10,13 +10,13 @@ Every time a plugin is added, a copy of the OpenAPI document file will be stored
 
 An [API Manifest][def] file named `apimanifest.json` will be generated (if non existing) or updated (if already existing) in the root folder `./kiota` next to `workspace.json`.  API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `openai` and `apimanifest` type of plugins. By generating `openai` or `apimanifest`, two outputs will be generated: a\) the plugin type you have chosen that will be named `{plugin-name}-{type}.json` and b\) a sliced OpenAPI document with only the endpoints that matches `--include-path` and `--exclude-path`, if provided.
+Developers can generate `openai` and `apimanifest` type of plugins. By generating `openai` or `apimanifest`, two outputs will be generated: a\) the plugin type you have chosen and b\) a sliced OpenAPI document named `sliced-{plugin-name}.json|yaml` with only the endpoints that matches `--include-path` and `--exclude-path`, if provided.
 > [!NOTE] 
-> In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory when `apimanifest` value is used as the plugin type.
+> In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin when providing `--type apimanifest`, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
 Once the `workspace.json` file is generated and the OpenAPI document file is saved locally, the generation will be executed and the plugin and the sliced OpenAPI document will become available.
 
-For `openai` plugins, the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
+For `openai` plugins, the generated plugin will be named `open-ai-plugins.json` and the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
 
 | OpenAI field | Default value |
 | -- | -- |
@@ -29,7 +29,7 @@ For `openai` plugins, the mapping should follow [Hidi logic to generate OpenAI P
 | legal_info_url | Defaults to x-legal-info-url extension from the OpenAPI document. If the x-legal-info-url is not availabe, the legal_info_url will not be added in the plugin. |
 |  |  |
 
-For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](https://github.com/microsoft/OpenApi.ApiManifest/blob/main/docs/OpenApiToApiManifestMapping.md). Requiring fields are as the following:
+For `apimanifest`, the generated file will be named `{plugin-name}-apimanifest.json` and the mapping should follow the [OpenApi.ApiManifest lib map](https://github.com/microsoft/OpenApi.ApiManifest/blob/main/docs/OpenApiToApiManifestMapping.md). Requiring fields are as the following:
 
 | API Manifest field | Default value |
 | -- | -- |
@@ -46,7 +46,7 @@ For `apimanifest`, the mapping should follow the [OpenApi.ApiManifest lib map](h
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
-| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`. Defaults to `apimanifest`| Yes |
+| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `openai` and `apimanifest`.| Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the location of `workspace.json`. Defaults to `./output`. | Yes, without its value |
 
@@ -78,7 +78,7 @@ _The resulting `workspace.json` file will look like this:_
 }
 ```
 
-_The resulting `github-openai.json` file will look like this:_
+_The resulting OpenAI plugin named `open-ai-plugins.json` will look like this:_
 
 ```jsonc
 {
@@ -92,7 +92,7 @@ _The resulting `github-openai.json` file will look like this:_
     },
     "api": {
         "type": "openapi",
-        "url": "./generated/plugins/github/sliced-openapi-github.json"
+        "url": "./generated/plugins/github/sliced-github.json"
     },
     "logo_url": "https://example.com/logo.png",
     "contact_email": "githubsupport@example.com",
@@ -100,7 +100,7 @@ _The resulting `github-openai.json` file will look like this:_
 }
 ```
 
-_The resulting `github-apimanifest.json` file will look like this:_
+_The resulting API Manifest named `github-apimanifest.json` will look like this:_
 
 ```jsonc
 {
@@ -129,7 +129,7 @@ _The resulting `github-apimanifest.json` file will look like this:_
 }
 ```
 
-_The resulting `apimanifest.json` file (concatenated surface of all APIs dependencies) in the `./kiota` folder will look like this:_
+_The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (concatenated surface of all APIs dependencies across clients and plugins) will look like this:_
 
 ```jsonc
 {
@@ -169,7 +169,7 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs depende
 ```bash
  └─.kiota
     └─workspace.json
-    └─apimanifest.json # Single artifact with all APIs dependencies info
+    └─apimanifest.json # Single artifact with all APIs dependencies info across clients and plugins
     └─documents
       └─github    
         └─GitHub.json # OpenAPI document
@@ -178,8 +178,8 @@ _The resulting `apimanifest.json` file (concatenated surface of all APIs depende
     └─plugins
       └─github
           └─github-apimanifest.json # Specific API Manifest
-          └─github-openai.json #OpenAI Plugin
-          └─sliced-openapi-github.json # Sliced and augmented OpenAPI document
+          └─open-ai-plugins.json #OpenAI Plugin
+          └─sliced-github.json # Sliced and augmented OpenAPI document
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html
