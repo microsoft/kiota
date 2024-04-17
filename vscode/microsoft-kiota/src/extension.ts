@@ -259,8 +259,18 @@ export async function activate(
         }
       }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () =>
-      openApiTreeProvider.closeDescription()
+    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () =>
+      {
+      const yesAnswer = vscode.l10n.t("Yes");
+      const response = await vscode.window.showInformationMessage(
+        vscode.l10n.t("Do you want to remove this API description?"),
+        yesAnswer,
+        vscode.l10n.t("No")
+      );
+      if(response === yesAnswer) {
+        openApiTreeProvider.closeDescription();
+      }
+    }
     ),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
       async () => {
