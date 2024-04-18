@@ -155,17 +155,19 @@ public class PythonConventionService : CommonLanguageConventionService
             return "object";
         return $"{{{innerDeclaration}}}";
     }
-    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (!element.Documentation.DescriptionAvailable) return;
-        if (element is not CodeElement codeElement) return;
+        if (!element.Documentation.DescriptionAvailable) return false;
+        if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
         writer.WriteLine(DocCommentStart);
         writer.WriteLine(description);
         writer.WriteLine(DocCommentEnd);
+
+        return true;
     }
     public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
