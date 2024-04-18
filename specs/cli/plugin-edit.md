@@ -50,7 +50,7 @@ _The resulting `workspace.json` file will look like this:_
 }
 ```
 
-_The resulting OpenAI plugin named `open-ai-plugins.json` will look like this:_
+_The resulting OpenAI plugin named `openai-plugins.json` will look like this:_
 
 ```jsonc
 {
@@ -142,7 +142,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
     └─plugins
       └─github
           └─github-apimanifest.json # Specific API Manifest
-          └─open-ai-plugins.json #OpenAI Plugin
+          └─openai-plugins.json #OpenAI Plugin
           └─sliced-github.json # Sliced and augmented OpenAPI document
 ```
 
