@@ -48,6 +48,7 @@ namespace Kiota.Builder.Refiners
             "list",
             "namespace",
             "new",
+            "object",
             "or",
             "print",
             "private",
