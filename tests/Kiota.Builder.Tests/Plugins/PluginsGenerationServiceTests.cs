@@ -33,6 +33,9 @@ public sealed class PluginsGenerationServiceTests : IDisposable
 info:
   title: test
   version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
 paths:
   /test:
     get:
@@ -49,8 +52,9 @@ paths:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.Microsoft],
+            PluginTypes = [PluginType.Microsoft, PluginType.APIManifest],
             ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
         var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
         var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
@@ -60,6 +64,7 @@ paths:
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, "client-microsoft.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-apimanifest.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "openapi.yml")));
     }
 }

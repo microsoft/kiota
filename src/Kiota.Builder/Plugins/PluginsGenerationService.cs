@@ -38,6 +38,9 @@ public class PluginsGenerationService
     {
         // write the decription
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+        var directory = Path.GetDirectoryName(descriptionFullPath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
         await using var descriptionStream = File.Create(descriptionFullPath, 4096);
         await using var fileWriter = new StreamWriter(descriptionStream);
@@ -50,9 +53,6 @@ public class PluginsGenerationService
         foreach (var pluginType in Configuration.PluginTypes)
         {
             var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}");
-            var directory = Path.GetDirectoryName(manifestOutputPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
             await using var fileStream = File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
