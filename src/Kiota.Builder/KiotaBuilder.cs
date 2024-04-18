@@ -231,8 +231,8 @@ public partial class KiotaBuilder
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
-            if (config.PluginTypes.Any(static pluginType => pluginType != PluginType.Microsoft))
-                throw new NotImplementedException("Only the Microsoft plugin type is not supported for generation");
+            if (config.PluginTypes.Contains(PluginType.OpenAI))
+                throw new NotImplementedException("The OpenAI plugin type is not supported for generation");
             if (openApiDocument is null || openApiTree is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin

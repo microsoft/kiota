@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.Kiota.Abstractions.Extensions;
+using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -34,29 +36,44 @@ public class PluginsGenerationService
     private const string DescriptionRelativePath = "./openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
+        // write the decription
+        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+        await using var descriptionStream = File.Create(descriptionFullPath, 4096);
+        await using var fileWriter = new StreamWriter(descriptionStream);
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+        var descriptionWriter = new OpenApiYamlWriter(fileWriter);
+        OAIDocument.SerializeAsV3(descriptionWriter);
+        descriptionWriter.Flush();
+
+        // write the plugins
         foreach (var pluginType in Configuration.PluginTypes)
         {
-            if (pluginType != PluginType.Microsoft)
-                continue; //TODO add support for other plugin type generation
-
             var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}");
             var directory = Path.GetDirectoryName(manifestOutputPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
-
-            var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var descriptionStream = File.Create(descriptionFullPath, 4096);
-            await using var fileWriter = new StreamWriter(descriptionStream);
-            var descriptionWriter = new OpenApiYamlWriter(fileWriter);
-            OAIDocument.SerializeAsV3(descriptionWriter);
-            descriptionWriter.Flush();
-
-            var pluginDocument = GetManifestDocument(DescriptionRelativePath);
             await using var fileStream = File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-            pluginDocument.Write(writer);
+
+            switch (pluginType)
+            {
+                case PluginType.Microsoft:
+                    var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+                    pluginDocument.Write(writer);
+                    break;
+                case PluginType.APIManifest:
+                    var apiManifest = new ApiManifestDocument("application"); //TODO add application name
+                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
+                    apiManifest.Write(writer);
+                    break;
+                case PluginType.OpenAI:
+                //TODO add support for OpenAI plugin type generation
+                default:
+                    continue;
+            }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
