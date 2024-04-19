@@ -40,7 +40,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         return currentNode.Path.GetNamespaceFromPath(prefix);
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-    [GeneratedRegex(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 500)]
+    [GeneratedRegex(@"(?<prefix>\w+)?(?<equals>=?)'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 500)]
     private static partial Regex PathParametersRegex();
     // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
     [GeneratedRegex(@"=@(\w+)", RegexOptions.Singleline, 500)]
@@ -51,8 +51,10 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private const string RequestParametersSectionEndChar = ")";
     private const string WithKeyword = "With";
     private static readonly MatchEvaluator requestParametersMatchEvaluator = match =>
-        WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
-    private static string CleanupParametersFromPath(string pathSegment)
+        string.IsNullOrEmpty(match.Groups["equals"].Value) ?
+            match.Groups["prefix"].Value + WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase() :
+            WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
+    internal static string CleanupParametersFromPath(string pathSegment)
     {
         if (string.IsNullOrEmpty(pathSegment))
             return pathSegment;

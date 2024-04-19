@@ -675,7 +675,7 @@ public partial class KiotaBuilder
                 Optional = asOptional,
                 Documentation = new()
                 {
-                    DescriptionTemplate = parameter.Description.CleanupDescription(),
+                    DescriptionTemplate = !string.IsNullOrEmpty(parameter.Description) ? parameter.Description.CleanupDescription() : $"The path parameter: {codeName}",
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName, StringComparison.OrdinalIgnoreCase) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),

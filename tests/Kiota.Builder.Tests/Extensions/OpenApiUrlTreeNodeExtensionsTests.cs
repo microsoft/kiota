@@ -1072,6 +1072,20 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         Assert.Equal("\\path\\{differentThingId-id}", differentThingId.Path);
         Assert.Equal("{+baseurl}/path/{differentThingId%2Did}", differentThingId.GetUrlTemplate());
     }
+
+    [Theory]
+    [InlineData("{path}", "WithPath")]
+    [InlineData("archived{path}","archivedWithPath")]
+    [InlineData("files{path}","filesWithPath")]
+    [InlineData("name(idParam='{id}')","nameWithId")]
+    [InlineData("name(idParam={id})","nameWithId")]
+    [InlineData("name(idParam='{id}',idParam2='{id2}')","nameWithIdWithId2")]
+    public void CleanupParametersFromPathGeneratesDifferentResultsWithPrefixPresent(string segmentName, string expectedIdentifer)
+    {
+        var result = OpenApiUrlTreeNodeExtensions.CleanupParametersFromPath(segmentName);
+        Assert.Equal(expectedIdentifer, result );
+    }
+
     private static OpenApiUrlTreeNode GetChildNodeByPath(OpenApiUrlTreeNode node, string path)
     {
         var pathSegments = path.Split('/');
