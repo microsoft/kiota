@@ -69,10 +69,10 @@ public class PluginsGenerationService
                     apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
                     apiManifest.Write(writer);
                     break;
-                case PluginType.OpenAI:
-                //TODO add support for OpenAI plugin type generation
+                case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
+                    // intentional drop to the default case
                 default:
-                    continue;
+                    throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
