@@ -36,8 +36,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
-        var nullableEx = codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? throw new InvalidOperationException(\"AdditionalData can not be null\")" : string.Empty;
-        var nullableOp = !codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? "?" : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
         switch (codeElement.Kind)
@@ -52,6 +50,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
+                var nullableOp = !codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? "?" : string.Empty;
+                var nullableEx = codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? throw new InvalidOperationException(\"AdditionalData can not be null\")" : string.Empty;
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Get<{propertyType}>(\"{backingStoreKey}\"){nullableEx}; }}");
