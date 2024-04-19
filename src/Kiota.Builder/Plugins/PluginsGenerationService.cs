@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.Kiota.Abstractions.Extensions;
+using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -30,31 +32,52 @@ public class PluginsGenerationService
         Configuration = configuration;
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
-    private const string ManifestFileName = "manifest.json";
+    private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionRelativePath = "./openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        var manifestOutputPath = Path.Combine(Configuration.OutputPath, ManifestFileName);
-        var directory = Path.GetDirectoryName(manifestOutputPath);
+        // write the decription
+        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+        var directory = Path.GetDirectoryName(descriptionFullPath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
-
-        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
         await using var descriptionStream = File.Create(descriptionFullPath, 4096);
         await using var fileWriter = new StreamWriter(descriptionStream);
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
         OAIDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
-        var pluginDocument = GetManifestDocument(DescriptionRelativePath);
-        await using var fileStream = File.Create(manifestOutputPath, 4096);
-        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+        // write the plugins
+        foreach (var pluginType in Configuration.PluginTypes)
+        {
+            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}");
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+            await using var fileStream = File.Create(manifestOutputPath, 4096);
+            await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-        pluginDocument.Write(writer);
-        await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+            switch (pluginType)
+            {
+                case PluginType.Microsoft:
+                    var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+                    pluginDocument.Write(writer);
+                    break;
+                case PluginType.APIManifest:
+                    var apiManifest = new ApiManifestDocument("application"); //TODO add application name
+                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
+                    apiManifest.Write(writer);
+                    break;
+                case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
+                                       // intentional drop to the default case
+                default:
+                    throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
+            }
+            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
-    private ManifestDocument GetManifestDocument(string openApiDocumentPath)
+    private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
@@ -64,7 +87,6 @@ public class PluginsGenerationService
         string? privacyUrl = null;
         if (OAIDocument.Info is not null)
         {
-
             if (OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
                 descriptionExtension is OpenApiDescriptionForModelExtension extension &&
                 !string.IsNullOrEmpty(extension.Description))
@@ -76,7 +98,7 @@ public class PluginsGenerationService
             if (OAIDocument.Info.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
                 privacyUrl = privacy.Privacy;
         }
-        return new ManifestDocument
+        return new PluginManifestDocument
         {
             SchemaVersion = "v2",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
@@ -100,18 +122,21 @@ public class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
     }
-    private (OpenAPIRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
+    private (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
     {
-        var runtimes = new List<OpenAPIRuntime>();
+        var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
-                runtimes.Add(new OpenAPIRuntime
+                runtimes.Add(new OpenApiRuntime
                 {
-                    Auth = new Auth("none"),
-                    Spec = new Dictionary<string, string> { { "url", openApiDocumentPath } },
+                    Auth = new AnonymousAuth(),
+                    Spec = new OpenApiRuntimeSpec()
+                    {
+                        Url = openApiDocumentPath
+                    },
                     RunForFunctions = [operation.OperationId]
                 });
                 var oasParameters = operation.Parameters
@@ -123,19 +148,26 @@ public class PluginsGenerationService
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
-                    Description = operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary) ? summary : operation.Description.CleanupXMLString(),
-                    Parameters = oasParameters.Length == 0 ? null :
-                                    new Parameters(
-                                        "object",
-                                        new Properties(oasParameters.ToDictionary(
-                                                                        static x => x.Name,
-                                                                        static x => new Property(
-                                                                                        x.Schema.Type ?? string.Empty,
-                                                                                        x.Description.CleanupXMLString(),
-                                                                                        x.Schema.Default?.ToString() ?? string.Empty,
-                                                                                        null), //TODO enums
-                                                                        StringComparer.OrdinalIgnoreCase)),
-                                        oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()),
+                    Description =
+                        operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary)
+                            ? summary
+                            : operation.Description.CleanupXMLString(),
+                    Parameters = oasParameters.Length == 0
+                        ? null
+                        : new Parameters
+                        {
+                            Type = "object",
+                            Properties = new Properties(oasParameters.ToDictionary(
+                                static x => x.Name,
+                                static x => new FunctionParameter()
+                                {
+                                    Type = x.Schema.Type ?? string.Empty,
+                                    Description = x.Description.CleanupXMLString(),
+                                    Default = x.Schema.Default?.ToString() ?? string.Empty,
+                                    //TODO enums
+                                })),
+                            Required = oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()
+                        },
                     States = GetStatesFromOperation(operation),
                 });
             }
@@ -177,7 +209,7 @@ public class PluginsGenerationService
         {
             return new State
             {
-                Instructions = instructionsExtractor(rExt).Where(static x => !string.IsNullOrEmpty(x)).Select(static x => x.CleanupXMLString()).ToList()
+                Instructions = new Instructions(instructionsExtractor(rExt).Where(static x => !string.IsNullOrEmpty(x)).Select(static x => x.CleanupXMLString()).ToList())
             };
         }
         return null;

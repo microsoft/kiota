@@ -196,7 +196,10 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["search", "microsoft"],
+      "args": [
+        "search",
+        "microsoft"
+      ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
       "stopAtEntry": false
@@ -207,7 +210,10 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["search", "test"],
+      "args": [
+        "search",
+        "test"
+      ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
       "stopAtEntry": false
@@ -249,7 +255,11 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["info", "-l", "CSharp"],
+      "args": [
+        "info",
+        "-l",
+        "CSharp"
+      ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
       "stopAtEntry": false
@@ -260,7 +270,11 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["update", "-o", "${workspaceFolder}/samples"],
+      "args": [
+        "update",
+        "-o",
+        "${workspaceFolder}/samples"
+      ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
       "stopAtEntry": false
@@ -271,7 +285,10 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["workspace", "migrate"],
+      "args": [
+        "workspace",
+        "migrate"
+      ],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",
       "stopAtEntry": false,
@@ -285,7 +302,10 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["client", "generate"],
+      "args": [
+        "client",
+        "generate"
+      ],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",
       "stopAtEntry": false,
@@ -330,7 +350,9 @@
         "-i",
         "**/messages",
         "--type",
-        "APIManifest"
+        "ApiManifest",
+        "--type",
+        "microsoft"
       ],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",
@@ -345,7 +367,11 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": ["login", "github", "device"],
+      "args": [
+        "login",
+        "github",
+        "device"
+      ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
       "stopAtEntry": false
