@@ -70,7 +70,7 @@ public class PluginsGenerationService
                     apiManifest.Write(writer);
                     break;
                 case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
-                    // intentional drop to the default case
+                                       // intentional drop to the default case
                 default:
                     throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
             }
