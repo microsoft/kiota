@@ -168,12 +168,12 @@ public class GoConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 
-    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (!element.Documentation.DescriptionAvailable) return;
-        if (element is not CodeElement codeElement) return;
+        if (!element.Documentation.DescriptionAvailable) return false;
+        if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false));
         if (!string.IsNullOrEmpty(prefix))
@@ -181,6 +181,7 @@ public class GoConventionService : CommonLanguageConventionService
             description = description.ToFirstCharacterLowerCase();
         }
         WriteDescriptionItem($"{prefix}{description}{suffix}", writer);
+        return true;
     }
     public void WriteDescriptionItem(string description, LanguageWriter writer)
     {
