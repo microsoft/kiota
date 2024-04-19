@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Suppress CS1591 when generating CSharp code and documentation is not available
+
 ### Changed
 
 - Changed URI template generation to reuse templates when required templates are absent across operations.
 - Updated reserved name providers for Java and Php so that "object" can be escaped. 
+- Do not generate CS8603 warnings when enabling backing store in CSharp generation. 
 
 ## [1.13.0] - 2024-04-04
 
