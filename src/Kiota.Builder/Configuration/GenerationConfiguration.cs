@@ -9,7 +9,6 @@ using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Configuration;
 #pragma warning disable CA2227
-#pragma warning disable CA1002
 #pragma warning disable CA1056
 public class GenerationConfiguration : ICloneable
 {
@@ -30,7 +29,7 @@ public class GenerationConfiguration : ICloneable
     {
         get; set;
     }
-    public ClientOperation? Operation
+    public ConsumerOperation? Operation
     {
         get; set;
     }
@@ -46,6 +45,7 @@ public class GenerationConfiguration : ICloneable
         get => $"{ClientNamespaceName}{NamespaceNameSeparator}{ModelsNamespaceSegmentName}";
     }
     public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
+    public HashSet<PluginType> PluginTypes { get; set; } = [];
     public string? ApiRootUrl
     {
         get; set;
@@ -150,6 +150,7 @@ public class GenerationConfiguration : ICloneable
             SkipGeneration = SkipGeneration,
             Operation = Operation,
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -185,7 +186,7 @@ public class GenerationConfiguration : ICloneable
         };
         return dependency;
     }
+    public bool IsPluginConfiguration => PluginTypes.Count != 0;
 }
 #pragma warning restore CA1056
-#pragma warning restore CA1002
 #pragma warning restore CA2227

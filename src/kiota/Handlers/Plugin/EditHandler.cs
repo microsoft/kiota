@@ -7,7 +7,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace kiota.Handlers.Client;
+namespace kiota.Handlers.Plugin;
 
 internal class EditHandler : BaseKiotaCommandHandler
 {
@@ -15,42 +15,13 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public required Option<bool?> BackingStoreOption
-    {
-        get; init;
-    }
     public required Option<string> OutputOption
-    {
-        get; init;
-    }
-    public required Option<GenerationLanguage?> LanguageOption
     {
         get; init;
     }
     public required Option<string> DescriptionOption
     {
         get; init;
-    }
-    public required Option<string> NamespaceOption
-    {
-        get; init;
-    }
-    public required Option<bool?> AdditionalDataOption
-    {
-        get; init;
-    }
-    public required Option<List<string>> DisabledValidationRulesOption
-    {
-        get; init;
-    }
-    public required Option<List<string>> StructuredMimeTypesOption
-    {
-        get; init;
-    }
-    public required Option<bool?> ExcludeBackwardCompatibleOption
-    {
-        get;
-        set;
     }
     public required Option<List<string>> IncludePatternsOption
     {
@@ -64,22 +35,20 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<PluginType>> PluginTypesOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
-        GenerationLanguage? language = context.ParseResult.GetValueForOption(LanguageOption);
+        List<PluginType>? pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
-        bool? backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
-        bool? excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
-        bool? includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
-        string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
         List<string>? includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
-        List<string>? disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
-        List<string>? structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Generation.SkipGeneration = skipGeneration;
@@ -101,40 +70,25 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayError("The workspace configuration is missing, please run the init command first.");
                     return 1;
                 }
-                if (!config.Clients.TryGetValue(className, out var clientConfiguration))
+                if (!config.Plugins.TryGetValue(className, out var pluginConfiguration))
                 {
-                    DisplayError($"No client found with the provided name {className}");
+                    DisplayError($"No plugin found with the provided name {className}");
                     return 1;
                 }
-                clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(Configuration.Generation, className);
-                if (language.HasValue)
-                    Configuration.Generation.Language = language.Value;
-                if (backingStore.HasValue)
-                    Configuration.Generation.UsesBackingStore = backingStore.Value;
-                if (excludeBackwardCompatible.HasValue)
-                    Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
-                if (includeAdditionalData.HasValue)
-                    Configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
+                pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
-                AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
                 if (includePatterns is { Count: > 0 })
                     Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (excludePatterns is { Count: > 0 })
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                if (disabledValidationRules is { Count: > 0 })
-                    Configuration.Generation.DisabledValidationRules = disabledValidationRules
-                                                                            .Select(static x => x.TrimQuotes())
-                                                                            .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                                                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-                if (structuredMimeTypes is { Count: > 0 })
-                    Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                                                                    .Select(static x => x.TrimQuotes()));
+                if (pluginTypes is { Count: > 0 })
+                    Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
 
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
-                var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
+                var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
                 else if (skipGeneration)
@@ -145,20 +99,20 @@ internal class EditHandler : BaseKiotaCommandHandler
                 else
                 {
                     DisplayWarning("Generation skipped as no changes were detected");
-                    DisplayCleanHint("client generate", "--refresh");
+                    DisplayCleanHint("plugin generate", "--refresh");
                 }
                 var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
-                DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "client edit");
+                DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "plugin edit");
                 return 0;
             }
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error adding the plugin: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error adding the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error adding the plugin: {exceptionMessage}", ex.Message);
                 return 1;
 #endif
             }
