@@ -215,7 +215,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         if(option.label === 'Generate an API client') {
 		return (input: MultiStepInput) => inputClientClassName(input, state);
         }
-        else if(option.label === 'Generate a plugin') { return ;}
+        else if(option.label === 'Generate a plugin') { 
+            return (input: MultiStepInput) => inputPluginName(input, state); 
+        }
         else if(option.label === 'Generate an API manifest') { return; }
 	}
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -278,6 +280,33 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		});
 		state.language = pick.label.split('-')[0].trim();
 	}
+    async function inputPluginName(input:MultiStepInput, state: Partial<GenerateState>) {
+        state.pluginName = await input.showInputBox({
+            title: l10n.t('Create a new  Microsoft plugin - plugin name'),
+            step: step++,
+            totalSteps: 2,
+            value: state.pluginName || '',
+            placeholder: 'MyPlugin',
+            prompt: l10n.t('Choose a name for the plugin'),
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+        return (input: MultiStepInput) => inputPluginOutputPath(input, state);      
+    }
+    async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+		state.outputPath = await input.showInputBox({
+			title: l10n.t('Create a new Microsoft plugin - output path'),
+			step: step++,
+			totalSteps: 2,
+			value: typeof state.outputPath === 'string' ? state.outputPath : '',
+			placeholder: 'myproject/myplugin',
+			prompt: l10n.t('Enter an output path relative to the root of the project'),
+			validate: validateIsNotEmpty,
+			shouldResume: shouldResume
+		});		
+	}
+
+
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     return state;
 }
@@ -323,6 +352,7 @@ interface SelectApiManifestKey extends BaseStepsState {
 
 interface GenerateState extends BaseStepsState {
     generationType: QuickPickItem | string;
+    pluginName:string;
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;
