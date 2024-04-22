@@ -296,12 +296,19 @@ public class WorkspaceManagementService
             wsConfig.Clients.Add(generationConfiguration.ClientClassName, clientConfiguration);
             var inputConfigurationHash = await GetConsumerConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
-            apiManifest.ApiDependencies.Add(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, []));
+            apiManifest.ApiDependencies.Add(
+                generationConfiguration.ClientClassName,
+                generationConfiguration.ToApiDependency(
+                    inputConfigurationHash,
+                    new Dictionary<string, HashSet<string>> {
+                        { MigrationPlaceholderPath, new HashSet<string> { "GET" } }
+                    }));
             lockManagementService.DeleteLockFile(Path.Combine(WorkingDirectory, clientConfiguration.OutputPath));
         }
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
         return clientsGenerationConfigurations.OfType<GenerationConfiguration>().Select(static x => x.ClientClassName);
     }
+    internal const string MigrationPlaceholderPath = "/migration-placeholder";
     private async Task<GenerationConfiguration?> LoadConfigurationFromLockAsync(string clientName, string lockFilePath, CancellationToken cancellationToken)
     {
         if (Path.GetDirectoryName(lockFilePath) is not string lockFileDirectory)

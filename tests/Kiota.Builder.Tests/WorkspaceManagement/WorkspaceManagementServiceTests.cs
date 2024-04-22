@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -70,7 +71,13 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             ApiRootUrl = "https://graph.microsoft.com",
         };
         Directory.CreateDirectory(tempPath);
-        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
+        await service.UpdateStateFromConfigurationAsync(
+            configuration,
+            "foo",
+            new Dictionary<string, HashSet<string>> {
+                { "/foo", new HashSet<string> { "GET" } }
+            },
+            Stream.Null);
         var result = await service.ShouldGenerateAsync(configuration, "foo");
         Assert.False(result);
     }
@@ -88,7 +95,13 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             ApiRootUrl = "https://graph.microsoft.com",
         };
         Directory.CreateDirectory(tempPath);
-        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
+        await service.UpdateStateFromConfigurationAsync(
+            configuration,
+            "foo",
+            new Dictionary<string, HashSet<string>> {
+                { "/foo", new HashSet<string> { "GET" } }
+            },
+            Stream.Null);
         await service.RemoveClientAsync("clientName");
         var result = await service.IsConsumerPresent("clientName");
         Assert.False(result);
@@ -108,7 +121,13 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             PluginTypes = [PluginType.APIManifest],
         };
         Directory.CreateDirectory(tempPath);
-        await service.UpdateStateFromConfigurationAsync(configuration, "foo", [], Stream.Null);
+        await service.UpdateStateFromConfigurationAsync(
+            configuration,
+            "foo",
+            new Dictionary<string, HashSet<string>> {
+                { "/foo", new HashSet<string> { "GET" } }
+            },
+            Stream.Null);
         await service.RemovePluginAsync("clientName");
         var result = await service.IsConsumerPresent("clientName");
         Assert.False(result);
@@ -187,7 +206,13 @@ paths:
                       foo:
                         type: string");
         var classicService = new WorkspaceManagementService(mockLogger, httpClient, false, tempPath);
-        await classicService.UpdateStateFromConfigurationAsync(generationConfiguration, "foo", [], Stream.Null);
+        await classicService.UpdateStateFromConfigurationAsync(
+            generationConfiguration,
+            "foo",
+            new Dictionary<string, HashSet<string>> {
+                { "/foo", new HashSet<string> { "GET" } }
+            },
+            Stream.Null);
         var clientNames = await service.MigrateFromLockFileAsync("clientName", tempPath);
         Assert.Single(clientNames);
         Assert.Equal("clientName", clientNames.First());

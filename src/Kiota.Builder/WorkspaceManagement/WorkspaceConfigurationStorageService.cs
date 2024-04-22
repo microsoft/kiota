@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -90,6 +91,10 @@ public class WorkspaceConfigurationStorageService
                         await using var manifestStream = File.OpenRead(targetManifestFilePath);
 #pragma warning restore CA2007
                         var manifest = await manifestManagementService.DeserializeManifestDocumentAsync(manifestStream).ConfigureAwait(false);
+                        if (manifest is not null)
+                            foreach (var apiDependency in manifest.ApiDependencies.Select(static x => x.Value))
+                                apiDependency.Requests = apiDependency.Requests.Where(static x => !WorkspaceManagementService.MigrationPlaceholderPath.Equals(x.UriTemplate, StringComparison.Ordinal)).ToList();
+                        // avoids migrations resulting in empty clients
                         return (config, manifest);
                     }
                 return (config, null);
