@@ -1079,6 +1079,9 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     [InlineData("files{path}", "filesWithPath")]
     [InlineData("name(idParam='{id}')", "nameWithId")]
     [InlineData("name(idParam={id})", "nameWithId")]
+    [InlineData("name(idParamFoo={id})", "nameWithId")] // The current implementation only uses the placeholder i.e {id} for the naming to ignore `idParamFoo`
+                                                        // and thus generates the same identifier as the previous case. This collision risk is unlikely and constrained to an odata service scenario
+                                                        // which would be invalid for functions scenario(overloads with the same parameters))
     [InlineData("name(idParam='{id}',idParam2='{id2}')", "nameWithIdWithId2")]
     public void CleanupParametersFromPathGeneratesDifferentResultsWithPrefixPresent(string segmentName, string expectedIdentifer)
     {
