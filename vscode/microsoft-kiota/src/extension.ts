@@ -161,7 +161,6 @@ export async function activate(
         let languagesInformation = await getLanguageInformation(context);
         const config = await generateSteps(
           {
-            generationType: '',
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
             language: openApiTreeProvider.language,
@@ -257,6 +256,7 @@ export async function activate(
         }));
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
+          await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
         }
       }
     ),

@@ -233,7 +233,7 @@
         {
           "command": "kiota.selectLock",
           "group": "2_kiota@1",
-          "when": "resourceLangId == json && resourceFilename =~ /kiota-lock\\.json$/"
+          "when": "resourceLangId == json && resourceFilename =~ /workspace\\.json$/"
         }
       ],
       "view/title": [
@@ -349,12 +349,14 @@
         "command": "kiota.openApiExplorer.generateClient",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.generateClient.title%",
+        "enablement": "kiota.openApiExplorer.showIcons",
         "icon": "$(run-all)"
       },
       {
         "command": "kiota.openApiExplorer.filterDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.filterDescription.title%",
+        "enablement": "kiota.openApiExplorer.showIcons",
         "icon": "$(filter)"
       },
       {
