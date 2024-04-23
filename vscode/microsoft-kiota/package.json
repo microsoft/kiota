@@ -412,7 +412,11 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openFile.title%",
         "icon": "$(folder-opened)"
-      }
+      },
+      {
+        "command": "kiota.workspace.openWorkspaceFile",
+        "title": "%kiota.openApiExplorer.openFile.title%"
+      }     
     ]
   },
   "scripts": {

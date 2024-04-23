@@ -22,6 +22,7 @@ import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
 import { ApiManifest } from "./apiManifest";
 import { getExtensionSettings } from "./extensionSettings";
+import {  KiotaWorkspace } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -31,7 +32,7 @@ const statusBarCommandId = `${extensionId}.status`;
 const treeViewId = `${extensionId}.openApiExplorer`;
 const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
 const dependenciesInfo = `${extensionId}.dependenciesInfo`;
-export const kiotaLockFile = "kiota-lock.json";
+export const kiotaLockFile = "workspace.json";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -46,6 +47,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  new KiotaWorkspace(context),
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -91,7 +93,7 @@ export async function activate(
     }),
     reporter,
     registerCommandWithTelemetry(reporter, 
-      `${extensionId}.searchLock`,
+      `${treeViewId}.openFile`,
       async () => {
         const lockFilePath = await searchLockSteps();
         if (lockFilePath?.lockFilePath) {
@@ -117,7 +119,6 @@ export async function activate(
       dependenciesInfo,
       dependenciesInfoProvider
     ),
-    vscode.commands.registerCommand(`${treeViewId}.openFile`, () => vscode.window.showInformationMessage(`Successfully called open api file.`)),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter, 
       `${treeViewId}.openDocumentationPage`,
