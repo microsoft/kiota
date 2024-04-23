@@ -77,7 +77,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (properties.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        return properties.GroupBy(static x => x.Name).Select(static x => x.First()).Select(property =>
+        return properties.GroupBy(static x => x.Name, StringComparer.Ordinal).Select(static x => x.First()).Select(property =>
         {
             // Prevent duplicates
             var otherProp = FindPropertyByNameInTypeHierarchy(property.Name);
