@@ -52,7 +52,7 @@ paths:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.Microsoft, PluginType.APIManifest],
+            PluginTypes = [PluginType.OpenAI, PluginType.APIManifest],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
@@ -63,7 +63,7 @@ paths:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration);
         await pluginsGenerationService.GenerateManifestAsync();
 
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-microsoft.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-openai.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "client-apimanifest.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "openapi.yml")));
     }

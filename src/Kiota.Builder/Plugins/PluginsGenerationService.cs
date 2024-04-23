@@ -60,8 +60,8 @@ public class PluginsGenerationService
 
             switch (pluginType)
             {
-                case PluginType.Microsoft:
-                    var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+                case PluginType.OpenAI:
+                    var pluginDocument = GetOpenAIManifestDocument(DescriptionRelativePath);
                     pluginDocument.Write(writer);
                     break;
                 case PluginType.APIManifest:
@@ -69,15 +69,13 @@ public class PluginsGenerationService
                     apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
                     apiManifest.Write(writer);
                     break;
-                case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
-                                       // intentional drop to the default case
                 default:
                     throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
-    private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
+    private PluginManifestDocument GetOpenAIManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
