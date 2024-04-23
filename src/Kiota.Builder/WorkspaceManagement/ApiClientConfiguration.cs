@@ -8,12 +8,8 @@ using Microsoft.OpenApi.ApiManifest;
 namespace Kiota.Builder.WorkspaceManagement;
 
 #pragma warning disable CA2227 // Collection properties should be read only
-public class ApiClientConfiguration : ICloneable
+public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
 {
-    /// <summary>
-    /// The location of the OpenAPI description file.
-    /// </summary>
-    public string DescriptionLocation { get; set; } = string.Empty;
     /// <summary>
     /// The language for this client.
     /// </summary>
@@ -24,18 +20,6 @@ public class ApiClientConfiguration : ICloneable
 #pragma warning disable CA1002
     public List<string> StructuredMimeTypes { get; set; } = new();
 #pragma warning restore CA1002
-    /// <summary>
-    /// The path patterns for API endpoints to include for this client.
-    /// </summary>
-    public HashSet<string> IncludePatterns { get; set; } = new();
-    /// <summary>
-    /// The path patterns for API endpoints to exclude for this client.
-    /// </summary>
-    public HashSet<string> ExcludePatterns { get; set; } = new();
-    /// <summary>
-    /// The output path for the generated code, related to the configuration file.
-    /// </summary>
-    public string OutputPath { get; set; } = string.Empty;
     /// <summary>
     /// The main namespace for this client.
     /// </summary>
@@ -68,7 +52,7 @@ public class ApiClientConfiguration : ICloneable
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiClientConfiguration"/> class.
     /// </summary>
-    public ApiClientConfiguration()
+    public ApiClientConfiguration() : base()
     {
 
     }
@@ -76,7 +60,7 @@ public class ApiClientConfiguration : ICloneable
     /// Initializes a new instance of the <see cref="ApiClientConfiguration"/> class from an existing <see cref="GenerationConfiguration"/>.
     /// </summary>
     /// <param name="config">The configuration to use to initialize the client configuration</param>
-    public ApiClientConfiguration(GenerationConfiguration config)
+    public ApiClientConfiguration(GenerationConfiguration config) : base(config)
     {
         ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
@@ -85,11 +69,7 @@ public class ApiClientConfiguration : ICloneable
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;
         IncludeAdditionalData = config.IncludeAdditionalData;
         StructuredMimeTypes = config.StructuredMimeTypes.ToList();
-        IncludePatterns = config.IncludePatterns;
-        ExcludePatterns = config.ExcludePatterns;
-        DescriptionLocation = config.OpenAPIFilePath;
         DisabledValidationRules = config.DisabledValidationRules;
-        OutputPath = config.OutputPath;
     }
     /// <summary>
     /// Updates the passed configuration with the values from the config file.
@@ -108,43 +88,24 @@ public class ApiClientConfiguration : ICloneable
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.StructuredMimeTypes = new(StructuredMimeTypes);
-        config.IncludePatterns = IncludePatterns;
-        config.ExcludePatterns = ExcludePatterns;
-        config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules;
-        config.OutputPath = OutputPath;
-        config.ClientClassName = clientName;
-        config.Serializers.Clear();
-        config.Deserializers.Clear();
-        if (requests is { Count: > 0 })
-        {
-            config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
-                                            .Select(static x => $"/{x.UriTemplate}#{x.Method!.ToUpperInvariant()}")
-                                            .ToHashSet();
-        }
+        UpdateGenerationConfigurationFromBase(config, clientName, requests);
     }
 
     public object Clone()
     {
-        return new ApiClientConfiguration
+        var result = new ApiClientConfiguration
         {
-            DescriptionLocation = DescriptionLocation,
             Language = Language,
             StructuredMimeTypes = [.. StructuredMimeTypes],
-            IncludePatterns = new(IncludePatterns, StringComparer.OrdinalIgnoreCase),
-            ExcludePatterns = new(ExcludePatterns, StringComparer.OrdinalIgnoreCase),
-            OutputPath = OutputPath,
             ClientNamespaceName = ClientNamespaceName,
             UsesBackingStore = UsesBackingStore,
             IncludeAdditionalData = IncludeAdditionalData,
             ExcludeBackwardCompatible = ExcludeBackwardCompatible,
             DisabledValidationRules = new(DisabledValidationRules, StringComparer.OrdinalIgnoreCase),
         };
-    }
-    public void NormalizePaths(string targetDirectory)
-    {
-        if (Path.IsPathRooted(OutputPath))
-            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+        CloneBase(result);
+        return result;
     }
 }
 #pragma warning restore CA2227 // Collection properties should be read only

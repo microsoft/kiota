@@ -39,15 +39,16 @@ public class CSharpConventionService : CommonLanguageConventionService
     private const string ReferenceTypePrefix = "<see cref=\"";
     private const string ReferenceTypeSuffix = "\"/>";
 #pragma warning disable S1006 // Method overrides should not change parameter defaults
-    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
 #pragma warning restore S1006 // Method overrides should not change parameter defaults
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (element is not CodeElement codeElement) return;
-        if (!element.Documentation.DescriptionAvailable) return;
+        if (element is not CodeElement codeElement) return false;
+        if (!element.Documentation.DescriptionAvailable) return false;
         var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
+        return true;
     }
     public void WriteAdditionalDescriptionItem(string description, LanguageWriter writer)
     {
@@ -55,12 +56,12 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(description);
         writer.WriteLine($"{DocCommentPrefix}{description}");
     }
-    public void WriteLongDescription(IDocumentedElement element, LanguageWriter writer)
+    public bool WriteLongDescription(IDocumentedElement element, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (element.Documentation is not { } documentation) return;
-        if (element is not CodeElement codeElement) return;
+        if (element.Documentation is not { } documentation) return false;
+        if (element is not CodeElement codeElement) return false;
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable)
         {
             writer.WriteLine($"{DocCommentPrefix}<summary>");
@@ -72,7 +73,9 @@ public class CSharpConventionService : CommonLanguageConventionService
             if (documentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
             writer.WriteLine($"{DocCommentPrefix}</summary>");
+            return true;
         }
+        return false;
     }
     public override string GetAccessModifier(AccessModifier access)
     {

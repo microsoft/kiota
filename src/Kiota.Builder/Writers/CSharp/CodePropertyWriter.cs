@@ -50,10 +50,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
+                var nullableOp = !codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? "?" : string.Empty;
+                var nullableEx = codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? throw new InvalidOperationException(\"AdditionalData can not be null\")" : string.Empty;
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\"); }}");
-                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(\"{backingStoreKey}\", value); }}");
+                writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Get<{propertyType}>(\"{backingStoreKey}\"){nullableEx}; }}");
+                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Set(\"{backingStoreKey}\", value); }}");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;

@@ -98,16 +98,18 @@ public partial class JavaConventionService : CommonLanguageConventionService
     }
     private const string ReferenceTypePrefix = "{@link ";
     private const string ReferenceTypeSuffix = "}";
-    public override void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (!element.Documentation.DescriptionAvailable) return;
-        if (element is not CodeElement codeElement) return;
+        if (!element.Documentation.DescriptionAvailable) return false;
+        if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
 
         writer.WriteLine($"{DocCommentStart} {description}{DocCommentEnd}");
+
+        return true;
     }
     internal string GetTypeReferenceForDocComment(CodeTypeBase code, CodeElement targetElement)
     {
