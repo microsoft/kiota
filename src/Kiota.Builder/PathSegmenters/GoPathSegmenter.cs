@@ -8,7 +8,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.PathSegmenters;
 public class GoPathSegmenter : CommonPathSegmenter
 {
-    private HashSet<string> specialFileNameSuffixes = new(StringComparer.OrdinalIgnoreCase) {
+    private static readonly HashSet<string> specialFileNameSuffixes = new(StringComparer.OrdinalIgnoreCase) {
         "test"       ,
 
         "aix"       ,
