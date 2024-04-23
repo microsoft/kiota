@@ -22,6 +22,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
+using Kiota.Builder.Plugins;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
@@ -221,6 +222,27 @@ public partial class KiotaBuilder
             return kiotaExt.LanguagesInformation;
         return null;
     }
+    /// <summary>
+    /// Generates the API plugins from the OpenAPI document
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>Whether the generated plugin was updated or not</returns>
+    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken)
+    {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        {
+            if (config.PluginTypes.Contains(PluginType.OpenAI))
+                throw new NotImplementedException("The OpenAI plugin type is not supported for generation");
+            if (openApiDocument is null || openApiTree is null)
+                throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
+            // generate plugin
+            sw.Start();
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config);
+            await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Generates the code from the OpenAPI document
@@ -229,11 +251,32 @@ public partial class KiotaBuilder
     /// <returns>Whether the generated code was updated or not</returns>
     public async Task<bool> GenerateClientAsync(CancellationToken cancellationToken)
     {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        {
+            // Create Source Model
+            sw.Start();
+            var generatedCode = CreateSourceModel(openApiTree);
+            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+            // RefineByLanguage
+            sw.Start();
+            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+            // Write language source
+            sw.Start();
+            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    private async Task<bool> GenerateConsumerAsync(Func<Stopwatch, int, OpenApiUrlTreeNode?, CancellationToken, Task<int>> innerGenerationSteps, CancellationToken cancellationToken)
+    {
         var sw = new Stopwatch();
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
-        if (config.Operation is ClientOperation.Add && await workspaceManagementService.IsClientPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
 
         try
@@ -252,27 +295,14 @@ public partial class KiotaBuilder
 
             if (shouldGenerate)
             {
-                // Create Source Model
-                sw.Start();
-                var generatedCode = CreateSourceModel(openApiTree);
-                StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-                // RefineByLanguage
-                sw.Start();
-                await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-                // Write language source
-                sw.Start();
-                await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+                stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
 
                 await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 logger.LogInformation("No changes detected, skipping generation");
-                if (config.Operation is ClientOperation.Add or ClientOperation.Edit && config.SkipGeneration)
+                if (config.Operation is ConsumerOperation.Add or ConsumerOperation.Edit && config.SkipGeneration)
                 {
                     await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
                 }
@@ -675,7 +705,7 @@ public partial class KiotaBuilder
                 Optional = asOptional,
                 Documentation = new()
                 {
-                    DescriptionTemplate = parameter.Description.CleanupDescription(),
+                    DescriptionTemplate = !string.IsNullOrEmpty(parameter.Description) ? parameter.Description.CleanupDescription() : $"The path parameter: {codeName}",
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName, StringComparison.OrdinalIgnoreCase) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),

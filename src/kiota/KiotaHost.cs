@@ -30,6 +30,7 @@ public static partial class KiotaHost
         {
             rootCommand.AddCommand(KiotaWorkspaceCommands.GetWorkspaceNodeCommand());
             rootCommand.AddCommand(KiotaClientCommands.GetClientNodeCommand());
+            rootCommand.AddCommand(KiotaPluginCommands.GetPluginNodeCommand());
         }
         return rootCommand;
     }
@@ -550,7 +551,7 @@ public static partial class KiotaHost
                 input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {validator}";
         });
     }
-    private static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues)
+    internal static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues)
     {
         var knownValuesHash = new HashSet<string>(knownValues, StringComparer.OrdinalIgnoreCase);
         if (input.Tokens.Any() && input.Tokens.Select(static x => x.Value).SelectMany(static x => x.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)).FirstOrDefault(x => !knownValuesHash.Contains(x)) is string unknownValue)
