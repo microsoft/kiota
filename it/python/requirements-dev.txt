@@ -10,7 +10,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
 
 dill==0.3.6 ; python_version < '3.11'
 
-docutils==0.21.1 ; python_version >= '3.7'
+docutils==0.21.2 ; python_version >= '3.7'
 
 exceptiongroup==1.1.1 ; python_version < '3.11'
 
