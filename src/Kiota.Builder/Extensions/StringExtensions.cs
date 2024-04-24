@@ -57,6 +57,15 @@ public static partial class StringExtensions
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
 #pragma warning restore CA1308
 
+    public static string EscapeSuffix(this string? name, HashSet<string> specialFileNameSuffixes, char separator = '_')
+    {
+        ArgumentNullException.ThrowIfNull(specialFileNameSuffixes);
+        if (string.IsNullOrEmpty(name)) return string.Empty;
+
+        var last = name.Split(separator)[^1];
+        return specialFileNameSuffixes.Contains(last) ? $"{name}_escaped" : name;
+    }
+
     public static string ToSnakeCase(this string? name, char separator = '_')
     {
         if (string.IsNullOrEmpty(name)) return string.Empty;

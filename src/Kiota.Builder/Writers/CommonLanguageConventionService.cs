@@ -41,5 +41,5 @@ public abstract class CommonLanguageConventionService : ILanguageConventionServi
     }
 
     public abstract string TranslateType(CodeType type);
-    public abstract void WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "");
+    public abstract bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "");
 }

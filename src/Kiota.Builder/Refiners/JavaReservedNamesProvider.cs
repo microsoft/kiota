@@ -43,6 +43,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "notify",
         "notifyall",
         "null",
+        "object",
         "package",
         "private",
         "protected",
