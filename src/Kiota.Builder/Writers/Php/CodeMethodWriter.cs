@@ -578,7 +578,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
+                if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultiPartBody", StringComparison.OrdinalIgnoreCase)))
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
                 else
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");

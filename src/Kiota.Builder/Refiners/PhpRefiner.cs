@@ -214,7 +214,7 @@ public class PhpRefiner : CommonLanguageRefiner
             @"Microsoft\Kiota\Abstractions", MultipartBodyClassName)
     };
 
-    private const string MultipartBodyClassName = "MultipartBody";
+    private const string MultipartBodyClassName = "MultiPartBody";
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
@@ -287,6 +287,11 @@ public class PhpRefiner : CommonLanguageRefiner
                 x.Type.Name = "BackingStoreFactory";
                 x.DefaultValue = "null";
             });
+            currentMethod.Parameters.Where(x => x.Type.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase))
+                .ToList().ForEach(static y =>
+                {
+                    y.Type.Name = "MultiPartBody";
+                });
         }
         CrawlTree(codeElement, CorrectParameterType);
     }
