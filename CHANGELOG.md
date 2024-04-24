@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added support for multipart form data request body in PHP. [#3029](https://github.com/microsoft/kiota/issues/3029)
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
-
 - Suppress CS1591 when generating CSharp code and documentation is not available
 - Added file name suffix escaping in Go to avoid generating files with reserved suffixes. [#4407](https://github.com/microsoft/kiota/issues/4407)
 
