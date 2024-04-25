@@ -1068,9 +1068,9 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         Assert.Null(GetChildNodeByPath(resultNode, "{thingId}"));
         Assert.Null(GetChildNodeByPath(resultNode, "{differentThingId}"));
 
-        var differentThingId = GetChildNodeByPath(resultNode, "{differentThingId-id}");
-        Assert.Equal("\\path\\{differentThingId-id}", differentThingId.Path);
-        Assert.Equal("{+baseurl}/path/{differentThingId%2Did}", differentThingId.GetUrlTemplate());
+        var differentThingId = GetChildNodeByPath(resultNode, "{differentThing-id}");
+        Assert.Equal("\\path\\{differentThing-id}", differentThingId.Path);
+        Assert.Equal("{+baseurl}/path/{differentThing%2Did}", differentThingId.GetUrlTemplate());
     }
 
     [Theory]

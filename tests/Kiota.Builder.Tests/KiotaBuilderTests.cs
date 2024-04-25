@@ -904,7 +904,7 @@ components:
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("EducationUser", false));
         Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false));
     }
-    private static async Task<Stream> GetDocumentStream(string document)
+    internal static async Task<Stream> GetDocumentStream(string document)
     {
         var ms = new MemoryStream();
         await using var tw = new StreamWriter(ms, Encoding.UTF8, leaveOpen: true);
