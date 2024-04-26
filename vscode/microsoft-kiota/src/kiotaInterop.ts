@@ -7,7 +7,12 @@ export async function connectToKiota<T>(context: vscode.ExtensionContext, callba
   const kiotaPath = getKiotaPath(context);
   await ensureKiotaIsPresent(context);
   const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined
+    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined,
+    env: {
+        ...process.env,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        KIOTA_CONFIG_PREVIEW: "true",
+    }
   });
   let connection = rpc.createMessageConnection(
     new rpc.StreamMessageReader(childProcess.stdout),
