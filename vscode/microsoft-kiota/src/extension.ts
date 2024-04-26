@@ -47,7 +47,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
-  new KiotaWorkspace(context),
+  new KiotaWorkspace(context);
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
