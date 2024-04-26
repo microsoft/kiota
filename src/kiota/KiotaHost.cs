@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace kiota;
 public static partial class KiotaHost
 {
-    internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
+    internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";
+    internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable(KiotaPreviewEnvironmentVariable), out var isPreviewEnabled) && isPreviewEnabled);
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();

@@ -30,7 +30,7 @@ internal partial class Server : IServer
         return configObject;
     });
     private static readonly HttpClient httpClient = new();
-    private static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
+    private static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable(KiotaHost.KiotaPreviewEnvironmentVariable), out var isPreviewEnabled) && isPreviewEnabled);
     public string GetVersion()
     {
         return KiotaVersion.Current();
