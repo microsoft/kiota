@@ -30,6 +30,7 @@ internal partial class Server : IServer
         return configObject;
     });
     private static readonly HttpClient httpClient = new();
+    private static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
     public string GetVersion()
     {
         return KiotaVersion.Current();
@@ -80,7 +81,7 @@ internal partial class Server : IServer
     {
         using var fileLogger = new FileLogLogger<KiotaBuilder>(config.OutputPath, LogLevel.Warning);
         var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
-        return await new KiotaBuilder(logger, config, httpClient, true).GenerateClientAsync(cancellationToken);
+        return await new KiotaBuilder(logger, config, httpClient, IsConfigPreviewEnabled.Value).GenerateClientAsync(cancellationToken);
     }
     public async Task<SearchOperationResult> SearchAsync(string searchTerm, bool clearCache, CancellationToken cancellationToken)
     {
@@ -97,7 +98,7 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
-        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken: cancellationToken);
         return new ManifestResult(logger.LogEntries,
                             manifestResult?.Item1,
@@ -109,12 +110,12 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
         configuration.ExcludePatterns = excludeFilters.ToHashSet(StringComparer.Ordinal);
         var filteredTreeNode = configuration.IncludePatterns.Count != 0 || configuration.ExcludePatterns.Count != 0 ?
-                            await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient, true).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
+                            await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient, IsConfigPreviewEnabled.Value).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
@@ -191,7 +192,7 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var result = await builder.GetLanguagesInformationAsync(cancellationToken);
         if (result is not null) return result;
         return Configuration.Languages;
