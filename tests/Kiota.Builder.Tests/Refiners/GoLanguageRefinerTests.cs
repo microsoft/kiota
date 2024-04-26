@@ -1,10 +1,13 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
-
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
@@ -438,6 +441,86 @@ public class GoLanguageRefinerTests
         Assert.Null(model.Indexer);
         Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ByIdInteger") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("Integer", StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public async Task ValidatesNamingOfRequestBuilderDoesNotRepeatIdCharacter()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await KiotaBuilderTests.GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /groups/{id}:
+    get:
+      summary: Get Group by Id
+      operationId: groups_GetById
+      parameters:
+        - name: id
+          in: path
+          description: The id of the group
+          required : true
+          schema :
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+  /groups/{groupId}/member/{id}:
+    get:
+      summary: Get member by Id
+      operationId: member_GetById
+      parameters:
+        - name: groupId
+          in: path
+          description: The id of the group
+          required : true
+          schema :
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          description: The id of the member
+          required : true
+          schema :
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: directoryObject
+      type: object
+      properties:
+        deletedDateTime:
+          type: string
+          pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+          format: date-time
+          nullable: true");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, new HttpClient());
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, codeModel);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("groupsRequestBuilder");
+        var indexerMethods = requestBuilder.Methods.Where(static method =>
+            method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)).ToArray();
+        Assert.Equal(2, indexerMethods.Length);
+        Assert.Equal("ByGroupId", indexerMethods[0].Name);
+        Assert.Equal("ByGroupIdGuid", indexerMethods[1].Name);
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
