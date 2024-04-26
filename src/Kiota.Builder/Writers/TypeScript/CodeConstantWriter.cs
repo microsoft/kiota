@@ -201,22 +201,16 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
 
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, bool isPrimitive, bool isEnum)
     {
-        if (isVoid)
+        return (isVoid, isEnum, isPrimitive || isStream, isCollection) switch
         {
-            return "sendNoResponseContent";
-        }
-        else if (isEnum)
-        {
-            return isCollection ? "sendCollectionOfEnum" : "sendEnum";
-        }
-        else if (isPrimitive || isStream)
-        {
-            return isCollection ? "sendCollectionOfPrimitive" : "sendPrimitive";
-        }
-        else
-        {
-            return isCollection ? "sendCollection" : "send";
-        }
+            (true, _, _, _) => "sendNoResponseContent",
+            (_, true, _, true) => "sendCollectionOfEnum",
+            (_, true, _, _) => "sendEnum",
+            (_, _, true, true) => "sendCollectionOfPrimitive",
+            (_, _, true, _) => "sendPrimitive",
+            (_, _, _, true) => "sendCollection",
+            _ => "send"
+        };
     }
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)

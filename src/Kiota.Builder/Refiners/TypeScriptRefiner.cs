@@ -19,6 +19,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore,
+                s => s.ToFirstCharacterLowerCase(),
+                false
+            );
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -262,8 +268,56 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         if (functions.Length == 0)
             return null;
-        return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
+        var children = new List<CodeElement>(functions);
+        var composedTypeBase = GetOriginalComposedType(codeInterface);
+        children.Add(composedTypeBase is not null ? composedTypeBase : codeInterface);
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, [.. children]);
     }
+
+    public static CodeComposedTypeBase? GetOriginalComposedType(CodeElement element)
+    {
+        if (element is CodeType codeType)
+        {
+            return GetOriginalComposedType(codeType);
+        }
+        else if (element is CodeClass codeClass)
+        {
+            return GetOriginalComposedType(codeClass);
+        }
+        else if (element is CodeInterface codeInterface)
+        {
+            return GetOriginalComposedType(codeInterface);
+        }
+        return null;
+    }
+
+    public static CodeComposedTypeBase? GetOriginalComposedType(CodeType codeType)
+    {
+        if (codeType?.TypeDefinition is CodeInterface ci)
+        {
+            return GetOriginalComposedType(ci);
+        }
+        else if (codeType?.TypeDefinition is CodeClass codeClass)
+        {
+            return GetOriginalComposedType(codeClass);
+        }
+        return null;
+    }
+
+    public static CodeComposedTypeBase? GetOriginalComposedType(CodeInterface codeInterface)
+    {
+        if (codeInterface?.OriginalClass is CodeClass originalClass)
+        {
+            return GetOriginalComposedType(originalClass);
+        }
+        return null;
+    }
+
+    public static CodeComposedTypeBase? GetOriginalComposedType(CodeClass codeClass)
+    {
+        return codeClass?.OriginalComposedType;
+    }
+
     private static readonly CodeUsing[] navigationMetadataUsings = [
         new CodeUsing
         {
@@ -963,6 +1017,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Kind = CodeInterfaceKind.Model,
             Documentation = modelClass.Documentation,
             Deprecation = modelClass.Deprecation,
+            OriginalClass = modelClass,
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
