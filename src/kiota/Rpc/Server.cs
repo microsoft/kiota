@@ -151,14 +151,19 @@ internal partial class Server : IServer
         configuration.ClearCache = clearCache;
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
-        if (disabledValidationRules is not null && disabledValidationRules.Length != 0)
+        if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (serializers is not null && serializers.Length != 0)
+        if (serializers is { Length: > 0 })
             configuration.Serializers = serializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (deserializers is not null && deserializers.Length != 0)
+        if (deserializers is { Length: > 0 })
             configuration.Deserializers = deserializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (structuredMimeTypes is not null && structuredMimeTypes.Length != 0)
+        if (structuredMimeTypes is { Length: > 0 })
             configuration.StructuredMimeTypes = new(structuredMimeTypes);
+        if (IsConfigPreviewEnabled.Value)
+        {
+            configuration.Serializers.Clear();
+            configuration.Deserializers.Clear();
+        }
         if (!string.IsNullOrEmpty(clientClassName))
             configuration.ClientClassName = clientClassName;
         if (!string.IsNullOrEmpty(clientNamespaceName))
