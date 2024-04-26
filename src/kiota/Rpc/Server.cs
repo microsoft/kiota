@@ -80,7 +80,7 @@ internal partial class Server : IServer
     {
         using var fileLogger = new FileLogLogger<KiotaBuilder>(config.OutputPath, LogLevel.Warning);
         var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
-        return await new KiotaBuilder(logger, config, httpClient).GenerateClientAsync(cancellationToken);
+        return await new KiotaBuilder(logger, config, httpClient, true).GenerateClientAsync(cancellationToken);
     }
     public async Task<SearchOperationResult> SearchAsync(string searchTerm, bool clearCache, CancellationToken cancellationToken)
     {
@@ -97,7 +97,7 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
-        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
         var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken: cancellationToken);
         return new ManifestResult(logger.LogEntries,
                             manifestResult?.Item1,
@@ -109,12 +109,12 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
         configuration.ExcludePatterns = excludeFilters.ToHashSet(StringComparer.Ordinal);
         var filteredTreeNode = configuration.IncludePatterns.Count != 0 || configuration.ExcludePatterns.Count != 0 ?
-                            await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
+                            await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient, true).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
@@ -191,7 +191,7 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var builder = new KiotaBuilder(logger, configuration, httpClient, true);
         var result = await builder.GetLanguagesInformationAsync(cancellationToken);
         if (result is not null) return result;
         return Configuration.Languages;
@@ -214,13 +214,13 @@ internal partial class Server : IServer
                             .ToArray();
         return new PathItem(node.Path, node.DeduplicatedSegment(), children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
     }
-    protected static string GetAbsolutePath(string source)
+    private static string GetAbsolutePath(string source)
     {
         if (string.IsNullOrEmpty(source))
             return string.Empty;
         return Path.IsPathRooted(source) || source.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
-    protected static string NormalizeSlashesInPath(string path)
+    private static string NormalizeSlashesInPath(string path)
     {
         if (string.IsNullOrEmpty(path))
             return path;
