@@ -211,14 +211,18 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
-        state.generationType = option.label;
         if(option.label === 'Generate an API client') {
-		return (input: MultiStepInput) => inputClientClassName(input, state);
+            state.generationType = "client";
+		    return (input: MultiStepInput) => inputClientClassName(input, state);
         }
         else if(option.label === 'Generate a plugin') { 
+            state.generationType = "plugin";
             return (input: MultiStepInput) => inputPluginName(input, state); 
         }
-        else if(option.label === 'Generate an API manifest') { return; }
+        else if(option.label === 'Generate an API manifest') {
+            state.generationType = "apimanifest";
+            return;
+        }
 	}
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientClassName = await input.showInputBox({
@@ -350,13 +354,37 @@ interface SelectApiManifestKey extends BaseStepsState {
     selectedKey: string;
 }
 
-interface GenerateState extends BaseStepsState {
+export interface GenerateState extends BaseStepsState {
     generationType: QuickPickItem | string;
+    pluginTypes: string[]; //TODO update type when we have multi-select
     pluginName:string;
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;
     outputPath: QuickPickItem | string;
+}
+export enum GenerationType {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Client = 0,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Plugin = 1,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ApiManifest = 2,
+}
+export function parseGenerationType(generationType: string | QuickPickItem | undefined): GenerationType {
+    if(typeof generationType !== 'string') {
+        throw new Error('generationType has not been selected yet');
+    }
+    switch(generationType) {
+        case "client":
+            return GenerationType.Client;
+        case "plugin":
+            return GenerationType.Plugin;
+        case "apimanifest":
+            return GenerationType.ApiManifest;
+        default:
+            throw new Error(`Unknown generation type ${generationType}`);
+    }
 }
 class InputFlowAction {
 	static back = new InputFlowAction();

@@ -151,6 +151,7 @@ internal partial class Server : IServer
         configuration.ClearCache = clearCache;
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
+        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (serializers is { Length: > 0 })
@@ -181,6 +182,45 @@ internal partial class Server : IServer
             logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
         }
         return logger.LogEntries;
+    }
+    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, CancellationToken cancellationToken)
+    {
+        var globalLogger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = Configuration.Generation;
+        configuration.PluginTypes = pluginTypes.ToHashSet();
+        configuration.OpenAPIFilePath = GetAbsolutePath(openAPIFilePath);
+        configuration.OutputPath = GetAbsolutePath(outputPath);
+        if (!string.IsNullOrEmpty(clientClassName))
+            configuration.ClientClassName = clientClassName;
+        // configuration.SkipGeneration = skipGeneration;
+        configuration.CleanOutput = cleanOutput;
+        configuration.ClearCache = clearCache;
+        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        if (disabledValidationRules is { Length: > 0 })
+            configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (pluginTypes is { Length: > 0 })
+            configuration.PluginTypes = pluginTypes.ToHashSet();
+        if (includePatterns is { Length: > 0 })
+            configuration.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (excludePatterns is { Length: > 0 })
+            configuration.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
+        configuration.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.OutputPath));
+        try
+        {
+            using var fileLogger = new FileLogLogger<KiotaBuilder>(configuration.OutputPath, LogLevel.Warning);
+            var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
+            var result = await new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value).GeneratePluginAsync(cancellationToken);
+            if (result)
+                logger.LogInformation("Generation completed successfully");
+            else
+                logger.LogInformation("Generation skipped as --skip-generation was passed");
+        }
+        catch (Exception ex)
+        {
+            globalLogger.LogCritical("error adding the client: {exceptionMessage}", ex.Message);
+        }
+        return globalLogger.LogEntries;
     }
     public LanguagesInformation Info()
     {

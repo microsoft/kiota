@@ -105,6 +105,26 @@ export enum KiotaGenerationLanguage {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     CLI = 8,
 }
+export enum KiotaPluginType {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    OpenAI = 0,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ApiManifest = 1,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Microsoft = 2,
+}
+export function parsePluginType(value: string): KiotaPluginType {
+    switch (value) {
+        case "OpenAI":
+            return KiotaPluginType.OpenAI;
+        case "ApiManifest":
+            return KiotaPluginType.ApiManifest;
+        case "Microsoft":
+            return KiotaPluginType.Microsoft;
+        default:
+            throw new Error("unknown plugin type");
+    }
+}
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
     switch (language) {
         case KiotaGenerationLanguage.CSharp:
@@ -258,4 +278,5 @@ export interface GenerationConfiguration {
     serializers: string[];
     structuredMimeTypes: string[];
     usesBackingStore: boolean;
+    pluginTypes: KiotaPluginType[];
 }
