@@ -8,7 +8,6 @@
   "kiota.selectLock.title": "Select lock file for API explorer view",
   "kiota.updateClients.title": "Update API clients in the current workspace",
   "kiota.openApiExplorer.generateClient.title": "Generate API client",
-  "kiota.searchApiDescription.title": "Search for an API description",
   "kiota.openApiExplorer.addToSelectedEndpoints.title": "Add",
   "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Remove",
   "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Add all",
