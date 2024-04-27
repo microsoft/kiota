@@ -17,6 +17,7 @@ internal static class KiotaConfigurationExtensions
     {
         ArgumentNullException.ThrowIfNull(configObject);
         ArgumentNullException.ThrowIfNull(configuration);
+        configObject.Update.Disabled = bool.TryParse(configuration["OFFLINE_ENABLED"], out var disableUpdate) && disableUpdate;
         configObject.Download.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.CleanOutput)}"], out var downloadCleanOutput) && downloadCleanOutput;
         configObject.Download.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.ClearCache)}"], out var downloadClearCache) && downloadClearCache;
         configObject.Download.OutputPath = configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.OutputPath)}"] is string value && !string.IsNullOrEmpty(value) ? value : configObject.Download.OutputPath;
