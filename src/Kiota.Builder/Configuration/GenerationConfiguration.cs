@@ -179,11 +179,14 @@ public class GenerationConfiguration : ICloneable
         {
             ApiDescriptionUrl = OpenAPIFilePath,
             ApiDeploymentBaseUrl = ApiRootUrl?.EndsWith('/') ?? false ? ApiRootUrl : $"{ApiRootUrl}/",
-            Extensions = new() {
-                { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
-            },
+            Extensions = new(),
             Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key.DeSanitizeUrlTemplateParameter() })).ToList(),
         };
+
+        if (!string.IsNullOrEmpty(configurationHash))
+        {
+            dependency.Extensions.Add(KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash));// only include non empty value.
+        }
         return dependency;
     }
     public bool IsPluginConfiguration => PluginTypes.Count != 0;
