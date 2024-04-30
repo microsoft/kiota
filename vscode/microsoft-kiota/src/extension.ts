@@ -275,8 +275,8 @@ export async function activate(
         pluginTypes,
         selectedPaths,
         [],
-        typeof config.clientClassName === "string"
-          ? config.clientClassName
+        typeof config.pluginName === "string"
+          ? config.pluginName
           : "ApiClient",
         settings.clearCache,
         settings.cleanOutput,
