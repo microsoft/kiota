@@ -82,7 +82,7 @@ body:
       description: "Provide Link to Open API description or attach description file below"
       placeholder: "(<link here>) or attach yml file instead"
     validations:
-      required: true
+      required: false
   - type: input
     attributes:
       label: Kiota Version
