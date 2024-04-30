@@ -1,0 +1,149 @@
+name: Kiota Bug Report
+description: File Kiota bug report
+labels: ["type:bug", "status:waiting-for-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for taking the time to fill out this bug report!**
+        💥Before submitting a new request, please search existing issues to see if an issue already exists.
+  - type: dropdown
+    attributes:
+      label: What are you generating using Kiota, clients or plugins?
+      description: |
+        What tooling are you generating?
+      options:
+        - API Client/SDK
+        - Kiota plugin
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: In what context or format are you using Kiota?
+      description: Please select an option below
+      options:
+        - Nuget tool
+        - Source Build
+        - Windows executable
+        - Linux executable
+        - Mac executable
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Client Library/SDK Language
+      description: If  Client SDK, what's the language in use?
+      multiple: false
+      options:
+        - C#
+        - CLI
+        - Go
+        - Java
+        - PHP
+        - PowerShell
+        - Python
+        - Ruby
+        - TypeScript
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: |
+        Provide a description of the actual behavior observed. If applicable please include link to the public repo that replicates the issue.
+      placeholder: I am trying to do [...] with Kiota version [...] but [...]
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: |
+        A clear and concise description of what you expected to happen.
+      placeholder: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: How to reproduce
+      description: |
+        Please include minimal steps to reproduce the problem if possible. E.g.: the smallest possible code snippet; or steps to run project in link above. If possible include text as text rather than screenshots (so it shows up in searches).
+        If link to the sample code in a pulblic repo exists, include it too.
+      placeholder: Minimal Reproduction steps.
+    validations:
+      required: true
+  - type: textarea
+    id: openapidescription
+    attributes:
+      label: "Open API description file"
+      description: "Provide Link to Open API description or attach description file below"
+      placeholder: "(<link here>) or attach yml file instead"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Kiota Version
+      placeholder: version-number
+      description: Version of Kiota with the bug described above. To check version run `kiota --version`
+    validations:
+      required: true
+  - type: input
+    id: regression
+    attributes:
+      label: Latest Kiota version known to work for scenario above?(Not required)
+      description: |
+        Did this work in a previous build or release of the SDK or API client? If you can try a previous release or build to find out, that can help us narrow down the problem. If you don't know, that's OK.
+      placeholder: version-number
+    validations:
+      required: false
+  - type: textarea
+    id: known-workarounds
+    attributes:
+      label: Known Workarounds
+      description: |
+        Please provide a description of any known workarounds.
+      placeholder: Known Workarounds
+    validations:
+      required: false
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration
+      description: |
+        Please provide more information on your Device configuration:
+          * What OS, OS version, and what distro if applicable (Windows 10, Windows 11, MacOS Catalina, Ubuntu 22.04)?
+          * What is the architecture (x64, x86, ARM, ARM64)?
+          * Do you know whether it is specific to that configuration?
+      placeholder: |
+        - OS:
+        - architecture:
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug output
+      description: Please copy and paste the output when using the `--debug`` flag. This will be automatically formatted into code, so no need for backticks.
+      value: |
+        <details><summary>Click to expand log</summary>
+        ```
+
+
+        <log output here>
+
+        ```
+        </details>
+    validations:
+      required: false
+  - type: textarea
+    id: other-info
+    attributes:
+      label: Other information
+      description: |
+        If you have an idea where the problem might lie, let us know that here. Please include any pointers to code, relevant changes, or related issues you know of.
+      placeholder: Other information
+    validations:
+      required: false
