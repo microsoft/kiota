@@ -23,7 +23,7 @@
   "kiota.generate.backingStore.description": "Modeller için yedekleme deposunu etkinleştirir",
   "kiota.generate.excludeBackwardCompatible.description": "Geriye dönük olarak uyumlu ve eski varlıkları oluşturulan sonuçtan hariç tutar. Yeni müşteriler için kullanılmalı",
   "kiota.cleanOutput.description": "Kod dosyalarını oluşturmadan önce çıktı dizinindeki tüm dosyaları kaldırır",
-  "kiota.generate.disabledValidationRules.description": "OpenAPI açıklama doğrulama kuralları olarak belirlenir: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.generate.disabledValidationRules.description": "Devre dışı bırakılacak OpenAPI açıklama doğrulama kuralları: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
   "kiota.clearCache.description": "Önbelleğe alınmış tüm verileri temizler",
   "kiota.generate.serializer.description": "Serileştiriciler için tam nitelikli sınıf adları",
   "kiota.generate.deserializer.description": "Seri durumdan çıkarma işlemleri için tam nitelikli sınıf adları",
