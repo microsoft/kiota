@@ -87,6 +87,9 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
+      eslint:
+        patterns:
+          - "*eslint*"
 
   - package-ecosystem: npm
     directory: "/vscode/microsoft-kiota"
