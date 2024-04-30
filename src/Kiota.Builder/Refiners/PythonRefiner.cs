@@ -46,6 +46,24 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "QueryParameters",
+                    IsExternal = true,
+                },
+                keepRequestConfigurationClass: true,
+                addDeprecation: true
+                );
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
