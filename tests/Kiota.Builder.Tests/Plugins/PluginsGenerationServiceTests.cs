@@ -16,9 +16,10 @@ public sealed class PluginsGenerationServiceTests : IDisposable
     [Fact]
     public void Defensive()
     {
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(null, OpenApiUrlTreeNode.Create(), new()));
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), null, new()));
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), null));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(null, OpenApiUrlTreeNode.Create(), new(), "foo"));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), null, new(), "foo"));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), null, "foo"));
+        Assert.Throws<ArgumentException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), new(), string.Empty));
     }
 
     public void Dispose()
@@ -43,11 +44,12 @@ paths:
       responses:
         '200':
           description: test";
-        var simpleDescriptionPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) + ".yaml";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
-        var outputDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
@@ -60,7 +62,7 @@ paths:
         var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
-        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration);
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, "client-microsoft.json")));
