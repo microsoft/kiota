@@ -136,7 +136,7 @@ public class PluginsGenerationService
                     Auth = new AnonymousAuth(),
                     Spec = new OpenApiRuntimeSpec()
                     {
-                        Url = openApiDocumentPath
+                        Url = openApiDocumentPath.TrimStart('.').TrimStart('/'),
                     },
                     RunForFunctions = [operation.OperationId]
                 });
