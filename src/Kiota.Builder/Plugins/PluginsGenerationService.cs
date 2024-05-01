@@ -66,7 +66,8 @@ public class PluginsGenerationService
                     break;
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
-                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
+                    // pass empty cong hash so that its not included in this manifest.
+                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
                     apiManifest.Write(writer);
                     break;
                 case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
