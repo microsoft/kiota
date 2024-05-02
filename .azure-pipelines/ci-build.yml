@@ -567,8 +567,6 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
-            variables:
-              - group: kiota-vscode-extension-publish
             dependsOn:
               - github_release
             steps:
@@ -586,18 +584,24 @@ extends:
               - pwsh: npm i -g @vscode/vsce
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
-              - pwsh: |
-                  Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
-                    Write-Host "Publishing $_.FullName"
-                    if ($Env:isPrerelease -eq "true") {
-                      Write-Host "Publishing $_.FullName as a pre-release"
-                      vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName --pre-release
+              - task: AzureCLI@2
+                inputs:
+                  azureSubscription: "kiota-vscode-marketplace-publish"
+                  scriptType: "pscore"
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    $aadToken = az account get-access-token --query accessToken --resource 499b84ac-1321-427f-aa17-267ca6975798 -o tsv
+                    Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
+                      Write-Host "Publishing $_.FullName"
+                      if ($Env:isPrerelease -eq "true") {
+                        Write-Host "Publishing $_.FullName as a pre-release"
+                        vsce publish --pat "$aadToken" --packagePath $_.FullName --pre-release
+                      }
+                      else {
+                        Write-Host "Publishing $_.FullName as a release"
+                        vsce publish --pat "$aadToken" --packagePath $_.FullName
+                      }
                     }
-                    else {
-                      Write-Host "Publishing $_.FullName as a release"
-                      vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
-                    }
-                  }
                 env:
                   isPrerelease: $(isPrerelease)
           - deployment: github_release

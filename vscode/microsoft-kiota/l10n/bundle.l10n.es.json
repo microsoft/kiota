@@ -7,7 +7,7 @@
   "No": "No",
   "not found": "No se pudo encontrar",
   "error updating the clients {error}": "Error al actualizar clientes {error}",
-  "updating client with path {path}": "Actualizando cliente con dirección {dirección}",
+  "updating client with path {path}": "Actualizando cliente con dirección {path}",
   "Kiota Dependencies Information": "Información sobre las dependencias de Kiota",
   "Installation commands": "Comandos de instalación",
   "Dependencies": "Dependencias",

@@ -237,7 +237,7 @@ public partial class KiotaBuilder
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
             sw.Start();
-            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config);
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
             await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
@@ -376,8 +376,14 @@ public partial class KiotaBuilder
             foreach (var path in doc.Paths.Where(x => !nonOperationIncludePatterns.Any(y => y.IsMatch(x.Key))))
             {
                 var pathString = path.Key;
-                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Count != 0 && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
-                                        operationExcludePatterns.Count != 0 && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Count != 0 && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                .ToList()
+                .ForEach(x => path.Value.Operations.Remove(x));
+            }
+            foreach (var path in doc.Paths)
+            {
+                var pathString = path.Key;
+                path.Value.Operations.Keys.Where(x => operationExcludePatterns.Count != 0 && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
                 .ToList()
                 .ForEach(x => path.Value.Operations.Remove(x));
             }

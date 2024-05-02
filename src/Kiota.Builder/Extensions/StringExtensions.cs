@@ -290,4 +290,7 @@ public static partial class StringExtensions
     /// <returns></returns>
     public static bool EqualsIgnoreCase(this string? a, string? b)
         => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    public static string TrimSuffix(this string s, string suffix, StringComparison stringComparison = StringComparison.Ordinal) =>
+        !string.IsNullOrEmpty(s) && !string.IsNullOrEmpty(suffix) && s.EndsWith(suffix, stringComparison) ? s[..^suffix.Length] : s;
 }

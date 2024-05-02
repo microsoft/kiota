@@ -320,7 +320,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             node.Children.Remove(indexNode.Key);
             var oldSegmentName = indexNode.Value.Segment.Trim('{', '}').CleanupSymbolName();
             var segmentIndex = indexNode.Value.Path.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList().IndexOf(indexNode.Value.Segment);
-            var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName}-id}}";
+            var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName.TrimSuffix("id", StringComparison.OrdinalIgnoreCase)}-id}}";
             indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
             indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
             node.Children.Add(newSegmentParameterName, indexNode.Value);

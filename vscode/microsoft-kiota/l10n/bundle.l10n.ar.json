@@ -6,7 +6,7 @@
   "Yes": "نعم",
   "No": "لا",
   "not found": "لم يتم العثور على شيء",
-  "error updating the clients {error}": "خطأ في تحديث العملاء {خطأ}",
+  "error updating the clients {error}": "خطأ في تحديث العملاء {error}",
   "updating client with path {path}": "تحديث العميل {path}",
   "Kiota Dependencies Information": "معلومات حول تبعيات Kiota",
   "Installation commands": "أوامر التثبيت",
