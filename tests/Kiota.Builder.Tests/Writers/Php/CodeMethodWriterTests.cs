@@ -2509,7 +2509,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForMultipart()
+    public async Task WritesRequestGeneratorBodyForMultipart()
     {
         setup();
         method.Kind = CodeMethodKind.RequestGenerator;
@@ -2522,9 +2522,10 @@ public sealed class CodeMethodWriterTests : IDisposable
             IsExternal = true
         };
         method.RequestBodyContentType = "multipart/form-data";
+        await _refiner.Refine(root, new CancellationToken(false));
         languageWriter.Write(method);
         var result = stringWriter.ToString();
-        Assert.Contains("MultipartBody $body", result);
+        Assert.Contains("MultiPartBody $body", result);
         Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"multipart/form-data\", $body);", result);
     }
 }
