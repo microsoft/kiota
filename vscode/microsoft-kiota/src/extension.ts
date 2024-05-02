@@ -228,6 +228,7 @@ export async function activate(
       );
       if(response === yesAnswer) {
         openApiTreeProvider.closeDescription();
+        await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
       }
     }
     ),
@@ -261,7 +262,7 @@ export async function activate(
   );
 
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<void> {
-    const pluginTypes = config.pluginTypes?.map(x => parsePluginType(x)) ?? [KiotaPluginType.Microsoft];//TODO remove the default once we have the question in steps
+    const pluginTypes = typeof config.pluginTypes === 'string' ? parsePluginType(config.pluginTypes) : KiotaPluginType.Microsoft;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -272,7 +273,7 @@ export async function activate(
         context,
         openApiTreeProvider.descriptionUrl,
         outputPath,
-        pluginTypes,
+        [pluginTypes],
         selectedPaths,
         [],
         typeof config.pluginName === "string"
@@ -355,12 +356,13 @@ export async function activate(
     if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
         vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
         result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
-      await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, kiotaLockFile));
+      await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.kiota', kiotaLockFile));
       //TODO this will need to be updated to refresh the workspace instead
     }
     if (result)
     {
       await exportLogsAndShowErrors(result);
+      openApiTreeProvider.closeDescription();
     }
   }
 

@@ -286,22 +286,36 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputPluginName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
-            title: l10n.t('Create a new  Microsoft plugin - plugin name'),
+            title: l10n.t('Create a new plugin - plugin name'),
             step: step++,
-            totalSteps: 2,
+            totalSteps: 3,
             value: state.pluginName || '',
             placeholder: 'MyPlugin',
             prompt: l10n.t('Choose a name for the plugin'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
-        return (input: MultiStepInput) => inputPluginOutputPath(input, state);      
-    }
+        return (input: MultiStepInput) => inputPluginType(input, state);      
+    }    
+        async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
+            const items = ['Microsoft','Open AI'].map(x => ({ label: x})as QuickPickItem);
+            const pluginTypes = await input.showQuickPick({
+                title: 'Choose a plugin type',
+                step: step++,
+                totalSteps: 3,
+                placeholder: 'Select an option',
+                items: items,
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+            pluginTypes.label === 'Microsoft'? state.pluginTypes = 'Microsoft' : state.pluginTypes = 'OpenAI';
+            return (input: MultiStepInput) => inputPluginOutputPath(input, state);
+        }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: l10n.t('Create a new Microsoft plugin - output path'),
+			title: l10n.t('Create a new plugin - output path'),
 			step: step++,
-			totalSteps: 2,
+			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/myplugin',
 			prompt: l10n.t('Enter an output path relative to the root of the project'),
@@ -309,8 +323,6 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			shouldResume: shouldResume
 		});		
 	}
-
-
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     return state;
 }
@@ -356,7 +368,7 @@ interface SelectApiManifestKey extends BaseStepsState {
 
 export interface GenerateState extends BaseStepsState {
     generationType: QuickPickItem | string;
-    pluginTypes: string[]; //TODO update type when we have multi-select
+    pluginTypes: QuickPickItem | string;
     pluginName:string;
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
