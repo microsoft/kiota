@@ -94,7 +94,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory",
                     @"Microsoft\Kiota\Serialization\Form\FormSerializationWriterFactory",
                     @"Microsoft\Kiota\Serialization\Multipart\MultipartSerializationWriterFactory"
-                    
+
                 }
             );
             ReplaceDefaultDeserializationModules(generatedCode,
