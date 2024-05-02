@@ -293,6 +293,7 @@ export async function activate(
       }, {
         "duration": duration,
       });
+      openApiTreeProvider.closeDescription();
       return result;
     });
     //TODO refresh the kiota workspace
@@ -331,6 +332,7 @@ export async function activate(
       }, {
         "duration": duration,
       });
+      openApiTreeProvider.closeDescription();
       return result;
     });
     //TODO refresh the kiota workspace
@@ -381,6 +383,7 @@ export async function activate(
       }, {
         "duration": duration,
       });
+      openApiTreeProvider.closeDescription();
       return result;
     });
     
@@ -402,7 +405,6 @@ export async function activate(
     if (result)
     {
       await exportLogsAndShowErrors(result);
-      openApiTreeProvider.closeDescription();
     }
   }
 
