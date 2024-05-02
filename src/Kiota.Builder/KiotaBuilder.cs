@@ -1550,8 +1550,11 @@ public partial class KiotaBuilder
     }
     private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
-        var rootSchemaIsMeaningful = schema.IsSemanticallyMeaningful();
-        var allOfs = (rootSchemaIsMeaningful ? new OpenApiSchema[] { schema } : []).Union(schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf));
+        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful();
+        var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf)
+                    .Union(isRootSchemaMeaningful ?
+                        [schema] :
+                        Array.Empty<OpenApiSchema>());
         CodeElement? codeDeclaration = null;
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
         foreach (var currentSchema in allOfs)
@@ -1559,7 +1562,7 @@ public partial class KiotaBuilder
             var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
             var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
             var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
-            var className = (currentSchema.GetSchemaName(rootSchemaIsMeaningful && currentSchema == schema) is string cName && !string.IsNullOrEmpty(cName) ?
+            var className = (currentSchema.GetSchemaName(isRootSchemaMeaningful && currentSchema == schema) is string cName && !string.IsNullOrEmpty(cName) ?
                             cName :
                             (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
                                 typeNameForInlineSchema :

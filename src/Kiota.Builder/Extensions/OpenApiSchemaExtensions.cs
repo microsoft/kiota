@@ -29,7 +29,7 @@ public static class OpenApiSchemaExtensions
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
         if (schemas is null) return [];
-        return schemas.Count == 1 ?
+        return schemas.Count == 1 && !schemas[0].Properties.Any() ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
@@ -57,7 +57,7 @@ public static class OpenApiSchemaExtensions
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
-            FlattenEmptyEntries(new OpenApiSchema[] { schema.Items }, static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
+            FlattenEmptyEntries([schema.Items], static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
     }
 
     public static bool IsObject(this OpenApiSchema? schema)
@@ -73,10 +73,11 @@ public static class OpenApiSchemaExtensions
     public static bool IsInherited(this OpenApiSchema? schema)
     {
         if (schema is null) return false;
-        var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
-        return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
-            (meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
-            schema.IsSemanticallyMeaningful());
+        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
+        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful();
+        return meaningfulMemberSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
+            (meaningfulMemberSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
+            isRootSchemaMeaningful);
     }
 
     internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)
