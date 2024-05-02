@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where the Microsoft Plugin Manifests would start with relative paths. [#4583](https://github.com/microsoft/kiota/issues/4583)
 - Fixed a bug where TypeScript deserialization would fail on Uppercase properties.[#4479](https://github.com/microsoft/kiota/issues/4479)
+- Fixed a bug where clients and plugins generation would leave empty log files. [#4584](https://github.com/microsoft/kiota/issues/4584)
 - Changed URI template generation to reuse templates when required templates are absent across operations.
 - Fixed path deduplication logic to avoid double `Id` suffixes in indexer names in scenarios where the `Id` suffix is already present.[#4519](https://github.com/microsoft/kiota/issues/4519)
 - Updated reserved name providers for Java and Php so that "object" can be escaped.
