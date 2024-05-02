@@ -1,11 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
+using Microsoft.Plugins.Manifest;
 using Moq;
 using Xunit;
 
@@ -63,8 +66,14 @@ paths:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration);
         await pluginsGenerationService.GenerateManifestAsync();
 
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-microsoft.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "client-apimanifest.json")));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "openapi.yml")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
     }
+    private const string ManifestFileName = "client-microsoft.json";
+    private const string OpenApiFileName = "openapi.yml";
 }

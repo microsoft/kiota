@@ -33,7 +33,7 @@ public class PluginsGenerationService
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionRelativePath = "./openapi.yml";
+    private const string DescriptionRelativePath = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         // write the decription
@@ -136,7 +136,7 @@ public class PluginsGenerationService
                     Auth = new AnonymousAuth(),
                     Spec = new OpenApiRuntimeSpec()
                     {
-                        Url = openApiDocumentPath
+                        Url = openApiDocumentPath,
                     },
                     RunForFunctions = [operation.OperationId]
                 });
