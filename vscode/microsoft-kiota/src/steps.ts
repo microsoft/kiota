@@ -221,7 +221,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
         else if(option.label === 'Generate an API manifest') {
             state.generationType = "apimanifest";
-            return;
+            return (input: MultiStepInput) => inputManifestName(input, state);
         }
 	}
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -318,6 +318,31 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/myplugin',
+			prompt: l10n.t('Enter an output path relative to the root of the project'),
+			validate: validateIsNotEmpty,
+			shouldResume: shouldResume
+		});		
+	}
+    async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
+        state.pluginName = await input.showInputBox({
+            title: l10n.t('Create a new manifest - manifest name'),
+            step: step++,
+            totalSteps: 3,
+            value: state.pluginName || '',
+            placeholder: 'MyManifest',
+            prompt: l10n.t('Choose a name for the manifest'),
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+        return (input: MultiStepInput) => inputManifestOutputPath(input, state);      
+    }
+    async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+		state.outputPath = await input.showInputBox({
+			title: l10n.t('Create a new manifest - output path'),
+			step: step++,
+			totalSteps: 3,
+			value: typeof state.outputPath === 'string' ? state.outputPath : '',
+			placeholder: 'myproject/mymanifest',
 			prompt: l10n.t('Enter an output path relative to the root of the project'),
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume

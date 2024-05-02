@@ -193,6 +193,8 @@ export async function activate(
           case GenerationType.Plugin:
             await generatePluginAndRefreshUI(config, settings, outputPath, selectedPaths);
           break;
+          case GenerationType.ApiManifest:
+            await generateManifestAndRefreshUI(config, settings, outputPath, selectedPaths);
           default:
             await vscode.window.showErrorMessage(
               vscode.l10n.t("Invalid generation type")
@@ -261,6 +263,44 @@ export async function activate(
     )
   );
 
+  async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<void> {
+    const pluginTypes = KiotaPluginType.ApiManifest;
+    const result = await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Generating manifest...")
+    }, async (progress, _) => {
+      const start = performance.now();
+      const result = await generatePlugin(
+        context,
+        openApiTreeProvider.descriptionUrl,
+        outputPath,
+        [pluginTypes],
+        selectedPaths,
+        [],
+        typeof config.pluginName === "string"
+          ? config.pluginName
+          : "ApiClient",
+        settings.clearCache,
+        settings.cleanOutput,
+        settings.disableValidationRules,
+      );
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
+        "pluginType": pluginTypes.toString(),
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
+      return result;
+    });
+    //TODO refresh the kiota workspace
+    if (result)
+    {
+      await exportLogsAndShowErrors(result);
+    }
+  }
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<void> {
     const pluginTypes = typeof config.pluginTypes === 'string' ? parsePluginType(config.pluginTypes) : KiotaPluginType.Microsoft;
     const result = await vscode.window.withProgress({
@@ -286,7 +326,7 @@ export async function activate(
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       reporter.sendRawTelemetryEvent(`${extensionId}.generatePlugin.completed`, {
-        //TODO log plugin type
+        "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
