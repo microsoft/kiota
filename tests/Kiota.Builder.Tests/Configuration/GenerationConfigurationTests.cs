@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Xunit;
@@ -34,7 +35,7 @@ public class GenerationConfigurationTests
         };
         var apiDependency = generationConfiguration.ToApiDependency("foo", new Dictionary<string, HashSet<string>>{
             { "foo/bar", new HashSet<string>{"GET"}}
-        });
+        }, Path.GetTempPath());
         Assert.NotNull(apiDependency);
         Assert.NotNull(apiDependency.Extensions);
         Assert.Equal("foo", apiDependency.Extensions[GenerationConfiguration.KiotaHashManifestExtensionKey].GetValue<string>());
@@ -54,7 +55,7 @@ public class GenerationConfigurationTests
         };
         var apiDependency = generationConfiguration.ToApiDependency(string.Empty, new Dictionary<string, HashSet<string>>{
             { "foo/bar", new HashSet<string>{"GET"}}
-        });
+        }, Path.GetTempPath());
         Assert.NotNull(apiDependency);
         Assert.NotNull(apiDependency.Extensions);
         Assert.False(apiDependency.Extensions.ContainsKey(GenerationConfiguration.KiotaHashManifestExtensionKey));

@@ -51,14 +51,16 @@ public class WorkspaceManagementService
         if (generationConfiguration.IsPluginConfiguration)
         {
             var generationPluginConfig = new ApiPluginConfiguration(generationConfiguration);
-            generationPluginConfig.NormalizePaths(WorkingDirectory);
+            generationPluginConfig.NormalizeOutputPath(WorkingDirectory);
+            generationPluginConfig.NormalizeDescriptionLocation(WorkingDirectory);
             wsConfig.Plugins.AddOrReplace(generationConfiguration.ClientClassName, generationPluginConfig);
             return generationPluginConfig;
         }
         else
         {
             var generationClientConfig = new ApiClientConfiguration(generationConfiguration);
-            generationClientConfig.NormalizePaths(WorkingDirectory);
+            generationClientConfig.NormalizeOutputPath(WorkingDirectory);
+            generationClientConfig.NormalizeDescriptionLocation(WorkingDirectory);
             wsConfig.Clients.AddOrReplace(generationConfiguration.ClientClassName, generationClientConfig);
             return generationClientConfig;
         }
@@ -70,8 +72,9 @@ public class WorkspaceManagementService
         {
             var (wsConfig, manifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
             var generationClientConfig = UpdateConsumerConfiguration(generationConfiguration, wsConfig);
+            generationClientConfig.NormalizeDescriptionLocation(WorkingDirectory);
             var inputConfigurationHash = await GetConsumerConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
-            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations));
+            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations, WorkingDirectory));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
             if (descriptionStream != Stream.Null)
                 await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, descriptionStream, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
@@ -116,19 +119,21 @@ public class WorkspaceManagementService
                 apiManifest.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingApiManifest))
             {
                 var inputClientConfig = new ApiClientConfiguration(inputConfig);
-                inputClientConfig.NormalizePaths(WorkingDirectory);
+                inputClientConfig.NormalizeOutputPath(WorkingDirectory);
+                inputClientConfig.NormalizeDescriptionLocation(WorkingDirectory);
                 var inputConfigurationHash = await GetConsumerConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
                 return !clientConfigurationComparer.Equals(existingClientConfig, inputClientConfig) ||
-                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingApiManifest);
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, [], WorkingDirectory), existingApiManifest);
             }
             if (wsConfig.Plugins.TryGetValue(inputConfig.ClientClassName, out var existingPluginConfig) &&
                 apiManifest.ApiDependencies.TryGetValue(inputConfig.ClientClassName, out var existingPluginApiManifest))
             {
                 var inputClientConfig = new ApiPluginConfiguration(inputConfig);
-                inputClientConfig.NormalizePaths(WorkingDirectory);
+                inputClientConfig.NormalizeOutputPath(WorkingDirectory);
+                inputClientConfig.NormalizeDescriptionLocation(WorkingDirectory);
                 var inputConfigurationHash = await GetConsumerConfigurationHashAsync(inputClientConfig, descriptionHash).ConfigureAwait(false);
                 return !pluginConfigurationComparer.Equals(existingPluginConfig, inputClientConfig) ||
-                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, []), existingPluginApiManifest);
+                       !apiDependencyComparer.Equals(inputConfig.ToApiDependency(inputConfigurationHash, [], WorkingDirectory), existingPluginApiManifest);
             }
             return true;
         }
@@ -292,7 +297,8 @@ public class WorkspaceManagementService
             await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, ms, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
 
             var clientConfiguration = new ApiClientConfiguration(generationConfiguration);
-            clientConfiguration.NormalizePaths(WorkingDirectory);
+            clientConfiguration.NormalizeOutputPath(WorkingDirectory);
+            clientConfiguration.NormalizeDescriptionLocation(WorkingDirectory);
             wsConfig.Clients.Add(generationConfiguration.ClientClassName, clientConfiguration);
             var inputConfigurationHash = await GetConsumerConfigurationHashAsync(clientConfiguration, "migrated-pending-generate").ConfigureAwait(false);
             // because it's a migration, we don't want to calculate the exact hash since the description might have changed since the initial generation that created the lock file
@@ -302,7 +308,8 @@ public class WorkspaceManagementService
                     inputConfigurationHash,
                     new Dictionary<string, HashSet<string>> {
                         { MigrationPlaceholderPath, new HashSet<string> { "GET" } }
-                    }));
+                    },
+                    WorkingDirectory));
             lockManagementService.DeleteLockFile(Path.Combine(WorkingDirectory, clientConfiguration.OutputPath));
         }
         await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, apiManifest, cancellationToken).ConfigureAwait(false);
