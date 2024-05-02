@@ -21,22 +21,25 @@ public class PluginsGenerationService
     private readonly OpenApiDocument OAIDocument;
     private readonly OpenApiUrlTreeNode TreeNode;
     private readonly GenerationConfiguration Configuration;
+    private readonly string WorkingDirectory;
 
-    public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration)
+    public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration, string workingDirectory)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
         ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentException.ThrowIfNullOrEmpty(workingDirectory);
         OAIDocument = document;
         TreeNode = openApiUrlTreeNode;
         Configuration = configuration;
+        WorkingDirectory = workingDirectory;
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionRelativePath = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        // write the decription
+        // write the description
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -67,7 +70,7 @@ public class PluginsGenerationService
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
                     // pass empty cong hash so that its not included in this manifest.
-                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
+                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory));
                     apiManifest.Write(writer);
                     break;
                 case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
