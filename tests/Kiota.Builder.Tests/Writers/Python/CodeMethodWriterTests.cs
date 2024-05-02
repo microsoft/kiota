@@ -1653,7 +1653,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__(self)", result);
-        Assert.Contains("def __init__(self,request_adapter: Optional[RequestAdapter] = None)", result);
+        Assert.Contains("def __init__(self,request_adapter: RequestAdapter)", result);
         Assert.DoesNotContain("This property has a description", result);
         Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.DoesNotContain("get_path_parameters(", result);
@@ -1716,7 +1716,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__(self)", result);
-        Assert.Contains("def __init__(self,request_adapter: Optional[RequestAdapter] = None, path_parameters: Optional[Union[Dict[str, Any], str]] = None,", result);
+        Assert.Contains("def __init__(self,request_adapter: RequestAdapter, path_parameters: Union[Dict[str, Any], str],", result);
         Assert.Contains("username: Optional[str] = None", result);
         Assert.Contains("if isinstance(path_parameters, dict):", result);
         Assert.Contains("path_parameters['username'] = str(username)", result);
