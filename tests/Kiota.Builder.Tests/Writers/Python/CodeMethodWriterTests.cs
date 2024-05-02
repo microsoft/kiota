@@ -2026,7 +2026,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         tempWriter.SetTextWriter(tw);
         tempWriter.Write(method);
         var result = tw.ToString();
-        Assert.Contains("backing_store: Optional[BackingStoreFactory] = None)", result);
+        Assert.Contains("backing_store: BackingStoreFactory)", result);
         Assert.Contains("self.request_adapter.enable_backing_store(backing_store)", result);
     }
     [Fact]
