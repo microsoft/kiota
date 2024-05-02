@@ -11,16 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Suppress CS1591 when generating CSharp code and documentation is not available
 - Added file name suffix escaping in Go to avoid generating files with reserved suffixes. [#4407](https://github.com/microsoft/kiota/issues/4407)
+- Added `KIOTA_OFFLINE_ENABLED` environment variable to disable checking for updates before each command. [#4556](https://github.com/microsoft/kiota/issues/4556)
 
 ### Changed
 
+- Fixed a bug where the Microsoft Plugin Manifests would start with relative paths. [#4583](https://github.com/microsoft/kiota/issues/4583)
 - Fixed a bug where TypeScript deserialization would fail on Uppercase properties.[#4479](https://github.com/microsoft/kiota/issues/4479)
+- Fixed a bug where clients and plugins generation would leave empty log files. [#4584](https://github.com/microsoft/kiota/issues/4584)
 - Changed URI template generation to reuse templates when required templates are absent across operations.
-- Fixed path deduplication logic to avoid double `Id` suffixes in indexer names in scenarios where the `Id` suffix is already present.[#4519](https://github.com/microsoft/kiota/issues/4519) 
+- Fixed path deduplication logic to avoid double `Id` suffixes in indexer names in scenarios where the `Id` suffix is already present.[#4519](https://github.com/microsoft/kiota/issues/4519)
 - Updated reserved name providers for Java and Php so that "object" can be escaped.
-- Fixes request builder disambiguation when child nodes had different prefixes for different paths with same parameters.[#4448](https://github.com/microsoft/kiota/issues/4448) 
+- Fixes request builder disambiguation when child nodes had different prefixes for different paths with same parameters.[#4448](https://github.com/microsoft/kiota/issues/4448)
 - Do not generate CS8603 warnings when enabling backing store in CSharp generation.
 - Fixed excluding operation. [#4399](https://github.com/microsoft/kiota/issues/4399)
+- Fided a bug where absolute path would be used for workspace for local descriptions. [#4582](https://github.com/microsoft/kiota/issues/4582) [#4581](https://github.com/microsoft/kiota/issues/4581)
+- Fixed plugin generation of `ApiManifest` type to not include the `x-ms-kiota-hash` in the generated plugin. [#4561](https://github.com/microsoft/kiota/issues/4561)
 
 ## [1.13.0] - 2024-04-04
 

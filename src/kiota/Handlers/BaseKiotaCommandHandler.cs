@@ -97,6 +97,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     }
     protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
     {
+        if (Configuration.Update.Disabled)
+        {
+            return;
+        }
+
         var updateService = new UpdateService(httpClient, logger, Configuration.Update);
         var result = await updateService.GetUpdateMessageAsync(Kiota.Generated.KiotaVersion.Current(), cancellationToken).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(result))
