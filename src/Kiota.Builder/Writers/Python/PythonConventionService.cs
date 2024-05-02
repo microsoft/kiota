@@ -56,7 +56,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
         var deprecationInfo = GetDeprecationInformation(parameter);
         var deprecationSuffix = string.IsNullOrEmpty(deprecationInfo) ? string.Empty : $"# {deprecationInfo}";
-        return $"{parameter.Name}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None" : string.Empty)}{defaultValueSuffix}{deprecationSuffix}";
+        return $"{parameter.Name}: {(parameter.Optional ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Optional ? "] = None" : string.Empty)}{defaultValueSuffix}{deprecationSuffix}";
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
@@ -87,7 +87,10 @@ public class PythonConventionService : CommonLanguageConventionService
                 typeName = targetElement.Parent.Name;
             if (code.ActionOf && writer != null)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
-            return $"{collectionPrefix}{typeName}{collectionSuffix}";
+                var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+                $"[{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}]" :
+                string.Empty;
+            return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");

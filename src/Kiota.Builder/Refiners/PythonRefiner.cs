@@ -56,34 +56,15 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                         Name = $"{AbstractionsPackageName}.base_request_configuration",
                         IsExternal = true
                     }
-                }, 
+                },
                 new CodeType
                 {
-                    Name = "DefaultQueryParameters",
+                    Name = "QueryParameters",
                     IsExternal = true,
                 },
                 keepRequestConfigurationClass: true,
                 addDeprecation: true
-                );
-                
-            // RemoveRequestConfigurationClasses(generatedCode,
-            //     new CodeUsing
-            //     {
-            //         Name = "RequestConfiguration",
-            //         Declaration = new CodeType
-            //         {
-            //             Name = $"{AbstractionsPackageName}.base_request_configuration",
-            //             IsExternal = true
-            //         }
-            //     },
-            //     new CodeType
-            //     {
-            //         Name = "QueryParameters",
-            //         IsExternal = true,
-            //     },
-            //     keepRequestConfigurationClass: true,
-            //     addDeprecation: true
-            //     );
+            );
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -192,6 +173,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            $"{AbstractionsPackageName}.default_query_parameters", "QueryParameters"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             SerializationModuleName, "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
