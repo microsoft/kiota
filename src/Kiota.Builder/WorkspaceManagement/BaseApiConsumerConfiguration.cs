@@ -38,10 +38,15 @@ public abstract class BaseApiConsumerConfiguration
     /// The output path for the generated code, related to the configuration file.
     /// </summary>
     public string OutputPath { get; set; } = string.Empty;
-    public void NormalizePaths(string targetDirectory)
+    public void NormalizeOutputPath(string targetDirectory)
     {
         if (Path.IsPathRooted(OutputPath))
             OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+    }
+    public void NormalizeDescriptionLocation(string targetDirectory)
+    {
+        if (Path.IsPathRooted(DescriptionLocation) && Path.GetFullPath(DescriptionLocation).StartsWith(Path.GetFullPath(targetDirectory), StringComparison.Ordinal) && !DescriptionLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            DescriptionLocation = "./" + Path.GetRelativePath(targetDirectory, DescriptionLocation);
     }
     protected void CloneBase(BaseApiConsumerConfiguration target)
     {
