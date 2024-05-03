@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed RPC server to respect the `KIOTA_CONFIG_PREVIEW` flag.
+
 ## [1.14.0] - 2024-05-02
 
 ### Added
@@ -30,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes request builder disambiguation when child nodes had different prefixes for different paths with same parameters.[#4448](https://github.com/microsoft/kiota/issues/4448)
 - Do not generate CS8603 warnings when enabling backing store in CSharp generation.
 - Fixed excluding operation. [#4399](https://github.com/microsoft/kiota/issues/4399)
-- Fided a bug where absolute path would be used for workspace for local descriptions. [#4582](https://github.com/microsoft/kiota/issues/4582) [#4581](https://github.com/microsoft/kiota/issues/4581)
+- Fixed a bug where absolute path would be used for workspace for local descriptions. [#4582](https://github.com/microsoft/kiota/issues/4582) [#4581](https://github.com/microsoft/kiota/issues/4581)
 - Fixed plugin generation of `ApiManifest` type to not include the `x-ms-kiota-hash` in the generated plugin. [#4561](https://github.com/microsoft/kiota/issues/4561)
 
 ## [1.13.0] - 2024-04-04
