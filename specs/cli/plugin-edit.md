@@ -64,7 +64,7 @@ _The resulting OpenAI plugin named `openai-plugins.json` will look like this:_
     },
     "api": {
         "type": "openapi",
-        "url": "./sliced-github.json"
+        "url": "./github-openapi.json"
     },
     "logo_url": "https://example.com/logo.png",
     "contact_email": "githubsupport@example.com",
@@ -143,7 +143,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
       └─github
           └─github-apimanifest.json # Specific API Manifest
           └─openai-plugins.json #OpenAI Plugin
-          └─sliced-github.json # Sliced and augmented OpenAPI document
+          └─github-openapi.json # Sliced and augmented OpenAPI document
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html
