@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -307,8 +308,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             if (conventions.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
             if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
             {
-                var factoryMethod = definitionClass.GetImmediateParentOfType<CodeFile>()?.FindChildByName<CodeFunction>(resultName) ??
-                                    definitionClass.GetImmediateParentOfType<CodeNamespace>()?.FindChildByName<CodeFunction>(resultName);
+                var factoryMethod = GetFactoryMethod(definitionClass, resultName);
                 if (factoryMethod != null)
                 {
                     var methodName = conventions.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
@@ -317,6 +317,24 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             }
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
+    }
+
+    private static T? GetParentOfTypeOrNull<T>(CodeInterface definitionClass) where T : class
+    {
+        try
+        {
+            return definitionClass.GetImmediateParentOfType<T>();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryFunctionName)
+    {
+        return GetParentOfTypeOrNull<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryFunctionName)
+            ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryFunctionName);
     }
 
     private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)

@@ -5,7 +5,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-
+using Kiota.Builder.Refiners;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -56,15 +56,17 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var paramType = GetTypeString(parameter.Type, targetElement);
-        var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind) switch
+        var isComposedOfPrimitives = TypeScriptRefiner.GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.Types.Any(x => IsPrimitiveType(x.Name));
+        var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
-            (false, CodeParameterKind.DeserializationTarget) => $" = {parameter.DefaultValue}",
-            (false, _) => $" = {parameter.DefaultValue} as {paramType}",
-            (true, _) => string.Empty,
+            (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
+            (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
+            (true, _, _) => string.Empty,
+            _ => string.Empty,
         };
-        var (partialPrefix, partialSuffix) = parameter.Kind switch
+        var (partialPrefix, partialSuffix) = (isComposedOfPrimitives, parameter.Kind) switch
         {
-            CodeParameterKind.DeserializationTarget => ("Partial<", ">"),
+            (false, CodeParameterKind.DeserializationTarget) => ("Partial<", ">"),
             _ => (string.Empty, string.Empty),
         };
         return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
@@ -73,9 +75,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(targetElement);
+
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
-        if (code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
-            return string.Join(" | ", currentUnion.Types.Select(x => GetTypeString(x, targetElement))) + collectionSuffix;
+
+        if (TypeScriptRefiner.GetOriginalComposedType(code) is CodeComposedTypeBase composedType && composedType.Types.Any())
+        {
+            var returnTypeString = string.Join(GetTypesDelimiterToken(composedType), composedType.Types.Select(x => GetTypeString(x, targetElement)));
+            return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
+        }
         if (code is CodeType currentType)
         {
             var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
@@ -87,6 +94,17 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
+
+    private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
+    {
+        return codeComposedTypeBase switch
+        {
+            CodeUnionType _ => " | ",
+            CodeIntersectionType _ => " & ",
+            _ => throw new InvalidOperationException("unknown composed type"),
+        };
+    }
+
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
         if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock &&

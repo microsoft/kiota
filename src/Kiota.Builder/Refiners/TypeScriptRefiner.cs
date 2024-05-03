@@ -270,7 +270,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
         var children = new List<CodeElement>(functions);
         var composedTypeBase = GetOriginalComposedType(codeInterface);
-        children.Add(composedTypeBase is not null ? composedTypeBase : codeInterface);
+        if (composedTypeBase is null)
+            children.Add(codeInterface);
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [.. children]);
     }
 
