@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.14.0] - 2024-05-02
+
+### Added
+
 - Suppress CS1591 when generating CSharp code and documentation is not available
 - Added file name suffix escaping in Go to avoid generating files with reserved suffixes. [#4407](https://github.com/microsoft/kiota/issues/4407)
 - Added `KIOTA_OFFLINE_ENABLED` environment variable to disable checking for updates before each command. [#4556](https://github.com/microsoft/kiota/issues/4556)
@@ -1316,3 +1322,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
