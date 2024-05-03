@@ -37,4 +37,6 @@ At this point you have the code extension installed, but it needs the kiota exec
 
 Refer to step 1 from the "debugging" section. The major difference will be the output path:
 
-`~/vscode/extensions/ms-graph.kiota-<versionInPackage.json>/.kiotabin/<versionInPackage.json>/<rid>/`
+`~/.vscode/extensions/ms-graph.kiota-<versionInPackage.json>/.kiotabin/<versionInPackage.json>/<rid>/`
+
+> Note: the **.vscode** segment might change to **.vscode-server** if you're remoting to WSL.
