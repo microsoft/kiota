@@ -4,7 +4,7 @@
 
 Context: you're a developer working on the extension, and you want to debug/step through the extension code.
 
-1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -c Release -r <win-x64|linux-x64|osx-x64> -o ./vscode/microsoft-kiota/.kiotabin/<versionInPackage.json>/<rid>/`
+1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -c Release -r <rid> -o ./vscode/microsoft-kiota/.kiotabin/<versionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and versionInPackage is the version field in `vscode/microsoft-kiota/package.json`.
 1. in `vscode/microsoft-kiota` run `code . && npm i`
 1. in the code instance that was opened at step 2, just press f5
 
@@ -33,6 +33,8 @@ Context: you're most likely a program manager eager to demo the latest bits from
 
 At this point you have the code extension installed, but it needs the kiota executable to work properly.
 
+> Note: alternatively to building the extension yourself, you can download it from [the pipeline](https://github.com/microsoft/kiota/actions/workflows/build-vscode-extension.yml) by filtering the branch (top right corner) with the pull request branch, selecting the latest run, and downloading the vsix from the artifacts. This will allow you to jump directly to the last step.
+
 #### Building kiota
 
 Refer to step 1 from the "debugging" section. The major difference will be the output path:
@@ -40,3 +42,5 @@ Refer to step 1 from the "debugging" section. The major difference will be the o
 `~/.vscode/extensions/ms-graph.kiota-<versionInPackage.json>/.kiotabin/<versionInPackage.json>/<rid>/`
 
 > Note: the **.vscode** segment might change to **.vscode-server** if you're remoting to WSL.
+
+> Note: alternatively to building executable yourself, you can download it from [the pipeline](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) by filtering the branch (top right corner) with the pull request branch, selecting the latest run, and downloading the right OS version from the artifacts. The only remaining work will be to move the downloaded files to the right path above.
