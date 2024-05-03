@@ -36,11 +36,12 @@ public class PluginsGenerationService
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionRelativePath = "openapi.yml";
+    private const string DescriptionPathSuffix = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         // write the description
-        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
+        var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
@@ -64,7 +65,7 @@ public class PluginsGenerationService
             switch (pluginType)
             {
                 case PluginType.Microsoft:
-                    var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+                    var pluginDocument = GetManifestDocument(descriptionRelativePath);
                     pluginDocument.Write(writer);
                     break;
                 case PluginType.APIManifest:
