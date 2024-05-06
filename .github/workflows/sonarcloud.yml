@@ -74,7 +74,7 @@ jobs:
       - name: Install SonarCloud scanner
         shell: pwsh
         run: |
-          dotnet tool install dotnet-sonarscanner
+          dotnet tool install dotnet-sonarscanner --create-manifest-if-needed
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
