@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed RPC server to respect the `KIOTA_CONFIG_PREVIEW` flag.
 - Fixed handling of nested arrays to be handled as `UntypedNode` instances [#4549](https://github.com/microsoft/kiota/issues/4549)
 - Fixed `InvalidOperationException` thrown when serializing IBacked models with no changes present in the additional data in dotnet [microsoftgraph/msgraph-sdk-dotnet#2471](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2471). 
+- Updated conversion to snake case to deal with strigns with multiple uppercase letters in a row for example "imageURL" will be converted to "image_url" and not "image_u_r_l"
 
 ## [1.14.0] - 2024-05-02
 
