@@ -82,7 +82,7 @@ public static partial class StringExtensions
             int count = 0;
             for (var i = 1; i < span.Length; i++)
             {
-                if (char.IsUpper(span[i]) && span[i - 1] is not '_' and not '-')
+                if (char.IsUpper(span[i]) && span[i - 1] is not '_' and not '-' && !char.IsUpper(span[i - 1]))
                 {
                     count++;
                 }
@@ -105,7 +105,10 @@ public static partial class StringExtensions
             }
             else if (char.IsUpper(current))
             {
-                if (nameSpan[i - 1] != '_') span[counter++] = separator;
+                if (nameSpan[i - 1] is not '_' && !char.IsUpper(nameSpan[i - 1]))
+                {
+                    span[counter++] = separator;
+                }
                 span[counter++] = char.ToLowerInvariant(current);
             }
             else
