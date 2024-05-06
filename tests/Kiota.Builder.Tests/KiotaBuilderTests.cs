@@ -1273,6 +1273,74 @@ paths:
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
+    public void MultiNestedArraysSupportedAsUntypedNodes()
+    {
+        var fooSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "sortBy", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema {
+                            Type = "array",
+                            Items = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    }
+                },
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/bar.foo"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["foos/{id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = fooSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "bar.foo", fooSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var fooClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("foo");
+        Assert.NotNull(fooClass);
+        var sortByProp = fooClass.FindChildByName<CodeProperty>("sortBy", false);
+        Assert.NotNull(sortByProp);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, sortByProp.Type.Name);// nested array property an UntypedNode
+    }
+    [Fact]
     public void Object_Arrays_are_supported()
     {
         var userSchema = new OpenApiSchema
