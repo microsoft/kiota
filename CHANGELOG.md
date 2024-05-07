@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed RPC server to respect the `KIOTA_CONFIG_PREVIEW` flag.
 - Fixed handling of nested arrays to be handled as `UntypedNode` instances [#4549](https://github.com/microsoft/kiota/issues/4549)
 - Fixed `InvalidOperationException` thrown when serializing IBacked models with no changes present in the additional data in dotnet [microsoftgraph/msgraph-sdk-dotnet#2471](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2471).
-- Fixed `RequestConfiguration` Classes dropped in RequestBuilder methods in python [#4578](https://github.com/microsoft/kiota/pull/4578)
+- Fixed `RequestConfiguration` Classes dropped in RequestBuilder methods in python [#4535](https://github.com/microsoft/kiota/issues/4535)
+- Fixed incorrect optional types in method parameters in Python [#4507](https://github.com/microsoft/kiota/issues/4507)
 
 ## [1.14.0] - 2024-05-02
 
