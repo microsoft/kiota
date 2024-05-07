@@ -69,7 +69,8 @@ namespace Kiota.Builder.Refiners
             "xor",
             "yield",
             "yield from",
-            "BaseRequestBuilder"
+            "BaseRequestBuilder",
+            "MultipartBody"
         });
 
         public HashSet<string> ReservedNames => _reservedNames.Value;

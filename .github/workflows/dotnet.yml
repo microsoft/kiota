@@ -70,6 +70,12 @@ jobs:
       - name: Publish ${{ matrix.os }}
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: ./${{ matrix.os }}
+
       # Mac and Linux
       - name: Isolate the binary
         if: runner.os != 'Windows'
