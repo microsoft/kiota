@@ -80,13 +80,17 @@ public static class OpenApiSchemaExtensions
             isRootSchemaMeaningful);
     }
 
-    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)
+    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default)
     {
         if (schema is null) return null;
         if (!schema.IsIntersection()) return schema;
         var result = new OpenApiSchema(schema);
         result.AllOf.Clear();
-        var meaningfulSchemas = schema.AllOf.Where(static x => x.IsSemanticallyMeaningful()).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
+        var meaningfulSchemas = schema.AllOf
+                                    .Where(static x => x.IsSemanticallyMeaningful())
+                                    .Select(x => MergeIntersectionSchemaEntries(x, schemasToExclude))
+                                    .Where(x => x is not null && (schemasToExclude is null || !schemasToExclude.Contains(x)))
+                                    .OfType<OpenApiSchema>();
         meaningfulSchemas.SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.TryAdd(x.Key, x.Value));
         return result;
     }
