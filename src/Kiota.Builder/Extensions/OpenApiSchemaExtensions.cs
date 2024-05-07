@@ -60,9 +60,13 @@ public static class OpenApiSchemaExtensions
             FlattenEmptyEntries([schema.Items], static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
     }
 
-    public static bool IsObject(this OpenApiSchema? schema)
+    public static bool IsObjectType(this OpenApiSchema? schema)
     {
         return "object".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase);
+    }
+    public static bool HasAnyProperty(this OpenApiSchema? schema)
+    {
+        return schema?.Properties is { Count: > 0 };
     }
     public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
@@ -178,7 +182,7 @@ public static class OpenApiSchemaExtensions
     }
     private static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
     {
-        if (schemas == null) return Enumerable.Empty<OpenApiSchema>();
+        if (schemas == null) return [];
         ArgumentNullException.ThrowIfNull(subsequentGetter);
 
         if ((maxDepth ?? 1) <= 0)

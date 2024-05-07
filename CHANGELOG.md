@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove trailing space after class definition [#4625](https://github.com/microsoft/kiota/issues/4625)
 - Fixed a bug where multiple allOf entries type would not get merged if they were part of a discriminator. [#4325](https://github.com/microsoft/kiota/issues/4325)
 - Fixed a bug where allOf structure with one entry and properties would not be considered as inheritance case. [#4346](https://github.com/microsoft/kiota/issues/4346)
+- Fixed a bug where some allOf scenarios would be missing properties if type object wasn't set on the schema. [#4074](https://github.com/microsoft/kiota/issues/4074)
 
 ## [1.14.0] - 2024-05-02
 

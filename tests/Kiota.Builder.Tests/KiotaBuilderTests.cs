@@ -7702,6 +7702,55 @@ components:
         Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
+    public async Task InheritanceWithoutObjectTypeHasAllProperties()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.3
+servers:
+  - url: 'https://example.com'
+info:
+  title: example
+  version: 0.0.1
+paths:
+  /path:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/outerPayload'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+
+components:
+  schemas:
+    outerPayload:
+      allOf:
+        - $ref: '#/components/schemas/innerPayload'
+        - properties:
+            someField:
+              type: string
+    innerPayload:
+      properties:
+        anotherField:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var outerPayloadClass = codeModel.FindChildByName<CodeClass>("outerPayload");
+        Assert.NotNull(outerPayloadClass);
+        Assert.Equal("innerPayload", outerPayloadClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Single(outerPayloadClass.Properties);
+        Assert.Single(outerPayloadClass.Properties.Where(static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineType()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());

@@ -43,17 +43,19 @@ public class OpenApiSchemaExtensionsTests
         Assert.False(OpenApiSchemaExtensions.IsInclusiveUnion(null));
         Assert.False(OpenApiSchemaExtensions.IsExclusiveUnion(null));
         Assert.False(OpenApiSchemaExtensions.IsArray(null));
-        Assert.False(OpenApiSchemaExtensions.IsObject(null));
+        Assert.False(OpenApiSchemaExtensions.IsObjectType(null));
+        Assert.False(OpenApiSchemaExtensions.HasAnyProperty(null));
         Assert.False(OpenApiSchemaExtensions.IsReferencedSchema(null));
         Assert.Null(OpenApiSchemaExtensions.MergeIntersectionSchemaEntries(null));
 
         Assert.False(new OpenApiSchema { Reference = null }.IsReferencedSchema());
         Assert.False(new OpenApiSchema { Type = null }.IsArray());
-        Assert.False(new OpenApiSchema { Type = null }.IsObject());
+        Assert.False(new OpenApiSchema { Type = null }.IsObjectType());
         Assert.False(new OpenApiSchema { AnyOf = null }.IsInclusiveUnion());
         Assert.False(new OpenApiSchema { AllOf = null }.IsInherited());
         Assert.False(new OpenApiSchema { AllOf = null }.IsIntersection());
         Assert.False(new OpenApiSchema { OneOf = null }.IsExclusiveUnion());
+        Assert.False(new OpenApiSchema { Properties = null }.HasAnyProperty());
         var original = new OpenApiSchema { AllOf = null };
         Assert.Equal(original, original.MergeIntersectionSchemaEntries());
 
