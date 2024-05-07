@@ -31,9 +31,15 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         Logger = logger,
         FileName = "pat-api.github.com"
     };
+
+    private HttpClient? _httpClient;
     protected HttpClient httpClient
     {
-        get => GetHttpCient();
+        get
+        {
+            _httpClient ??= GetHttpClient();
+            return _httpClient;
+        }
     }
     public required Option<LogLevel> LogLevelOption
     {
@@ -56,7 +62,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         return configObject;
     });
 
-    protected HttpClient GetHttpCient()
+    protected HttpClient GetHttpClient()
     {
         var httpClientHandler = new HttpClientHandler();
         if (Configuration.Generation.DisableSSLValidation)
