@@ -69,6 +69,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
+        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
@@ -112,6 +113,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
+        Configuration.Generation.DisableSSLValidation = disableSSLValidation;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
@@ -169,5 +171,9 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get;
         set;
+    }
+    public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
     }
 }

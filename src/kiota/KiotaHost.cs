@@ -444,6 +444,8 @@ public static partial class KiotaHost
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             manifestOption,
@@ -463,6 +465,7 @@ public static partial class KiotaHost
             excludePatterns,
             dvrOption,
             clearCacheOption,
+            disableSSLValidationOption,
         };
         command.Handler = new KiotaGenerateCommandHandler
         {
@@ -484,6 +487,7 @@ public static partial class KiotaHost
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return command;
     }
@@ -541,6 +545,14 @@ public static partial class KiotaHost
         clearCacheOption.AddAlias("--cc");
         return clearCacheOption;
     }
+
+    private static Option<bool> GetDisableSSLValidationOption(bool defaultValue)
+    {
+        var disableSSLValidationOption = new Option<bool>("--disable-ssl-validation", () => defaultValue, "Disables SSL certificate validation.");
+        disableSSLValidationOption.AddAlias("--dsv");
+        return disableSSLValidationOption;
+    }    
+
     private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
     {
         option.AddValidator(input =>
