@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Refiners;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 
@@ -50,8 +50,27 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             case CodeMethodKind.ClientConstructor:
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
                 break;
+            case CodeMethodKind.ComposedTypeDeserializer:
+                WriteComposedTypeDeserializer(codeMethod, writer);
+                break;
             default: throw new InvalidOperationException("Invalid code method kind");
         }
+    }
+
+    private void WriteComposedTypeDeserializer(CodeMethod method, LanguageWriter writer)
+    {
+        // TODO: Add implementation for object types and collections
+        if (GetOriginalComposedType(method.ReturnType) is CodeComposedTypeBase composedType)
+        {
+            foreach (var type in composedType.Types)
+            {
+                var nodeType = conventions.GetTypeString(type, method, false);
+                writer.StartBlock($"if(typeof node?.getRawValue() === \"{nodeType}\") {{");
+                writer.WriteLine($"return node?.getRawValue() as {nodeType};");
+                writer.CloseBlock();
+            }
+        }
+        writer.WriteLine("return undefined;");
     }
 
     private static void WriteApiConstructorBody(CodeFile parentFile, CodeMethod method, LanguageWriter writer)
@@ -201,9 +220,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         if (propType.TypeDefinition is CodeEnum currentEnum)
             return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>";
-        else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
+        if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
             return "writeByteArrayValue";
-        else if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
+        if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
         {
             if (propType.TypeDefinition == null)
                 return $"writeCollectionOfPrimitiveValues<{propertyType}>";
@@ -240,6 +259,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                 var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
                 if (otherProp.Kind is CodePropertyKind.BackingStore)
                     writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
+                else if (GetOriginalComposedType(otherProp.Type) is not null)
+                {
+                    writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(otherProp.Type, codeFunction)}(n); }},");
+                }
                 else
                 {
                     var defaultValueSuffix = GetDefaultValueLiteralForProperty(otherProp) is string dft && !string.IsNullOrEmpty(dft) ? $" ?? {dft}" : string.Empty;
@@ -279,13 +302,17 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, codeFunction, false);
+        if (GetOriginalComposedType(propType) is CodeComposedTypeBase composedType)
+        {
+            return GetComposedTypeDeserializationMethodName(composedType);
+        }
         if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.CodeEnumObject is not null)
                 return $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})";
-            else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
+            if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
                 return "getByteArrayValue";
-            else if (isCollection)
+            if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType}>()";
                 else

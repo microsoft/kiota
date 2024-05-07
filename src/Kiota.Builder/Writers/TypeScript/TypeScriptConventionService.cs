@@ -52,6 +52,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
+    public static bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
+    {
+        return composedType?.Types.All(x => IsPrimitiveType(x.Name)) ?? false;
+    }
+
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
@@ -61,7 +66,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
             (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
-            (true, _, _) => string.Empty,
             _ => string.Empty,
         };
         var (partialPrefix, partialSuffix) = (isComposedOfPrimitives, parameter.Kind) switch
@@ -78,11 +82,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
 
-        if (TypeScriptRefiner.GetOriginalComposedType(code) is CodeComposedTypeBase composedType && composedType.Types.Any())
+        CodeComposedTypeBase? composedType = code is CodeComposedTypeBase originalComposedType ? originalComposedType : TypeScriptRefiner.GetOriginalComposedType(code);
+
+        if (composedType is not null && composedType.Types.Any())
         {
             var returnTypeString = string.Join(GetTypesDelimiterToken(composedType), composedType.Types.Select(x => GetTypeString(x, targetElement)));
             return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
         }
+
         if (code is CodeType currentType)
         {
             var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
@@ -140,7 +147,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : codeType.Name).ToFirstCharacterUpperCase();
     }
 #pragma warning disable CA1822 // Method should be static
-    public bool IsPrimitiveType(string typeName)
+    public static bool IsPrimitiveType(string typeName)
     {
         return typeName switch
         {
@@ -200,4 +207,19 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         return $"@deprecated {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}";
     }
+
+    public static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType)
+    {
+        ArgumentNullException.ThrowIfNull(composedType);
+        var isCollection = composedType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+        return GetComposedTypeDeserializationMethodName(composedType, isCollection);
+    }
+
+    public static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType, bool isCollection)
+    {
+        ArgumentNullException.ThrowIfNull(composedType);
+        var propertyName = composedType.Name.ToFirstCharacterUpperCase();
+        return isCollection ? $"getCollectionOf{propertyName}" : $"get{propertyName}";
+    }
+
 }

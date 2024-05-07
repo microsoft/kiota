@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -256,53 +257,112 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
-            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
-                codeFunction.OriginalLocalMethod.Parameters
-                    .Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase)) ||
-
-            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
-                        codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
-                        codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace)
-        ).ToArray();
+        var functions = GetRelevantFunctions(codeInterface, codeNamespace).ToArray();
 
         if (functions.Length == 0)
             return null;
-        var children = new List<CodeElement>(functions);
+
         var composedTypeBase = GetOriginalComposedType(codeInterface);
         if (composedTypeBase is null)
-            children.Add(codeInterface);
+            return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
+
+        var children = GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedTypeBase, functions);
         return codeNamespace.TryAddCodeFile(codeInterface.Name, [.. children]);
+    }
+
+    private static IEnumerable<CodeFunction> GetRelevantFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        return codeNamespace.GetChildElements(true)
+            .OfType<CodeFunction>()
+            .Where(codeFunction =>
+                IsRelevantDeserializerOrSerializer(codeFunction, codeInterface) ||
+                IsRelevantFactory(codeFunction, codeInterface, codeNamespace));
+    }
+
+    private static bool IsRelevantDeserializerOrSerializer(CodeFunction codeFunction, CodeInterface codeInterface)
+    {
+        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
+            codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsRelevantFactory(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
+            codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+            codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
+    }
+
+    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedTypeBase, CodeFunction[] functions)
+    {
+        var children = new List<CodeElement>(functions);
+        var factoryMethods = functions.Where(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory).ToList();
+
+        foreach (var function in factoryMethods)
+        {
+            var method = CreateCodeMethod(codeInterface, composedTypeBase, function);
+            var codeFunction = new CodeFunction(method) { Name = method.Name };
+
+            children.Remove(function);
+            codeInterface.RemoveChildElement(function);
+            codeNamespace.RemoveChildElement(function);
+            children.Add(codeFunction);
+        }
+
+        return children;
+    }
+
+    private static CodeMethod CreateCodeMethod(CodeInterface codeInterface, CodeComposedTypeBase composedTypeBase, CodeFunction function)
+    {
+        var method = new CodeMethod
+        {
+            Name = GetComposedTypeDeserializationMethodName(composedTypeBase),
+            ReturnType = composedTypeBase,
+            Kind = CodeMethodKind.ComposedTypeDeserializer,
+            Access = function.OriginalLocalMethod.Access,
+            IsAsync = function.OriginalLocalMethod.IsAsync,
+            IsStatic = function.OriginalLocalMethod.IsStatic,
+            Documentation = function.OriginalLocalMethod.Documentation,
+            Parent = codeInterface.OriginalClass,
+        };
+
+        method.AddParameter(CreateParseNodeCodeParameter());
+
+        return method;
+    }
+
+    private static CodeParameter CreateParseNodeCodeParameter()
+    {
+        return new CodeParameter
+        {
+            Name = "node",
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+        };
     }
 
     public static CodeComposedTypeBase? GetOriginalComposedType(CodeElement element)
     {
-        if (element is CodeType codeType)
+        return element switch
         {
-            return GetOriginalComposedType(codeType);
-        }
-        else if (element is CodeClass codeClass)
-        {
-            return GetOriginalComposedType(codeClass);
-        }
-        else if (element is CodeInterface codeInterface)
-        {
-            return GetOriginalComposedType(codeInterface);
-        }
-        return null;
+            CodeType codeType => GetOriginalComposedType(codeType),
+            CodeClass codeClass => GetOriginalComposedType(codeClass),
+            CodeInterface codeInterface => GetOriginalComposedType(codeInterface),
+            CodeComposedTypeBase composedType => composedType,
+            _ => null,
+        };
     }
 
     public static CodeComposedTypeBase? GetOriginalComposedType(CodeType codeType)
     {
-        if (codeType?.TypeDefinition is CodeInterface ci)
+        return codeType?.TypeDefinition switch
         {
-            return GetOriginalComposedType(ci);
-        }
-        else if (codeType?.TypeDefinition is CodeClass codeClass)
-        {
-            return GetOriginalComposedType(codeClass);
-        }
-        return null;
+            CodeInterface ci => GetOriginalComposedType(ci),
+            CodeClass cc => GetOriginalComposedType(cc),
+            _ => null,
+        };
     }
 
     public static CodeComposedTypeBase? GetOriginalComposedType(CodeInterface codeInterface)

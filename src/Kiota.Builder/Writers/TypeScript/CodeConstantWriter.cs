@@ -2,6 +2,7 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConventionService>
@@ -101,7 +102,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
-            var isPrimitive = conventions.IsPrimitiveType(returnTypeWithoutCollectionSymbol);
+            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol);
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
@@ -167,7 +168,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
-        if (isStream || conventions.IsPrimitiveType(typeName)) return $" \"{typeName}\"";
+        if (isStream || IsPrimitiveType(typeName)) return $" \"{typeName}\"";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
