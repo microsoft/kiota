@@ -265,8 +265,11 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    vscode.commands.registerCommand(`${extensionId}.editPaths`, (fileName: string, key: string) => {
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, (fileName: string, key: string) => {
       void vscode.window.showInformationMessage(`Editing paths for ${key} in ${fileName}`);
+    }),
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, (fileName: string, key: string) => {
+      void vscode.window.showInformationMessage(`Regenerating paths for ${key} in ${fileName}`);
     }),
   );
 

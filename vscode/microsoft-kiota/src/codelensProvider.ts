@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
-        console.log("provideCodeLenses called");
         const codeLenses: vscode.CodeLens[] = [];
         const text = document.getText();
         const jsonObject = JSON.parse(text);
@@ -18,12 +17,18 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                         if (clientStartLine !== -1) {
                             const positionBeforeClient = new vscode.Position(clientStartLine, 0);
                             const rangeBeforeClient = new vscode.Range(positionBeforeClient, positionBeforeClient);
-                            const commandBeforeClient = {
+                            const editPathsCommand = {
                                 title: "Edit Paths",
                                 command: "kiota.editPaths",
                                 arguments: [document.fileName, clientKey] 
                             };
-                            codeLenses.push(new vscode.CodeLens(rangeBeforeClient, commandBeforeClient));
+                            codeLenses.push(new vscode.CodeLens(rangeBeforeClient, editPathsCommand));
+                            const regenerateCommand = {
+                                title: "Regenerate",
+                                command: "kiota.regenerate",
+                                arguments: [document.fileName, clientKey]
+                            };
+                            codeLenses.push(new vscode.CodeLens(rangeBeforeClient, regenerateCommand));
                         }
                     });
                 }

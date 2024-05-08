@@ -414,6 +414,10 @@
       {
         "command": "kiota.editPaths",
         "title": "Edit Paths"
+      },
+      {
+        "command": "kiota.regenerate",
+        "title": "Re-generate"
       }
     ],
     "languages": [
