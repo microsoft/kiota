@@ -410,6 +410,22 @@
       {
         "command": "kiota.workspace.openWorkspaceFile",
         "title": "%kiota.openApiExplorer.openFile.title%"
+      },
+      {
+        "command": "kiota.editPaths",
+        "title": "Edit Paths"
+      }
+    ],
+    "languages": [
+      {
+          "id": "json",
+          "extensions": [ ".json" ]
+      }
+    ],
+    "codeLensProviders": [
+      {
+          "language": "json",
+          "provideCodeLenses": true
       }
     ]
   },

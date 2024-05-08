@@ -203,7 +203,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = ['Generate an API client', 'Generate a plugin', 'Generate an API manifest'];
 		const option = await input.showQuickPick({
-			title: 'What do you want to generate?',
+			title: l10n.t('What do you want to generate?'),
 			step: 1,
 			totalSteps: 1,
             placeholder: 'Select an option',

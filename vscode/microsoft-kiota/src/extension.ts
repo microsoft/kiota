@@ -27,6 +27,7 @@ import { ApiManifest } from "./apiManifest";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
+import { CodeLensProvider } from "./codeLensProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -52,6 +53,7 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   new KiotaWorkspace(context);
+  let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -95,6 +97,8 @@ export async function activate(
         );
       }
     }),
+    
+    vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
     registerCommandWithTelemetry(reporter, 
       `${treeViewId}.openFile`,
@@ -260,7 +264,10 @@ export async function activate(
     registerCommandWithTelemetry(reporter, 
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
-    )
+    ),
+    vscode.commands.registerCommand(`${extensionId}.editPaths`, (fileName: string, key: string) => {
+      void vscode.window.showInformationMessage(`Editing paths for ${key} in ${fileName}`);
+    }),
   );
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<void> {
