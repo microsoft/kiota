@@ -32,11 +32,11 @@ body:
   - type: dropdown
     id: language
     attributes:
-      label: Client Library/SDK Language
+      label: Client library/SDK language
       description: If  Client SDK, what's the language in use?
       multiple: false
       options:
-        - C#
+        - Csharp
         - CLI
         - Go
         - Java
@@ -45,6 +45,7 @@ body:
         - Python
         - Ruby
         - TypeScript
+        - Swift
     validations:
       required: false
   - type: textarea

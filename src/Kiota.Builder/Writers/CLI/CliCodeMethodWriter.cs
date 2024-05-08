@@ -341,7 +341,9 @@ partial class CliCodeMethodWriter : CodeMethodWriter
 
             if (originalMethod.PagingInformation != null)
             {
+                writer.WriteLine(CSharpConventionService.NullableEnableDirective, false);
                 writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
+                writer.WriteLine(CSharpConventionService.NullableRestoreDirective, false);
             }
             if (originalMethod.ReturnType is CodeType type &&
                 conventions.GetTypeString(type, originalMethod) is { } typeString && !typeString.Equals("Stream", StringComparison.Ordinal))

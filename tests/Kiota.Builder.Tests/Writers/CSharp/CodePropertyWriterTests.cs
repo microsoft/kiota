@@ -113,7 +113,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.AdditionalData;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore.Get<SomeCustomClass>(\"propertyName\") ?? throw new InvalidOperationException(\"AdditionalData can not be null\"); }", result);
+        Assert.Contains("get { return BackingStore.Get<SomeCustomClass>(\"propertyName\") ?? new Dictionary<string, object>(); }", result);
         Assert.Contains("set { BackingStore.Set(\"propertyName\", value);", result);
     }
     [Fact]
