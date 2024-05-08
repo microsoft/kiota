@@ -551,7 +551,7 @@ public static partial class KiotaHost
         var disableSSLValidationOption = new Option<bool>("--disable-ssl-validation", () => defaultValue, "Disables SSL certificate validation.");
         disableSSLValidationOption.AddAlias("--dsv");
         return disableSSLValidationOption;
-    }    
+    }
 
     private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
     {
