@@ -27,7 +27,7 @@ import { ApiManifest } from "./apiManifest";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
-import { CodeLensProvider } from "./codeLensProvider";
+import { CodeLensProvider } from "./codelensProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
