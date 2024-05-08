@@ -265,8 +265,9 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, (fileName: string, key: string) => {
-      void vscode.window.showInformationMessage(`Editing paths for ${key} in ${fileName}`);
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (fileName: string, clientObject: any) => {
+     // void vscode.window.showInformationMessage(`Regenerating paths for ${key} in ${fileName}`);
+     await loadEditPaths(clientObject, openApiTreeProvider);
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, (fileName: string, key: string) => {
       void vscode.window.showInformationMessage(`Regenerating paths for ${key} in ${fileName}`);
@@ -550,6 +551,10 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
   await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath));
+}
+
+async function loadEditPaths(clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientObject));
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {

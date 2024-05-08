@@ -13,6 +13,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                 if (clientsStartLine !== -1) {
                     const clientKeys = Object.keys(clientsObject);
                     clientKeys.forEach(clientKey => {
+                        const clientObject = clientsObject[clientKey];
                         const clientStartLine = this.findPropertyLine(text, clientKey);
                         if (clientStartLine !== -1) {
                             const positionBeforeClient = new vscode.Position(clientStartLine, 0);
@@ -20,11 +21,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                             const editPathsCommand = {
                                 title: "Edit Paths",
                                 command: "kiota.editPaths",
-                                arguments: [document.fileName, clientKey] 
+                                arguments: [document.fileName, clientObject] 
                             };
                             codeLenses.push(new vscode.CodeLens(rangeBeforeClient, editPathsCommand));
                             const regenerateCommand = {
-                                title: "Regenerate",
+                                title: "Re-generate",
                                 command: "kiota.regenerate",
                                 arguments: [document.fileName, clientKey]
                             };

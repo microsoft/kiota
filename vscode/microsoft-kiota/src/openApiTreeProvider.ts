@@ -39,6 +39,20 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
       }
     }
+    public async loadEditPaths(clientObject: any): Promise<void> {
+        this.closeDescription(false);
+        this._lockFile = clientObject;
+        if (this._lockFile?.descriptionLocation) {
+          this._descriptionUrl = this._lockFile.descriptionLocation;
+          this.includeFilters = this._lockFile.includePatterns;
+          this.excludeFilters = this._lockFile.excludePatterns;
+          const settings = this.settingsGetter();
+          await this.loadNodes(settings.clearCache);
+          if (this.rawRootNode) {
+              this.refreshView();
+          }
+        }
+      }
     public async loadManifestFromUri(path: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         this.closeDescription(false);
         const logs = await this.loadNodesFromManifest(path, apiIdentifier);
