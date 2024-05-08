@@ -67,7 +67,13 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var httpClientHandler = new HttpClientHandler();
         if (Configuration.Generation.DisableSSLValidation)
             httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return new HttpClient(httpClientHandler);
+
+        var httpClient = new HttpClient(httpClientHandler);
+
+        disposables.Add(httpClientHandler);
+        disposables.Add(httpClient);
+
+        return httpClient;
     }
 
     private const string GitHubScope = "repo";
