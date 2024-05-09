@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Validations;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
+
 public class MissingDiscriminatorTests
 {
     [Fact]
@@ -35,6 +36,7 @@ paths:
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
+
     [Fact]
     public void AddsWarningOnInlineSchemas()
     {
@@ -70,6 +72,44 @@ paths:
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
+
+    [Fact]
+    public void AddsWarningOnNestedInlineSchemas()
+    {
+        var rule = new MissingDiscriminator(new());
+        var documentTxt = @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                    - type: object
+                      properties:
+                        type2:
+                          type: string";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
+        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
+        {
+            RuleSet = new(new ValidationRule[] { rule }),
+        });
+        var doc = reader.Read(stream, out var diag);
+        Assert.Single(diag.Warnings);
+    }
+
     [Fact]
     public void AddsWarningOnComponentSchemas()
     {
@@ -113,6 +153,7 @@ paths:
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
+
     [Fact]
     public void DoesntAddsWarningOnComponentSchemasWithDiscriminatorInformation()
     {
@@ -158,6 +199,7 @@ paths:
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
+
     [Fact]
     public void DoesntAddsWarningOnComponentSchemasScalars()
     {
