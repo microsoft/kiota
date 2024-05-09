@@ -117,7 +117,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 writer.DecreaseIndent();
             }
         }
-        
+
         writer.StartBlock("default:");
         writer.WriteLine($"return nil, nil");
         writer.DecreaseIndent();
