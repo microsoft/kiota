@@ -52,16 +52,16 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public static bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
+    public bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
     {
-        return composedType?.Types.All(x => IsPrimitiveType(x.Name)) ?? false;
+        return composedType?.Types.All(x => IsPrimitiveType(GetTypeString(x, composedType))) ?? false;
     }
 
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var paramType = GetTypeString(parameter.Type, targetElement);
-        var isComposedOfPrimitives = TypeScriptRefiner.GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.Types.Any(x => IsPrimitiveType(x.Name));
+        var isComposedOfPrimitives = TypeScriptRefiner.GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
@@ -211,7 +211,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType)
     {
         ArgumentNullException.ThrowIfNull(composedType);
-        var isCollection = composedType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+        var isCollection = composedType.CollectionKind != CodeTypeCollectionKind.None;
         return GetComposedTypeDeserializationMethodName(composedType, isCollection);
     }
 

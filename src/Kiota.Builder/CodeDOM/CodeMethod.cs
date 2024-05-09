@@ -16,6 +16,7 @@ public enum CodeMethodKind
     Serializer,
     Deserializer,
     ComposedTypeDeserializer,
+    ComposedTypeSerializer,
     Constructor,
     Getter,
     Setter,
