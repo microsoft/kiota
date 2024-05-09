@@ -113,6 +113,17 @@ export enum KiotaPluginType {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Microsoft = 2,
 }
+
+export enum ConsumerOperation {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Add,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Edit,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Remove,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Generate
+}
 export function parsePluginType(value: string): KiotaPluginType {
     switch (value) {
         case "OpenAI":
@@ -279,4 +290,5 @@ export interface GenerationConfiguration {
     structuredMimeTypes: string[];
     usesBackingStore: boolean;
     pluginTypes: KiotaPluginType[];
+    operation: ConsumerOperation;
 }

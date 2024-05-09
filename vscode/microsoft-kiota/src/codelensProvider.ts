@@ -21,13 +21,13 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                             const editPathsCommand = {
                                 title: "Edit Paths",
                                 command: "kiota.editPaths",
-                                arguments: [document.fileName, clientObject] 
+                                arguments: [clientObject] 
                             };
                             codeLenses.push(new vscode.CodeLens(rangeBeforeClient, editPathsCommand));
                             const regenerateCommand = {
                                 title: "Re-generate",
                                 command: "kiota.regenerate",
-                                arguments: [document.fileName, clientKey]
+                                arguments: [clientKey, clientObject]
                             };
                             codeLenses.push(new vscode.CodeLens(rangeBeforeClient, regenerateCommand));
                         }

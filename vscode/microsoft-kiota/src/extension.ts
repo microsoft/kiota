@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
+  ConsumerOperation,
   generationLanguageToString,
   getLogEntriesForLevel,
   KiotaGenerationLanguage,
@@ -265,12 +266,13 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (fileName: string, clientObject: any) => {
-     // void vscode.window.showInformationMessage(`Regenerating paths for ${key} in ${fileName}`);
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientObject: any) => {
      await loadEditPaths(clientObject, openApiTreeProvider);
+     await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
     }),
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, (fileName: string, key: string) => {
-      void vscode.window.showInformationMessage(`Regenerating paths for ${key} in ${fileName}`);
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any) => {
+      const settings = getExtensionSettings(extensionId); 
+      await regenerateClient(clientKey, clientObject, settings);
     }),
   );
 
@@ -384,7 +386,8 @@ export async function activate(
         settings.languagesSerializationConfiguration[language].serializers,
         settings.languagesSerializationConfiguration[language].deserializers,
         settings.structuredMimeTypes,
-        settings.includeAdditionalData
+        settings.includeAdditionalData,
+        ConsumerOperation.Add
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -417,6 +420,60 @@ export async function activate(
     {
       await exportLogsAndShowErrors(result);
     }
+  }
+  async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings): Promise<void> {
+    const language =
+          typeof clientObject.language === "string"
+            ? parseGenerationLanguage(clientObject.language)
+            : KiotaGenerationLanguage.CSharp;
+            console.log(
+              context,
+        clientObject.descriptionLocation,
+        clientObject.outputPath,
+        language,
+        clientObject.includePatterns,
+        clientObject.excludePatterns,
+        clientKey,
+        clientObject.clientNamespaceName,
+        clientObject.usesBackingStore,
+        true, // clearCache
+        true, // cleanOutput
+        clientObject.excludeBackwardCompatible,
+        clientObject.disabledValidationRules,
+        settings.languagesSerializationConfiguration[language].serializers,
+        settings.languagesSerializationConfiguration[language].deserializers,
+        clientObject.structuredMimeTypes,
+        clientObject.includeAdditionalData
+            );
+     await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Generating client...")  
+    }, async (progress, _) => {
+      const result = await generateClient(
+        context,
+        clientObject.descriptionLocation,
+        clientObject.outputPath,
+        language,
+        clientObject.includePatterns,
+        clientObject.excludePatterns,
+        clientKey,
+        clientObject.clientNamespaceName,
+        clientObject.usesBackingStore,
+        true, // clearCache
+        true, // cleanOutput
+        clientObject.excludeBackwardCompatible,
+        clientObject.disabledValidationRules,
+        settings.languagesSerializationConfiguration[language].serializers,
+        settings.languagesSerializationConfiguration[language].deserializers,
+        clientObject.structuredMimeTypes,
+        clientObject.includeAdditionalData,
+        ConsumerOperation.Edit
+    );
+    return result;
+    });
+    
+  void vscode.window.showInformationMessage(`Client ${clientKey} regenerated successfully.`);
   }
 
   // create a new status bar item that we can now manage

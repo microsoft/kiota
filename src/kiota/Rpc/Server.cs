@@ -137,7 +137,7 @@ internal partial class Server : IServer
             return indexingNormalizationRegex().Replace(name, "{}");
         return name;
     }
-    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -151,7 +151,7 @@ internal partial class Server : IServer
         configuration.ClearCache = clearCache;
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
-        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        configuration.Operation = operation;
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (serializers is { Length: > 0 })
