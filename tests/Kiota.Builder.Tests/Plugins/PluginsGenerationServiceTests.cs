@@ -77,5 +77,5 @@ paths:
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
     }
     private const string ManifestFileName = "client-microsoft.json";
-    private const string OpenApiFileName = "openapi.yml";
+    private const string OpenApiFileName = "client-openapi.yml";
 }

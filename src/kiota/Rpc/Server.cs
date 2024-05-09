@@ -192,7 +192,6 @@ internal partial class Server : IServer
         configuration.OutputPath = GetAbsolutePath(outputPath);
         if (!string.IsNullOrEmpty(clientClassName))
             configuration.ClientClassName = clientClassName;
-        // configuration.SkipGeneration = skipGeneration;
         configuration.CleanOutput = cleanOutput;
         configuration.ClearCache = clearCache;
         configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
@@ -218,7 +217,7 @@ internal partial class Server : IServer
         }
         catch (Exception ex)
         {
-            globalLogger.LogCritical("error adding the client: {exceptionMessage}", ex.Message);
+            globalLogger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
         }
         return globalLogger.LogEntries;
     }

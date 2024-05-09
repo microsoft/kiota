@@ -46,7 +46,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
-            RemoveRequestConfigurationClasses(generatedCode,
+            RemoveRequestConfigurationClasses(
+                generatedCode,
                 new CodeUsing
                 {
                     Name = "RequestConfiguration",
@@ -60,7 +61,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     Name = "QueryParameters",
                     IsExternal = true,
-                });
+                },
+                keepRequestConfigurationClass: true,
+                addDeprecation: true
+            );
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -169,6 +173,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            $"{AbstractionsPackageName}.default_query_parameters", "QueryParameters"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             SerializationModuleName, "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),

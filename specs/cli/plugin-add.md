@@ -10,7 +10,7 @@ Every time a plugin is added, a copy of the OpenAPI document file will be stored
 
 An [API Manifest][def] file named `apimanifest.json` will be generated (if non existing) or updated (if already existing) in the root folder `./kiota` next to `workspace.json`.  API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `openai` and `apimanifest` type of plugins. By generating `openai` or `apimanifest`, two outputs will be generated: a\) the plugin type you have chosen and b\) a sliced OpenAPI document named `sliced-{plugin-name}.json|yaml` with only the endpoints that matches `--include-path` and `--exclude-path`, if provided.
+Developers can generate `openai` and `apimanifest` type of plugins. By generating `openai` or `apimanifest`, two outputs will be generated: a\) the plugin type you have chosen and b\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml` with only the endpoints that matches `--include-path` and `--exclude-path`, if provided.
 > [!NOTE] 
 > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin when providing `--type apimanifest`, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
@@ -92,7 +92,7 @@ _The resulting OpenAI plugin named `openai-plugins.json` will look like this:_
     },
     "api": {
         "type": "openapi",
-        "url": "./generated/plugins/github/sliced-github.json"
+        "url": "./generated/plugins/github/github-openapi.json"
     },
     "logo_url": "https://example.com/logo.png",
     "contact_email": "githubsupport@example.com",
@@ -179,7 +179,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
       └─github
           └─github-apimanifest.json # Specific API Manifest
           └─openai-plugins.json #OpenAI Plugin
-          └─sliced-github.json # Sliced and augmented OpenAPI document
+          └─github-openapi.json # Sliced and augmented OpenAPI document
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html

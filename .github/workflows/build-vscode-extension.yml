@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 18.x
       - id: last_release
-        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           owner: microsoft
           repo: kiota

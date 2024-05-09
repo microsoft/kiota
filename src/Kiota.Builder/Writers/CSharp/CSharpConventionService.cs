@@ -18,17 +18,19 @@ public class CSharpConventionService : CommonLanguageConventionService
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "IParseNode";
+    public const string NullableEnableDirective = "#nullable enable";
+    public const string NullableRestoreDirective = "#nullable restore";
 
     public static void WriteNullableOpening(LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER", false);
-        writer.WriteLine($"#nullable enable", false);
+        writer.WriteLine(NullableEnableDirective, false);
     }
     public static void WriteNullableMiddle(LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine($"#nullable restore", false);
+        writer.WriteLine(NullableRestoreDirective, false);
         writer.WriteLine("#else", false);
     }
     public static void WriteNullableClosing(LanguageWriter writer)

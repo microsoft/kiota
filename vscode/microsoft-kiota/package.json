@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.88.0"
+    "vscode": "^1.89.0"
   },
   "categories": [
     "Other"
@@ -448,7 +448,7 @@
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
-    "@types/vscode": "^1.88.0",
+    "@types/vscode": "^1.89.0",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
     "@vscode/test-electron": "^2.3.9",

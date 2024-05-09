@@ -16,7 +16,7 @@ The command also has one optional parameter, the ability to remove the all gener
 ```bash
 kiota plugin remove --plugin-name "GitHub" --clean-output
 ```
-_The resulting `github-apimanifest.json`, `openai-plugins.json` and `sliced-github.json` files will be deleted._
+_The resulting `github-apimanifest.json`, `openai-plugins.json` and `github-openapi.json` files will be deleted._
 
 The resulting `workspace.json` file will look like this:
 
