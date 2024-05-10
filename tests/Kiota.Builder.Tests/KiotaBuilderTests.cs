@@ -7467,6 +7467,103 @@ components:
         Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
+    public async Task NestedIntersectionTypeAllOf()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.3
+info:
+  title: Model Registry REST API
+  version: v1alpha2
+  description: REST API for Model Registry to create and manage ML model metadata
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+servers:
+  - url: 'https://localhost:8080'
+  - url: 'http://localhost:8080'
+paths:
+  /api/model_registry/v1alpha2/registered_models:
+    summary: Path used to manage the list of registeredmodels.
+    description: >-
+      The REST endpoint/path used to list and create zero or more `RegisteredModel` entities.  This path contains a `GET` and `POST` operation to perform the list and create tasks, respectively.
+    get:
+      responses:
+        '200':
+          $ref: '#/components/responses/RegisteredModelListResponse'
+      summary: List All RegisteredModels
+      description: Gets a list of all `RegisteredModel` entities.
+components:
+  schemas:
+    BaseResource:
+      type: object
+      properties:
+        id:
+          format: int64
+          description: Output only. The unique server generated id of the resource.
+          type: number
+          readOnly: true
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceCreate'
+    BaseResourceCreate:
+      type: object
+      properties:
+        name:
+          description: |-
+            The client provided name of the artifact. This field is optional. If set,
+            it must be unique among all the artifacts of the same artifact type within
+            a database instance and cannot be changed once set.
+          type: string
+    BaseResourceList:
+      required:
+        - size
+      type: object
+      properties:
+        size:
+          format: int32
+          description: Number of items in result list.
+          type: integer
+    RegisteredModel:
+      description: A registered model in model registry. A registered model has ModelVersion children.
+      allOf:
+        - $ref: '#/components/schemas/BaseResource'
+        - $ref: '#/components/schemas/RegisteredModelCreate'
+    RegisteredModelCreate:
+      description: A registered model in model registry. A registered model has ModelVersion children.
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceCreate'
+    RegisteredModelList:
+      description: List of RegisteredModels.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceList'
+        - type: object
+          properties:
+            items:
+              description: ''
+              type: array
+              items:
+                $ref: '#/components/schemas/RegisteredModel'
+              readOnly: false
+  responses:
+    RegisteredModelListResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisteredModelList'
+      description: A response containing a list of `RegisteredModel` entities.\");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
+        Assert.Null(registeredModelClass.StartBlock.Inherits);
+        Assert.NotNull(registeredModelClass);
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaParentClass()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
