@@ -2086,7 +2086,7 @@ public partial class KiotaBuilder
         }
         var className = currentNode.GetClassName(config.StructuredMimeTypes, schema: discriminatorSchema).CleanupSymbolName();
         var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference?.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase) ?? false);
-        if (baseClass is not null && !discriminatorSchema.IsInherited())
+        if (baseClass is not null && shouldInherit && !discriminatorSchema.IsInherited())
         {
             logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
             return null;
