@@ -46,3 +46,13 @@ Where kiotaVersionInPackage is the kiotaVersion field and versionInPackage is th
 > Note: the **.vscode** segment might change to **.vscode-server** if you're remoting to WSL.
 
 > Note: alternatively to building executable yourself, you can download it from [the pipeline](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) by filtering the branch (top right corner) with the pull request branch, selecting the latest run, and downloading the right OS version from the artifacts. The only remaining work will be to move the downloaded files to the right path above.
+
+## FAQ
+
+### VS Code keeps reinstalling from the marketplace
+
+This is most likely caused by the fact that there's a newer released version. Run the following script replacing the version argument with the latest version of kiota.
+
+```powershell
+.\scripts\update-vscode-releases.ps1 -version "versionWithoutVPrefix" -online -filePath .\vscode\microsoft-kiota\package.json
+```
