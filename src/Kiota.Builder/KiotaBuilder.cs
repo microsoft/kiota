@@ -1604,7 +1604,7 @@ public partial class KiotaBuilder
         if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
-                                                        !x.Properties.Any() &&
+                                                        !x.HasAnyProperty() &&
                                                         !x.IsExclusiveUnion() &&
                                                         !x.IsInclusiveUnion() &&
                                                         !x.IsInherited() &&

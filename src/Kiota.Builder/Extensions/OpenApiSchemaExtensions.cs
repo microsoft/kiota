@@ -29,7 +29,7 @@ public static class OpenApiSchemaExtensions
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
         if (schemas is null) return [];
-        return schemas.Count == 1 && !schemas[0].Properties.Any() ?
+        return schemas.Count == 1 && !schemas[0].HasAnyProperty() ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
@@ -144,7 +144,7 @@ public static class OpenApiSchemaExtensions
     public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
     {
         if (schema is null) return false;
-        return schema.Properties.Any() ||
+        return schema.HasAnyProperty() ||
                 schema.Enum is { Count: > 0 } ||
                 schema.Items != null ||
                 (!string.IsNullOrEmpty(schema.Type) &&
