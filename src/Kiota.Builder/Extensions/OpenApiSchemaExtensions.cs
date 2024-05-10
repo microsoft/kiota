@@ -102,8 +102,8 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsIntersection(this OpenApiSchema? schema)
     {
-        var meaningfulSchemas = schema?.AllOf?.Where(static x => x.IsSemanticallyMeaningful());
-        return meaningfulSchemas?.Count() > 3 || meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
+        var meaningfulSchemas = schema?.AllOf?.Where(static x => x.IsSemanticallyMeaningful()).ToArray();
+        return meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
     }
 
     public static bool IsExclusiveUnion(this OpenApiSchema? schema)
