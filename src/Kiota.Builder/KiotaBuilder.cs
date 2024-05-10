@@ -1937,7 +1937,6 @@ public partial class KiotaBuilder
             if (relatedModels.Contains(x) || classesInUse.Contains(x)) return;
             if (x is CodeClass currentClass)
             {
-                //TODO this is trimming mailboxsettingsbase when it shouldn't. Most likely because one of the indices is now broken
                 var parents = currentClass.GetInheritanceTree(false, false);
                 if (parents.Any(y => classesDirectlyInUse.Contains(y))) return; // to support the inheritance recursive downcast
                 foreach (var baseClass in parents) // discriminator might also be in grand parent types
