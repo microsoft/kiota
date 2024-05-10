@@ -3,8 +3,8 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.13.100000001",
-  "kiotaVersion": "1.13.0",
+  "version": "1.14.100000001",
+  "kiotaVersion": "1.14.0",
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
@@ -422,14 +422,16 @@
     ],
     "languages": [
       {
-          "id": "json",
-          "extensions": [ ".json" ]
+        "id": "json",
+        "extensions": [
+          ".json"
+        ]
       }
     ],
     "codeLensProviders": [
       {
-          "language": "json",
-          "provideCodeLenses": true
+        "language": "json",
+        "provideCodeLenses": true
       }
     ]
   },
@@ -472,23 +474,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "502715936A379A60ACDE5CABD3BD98583DD29FBDA35E1D9AC342F61D064C73DD"
+      "sha256": "7AB8DA15620971C53BF14F67F957F19D3E7C2F53C66631E7E01D1BF639D1FBF6"
     },
     {
       "platformId": "win-x86",
-      "sha256": "995F25489BF5B50A76E7CA87F10C5E6EF9E95FB8CE1EA0959F6CC76436584E72"
+      "sha256": "92918467EEBEB489A5F61AD41D3A31BE6EB6B05E2C016B0AAC2CAEA3A44FE99E"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "C69FB6ECE60B518DF8EA989AFBB9A475E866F514DFB4D4DDFBF681651D57D3FF"
+      "sha256": "388592EC1496BD1EA83A467238FCC751C0C7551ED903D23843420D2D8FB42669"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "F9548767005D6B5B8E861B3120042EC03FFF2A263E8FCA8F8402C3CE0548C72B"
+      "sha256": "54165FAC96060FA89B007C66A1005A8B3FB014E24F089243C8D9058B9398327B"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "A59C9FE6B13F7936BB655CE29893307583949C4769BDD7BE53AC41F94AE2F4AC"
+      "sha256": "5666D266ED3A087F7AB18F065CE824FE9FB5362A49FF83B363D499A5EDC81EB5"
     }
   ]
 }
