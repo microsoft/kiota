@@ -15,6 +15,7 @@ public enum CodeMethodKind
     RequestGenerator,
     Serializer,
     Deserializer,
+    ComposedTypeFactory,
     ComposedTypeDeserializer,
     ComposedTypeSerializer,
     Constructor,

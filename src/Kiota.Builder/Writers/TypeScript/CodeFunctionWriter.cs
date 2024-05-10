@@ -50,7 +50,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             case CodeMethodKind.ClientConstructor:
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
                 break;
-            case CodeMethodKind.ComposedTypeDeserializer:
+            case CodeMethodKind.ComposedTypeFactory:
                 WriteComposedTypeDeserializer(codeMethod, writer);
                 break;
             case CodeMethodKind.ComposedTypeSerializer:
@@ -69,7 +69,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             foreach (var type in composedType.Types)
             {
                 var nodeType = conventions.GetTypeString(type, method, false);
-                writer.StartBlock($"if(typeof nodeValue === \"{nodeType}\") {{");
+                writer.StartBlock($"if (typeof nodeValue === \"{nodeType}\") {{");
                 writer.WriteLine($"return nodeValue as {nodeType};");
                 writer.CloseBlock();
             }
