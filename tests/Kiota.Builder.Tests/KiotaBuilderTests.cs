@@ -1890,9 +1890,9 @@ paths:
                                                                     }
                                                                 }
                                                             },
-                                                            AllOf = new List<OpenApiSchema> {
+                                                            AllOf = [
                                                                 resourceSchema,
-                                                            }
+                                                            ]
                                                         }
                                                     }
                                                 }
