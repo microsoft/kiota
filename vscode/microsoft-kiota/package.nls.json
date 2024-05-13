@@ -29,5 +29,8 @@
   "kiota.generate.structuredMimeTypes.description": "The MIME types and preference to use for structured data model generation. As per RFC9110 Accept header notation.",
   "kiota.generate.includeAdditionalData.description": "Will include the 'AdditionalData' property for models",
   "kiota.workspace.name": "My Workspace",
-  "kiota.openApiExplorer.openFile.title": "Open file"
+  "kiota.openApiExplorer.openFile.title": "Open file",
+  "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
+  "kiota.openApiExplorer.editPaths.title": "Edit paths"
+
 }

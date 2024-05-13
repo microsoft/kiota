@@ -39,6 +39,8 @@ const treeViewId = `${extensionId}.openApiExplorer`;
 const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
 const dependenciesInfo = `${extensionId}.dependenciesInfo`;
 export const kiotaLockFile = "workspace.json";
+let globalClientKey: string;
+let globalClientObject: any;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -222,6 +224,7 @@ export async function activate(
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
           await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
+          await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
         }
       }
     ),
@@ -266,10 +269,26 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientObject: any) => {
-     await loadEditPaths(clientObject, openApiTreeProvider);
-     await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: any) => {
+     globalClientKey = clientKey;
+     globalClientObject = clientObject;
+      await loadEditPaths(clientObject, openApiTreeProvider);
+     await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
+     await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
+
+     vscode.commands.registerCommand(`${treeViewId}.regenerateButton`, async (clientKey: string, clientObject: any) => {
+      const settings = getExtensionSettings(extensionId); 
+      const selectedPaths = openApiTreeProvider.getSelectedPaths();
+     if (selectedPaths.length === 0) {
+      await vscode.window.showErrorMessage(
+        vscode.l10n.t("No endpoints selected, select endpoints first")
+      );
+    }
+      await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);      
+    }),
+      
+    
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any) => {
       const settings = getExtensionSettings(extensionId); 
       await regenerateClient(clientKey, clientObject, settings);
@@ -421,41 +440,22 @@ export async function activate(
       await exportLogsAndShowErrors(result);
     }
   }
-  async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings): Promise<void> {
+  async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]): Promise<void> {
     const language =
           typeof clientObject.language === "string"
             ? parseGenerationLanguage(clientObject.language)
             : KiotaGenerationLanguage.CSharp;
-            console.log(
-              context,
-        clientObject.descriptionLocation,
-        clientObject.outputPath,
-        language,
-        clientObject.includePatterns,
-        clientObject.excludePatterns,
-        clientKey,
-        clientObject.clientNamespaceName,
-        clientObject.usesBackingStore,
-        true, // clearCache
-        true, // cleanOutput
-        clientObject.excludeBackwardCompatible,
-        clientObject.disabledValidationRules,
-        settings.languagesSerializationConfiguration[language].serializers,
-        settings.languagesSerializationConfiguration[language].deserializers,
-        clientObject.structuredMimeTypes,
-        clientObject.includeAdditionalData
-            );
      await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
-      title: vscode.l10n.t("Generating client...")  
+      title: vscode.l10n.t("Re-generating client...")  
     }, async (progress, _) => {
       const result = await generateClient(
         context,
         clientObject.descriptionLocation,
         clientObject.outputPath,
         language,
-        clientObject.includePatterns,
+        selectedPaths ? selectedPaths : clientObject.includePatterns,
         clientObject.excludePatterns,
         clientKey,
         clientObject.clientNamespaceName,
@@ -473,7 +473,8 @@ export async function activate(
     return result;
     });
     
-  void vscode.window.showInformationMessage(`Client ${clientKey} regenerated successfully.`);
+  void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+  openApiTreeProvider.closeDescription();
   }
 
   // create a new status bar item that we can now manage

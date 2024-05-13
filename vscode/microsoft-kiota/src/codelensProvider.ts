@@ -21,7 +21,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                             const editPathsCommand = {
                                 title: "Edit Paths",
                                 command: "kiota.editPaths",
-                                arguments: [clientObject] 
+                                arguments: [clientKey, clientObject] 
                             };
                             codeLenses.push(new vscode.CodeLens(rangeBeforeClient, editPathsCommand));
                             const regenerateCommand = {

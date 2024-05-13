@@ -240,22 +240,27 @@
         {
           "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@2"
+          "group": "navigation@1"
         },
         {
           "command": "kiota.openApiExplorer.filterDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@4"
+          "group": "navigation@3"
         },
         {
           "command": "kiota.openApiExplorer.openFile",
           "when": "view == kiota.workspace",
-          "group": "navigation@2"
+          "group": "navigation@1"
+        },
+        {
+          "command": "kiota.openApiExplorer.regenerateButton",
+          "when": "view == kiota.openApiExplorer",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -353,6 +358,13 @@
         "icon": "$(run-all)"
       },
       {
+        "command": "kiota.openApiExplorer.regenerateButton",
+        "category": "Kiota",
+        "title": "%kiota.openApiExplorer.regenerateButton.title%",
+        "enablement": "kiota.openApiExplorer.showRegenerateIcon",
+        "icon": "$(sync)"
+      },
+      {
         "command": "kiota.openApiExplorer.filterDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.filterDescription.title%",
@@ -413,11 +425,11 @@
       },
       {
         "command": "kiota.editPaths",
-        "title": "Edit Paths"
+        "title": "%kiota.openApiExplorer.editPaths.title%"
       },
       {
         "command": "kiota.regenerate",
-        "title": "Re-generate"
+        "title": "%kiota.openApiExplorer.regenerateButton.title%"
       }
     ],
     "languages": [
