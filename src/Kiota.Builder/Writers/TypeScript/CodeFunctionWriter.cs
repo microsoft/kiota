@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
@@ -51,7 +52,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
                 break;
             case CodeMethodKind.ComposedTypeFactory:
-                WriteComposedTypeDeserializer(codeMethod, writer);
+                WriteComposedTypeFactory(codeMethod, writer);
                 break;
             case CodeMethodKind.ComposedTypeSerializer:
                 WriteComposedTypeSerializer(codeMethod, writer);
@@ -60,21 +61,26 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
     }
 
-    private void WriteComposedTypeDeserializer(CodeMethod method, LanguageWriter writer)
+    private void WriteComposedTypeFactory(CodeMethod method, LanguageWriter writer)
     {
         // TODO: Add implementation for object types and collections
         if (GetOriginalComposedType(method.ReturnType) is CodeComposedTypeBase composedType)
         {
             writer.WriteLine("const nodeValue = node?.getNodeValue();");
+            writer.StartBlock($"switch (typeof nodeValue) {{");
             foreach (var type in composedType.Types)
             {
                 var nodeType = conventions.GetTypeString(type, method, false);
-                writer.StartBlock($"if (typeof nodeValue === \"{nodeType}\") {{");
-                writer.WriteLine($"return nodeValue as {nodeType};");
-                writer.CloseBlock();
+                writer.WriteLine($"case \"{nodeType}\":");
             }
+            writer.IncreaseIndent();
+            writer.WriteLine($"return nodeValue;");
+            writer.DecreaseIndent();
+            writer.StartBlock($"default:");
+            writer.WriteLine($"return undefined;");
+            writer.DecreaseIndent();
+            writer.CloseBlock();
         }
-        writer.WriteLine("return undefined;");
     }
 
     private void WriteComposedTypeSerializer(CodeMethod method, LanguageWriter writer)

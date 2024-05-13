@@ -1,16 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-
+using Kiota.Builder.Tests.OpenApiSampleFiles;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class TypeScriptLanguageRefinerTests
+public sealed class TypeScriptLanguageRefinerTests : IDisposable
 {
+    private readonly HttpClient _httpClient = new();
+
+    private readonly List<string> _tempFiles = new();
+    public void Dispose()
+    {
+        foreach (var file in _tempFiles)
+            File.Delete(file);
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
     public TypeScriptLanguageRefinerTests()
@@ -683,7 +699,6 @@ public class TypeScriptLanguageRefinerTests
         Assert.Single(testNS.Constants.Where(static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper)));
     }
 
-
     [Fact]
     public async Task GeneratesCodeFiles()
     {
@@ -822,6 +837,36 @@ public class TypeScriptLanguageRefinerTests
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Single(nodeUsing);
         Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
+    }
+    [Fact]
+    public async Task ParsesAndRefinesUnionOfPrimitiveValues()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(modelCodeFile);
+        var unionType = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && TypeScriptRefiner.GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).ToList();
+        Assert.True(unionType.Count > 0);
     }
     #endregion
 }

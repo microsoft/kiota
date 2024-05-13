@@ -7,8 +7,8 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.TypeScript;
-using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 using static Kiota.Builder.Writers.TypeScript.CodeFunctionWriter;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
