@@ -24,22 +24,20 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         return element;
     }
 
-    private async ensureKiotaDirectory(): Promise<void> {
+    private async ensureKiotaDirectory(): Promise<unknown> {
         if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
             await vscode.window.showErrorMessage(
                 vscode.l10n.t("No workspace folder found, open a folder first")
             );
             return;
         }
-            const kiotaDir = path.dirname(workspaceJsonPath);
+        const kiotaDir = path.dirname(workspaceJsonPath);
         try {
             await fs.promises.access(kiotaDir);
         } catch (error) {
-            await fs.promises.mkdir(kiotaDir, { recursive: true });
+            return error;
         }
-        
     }
-
 }
 
 export class KiotaWorkspace {
