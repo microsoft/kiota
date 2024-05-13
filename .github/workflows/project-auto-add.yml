@@ -9,7 +9,7 @@ on:
     types:
       - opened
     branches:
-      - 'main'
+      - "main"
 
 jobs:
   track_issue:
@@ -25,9 +25,9 @@ jobs:
 
       - name: Check if issue has language specified
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          ISSUE_BODY: ${{github.event.issue.body}}
         run: |
-          language=$(awk '/SDK language/{flag=1;next} /Describe/{flag=0} flag' <<< "${{github.event.issue.body}}" | tr -d '[:space:]')
+          language=$(awk '/SDK language/{flag=1;next} /Describe/{flag=0} flag' <<< "$ISSUE_BODY" | tr -d '[:space:]')
           allowedList="PHP Python Go TypeScript Csharp Java PowerShell CLI Ruby Swift"
           if [[ $allowedList =~ (^|[[:space:]])$language($|[[:space:]]) ]]; then
             echo "$language is in allowed list";
