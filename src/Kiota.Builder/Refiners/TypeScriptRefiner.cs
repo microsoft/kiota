@@ -304,49 +304,64 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
     }
 
-    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedTypeBase, CodeFunction[] functions)
+    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
     {
         var children = new List<CodeElement>(functions);
-        var factoryMethods = functions.Where(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory).ToList();
 
-        // Replace the factory method
+        ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+        ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+
+        return children;
+    }
+
+    private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        var factoryMethods = children.OfType<CodeFunction>().Where(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory).ToList();
+
         foreach (var factoryMethod in factoryMethods)
         {
-            var method = CreateFactoryMethodForComposedType(codeInterface, composedTypeBase, factoryMethod);
+            var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
             var factoryFunction = new CodeFunction(method) { Name = method.Name };
 
             children.Remove(factoryMethod);
-            codeInterface.RemoveChildElement(factoryMethod);
-            codeNamespace.RemoveChildElement(factoryMethod);
+            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, factoryMethod);
             children.Add(factoryFunction);
         }
+    }
 
-        // Replace the Serializer method
-        var serializerMethod = Array.Find(functions, function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
+    private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        var serializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
         if (serializerMethod is not null)
         {
-            var method = CreateSerializerMethodForComposedType(codeInterface, composedTypeBase, serializerMethod);
+            var method = CreateSerializerMethodForComposedType(codeInterface, composedType, serializerMethod);
             var serializerFunction = new CodeFunction(method) { Name = method.Name };
 
             children.Remove(serializerMethod);
-            codeInterface.RemoveChildElement(serializerMethod);
-            codeNamespace.RemoveChildElement(serializerMethod);
+            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, serializerMethod);
             children.Add(serializerFunction);
         }
+    }
 
-        // Completely remove the Deserializer method if the composed type is comprised of primitive types only
-        if (composedTypeBase is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedTypeBase))
+    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        // Completely remove the deserializer method if the composed type is a union of primitive values
+        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
-            var deserializerMethod = Array.Find(functions, function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
+            var deserializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
             if (deserializerMethod is not null)
             {
                 children.Remove(deserializerMethod);
-                codeInterface.RemoveChildElement(deserializerMethod);
-                codeNamespace.RemoveChildElement(deserializerMethod);
+                RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
             }
         }
+    }
 
-        return children;
+    private static void RemoveChildElementFromInterfaceAndNamespace(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction function)
+    {
+        codeInterface.RemoveChildElement(function);
+        codeNamespace.RemoveChildElement(function);
     }
 
     private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedTypeBase, CodeFunction function)
