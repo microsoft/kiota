@@ -138,4 +138,21 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains($"// {option.Documentation.DescriptionTemplate}", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Fact]
+    public void DoesNotWriteImportOnEmptyImports()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
+                DescriptionTemplate = "Some option description",
+            },
+            Name = "option1",
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.DoesNotContain("import", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }

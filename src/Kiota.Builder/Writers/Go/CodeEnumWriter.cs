@@ -16,10 +16,14 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         if (codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
 
-        writer.StartBlock("import (");
-        foreach (var cUsing in codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"\"{cUsing.Name}\"");
-        writer.CloseBlock(")");
+        var usings = codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (usings.Length > 0)
+        {
+            writer.StartBlock("import (");
+            foreach (var cUsing in usings)
+                writer.WriteLine($"\"{cUsing.Name}\"");
+            writer.CloseBlock(")");
+        }
 
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription(codeElement, writer);
