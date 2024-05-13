@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `RequestConfiguration` Classes dropped in RequestBuilder methods in python [#4535](https://github.com/microsoft/kiota/issues/4535)
 - Fixed incorrect optional types in method parameters in Python [#4507](https://github.com/microsoft/kiota/issues/4507)
 - Changed enum parsing methods to return nil in the default case in Go [#4621](https://github.com/microsoft/kiota/issues/4621)
+- Changes the cached description file name to `openapi.yml|json` from `description.yml|json` [#4641](https://github.com/microsoft/kiota/issues/4641)
 
 ## [1.14.0] - 2024-05-02
 
