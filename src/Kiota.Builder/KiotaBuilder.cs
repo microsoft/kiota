@@ -1548,54 +1548,56 @@ public partial class KiotaBuilder
             TypeDefinition = codeDeclaration,
         };
     }
-    private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
+    private CodeType CreateInheritedModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
-        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful();
-        var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf)
-                    .Union(isRootSchemaMeaningful ?
-                        [schema] :
-                        Array.Empty<OpenApiSchema>())
-                    .ToArray();
-        CodeClass? codeDeclaration = null;
-        var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
-        OpenApiSchema? previousSchema = null;
-        foreach (var currentSchema in allOfs)
+        return new CodeType
         {
-            var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
-            var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
-            var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
-            var className = (currentSchema.GetSchemaName(isRootSchemaMeaningful && currentSchema == schema) is string cName && !string.IsNullOrEmpty(cName) ?
+            TypeDefinition = CreateInheritedModelDeclaration(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema),
+        };
+    }
+    private CodeClass CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
+    {
+        var flattenedAllOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).ToArray();
+        var referenceId = schema.Reference?.Id;
+        var className = (schema.GetSchemaName(true) is string cName && !string.IsNullOrEmpty(cName) ?
                             cName :
                             (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
                                 typeNameForInlineSchema :
-                                currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: currentSchema, requestBody: isRequestBody)))
+                                currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)))
                         .CleanupSymbolName();
-            if (shortestNamespace != null &&
-                AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration, previousSchema) is CodeClass addedDeclaration)
-            {
-                codeDeclaration = addedDeclaration;
-                previousSchema = currentSchema;
-            }
-        }
-        if (codeDeclaration is { } currentClass &&
-            !currentClass.Documentation.DescriptionAvailable &&
+        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
+        var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
+        if (rootNamespace is null)
+            throw new InvalidOperationException("Root namespace is not set");
+        var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindOrAddNamespace(shortestNamespaceName);
+        var inlineSchema = flattenedAllOfs.FirstOrDefault(static x => !x.IsReferencedSchema());
+        var referencedSchema = flattenedAllOfs.FirstOrDefault(static x => x.IsReferencedSchema());
+        var rootSchemaHasProperties = schema.HasAnyProperty();
+        var codeDeclaration = (rootSchemaHasProperties, inlineSchema, referencedSchema) switch
+        {
+            // greatest parent type
+            (true, null, null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace),
+            // inline schema + referenced schema
+            (false, not null, not null) => AddModelDeclarationIfDoesntExist(currentNode, inlineSchema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // properties + referenced schema
+            (true, null, not null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // properties + inline schema
+            (true, not null, null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // empty schema + referenced schema
+            (false, null, not null) => AddModelDeclarationIfDoesntExist(currentNode, referencedSchema, className, shortestNamespace),
+            // empty schema + inline schema
+            (false, not null, null) => AddModelDeclarationIfDoesntExist(currentNode, inlineSchema, className, shortestNamespace),
+            // meaningless scenarios
+            (false, null, null) or (true, not null, not null) => throw new InvalidOperationException("invalid inheritance case"),
+
+        };
+        if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
+        if (!currentClass.Documentation.DescriptionAvailable &&
             string.IsNullOrEmpty(schema.AllOf.LastOrDefault()?.Description) &&
             !string.IsNullOrEmpty(schema.Description))
             currentClass.Documentation.DescriptionTemplate = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
 
-        return new CodeType
-        {
-            TypeDefinition = codeDeclaration,
-        };
-    }
-    private static string? GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema)
-    {
-        var title = schema.Title;
-        if (!string.IsNullOrEmpty(schema.Reference?.Id)) return schema.Reference.Id;
-        if (string.IsNullOrEmpty(title)) return string.Empty;
-        if (parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
-        if (parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
-        return parentSchema.GetSchemaReferenceIds().FirstOrDefault(refId => refId.EndsWith(title, StringComparison.OrdinalIgnoreCase));
+        return currentClass;
     }
     private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
@@ -1683,7 +1685,7 @@ public partial class KiotaBuilder
 
         if (schema.IsInherited())
         {
-            return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
+            return CreateInheritedModelDeclarationAndType(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
         if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is OpenApiSchema mergedSchema)
