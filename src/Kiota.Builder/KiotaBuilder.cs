@@ -1570,8 +1570,8 @@ public partial class KiotaBuilder
         if (rootNamespace is null)
             throw new InvalidOperationException("Root namespace is not set");
         var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindOrAddNamespace(shortestNamespaceName);
-        var inlineSchema = flattenedAllOfs.FirstOrDefault(static x => !x.IsReferencedSchema());
-        var referencedSchema = flattenedAllOfs.FirstOrDefault(static x => x.IsReferencedSchema());
+        var inlineSchema = Array.Find(flattenedAllOfs, static x => !x.IsReferencedSchema());
+        var referencedSchema = Array.Find(flattenedAllOfs, static x => x.IsReferencedSchema());
         var rootSchemaHasProperties = schema.HasAnyProperty();
         var codeDeclaration = (rootSchemaHasProperties, inlineSchema, referencedSchema) switch
         {
