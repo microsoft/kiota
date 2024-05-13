@@ -26,7 +26,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");
+            writer.WriteLine($"namespace {codeElement.Parent.Parent.Name}");
+            writer.StartBlock();
         }
 
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })

@@ -27,7 +27,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(static x => x, StringComparer.Ordinal))
                 writer.WriteLine(x);
-            writer.StartBlock($"namespace {codeNamespace.Name} {{");
+            writer.WriteLine($"namespace {codeNamespace.Name}");
+            writer.StartBlock();
         }
         bool hasDescription = conventions.WriteShortDescription(codeElement, writer);
         if (codeElement.Flags)
