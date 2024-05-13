@@ -11,18 +11,16 @@ on:
     branches:
       - "main"
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   track_issue:
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
-        with:
-          app_id: ${{ secrets.GRAPHBOT_APP_ID }}
-          private_key: ${{ secrets.GRAPHBOT_APP_PEM }}
-
       - name: Check if issue has language specified
         env:
           ISSUE_BODY: ${{github.event.issue.body}}
@@ -40,7 +38,7 @@ jobs:
 
       - name: Get project data
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           ORGANIZATION: microsoft
           PROJECT_NUMBER: 220
         run: |
@@ -72,7 +70,7 @@ jobs:
 
       - name: Add Issue or PR to project
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           ISSUE_ID: ${{ github.event_name == 'issues' && github.event.issue.node_id || github.event.pull_request.node_id }}
         run: |
           item_id="$( gh api graphql -f query='
@@ -88,7 +86,7 @@ jobs:
 
       - name: Set Language
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh api graphql -f query='
             mutation (
