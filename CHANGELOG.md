@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Put opening brace after property definition on new line, if property has getter and setter [#4625](https://github.com/microsoft/kiota/issues/4625)
 - Put spaces correctly around dictionary entries [#4625](https://github.com/microsoft/kiota/issues/4625)
 - Remove trailing space after class definition [#4625](https://github.com/microsoft/kiota/issues/4625)
+- Fixes constructor generation for nullable properties that are initialized as null in C#,Java and PHP
 
 ## [1.14.0] - 2024-05-02
 
