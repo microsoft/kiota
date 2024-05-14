@@ -471,9 +471,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("<exception cref=", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"401\", Error401.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"5XX\", Error5XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"401\", Error401.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendAsync", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         Assert.Contains(AsyncKeyword, result);
@@ -514,7 +514,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("return collectionResult?.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
@@ -1137,8 +1137,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("{\"DummyUCaseProp", result);
-        Assert.Contains("{\"dummyProp", result);
+        Assert.Contains("{ \"DummyUCaseProp", result);
+        Assert.Contains("{ \"dummyProp", result);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
