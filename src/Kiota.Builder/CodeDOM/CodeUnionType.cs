@@ -7,6 +7,10 @@ namespace Kiota.Builder.CodeDOM;
 /// </summary>
 public class CodeUnionType : CodeComposedTypeBase, ICloneable
 {
+    public override string FullName
+    {
+        get => Name;
+    }
     public override object Clone()
     {
         return new CodeUnionType().BaseClone<CodeUnionType>(this);

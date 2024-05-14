@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -55,10 +56,11 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
     }
     public void RemoveUsingsByDeclarationName(params string[] names) => StartBlock.RemoveUsingsByDeclarationName(names);
     public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
+    [JsonIgnore]
     public IEnumerable<CodeUsing> Usings => StartBlock.Usings;
     protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement
     {
-        if (elements == null) return Enumerable.Empty<T>();
+        if (elements == null) return [];
         EnsureElementsAreChildren(elements);
         var result = new T[elements.Length]; // not using yield return as they'll only get called if the result is assigned
 

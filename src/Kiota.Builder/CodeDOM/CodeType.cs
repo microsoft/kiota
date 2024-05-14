@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 public class CodeType : CodeTypeBase, ICloneable
 {
+    public override string FullName
+    {
+        get => TypeDefinition?.Name + "." + Name;
+    }
+    [JsonIgnore]
     public override string Name
     {
         get => IsExternal || TypeDefinition is null ? base.Name : TypeDefinition.Name;

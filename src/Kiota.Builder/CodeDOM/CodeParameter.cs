@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 public enum CodeParameterKind
@@ -76,9 +77,11 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
     {
         get; set;
     }
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     public string DefaultValue { get; set; } = string.Empty;
     public string SerializationName { get; set; } = string.Empty;
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get;

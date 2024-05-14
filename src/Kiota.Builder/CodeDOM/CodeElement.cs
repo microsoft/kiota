@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -9,6 +10,7 @@ namespace Kiota.Builder.CodeDOM;
 /// </summary>
 public abstract class CodeElement : ICodeElement
 {
+    [JsonIgnore]
     public CodeElement? Parent
     {
         get; set;
@@ -24,6 +26,7 @@ public abstract class CodeElement : ICodeElement
     }
     public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
+    [JsonIgnore]
     public virtual string Name
     {
         get; set;

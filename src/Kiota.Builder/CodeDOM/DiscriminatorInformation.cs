@@ -2,14 +2,21 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 public class DiscriminatorInformation : CodeElement, ICloneable
 {
     private ConcurrentDictionary<string, CodeType> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("discriminatorMappings")]
+    public Dictionary<string, CodeType> DiscriminatorMappingsJSON
+    {
+        get => DiscriminatorMappings.ToDictionary(static x => x.Key, static x => x.Value);
+    }
     /// <summary>
     /// Gets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
+    [JsonIgnore]
     public IOrderedEnumerable<KeyValuePair<string, CodeType>> DiscriminatorMappings
     {
         get
@@ -69,10 +76,15 @@ public class DiscriminatorInformation : CodeElement, ICloneable
             Name = Name,
         };
     }
+    [JsonIgnore]
     public bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && !discriminatorMappings.IsEmpty;
+    [JsonIgnore]
     public bool ShouldWriteDiscriminatorForInheritedType => HasBasicDiscriminatorInformation && IsComplexType;
+    [JsonIgnore]
     public bool ShouldWriteDiscriminatorForUnionType => IsUnionType; // if union of scalar types, then we don't always get discriminator information
+    [JsonIgnore]
     public bool ShouldWriteDiscriminatorForIntersectionType => IsIntersectionType; // if intersection of scalar types, then we don't always get discriminator information
+    [JsonIgnore]
     public bool ShouldWriteParseNodeCheck => ShouldWriteDiscriminatorForInheritedType || ShouldWriteDiscriminatorForUnionType || ShouldWriteDiscriminatorForIntersectionType;
     private bool IsUnionType => Is<CodeUnionType>();
     private bool IsIntersectionType => Is<CodeIntersectionType>();

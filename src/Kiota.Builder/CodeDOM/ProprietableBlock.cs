@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -21,6 +22,7 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     /// <summary>
     /// Name of Class
     /// </summary>
+    [JsonIgnore]
     public override string Name
     {
         get => name;
@@ -30,6 +32,7 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
             StartBlock.Name = name;
         }
     }
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     public virtual IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
@@ -66,10 +69,24 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     public CodeProperty? GetPropertyOfKindFromAccessorOrDirect(params CodePropertyKind[] kind) =>
         GetPropertyOfKind(kind) ?? GetMethodByAccessedPropertyOfKind(kind);
 
+    [JsonPropertyName("properties")]
+    public IDictionary<string, CodeProperty> PropertiesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeProperty).ToDictionary(static x => x.Key, static x => (CodeProperty)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+    [JsonIgnore]
     public IEnumerable<CodeProperty> UnorderedProperties => InnerChildElements.Values.OfType<CodeProperty>();
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+    [JsonIgnore]
     public IEnumerable<CodeMethod> UnorderedMethods => InnerChildElements.Values.OfType<CodeMethod>();
+    [JsonPropertyName("innerClasses")]
+    public IDictionary<string, CodeClass> InnerClassesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeClass).ToDictionary(static x => x.Key, static x => (CodeClass)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeClass> InnerClasses => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     public bool ContainsMember(string name)
     {

@@ -7,6 +7,10 @@ namespace Kiota.Builder.CodeDOM;
 /// </summary>
 public class CodeIntersectionType : CodeComposedTypeBase, ICloneable
 {
+    public override string FullName
+    {
+        get => Name;
+    }
     public override object Clone()
     {
         return new CodeIntersectionType().BaseClone<CodeIntersectionType>(this);
