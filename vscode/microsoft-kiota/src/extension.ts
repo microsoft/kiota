@@ -218,7 +218,7 @@ export async function activate(
         if (!openApiTreeProvider.isEmpty()) {
           const response = await vscode.window.showWarningMessage(
             vscode.l10n.t(
-              "Are you sure you want to add a new API Description?"),
+              "Before adding a new API description, consider that your changes and current selection will be lost."),
               yesAnswer,
               vscode.l10n.t("Cancel")
           );
@@ -307,9 +307,16 @@ export async function activate(
     }
     }),
       
-    
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any, generationType: string) => {
       const settings = getExtensionSettings(extensionId); 
+      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith("workspace.json"));
+      if (workspaceJson && workspaceJson.isDirty) {
+          await vscode.window.showInformationMessage(
+              vscode.l10n.t("Please save the workspace.json file before re-generation."),
+              vscode.l10n.t("OK")
+          );
+          return;
+      }
       if (generationType === "clients") {
       await regenerateClient(clientKey, clientObject, settings);
       }
