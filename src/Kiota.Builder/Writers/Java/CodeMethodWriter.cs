@@ -358,6 +358,12 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {
                 defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
             }
+            // avoid setting null as a string.
+            if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = NullValueString;
+            }
             writer.WriteLine($"this.{setterName}({defaultValue});");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
@@ -376,6 +382,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                                                 .ToArray());
         }
     }
+    private const string NullValueString = "null";
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         if (parentClass.GetBackingStoreProperty() is not CodeProperty backingStore || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
