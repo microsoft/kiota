@@ -362,7 +362,7 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.regenerateButton.title%",
         "enablement": "kiota.openApiExplorer.showRegenerateIcon",
-        "icon": "$(sync)"
+        "icon": "$(debug-rerun)"
       },
       {
         "command": "kiota.openApiExplorer.filterDescription",
