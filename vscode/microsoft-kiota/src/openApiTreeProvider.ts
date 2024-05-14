@@ -95,6 +95,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             this.refreshView();
         }
     }
+    public isEmpty(): boolean {
+        return this.rawRootNode === undefined;
+    }
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;

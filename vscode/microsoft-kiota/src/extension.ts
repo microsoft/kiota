@@ -214,6 +214,18 @@ export async function activate(
     registerCommandWithTelemetry(reporter, 
       `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
+        const yesAnswer = vscode.l10n.t("Yes, override it");
+        if (!openApiTreeProvider.isEmpty()) {
+          const response = await vscode.window.showWarningMessage(
+            vscode.l10n.t(
+              "Are you sure you want to add a new API Description?"),
+              yesAnswer,
+              vscode.l10n.t("Cancel")
+          );
+          if (response !== yesAnswer) {
+              return; 
+          }
+      }
         const config = await searchSteps(x => vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
           cancellable: false,
