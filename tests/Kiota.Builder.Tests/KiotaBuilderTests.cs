@@ -1878,7 +1878,7 @@ paths:
                                                             Type = "object",
                                                             Properties = new Dictionary<string, OpenApiSchema> {
                                                                 {
-                                                                    "info", new OpenApiSchema {
+                                                                    "info2", new OpenApiSchema {
                                                                         Type = "object",
                                                                         Properties = new Dictionary<string, OpenApiSchema> {
                                                                             {
@@ -1890,9 +1890,9 @@ paths:
                                                                     }
                                                                 }
                                                             },
-                                                            AllOf = new List<OpenApiSchema> {
+                                                            AllOf = [
                                                                 resourceSchema,
-                                                            }
+                                                            ]
                                                         }
                                                     }
                                                 }
@@ -1923,12 +1923,12 @@ paths:
         var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
         var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse");
         var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource");
-        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info");
+        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info2");
 
 
         Assert.NotNull(resourceClass);
         Assert.NotNull(derivedResourceClass);
-        Assert.NotNull(derivedResourceClass.StartBlock);
+        Assert.NotNull(derivedResourceClass.StartBlock.Inherits);
         Assert.Equal(derivedResourceClass.StartBlock.Inherits.TypeDefinition, resourceClass);
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
@@ -7396,7 +7396,7 @@ components:
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Group"));
     }
     [Fact]
-    public async Task InheritanceWithAllOfWith3Parts()
+    public async Task InheritanceWithAllOfWith3Parts3SchemaChildClass()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStream(@"openapi: 3.0.1
@@ -7411,11 +7411,257 @@ paths:
     get:
       responses: 
         '200':
-          description: Example response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/microsoft.graph.directoryObject'
+  /group:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.group'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      required: ['@odata.type']
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.groupFacet1:
+      properties:
+        facetprop1:
+          type: 'string'
+    microsoft.graph.groupFacet2:
+      properties:
+        facetprop2:
+          type: 'string'
+    microsoft.graph.group:
+      title: 'group'
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
+        - '$ref': '#/components/schemas/microsoft.graph.groupFacet1'
+        - '$ref': '#/components/schemas/microsoft.graph.groupFacet2'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
+        Assert.Null(directoryObjectClass.StartBlock.Inherits);
+        Assert.NotNull(directoryObjectClass);
+        var groupClass = codeModel.FindChildByName<CodeClass>("Group");
+        Assert.NotNull(groupClass);
+        Assert.Equal(4, groupClass.Properties.Count());
+        Assert.Null(groupClass.StartBlock.Inherits);
+        Assert.Single(groupClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task NestedIntersectionTypeAllOf()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.3
+info:
+  title: Model Registry REST API
+  version: v1alpha2
+  description: REST API for Model Registry to create and manage ML model metadata
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+servers:
+  - url: 'https://localhost:8080'
+  - url: 'http://localhost:8080'
+paths:
+  /api/model_registry/v1alpha2/registered_models:
+    summary: Path used to manage the list of registeredmodels.
+    description: >-
+      The REST endpoint/path used to list and create zero or more `RegisteredModel` entities.  This path contains a `GET` and `POST` operation to perform the list and create tasks, respectively.
+    get:
+      responses:
+        '200':
+          $ref: '#/components/responses/RegisteredModelListResponse'
+      summary: List All RegisteredModels
+      description: Gets a list of all `RegisteredModel` entities.
+components:
+  schemas:
+    BaseResource:
+      type: object
+      properties:
+        id:
+          format: int64
+          description: Output only. The unique server generated id of the resource.
+          type: number
+          readOnly: true
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceCreate'
+    BaseResourceCreate:
+      type: object
+      properties:
+        name:
+          description: |-
+            The client provided name of the artifact. This field is optional. If set,
+            it must be unique among all the artifacts of the same artifact type within
+            a database instance and cannot be changed once set.
+          type: string
+    BaseResourceList:
+      required:
+        - size
+      type: object
+      properties:
+        size:
+          format: int32
+          description: Number of items in result list.
+          type: integer
+    RegisteredModel:
+      description: A registered model in model registry. A registered model has ModelVersion children.
+      allOf:
+        - $ref: '#/components/schemas/BaseResource'
+        - $ref: '#/components/schemas/RegisteredModelCreate'
+    RegisteredModelCreate:
+      description: A registered model in model registry. A registered model has ModelVersion children.
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceCreate'
+    RegisteredModelList:
+      description: List of RegisteredModels.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResourceList'
+        - type: object
+          properties:
+            items:
+              description: ''
+              type: array
+              items:
+                $ref: '#/components/schemas/RegisteredModel'
+              readOnly: false
+  responses:
+    RegisteredModelListResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisteredModelList'
+      description: A response containing a list of `RegisteredModel` entities.\");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
+        Assert.Null(registeredModelClass.StartBlock.Inherits);
+        Assert.NotNull(registeredModelClass);
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task InheritanceWithAllOfWith3Parts3SchemaParentClass()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+  /group:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.group'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      required: ['@odata.type']
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObjectFacet1'
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObjectFacet2'
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.directoryObjectFacet1:
+      properties:
+        facetprop1:
+          type: 'string'
+    microsoft.graph.directoryObjectFacet2:
+      properties:
+        facetprop2:
+          type: 'string'
+    microsoft.graph.group:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
+      properties:
+        groupprop1:
+          type: 'string'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
+        Assert.NotNull(directoryObjectClass);
+        Assert.Null(directoryObjectClass.StartBlock.Inherits);
+        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        var groupClass = codeModel.FindChildByName<CodeClass>("Group");
+        Assert.NotNull(groupClass);
+        Assert.Single(groupClass.Properties);
+        Assert.NotNull(groupClass.StartBlock.Inherits);
+        Assert.Empty(groupClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
+        Assert.Empty(groupClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Empty(groupClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Empty(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task InheritanceWithAllOfWith2Parts1Schema1InlineNoDiscriminator()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /group:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.group'
 components:
   schemas:
     microsoft.graph.directoryObject:
@@ -7426,23 +7672,14 @@ components:
         '@odata.type':
           type: 'string'
           default: '#microsoft.graph.directoryObject'
-      discriminator:
-        propertyName: '@odata.type'
-        mapping:
-          '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
-          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
     microsoft.graph.group:
+      type: 'object'
       allOf:
         - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
         - title: 'group part 1'
           type: 'object'
           properties:
             groupprop1:
-              type: 'string'
-        - title: 'group part 2'
-          type: 'object'
-          properties:
-            groupprop2:
               type: 'string'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
@@ -7451,9 +7688,164 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Group");
         Assert.NotNull(resultClass);
+        Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Single(resultClass.Properties);
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task InheritanceWithAllOfWith1Part1SchemaAndPropertiesNoDiscriminator()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /group:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.group'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: 'directoryObject'
+      required: ['@odata.type']
+      type: 'object'
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+    microsoft.graph.group:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
+      type: 'object'
+      properties:
+        groupprop1:
+          type: 'string'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resultClass = codeModel.FindChildByName<CodeClass>("Group");
+        Assert.NotNull(resultClass);
+        Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Single(resultClass.Properties);
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+    }
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public async Task InheritanceWithAllOfWith3Parts1Schema2Inline(bool reverseOrder)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      required: ['@odata.type']
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.group:
+      allOf:"
+       + (reverseOrder ? "" : @" 
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'") + @"
+        - properties:
+            groupprop1:
+              type: 'string'
+        - properties:
+            groupprop2:
+              type: 'string'" + (!reverseOrder ? "" : @" 
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'"));
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resultClass = codeModel.FindChildByName<CodeClass>("Group");
+        Assert.NotNull(resultClass);
+        Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(2, resultClass.Properties.Count());
-        Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(resultClass.Properties.Where(x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Empty(resultClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task InheritanceWithoutObjectTypeHasAllProperties()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.3
+servers:
+  - url: 'https://example.com'
+info:
+  title: example
+  version: 0.0.1
+paths:
+  /path:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/outerPayload'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: string
+
+components:
+  schemas:
+    outerPayload:
+      allOf:
+        - $ref: '#/components/schemas/innerPayload'
+        - properties:
+            someField:
+              type: string
+    innerPayload:
+      properties:
+        anotherField:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var outerPayloadClass = codeModel.FindChildByName<CodeClass>("outerPayload");
+        Assert.NotNull(outerPayloadClass);
+        Assert.Equal("innerPayload", outerPayloadClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Single(outerPayloadClass.Properties);
+        Assert.Single(outerPayloadClass.Properties.Where(static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineType()
