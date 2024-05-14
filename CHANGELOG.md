@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for multipart form data request body in PHP. [#3029](https://github.com/microsoft/kiota/issues/3029)
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
+- Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
 
 ### Changed
 

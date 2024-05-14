@@ -62,7 +62,10 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 var results = await Task.WhenAll(configurations
                                                 .Select(x => GenerateClientAsync(context, x, cancellationToken)));
                 foreach (var (lockInfo, lockDirectoryPath) in locks)
+                {
                     DisplaySuccess($"Update of {lockInfo?.ClientClassName} client for {lockInfo?.Language} at {lockDirectoryPath} completed");
+                    DisplayUrlInformation(configurations.FirstOrDefault(x => lockDirectoryPath.Equals(x.OutputPath, StringComparison.OrdinalIgnoreCase))?.ApiRootUrl);
+                }
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach (var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
