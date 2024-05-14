@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
@@ -124,15 +125,19 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get; set;
     }
+    [JsonIgnore]
     public string RequestBodyContentType { get; set; } = string.Empty;
-    public IList<string> AcceptedResponseTypes { get; private set; } = new List<string>();
+    [JsonIgnore]
+    public IList<string> AcceptedResponseTypes { get; private set; } = [];
     public void AddAcceptedResponsesTypes(IEnumerable<string> types)
     {
         if (types == null) return;
         if (AcceptedResponseTypes is List<string> list)
             list.AddRange(types);
     }
+    [JsonIgnore]
     public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
+    [JsonIgnore]
     public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
@@ -170,8 +175,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public bool IsAsync { get; set; } = true;
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
-
+    [JsonIgnore]
     public PagingInformation? PagingInformation
     {
         get; set;
@@ -181,6 +187,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. CLI)
     /// </summary>
+    [JsonIgnore]
     public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
     {
         get => pathQueryAndHeaderParameters.Values;
@@ -217,7 +224,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
 #pragma warning disable CA2227
+    [JsonIgnore]
     public HashSet<string> SerializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [JsonIgnore]
     public HashSet<string> DeserializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore CA2227
     /// <summary>
@@ -233,6 +242,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// <summary>
     /// Provides a reference to the original method that this method is an overload of.
     /// </summary>
+    [JsonIgnore]
     public CodeMethod? OriginalMethod
     {
         get; set;
@@ -240,6 +250,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// <summary>
     /// The original indexer codedom element this method replaces when it is of kind IndexerBackwardCompatibility.
     /// </summary>
+    [JsonIgnore]
     public CodeIndexer? OriginalIndexer
     {
         get; set;
@@ -249,6 +260,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// Only provided for constructor on Api client
     /// </summary>
 #pragma warning disable CA1056 // Uri properties should not be strings
+    [JsonIgnore]
     public string BaseUrl { get; set; } = string.Empty;
 #pragma warning restore CA1056 // Uri properties should not be strings
 
@@ -279,6 +291,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// </summary>
     public string UrlTemplateOverride { get; set; } = string.Empty;
 #pragma warning restore CA1056 // URI-like properties should not be strings
+    [JsonIgnore]
     public bool HasUrlTemplateOverride => !string.IsNullOrEmpty(UrlTemplateOverride);
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
@@ -298,7 +311,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         ArgumentException.ThrowIfNullOrEmpty(code);
         return errorMappings.ContainsKey(code);
     }
-
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get; set;

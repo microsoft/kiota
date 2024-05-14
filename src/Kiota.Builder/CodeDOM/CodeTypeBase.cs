@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 public abstract class CodeTypeBase : CodeTerminal, ICloneable
 {
+    public abstract string FullName
+    {
+        get;
+    }
     public enum CodeTypeCollectionKind
     {
         None,
@@ -23,6 +27,7 @@ public abstract class CodeTypeBase : CodeTerminal, ICloneable
     }
     public bool IsNullable { get; set; } = true;
     public CodeTypeCollectionKind CollectionKind { get; set; } = CodeTypeCollectionKind.None;
+    [JsonIgnore]
     public bool IsCollection
     {
         get
@@ -30,6 +35,7 @@ public abstract class CodeTypeBase : CodeTerminal, ICloneable
             return CollectionKind != CodeTypeCollectionKind.None;
         }
     }
+    [JsonIgnore]
     public bool IsArray
     {
         get
@@ -51,15 +57,16 @@ public abstract class CodeTypeBase : CodeTerminal, ICloneable
 
     public abstract object Clone();
 
+    [JsonIgnore]
     public IEnumerable<CodeType> AllTypes
     {
         get
         {
             if (this is CodeType currentType)
-                return new[] { currentType };
+                return [currentType];
             if (this is CodeComposedTypeBase currentUnion)
                 return currentUnion.Types;
-            return Enumerable.Empty<CodeType>();
+            return [];
         }
     }
 }

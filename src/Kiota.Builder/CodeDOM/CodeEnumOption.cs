@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using System.Text.Json.Serialization;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -6,6 +7,7 @@ public class CodeEnumOption : CodeElement, IDocumentedElement, ITypeDefinition, 
 {
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     /// <inheritdoc/>
     public bool IsNameEscaped

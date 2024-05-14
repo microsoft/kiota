@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
@@ -47,6 +48,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         get; set;
     }
     public AccessModifier Access { get; set; } = AccessModifier.Public;
+    [JsonIgnore]
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
     public bool ExistsInExternalBaseType
     {
@@ -60,6 +62,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    [JsonIgnore]
     public CodeMethod? GetterFromCurrentOrBaseType
     {
         get
@@ -71,6 +74,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             return default;
         }
     }
+    [JsonIgnore]
     public CodeMethod? SetterFromCurrentOrBaseType
     {
         get
@@ -95,21 +99,26 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         }
     }
     public string DefaultValue { get; set; } = string.Empty;
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
     public string NamePrefix { get; set; } = string.Empty;
     /// <inheritdoc/>
+    [JsonIgnore]
     public bool IsNameEscaped
     {
         get => !string.IsNullOrEmpty(SerializationName);
     }
     /// <inheritdoc/>
+    [JsonIgnore]
     public string WireName => IsNameEscaped ? SerializationName : Name;
+    [JsonIgnore]
     public CodeProperty? OriginalPropertyFromBaseType
     {
         get; set;
     }
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get; set;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement, ICloneable
@@ -30,11 +31,13 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement,
             indexParameter = value;
         }
     }
+    [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     /// <summary>
     /// The Path segment to use for the method name when using back-compatible methods.
     /// </summary>
     public string PathSegment { get; set; } = string.Empty;
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get; set;

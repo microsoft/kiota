@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -17,6 +18,7 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
     {
         get; init;
     }
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get; set;

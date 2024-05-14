@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 /// <summary>
@@ -66,6 +67,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     {
         get; set;
     }
+    [JsonIgnore]
     public DeprecationInformation? Deprecation
     {
         get;

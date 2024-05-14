@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -17,6 +18,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         return new();
     }
     private string name = string.Empty;
+    [JsonIgnore]
     public override string Name
     {
         get
@@ -65,12 +67,54 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
         return this;
     }
+    [JsonPropertyName("namespaces")]
+    public IDictionary<string, CodeNamespace> NamespacesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeNamespace).ToDictionary(static x => x.Key, static x => (CodeNamespace)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
+    [JsonPropertyName("classes")]
+    public IDictionary<string, CodeClass> ClassesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeClass).ToDictionary(static x => x.Key, static x => (CodeClass)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
+    [JsonPropertyName("enums")]
+    public IDictionary<string, CodeEnum> EnumsJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeEnum).ToDictionary(static x => x.Key, static x => (CodeEnum)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
+    [JsonPropertyName("functions")]
+    public IDictionary<string, CodeFunction> FunctionsJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeFunction).ToDictionary(static x => x.Key, static x => (CodeFunction)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
+    [JsonPropertyName("interfaces")]
+    public IDictionary<string, CodeInterface> InterfacesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeInterface).ToDictionary(static x => x.Key, static x => (CodeInterface)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
+    [JsonPropertyName("constants")]
+    public IDictionary<string, CodeConstant> ConstantsJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeConstant).ToDictionary(static x => x.Key, static x => (CodeConstant)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeConstant> Constants => InnerChildElements.Values.OfType<CodeConstant>();
+    [JsonPropertyName("files")]
+    public IDictionary<string, CodeFile> FilesJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeFile).ToDictionary(static x => x.Key, static x => (CodeFile)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
@@ -114,6 +158,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         return lastPresentSegmentNamespace;
     }
     private const string ItemNamespaceName = "item";
+    [JsonIgnore]
     public bool IsItemNamespace
     {
         get; private set;
@@ -139,6 +184,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
         return AddRange(enumDeclarations);
     }
+    [JsonIgnore]
     public int Depth
     {
         get

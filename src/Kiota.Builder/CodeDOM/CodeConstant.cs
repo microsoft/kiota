@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
@@ -19,6 +20,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
         get; init;
     }
     /// <inheritdoc/>
+    [JsonIgnore]
     public CodeDocumentation Documentation
     {
         get; set;
