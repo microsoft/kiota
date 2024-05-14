@@ -868,5 +868,94 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var unionType = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && TypeScriptRefiner.GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).ToList();
         Assert.True(unionType.Count > 0);
     }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsNull_WhenElementIsNull()
+    {
+        var codeElement = new Mock<CodeElement>();
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeElement.Object);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsComposedType()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+        var result = TypeScriptRefiner.GetOriginalComposedType(composedType.Object);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsParameter()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var codeType = new CodeType()
+        {
+            TypeDefinition = codeClass,
+        };
+
+        var parameter = new CodeParameter() { Type = codeType };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(parameter);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeType()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var codeType = new CodeType()
+        {
+            TypeDefinition = codeClass,
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeType);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeClass()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeClass);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeInterface()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var codeInterface = new CodeInterface()
+        {
+            OriginalClass = codeClass,
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeInterface);
+        Assert.Equal(composedType.Object, result);
+    }
     #endregion
 }
