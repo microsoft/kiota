@@ -397,7 +397,10 @@ public partial class KiotaBuilder
     internal void SetApiRootUrl()
     {
         if (openApiDocument is not null && openApiDocument.GetAPIRootUrl(config.OpenAPIFilePath) is string candidateUrl)
+        {
             config.ApiRootUrl = candidateUrl;
+            logger.LogInformation("Client root URL set to {ApiRootUrl}", candidateUrl);
+        }
         else
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
     }

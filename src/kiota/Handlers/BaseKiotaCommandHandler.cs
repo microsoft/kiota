@@ -287,6 +287,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     {
         return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-a \"{manifest}\"";
     }
+    protected void DisplayUrlInformation(string? apiRootUrl, bool isPlugin = false)
+    {
+        if (!string.IsNullOrEmpty(apiRootUrl))
+            DisplayInfo($"{(isPlugin ? "Plugin" : "Client")} base url set to {apiRootUrl}");
+    }
     protected void DisplayGenerateCommandHint()
     {
         DisplayHint("Hint: use the client generate command to generate the code.",
