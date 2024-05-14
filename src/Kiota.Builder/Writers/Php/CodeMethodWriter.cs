@@ -150,10 +150,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
+            // avoid setting null as a string.
+            if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = NullValueString;
+            }
             writer.WriteLine($"$this->{setterName}({defaultValue});");
         }
     }
 
+    private const string NullValueString = "null";
     private void WriteRequestBuilderConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(

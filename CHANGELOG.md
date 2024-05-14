@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where allOf structure with one entry and properties would not be considered as inheritance case. [#4346](https://github.com/microsoft/kiota/issues/4346)
 - Fixed a bug where some allOf scenarios would be missing properties if type object wasn't set on the schema. [#4074](https://github.com/microsoft/kiota/issues/4074)
 - Fixed a bug where schema with multiple allOf entries would incorrectly get merged to inherit from the first entry [#4428] (https://github.com/microsoft/kiota/issues/4428)
+- Fixes constructor generation for nullable properties that are initialized as null in C#,Java and PHP
 
 ## [1.14.0] - 2024-05-02
 
