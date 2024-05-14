@@ -28,7 +28,7 @@
   "Generating client...": "İstemci oluşturuluyor...",
   "Updating clients...": "İstemciler güncelleniyor...",
   "Loading...": "Yükleniyor...",
-  "Pick a lock file": "Bir kilit dosyası seçin",
+  "Pick a workspace file": "Bir kilit dosyası seçin",
   "Open a lock file": "Bir kilit dosyası açın",
   "Filter the API description": "API açıklamasını filtreleyin",
   "Enter a filter": "Filtre girin",

@@ -27,7 +27,7 @@
   "Generating client...": "Генерирование клиента...",
   "Updating clients...": "Обновление клиентов...",
   "Loading...": "Загрузка...",
-  "Pick a lock file": "Выбрать файл блокировки",
+  "Pick a workspace file": "Выбрать файл блокировки",
   "Open a lock file": "Открыть файл блокировки",
   "Filter the API description": "Отфильтровать описание API",
   "Enter a filter": "Ввести фильтр",

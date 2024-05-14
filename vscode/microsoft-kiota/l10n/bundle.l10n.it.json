@@ -28,7 +28,7 @@
   "Generating client...": "Generazione del client in corso...",
   "Updating clients...": "Aggiornamento dei client in corso...",
   "Loading...": "Caricamento...",
-  "Pick a lock file": "Seleziona un file di lock",
+  "Pick a workspace file": "Seleziona un file di lock",
   "Open a lock file": "Apri un file di lock",
   "Filter the API description": "Filtra la descrizione API",
   "Enter a filter": "Inserisci un filtro",

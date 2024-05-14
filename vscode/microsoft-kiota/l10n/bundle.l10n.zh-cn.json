@@ -27,7 +27,7 @@
   "Generating client...": "正在生成客户端...",
   "Updating clients...": "正在更新客户端...",
   "Loading...": "加载中...",
-  "Pick a lock file": "请选择一个锁定文件",
+  "Pick a workspace file": "请选择一个锁定文件",
   "Open a lock file": "请打开一个锁定文件",
   "Filter the API description": "筛选API描述",
   "Enter a filter": "输入一个筛选项",

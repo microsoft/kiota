@@ -86,7 +86,7 @@ export async function searchLockSteps() {
             title,
             step: step++,
             totalSteps: totalSteps,
-            placeholder: l10n.t('Pick a lock file'),
+            placeholder: l10n.t('Pick a workspace file'),
             items: items,
             shouldResume: shouldResume
         });

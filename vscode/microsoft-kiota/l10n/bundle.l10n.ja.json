@@ -29,7 +29,7 @@
   "Generating client...": "クライアントを生成中...",
   "Updating clients...": "クライアントを更新中...",
   "Loading...": "読み込み中...",
-  "Pick a lock file": "ロックファイルを選択",
+  "Pick a workspace file": "ロックファイルを選択",
   "Open a lock file": "ロックファイルを開く",
   "Filter the API description": "API仕様書をフィルタ",
   "Enter a filter": "フィルタを入力",
