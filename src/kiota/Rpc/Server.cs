@@ -183,7 +183,7 @@ internal partial class Server : IServer
         }
         return logger.LogEntries;
     }
-    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var globalLogger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -194,7 +194,7 @@ internal partial class Server : IServer
             configuration.ClientClassName = clientClassName;
         configuration.CleanOutput = cleanOutput;
         configuration.ClearCache = clearCache;
-        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        configuration.Operation = operation;
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (pluginTypes is { Length: > 0 })

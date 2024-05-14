@@ -1,4 +1,4 @@
-import { connectToKiota, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType } from "./kiotaInterop";
+import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType } from "./kiotaInterop";
 import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
 
@@ -11,7 +11,8 @@ export function generatePlugin(context: vscode.ExtensionContext,
   clientClassName: string,
   clearCache: boolean,
   cleanOutput: boolean,
-  disableValidationRules: string[]): Promise<KiotaLogEntry[] | undefined> {
+  disableValidationRules: string[],
+  operation: ConsumerOperation ): Promise<KiotaLogEntry[] | undefined> {
     return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
       const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
         "GeneratePlugin"
@@ -28,6 +29,7 @@ export function generatePlugin(context: vscode.ExtensionContext,
           includePatterns: includeFilters,
           openAPIFilePath: descriptionPath,
           outputPath: output,
+          operation: operation
         } as GenerationConfiguration,
       );
     });

@@ -7,33 +7,33 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         const jsonObject = JSON.parse(text);
 
         if (document.fileName.endsWith('workspace.json')) {
-            const clientsObject = jsonObject['clients'];
-            if (clientsObject) {
-                const clientsStartLine = this.findPropertyLine(text, "clients");
-                if (clientsStartLine !== -1) {
-                    const clientKeys = Object.keys(clientsObject);
-                    clientKeys.forEach(clientKey => {
-                        const clientObject = clientsObject[clientKey];
-                        const clientStartLine = this.findPropertyLine(text, clientKey);
-                        if (clientStartLine !== -1) {
-                            const positionBeforeClient = new vscode.Position(clientStartLine, 0);
-                            const rangeBeforeClient = new vscode.Range(positionBeforeClient, positionBeforeClient);
+            ['clients', 'plugins'].forEach(objectKey => {
+                const object = jsonObject[objectKey];
+                if (object) {
+                    Object.keys(object).forEach(key => {
+                        const obj = object[key];
+                        const startLine = this.findPropertyLine(text, key);
+                        if (startLine !== -1) {
+                            const positionBeforeObj = new vscode.Position(startLine, 0);
+                            const rangeBeforeObj = new vscode.Range(positionBeforeObj, positionBeforeObj);
+    
                             const editPathsCommand = {
                                 title: "Edit Paths",
                                 command: "kiota.editPaths",
-                                arguments: [clientKey, clientObject] 
+                                arguments: [key, obj, objectKey]
                             };
-                            codeLenses.push(new vscode.CodeLens(rangeBeforeClient, editPathsCommand));
+                            codeLenses.push(new vscode.CodeLens(rangeBeforeObj, editPathsCommand));
+    
                             const regenerateCommand = {
                                 title: "Re-generate",
                                 command: "kiota.regenerate",
-                                arguments: [clientKey, clientObject]
+                                arguments: [key, obj, objectKey]
                             };
-                            codeLenses.push(new vscode.CodeLens(rangeBeforeClient, regenerateCommand));
+                            codeLenses.push(new vscode.CodeLens(rangeBeforeObj, regenerateCommand));
                         }
                     });
                 }
-            }
+            });
         }
         return codeLenses;
     }

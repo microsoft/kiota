@@ -41,6 +41,7 @@ const dependenciesInfo = `${extensionId}.dependenciesInfo`;
 export const kiotaLockFile = "workspace.json";
 let globalClientKey: string;
 let globalClientObject: any;
+let globalGenerationType: string;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -269,15 +270,16 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: any) => {
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: any, generationType: string) => {
      globalClientKey = clientKey;
      globalClientObject = clientObject;
+     globalGenerationType = generationType;
       await loadEditPaths(clientObject, openApiTreeProvider);
      await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
      await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
 
-     vscode.commands.registerCommand(`${treeViewId}.regenerateButton`, async (clientKey: string, clientObject: any) => {
+     vscode.commands.registerCommand(`${treeViewId}.regenerateButton`, async () => {
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -285,13 +287,23 @@ export async function activate(
         vscode.l10n.t("No endpoints selected, select endpoints first")
       );
     }
-      await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);      
+    if(globalGenerationType === "clients") {
+      await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);    
+    }
+    if (globalGenerationType === "plugins")  {
+      await regeneratePlugin(globalClientKey, globalClientObject, settings, selectedPaths);
+    }
     }),
       
     
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any) => {
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any, generationType: string) => {
       const settings = getExtensionSettings(extensionId); 
+      if (generationType === "clients") {
       await regenerateClient(clientKey, clientObject, settings);
+      }
+      if (generationType === "plugins") {
+        await regeneratePlugin(clientKey, clientObject, settings);
+      }
     }),
   );
 
@@ -316,6 +328,7 @@ export async function activate(
         settings.clearCache,
         settings.cleanOutput,
         settings.disableValidationRules,
+        ConsumerOperation.Add
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -355,6 +368,7 @@ export async function activate(
         settings.clearCache,
         settings.cleanOutput,
         settings.disableValidationRules,
+        ConsumerOperation.Add
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -475,6 +489,41 @@ export async function activate(
     
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
   openApiTreeProvider.closeDescription();
+  }
+
+  async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
+    const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.Microsoft;
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Re-generating plugin...")
+    }, async (progress, _) => {
+      const start = performance.now();
+      const result = await generatePlugin(
+        context,
+        clientObject.descriptionLocation,
+        clientObject.outputPath,
+        [pluginTypes],
+        selectedPaths ? selectedPaths : clientObject.includePatterns,
+        [],
+        clientKey,
+        settings.clearCache,
+        settings.cleanOutput,
+        settings.disableValidationRules,
+        ConsumerOperation.Edit
+      );
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
+        "pluginType": pluginTypes.toString(),
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
+      return result;
+    });
+    void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+    openApiTreeProvider.closeDescription();
   }
 
   // create a new status bar item that we can now manage
