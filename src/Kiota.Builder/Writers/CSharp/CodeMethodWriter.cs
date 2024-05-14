@@ -248,6 +248,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             {
                 defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
+            // avoid setting null as a string.
+            if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = NullValueString;
+            }
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
@@ -267,6 +273,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                 .ToArray());
         }
     }
+
+    private const string NullValueString = "null";
     private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
