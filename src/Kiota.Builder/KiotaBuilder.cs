@@ -1578,9 +1578,9 @@ public partial class KiotaBuilder
             // greatest parent type
             (true, null, null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace),
             // inline schema + referenced schema
-            (false, not null, not null) => AddModelDeclarationIfDoesntExist(currentNode, inlineSchema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            (false, not null, not null) => AddModelDeclarationIfDoesntExist(currentNode, inlineSchema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // properties + referenced schema
-            (true, null, not null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            (true, null, not null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // properties + inline schema
             (true, not null, null) => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
             // empty schema + referenced schema
