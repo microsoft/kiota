@@ -165,7 +165,13 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         parameters.Clear();
     }
+    [JsonPropertyName("parameters")]
+    public IDictionary<string, CodeParameter> ParametersJSON
+    {
+        get => parameters;
+    }
     private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
+    [JsonIgnore]
     public IEnumerable<CodeParameter> Parameters
     {
         get => parameters.Values.OrderBy(static x => x, parameterOrderComparer);
@@ -295,10 +301,16 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool HasUrlTemplateOverride => !string.IsNullOrEmpty(UrlTemplateOverride);
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("errorMappings")]
+    public IDictionary<string, CodeTypeBase> ErrorMappingsJSON
+    {
+        get => errorMappings;
+    }
 
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>
+    [JsonIgnore]
     public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> ErrorMappings
     {
         get
