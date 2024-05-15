@@ -29,7 +29,7 @@ public class KiotaDiffService
     private const string DomExportFileName = "diff.json";
     public async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
-        //TODO anything that's an array needs to be replaced by a dictionary for the semantic comparison to work
+        //TODO there are things were order matter like enum options and parameters
         var filePath = Path.Combine(OutputDirectoryPath, DomExportFileName);
         using var fileStream = File.Create(filePath);
         await JsonSerializer.SerializeAsync(fileStream, rootNamespace, context.CodeNamespace, cancellationToken).ConfigureAwait(false);

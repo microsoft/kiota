@@ -10,13 +10,16 @@ public class CodeEnumOption : CodeElement, IDocumentedElement, ITypeDefinition, 
     [JsonIgnore]
     public CodeDocumentation Documentation { get; set; } = new();
     /// <inheritdoc/>
+    [JsonIgnore]
     public bool IsNameEscaped
     {
         get => !string.IsNullOrEmpty(SerializationName);
     }
     /// <inheritdoc/>
+    [JsonIgnore]
     public string WireName => IsNameEscaped ? SerializationName : Name;
     /// <inheritdoc/>
+    [JsonIgnore]
     public string SymbolName
     {
         get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name;
