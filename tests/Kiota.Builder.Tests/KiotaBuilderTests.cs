@@ -4019,7 +4019,8 @@ components:
             Type = "object",
             AllOf = [
                 baseObject,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
@@ -4028,7 +4029,8 @@ components:
                             }
                         }
                     },
-                    Discriminator = new OpenApiDiscriminator {
+                    Discriminator = new OpenApiDiscriminator
+                    {
                         PropertyName = "kind",
                         Mapping = new Dictionary<string, string> {
                             {
@@ -4050,7 +4052,8 @@ components:
             Type = "object",
             AllOf = [
                 derivedObject,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
