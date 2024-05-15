@@ -688,7 +688,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                             .Name +
                                 usingElement.Declaration
                                             ?.TypeDefinition
-                                            ?.Name)
+                                            ?.Name.ToFirstCharacterUpperCase())
                                 .GetNamespaceImportSymbol()
                                 .ToFirstCharacterUpperCase();
     }

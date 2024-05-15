@@ -1442,12 +1442,26 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "string"
             },
         });
+        var defaultValueNull = "\"null\"";
+        var nullPropName = "propWithDefaultNullValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = nullPropName,
+            DefaultValue = defaultValueNull,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int",
+                IsNullable = true
+            }
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<summary>", result);
         Assert.Contains("<see cref=", result);
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
+        Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
     }
     [Fact]
     public void WritesWithUrl()
