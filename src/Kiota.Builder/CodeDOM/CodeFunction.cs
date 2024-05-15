@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -7,6 +8,7 @@ namespace Kiota.Builder.CodeDOM;
 /// </summary>
 public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
 {
+    [JsonIgnore]
     public override string Name
     {
         get
@@ -22,6 +24,7 @@ public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
     {
         get; private set;
     }
+    [JsonIgnore]
     public CodeClass OriginalMethodParentClass
     {
         get;
