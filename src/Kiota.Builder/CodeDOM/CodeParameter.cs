@@ -87,8 +87,8 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
         get;
         set;
     }
-
-    public IList<string> PossibleValues { get; init; } = new List<string>();
+    [JsonIgnore]
+    public IList<string> PossibleValues { get; init; } = [];
 
     public object Clone()
     {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -44,5 +45,11 @@ public class CodeType : CodeTypeBase, ICloneable
             GenericTypeParameterValues = new(GenericTypeParameterValues.ToList()),
         }.BaseClone<CodeType>(this, TypeDefinition is null || IsExternal);
     }
-    public Collection<CodeType> GenericTypeParameterValues { get; init; } = new();
+    [JsonPropertyName("genericTypeParameterValues")]
+    public IDictionary<string, CodeType> GenericTypeParameterValuesJSON
+    {
+        get => GenericTypeParameterValues.ToDictionary(static x => x.Name, static x => x);
+    }
+    [JsonIgnore]
+    public Collection<CodeType> GenericTypeParameterValues { get; init; } = [];
 }

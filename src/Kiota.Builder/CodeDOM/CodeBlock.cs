@@ -184,6 +184,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
 public class BlockDeclaration : CodeTerminal
 {
     private readonly ConcurrentDictionary<CodeUsing, bool> usings = new(); // To avoid concurrent access issues
+    [JsonIgnore]
     public IEnumerable<CodeUsing> Usings => usings.Keys;
     public void AddUsings(params CodeUsing[] codeUsings)
     {

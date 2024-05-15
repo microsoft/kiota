@@ -78,6 +78,12 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     [JsonIgnore]
     public IEnumerable<CodeProperty> UnorderedProperties => InnerChildElements.Values.OfType<CodeProperty>();
+    [JsonPropertyName("methods")]
+    public IDictionary<string, CodeMethod> MethodsJSON
+    {
+        get => InnerChildElements.Where(static x => x.Value is CodeMethod).ToDictionary(static x => x.Key, static x => (CodeMethod)x.Value);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     [JsonIgnore]
     public IEnumerable<CodeMethod> UnorderedMethods => InnerChildElements.Values.OfType<CodeMethod>();
