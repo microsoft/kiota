@@ -638,7 +638,7 @@ public class TypeScriptLanguageRefinerTests
         var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
         var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
         Assert.NotNull(codeFile);
-        Assert.Equal(2,codeFile.Interfaces.Count());
+        Assert.Equal(2, codeFile.Interfaces.Count());
         Assert.Contains(codeFile.Interfaces, static x => "hostModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Contains(codeFile.Interfaces, static x => "hostModelInterface".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
     }

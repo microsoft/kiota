@@ -960,7 +960,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         var i = 1;
         while (namespaceOfModel.FindChildByName<CodeClass>(temporaryInterfaceName, false) != null)
-        {
+        {// We already know an Interface doesn't exist with the name. Make sure we don't collide with an existing class name in the namespace.
             temporaryInterfaceName = $"{temporaryInterfaceName}{i++}";
         }
 
