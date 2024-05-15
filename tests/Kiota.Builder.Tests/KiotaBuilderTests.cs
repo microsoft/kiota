@@ -3983,7 +3983,7 @@ components:
     [Fact]
     public void InheritedTypeWithInlineSchemaWorks()
     {
-        var baseObjet = new OpenApiSchema
+        var baseObject = new OpenApiSchema
         {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -4014,11 +4014,11 @@ components:
             },
             UnresolvedReference = false
         };
-        var derivedObjet = new OpenApiSchema
+        var derivedObject = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
-                baseObjet,
+            AllOf = [
+                baseObject,
                 new OpenApiSchema {
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema> {
@@ -4037,7 +4037,7 @@ components:
                         }
                     },
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "subNS.derivedObject",
@@ -4048,8 +4048,8 @@ components:
         var secondLevelDerivedObject = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
-                derivedObjet,
+            AllOf = [
+                derivedObject,
                 new OpenApiSchema {
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema> {
@@ -4060,7 +4060,7 @@ components:
                         }
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "subNS.secondLevelDerivedObject",
@@ -4082,7 +4082,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = derivedObjet
+                                            Schema = derivedObject
                                         }
                                     }
                                 },
@@ -4095,10 +4095,10 @@ components:
             {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
-                        "subNS.baseObject", baseObjet
+                        "subNS.baseObject", baseObject
                     },
                     {
-                        "subNS.derivedObject", derivedObjet
+                        "subNS.derivedObject", derivedObject
                     },
                     {
                         "subNS.secondLevelDerivedObject", secondLevelDerivedObject
@@ -4119,12 +4119,12 @@ components:
         var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
         Assert.NotNull(executorReturnType);
         Assert.Contains("derivedObject", requestExecutorMethod.ReturnType.Name);
-        var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject");
-        Assert.NotNull(secondLevelDerivedObject);
-        var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        var derivedObjectClass = codeModel.FindChildByName<CodeClass>("derivedObject");
+        Assert.NotNull(derivedObjectClass);
+        var factoryMethod = derivedObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("kind", secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorPropertyName);
-        Assert.NotEmpty(secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Equal("kind", derivedObjectClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.NotEmpty(derivedObjectClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
     [InlineData("string", "commonmark", "string")]

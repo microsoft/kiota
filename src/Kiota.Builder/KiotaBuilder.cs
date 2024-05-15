@@ -1588,9 +1588,12 @@ public partial class KiotaBuilder
             (false, null, not null) => AddModelDeclarationIfDoesntExist(currentNode, referencedSchema, className, shortestNamespace),
             // empty schema + inline schema
             (false, not null, null) => AddModelDeclarationIfDoesntExist(currentNode, inlineSchema, className, shortestNamespace),
-            // meaningless scenarios
+            // too much information but we can make a choice -> maps to properties + inline schema
+            (true, not null, not null) when inlineSchema.HasAnyProperty() => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // too much information but we can make a choice -> maps to properties + referenced schema
+            (true, not null, not null) when referencedSchema.HasAnyProperty() => AddModelDeclarationIfDoesntExist(currentNode, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchema, operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // meaningless scenario
             (false, null, null) or (true, not null, not null) => throw new InvalidOperationException("invalid inheritance case"),
-
         };
         if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
         if (!currentClass.Documentation.DescriptionAvailable &&
@@ -1894,9 +1897,7 @@ public partial class KiotaBuilder
         }
 
         var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
-                        .Where(x => x.Value is CodeType type &&
-                                    type.TypeDefinition != null &&
-                                    type.TypeDefinition is CodeClass definition &&
+                        .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
                                     definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
         AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
