@@ -930,7 +930,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     {
         var composedType = new Mock<CodeComposedTypeBase>();
 
-        var codeClass = new CodeClass
+        CodeElement codeClass = new CodeClass
         {
             OriginalComposedType = composedType.Object
         };
@@ -949,7 +949,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
             OriginalComposedType = composedType.Object
         };
 
-        var codeInterface = new CodeInterface()
+        CodeElement codeInterface = new CodeInterface()
         {
             OriginalClass = codeClass,
         };
