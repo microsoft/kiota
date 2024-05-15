@@ -72,7 +72,7 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     [JsonPropertyName("properties")]
     public IDictionary<string, CodeProperty> PropertiesJSON
     {
-        get => InnerChildElements.Where(static x => x.Value is CodeProperty).ToDictionary(static x => x.Key, static x => (CodeProperty)x.Value);
+        get => InnerChildElements.Where(static x => x.Value is CodeProperty { Access: AccessModifier.Public or AccessModifier.Protected }).ToDictionary(static x => x.Key, static x => (CodeProperty)x.Value);
     }
     [JsonIgnore]
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
@@ -138,10 +138,16 @@ public class ProprietableBlockDeclaration : BlockDeclaration
     }
     public void RemoveImplements(params CodeType[] types)
     {
-        if (types == null || types.Any(x => x == null))
+        if (types == null || Array.Exists(types, static x => x is null))
             throw new ArgumentNullException(nameof(types));
         foreach (var type in types)
             implements.TryRemove(type.Name, out var _);
     }
+    [JsonPropertyName("implements")]
+    public IDictionary<string, CodeType> ImplementsJSON
+    {
+        get => implements;
+    }
+    [JsonIgnore]
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
 }

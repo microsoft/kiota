@@ -26,6 +26,12 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
             OptionsInternal.Enqueue(option);
         }
     }
+    [JsonPropertyName("options")]
+    public IDictionary<string, CodeEnumOption> OptionsJSON
+    {
+        get => OptionsInternal.ToDictionary(static x => x.Name, static x => x);
+    }
+    [JsonIgnore]
     public IEnumerable<CodeEnumOption> Options
     {
         get
