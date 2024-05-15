@@ -27,7 +27,8 @@ public sealed class CodeInterfaceDeclarationWriterTests : IDisposable
         root = CodeNamespace.InitRootNamespace();
         parentInterface = new()
         {
-            Name = "parentClass"
+            Name = "parentClass",
+            OriginalClass = new CodeClass() { Name = "parentClass" }
         };
         root.AddInterface(parentInterface);
     }
