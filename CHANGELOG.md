@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where schema with multiple allOf entries would incorrectly get merged to inherit from the first entry [#4428] (https://github.com/microsoft/kiota/issues/4428)
 - Fixes constructor generation for nullable properties that are initialized as null in C#,Java and PHP
 - Fixed a bug where the hash alias in typescript wasn't being generated uniformly for similar interfaces [#84](https://github.com/microsoftgraph/msgraph-beta-sdk-typescript/issues/84)
+- Fixes a bug where name collisions would occur in the Typescript refiner if model name also exists with the `Interface` suffix [#4382](https://github.com/microsoft/kiota/issues/4382)
 
 ## [1.14.0] - 2024-05-02
 
