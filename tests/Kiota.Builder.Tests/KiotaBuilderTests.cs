@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
-public sealed class KiotaBuilderTests : IDisposable
+public sealed partial class KiotaBuilderTests : IDisposable
 {
     private readonly List<string> _tempFiles = new();
     public void Dispose()
@@ -8483,4 +8484,194 @@ components:
         Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
         Assert.Empty(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete));
     }
+    [Fact]
+    public void CleansUpOperationIdAddsMissingOperationId()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["directory/administrativeUnits"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["201"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        KiotaBuilder.CleanupOperationIdForPlugins(document);
+        var operations = document.Paths.SelectMany(path => path.Value.Operations).ToList();
+        foreach (var path in operations)
+        {
+            Assert.False(string.IsNullOrEmpty(path.Value.OperationId)); //Assert that the operationId is not empty
+            Assert.EndsWith(path.Key.ToString().ToLowerInvariant(), path.Value.OperationId);// assert that the operationId ends with the operation type
+            Assert.Matches(OperationIdValidationRegex(), path.Value.OperationId); // assert that the operationId is clean an matches the regex
+        }
+        Assert.Equal("directory_administrativeunits_get", operations[0].Value.OperationId);
+        Assert.Equal("directory_administrativeunits_post", operations[1].Value.OperationId);
+    }
+
+    [Fact]
+    public void CleansUpOperationIdChangesOperationId()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["directory/administrativeUnits"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            },
+                            OperationId = "GetAdministrativeUnits" // Nothing wrong with this operationId
+                        },
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["201"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            },
+                            OperationId = "PostAdministrativeUnits.With201-response" // operationId should be cleaned up
+                        }
+                    }
+                },
+                ["directory/adminstativeUnits/{unit-id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            },
+                            // OperationId is missing
+                        },
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        KiotaBuilder.CleanupOperationIdForPlugins(document);
+        var operations = document.Paths.SelectMany(path => path.Value.Operations).ToList();
+        foreach (var path in operations)
+        {
+            Assert.False(string.IsNullOrEmpty(path.Value.OperationId)); //Assert that the operationId is not empty
+            Assert.Matches(OperationIdValidationRegex(), path.Value.OperationId); // assert that the operationId is clean an matches the regex
+        }
+        Assert.Equal("GetAdministrativeUnits", operations[0].Value.OperationId);
+        Assert.Equal("PostAdministrativeUnits_With201_response", operations[1].Value.OperationId);
+        Assert.Equal("directory_adminstativeunits_item_get", operations[2].Value.OperationId);
+    }
+    [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex OperationIdValidationRegex();
 }
