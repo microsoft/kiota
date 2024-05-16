@@ -358,12 +358,12 @@ public partial class KiotaBuilder
     internal static void CleanupOperationIdForPlugins(OpenApiDocument document)
     {
         if (document.Paths is null) return;
-        foreach (var (pathItem, operation) in document.Paths.SelectMany(path => path.Value.Operations.Select(value => new Tuple<string, KeyValuePair<OperationType, OpenApiOperation>>(path.Key, value))))
+        foreach (var (pathItem, operation) in document.Paths.SelectMany(static path => path.Value.Operations.Select(value => new Tuple<string, KeyValuePair<OperationType, OpenApiOperation>>(path.Key, value))))
         {
             if (string.IsNullOrEmpty(operation.Value.OperationId))
             {
                 var stringBuilder = new StringBuilder();
-                foreach (var segment in pathItem.Split('/'))
+                foreach (var segment in pathItem.TrimStart('/').Split('/',StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (segment.IsPathSegmentWithSingleSimpleParameter())
                         stringBuilder.Append("item");
