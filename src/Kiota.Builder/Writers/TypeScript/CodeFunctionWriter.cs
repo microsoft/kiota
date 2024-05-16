@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
@@ -87,7 +86,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var composedParam = method.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
         if (composedParam == null) return;
-
 
         if (GetOriginalComposedType(composedParam) is CodeComposedTypeBase composedType)
         {
@@ -274,20 +272,14 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
-        if (propType.TypeDefinition is CodeEnum currentEnum)
-            return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>";
-        if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
-            return "writeByteArrayValue";
-        if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
+        return propType switch
         {
-            if (propType.TypeDefinition == null)
-                return $"writeCollectionOfPrimitiveValues<{propertyType}>";
-            else
-                return "writeCollectionOfObjectValues";
-        }
-        return null;
+            _ when propType.TypeDefinition is CodeEnum currentEnum => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>",
+            _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
+            _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
+            _ => null
+        };
     }
-
 
     private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
