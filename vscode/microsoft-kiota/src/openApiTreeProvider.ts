@@ -229,6 +229,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if(result) {
             this.apiTitle = result.apiTitle;
             if(result.rootNode) {
+                if(this.includeFilters.length === 0){
+                    this.setAllSelected(result.rootNode, false);
+                }
                 this.rawRootNode = result.rootNode;
             }
         }
