@@ -468,7 +468,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                             .Name +
                                 usingElement.Declaration
                                             ?.TypeDefinition
-                                            ?.Name)
+                                            ?.Name.ToFirstCharacterUpperCase())
                                 .GetNamespaceImportSymbol()
                                 .ToFirstCharacterUpperCase();
     }
@@ -659,6 +659,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Kind = CodeInterfaceKind.QueryParameters,
                 Documentation = codeClass.Documentation,
                 Deprecation = codeClass.Deprecation,
+                OriginalClass = codeClass
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
@@ -674,7 +675,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, ReplaceRequestQueryParamsWithInterfaces);
     }
-    private const string TemporaryInterfaceNameSuffix = "Interface";
+
     private const string ModelSerializerPrefix = "serialize";
     private const string ModelDeserializerPrefix = "deserializeInto";
 
@@ -737,9 +738,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         method.AddParameter(new CodeParameter
         {
-            Name = ReturnFinalInterfaceName(modelInterface.Name), // remove the interface suffix
+            Name = ReturnFinalInterfaceName(modelInterface),
             DefaultValue = "{}",
-            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface },
+            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
         });
 
@@ -750,7 +751,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = modelInterface.Parent.Name,
                 Declaration = new CodeType
                 {
-                    Name = ReturnFinalInterfaceName(modelInterface.Name),
+                    Name = ReturnFinalInterfaceName(modelInterface),
                     TypeDefinition = modelInterface
                 }
             });
@@ -781,7 +782,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
-            var finalName = ReturnFinalInterfaceName(modelInterface.Name);
+            var finalName = ReturnFinalInterfaceName(modelInterface);
             if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
             {
                 if (parentNS.FindChildByName<CodeClass>(finalName, false) is CodeClass existingClassToRemove)
@@ -801,13 +802,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
         {
-            param.Name = ReturnFinalInterfaceName(paramInterface.Name);
+            param.Name = ReturnFinalInterfaceName(paramInterface);
         }
     }
 
-    private static string ReturnFinalInterfaceName(string interfaceName)
+    private static string ReturnFinalInterfaceName(CodeInterface codeInterface)
     {
-        return interfaceName.EndsWith(TemporaryInterfaceNameSuffix, StringComparison.Ordinal) ? interfaceName[..^TemporaryInterfaceNameSuffix.Length] : interfaceName;
+        return codeInterface.OriginalClass.Name.ToFirstCharacterUpperCase();
     }
 
     private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
@@ -925,7 +926,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = interfaceElement.Name,
             TypeDefinition = interfaceElement,
         };
-        requestBuilder.RemoveUsingsByDeclarationName(interfaceElement.Name.Split(TemporaryInterfaceNameSuffix)[0]);
+        requestBuilder.RemoveUsingsByDeclarationName(ReturnFinalInterfaceName(interfaceElement));
         if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
@@ -957,12 +958,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false) is CodeInterface existing)
             return existing;
 
+        var i = 1;
+        while (namespaceOfModel.FindChildByName<CodeClass>(temporaryInterfaceName, false) != null)
+        {// We already know an Interface doesn't exist with the name. Make sure we don't collide with an existing class name in the namespace.
+            temporaryInterfaceName = $"{temporaryInterfaceName}{i++}";
+        }
+
         var insertValue = new CodeInterface
         {
             Name = temporaryInterfaceName,
             Kind = CodeInterfaceKind.Model,
             Documentation = modelClass.Documentation,
             Deprecation = modelClass.Deprecation,
+            OriginalClass = modelClass
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
@@ -987,7 +995,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var parentInterface = CreateModelInterface(baseClass, tempInterfaceNamingCallback);
             var codeType = new CodeType
             {
-                Name = ReturnFinalInterfaceName(parentInterface.Name),
+                Name = ReturnFinalInterfaceName(parentInterface),
                 TypeDefinition = parentInterface,
             };
             modelInterface.StartBlock.AddImplements(codeType);

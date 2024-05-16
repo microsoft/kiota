@@ -21,7 +21,7 @@ public class DescriptionStorageService
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
-    private string GetDescriptionFilePath(string clientName, string extension) => Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, clientName, $"description.{extension}");
+    private string GetDescriptionFilePath(string clientName, string extension) => Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, clientName, $"openapi.{extension}");
     public async Task UpdateDescriptionAsync(string clientName, Stream description, string extension = "yml", CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(clientName);

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for multipart form data request body in PHP. [#3029](https://github.com/microsoft/kiota/issues/3029)
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
+- Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
 
 ### Changed
 
@@ -19,8 +20,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added missing nullable directives for CLI generation.
 - Fixed handling of nested arrays to be handled as `UntypedNode` instances [#4549](https://github.com/microsoft/kiota/issues/4549)
 - Fixed `InvalidOperationException` thrown when serializing IBacked models with no changes present in the additional data in dotnet [microsoftgraph/msgraph-sdk-dotnet#2471](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2471).
+- Fixed a bug where enums could be considered inheritance parents. [#4640](https://github.com/microsoft/kiota/issues/4640)
 - Fixed `RequestConfiguration` Classes dropped in RequestBuilder methods in python [#4535](https://github.com/microsoft/kiota/issues/4535)
 - Fixed incorrect optional types in method parameters in Python [#4507](https://github.com/microsoft/kiota/issues/4507)
+- Changed enum parsing methods to return nil in the default case in Go [#4621](https://github.com/microsoft/kiota/issues/4621)
+- Changes the cached description file name to `openapi.yml|json` from `description.yml|json` [#4641](https://github.com/microsoft/kiota/issues/4641)
+- Put opening brace after namespace definition on new line [#4625](https://github.com/microsoft/kiota/issues/4625)
+- Put opening brace after property definition on new line, if property has getter and setter [#4625](https://github.com/microsoft/kiota/issues/4625)
+- Put spaces correctly around dictionary entries [#4625](https://github.com/microsoft/kiota/issues/4625)
+- Remove trailing space after class definition [#4625](https://github.com/microsoft/kiota/issues/4625)
+- Fixed a bug where multiple allOf entries type would not get merged if they were part of a discriminator. [#4325](https://github.com/microsoft/kiota/issues/4325)
+- Fixed a bug where allOf structure with one entry and properties would not be considered as inheritance case. [#4346](https://github.com/microsoft/kiota/issues/4346)
+- Fixed a bug where some allOf scenarios would be missing properties if type object wasn't set on the schema. [#4074](https://github.com/microsoft/kiota/issues/4074)
+- Fixed a bug where schema with multiple allOf entries would incorrectly get merged to inherit from the first entry [#4428](https://github.com/microsoft/kiota/issues/4428)
+- Fixes constructor generation for nullable properties that are initialized as null in C#,Java and PHP
+- Fixed a bug where the hash alias in typescript wasn't being generated uniformly for similar interfaces [microsoftgraph/msgraph-beta-sdk-typescript#84](https://github.com/microsoftgraph/msgraph-beta-sdk-typescript/issues/84)
+- Fixes a bug where name collisions would occur in the Typescript refiner if model name also exists with the `Interface` suffix [#4382](https://github.com/microsoft/kiota/issues/4382)
+- Fixes a bug where paths without operationIds would not be included in the generated plugins and ensured operationIds are cleaned up [#4642](https://github.com/microsoft/kiota/issues/4642)
 
 ## [1.14.0] - 2024-05-02
 
