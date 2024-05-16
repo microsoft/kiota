@@ -409,6 +409,10 @@
         "icon": "$(add)"
       },
       {
+        "command": "kiota.workspace.openWorkspaceFile",
+        "title": "%kiota.openApiExplorer.openFile.title%"
+      },
+      {
         "command": "kiota.editPaths",
         "title": "%kiota.openApiExplorer.editPaths.title%"
       },
