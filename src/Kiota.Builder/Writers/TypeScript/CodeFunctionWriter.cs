@@ -243,9 +243,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
     }
 
-    private string GetSerializationMethodName(CodeTypeBase propertyType)
+    public static string GetSerializationMethodName(CodeTypeBase propertyType)
     {
-        var propertyTypeName = conventions.TranslateType(propertyType);
+        var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
         var composedType = GetOriginalComposedType(propertyType);
         var currentType = propertyType as CodeType;
 
@@ -258,7 +258,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         };
     }
 
-    public static string GetComposedTypeSerializationMethodName(CodeComposedTypeBase composedType)
+    private static string GetComposedTypeSerializationMethodName(CodeComposedTypeBase composedType)
     {
         ArgumentNullException.ThrowIfNull(composedType);
         // handle union of primitive values
@@ -270,12 +270,12 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         throw new InvalidOperationException($"Serialization for this composed type :: {composedType} :: is not supported yet");
     }
 
-    private string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         return propType switch
         {
             _ when propType.TypeDefinition is CodeEnum currentEnum => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>",
-            _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
+            _ when ConventionServiceInstance.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
             _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
             _ => null
         };
@@ -332,7 +332,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
         else if (GetOriginalComposedType(otherProp.Type) is not null)
         {
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(otherProp.Type, codeFunction)}(n); }},");
+            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = {GetFactoryMethodName(otherProp.Type, codeFunction)}(n); }},");
         }
         else
         {
@@ -363,73 +363,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             if (!"boolean".Equals(conventions.TranslateType(parameter.Type), StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
         }
-    }
-    private string GetDeserializationMethodName(CodeTypeBase codeType, CodeFunction codeFunction)
-    {
-        var isCollection = codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-        var propertyType = conventions.GetTypeString(codeType, codeFunction, false);
-        if (GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType)
-        {
-            return GetComposedTypeDeserializationMethodName(composedType);
-        }
-        if (codeType is CodeType currentType && !string.IsNullOrEmpty(propertyType))
-        {
-            return (currentType.TypeDefinition, isCollection, propertyType) switch
-            {
-                (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
-                (_, _, string prop) when conventions.StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
-                (_, true, string prop) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{prop}>()",
-                (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeType, codeFunction.OriginalLocalMethod)})",
-                _ => GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction)
-            };
-        }
-        return GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction);
-    }
-
-    private string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeFunction codeFunction)
-    {
-        return propertyTypeName switch
-        {
-            "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
-        };
-    }
-
-    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
-    {
-        if (conventions.TranslateType(targetClassType) is string targetClassName)
-        {
-            var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-            if (conventions.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
-            if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
-            {
-                var factoryMethod = GetFactoryMethod(definitionClass, resultName);
-                if (factoryMethod != null)
-                {
-                    var methodName = conventions.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-                    return methodName.ToFirstCharacterUpperCase();// static function is aliased
-                }
-            }
-        }
-        throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
-    }
-
-    private static T? GetParentOfTypeOrNull<T>(CodeInterface definitionClass) where T : class
-    {
-        try
-        {
-            return definitionClass.GetImmediateParentOfType<T>();
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-    }
-
-    private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryFunctionName)
-    {
-        return GetParentOfTypeOrNull<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryFunctionName)
-            ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryFunctionName);
     }
 
     private string? GetSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)

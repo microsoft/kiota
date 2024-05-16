@@ -265,12 +265,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (functions.Length == 0)
             return null;
 
-        var composedTypeBase = GetOriginalComposedType(codeInterface);
-        if (composedTypeBase is null)
-            return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
+        var composedType = GetOriginalComposedType(codeInterface);
+        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedType, functions);
 
-        var children = GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedTypeBase, functions);
-        return codeNamespace.TryAddCodeFile(codeInterface.Name, [.. children]);
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
     }
 
     private static IEnumerable<CodeFunction> GetRelevantFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
@@ -298,6 +296,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
     {
         var children = new List<CodeElement>(functions);
+
+        // Add the composed type, The writer will output the composed type as a type definition e.g export type Pet = Cat | Dog
+        children.Add(composedType);
 
         ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
         ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
@@ -405,8 +406,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         return function.OriginalLocalMethod.Kind switch
         {
-            CodeMethodKind.Factory => GetComposedTypeDeserializationMethodName(composedTypeBase),
-            CodeMethodKind.Serializer => GetComposedTypeSerializationMethodName(composedTypeBase),
+            CodeMethodKind.Factory => GetFactoryMethodName(composedTypeBase, function),
+            CodeMethodKind.Serializer => GetSerializationMethodName(composedTypeBase),
             _ => throw new InvalidOperationException($"Unsupported method type :: {function.OriginalLocalMethod.Kind}")
         };
     }
@@ -949,9 +950,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         method.AddParameter(new CodeParameter
         {
-            Name = ReturnFinalInterfaceName(modelInterface),
+            Name = GetFinalInterfaceName(modelInterface),
             DefaultValue = "{}",
-            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
+            Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
         });
 
@@ -962,7 +963,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = modelInterface.Parent.Name,
                 Declaration = new CodeType
                 {
-                    Name = ReturnFinalInterfaceName(modelInterface),
+                    Name = GetFinalInterfaceName(modelInterface),
                     TypeDefinition = modelInterface
                 }
             });
@@ -993,7 +994,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
-            var finalName = ReturnFinalInterfaceName(modelInterface);
+            var finalName = GetFinalInterfaceName(modelInterface);
             if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
             {
                 if (parentNS.FindChildByName<CodeClass>(finalName, false) is CodeClass existingClassToRemove)
@@ -1013,13 +1014,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
         {
-            param.Name = ReturnFinalInterfaceName(paramInterface);
+            param.Name = GetFinalInterfaceName(paramInterface);
         }
     }
 
-    private static string ReturnFinalInterfaceName(CodeInterface codeInterface)
+    private static string GetFinalInterfaceName(CodeInterface codeInterface)
     {
-        return codeInterface.OriginalClass.Name.ToFirstCharacterUpperCase();
+        return codeInterface.OriginalClass?.Name.ToFirstCharacterUpperCase() ?? throw new InvalidOperationException($"The refiner was unable to find the original class for {codeInterface.Name}");
     }
 
     private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
@@ -1137,7 +1138,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = interfaceElement.Name,
             TypeDefinition = interfaceElement,
         };
-        requestBuilder.RemoveUsingsByDeclarationName(ReturnFinalInterfaceName(interfaceElement));
+        requestBuilder.RemoveUsingsByDeclarationName(GetFinalInterfaceName(interfaceElement));
         if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
@@ -1206,7 +1207,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var parentInterface = CreateModelInterface(baseClass, tempInterfaceNamingCallback);
             var codeType = new CodeType
             {
-                Name = ReturnFinalInterfaceName(parentInterface),
+                Name = GetFinalInterfaceName(parentInterface),
                 TypeDefinition = parentInterface,
             };
             modelInterface.StartBlock.AddImplements(codeType);

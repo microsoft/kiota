@@ -158,6 +158,12 @@ public abstract class LanguageWriter
                 case CodeConstant codeConstant:
                     ((ICodeElementWriter<CodeConstant>)elementWriter).WriteCodeElement(codeConstant, this);
                     break;
+                case CodeUnionType codeUnionType:
+                    ((ICodeElementWriter<CodeUnionType>)elementWriter).WriteCodeElement(codeUnionType, this);
+                    break;
+                case CodeIntersectionType codeIntersectionType:
+                    ((ICodeElementWriter<CodeIntersectionType>)elementWriter).WriteCodeElement(codeIntersectionType, this);
+                    break;
             }
         else if (code is not CodeClass &&
                 code is not BlockDeclaration &&

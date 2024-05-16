@@ -7,6 +7,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
+using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypeScriptConventionService : CommonLanguageConventionService
@@ -71,7 +72,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var paramType = GetTypeString(parameter.Type, targetElement);
-        var isComposedOfPrimitives = TypeScriptRefiner.GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
+        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
@@ -92,24 +93,19 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
 
-        CodeComposedTypeBase? composedType = code is CodeComposedTypeBase originalComposedType ? originalComposedType : TypeScriptRefiner.GetOriginalComposedType(code);
+        CodeTypeBase codeType = GetOriginalComposedType(code) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : code;
 
-        if (composedType is not null && composedType.Types.Any())
+        if (codeType is not CodeType currentType)
         {
-            var returnTypeString = string.Join(GetTypesDelimiterToken(composedType), composedType.Types.Select(x => GetTypeString(x, targetElement)));
-            return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
+            throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        if (code is CodeType currentType)
-        {
-            var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
-            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
-                $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
-                string.Empty;
-            return $"{typeName}{collectionSuffix}{genericParameters}";
-        }
+        var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
+        var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+            $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
+            string.Empty;
 
-        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        return $"{typeName}{collectionSuffix}{genericParameters}";
     }
 
     private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
@@ -132,6 +128,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                                         !string.IsNullOrEmpty(x.Alias)) is CodeUsing aliasedUsing)
             return aliasedUsing.Alias;
         return string.Empty;
+    }
+
+    public static string TranslateType(CodeComposedTypeBase composedType)
+    {
+        ArgumentNullException.ThrowIfNull(composedType);
+        return composedType.Name.ToFirstCharacterUpperCase();
     }
 
     public override string TranslateType(CodeType type)
@@ -225,33 +227,79 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return GetComposedTypeDeserializationMethodName(composedType, isCollection);
     }
 
-    public static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType, bool isCollection)
+    private static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType, bool isCollection)
     {
-        ArgumentNullException.ThrowIfNull(composedType);
         var propertyName = composedType.Name.ToFirstCharacterUpperCase();
         return isCollection ? $"getCollectionOf{propertyName}" : $"get{propertyName}";
     }
 
-    public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer)
+    public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter? writer = null)
     {
-        var returnType = ConventionServiceInstance.GetTypeString(targetClassType, currentElement, false, writer);
-        var targetClassName = ConventionServiceInstance.TranslateType(targetClassType);
+        var composedType = GetOriginalComposedType(targetClassType);
+        string targetClassName = composedType is not null ? TranslateType(composedType) : ConventionServiceInstance.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-            return resultName;
-        if (targetClassType is CodeType currentType &&
-            currentType.TypeDefinition is CodeClass definitionClass &&
-            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+        if (ConventionServiceInstance.GetTypeString(targetClassType, currentElement, false, writer) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
+        if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
         {
-            var methodName = ConventionServiceInstance.GetTypeString(new CodeType
+            var factoryMethod = GetFactoryMethod(definitionClass, resultName);
+            if (factoryMethod != null)
             {
-                Name = resultName,
-                TypeDefinition = factoryMethod
-            }, currentElement, false, writer);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+                var methodName = ConventionServiceInstance.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
+                return methodName.ToFirstCharacterUpperCase();// static function is aliased
+            }
         }
-        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
+    }
+
+    private static T? GetParentOfTypeOrNull<T>(CodeInterface definitionClass) where T : class
+    {
+        try
+        {
+            return definitionClass.GetImmediateParentOfType<T>();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
+    {
+        return GetParentOfTypeOrNull<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName)
+            ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
+    }
+
+    public static string GetDeserializationMethodName(CodeTypeBase codeType, CodeFunction codeFunction)
+    {
+        ArgumentNullException.ThrowIfNull(codeType);
+        ArgumentNullException.ThrowIfNull(codeFunction);
+        var isCollection = codeType.CollectionKind != CodeTypeCollectionKind.None;
+        var propertyType = ConventionServiceInstance.GetTypeString(codeType, codeFunction, false);
+        if (GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType)
+        {
+            return GetComposedTypeDeserializationMethodName(composedType);
+        }
+        if (codeType is CodeType currentType && !string.IsNullOrEmpty(propertyType))
+        {
+            return (currentType.TypeDefinition, isCollection, propertyType) switch
+            {
+                (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
+                (_, _, string prop) when ConventionServiceInstance.StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
+                (_, true, string prop) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{prop}>()",
+                (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeType, codeFunction.OriginalLocalMethod)})",
+                _ => GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction)
+            };
+        }
+        return GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction);
+    }
+
+    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeFunction codeFunction)
+    {
+        return propertyTypeName switch
+        {
+            "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
+            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
+        };
     }
 
 }
