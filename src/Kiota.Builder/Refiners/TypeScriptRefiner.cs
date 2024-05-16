@@ -14,16 +14,7 @@ namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
-    private static TypeScriptConventionService? conventionService;
 
-    public static TypeScriptConventionService ConventionServiceInstance
-    {
-        get
-        {
-            conventionService ??= new TypeScriptConventionService();
-            return conventionService;
-        }
-    }
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
