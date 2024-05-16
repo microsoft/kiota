@@ -74,7 +74,8 @@ public class CodeUsingWriterTests
         var someInterface = new CodeInterface
         {
             Name = "Bar",
-            Kind = CodeInterfaceKind.Model
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "Bar" }
         };
         root.AddInterface(someInterface);
         var us = new CodeUsing

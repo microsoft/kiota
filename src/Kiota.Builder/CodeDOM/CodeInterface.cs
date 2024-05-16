@@ -13,9 +13,9 @@ public enum CodeInterfaceKind
 
 public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDeclaration>, ITypeDefinition, IDeprecableElement
 {
-    public CodeClass? OriginalClass
+    public required CodeClass OriginalClass
     {
-        get; set;
+        get; init;
     }
     public DeprecationInformation? Deprecation
     {
