@@ -352,7 +352,9 @@
         "--type",
         "ApiManifest",
         "--type",
-        "microsoft"
+        "microsoft",
+        "--type",
+        "OpenAI"
       ],
       "cwd": "${workspaceFolder}/samples/msgraph-mail/dotnet",
       "console": "internalConsole",

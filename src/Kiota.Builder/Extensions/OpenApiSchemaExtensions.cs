@@ -77,8 +77,8 @@ public static class OpenApiSchemaExtensions
     public static bool IsInherited(this OpenApiSchema? schema)
     {
         if (schema is null) return false;
-        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
-        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful();
+        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true)).ToArray();
+        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true);
         return meaningfulMemberSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
             (meaningfulMemberSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
             isRootSchemaMeaningful);
@@ -141,13 +141,13 @@ public static class OpenApiSchemaExtensions
         return schema.AnyOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
                 schema.OneOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
     }
-    public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
+    public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false, bool ignoreEnums = false, bool ignoreArrays = false, bool ignoreType = false)
     {
         if (schema is null) return false;
         return schema.HasAnyProperty() ||
-                schema.Enum is { Count: > 0 } ||
-                schema.Items != null ||
-                (!string.IsNullOrEmpty(schema.Type) &&
+                (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
+                (!ignoreArrays && schema.Items != null) ||
+                (!ignoreType && !string.IsNullOrEmpty(schema.Type) &&
                     ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||

@@ -896,6 +896,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
@@ -930,6 +931,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
@@ -963,6 +965,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
@@ -997,6 +1000,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
@@ -1029,6 +1033,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
@@ -1062,6 +1067,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "SomeInterface",
             Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         }).First();
         var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;

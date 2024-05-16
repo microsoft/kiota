@@ -349,6 +349,7 @@ public sealed class CodeConstantWriterTests : IDisposable
             {
                 Name = "SomeComplexTypeForRequestBody",
                 Kind = CodeInterfaceKind.Model,
+                OriginalClass = new CodeClass() { Name = "SomeComplexTypeForRequestBody" }
             },
         };
         generatorMethod.AcceptedResponseTypes.Add("application/json");
@@ -502,7 +503,8 @@ public sealed class CodeConstantWriterTests : IDisposable
         var parentInterface = new CodeInterface
         {
             Name = "parentClass",
-            Kind = CodeInterfaceKind.RequestBuilder
+            Kind = CodeInterfaceKind.RequestBuilder,
+            OriginalClass = new CodeClass() { Name = "parentClass" }
         };
         method.AddParameter(new CodeParameter
         {
