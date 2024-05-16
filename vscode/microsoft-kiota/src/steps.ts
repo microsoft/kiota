@@ -258,9 +258,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/apiclient',
 			prompt: l10n.t('Enter an output path relative to the root of the project'),
-			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
+        state.outputPath === '' ? state.outputPath = 'output' : state.outputPath;	
 		return (input: MultiStepInput) => pickLanguage(input, state);
 	}
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -319,9 +319,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/myplugin',
 			prompt: l10n.t('Enter an output path relative to the root of the project'),
-			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
-		});		
+		});
+        state.outputPath === ''? state.outputPath = 'output' : state.outputPath;		
 	}
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
@@ -344,9 +344,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/mymanifest',
 			prompt: l10n.t('Enter an output path relative to the root of the project'),
-			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
-		});		
+		});	
+        state.outputPath === ''? state.outputPath = 'output' : state.outputPath;		
 	}
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     return state;
@@ -448,7 +448,7 @@ interface InputBoxParameters {
 	totalSteps: number;
 	value: string;
 	prompt: string;
-	validate: (value: string) => Promise<string | undefined>;
+	validate?: (value: string) => Promise<string | undefined>;
 	buttons?: QuickInputButton[];
 	ignoreFocusOut?: boolean;
 	placeholder?: string;
@@ -558,7 +558,7 @@ class MultiStepInput {
 					...(this.steps.length > 1 ? [QuickInputButtons.Back] : []),
 					...(buttons || [])
 				];
-				let validating = validate('');
+				let validating = validate ? validate(''): Promise.resolve(undefined);
 				disposables.push(
 					input.onDidTriggerButton(item => {
 						if (item === QuickInputButtons.Back) {
@@ -571,19 +571,21 @@ class MultiStepInput {
 						const value = input.value;
 						input.enabled = false;
 						input.busy = true;
-						if (!(await validate(value))) {
+						if (!(validate && await validate(value))) {
 							resolve(value);
 						}
 						input.enabled = true;
 						input.busy = false;
 					}),
 					input.onDidChangeValue(async text => {
-						const current = validate(text);
-						validating = current;
-						const validationMessage = await current;
-						if (current === validating) {
-							input.validationMessage = validationMessage;
-						}
+                        if(validate){
+                            const current = validate(text);
+						    validating = current;
+						    const validationMessage = await current;
+						    if (current === validating) {
+							    input.validationMessage = validationMessage;
+						    }
+                        }						
 					}),
 					input.onDidHide(() => {
 						(async () => {
