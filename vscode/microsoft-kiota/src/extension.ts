@@ -29,16 +29,10 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
+import { dependenciesInfo, extensionId, kiotaLockFile, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
-const extensionId = "kiota";
-const focusCommandId = ".focus";
-const statusBarCommandId = `${extensionId}.status`;
-const treeViewId = `${extensionId}.openApiExplorer`;
-const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
-const dependenciesInfo = `${extensionId}.dependenciesInfo`;
-export const kiotaLockFile = "workspace.json";
 let globalClientKey: string;
 let globalClientObject: any;
 let globalGenerationType: string;

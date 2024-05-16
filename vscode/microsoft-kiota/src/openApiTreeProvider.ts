@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import { connectToKiota, KiotaGetManifestDetailsConfiguration, KiotaLogEntry, KiotaManifestResult, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResult, LockFile } from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
+import { treeViewId } from './constants';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
@@ -94,6 +95,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (shouldRefresh) {
             this.refreshView();
         }
+        void vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
     }
     public isEmpty(): boolean {
         return this.rawRootNode === undefined;
