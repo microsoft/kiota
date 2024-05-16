@@ -17,7 +17,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     public void Defensive()
     {
         Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathMultipleParameters(null));
-        Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter(null));
+        Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter((OpenApiUrlTreeNode)null));
         Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
         Assert.Empty(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
         Assert.Empty(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));

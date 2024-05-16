@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -192,6 +193,12 @@ public partial class KiotaBuilder
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
+            // OperationId cleanup in the event that we are generating plugins
+            if (config.IsPluginConfiguration)
+            {
+                CleanupOperationIdForPlugins(openApiDocument);
+            }
+
             // Create Uri Space of API
             sw.Start();
             openApiTree = CreateUriSpace(openApiDocument);
@@ -344,6 +351,34 @@ public partial class KiotaBuilder
                                                             .Where(static y => y != null && y.HasValue)
                                                             .Select(static y => y!.Value)),
                     globComparer);
+    }
+
+    [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex PluginOperationIdCleanupRegex();
+    internal static void CleanupOperationIdForPlugins(OpenApiDocument document)
+    {
+        if (document.Paths is null) return;
+        foreach (var (pathItem, operation) in document.Paths.SelectMany(path => path.Value.Operations.Select(value => new Tuple<string, KeyValuePair<OperationType, OpenApiOperation>>(path.Key, value))))
+        {
+            if (string.IsNullOrEmpty(operation.Value.OperationId))
+            {
+                var stringBuilder = new StringBuilder();
+                foreach (var segment in pathItem.Split('/'))
+                {
+                    if (segment.IsPathSegmentWithSingleSimpleParameter())
+                        stringBuilder.Append("item");
+                    else if (!string.IsNullOrEmpty(segment.Trim()))
+                        stringBuilder.Append(segment.ToLowerInvariant());
+                    stringBuilder.Append('_');
+                }
+                stringBuilder.Append(operation.Key.ToString().ToLowerInvariant());
+                operation.Value.OperationId = stringBuilder.ToString();
+            }
+            else
+            {
+                operation.Value.OperationId = PluginOperationIdCleanupRegex().Replace(operation.Value.OperationId, "_");//replace non-alphanumeric characters with _
+            }
+        }
     }
     internal void FilterPathsByPatterns(OpenApiDocument doc)
     {
