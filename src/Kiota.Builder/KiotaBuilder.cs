@@ -363,7 +363,7 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(operation.Value.OperationId))
             {
                 var stringBuilder = new StringBuilder();
-                foreach (var segment in pathItem.TrimStart('/').Split('/',StringSplitOptions.RemoveEmptyEntries))
+                foreach (var segment in pathItem.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (segment.IsPathSegmentWithSingleSimpleParameter())
                         stringBuilder.Append("item");
