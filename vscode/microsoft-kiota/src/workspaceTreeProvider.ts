@@ -17,10 +17,6 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     }
 
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-        if (element) {
-            element.command = { command: 'kiota.workspace.openWorkspaceFile', title: "Open File", arguments: [vscode.Uri.file(workspaceJsonPath)], };
-            element.contextValue = 'file';
-        }
         return element;
     }
 

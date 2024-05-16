@@ -253,11 +253,6 @@
           "group": "navigation@3"
         },
         {
-          "command": "kiota.openApiExplorer.openFile",
-          "when": "view == kiota.workspace",
-          "group": "navigation@1"
-        },
-        {
           "command": "kiota.openApiExplorer.regenerateButton",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@4"
@@ -412,16 +407,6 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
         "icon": "$(add)"
-      },
-      {
-        "command": "kiota.openApiExplorer.openFile",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.openFile.title%",
-        "icon": "$(folder-opened)"
-      },
-      {
-        "command": "kiota.workspace.openWorkspaceFile",
-        "title": "%kiota.openApiExplorer.openFile.title%"
       },
       {
         "command": "kiota.editPaths",
