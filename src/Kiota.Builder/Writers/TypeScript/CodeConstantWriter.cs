@@ -178,27 +178,6 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
     }
-    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer)
-    {
-        var returnType = conventions.GetTypeString(targetClassType, currentElement, false, writer);
-        var targetClassName = conventions.TranslateType(targetClassType);
-        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-            return resultName;
-        if (targetClassType is CodeType currentType &&
-            currentType.TypeDefinition is CodeClass definitionClass &&
-            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
-        {
-            var methodName = conventions.GetTypeString(new CodeType
-            {
-                Name = resultName,
-                TypeDefinition = factoryMethod
-            }, currentElement, false, writer);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
-        }
-        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
-    }
 
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, bool isPrimitive, bool isEnum)
     {

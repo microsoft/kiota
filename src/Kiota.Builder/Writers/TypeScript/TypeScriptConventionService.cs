@@ -232,4 +232,26 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return isCollection ? $"getCollectionOf{propertyName}" : $"get{propertyName}";
     }
 
+    public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer)
+    {
+        var returnType = ConventionServiceInstance.GetTypeString(targetClassType, currentElement, false, writer);
+        var targetClassName = ConventionServiceInstance.TranslateType(targetClassType);
+        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            return resultName;
+        if (targetClassType is CodeType currentType &&
+            currentType.TypeDefinition is CodeClass definitionClass &&
+            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
+            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+        {
+            var methodName = ConventionServiceInstance.GetTypeString(new CodeType
+            {
+                Name = resultName,
+                TypeDefinition = factoryMethod
+            }, currentElement, false, writer);
+            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+        }
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
+    }
+
 }
