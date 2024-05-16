@@ -246,8 +246,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             collapsibleStateOverride ?? this.getCollapsedState(node),
             node.isOperation ?? false,
             this.tokenizedFilter,
+            this.apiTitle,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
-            node.documentationUrl
+            node.documentationUrl,
         );
     }
     getChildren(element?: OpenApiTreeNode): vscode.ProviderResult<OpenApiTreeNode[]> {
@@ -275,6 +276,7 @@ type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string 
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
     private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
+
     constructor(
         public readonly path: string,
         public readonly label: string,
@@ -282,12 +284,13 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
         filterTokens: string[],
+        apiTitle: string | undefined,
         public readonly children: OpenApiTreeNode[] = [],
         public readonly documentationUrl?: string
     ) {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
-        this.contextValue =(this.label.indexOf('(') !== -1) ? 'apiTitle' :  (this.documentationUrl ? 'documentationUrl' : '');
+        this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' :  (this.documentationUrl ? 'documentationUrl' : '');
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
