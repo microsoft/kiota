@@ -26,7 +26,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");
+            writer.WriteLine($"namespace {codeElement.Parent.Parent.Name}");
+            writer.StartBlock();
         }
 
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })
@@ -34,7 +35,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                                         .OfType<string>()
                                         .Select(static x => x.ToFirstCharacterUpperCase())
                                         .ToArray();
-        var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
+        var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
         bool hasDescription = conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");

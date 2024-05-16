@@ -54,7 +54,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("default", result);
         Assert.Contains("result :=", result);
         Assert.Contains("return &result, nil", result);
-        Assert.Contains("return 0, errors.New(\"Unknown ", result);
+        Assert.Contains("return nil, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
         Assert.Contains(optionName.ToUpperInvariant(), result);
         Assert.Contains("func (i SomeEnum) isMultiValue() bool {", result);
@@ -96,7 +96,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("default", result);
         Assert.Contains("result :=", result);
         Assert.Contains("return &result, nil", result);
-        Assert.Contains("return 0, errors.New(\"Unknown ", result);
+        Assert.Contains("return nil, nil", result);
         Assert.Contains("func (i MultiValueEnum) isMultiValue() bool {", result);
         Assert.Contains("return true", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -136,6 +136,23 @@ public sealed class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains($"// {option.Documentation.DescriptionTemplate}", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void DoesNotWriteImportOnEmptyImports()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
+                DescriptionTemplate = "Some option description",
+            },
+            Name = "option1",
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.DoesNotContain("import", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

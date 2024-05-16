@@ -911,7 +911,7 @@ components:
             Flags = true
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.Empty(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
         Assert.Single(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
     }
     [Fact]
@@ -923,7 +923,7 @@ components:
             Flags = false
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.Empty(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
         Assert.Empty(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
     }
     [Fact]

@@ -136,7 +136,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
     └─apimanifest.json
     └─documents
       └─github    
-        └─GitHub.json # OpenAPI document
+        └─openapi.json # OpenAPI document
         └─overlay.json # Overlay to be applied on top of OpenAPI document
  └─generated
     └─plugins

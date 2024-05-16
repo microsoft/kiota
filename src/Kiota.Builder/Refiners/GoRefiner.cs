@@ -525,20 +525,12 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void AddErrorAndStringsImportForEnums(CodeElement currentElement)
     {
-        if (currentElement is CodeEnum currentEnum)
+        if (currentElement is CodeEnum { Flags: true } currentEnum)
         {
             currentEnum.AddUsing(new CodeUsing
             {
-                Name = "errors",
+                Name = "strings",
             });
-
-            if (currentEnum.Flags)
-            {
-                currentEnum.AddUsing(new CodeUsing
-                {
-                    Name = "strings",
-                });
-            }
         }
         CrawlTree(currentElement, AddErrorAndStringsImportForEnums);
     }

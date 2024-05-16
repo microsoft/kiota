@@ -163,7 +163,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
         currentNode?.DeduplicatedSegment().IsPathSegmentWithSingleSimpleParameter() ?? false;
-    private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
+    internal static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
     {
         if (string.IsNullOrEmpty(currentSegment)) return false;
         var segmentWithoutExtension = stripExtensionForIndexersRegex().Replace(currentSegment, string.Empty);

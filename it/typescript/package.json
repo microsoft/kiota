@@ -19,10 +19,10 @@
   "prettier": "./.prettierrc.json",
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
-    "@types/node": "^20.12.11",
+    "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^7.7.1",
     "@typescript-eslint/parser": "^7.8.0",
-    "esbuild": "^0.21.2",
+    "esbuild": "^0.21.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "minimist": "^1.2.8",
@@ -31,13 +31,13 @@
   },
   "dependencies": {
     "@azure/identity": "^4.2.0",
-    "@microsoft/kiota-abstractions": "^1.0.0-preview.51",
-    "@microsoft/kiota-authentication-azure": "^1.0.0-preview.46",
-    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.50",
-    "@microsoft/kiota-serialization-form": "^1.0.0-preview.40",
-    "@microsoft/kiota-serialization-json": "^1.0.0-preview.51",
-    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.29",
-    "@microsoft/kiota-serialization-text": "^1.0.0-preview.48",
+    "@microsoft/kiota-abstractions": "^1.0.0-preview.52",
+    "@microsoft/kiota-authentication-azure": "^1.0.0-preview.47",
+    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.51",
+    "@microsoft/kiota-serialization-form": "^1.0.0-preview.41",
+    "@microsoft/kiota-serialization-json": "^1.0.0-preview.52",
+    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.30",
+    "@microsoft/kiota-serialization-text": "^1.0.0-preview.49",
     "express": "^4.19.2",
     "node-fetch": "^2.7.0"
   }
