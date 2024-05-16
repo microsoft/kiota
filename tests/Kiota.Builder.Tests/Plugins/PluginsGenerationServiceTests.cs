@@ -44,14 +44,13 @@ paths:
   /test:
     get:
       description: description for test path
-      operationId: test
       responses:
         '200':
           description: test
   /test/{id}:
     get:
       description: description for test path with id
-      operationId: test_WithId
+      operationId: test.WithId
       parameters:
       - name: id
         in: path
@@ -79,6 +78,7 @@ paths:
         };
         var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
         var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
@@ -95,7 +95,8 @@ paths:
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
-        Assert.Empty(resultingManifest.Problems);
+        Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
         // Validate the v1 plugin
         var v1ManifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenAIPluginFileName));
