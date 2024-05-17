@@ -108,16 +108,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return $"{typeName}{collectionSuffix}{genericParameters}";
     }
 
-    private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
-    {
-        return codeComposedTypeBase switch
-        {
-            CodeUnionType _ => " | ",
-            CodeIntersectionType _ => " & ",
-            _ => throw new InvalidOperationException("unknown composed type"),
-        };
-    }
-
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
         if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock &&
@@ -251,11 +241,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
-    private static T? GetParentOfTypeOrNull<T>(CodeInterface definitionClass) where T : class
+    public static T? GetParentOfTypeOrNull<T>(CodeElement codeElement) where T : class
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
         try
         {
-            return definitionClass.GetImmediateParentOfType<T>();
+            return codeElement.GetImmediateParentOfType<T>();
         }
         catch (InvalidOperationException)
         {

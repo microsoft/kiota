@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
-using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 public sealed class CodeFunctionWriterTests : IDisposable
