@@ -264,7 +264,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         // handle union of primitive values
         if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
-            return $"write{composedType.Name}Value";
+            return $"write{ConventionServiceInstance.GetTypeString(composedType, composedType.Parent!, false).ToFirstCharacterUpperCase()}Value";
         }
         // throw unsupported exception
         throw new InvalidOperationException($"Serialization for this composed type :: {composedType} :: is not supported yet");

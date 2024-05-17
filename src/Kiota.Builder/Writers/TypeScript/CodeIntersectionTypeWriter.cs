@@ -1,4 +1,4 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.TypeScript;
 
@@ -10,6 +10,6 @@ public class CodeIntersectionTypeWriter : CodeComposedTypeBaseWriter<CodeInterse
 
     public override string TypesDelimiter
     {
-        get => " & ";
+        get => "&";
     }
 }

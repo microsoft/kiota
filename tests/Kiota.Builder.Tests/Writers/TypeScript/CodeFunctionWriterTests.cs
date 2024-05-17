@@ -1,14 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Kiota.Builder.Writers;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
+using static Kiota.Builder.Refiners.TypeScriptRefiner;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 public sealed class CodeFunctionWriterTests : IDisposable
@@ -20,6 +27,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
     private readonly CodeNamespace root;
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
+    private readonly HttpClient _httpClient = new();
+    private readonly List<string> _tempFiles = new();
+    private const string IndexFileName = "index";
 
     public CodeFunctionWriterTests()
     {
@@ -30,6 +40,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
     public void Dispose()
     {
+        foreach (var file in _tempFiles)
+            File.Delete(file);
+        _httpClient.Dispose();
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -1118,4 +1131,108 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains($" ?? {codeEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
+    [Fact]
+    public async Task Writes_UnionOfPrimitiveValues_FactoryFunction()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(modelCodeFile);
+
+        /*
+         * 
+         * 
+        \/**
+        * Creates a new instance of the appropriate class based on discriminator value
+        * @returns {ValidationError_errors_value}
+        *\/
+        export function createValidationError_errors_valueFromDiscriminatorValue(node: ParseNode | undefined) : ValidationError_errors_value | undefined {
+            const nodeValue = node?.getNodeValue();
+            switch (typeof nodeValue) {
+                case "number":
+                case "string":
+                    return nodeValue;
+                default:
+                    return undefined;
+         }
+         
+         */
+
+        // Test Factory function
+        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).FirstOrDefault();
+        Assert.True(factoryFunction is not null);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("return", result);
+        Assert.Contains("const", result);
+        Assert.Contains("switch (typeof", result);
+        Assert.Contains("case \"number\":", result);
+        Assert.Contains("case \"string\":", result);
+        Assert.Contains("return nodeValue;", result);
+        Assert.Contains("default", result);
+        Assert.Contains("return undefined;", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_UnionOfPrimitiveValues_SerializerFunction()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null)) is not null).FirstOrDefault();
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("return", serializerFunctionStr);
+        Assert.Contains("switch", serializerFunctionStr);
+        Assert.Contains("case \"number\":", serializerFunctionStr);
+        Assert.Contains("case \"string\":", serializerFunctionStr);
+        Assert.Contains("break", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
 }
+
