@@ -13,7 +13,7 @@ Push-Location ./vscode/microsoft-kiota
 npm i
 
 # Package the VS Code extension
-vsce package
+npx @vscode/vsce package
 
 # Getting package for its version
 $PackageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
@@ -29,8 +29,6 @@ if ($WSL) {
 }
 
 $KiotaBin = "$VsCodeRootPath/extensions/ms-graph.kiota-$($PackageJson.version)/.kiotabin/$($PackageJson.kiotaVersion)/$Platform"
-
-
 
 Pop-Location
 
