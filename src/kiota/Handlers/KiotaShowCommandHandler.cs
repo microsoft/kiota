@@ -62,6 +62,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
         Configuration.Search.ClearCache = clearCache;
+        Configuration.Generation.DisableSSLValidation = disableSSLValidation;
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -85,7 +86,6 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.IncludePatterns = [.. includePatterns];
             Configuration.Generation.ExcludePatterns = [.. excludePatterns];
             Configuration.Generation.ClearCache = clearCache;
-            Configuration.Generation.DisableSSLValidation = disableSSLValidation;
             try
             {
                 var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
