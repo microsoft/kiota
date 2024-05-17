@@ -292,6 +292,7 @@ export async function activate(
       await vscode.window.showErrorMessage(
         vscode.l10n.t("No endpoints selected, select endpoints first")
       );
+      return;
     }
     if(globalGenerationType === "clients") {
       await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);    
@@ -351,7 +352,6 @@ export async function activate(
       }, {
         "duration": duration,
       });
-      openApiTreeProvider.closeDescription();
       return result;
     });
     //TODO refresh the kiota workspace
@@ -391,7 +391,6 @@ export async function activate(
       }, {
         "duration": duration,
       });
-      openApiTreeProvider.closeDescription();
       return result;
     });
     //TODO refresh the kiota workspace
@@ -443,7 +442,6 @@ export async function activate(
       }, {
         "duration": duration,
       });
-      openApiTreeProvider.closeDescription();
       return result;
     });
     
@@ -501,7 +499,6 @@ export async function activate(
     });
     
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
-  openApiTreeProvider.closeDescription();
   }
 
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
@@ -536,7 +533,6 @@ export async function activate(
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
-    openApiTreeProvider.closeDescription();
   }
 
   // create a new status bar item that we can now manage
