@@ -19,6 +19,7 @@ public class KiotaDiffService
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
+        ReferenceHandler = new DomReferenceHandler(), // so circular references are through $ref and not duplicated in the output
         Converters =
         {
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
