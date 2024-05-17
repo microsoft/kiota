@@ -951,7 +951,9 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var pagingData = new PageLinkData(requestInfo, null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, token) => reqAdapter.SendNoContentAsync(info, cancellationToken: token), pagingData, all, cancellationToken);", result);
+        Assert.Contains("#nullable enable", result);
         Assert.Contains("IOutputFormatter? formatter = null;", result);
+        Assert.Contains("#nullable restore", result);
         Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(output);", result);
         Assert.Contains("response = (response != Stream.Null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);

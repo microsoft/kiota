@@ -99,6 +99,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var interfaceDef = new CodeInterface
         {
             Name = "SomeInterface",
+            OriginalClass = new CodeClass() { Name = "SomeInterface" }
         };
         ns.AddInterface(interfaceDef);
         var nUsing = new CodeUsing

@@ -25,7 +25,8 @@ public sealed class CodePropertyWriterTests : IDisposable
         var root = CodeNamespace.InitRootNamespace();
         parentInterface = root.AddInterface(new CodeInterface
         {
-            Name = "parentClass"
+            Name = "parentClass",
+            OriginalClass = new CodeClass() { Name = "parentClass" }
         }).First();
         property = new CodeProperty
         {

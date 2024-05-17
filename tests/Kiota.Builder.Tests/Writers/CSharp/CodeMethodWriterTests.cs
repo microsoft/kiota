@@ -471,9 +471,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("<exception cref=", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"401\", Error401.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"5XX\", Error5XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"401\", Error401.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendAsync", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         Assert.Contains(AsyncKeyword, result);
@@ -514,7 +514,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("return collectionResult?.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
@@ -1137,8 +1137,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("{\"DummyUCaseProp", result);
-        Assert.Contains("{\"dummyProp", result);
+        Assert.Contains("{ \"DummyUCaseProp", result);
+        Assert.Contains("{ \"dummyProp", result);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
@@ -1442,12 +1442,26 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "string"
             },
         });
+        var defaultValueNull = "\"null\"";
+        var nullPropName = "propWithDefaultNullValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = nullPropName,
+            DefaultValue = defaultValueNull,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int",
+                IsNullable = true
+            }
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<summary>", result);
         Assert.Contains("<see cref=", result);
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
+        Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
     }
     [Fact]
     public void WritesWithUrl()

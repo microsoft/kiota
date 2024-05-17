@@ -43,7 +43,22 @@ servers:
 paths:
   /test:
     get:
-      operationId: test
+      description: description for test path
+      responses:
+        '200':
+          description: test
+  /test/{id}:
+    get:
+      description: description for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
       responses:
         '200':
           description: test";
@@ -57,12 +72,13 @@ paths:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.Microsoft, PluginType.APIManifest],
+            PluginTypes = [PluginType.Microsoft, PluginType.APIManifest, PluginType.OpenAI],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
         var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
         var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
@@ -70,12 +86,27 @@ paths:
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "client-apimanifest.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Empty(resultingManifest.Problems);// no problems are expected with names
+
+        // Validate the v1 plugin
+        var v1ManifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenAIPluginFileName));
+        using var v1JsonDocument = JsonDocument.Parse(v1ManifestContent);
+        var v1Manifest = PluginManifestDocument.Load(v1JsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal(OpenApiFileName, v1Manifest.Document.Api.URL);
+        Assert.Empty(v1Manifest.Problems);
     }
     private const string ManifestFileName = "client-microsoft.json";
+    private const string OpenAIPluginFileName = "openai-plugins.json";
     private const string OpenApiFileName = "client-openapi.yml";
 }

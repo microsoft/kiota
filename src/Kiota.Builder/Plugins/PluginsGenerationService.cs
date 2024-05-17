@@ -37,6 +37,7 @@ public class PluginsGenerationService
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionPathSuffix = "openapi.yml";
+    private const string OpenAIManifestFileName = "openai-plugins";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         // write the description
@@ -56,7 +57,8 @@ public class PluginsGenerationService
         // write the plugins
         foreach (var pluginType in Configuration.PluginTypes)
         {
-            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}");
+            var manifestFileName = pluginType == PluginType.OpenAI ? OpenAIManifestFileName : $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
+            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
             await using var fileStream = File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
@@ -70,51 +72,67 @@ public class PluginsGenerationService
                     break;
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
-                    // pass empty cong hash so that its not included in this manifest.
+                    // pass empty config hash so that its not included in this manifest.
                     apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory));
+                    var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
+                        ? DefaultContactName
+                        : OAIDocument.Info.Contact.Name;
+                    var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
+                        ? DefaultContactEmail
+                        : OAIDocument.Info.Contact.Email;
+                    apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
                     apiManifest.Write(writer);
                     break;
-                case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
-                                       // intentional drop to the default case
+                case PluginType.OpenAI:
+                    var pluginDocumentV1 = GetV1ManifestDocument(descriptionRelativePath);
+                    pluginDocumentV1.Write(writer);
+                    break;
                 default:
                     throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
+    private PluginManifestDocument GetV1ManifestDocument(string openApiDocumentPath)
+    {
+        var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
+        var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
+        return new PluginManifestDocument
+        {
+            SchemaVersion = "v1",
+            NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
+            NameForModel = OAIDocument.Info?.Title.CleanupXMLString(),
+            DescriptionForHuman = descriptionForHuman,
+            DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
+            Auth = new V1AnonymousAuth(),
+            Api = new Api()
+            {
+                Type = ApiType.openapi,
+                URL = openApiDocumentPath
+            },
+            ContactEmail = manifestInfo.ContactEmail,
+            LogoUrl = manifestInfo.LogoUrl,
+            LegalInfoUrl = manifestInfo.LegalUrl,
+        };
+    }
+
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
-        var descriptionForModel = descriptionForHuman;
-        string? legalUrl = null;
-        string? logoUrl = null;
-        string? privacyUrl = null;
-        if (OAIDocument.Info is not null)
-        {
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
-                descriptionExtension is OpenApiDescriptionForModelExtension extension &&
-                !string.IsNullOrEmpty(extension.Description))
-                descriptionForModel = extension.Description.CleanupXMLString();
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
-                legalUrl = legal.Legal;
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
-                logoUrl = logo.Url;
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
-                privacyUrl = privacy.Privacy;
-        }
+        var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
         {
             SchemaVersion = "v2",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
-            DescriptionForModel = descriptionForModel,
-            ContactEmail = OAIDocument.Info?.Contact?.Email,
+            DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
+            ContactEmail = manifestInfo.ContactEmail,
             Namespace = Configuration.ClientClassName,
-            LogoUrl = logoUrl,
-            LegalInfoUrl = legalUrl,
-            PrivacyPolicyUrl = privacyUrl,
+            LogoUrl = manifestInfo.LogoUrl,
+            LegalInfoUrl = manifestInfo.LegalUrl,
+            PrivacyPolicyUrl = manifestInfo.PrivacyUrl,
             Runtimes = [.. runtimes
                             .GroupBy(static x => x, _openAPIRuntimeComparer)
                             .Select(static x =>
@@ -127,7 +145,40 @@ public class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
     }
-    private (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
+
+    private static OpenApiManifestInfo ExtractInfoFromDocument(OpenApiInfo? openApiInfo)
+    {
+        var manifestInfo = new OpenApiManifestInfo();
+
+        if (openApiInfo is null)
+            return manifestInfo;
+
+        string? descriptionForModel = null;
+        string? legalUrl = null;
+        string? logoUrl = null;
+        string? privacyUrl = null;
+        string contactEmail = string.IsNullOrEmpty(openApiInfo.Contact?.Email)
+            ? DefaultContactEmail
+            : openApiInfo.Contact.Email;
+
+        if (openApiInfo.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
+            descriptionExtension is OpenApiDescriptionForModelExtension extension &&
+            !string.IsNullOrEmpty(extension.Description))
+            descriptionForModel = extension.Description.CleanupXMLString();
+        if (openApiInfo.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
+            legalUrl = legal.Legal;
+        if (openApiInfo.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
+            logoUrl = logo.Url;
+        if (openApiInfo.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
+            privacyUrl = privacy.Privacy;
+
+        return new OpenApiManifestInfo(descriptionForModel, legalUrl, logoUrl, privacyUrl, contactEmail);
+
+    }
+    private const string DefaultContactName = "publisher-name";
+    private const string DefaultContactEmail = "publisher-email@example.com";
+    private sealed record OpenApiManifestInfo(string? DescriptionForModel = null, string? LegalUrl = null, string? LogoUrl = null, string? PrivacyUrl = null, string ContactEmail = DefaultContactEmail);
+    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();

@@ -127,7 +127,10 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
+                {
                     DisplaySuccess("Generation completed successfully");
+                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
+                }
                 else
                 {
                     DisplaySuccess("Generation skipped as no changes were detected");

@@ -627,6 +627,23 @@ public class TypeScriptLanguageRefinerTests
     }
 
     [Fact]
+    public async Task AddsModelInterfaceForAModelClassWithoutCollision()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "hostModel");
+        TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "hostModelInterface");// a second model with the `Interface` suffix
+
+        await ILanguageRefiner.Refine(generationConfiguration, root);
+
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(codeFile);
+        Assert.Equal(2, codeFile.Interfaces.Count());
+        Assert.Contains(codeFile.Interfaces, static x => "hostModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(codeFile.Interfaces, static x => "hostModelInterface".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task ReplaceRequestConfigsQueryParams()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
