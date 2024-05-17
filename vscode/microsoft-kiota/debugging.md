@@ -47,6 +47,20 @@ Where kiotaVersionInPackage is the kiotaVersion field and versionInPackage is th
 
 > Note: alternatively to building executable yourself, you can download it from [the pipeline](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) by filtering the branch (top right corner) with the pull request branch, selecting the latest run, and downloading the right OS version from the artifacts. The only remaining work will be to move the downloaded files to the right path above.
 
+#### Using the ready-made script
+
+If you want to automate these steps, you can use the following script to automate the process:
+
+```powershell
+.\scripts\execute-vscode-sideload.ps1 -Platform "win-x64|linux-x64|osx-x64" 
+```
+
+If you are using WSL, you can use the following:
+
+```powershell
+.\scripts\execute-vscode-sideload.ps1 -WSL
+```
+
 ## FAQ
 
 ### VS Code keeps reinstalling from the marketplace
