@@ -231,9 +231,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         var parentClass = BaseClass;
         if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
             if (includeCurrentClass)
-                return new() { this };
+                return [this];
             else
-                return new();
+                return [];
         var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
         result.Add(this);
         return result;
