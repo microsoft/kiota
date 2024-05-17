@@ -153,6 +153,7 @@ public static partial class KiotaHost
         var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         maxDepthOption.AddAlias("--m-d");
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultGenerationConfiguration.DisableSSLValidation);
         var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
             logLevelOption,
@@ -163,6 +164,7 @@ public static partial class KiotaHost
             includePatterns,
             excludePatterns,
             clearCacheOption,
+            disableSSLValidationOption,
         };
         displayCommand.Handler = new KiotaShowCommandHandler
         {
@@ -175,6 +177,7 @@ public static partial class KiotaHost
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
             ClearCacheOption = clearCacheOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return displayCommand;
     }
@@ -213,6 +216,8 @@ public static partial class KiotaHost
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+
         var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
             keyArgument,
             logLevelOption,
@@ -220,6 +225,7 @@ public static partial class KiotaHost
             versionOption,
             cleanOutputOption,
             outputOption,
+            disableSSLValidationOption,
         };
         searchCommand.Handler = new KiotaDownloadCommandHandler
         {
@@ -229,6 +235,7 @@ public static partial class KiotaHost
             VersionOption = versionOption,
             CleanOutputOption = cleanOutputOption,
             OutputPathOption = outputOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return searchCommand;
     }
