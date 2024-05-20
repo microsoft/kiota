@@ -9,6 +9,10 @@ public class DownloadConfiguration : SearchConfigurationBase, ICloneable
     {
         get; set;
     }
+    public bool DisableSSLValidation
+    {
+        get; set;
+    }
 
     public object Clone()
     {
@@ -16,7 +20,8 @@ public class DownloadConfiguration : SearchConfigurationBase, ICloneable
         {
             OutputPath = OutputPath,
             CleanOutput = CleanOutput,
-            ClearCache = ClearCache
+            ClearCache = ClearCache,
+            DisableSSLValidation = DisableSSLValidation,
         };
     }
 }
