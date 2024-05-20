@@ -31,6 +31,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
@@ -38,9 +42,11 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         string outputPath = context.ParseResult.GetValueForOption(OutputPathOption) ?? string.Empty;
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
+        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Download.ClearCache = clearCache;
+        Configuration.Download.DisableSSLValidation = disableSSLValidation;
         Configuration.Download.CleanOutput = cleanOutput;
         Configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
 
