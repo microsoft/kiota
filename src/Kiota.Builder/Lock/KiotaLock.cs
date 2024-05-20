@@ -59,6 +59,13 @@ public class KiotaLock
     {
         get; set;
     }
+    /// <summary>
+    /// Whether SSL Validation was disabled for this client.
+    /// </summary>
+    public bool DisableSSLValidation
+    {
+        get; set;
+    }
 #pragma warning disable CA2227
     /// <summary>
     /// The serializers used for this client.
@@ -108,6 +115,7 @@ public class KiotaLock
         config.ExcludePatterns = ExcludePatterns;
         config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules;
+        config.DisableSSLValidation = DisableSSLValidation;
     }
     /// <summary>
     /// Initializes a new instance of the <see cref="KiotaLock"/> class.
@@ -135,5 +143,6 @@ public class KiotaLock
         ExcludePatterns = config.ExcludePatterns;
         DescriptionLocation = config.OpenAPIFilePath;
         DisabledValidationRules = config.DisabledValidationRules;
+        DisableSSLValidation = config.DisableSSLValidation;
     }
 }

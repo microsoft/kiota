@@ -41,6 +41,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -52,11 +56,13 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
         List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
+        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
         Configuration.Search.ClearCache = clearCache;
+        Configuration.Generation.DisableSSLValidation = disableSSLValidation;
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
