@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the hash alias in typescript wasn't being generated uniformly for similar interfaces [microsoftgraph/msgraph-beta-sdk-typescript#84](https://github.com/microsoftgraph/msgraph-beta-sdk-typescript/issues/84)
 - Fixes a bug where name collisions would occur in the Typescript refiner if model name also exists with the `Interface` suffix [#4382](https://github.com/microsoft/kiota/issues/4382)
 - Fixes a bug where paths without operationIds would not be included in the generated plugins and ensured operationIds are cleaned up [#4642](https://github.com/microsoft/kiota/issues/4642)
+- Fixes a bug where models would be duplicated in some allOf scenarios [#4191](https://github.com/microsoft/kiota/issues/4191)
 
 ## [1.14.0] - 2024-05-02
 

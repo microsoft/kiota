@@ -7400,6 +7400,85 @@ components:
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Group"));
     }
     [Fact]
+    public async Task InlineSchemaWithSingleAllOfReference()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /user:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /group/members:
+    get:
+      responses: 
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.member'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      required: ['@odata.type']
+      properties:
+        '@odata.type':
+          type: 'string'
+          default: '#microsoft.graph.directoryObject'
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.group:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.directoryObject'
+        - title: 'group'
+          type: 'object'
+          properties:
+            groupprop:
+              type: 'string'
+    microsoft.graph.member:
+      type: 'object'
+      properties:
+        group:
+          allOf:
+            - '$ref': '#/components/schemas/microsoft.graph.group'
+    microsoft.graph.user:
+      properties:
+        groups:
+          type: array
+          items:
+            - '$ref': '#/components/schemas/microsoft.graph.group'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var memberClass = codeModel.FindChildByName<CodeClass>("member");
+        Assert.NotNull(memberClass);
+        Assert.Equal(2, memberClass.Properties.Count());// single prop plus additionalData
+        Assert.Null(memberClass.StartBlock.Inherits);//no base
+        var userClass = codeModel.FindChildByName<CodeClass>("user");
+        Assert.NotNull(userClass);
+        Assert.Equal(2, userClass.Properties.Count());// single prop plus additionalData
+        Assert.Null(userClass.StartBlock.Inherits);//no base
+        var inlinedClassThatIsDuplicate = codeModel.FindChildByName<CodeClass>("member_group");
+        Assert.Null(inlinedClassThatIsDuplicate);//no duplicate
+        var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNamespace);
+        Assert.Equal(4,modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
+    }
+    [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaChildClass()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
