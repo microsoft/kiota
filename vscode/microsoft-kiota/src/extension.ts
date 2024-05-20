@@ -280,7 +280,7 @@ export async function activate(
      globalClientKey = clientKey;
      globalClientObject = clientObject;
      globalGenerationType = generationType;
-      await loadEditPaths(clientObject, openApiTreeProvider);
+     await loadEditPaths(clientObject, openApiTreeProvider);
      await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
      await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
@@ -667,6 +667,7 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
   await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath));
+  await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
 }
 
 async function loadEditPaths(clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
