@@ -151,6 +151,7 @@ public class GenerationConfiguration : ICloneable
             Operation = Operation,
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
+            DisableSSLValidation = DisableSSLValidation,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -200,6 +201,11 @@ public class GenerationConfiguration : ICloneable
         return OpenAPIFilePath;
     }
     public bool IsPluginConfiguration => PluginTypes.Count != 0;
+
+    public bool DisableSSLValidation
+    {
+        get; set;
+    }
 }
 #pragma warning restore CA1056
 #pragma warning restore CA2227
