@@ -10,7 +10,7 @@ Every time a plugin is added, a copy of the OpenAPI document file will be stored
 
 An [API Manifest][def] file named `apimanifest.json` will be generated (if non existing) or updated (if already existing) in the root folder `./kiota` next to `workspace.json`.  API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `name_to_be_defined`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) a `manifest.json` file which will follow the [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) schema.
+Developers can generate `name_to_be_defined`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) an [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) file named `manifest.json` which conforms with the schema https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema.
 > [!NOTE] 
 > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one, specific to each plugin when providing `--type apimanifest`, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
@@ -46,6 +46,7 @@ For `apimanifest`, the generated file will be named `{plugin-name}-apimanifest.j
 |  |  |
 
 ### App manifest
+The app manifest file describes how one's plugin integrates into Microsoft 365 and it's not related to plugin types. App manifests are required for [publishing apps to Microsoft 365 app stores](https://learn.microsoft.com/en-us/partner-center/marketplace/checklist#step-3-check-that-your-manifest-is-compliant).
 For `manifest.json` file, we will:
 1. Add a plugin node to the `manifest.json` file if a `manifest.json` file already exists in the output directory.
 
@@ -98,6 +99,8 @@ For `manifest.json` file, we will:
   }
 }
 ```
+
+4. [Validate](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/troubleshoot-manifest) the generated `manifest.json` file.
 
 ## Parameters
 
