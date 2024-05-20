@@ -3,13 +3,10 @@ using System.Threading;
 
 namespace Kiota.Builder;
 
-public class ModelClassBuildLifecycle : IDisposable
+internal sealed class ModelClassBuildLifecycle : IDisposable
 {
     private readonly CountdownEvent propertiesBuilt = new(1);
-    public ModelClassBuildLifecycle()
-    {
-    }
-    public Boolean IsPropertiesBuilt()
+    public bool IsPropertiesBuilt()
     {
         return propertiesBuilt.IsSet;
     }
@@ -26,31 +23,15 @@ public class ModelClassBuildLifecycle : IDisposable
     }
     public void PropertiesBuildingDone()
     {
-        if (!IsPropertiesBuilt())
+        if (!IsPropertiesBuilt() && !propertiesBuilt.Signal())
         {
-            if (!propertiesBuilt.Signal())
-            {
-                throw new InvalidOperationException("PropertiesBuilt CountdownEvent is expected to always reach 0 at this point.");
-            }
+            throw new InvalidOperationException("PropertiesBuilt CountdownEvent is expected to always reach 0 at this point.");
         }
         Monitor.Exit(propertiesBuilt);
     }
-    private bool isDisposed;
     public void Dispose()
     {
-        Dispose(true);
+        propertiesBuilt.Dispose();
         GC.SuppressFinalize(this);
-    }
-    protected virtual void Dispose(bool disposing)
-    {
-        if (isDisposed) return;
-
-        if (disposing)
-        {
-            // free managed resources
-            propertiesBuilt.Dispose();
-        }
-
-        isDisposed = true;
     }
 }
