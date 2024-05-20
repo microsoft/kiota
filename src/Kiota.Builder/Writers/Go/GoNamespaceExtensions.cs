@@ -12,14 +12,14 @@ public static class GoNamespaceExtensions
         if (string.IsNullOrEmpty(nsName)) return string.Empty;
         var urlPrefixIndex = nsName.LastIndexOf('/') + 1;
         var tentativeSegment = nsName[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
-        if (string.IsNullOrEmpty(tentativeSegment)) tentativeSegment = nsName.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+        if (string.IsNullOrEmpty(tentativeSegment)) tentativeSegment = nsName.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1];
         return tentativeSegment;
     }
     public static string GetInternalNamespaceImport(this CodeElement ns)
     {
         if (ns == null) return string.Empty;
         var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
-        return (ns.Name[..urlPrefixIndex] + string.Join("/", ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries)));
+        return (ns.Name[..urlPrefixIndex] + string.Join("/", ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries)[^1]));
     }
     public static string GetNamespaceImportSymbol(this CodeElement ns)
     {
