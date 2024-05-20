@@ -1,14 +1,14 @@
-id: 
+id:
 name: GitOps.PullRequestIssueManagement
 description: GitOps.PullRequestIssueManagement primitive
-owner: 
+owner:
 resource: repository
 disabled: false
-where: 
+where:
 configuration:
   resourceManagementConfiguration:
     scheduledSearches:
-    - description: 
+    - description:
       frequencies:
       - hourly:
           hour: 6
@@ -16,14 +16,14 @@ configuration:
       - isIssue
       - isOpen
       - hasLabel:
-          label: 'Needs: Author Feedback'
+          label: 'status:waiting-for-author-feedback'
       - hasLabel:
           label: 'Status: No Recent Activity'
       - noActivitySince:
           days: 3
       actions:
       - closeIssue
-    - description: 
+    - description:
       frequencies:
       - hourly:
           hour: 6
@@ -31,7 +31,7 @@ configuration:
       - isIssue
       - isOpen
       - hasLabel:
-          label: 'Needs: Author Feedback'
+          label: 'status:waiting-for-author-feedback'
       - noActivitySince:
           days: 4
       - isNotLabeledWith:
@@ -41,7 +41,7 @@ configuration:
           label: 'Status: No Recent Activity'
       - addReply:
           reply: This issue has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **4 days**. It will be closed if no further activity occurs **within 3 days of this comment**.
-    - description: 
+    - description:
       frequencies:
       - hourly:
           hour: 6
@@ -64,14 +64,14 @@ configuration:
       - isActivitySender:
           issueAuthor: True
       - hasLabel:
-          label: 'Needs: Author Feedback'
+          label: 'status:waiting-for-author-feedback'
       - isOpen
       then:
       - addLabel:
           label: 'Needs: Attention :wave:'
       - removeLabel:
-          label: 'Needs: Author Feedback'
-      description: 
+          label: 'status:waiting-for-author-feedback'
+      description:
     - if:
       - payloadType: Issues
       - not:
@@ -82,7 +82,7 @@ configuration:
       then:
       - removeLabel:
           label: 'Status: No Recent Activity'
-      description: 
+      description:
     - if:
       - payloadType: Issue_Comment
       - hasLabel:
@@ -90,12 +90,12 @@ configuration:
       then:
       - removeLabel:
           label: 'Status: No Recent Activity'
-      description: 
+      description:
     - if:
       - payloadType: Pull_Request
       then:
       - inPrLabel:
           label: WIP
-      description: 
-onFailure: 
-onSuccess: 
+      description:
+onFailure:
+onSuccess:
