@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { l10n } from 'vscode';
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
@@ -18,14 +19,14 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                             const rangeBeforeObj = new vscode.Range(positionBeforeObj, positionBeforeObj);
     
                             const editPathsCommand = {
-                                title: "Edit Paths",
+                                title: l10n.t("Edit Paths"),
                                 command: "kiota.editPaths",
                                 arguments: [key, obj, objectKey]
                             };
                             codeLenses.push(new vscode.CodeLens(rangeBeforeObj, editPathsCommand));
     
                             const regenerateCommand = {
-                                title: "Re-generate",
+                                title: l10n.t("Re-generate"),
                                 command: "kiota.regenerate",
                                 arguments: [key, obj, objectKey]
                             };

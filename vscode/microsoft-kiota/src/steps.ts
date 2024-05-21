@@ -201,32 +201,32 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     let step = 1;
     let totalSteps = 4;
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
-        const items = ['Generate an API client', 'Generate a plugin', 'Generate an API manifest'];
+        const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
 		const option = await input.showQuickPick({
 			title: l10n.t('What do you want to generate?'),
 			step: 1,
 			totalSteps: 1,
-            placeholder: 'Select an option',
+            placeholder: l10n.t('Select an option'),
 			items: items.map(x => ({label: x})),
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
-        if(option.label === 'Generate an API client') {
+        if(option.label === l10n.t('Generate an API client')) {
             state.generationType = "client";
 		    return (input: MultiStepInput) => inputClientClassName(input, state);
         }
-        else if(option.label === 'Generate a plugin') { 
+        else if(option.label === l10n.t('Generate a plugin')) { 
             state.generationType = "plugin";
             return (input: MultiStepInput) => inputPluginName(input, state); 
         }
-        else if(option.label === 'Generate an API manifest') {
+        else if(option.label === l10n.t('Generate an API manifest')) {
             state.generationType = "apimanifest";
             return (input: MultiStepInput) => inputManifestName(input, state);
         }
 	}
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientClassName = await input.showInputBox({
-			title: l10n.t('Create a new API client - class'),
+			title: `${l10n.t('Create a new API client')} - ${l10n.t('class')}`,
 			step: step++,
 			totalSteps: totalSteps,
 			value: state.clientClassName || '',
@@ -239,7 +239,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputClientNamespaceName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientNamespaceName = await input.showInputBox({
-			title: l10n.t('Create a new API client - namespace'),
+			title: `${l10n.t('Create a new API client')} - ${l10n.t('namespace')}`,
 			step: step++,
 			totalSteps: totalSteps,
 			value: typeof state.clientNamespaceName === 'string' ? state.clientNamespaceName : '',
@@ -252,7 +252,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: l10n.t('Create a new API client - output path'),
+			title: `${l10n.t('Create a new API client')} - ${l10n.t('output path')}`,
 			step: step++,
 			totalSteps: totalSteps,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -274,7 +274,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             } as (QuickPickItem & {languageName: string});
         });
 		const pick = await input.showQuickPick({
-			title: l10n.t('Create a new API client - language'),
+			title: `${l10n.t('Create a new API client')} - ${l10n.t('language')}`,
 			step: step++,
 			totalSteps: totalSteps,
 			placeholder: l10n.t('Pick a language'),
@@ -286,7 +286,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputPluginName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
-            title: l10n.t('Create a new plugin - plugin name'),
+            title: `${l10n.t('Create a new plugin')} - ${('plugin name')}`,
             step: step++,
             totalSteps: 3,
             value: state.pluginName || '',
@@ -313,7 +313,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: l10n.t('Create a new plugin - output path'),
+			title: `${l10n.t('Create a new plugin')} - ${('output path')}}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -325,7 +325,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
-            title: l10n.t('Create a new manifest - manifest name'),
+            title: `${l10n.t('Create a new manifest')} - ${('manifest name')}`,
             step: step++,
             totalSteps: 3,
             value: state.pluginName || '',
@@ -338,7 +338,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: l10n.t('Create a new manifest - output path'),
+			title: `${l10n.t('Create a new manifest')} - ${('output path')}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -360,7 +360,7 @@ function shouldResume() {
 }
 
 function validateIsNotEmpty(value: string) {
-    return Promise.resolve(value.length > 0 ? undefined : 'Required');
+    return Promise.resolve(value.length > 0 ? undefined : l10n.t('Required'));
 }
 
 interface BaseStepsState {
