@@ -292,3 +292,26 @@ export interface GenerationConfiguration {
     pluginTypes: KiotaPluginType[];
     operation: ConsumerOperation;
 }
+
+interface WorkspaceObjectProperties {
+    descriptionLocation: string;
+    includePatterns: string[];
+    excludePatterns: string[];
+    outputPath: string;
+}
+
+interface ClientObjectProperties extends WorkspaceObjectProperties {
+    language: string;
+    structuredMimeTypes: string[];
+    clientNamespaceName: string;
+    usesBackingStore: boolean;
+    includeAdditionalData: boolean;
+    excludeBackwardCompatible: boolean;
+    disabledValidationRules: string[];
+}
+
+interface PluginObjectProperties extends WorkspaceObjectProperties {
+    types: string[];
+}
+
+export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;

@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
+  ClientOrPluginProperties,
   ConsumerOperation,
   generationLanguageToString,
   getLogEntriesForLevel,
@@ -33,9 +34,9 @@ import { dependenciesInfo, extensionId, kiotaWorkspaceFile, statusBarCommandId, 
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
-let globalClientKey: string;
-let globalClientObject: any;
-let globalGenerationType: string;
+let clientOrPluginKey: string;
+let clientOrPluginObject: ClientOrPluginProperties;
+let workspaceGenerationType: string;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -268,16 +269,16 @@ export async function activate(
       `${treeViewId}.pasteManifest`,
       () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: any, generationType: string) => {
-     globalClientKey = clientKey;
-     globalClientObject = clientObject;
-     globalGenerationType = generationType;
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+     clientOrPluginKey = clientKey;
+     clientOrPluginObject = clientObject;
+     workspaceGenerationType = generationType;
      await loadEditPaths(clientObject, openApiTreeProvider);
      await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
      await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
 
-     vscode.commands.registerCommand(`${treeViewId}.regenerateButton`, async () => {
+     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -286,15 +287,15 @@ export async function activate(
       );
       return;
     }
-    if(globalGenerationType === "clients") {
-      await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);    
+    if(workspaceGenerationType === "clients") {
+      await regenerateClient(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);    
     }
-    else if (globalGenerationType === "plugins")  {
-      await regeneratePlugin(globalClientKey, globalClientObject, settings, selectedPaths);
+    else if (workspaceGenerationType === "plugins")  {
+      await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
     }
     }),
       
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any, generationType: string) => {
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       const settings = getExtensionSettings(extensionId); 
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(kiotaWorkspaceFile));
       if (workspaceJson && workspaceJson.isDirty) {
