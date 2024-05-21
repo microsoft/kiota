@@ -17,7 +17,7 @@ import {
   parseGenerationLanguage,
   parsePluginType,
 } from "./kiotaInterop";
-import { GenerateState, GenerationType, filterSteps, generateSteps, openManifestSteps, openSteps, parseGenerationType, searchLockSteps, searchSteps, selectApiManifestKey } from "./steps";
+import { GenerateState, GenerationType, filterSteps, generateSteps, openManifestSteps, openSteps, parseGenerationType, searchSteps, selectApiManifestKey } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
@@ -98,14 +98,6 @@ export async function activate(
     
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
-    registerCommandWithTelemetry(reporter, 
-      `${treeViewId}.openFile`,
-      async () => {
-        const lockFilePath = await searchLockSteps();
-        if (lockFilePath?.lockFilePath) {
-          await loadLockFile(lockFilePath.lockFilePath, openApiTreeProvider);
-        }
-      }),
     registerCommandWithTelemetry(reporter, 
       `${extensionId}.selectLock`,
       (x) => loadLockFile(x, openApiTreeProvider)

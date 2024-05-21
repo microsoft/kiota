@@ -68,34 +68,6 @@ export async function selectApiManifestKey(keys: string[]) {
     await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
     return state;
 }
-
-export async function searchLockSteps() {
-    const state = {} as Partial<SearchLockState>;
-    let step = 1;
-    let totalSteps = 1;
-    const title = l10n.t('Open a lock file');
-    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchLockState>) {
-        const searchResults = await workspace.findFiles(`**/${kiotaLockFile}`);
-        const items = searchResults.map(x => 
-        { 
-            return {
-                label: x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', ''),
-            } as QuickPickItem;
-        });
-        const pick = await input.showQuickPick({
-            title,
-            step: step++,
-            totalSteps: totalSteps,
-            placeholder: l10n.t('Pick a workspace file'),
-            items: items,
-            shouldResume: shouldResume
-        });
-        state.lockFilePath = searchResults.find(x => x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', '') === pick?.label);
-    }
-    await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
-    return state;
-}
-
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
     const title = l10n.t('Filter the API description');
