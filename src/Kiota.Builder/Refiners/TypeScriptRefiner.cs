@@ -372,19 +372,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return method;
     }
 
-    private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
-    {
-        var method = CreateCodeMethod(codeInterface, function);
-        // Add the key parameter if the composed type is a union of primitive values
-        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
-        {
-            method.ReturnType = new CodeType { Name = composedType.Name, IsExternal = false, TypeDefinition = composedType };
-            method.ClearParameters();
-            method.AddParameter(CreateParseNodeCodeParameter());
-        }
-        return method;
-    }
-
     private static CodeMethod CreateCodeMethod(CodeInterface codeInterface, CodeFunction function)
     {
         var method = new CodeMethod
@@ -412,19 +399,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CodeMethodKind.Serializer => CodeMethodKind.ComposedTypeSerializer,
             CodeMethodKind.Deserializer => CodeMethodKind.ComposedTypeDeserializer,
             _ => throw new InvalidOperationException($"Unsupported method type :: {function.OriginalLocalMethod.Kind}")
-        };
-    }
-
-    private static CodeParameter CreateParseNodeCodeParameter()
-    {
-        return new CodeParameter
-        {
-            Name = "node",
-            Type = new CodeType
-            {
-                Name = "ParseNode",
-                IsExternal = true,
-            },
         };
     }
 
