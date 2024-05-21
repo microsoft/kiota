@@ -48,7 +48,7 @@
   "Select an option": "",
   "class": "",
   "namespace": "",
-  "output path": "",
+  "output directory": "",
   "language": "",
   "Create a new API client": "Crear un nuevo cliente de API",
   "Create a new plugin": "Crear un nuevo plugin",

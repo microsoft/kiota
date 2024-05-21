@@ -47,7 +47,7 @@
   "Select an option": "",
   "class": "",
   "namespace": "",
-  "output path": "",
+  "output directory": "",
   "language": "",
   "Create a new API client": "创建新的 API 客户端",
   "Create a new plugin": "创建一个新插件",

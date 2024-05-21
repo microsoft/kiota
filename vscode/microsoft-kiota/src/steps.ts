@@ -224,7 +224,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new API client')} - ${l10n.t('output path')}`,
+			title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
 			step: step++,
 			totalSteps: totalSteps,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -285,7 +285,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new plugin')} - ${('output path')}}`,
+			title: `${l10n.t('Create a new plugin')} - ${('output directory')}}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -310,7 +310,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new manifest')} - ${('output path')}`,
+			title: `${l10n.t('Create a new manifest')} - ${('output directory')}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',

@@ -48,7 +48,7 @@
   "Select an option": "Vyberte možnost",
   "class": "třída",
   "namespace": "jmenný prostor",
-  "output path": "výstupní cesta",
+  "output directory": "výstupní adresář",
   "language": "jazyk",
   "Create a new API client": "Vytvořit nového API klienta",
   "Create a new plugin": "Vytvořit nový plugin",
