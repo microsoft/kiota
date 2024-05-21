@@ -14,7 +14,6 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "すべて削除",
   "kiota.openApiExplorer.closeDescription.title": "API仕様書を閉じる",
   "kiota.openApiExplorer.openDescription.title": "API仕様書を開く",
-  "kiota.openApiExplorer.welcome": "API仕様書が選択されていません。\n[検索](command:kiota.searchOrOpenApiDescription)\n[API仕様書を開く](command:kiota.openApiExplorer.openDescription)\n[マニフェストを開く](command:kiota.openApiExplorer.openManifestPath)\n[マニフェストを貼り付け](command:kiota.openApiExplorer.pasteManifest)\n[ロックファイルを選択](command:kiota.searchLock)",
   "kiota.searchLock.title": "ロックファイルを検索",
   "kiota.openApiExplorer.filterDescription.title": "API仕様書をフィルタ",
   "kiota.openApiExplorer.openDocumentationPage.title": "ドキュメントページを開く",

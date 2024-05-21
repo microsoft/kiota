@@ -15,7 +15,6 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Usuń wszystkie",
   "kiota.openApiExplorer.closeDescription.title": "Zamknij opis API",
   "kiota.openApiExplorer.openDescription.title": "Otwórz opis API",
-  "kiota.openApiExplorer.welcome": "Nie wybrano opisu API.\n[Wyszukaj](command:kiota.searchApiDescription)\n[Otwórz opis API](command:kiota.openApiExplorer.openDescription)\n[Otwórz manifest](command:kiota.openApiExplorer.openManifestPath)\n[Wklej manifest](command:kiota.openApiExplorer.pasteManifest)\n[Wybierz plik lock](command:kiota.searchLock)",
   "kiota.searchLock.title": "Wyszukaj plik lock",
   "kiota.openApiExplorer.filterDescription.title": "Filtruj opis API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Otwórz stronę dokumentacji",

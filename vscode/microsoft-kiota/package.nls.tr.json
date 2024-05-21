@@ -14,7 +14,6 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Tümünü kaldır",
   "kiota.openApiExplorer.closeDescription.title": "API açıklamasını kapat",
   "kiota.openApiExplorer.openDescription.title": "API açıklamasını aç",
-  "kiota.openApiExplorer.welcome": "Seçili bir API açıklaması yok.\n[Ara](command:kiota.searchOrOpenApiDescription)\n[Aç](command:kiota.openApiExplorer.openDescription)\n[Kilit dosyasını seç](command:kiota.searchLock)",
   "kiota.searchLock.title": "Kilit dosyası arayın",
   "kiota.openApiExplorer.filterDescription.title": "API açıklaması filtrele",
   "kiota.openApiExplorer.openDocumentationPage.title": "API belgelerini aç",
