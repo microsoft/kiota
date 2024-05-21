@@ -31,7 +31,16 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         Logger = logger,
         FileName = "pat-api.github.com"
     };
-    internal static readonly HttpClient httpClient = new();
+
+    private HttpClient? _httpClient;
+    protected HttpClient httpClient
+    {
+        get
+        {
+            _httpClient ??= GetHttpClient();
+            return _httpClient;
+        }
+    }
     public required Option<LogLevel> LogLevelOption
     {
         get; init;
@@ -52,6 +61,21 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         configObject.BindConfiguration(configuration);
         return configObject;
     });
+
+    protected HttpClient GetHttpClient()
+    {
+        var httpClientHandler = new HttpClientHandler();
+        if (Configuration.Generation.DisableSSLValidation)
+            httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
+        var httpClient = new HttpClient(httpClientHandler);
+
+        disposables.Add(httpClientHandler);
+        disposables.Add(httpClient);
+
+        return httpClient;
+    }
+
     private const string GitHubScope = "repo";
     private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) =>
     {
