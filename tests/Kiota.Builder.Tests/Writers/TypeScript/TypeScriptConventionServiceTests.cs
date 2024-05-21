@@ -10,22 +10,6 @@ namespace Kiota.Builder.Tests.Writers.TypeScript;
 public class TypeScriptConventionServiceTests
 {
     [Fact]
-    public void GetComposedTypeDeserializationMethodName_ShouldThrowArgumentNullException_WhenComposedTypeIsNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => TypeScriptConventionService.GetComposedTypeDeserializationMethodName(null));
-    }
-
-    [Theory]
-    [InlineData(CodeTypeCollectionKind.None, "composedType", "getComposedType")]
-    [InlineData(CodeTypeCollectionKind.Array, "composedType", "getCollectionOfComposedType")]
-    public void GetComposedTypeDeserializationMethodName_ShouldReturnCorrectName_WhenComposedTypeIsNotNull(CodeTypeCollectionKind collectionKind, string name, string expectedName)
-    {
-        var composedType = new CodeUnionType { CollectionKind = collectionKind, Name = name };
-        var result = TypeScriptConventionService.GetComposedTypeDeserializationMethodName(composedType);
-        Assert.Equal(expectedName, result);
-    }
-
-    [Fact]
     public void GetParentOfTypeOrNull_ShouldThrowArgumentNullException_WhenCodeElementIsNull()
     {
         Assert.Throws<ArgumentNullException>(() => TypeScriptConventionService.GetParentOfTypeOrNull<CodeElement>(null));

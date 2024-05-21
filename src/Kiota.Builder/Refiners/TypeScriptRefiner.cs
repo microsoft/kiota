@@ -295,10 +295,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
     {
-        var children = new List<CodeElement>(functions);
-
-        // Add the composed type, The writer will output the composed type as a type definition e.g export type Pet = Cat | Dog
-        children.Add(composedType);
+        var children = new List<CodeElement>(functions)
+        {
+            // Add the composed type, The writer will output the composed type as a type definition e.g export type Pet = Cat | Dog
+            composedType
+        };
 
         ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
         ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
@@ -309,12 +310,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var factoryMethods = children.OfType<CodeFunction>().Where(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory).ToList();
+        var factoryMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory);
 
-        foreach (var factoryMethod in factoryMethods)
+        if (factoryMethod is not null)
         {
             var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
-            var factoryFunction = new CodeFunction(method) { Name = method.Name };
+            var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
+            factoryFunction.AddUsing(factoryMethod.Usings.ToArray());
 
             children.Remove(factoryMethod);
             RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, factoryMethod);
@@ -324,29 +326,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var serializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
-        if (serializerMethod is not null)
+        var function = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
+        if (function is not null)
         {
-            var method = CreateSerializerMethodForComposedType(codeInterface, composedType, serializerMethod);
+            var method = CreateSerializerMethodForComposedType(codeInterface, composedType, function);
             var serializerFunction = new CodeFunction(method) { Name = method.Name };
+            serializerFunction.AddUsing(function.Usings.ToArray());
 
-            children.Remove(serializerMethod);
-            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, serializerMethod);
+            children.Remove(function);
+            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, function);
             children.Add(serializerFunction);
         }
     }
 
     private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        // Completely remove the deserializer method if the composed type is a union of primitive values
-        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        var deserializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
+        if (deserializerMethod is not null)
         {
-            var deserializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
-            if (deserializerMethod is not null)
-            {
-                children.Remove(deserializerMethod);
-                RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
-            }
+            children.Remove(deserializerMethod);
+            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
         }
     }
 
@@ -356,29 +355,41 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         codeNamespace.RemoveChildElement(function);
     }
 
-    private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedTypeBase, CodeFunction function)
+    private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
     {
-        var method = CreateCodeMethod(codeInterface, composedTypeBase, function);
-        method.ReturnType = composedTypeBase;
-        method.AddParameter(CreateParseNodeCodeParameter());
+        var method = CreateCodeMethod(codeInterface, function);
+        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+            method.ReturnType = composedType;
         return method;
     }
 
     private static CodeMethod CreateSerializerMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
     {
-        var method = CreateCodeMethod(codeInterface, composedType, function);
+        var method = CreateCodeMethod(codeInterface, function);
         // Add the key parameter if the composed type is a union of primitive values
-        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
-            method.AddParameter(CreateKeyParameter());
+        method.AddParameter(CreateKeyParameter());
         method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
         return method;
     }
 
-    private static CodeMethod CreateCodeMethod(CodeInterface codeInterface, CodeComposedTypeBase composedTypeBase, CodeFunction function)
+    private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
+    {
+        var method = CreateCodeMethod(codeInterface, function);
+        // Add the key parameter if the composed type is a union of primitive values
+        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        {
+            method.ReturnType = new CodeType { Name = composedType.Name, IsExternal = false, TypeDefinition = composedType };
+            method.ClearParameters();
+            method.AddParameter(CreateParseNodeCodeParameter());
+        }
+        return method;
+    }
+
+    private static CodeMethod CreateCodeMethod(CodeInterface codeInterface, CodeFunction function)
     {
         var method = new CodeMethod
         {
-            Name = GetSerializerOrDeserializerMethodName(composedTypeBase, function),
+            Name = function.OriginalLocalMethod.Name,
             ReturnType = function.OriginalLocalMethod.ReturnType,
             Kind = GetComposedTypeMethodKind(function),
             Access = function.OriginalLocalMethod.Access,
@@ -387,6 +398,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Documentation = function.OriginalLocalMethod.Documentation,
             Parent = codeInterface.OriginalClass,
         };
+
+        method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
 
         return method;
     }
@@ -398,16 +411,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             CodeMethodKind.Factory => CodeMethodKind.ComposedTypeFactory,
             CodeMethodKind.Serializer => CodeMethodKind.ComposedTypeSerializer,
             CodeMethodKind.Deserializer => CodeMethodKind.ComposedTypeDeserializer,
-            _ => throw new InvalidOperationException($"Unsupported method type :: {function.OriginalLocalMethod.Kind}")
-        };
-    }
-
-    private static string GetSerializerOrDeserializerMethodName(CodeComposedTypeBase composedTypeBase, CodeFunction function)
-    {
-        return function.OriginalLocalMethod.Kind switch
-        {
-            CodeMethodKind.Factory => GetFactoryMethodName(composedTypeBase, function),
-            CodeMethodKind.Serializer => GetSerializationMethodName(composedTypeBase),
             _ => throw new InvalidOperationException($"Unsupported method type :: {function.OriginalLocalMethod.Kind}")
         };
     }
@@ -456,6 +459,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         return codeType?.TypeDefinition switch
         {
+            CodeComposedTypeBase composedType => composedType,
             CodeInterface ci => GetOriginalComposedType(ci),
             CodeClass cc => GetOriginalComposedType(cc),
             _ => null,

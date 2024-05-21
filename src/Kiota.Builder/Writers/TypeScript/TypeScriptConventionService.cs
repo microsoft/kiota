@@ -210,19 +210,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return $"@deprecated {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}";
     }
 
-    public static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType)
-    {
-        ArgumentNullException.ThrowIfNull(composedType);
-        var isCollection = composedType.CollectionKind != CodeTypeCollectionKind.None;
-        return GetComposedTypeDeserializationMethodName(composedType, isCollection);
-    }
-
-    private static string GetComposedTypeDeserializationMethodName(CodeComposedTypeBase composedType, bool isCollection)
-    {
-        var propertyName = composedType.Name.ToFirstCharacterUpperCase();
-        return isCollection ? $"getCollectionOf{propertyName}" : $"get{propertyName}";
-    }
-
     public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter? writer = null)
     {
         var composedType = GetOriginalComposedType(targetClassType);
@@ -260,36 +247,35 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public static string GetDeserializationMethodName(CodeTypeBase codeType, CodeFunction codeFunction)
+    public static string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method)
     {
         ArgumentNullException.ThrowIfNull(codeType);
-        ArgumentNullException.ThrowIfNull(codeFunction);
+        ArgumentNullException.ThrowIfNull(method);
         var isCollection = codeType.CollectionKind != CodeTypeCollectionKind.None;
-        var propertyType = ConventionServiceInstance.GetTypeString(codeType, codeFunction, false);
-        if (GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType)
-        {
-            return GetComposedTypeDeserializationMethodName(composedType);
-        }
-        if (codeType is CodeType currentType && !string.IsNullOrEmpty(propertyType))
+        var propertyType = ConventionServiceInstance.GetTypeString(codeType, method, false);
+
+        CodeTypeBase _codeType = GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : codeType;
+
+        if (_codeType is CodeType currentType && !string.IsNullOrEmpty(propertyType))
         {
             return (currentType.TypeDefinition, isCollection, propertyType) switch
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, string prop) when ConventionServiceInstance.StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
                 (_, true, string prop) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{prop}>()",
-                (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeType, codeFunction.OriginalLocalMethod)})",
-                _ => GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction)
+                (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
+                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method)
             };
         }
-        return GetDeserializationMethodNameForPrimitiveOrObject(codeType, propertyType, codeFunction);
+        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method);
     }
 
-    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeFunction codeFunction)
+    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeMethod method)
     {
         return propertyTypeName switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
+            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, method)})"
         };
     }
 
