@@ -36,7 +36,9 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         try {
             await fs.promises.access(kiotaDir);
         } catch (error) {
-            return error;
+            await vscode.window.showErrorMessage(
+                vscode.l10n.t("Kiota directory not found")
+            );
         }
     }
 }
