@@ -7476,7 +7476,7 @@ components:
         Assert.Null(inlinedClassThatIsDuplicate);//no duplicate
         var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models.microsoft.graph");
         Assert.NotNull(modelsNamespace);
-        Assert.Equal(4,modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
+        Assert.Equal(4, modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
     }
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaChildClass()
