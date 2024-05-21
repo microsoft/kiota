@@ -29,7 +29,7 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { dependenciesInfo, extensionId, kiotaLockFile, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { dependenciesInfo, extensionId, kiotaWorkspaceFile, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -296,7 +296,7 @@ export async function activate(
       
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: any, generationType: string) => {
       const settings = getExtensionSettings(extensionId); 
-      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith("workspace.json"));
+      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(kiotaWorkspaceFile));
       if (workspaceJson && workspaceJson.isDirty) {
           await vscode.window.showInformationMessage(
               vscode.l10n.t("Please save the workspace.json file before re-generation."),
@@ -449,7 +449,7 @@ export async function activate(
     if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
         vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
         result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
-      await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.kiota', kiotaLockFile));
+      await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.kiota', kiotaWorkspaceFile));
       //TODO this will need to be updated to refresh the workspace instead
     }
     if (result)
@@ -549,7 +549,7 @@ export async function activate(
         );
         return;
       }
-      const existingLockFileUris = await vscode.workspace.findFiles(`**/${kiotaLockFile}`);
+      const existingLockFileUris = await vscode.workspace.findFiles(`**/${kiotaWorkspaceFile}`);
       if (existingLockFileUris.length > 0) {
         await Promise.all(existingLockFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(x, context)));
       }
@@ -645,7 +645,7 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
 
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
   const kiotaVersion = context.extension.packageJSON.kiotaVersion.toLocaleLowerCase();
-  const lockFilePath = path.join(clientPath, kiotaLockFile);
+  const lockFilePath = path.join(clientPath, kiotaWorkspaceFile);
   if(!fs.existsSync(lockFilePath)) {
     return;
   }

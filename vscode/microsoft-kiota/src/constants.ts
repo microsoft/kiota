@@ -4,4 +4,4 @@ export const statusBarCommandId = `${extensionId}.status`;
 export const treeViewId = `${extensionId}.openApiExplorer`;
 export const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
 export const dependenciesInfo = `${extensionId}.dependenciesInfo`;
-export const kiotaLockFile = "workspace.json";
+export const kiotaWorkspaceFile = "workspace.json";
