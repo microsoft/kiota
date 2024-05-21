@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers.Go;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -1180,6 +1181,17 @@ components:
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Single(nodeUsing);
         Assert.Equal("github.com/microsoft/kiota-abstractions-go/serialization", nodeUsing[0].Declaration.Name);
+    }
+
+    [Fact]
+    public async Task NormalizeNamespaceName()
+    {
+        root.Name = "github.com/OrgName/RepoName";
+        var models = root.AddNamespace("ApiSdk.models");
+        var submodels = models.AddNamespace("ApiSdk.models.submodels");
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go,ClientNamespaceName = "github.com/OrgName/RepoName"}, root);
+        Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels", submodels.Name);
+        Assert.Equal("github.com/OrgName/RepoName.apisdk.models", models.Name);
     }
     #endregion
 }
