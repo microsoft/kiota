@@ -14,7 +14,6 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Odebrat vše",
   "kiota.openApiExplorer.closeDescription.title": "Zavřít popis API",
   "kiota.openApiExplorer.openDescription.title": "Otevřít popis API",
-  "kiota.openApiExplorer.welcome": "Není vybrán žádný popis API.\n[Hledat](command:kiota.searchOrOpenApiDescription)\n[Otevřít popis API](command:kiota.openApiExplorer.openDescription)\n[Otevřít manifest](command:kiota.openApiExplorer.openManifestPath)\n[Vložit manifest](command:kiota.openApiExplorer.pasteManifest)\n[Vybrat soubor se zámkem](command:kiota.searchLock)",
   "kiota.searchLock.title": "Hledat soubor se zámkem",
   "kiota.openApiExplorer.filterDescription.title": "Filtrovat popis API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Otevřít stránku dokumentace",
