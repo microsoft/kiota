@@ -289,7 +289,7 @@ export async function activate(
     if(globalGenerationType === "clients") {
       await regenerateClient(globalClientKey, globalClientObject, settings, selectedPaths);    
     }
-    if (globalGenerationType === "plugins")  {
+    else if (globalGenerationType === "plugins")  {
       await regeneratePlugin(globalClientKey, globalClientObject, settings, selectedPaths);
     }
     }),
@@ -307,7 +307,7 @@ export async function activate(
       if (generationType === "clients") {
       await regenerateClient(clientKey, clientObject, settings);
       }
-      if (generationType === "plugins") {
+      else if (generationType === "plugins") {
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
