@@ -2403,7 +2403,7 @@ public partial class KiotaBuilder
         };
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
-        new()
+        GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
             Name = schema.Items?.Type ?? schema.Type,
