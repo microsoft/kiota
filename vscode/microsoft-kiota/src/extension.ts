@@ -346,7 +346,6 @@ export async function activate(
       });
       return result;
     });
-    //TODO refresh the kiota workspace
     if (result)
     {
       await exportLogsAndShowErrors(result);
@@ -385,7 +384,6 @@ export async function activate(
       });
       return result;
     });
-    //TODO refresh the kiota workspace
     if (result)
     {
       await exportLogsAndShowErrors(result);
@@ -450,7 +448,6 @@ export async function activate(
         vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
         result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
       await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.kiota', kiotaWorkspaceFile));
-      //TODO this will need to be updated to refresh the workspace instead
     }
     if (result)
     {
