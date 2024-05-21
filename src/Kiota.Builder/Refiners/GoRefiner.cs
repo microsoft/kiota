@@ -768,7 +768,13 @@ public class GoRefiner : CommonLanguageRefiner
             if (namespaceName.StartsWith(clientNamespace, StringComparison.OrdinalIgnoreCase) && !namespaceName.Equals(clientNamespace, StringComparison.OrdinalIgnoreCase))
             {
                 var secondPart = namespaceName[clientNamespace.Length..]; // The rest of the name after the clientNamespace
-                codeNamespace.Name = $"{clientNamespace}.{secondPart.ToLowerInvariant()}";
+                var withEmptyRemoved = string.Join('.', secondPart.Split('.', StringSplitOptions.RemoveEmptyEntries));
+                var normalizedString = string.IsNullOrEmpty(withEmptyRemoved) switch
+                {
+                    true => string.Empty,
+                    false => $".{withEmptyRemoved}"
+                };
+                codeNamespace.Name = $"{clientNamespace}{normalizedString.ToLowerInvariant()}";
             }
         }
         CrawlTree(currentElement, NormalizeNamespaceNames);
