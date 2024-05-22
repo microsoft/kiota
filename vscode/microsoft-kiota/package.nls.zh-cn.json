@@ -25,5 +25,8 @@
   "kiota.generate.serializer.description": "合格的序列化器类名",
   "kiota.generate.deserializer.description": "合格的反序列化器类名",
   "kiota.generate.structuredMimeTypes.description": "用于生成结构化数据模型的 MIME 类型和首选项。根据符合 RFC9110 标题符号。",
-  "kiota.generate.includeAdditionalData.description": "将包含模型的“AdditionalData”属性"
+  "kiota.generate.includeAdditionalData.description": "将包含模型的“AdditionalData”属性",
+  "kiota.workspace.name": "我的工作空间",
+  "kiota.openApiExplorer.regenerateButton.title": "重新生成",
+  "kiota.openApiExplorer.editPaths.title": "编辑路径"
 }

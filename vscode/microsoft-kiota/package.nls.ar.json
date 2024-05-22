@@ -25,5 +25,8 @@
   "kiota.generate.serializer.description": "أسماء الفئات المؤهلة بالكامل للمتسلسلات",
   "kiota.generate.deserializer.description": "أسماء الفئات المؤهلة بالكامل لإلغاء التسلسل",
   "kiota.generate.structuredMimeTypes.description": "أنواع MIME والتفضيلات المستخدمة لإنشاء نماذج البيانات المنظمة. وفقًا لـ RFC9110، قم بقبول تدوين الرأس.",
-  "kiota.generate.includeAdditionalData.description": "سيتم تضمين خاصية 'Additional Data' للنماذج"
+  "kiota.generate.includeAdditionalData.description": "سيتم تضمين خاصية 'Additional Data' للنماذج",
+  "kiota.workspace.name": "",
+  "kiota.openApiExplorer.regenerateButton.title": "",
+  "kiota.openApiExplorer.editPaths.title": ""
 }

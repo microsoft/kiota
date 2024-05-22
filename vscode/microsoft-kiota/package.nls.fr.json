@@ -25,5 +25,8 @@
   "kiota.generate.serializer.description": "Le nom complet des classes de sérialisation.",
   "kiota.generate.deserializer.description": "Le nom complet des classes de désérialisation.",
   "kiota.generate.structuredMimeTypes.description": "Les types MIME et ordre de préférence à utiliser pour la génération de modèles structurés. Suit la convention décrite dans la RFC 9110 pour l'entête Accept.",
-  "kiota.generate.includeAdditionalData.description": "Incluera la propriété 'AdditionalData' pour les modèles générés."
+  "kiota.generate.includeAdditionalData.description": "Incluera la propriété 'AdditionalData' pour les modèles générés.",
+  "kiota.workspace.name": "Mon espace de travail",
+  "kiota.openApiExplorer.regenerateButton.title": "Générer de nouveau",
+  "kiota.openApiExplorer.editPaths.title": "Modifier les chemins"
 }

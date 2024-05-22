@@ -26,5 +26,8 @@
   "kiota.generate.serializer.description": "Pełne nazwy klas dla serializatorów",
   "kiota.generate.deserializer.description": "Pełne nazwy klas dla deserializatorów",
   "kiota.generate.structuredMimeTypes.description": "Typy MIME i preferencje do użycia dla generacji modeli danych strukturalnych. Zgodnie z notacją nagłówka Accept RFC9110.",
-  "kiota.generate.includeAdditionalData.description": "Doda właściwości 'AdditionalData' do modeli"
+  "kiota.generate.includeAdditionalData.description": "Doda właściwości 'AdditionalData' do modeli",
+  "kiota.workspace.name": "My Workspace",
+  "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
+  "kiota.openApiExplorer.editPaths.title": "Edit paths"
 }

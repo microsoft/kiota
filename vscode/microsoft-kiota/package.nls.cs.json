@@ -27,5 +27,6 @@
   "kiota.generate.structuredMimeTypes.description": "MIME typy a preference pro generování strukturovaných datových modelů. Podle notace Accept hlavičky dle RFC9110.",
   "kiota.generate.includeAdditionalData.description": "Bude zahrnuta vlastnost 'AdditionalData' pro modely",
   "kiota.workspace.name": "Můj pracovní prostor",
-  "kiota.openApiExplorer.openFile.title": "Otevřít soubor"
+  "kiota.openApiExplorer.regenerateButton.title": "Znovu vygenerovat",
+  "kiota.openApiExplorer.editPaths.title": "Upravit cesty"
 }

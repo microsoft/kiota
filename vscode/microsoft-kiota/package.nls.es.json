@@ -25,5 +25,8 @@
   "kiota.generate.serializer.description": "Los nombres de clase completamente calificados para serializadores",
   "kiota.generate.deserializer.description": "Los nombres de clase completamente calificados para deserializadores",
   "kiota.generate.structuredMimeTypes.description": "Las preferencias y tipos MIME para usar en la generación de modelos de data estructurados. De acuerdo con RFC9110, acepte notación de encabezado.",
-  "kiota.generate.includeAdditionalData.description": "Incluirá la propiedad 'AdditionalData' para modelos."
+  "kiota.generate.includeAdditionalData.description": "Incluirá la propiedad 'AdditionalData' para modelos.",
+  "kiota.workspace.name": "Mi espacio de trabajo",
+  "kiota.openApiExplorer.regenerateButton.title": "Re-generar",
+  "kiota.openApiExplorer.editPaths.title": "Editar ruta de acceso"
 }

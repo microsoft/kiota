@@ -25,5 +25,8 @@
   "kiota.generate.serializer.description": "Serileştiriciler için tam nitelikli sınıf adları",
   "kiota.generate.deserializer.description": "Seri durumdan çıkarma işlemleri için tam nitelikli sınıf adları",
   "kiota.generate.structuredMimeTypes.description": "Yapılandırılmış veri modeli oluşturmak için kullanılacak MIME türleri ve tercihi. RFC9110'a göre Başlık gösterimini kabul et.",
-  "kiota.generate.includeAdditionalData.description": "Modeller için 'AdditionalData' özelliğini içerecektir"
+  "kiota.generate.includeAdditionalData.description": "Modeller için 'AdditionalData' özelliğini içerecektir",
+  "kiota.workspace.name": "My Workspace",
+  "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
+  "kiota.openApiExplorer.editPaths.title": "Edit paths"
 }
