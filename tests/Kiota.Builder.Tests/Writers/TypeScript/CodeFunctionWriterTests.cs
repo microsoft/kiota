@@ -1233,5 +1233,46 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("break", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
+
+    [Fact]
+    public async Task Writes_UnionOfObjects_SerializerFunctions()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Pets", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null)) is not null).FirstOrDefault();
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("return", serializerFunctionStr);
+        Assert.Contains("switch", serializerFunctionStr);
+        Assert.Contains("case \"Cat\":", serializerFunctionStr);
+        Assert.Contains("case \"Dog\":", serializerFunctionStr);
+        Assert.Contains("break", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
 }
 

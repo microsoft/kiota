@@ -91,10 +91,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return;
         }
 
-        WriteComposedTypeSerialization(composedType, composedParam, codeElement, writer);
+        WriteComposedTypeSerialization(composedParam, codeElement, writer);
     }
 
-    private void WriteComposedTypeSerialization(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
+    private void WriteComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
         var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName ?? throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
@@ -247,10 +247,21 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind)
     {
-        var codeNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
         var functionName = GetFunctionName(returnType, kind);
-        var parent = codeNamespace.FindChildByName<CodeFunction>(functionName);
-        return ConventionServiceInstance.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
+        var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+        var codeFunction = FindCodeFunctionInParentNamespaces(functionName, parentNamespace);
+        return ConventionServiceInstance.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
+    }
+
+    private CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
+    {
+        CodeFunction? codeFunction;
+        do
+        {
+            codeFunction = parentNamespace?.FindChildByName<CodeFunction>(functionName);
+            parentNamespace = parentNamespace?.Parent?.GetImmediateParentOfType<CodeNamespace>();
+        } while (codeFunction is null && parentNamespace is not null);
+        return codeFunction;
     }
 
     private static string GetFunctionName(string returnType, CodeMethodKind functionKind)

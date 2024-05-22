@@ -1,9 +1,7 @@
 ﻿using System;
-using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers.TypeScript;
 using Xunit;
-using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 
@@ -28,5 +26,19 @@ public class TypeScriptConventionServiceTests
         var parent = new CodeClass();
         var codeElement = new CodeProperty { Name = "Test Property", Parent = parent, Type = new CodeType { Name = "test" } };
         Assert.Equal(parent, TypeScriptConventionService.GetParentOfTypeOrNull<CodeClass>(codeElement));
+    }
+
+    [Fact]
+    public void TranslateType_ThrowsArgumentNullException_WhenComposedTypeIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => TypeScriptConventionService.TranslateType(null));
+    }
+
+    [Fact]
+    public void TranslateType_ReturnsCorrectTranslation_WhenComposedTypeIsNotNull()
+    {
+        var composedType = new CodeUnionType { Name = "test" };
+        var result = TypeScriptConventionService.TranslateType(composedType);
+        Assert.Equal("Test", result);
     }
 }
