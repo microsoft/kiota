@@ -232,8 +232,7 @@ export async function activate(
      await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
      await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
-
-     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
+    registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -249,7 +248,6 @@ export async function activate(
       await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
     }
     }),
-      
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       const settings = getExtensionSettings(extensionId); 
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(kiotaWorkspaceFile));
@@ -445,7 +443,6 @@ export async function activate(
     
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
   }
-
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
     const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.Microsoft;
     await vscode.window.withProgress({

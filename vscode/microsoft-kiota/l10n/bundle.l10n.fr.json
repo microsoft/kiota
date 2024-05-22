@@ -48,7 +48,7 @@
   "Select an option": "Sélectionnez une option",
   "class": "classe",
   "namespace": "espace de nommage",
-  "output path": "chemin de sortie",
+  "output directory": "répertoire de sortie",
   "language": "langage",
   "Create a new API client": "Créer un nouveau client d'API",
   "Create a new plugin": "Créer un nouveau composant",
