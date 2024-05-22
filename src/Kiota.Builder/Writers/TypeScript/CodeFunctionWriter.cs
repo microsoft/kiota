@@ -10,11 +10,8 @@ using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 
-public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConventionService>
+public class CodeFunctionWriter(TypeScriptConventionService conventionService) : BaseElementWriter<CodeFunction, TypeScriptConventionService>(conventionService)
 {
-    public CodeFunctionWriter(TypeScriptConventionService conventionService) : base(conventionService)
-    {
-    }
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
@@ -56,7 +53,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
                 break;
             case CodeMethodKind.ComposedTypeSerializer:
-                WriteComposedTypeSerializer(codeMethod, writer);
+                WriteComposedTypeSerializer(codeElement, writer);
                 break;
             default: throw new InvalidOperationException("Invalid code method kind");
         }
@@ -81,17 +78,42 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         writer.CloseBlock();
     }
 
-    private void WriteComposedTypeSerializer(CodeMethod method, LanguageWriter writer)
+    private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer)
     {
-        var composedParam = method.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
+        var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
         if (composedParam == null) return;
 
         if (GetOriginalComposedType(composedParam) is not CodeComposedTypeBase composedType) return;
 
-        WriteComposedTypeSerialization(composedType, composedParam, method, writer);
+        if (conventions.IsComposedOfPrimitives(composedType))
+        {
+            WriteComposedTypeSerializationForPrimitives(composedType, composedParam, codeElement, writer);
+            return;
+        }
+
+        WriteComposedTypeSerialization(composedType, composedParam, codeElement, writer);
     }
 
-    private void WriteComposedTypeSerialization(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeMethod method, LanguageWriter writer)
+    private void WriteComposedTypeSerialization(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
+    {
+        var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName ?? throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
+        var paramName = composedParam.Name.ToFirstCharacterLowerCase();
+        writer.WriteLine($"if ({paramName} == undefined) return;");
+        writer.StartBlock($"switch ({paramName}.{discriminatorPropertyName}) {{");
+
+        foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
+        {
+            writer.StartBlock($"case \"{mappedType.Key}\":");
+            var mappedTypeName = mappedType.Value.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"writer.writeObjectValue<{mappedTypeName}>(key, {paramName}, {GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)});");
+            writer.WriteLine("break;");
+            writer.DecreaseIndent();
+        }
+
+        writer.CloseBlock();
+    }
+
+    private void WriteComposedTypeSerializationForPrimitives(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"if ({paramName} == undefined) return;");
@@ -105,10 +127,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         writer.CloseBlock();
     }
 
-    private void WriteTypeSerialization(CodeTypeBase type, string paramName, CodeMethod method, LanguageWriter writer)
+    private void WriteTypeSerialization(CodeTypeBase type, string paramName, CodeFunction method, LanguageWriter writer)
     {
         var nodeType = conventions.GetTypeString(type, method, false);
-        var serializationName = GetSerializationMethodName(type, method);
+        var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
         if (serializationName == null || nodeType == null) return;
 
         writer.StartBlock($"case \"{nodeType}\":");
@@ -183,7 +205,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter? parseNodeParameter)
     {
-        var deserializationFunction = GetDeserializationFunction(codeElement, returnType);
+        var deserializationFunction = GetFunctionName(codeElement, returnType, CodeMethodKind.Deserializer);
         var parseNodeParameterForPrimitiveValues = GetParseNodeParameterForPrimitiveValues(codeElement, parseNodeParameter);
         writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()}{parseNodeParameterForPrimitiveValues};");
     }
@@ -206,7 +228,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
             writer.StartBlock($"case \"{mappedType.Key}\":");
-            writer.WriteLine($"return {GetDeserializationFunction(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase())};");
+            writer.WriteLine($"return {GetFunctionName(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase(), CodeMethodKind.Deserializer)};");
             writer.DecreaseIndent();
         }
         writer.CloseBlock();
@@ -223,12 +245,22 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         return string.Empty;
     }
 
-    private string GetDeserializationFunction(CodeElement codeElement, string returnType)
+    private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind)
     {
         var codeNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
-        var parent = codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}")!;
+        var functionName = GetFunctionName(returnType, kind);
+        var parent = codeNamespace.FindChildByName<CodeFunction>(functionName);
+        return ConventionServiceInstance.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
+    }
 
-        return conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
+    private static string GetFunctionName(string returnType, CodeMethodKind functionKind)
+    {
+        return functionKind switch
+        {
+            CodeMethodKind.Serializer => $"serialize{returnType}",
+            CodeMethodKind.Deserializer => $"deserializeInto{returnType}",
+            _ => throw new InvalidOperationException($"Unsupported function kind :: {functionKind}")
+        };
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
