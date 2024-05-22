@@ -54,7 +54,7 @@
   "Create a new plugin": "Crear un nuevo plugin",
   "Create a new manifest": "Crear un nuevo manifesto",
   "plugin name:": "nombre del plugin",
-  "Choose a name for the plugin:": "Elija un nombre para el plugin",
+  "Choose a name for the plugin": "Elija un nombre para el plugin",
   "Choose a plugin type": "Elija un tipo de plugin",
   "manifest name": "Nombre de manifesto",
   "Choose a name for the manifest": "Elija un nombre para el manifesto",
