@@ -187,7 +187,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputPluginName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
-            title: `${l10n.t('Create a new plugin')} - ${('plugin name')}`,
+            title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
             step: step++,
             totalSteps: 3,
             value: state.pluginName ?? '',
@@ -201,10 +201,10 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
             const items = ['Microsoft','Open AI'].map(x => ({ label: x})as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
-                title: 'Choose a plugin type',
+                title: l10n.t('Choose a plugin type'),
                 step: step++,
                 totalSteps: 3,
-                placeholder: 'Select an option',
+                placeholder: l10n.t('Select an option'),
                 items: items,
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
@@ -214,7 +214,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new plugin')} - ${('output directory')}}`,
+			title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
@@ -226,7 +226,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
-            title: `${l10n.t('Create a new manifest')} - ${('manifest name')}`,
+            title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
             step: step++,
             totalSteps: 3,
             value: state.pluginName ?? '',
@@ -239,7 +239,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new manifest')} - ${('output directory')}`,
+			title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
 			step: step++,
 			totalSteps: 3,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
