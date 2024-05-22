@@ -17,8 +17,6 @@
   "kiota.searchLock.title": "Search for a lock file",
   "kiota.openApiExplorer.filterDescription.title": "Filter API description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Open documentation page",
-  "kiota.openApiExplorer.openManifestPath.title": "Open API manifest",
-  "kiota.openApiExplorer.pasteManifest.title": "Paste API manifest",
   "kiota.generate.backingStore.description": "Enables backing store for models",
   "kiota.generate.excludeBackwardCompatible.description": "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients",
   "kiota.cleanOutput.description": "Removes all files from the output directory before generating the code files",

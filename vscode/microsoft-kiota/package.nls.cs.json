@@ -17,8 +17,6 @@
   "kiota.searchLock.title": "Hledat soubor se zámkem",
   "kiota.openApiExplorer.filterDescription.title": "Filtrovat popis API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Otevřít stránku dokumentace",
-  "kiota.openApiExplorer.openManifestPath.title": "Otevřít API manifest",
-  "kiota.openApiExplorer.pasteManifest.title": "Vložit API manifest",
   "kiota.generate.backingStore.description": "Povoluje úložiště pro modely",
   "kiota.generate.excludeBackwardCompatible.description": "Vylučuje zpětně kompatibilní a zastaralé prvky z vygenerovaného výsledku. Mělo by se používat pro nové klienty",
   "kiota.cleanOutput.description": "Odstraní všechny soubory z výstupního adresáře před generováním souborů s kódem",

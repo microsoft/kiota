@@ -4,7 +4,7 @@
   "kiota.openApiExplorer.name": "OpenAPI исследователь для Kiota",
   "kiota.openApiExplorer.contextualTitle": "OpenAPI исследователь",
   "kiota-dependencies-info.panel.title": "Информация о зависимостях Kiota",
-  "kiota-openapi-explorer.activitybar.title": "OpenAPI исследователь для Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Kiota",
   "kiota.selectLock.title": "Выберите файл блокировки для просмотра API-исследователя",
   "kiota.updateClients.title": "Обновите API-клиенты в текущем рабочем пространстве",
   "kiota.openApiExplorer.generateClient.title": "Создать клиент API",
@@ -16,7 +16,5 @@
   "kiota.openApiExplorer.openDescription.title": "Открыть описание API",
   "kiota.searchLock.title": "Искать файл блокировки",
   "kiota.openApiExplorer.filterDescription.title": "Отфильтровать описание API",
-  "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации",
-  "kiota.openApiExplorer.openManifestPath.title": "Откройте манифест API",
-  "kiota.openApiExplorer.pasteManifest.title": "Вставьте манифест API"
+  "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации"
 }

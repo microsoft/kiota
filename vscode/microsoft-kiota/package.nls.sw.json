@@ -4,7 +4,7 @@
   "kiota.openApiExplorer.name": "Mchunguzi wa OpenAPI Kiota",
   "kiota.openApiExplorer.contextualTitle": "Mchunguzi wa OpenAPI",
   "kiota-dependencies-info.panel.title": "Taarifa za Mategemeo za Kiota",
-  "kiota-openapi-explorer.activitybar.title": "Mchunguzi wa OpenAPI Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Kiota",
   "kiota.selectLock.title": "Chagua faili ya kufunga ili uone kichunguzi cha API",
   "kiota.updateClients.title": "Sasisha wateja wa API katika nafasi ya kazi",
   "kiota.openApiExplorer.generateClient.title": "Tengeneza mteja wa API",
@@ -16,7 +16,5 @@
   "kiota.openApiExplorer.openDescription.title": "Fungua maelezo ya API",
   "kiota.searchLock.title": "Tafuta faili ya kufunga",
   "kiota.openApiExplorer.filterDescription.title": "Chuja maelezo ya API",
-  "kiota.openApiExplorer.openDocumentationPage.title": "Fungua ukurasa wa nyaraka",
-  "kiota.openApiExplorer.openManifestPath.title": "Fungua dhahiri ya API",
-  "kiota.openApiExplorer.pasteManifest.title": "Bandiko dhahiri ya dhahiri"
+  "kiota.openApiExplorer.openDocumentationPage.title": "Fungua ukurasa wa nyaraka"
 }
