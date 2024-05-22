@@ -319,16 +319,6 @@
     },
     "commands": [
       {
-        "command": "kiota.openApiExplorer.pasteManifest",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.pasteManifest.title%"
-      },
-      {
-        "command": "kiota.openApiExplorer.openManifestPath",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.openManifestPath.title%"
-      },
-      {
         "command": "kiota.selectLock",
         "category": "Kiota",
         "title": "%kiota.selectLock.title%",

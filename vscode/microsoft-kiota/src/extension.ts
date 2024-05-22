@@ -18,7 +18,7 @@ import {
   parseGenerationLanguage,
   parsePluginType,
 } from "./kiotaInterop";
-import { GenerateState, GenerationType, filterSteps, generateSteps, openManifestSteps, openSteps, parseGenerationType, searchSteps, selectApiManifestKey } from "./steps";
+import { GenerateState, GenerationType, filterSteps, generateSteps, parseGenerationType, searchSteps } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
@@ -65,29 +65,6 @@ export async function activate(
           const descriptionUrl = queryParameters["descriptionurl"];
           if (descriptionUrl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
-            return;
-          }
-        }
-        if (uri.path.toLowerCase() === "/openmanifest") {
-          reporter.sendTelemetryEvent("DeepLink.OpenManifest");
-          const manifestUrl = queryParameters["manifesturl"];
-          const manifestContent = queryParameters["manifestcontent"];
-          const apiIdentifier = queryParameters["apiidentifier"];
-          const fromClipboard = queryParameters["fromclipboard"];
-          if (manifestUrl) {
-            await openTreeViewWithProgress(async () => {
-              const logs = await openApiTreeProvider.loadManifestFromUri(manifestUrl, apiIdentifier);
-              await exportLogsAndShowErrors(logs);
-            });
-            return;
-          } else if (manifestContent) {
-            await openTreeViewWithProgress(async () => {
-              const logs = await openApiTreeProvider.loadManifestFromContent(manifestContent, apiIdentifier);
-              await exportLogsAndShowErrors(logs);
-            });
-            return;
-          } else if (fromClipboard.toLowerCase() === "true") {
-            await openManifestFromClipboard(openApiTreeProvider, apiIdentifier!);
             return;
           }
         }
@@ -246,28 +223,6 @@ export async function activate(
       async () => {
         await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
       }
-    ),
-    registerCommandWithTelemetry(reporter, 
-      `${treeViewId}.openDescription`,
-      async () => {
-        const openState = await openSteps();
-        if (openState.descriptionPath) {
-          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(openState.descriptionPath!));
-        }
-      }
-    ),
-    registerCommandWithTelemetry(reporter, 
-      `${treeViewId}.openManifestPath`,
-      async () => {
-        const openState = await openManifestSteps();
-        if (openState.manifestPath) {
-          await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(openState.manifestPath!));
-        }
-      }
-    ),
-    registerCommandWithTelemetry(reporter, 
-      `${treeViewId}.pasteManifest`,
-      () => openManifestFromClipboard(openApiTreeProvider, "")
     ),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
      clientOrPluginKey = clientKey;
@@ -585,41 +540,6 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
-}
-async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvider, apiIdentifier?: string): Promise<void> {
-  await openTreeViewWithProgress(async () => {
-    let clipBoardContent = await vscode.env.clipboard.readText();
-    if (!clipBoardContent) {
-      await vscode.window.showErrorMessage(
-        vscode.l10n.t("No content found in the clipboard")
-      );
-      return;
-    }
-    try {
-      let deserializedContent: ApiManifest;
-      try {
-        deserializedContent = JSON.parse(clipBoardContent) as ApiManifest;
-        // if it's valid json, it's not base64 encoded
-      } catch {
-        clipBoardContent = Buffer.from(clipBoardContent, 'base64').toString('utf-8');
-        deserializedContent = JSON.parse(clipBoardContent) as ApiManifest;
-      }
-      if (!apiIdentifier && deserializedContent.apiDependencies && Object.keys(deserializedContent.apiDependencies).length > 1) {
-        const apiKeys = Object.keys(deserializedContent.apiDependencies);
-        const selectKeyResult = await selectApiManifestKey(apiKeys);
-        if (selectKeyResult.selectedKey) {
-          apiIdentifier = selectKeyResult.selectedKey;
-        }
-      }
-    } catch (error) {
-      await vscode.window.showErrorMessage(
-        vscode.l10n.t("Invalid content found in the clipboard")
-      );
-      return;
-    }
-    const logs = await openApiTreeProvider.loadManifestFromContent(clipBoardContent, apiIdentifier);
-    await exportLogsAndShowErrors(logs);
-  });
 }
 function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
   return vscode.window.withProgress({

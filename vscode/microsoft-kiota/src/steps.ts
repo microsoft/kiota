@@ -1,72 +1,6 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
-
-export async function openSteps() {
-    const state = {} as Partial<OpenState>;
-    const title = l10n.t('Open an API description');
-    let step = 1;
-    let totalSteps = 1;
-    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
-        state.descriptionPath = await input.showInputBox({
-            title,
-            step: step++,
-            totalSteps: totalSteps,
-            value: state.descriptionPath || '',
-            prompt: l10n.t('A path or url to an OpenAPI description'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
-    }
-    await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
-    return state;
-};
-
-export async function openManifestSteps() {
-    const state = {} as Partial<OpenManifestState>;
-    const title = l10n.t('Open an API manifest');
-    let step = 1;
-    let totalSteps = 1;
-    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenManifestState>) {
-        state.manifestPath = await input.showInputBox({
-            title,
-            step: step++,
-            totalSteps: totalSteps,
-            value: state.manifestPath ?? '',
-            prompt: l10n.t('A path or URL to an API manifest'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
-    }
-    await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
-    return state;
-};
-
-export async function selectApiManifestKey(keys: string[]) {
-    const state = {} as Partial<SelectApiManifestKey>;
-    let step = 1;
-    let totalSteps = 1;
-    const title = l10n.t('Select an API manifest key');
-    async function pickSearchResult(input: MultiStepInput, state: Partial<SelectApiManifestKey>) {
-        const items = keys.map(x => 
-        { 
-            return {
-                label: x,
-            } as QuickPickItem;
-        });
-        const pick = await input.showQuickPick({
-            title,
-            step: step++,
-            totalSteps: totalSteps,
-            placeholder: l10n.t('Select an API manifest key'),
-            items: items,
-            shouldResume: shouldResume
-        });
-        state.selectedKey = keys.find(x => x === pick?.label);
-    }
-    await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
-    return state;
-}
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
     const title = l10n.t('Filter the API description');
@@ -153,10 +87,6 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-interface SearchItem {
-    descriptionUrl?: string;
-}
-type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
     const state = {...existingConfiguration} as Partial<GenerateState>;
@@ -350,17 +280,10 @@ interface OpenState extends BaseStepsState {
     descriptionPath: string;
 }
 
-interface OpenManifestState extends BaseStepsState {
-    manifestPath: string;
+interface SearchItem {
+    descriptionUrl?: string;
 }
-
-interface SearchLockState extends BaseStepsState {
-    lockFilePath: Uri;
-}
-
-interface SelectApiManifestKey extends BaseStepsState {
-    selectedKey: string;
-}
+type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export interface GenerateState extends BaseStepsState {
     generationType: QuickPickItem | string;
