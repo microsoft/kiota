@@ -446,7 +446,7 @@
     "@typescript-eslint/parser": "^7.5.0",
     "@vscode/test-electron": "^2.3.10",
     "eslint": "^8.57.0",
-    "glob": "^10.3.15",
+    "glob": "^10.3.16",
     "mocha": "^10.4.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
@@ -459,7 +459,7 @@
     "adm-zip": "^0.5.12",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
-    "vscode-jsonrpc": "^8.2.0"
+    "vscode-jsonrpc": "^8.2.1"
   },
   "preview": true,
   "runtimeDependencies": [

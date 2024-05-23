@@ -394,7 +394,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
-        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass
+        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
                                 ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
