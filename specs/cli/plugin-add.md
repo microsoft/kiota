@@ -241,6 +241,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
  └─generated
     └─plugins
       └─github
+          └─manifest.json # App manifest
           └─github-apimanifest.json # Specific API Manifest
           └─openai-plugins.json #OpenAI Plugin
           └─github-openapi.json # Sliced and augmented OpenAPI document
