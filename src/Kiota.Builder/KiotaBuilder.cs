@@ -2402,13 +2402,17 @@ public partial class KiotaBuilder
             Name = "string",
         };
     }
-    private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
-        GetPrimitiveType(schema) ?? new()
+    private static CodeType GetQueryParameterType(OpenApiSchema schema)
+    {
+        var paramType = GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
             Name = schema.Items?.Type ?? schema.Type,
-            CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default,
         };
+
+        paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        return paramType;
+    }
 
     private void CleanUpInternalState()
     {
