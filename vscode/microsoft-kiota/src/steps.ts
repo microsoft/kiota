@@ -152,16 +152,30 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		return (input: MultiStepInput) => inputOutputPath(input, state);
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-		state.outputPath = await input.showInputBox({
+        const folderSelectionOption = l10n.t('Browse your output directory');
+        const inputOptions = [folderSelectionOption];
+
+		const selectedOption = await input.showQuickPick({
 			title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
 			step: step++,
 			totalSteps: totalSteps,
-			value: typeof state.outputPath === 'string' ? state.outputPath : '',
-			placeholder: 'myproject/apiclient',
-			prompt: l10n.t('Enter an output path relative to the root of the project'),
+            placeholder: l10n.t('Enter an output path relative to the root of the project'),
+            items: inputOptions.map(label => ({ label: label as string })), 
 			shouldResume: shouldResume
 		});
-        state.outputPath === '' ? state.outputPath = 'output' : state.outputPath;	
+        if (selectedOption?.label === folderSelectionOption) {
+            const folderUri = await input.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Select',
+                canSelectFolders: true,
+                canSelectFiles: false
+            });
+    
+            if (folderUri && folderUri[0]) {
+                state.outputPath = folderUri[0].fsPath;
+            }
+        } 
+        state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;	
 		return (input: MultiStepInput) => pickLanguage(input, state);
 	}
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
