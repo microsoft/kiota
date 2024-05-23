@@ -54,7 +54,7 @@ For `manifest.json` file, we will:
 "copilotExtensions": {
   "plugins": [
     {
-      "id": {plugin-name}
+      "id": "{plugin-name}",
       "file": "<generated_plugin_file>.json"
     }
   ]
@@ -63,7 +63,7 @@ For `manifest.json` file, we will:
 2. If a `plugins` node already exists and there is no plugin with the same `id`, add the new plugin information. If the `id` already exists, replace the current content.
 3. If there is no `manifest.json` file, we should create a basic manifest with only required information as the following example:
 
-```json
+```jsonc
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
   "manifestVersion": "devPreview",
