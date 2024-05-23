@@ -101,6 +101,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     let step = 1;
     let totalSteps = 4;
+    const folderSelectionOption = l10n.t('Browse your output directory');
+    const inputOptions = [folderSelectionOption];
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
 		const option = await input.showQuickPick({
@@ -152,9 +154,6 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		return (input: MultiStepInput) => inputOutputPath(input, state);
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        const folderSelectionOption = l10n.t('Browse your output directory');
-        const inputOptions = [folderSelectionOption];
-
 		const selectedOption = await input.showQuickPick({
 			title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
 			step: step++,
@@ -226,10 +225,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             pluginTypes.label === 'Microsoft'? state.pluginTypes = 'Microsoft' : state.pluginTypes = 'OpenAI';
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
-        async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-            const folderSelectionOption = l10n.t('Browse your output directory');
-            const inputOptions = [folderSelectionOption];
-            
+        async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {            
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
@@ -267,15 +263,26 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);      
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-		state.outputPath = await input.showInputBox({
+		const selectedOption = await input.showQuickPick({
 			title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
 			step: step++,
 			totalSteps: 3,
-			value: typeof state.outputPath === 'string' ? state.outputPath : '',
-			placeholder: 'myproject/mymanifest',
-			prompt: l10n.t('Enter an output path relative to the root of the project'),
+            placeholder: l10n.t('Enter an output path relative to the root of the project'),
+            items: inputOptions.map(label => ({ label: label as string })),
 			shouldResume: shouldResume
-		});	
+		});
+        if (selectedOption?.label === folderSelectionOption) {
+            const folderUri = await input.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Select',
+                canSelectFolders: true,
+                canSelectFiles: false
+            });
+    
+            if (folderUri && folderUri[0]) {
+                state.outputPath = folderUri[0].fsPath;
+            }
+        }	
         state.outputPath === ''? state.outputPath = 'output' : state.outputPath;		
 	}
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
