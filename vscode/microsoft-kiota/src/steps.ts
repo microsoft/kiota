@@ -45,10 +45,8 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
         if(state.searchResults && Object.keys(state.searchResults).length > 0) {
             return (input: MultiStepInput) => pickSearchResult(input, state);
         }
-        else {
-            state.descriptionPath = state.searchQuery;
-            return (input: MultiStepInput) => inputPathOrUrl(input, state);
-        }
+        state.descriptionPath = state.searchQuery;
+        return (input: MultiStepInput) => inputPathOrUrl(input, state);
     }
 
     async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
