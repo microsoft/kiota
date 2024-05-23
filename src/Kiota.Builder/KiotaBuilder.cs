@@ -1595,12 +1595,6 @@ public partial class KiotaBuilder
     {
         var flattenedAllOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).ToArray();
         var referenceId = schema.Reference?.Id;
-        var className = (schema.GetSchemaName(true) is string cName && !string.IsNullOrEmpty(cName) ?
-                            cName :
-                            (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
-                                typeNameForInlineSchema :
-                                currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)))
-                        .CleanupSymbolName();
         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
         if (rootNamespace is null)
@@ -1609,6 +1603,12 @@ public partial class KiotaBuilder
         var inlineSchema = Array.Find(flattenedAllOfs, static x => !x.IsReferencedSchema());
         var referencedSchema = Array.Find(flattenedAllOfs, static x => x.IsReferencedSchema());
         var rootSchemaHasProperties = schema.HasAnyProperty();
+        var className = (schema.GetSchemaName(schema.IsSemanticallyMeaningful()) is string cName && !string.IsNullOrEmpty(cName) ?
+                cName :
+                (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
+                    typeNameForInlineSchema :
+                    currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)))
+            .CleanupSymbolName();
         var codeDeclaration = (rootSchemaHasProperties, inlineSchema, referencedSchema) switch
         {
             // greatest parent type
@@ -2403,7 +2403,7 @@ public partial class KiotaBuilder
         };
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
-        new()
+        GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
             Name = schema.Items?.Type ?? schema.Type,

@@ -482,6 +482,32 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void WritesRequestExecutorBodyWithUntypedReturnValue()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { TypeDefinition = null, Name = KiotaBuilder.UntypedNodeName };
+        var errorXXX = root.AddClass(new CodeClass
+        {
+            Name = "ErrorXXX",
+        }).First();
+        method.AddErrorMapping("XXX", new CodeType { Name = "ErrorXXX", TypeDefinition = errorXXX });
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo", result);
+        Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("<exception cref=", result);
+        Assert.Contains("{ \"XXX\", ErrorXXX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("SendAsync", result);
+        Assert.Contains("UntypedNode.CreateFromDiscriminatorValue", result);
+        Assert.Contains(AsyncKeyword, result);
+        Assert.Contains("await", result);
+        Assert.Contains("cancellationToken", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyForMultipart()
     {
         setup();
