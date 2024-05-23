@@ -1,4 +1,4 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
@@ -212,18 +212,33 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             pluginTypes.label === 'Microsoft'? state.pluginTypes = 'Microsoft' : state.pluginTypes = 'OpenAI';
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
-    async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-		state.outputPath = await input.showInputBox({
-			title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
-			step: step++,
-			totalSteps: 3,
-			value: typeof state.outputPath === 'string' ? state.outputPath : '',
-			placeholder: 'myproject/myplugin',
-			prompt: l10n.t('Enter an output path relative to the root of the project'),
-			shouldResume: shouldResume
-		});
-        state.outputPath === ''? state.outputPath = 'output' : state.outputPath;		
-	}
+        async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+            const folderSelectionOption = l10n.t('Browse your output directory');
+            const inputOptions = [folderSelectionOption];
+            
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
+                step: step++,
+                totalSteps: 3,
+                placeholder:  l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions.map(label => ({ label: label as string })), 
+                shouldResume: shouldResume
+            });
+            if (selectedOption?.label === folderSelectionOption) {
+                const folderUri = await input.showOpenDialog({
+                    canSelectMany: false,
+                    openLabel: 'Select',
+                    canSelectFolders: true,
+                    canSelectFiles: false
+                });
+        
+                if (folderUri && folderUri[0]) {
+                    state.outputPath = folderUri[0].fsPath;
+                }
+            } 
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;	
+        }
+    
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
             title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
@@ -348,9 +363,38 @@ interface InputBoxParameters {
 	placeholder?: string;
 	shouldResume: () => Thenable<boolean>;
 }
-
+ interface OpenDialogParameters {
+    canSelectMany: boolean;
+    openLabel: string;
+    canSelectFolders: boolean;
+    canSelectFiles: boolean;
+}
 
 class MultiStepInput {
+    async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles} : OpenDialogParameters): Promise<Uri[] | undefined> {
+    const disposables: Disposable[] = [];
+
+    try {
+        return await new Promise<Uri[] | undefined>((resolve) => {
+            const input: OpenDialogOptions = {
+                canSelectMany,
+                openLabel,
+                canSelectFolders,
+                canSelectFiles
+            };
+
+            void window.showOpenDialog(input).then(folderUris => {
+                if (folderUris && folderUris.length > 0) {
+                    resolve([folderUris[0]]);
+                } else {
+                    resolve(undefined);
+                }
+            });
+        });
+    } finally {
+        disposables.forEach(d => d.dispose());
+    }
+}
 
 	static async run<T>(start: InputStep, onNavBack?: () => void) {
 		const input = new MultiStepInput();
