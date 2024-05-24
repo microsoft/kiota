@@ -302,6 +302,7 @@ export async function activate(
     });
     if (result)
     {
+      await checkForSuccess(result);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -340,6 +341,7 @@ export async function activate(
     });
     if (result)
     {
+      await checkForSuccess(result);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -405,6 +407,7 @@ export async function activate(
     }
     if (result)
     {
+      await checkForSuccess(result);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -655,6 +658,19 @@ function getQueryParameters(uri: vscode.Uri): Record<string, string> {
   });
   return parameters;
 }
+async function checkForSuccess(results: KiotaLogEntry[]) {
+  for (const result of results) {
+    if (result && result.message) {
+      if (result.message.includes("Generation completed successfully")) {
+        void vscode.window.showInformationMessage('Generation completed successfully.');
+        await vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, false);
+        await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
+        break;
+      }
+    }
+  }
+}
+
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
