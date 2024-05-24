@@ -331,9 +331,9 @@ public partial class KiotaBuilder
     }
     private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
-    [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])?", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();
-    private static string ReplaceAllIndexesWithWildcard(string path, uint depth = 10) => depth == 0 ? path : ReplaceAllIndexesWithWildcard(MultiIndexSameLevelCleanupRegex().Replace(path, "$1{*}$2"), depth - 1); // the bound needs to be greedy to avoid replacing anything else than single path parameters
+    internal static string ReplaceAllIndexesWithWildcard(string path, uint depth = 10) => depth == 0 ? path : ReplaceAllIndexesWithWildcard(MultiIndexSameLevelCleanupRegex().Replace(path, "$1{*}$2"), depth - 1); // the bound needs to be greedy to avoid replacing anything else than single path parameters
     private static Dictionary<Glob, HashSet<OperationType>> GetFilterPatternsFromConfiguration(HashSet<string> configPatterns)
     {
         return configPatterns.Select(static x =>
