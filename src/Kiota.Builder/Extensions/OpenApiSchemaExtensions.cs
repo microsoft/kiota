@@ -84,19 +84,36 @@ public static class OpenApiSchemaExtensions
             isRootSchemaMeaningful);
     }
 
-    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default)
+    internal static OpenApiSchema? MergeAllOfSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, Func<OpenApiSchema, bool>? filter = default)
+    {
+        return schema.MergeIntersectionSchemaEntries(schemasToExclude, true, filter);
+    }
+
+    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<OpenApiSchema, bool>? filter = default)
     {
         if (schema is null) return null;
-        if (!schema.IsIntersection()) return schema;
+        if (!schema.IsIntersection() && !overrideIntersection) return schema;
         var result = new OpenApiSchema(schema);
         result.AllOf.Clear();
         var meaningfulSchemas = schema.AllOf
-                                    .Where(static x => x.IsSemanticallyMeaningful() || x.AllOf.Any())
-                                    .Select(x => MergeIntersectionSchemaEntries(x, schemasToExclude))
+                                    .Where(x => (x.IsSemanticallyMeaningful() || x.AllOf.Any()) && (filter == null || filter(x)))
+                                    .Select(x => MergeIntersectionSchemaEntries(x, schemasToExclude, overrideIntersection, filter))
                                     .Where(x => x is not null && (schemasToExclude is null || !schemasToExclude.Contains(x)))
                                     .OfType<OpenApiSchema>()
                                     .ToArray();
-        meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.TryAdd(x.Key, x.Value));
+        var entriesToMerge = meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).ToArray();
+        if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator)
+            if (result.Discriminator is null)
+                result.Discriminator = discriminator;
+            else if (string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
+                result.Discriminator.PropertyName = discriminator.PropertyName;
+            else if (discriminator.Mapping?.Any() ?? false)
+                result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
+
+        foreach (var propertyToMerge in entriesToMerge.SelectMany(static x => x.Properties))
+        {
+            result.Properties.TryAdd(propertyToMerge.Key, propertyToMerge.Value);
+        }
         return result;
     }
 
@@ -225,8 +242,8 @@ public static class OpenApiSchemaExtensions
             return oneOfDiscriminatorPropertyName;
         if (schema.AnyOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
             return anyOfDiscriminatorPropertyName;
-        if (schema.AllOf.Any())
-            return GetDiscriminatorPropertyName(schema.AllOf[^1]);
+        if (schema.AllOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string allOfDiscriminatorPropertyName)
+            return allOfDiscriminatorPropertyName;
 
         return string.Empty;
     }
@@ -260,7 +277,7 @@ public static class OpenApiSchemaExtensions
         ArgumentNullException.ThrowIfNull(inheritanceIndex);
         if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
             return dependents.Keys.Union(dependents.Keys.SelectMany(x => GetAllInheritanceSchemaReferences(x, inheritanceIndex))).Distinct(StringComparer.OrdinalIgnoreCase);
-        return Enumerable.Empty<string>();
+        return [];
     }
 }
 

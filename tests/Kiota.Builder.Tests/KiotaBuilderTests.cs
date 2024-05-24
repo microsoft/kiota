@@ -3487,7 +3487,7 @@ paths:
         var directoryObjectSchema = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
+            AllOf = [
                 entitySchema,
                 new OpenApiSchema {
                     Properties = new Dictionary<string, OpenApiSchema> {
@@ -3506,7 +3506,7 @@ paths:
                         "@odata.type"
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "microsoft.graph.directoryObject",
@@ -3517,7 +3517,7 @@ paths:
         var userSchema = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
+            AllOf = [
                 directoryObjectSchema,
                 new OpenApiSchema {
                     Properties = new Dictionary<string, OpenApiSchema> {
@@ -3536,7 +3536,7 @@ paths:
                         "@odata.type"
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "microsoft.graph.user",
