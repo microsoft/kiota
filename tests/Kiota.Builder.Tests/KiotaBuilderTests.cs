@@ -3489,7 +3489,8 @@ paths:
             Type = "object",
             AllOf = [
                 entitySchema,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "tenant", new OpenApiSchema {
@@ -3519,7 +3520,8 @@ paths:
             Type = "object",
             AllOf = [
                 directoryObjectSchema,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "firstName", new OpenApiSchema {
