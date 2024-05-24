@@ -221,6 +221,10 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.PathQueryAndHeaderParameters
+                                                .Select(x => x.Type)
+                                                .Union(new[] { currentMethod.ReturnType })
+                                                .ToArray());
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

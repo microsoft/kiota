@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where models would be duplicated in some allOf scenarios [#4191](https://github.com/microsoft/kiota/issues/4191)
 - Fixes a bug where CLI Generation does not handle path parameters of type "string" and format "date", "date-time", "time", etc. [#4615](https://github.com/microsoft/kiota/issues/4615)
 - Fixes a bug where request executors would be missing Untyped parameters in dotnet [#4692](https://github.com/microsoft/kiota/issues/4692)
+- Fixes a bug where CLI generation doesnot handle parameters of type string array. [#4707](https://github.com/microsoft/kiota/issues/4707)
 
 ## [1.14.0] - 2024-05-02
 
