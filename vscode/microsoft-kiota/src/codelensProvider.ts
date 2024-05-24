@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { l10n } from 'vscode';
-import { kiotaWorkspaceFile } from './constants';
+import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from './constants';
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
@@ -8,8 +8,8 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         const text = document.getText();
         const jsonObject = JSON.parse(text);
 
-        if (document.fileName.endsWith(kiotaWorkspaceFile)) {
-            ['clients', 'plugins'].forEach(objectKey => {
+        if (document.fileName.endsWith(KIOTA_WORKSPACE_FILE)) {
+            [CLIENTS, PLUGINS].forEach(objectKey => {
                 const object = jsonObject[objectKey];
                 if (object) {
                     Object.keys(object).forEach(key => {

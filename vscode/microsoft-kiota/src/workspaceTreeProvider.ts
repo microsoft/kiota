@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { kiotaWorkspaceFile } from './constants';
+import { KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE } from './constants';
 
-const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join('') || '', '.kiota', kiotaWorkspaceFile);
+const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join('') || '', KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
 
 export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
@@ -12,7 +12,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     }
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (!element) {
-            return [new vscode.TreeItem(kiotaWorkspaceFile, vscode.TreeItemCollapsibleState.None)];
+            return [new vscode.TreeItem(KIOTA_WORKSPACE_FILE, vscode.TreeItemCollapsibleState.None)];
         }
         return [];
     }
