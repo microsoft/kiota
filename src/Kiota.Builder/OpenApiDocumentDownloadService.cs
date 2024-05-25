@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Security;
 using System.Threading;
@@ -143,7 +142,7 @@ internal class OpenApiDocumentDownloadService
         if (generating)
             foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
                 Logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.OpenApiDiagnostic.Errors.Any())
+        if (readResult.OpenApiDiagnostic.Errors.Count > 0)
         {
             Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
             foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)

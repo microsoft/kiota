@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -24,12 +23,21 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         StartBlock = new TBlockDeclaration { Parent = this };
         EndBlock = new TBlockEnd { Parent = this };
     }
+
     public override IEnumerable<CodeElement> GetChildElements(bool innerOnly = false)
     {
         if (innerOnly)
             return InnerChildElements.Values;
-        return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
+
+        var result = new List<CodeElement> { StartBlock, EndBlock };
+        foreach (var innerChildElement in InnerChildElements.Values)
+        {
+            result.Add(innerChildElement);
+        }
+
+        return result;
     }
+
     public virtual void RenameChildElement(string oldName, string newName)
     {
         if (InnerChildElements.TryRemove(oldName, out var element))
@@ -39,11 +47,18 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         }
         else throw new InvalidOperationException($"The element to rename was not found {oldName}");
     }
+
     public void RemoveChildElement<T>(params T[] elements) where T : ICodeElement
     {
         if (elements == null) return;
-        RemoveChildElementByName(elements.Select(static x => x.Name).ToArray());
+
+        foreach (var element in elements)
+        {
+            if (element.Name is not null)
+                InnerChildElements.TryRemove(element.Name, out _);
+        }
     }
+
     public virtual void RemoveChildElementByName(params string[] names)
     {
         if (names == null) return;
@@ -58,7 +73,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
     public IEnumerable<CodeUsing> Usings => StartBlock.Usings;
     protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement
     {
-        if (elements == null) return Enumerable.Empty<T>();
+        if (elements == null) return [];
         EnsureElementsAreChildren(elements);
         var result = new T[elements.Length]; // not using yield return as they'll only get called if the result is assigned
 
@@ -87,15 +102,27 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
             else if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor) &&
                      returnedValue is CodeMethod existingMethod)
             {
-                var currentMethodParameterNames = currentMethod.Parameters.Select(static x => x.Name).ToHashSet();
-                var returnedMethodParameterNames = existingMethod.Parameters.Select(static x => x.Name).ToHashSet();
+                var currentMethodParameterNames = new HashSet<string>();
+                foreach (var parameter in currentMethod.Parameters)
+                {
+                    currentMethodParameterNames.Add(parameter.Name);
+                }
+                var returnedMethodParameterNames = new HashSet<string>();
+                foreach (var parameter in existingMethod.Parameters)
+                {
+                    returnedMethodParameterNames.Add(parameter.Name);
+                }
                 if (currentMethodParameterNames.Count != returnedMethodParameterNames.Count ||
-                    currentMethodParameterNames.Union(returnedMethodParameterNames)
-                                                .Except(currentMethodParameterNames.Intersect(returnedMethodParameterNames))
-                                                .Any())
+                    currentMethodParameterNames.IsSupersetOf(returnedMethodParameterNames))
                 {
                     // allows for methods overload
-                    var methodOverloadNameSuffix = currentMethodParameterNames.Count != 0 ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
+                    var methodOverloadNameSuffix = "1";
+                    if (currentMethodParameterNames.Count != 0)
+                    {
+                        var list = new List<string>(currentMethodParameterNames);
+                        list.Sort(StringComparer.CurrentCulture);
+                        methodOverloadNameSuffix = string.Concat(list);
+                    }
                     if (InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element) is T result2)
                         return result2;
                 }
@@ -149,12 +176,19 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
             var immediateResult = this.FindChildByName<T>(childName, false);
             if (immediateResult != null)
                 result.Add(immediateResult);
-            foreach (var childElement in InnerChildElements.Values.OfType<IBlock>())
-                result.AddRange(childElement.FindChildrenByName<T>(childName));
+            foreach (var childElement in InnerChildElements.Values)
+            {
+                if (!(childElement is IBlock block)) continue;
+
+                foreach (var foundChild in block.FindChildrenByName<T>(childName))
+                {
+                    result.Add(foundChild);
+                }
+            }
             return result;
         }
 
-        return Enumerable.Empty<T>();
+        return [];
     }
     public T? FindChildByName<T>(string childName, bool findInChildElements = true) where T : ICodeElement
     {
@@ -170,11 +204,12 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
             return castResult;
         if (--maxDepth > 0)
-            foreach (var childElement in InnerChildElements.Values.OfType<IBlock>())
+            foreach (var childElement in InnerChildElements.Values)
             {
-                var childResult = childElement.FindChildByName<T>(childName, maxDepth);
-                if (childResult != null)
-                    return childResult;
+                if (!(childElement is IBlock block)) continue;
+
+                var childResult = block.FindChildByName<T>(childName, maxDepth);
+                if (childResult != null) return childResult;
             }
         return default;
     }
@@ -182,30 +217,71 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
 public class BlockDeclaration : CodeTerminal
 {
     private readonly ConcurrentDictionary<CodeUsing, bool> usings = new(); // To avoid concurrent access issues
+
     public IEnumerable<CodeUsing> Usings => usings.Keys;
+
     public void AddUsings(params CodeUsing[] codeUsings)
     {
-        if (codeUsings == null || codeUsings.Any(static x => x == null))
-            throw new ArgumentNullException(nameof(codeUsings));
-        EnsureElementsAreChildren(codeUsings);
+        ArgumentNullException.ThrowIfNull(codeUsings);
+
         foreach (var codeUsing in codeUsings)
+        {
+            if (codeUsing == null)
+            {
+                throw new ArgumentNullException(nameof(codeUsings), "One or more codeUsings is null.");
+            }
+        }
+
+        EnsureElementsAreChildren(codeUsings);
+
+        foreach (var codeUsing in codeUsings)
+        {
             usings.TryAdd(codeUsing, true);
+        }
     }
+
     public void RemoveUsings(params CodeUsing[] codeUsings)
     {
-        if (codeUsings == null || codeUsings.Any(static x => x == null))
-            throw new ArgumentNullException(nameof(codeUsings));
+        ArgumentNullException.ThrowIfNull(codeUsings);
+
         foreach (var codeUsing in codeUsings)
+        {
+            if (codeUsing == null)
+            {
+                throw new ArgumentNullException(nameof(codeUsings), "One or more codeUsings is null.");
+            }
+        }
+
+        foreach (var codeUsing in codeUsings)
+        {
             usings.TryRemove(codeUsing, out var _);
+        }
     }
+
+
     public void RemoveUsingsByDeclarationName(params string[] names)
     {
-        if (names == null || names.Any(string.IsNullOrEmpty))
-            throw new ArgumentNullException(nameof(names));
-        var namesAsHashSet = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var usingToRemove in usings.Keys.Where(x => !string.IsNullOrEmpty(x.Declaration?.Name) && namesAsHashSet.Contains(x.Declaration!.Name)))
-            usings.TryRemove(usingToRemove, out var _);
+        ArgumentNullException.ThrowIfNull(names);
+
+        foreach (var name in names)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException("One or more names is null or empty.", nameof(names));
+            }
+        }
+
+        var namesAsHashSet = new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var key in usings.Keys)
+        {
+            if (!string.IsNullOrEmpty(key.Declaration?.Name) && namesAsHashSet.Contains(key.Declaration!.Name))
+            {
+                usings.TryRemove(key, out _);
+            }
+        }
     }
+
 }
 public class BlockEnd : CodeTerminal
 {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -61,26 +60,54 @@ public class CodeDocumentation : ICloneable
     {
         return GetDescriptionInternal(DescriptionTemplate, typeReferenceResolver, TypeReferences, typeReferencePrefix, typeReferenceSuffix, normalizationFunc);
     }
+
     internal static string GetDescriptionInternal(string descriptionTemplate, Func<CodeTypeBase, string> typeReferenceResolver, IDictionary<string, CodeTypeBase>? typeReferences = null, string? typeReferencePrefix = null, string? typeReferenceSuffix = null, Func<string, string>? normalizationFunc = null)
     {
         ArgumentNullException.ThrowIfNull(typeReferenceResolver);
         if (string.IsNullOrEmpty(descriptionTemplate))
+        {
             return string.Empty;
+        }
+
         var description = normalizationFunc is null ? descriptionTemplate : normalizationFunc(descriptionTemplate);
+
         if (typeReferences is not null)
-            foreach (var (key, value) in typeReferences)
+        {
+            foreach (var kvp in typeReferences)
             {
-                var resolvedValue = value switch
+                var key = kvp.Key;
+                var value = kvp.Value;
+
+                string resolvedValue;
+
+                switch (value)
                 {
-                    CodeComposedTypeBase codeComposedTypeBase => string.Join(", ", codeComposedTypeBase.Types.Select(x => $"{typeReferencePrefix}{typeReferenceResolver(x)}{typeReferenceSuffix}").Order(StringComparer.OrdinalIgnoreCase)) is string s && !string.IsNullOrEmpty(s) ?
-                                                                        s : typeReferenceResolver(value),
-                    _ => $"{typeReferencePrefix}{typeReferenceResolver(value)}{typeReferenceSuffix}",
-                };
+                    case CodeComposedTypeBase codeComposedTypeBase:
+                        var composedTypeValues = new List<string>();
+                        foreach (var type in codeComposedTypeBase.Types)
+                        {
+                            composedTypeValues.Add($"{typeReferencePrefix}{typeReferenceResolver(type)}{typeReferenceSuffix}");
+                        }
+                        var composedTypeResult = string.Join(", ", composedTypeValues);
+                        resolvedValue = string.IsNullOrEmpty(composedTypeResult) ? typeReferenceResolver(value) : composedTypeResult;
+                        break;
+
+                    default:
+                        resolvedValue = $"{typeReferencePrefix}{typeReferenceResolver(value)}{typeReferenceSuffix}";
+                        break;
+                }
+
                 if (!string.IsNullOrEmpty(resolvedValue))
+                {
                     description = description.Replace($"{{{key}}}", resolvedValue, StringComparison.OrdinalIgnoreCase);
+                }
             }
+        }
+
         return description;
     }
+
+
     public bool DescriptionAvailable
     {
         get => !string.IsNullOrEmpty(DescriptionTemplate);

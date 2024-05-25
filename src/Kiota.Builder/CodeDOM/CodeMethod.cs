@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
@@ -132,7 +131,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         if (AcceptedResponseTypes is List<string> list)
             list.AddRange(types);
     }
-    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
+    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Count > 0;
     public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
@@ -150,11 +149,22 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private readonly ConcurrentDictionary<string, CodeParameter> parameters = new();
     public void RemoveParametersByKind(params CodeParameterKind[] kinds)
     {
-        parameters.Where(p => p.Value.IsOfKind(kinds))
-                            .Select(static x => x.Key)
-                            .ToList()
-                            .ForEach(x => parameters.Remove(x, out var _));
+        var keysToRemove = new List<string>();
+
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Value.IsOfKind(kinds))
+            {
+                keysToRemove.Add(parameter.Key);
+            }
+        }
+
+        foreach (var key in keysToRemove)
+        {
+            parameters.Remove(key, out var _);
+        }
     }
+
 
     public void ClearParameters()
     {
@@ -163,8 +173,15 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     public IEnumerable<CodeParameter> Parameters
     {
-        get => parameters.Values.OrderBy(static x => x, parameterOrderComparer);
+        get
+        {
+            var orderedParameters = new List<CodeParameter>(parameters.Values);
+            orderedParameters.Sort(parameterOrderComparer);
+            return orderedParameters;
+        }
     }
+
+
     public bool IsStatic
     {
         get; set;
@@ -185,26 +202,41 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get => pathQueryAndHeaderParameters.Values;
     }
+
     private readonly Dictionary<string, CodeParameter> pathQueryAndHeaderParameters = new(StringComparer.OrdinalIgnoreCase);
+
     public void AddPathQueryOrHeaderParameter(params CodeParameter[] parameters)
     {
-        if (parameters == null || parameters.Length == 0) return;
-        foreach (var parameter in parameters.OrderByDescending(static x => x.Kind)) //guarantees that path parameters are added first and other are deduplicated
+        if (parameters == null || parameters.Length == 0)
+        {
+            return;
+        }
+
+        Array.Sort(parameters, static (x, y) => y.Kind.CompareTo(x.Kind)); // Order by parameter kind in descending order
+
+        foreach (var parameter in parameters)
         {
             EnsureElementsAreChildren(parameter);
             if (!pathQueryAndHeaderParameters.TryAdd(parameter.Name, parameter))
             {
                 if (parameter.IsOfKind(CodeParameterKind.QueryParameter))
+                {
                     parameter.Name += "-query";
+                }
                 else if (parameter.IsOfKind(CodeParameterKind.Headers))
+                {
                     parameter.Name += "-header";
+                }
                 else
+                {
                     continue;
+                }
                 pathQueryAndHeaderParameters.Add(parameter.Name, parameter);
             }
-
         }
     }
+
+
     /// <summary>
     /// The property this method accesses to when it's a getter or setter.
     /// </summary>
@@ -286,13 +318,16 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> ErrorMappings
+    public IEnumerable<KeyValuePair<string, CodeTypeBase>> ErrorMappings
     {
         get
         {
-            return errorMappings.OrderBy(static x => x.Key);
+            var orderedMappings = new List<KeyValuePair<string, CodeTypeBase>>(errorMappings);
+            orderedMappings.Sort(static (x, y) => string.Compare(x.Key, y.Key, StringComparison.Ordinal));
+            return orderedMappings;
         }
     }
+
     public bool HasErrorMappingCode(string code)
     {
         ArgumentException.ThrowIfNullOrEmpty(code);
@@ -306,12 +341,23 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 
     public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
     {
-        var codes = errorMappings.Where(x => x.Value == oldType).Select(static x => x.Key).ToArray();
-        foreach (var code in codes)
+        var codesToRemove = new List<string>();
+
+        foreach (var mapping in errorMappings)
+        {
+            if (mapping.Value == oldType)
+            {
+                codesToRemove.Add(mapping.Key);
+            }
+        }
+
+        foreach (var code in codesToRemove)
         {
             errorMappings[code] = newType;
         }
     }
+
+
     public object Clone()
     {
         var method = new CodeMethod
@@ -338,20 +384,32 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Deprecation = Deprecation,
             UrlTemplateOverride = UrlTemplateOverride,
         };
-        if (Parameters?.Any() ?? false)
-            method.AddParameter(Parameters.Select(x => (CodeParameter)x.Clone()).ToArray());
+
+        if (Parameters != null)
+        {
+            foreach (var parameter in Parameters)
+            {
+                method.AddParameter((CodeParameter)parameter.Clone());
+            }
+        }
+
         return method;
     }
 
     public void AddParameter(params CodeParameter[] methodParameters)
     {
-        if (methodParameters == null || methodParameters.Any(static x => x == null))
-            throw new ArgumentNullException(nameof(methodParameters));
-        if (methodParameters.Length == 0)
-            throw new ArgumentOutOfRangeException(nameof(methodParameters));
-        EnsureElementsAreChildren(methodParameters);
-        methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
+        ArgumentNullException.ThrowIfNull(methodParameters);
+
+        for (int i = 0; i < methodParameters.Length; i++)
+        {
+            if (methodParameters[i] == null)
+                throw new ArgumentNullException($"methodParameters[{i}]");
+
+            EnsureElementsAreChildren(methodParameters);
+            parameters.TryAdd(methodParameters[i].Name, methodParameters[i]);
+        }
     }
+
     public void AddErrorMapping(string errorCode, CodeTypeBase type)
     {
         ArgumentNullException.ThrowIfNull(type);

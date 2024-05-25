@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -17,6 +17,7 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
     {
         get; init;
     }
+
     public DeprecationInformation? Deprecation
     {
         get; set;
@@ -25,7 +26,9 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
     public static CodeInterface FromRequestBuilder(CodeClass codeClass, CodeUsing[]? usingsToAdd = default)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
-        if (codeClass.Kind != CodeClassKind.RequestBuilder) throw new InvalidOperationException($"Cannot create a request builder interface from a non request builder class");
+        if (codeClass.Kind != CodeClassKind.RequestBuilder)
+            throw new InvalidOperationException($"Cannot create a request builder interface from a non request builder class");
+
         var result = new CodeInterface
         {
             Name = codeClass.Name,
@@ -35,33 +38,69 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
             Deprecation = codeClass.Deprecation,
         };
 
-        if (codeClass.Methods
-                .Where(static x => x.Kind is CodeMethodKind.RequestGenerator or
-                                            CodeMethodKind.RequestExecutor or
-                                            CodeMethodKind.IndexerBackwardCompatibility or
-                                            CodeMethodKind.RequestBuilderWithParameters)
-                .Select(static x => (CodeMethod)x.Clone()).ToArray() is { Length: > 0 } methods)
-            result.AddMethod(methods);
-        if (codeClass.Properties
-                .Where(static x => x.Kind is CodePropertyKind.RequestBuilder)
-                .Select(static x => (CodeProperty)x.Clone()).ToArray() is { Length: > 0 } properties)
-            result.AddProperty(properties);
-
-        if (codeClass.Usings.ToArray() is { Length: > 0 } usings)
+        // Copy methods
+        var methodsToCopy = new List<CodeMethod>();
+        foreach (var method in codeClass.Methods)
         {
-            foreach (var usingToCopy in usings.Where(static x => x.Declaration?.TypeDefinition is CodeInterface or CodeClass { Kind: CodeClassKind.RequestBuilder }))
+            if (method.Kind is CodeMethodKind.RequestGenerator or
+                CodeMethodKind.RequestExecutor or
+                CodeMethodKind.IndexerBackwardCompatibility or
+                CodeMethodKind.RequestBuilderWithParameters)
+            {
+                methodsToCopy.Add((CodeMethod)method.Clone());
+            }
+        }
+        if (methodsToCopy.Count > 0)
+        {
+            result.AddMethod(methodsToCopy.ToArray());
+        }
+
+        // Copy properties
+        var propertiesToCopy = new List<CodeProperty>();
+        foreach (var property in codeClass.Properties)
+        {
+            if (property.Kind is CodePropertyKind.RequestBuilder)
+            {
+                propertiesToCopy.Add((CodeProperty)property.Clone());
+            }
+        }
+        if (propertiesToCopy.Count > 0)
+        {
+            result.AddProperty(propertiesToCopy.ToArray());
+        }
+
+        // Copy usings
+        var usingsToCopy = new List<CodeUsing>();
+        foreach (var usingToCopy in codeClass.Usings)
+        {
+            if (usingToCopy.Declaration?.TypeDefinition is CodeInterface or CodeClass { Kind: CodeClassKind.RequestBuilder })
             {
                 usingToCopy.IsErasable = true;
+                usingsToCopy.Add(usingToCopy);
             }
-            result.AddUsing(usings);
         }
+        if (usingsToCopy.Count > 0)
+        {
+            result.AddUsing(usingsToCopy.ToArray());
+        }
+
+        // Add additional usings
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
+        {
             result.AddUsing(usingsToAddList);
+        }
+
+        // Add inherited interface
         if (codeClass.StartBlock.Inherits is not null)
+        {
             result.StartBlock.AddImplements(codeClass.StartBlock.Inherits);
+        }
+
         return result;
     }
+
 }
+
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {
 }

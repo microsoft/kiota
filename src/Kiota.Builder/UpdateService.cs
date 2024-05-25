@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +28,7 @@ public class UpdateService
         _logger = logger;
         _updateConfiguration = updateConfiguration;
     }
+
     public async Task<string> GetUpdateMessageAsync(string currentVersion, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(currentVersion) || _updateConfiguration.Disabled)
@@ -41,11 +41,20 @@ public class UpdateService
             var gitHubClient = new GitHubClient(requestAdapter);
             var releases = await gitHubClient.Repos[_updateConfiguration.OrgName][_updateConfiguration.RepoName].Releases.GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (releases is null) return string.Empty;
-            var latestVersion = releases.Where(static x => x.Draft == false && x.Prerelease == false && !string.IsNullOrEmpty(x.TagName))
-                                        .Select(static x => GetVersionFromLabel(x.TagName!))
-                                        .OfType<Version>()
-                                        .OrderDescending(_versionComparer)
-                                        .FirstOrDefault();
+
+            Version? latestVersion = null;
+            foreach (var release in releases)
+            {
+                if (release.Draft != true && release.Prerelease != true && !string.IsNullOrEmpty(release.TagName))
+                {
+                    var version = GetVersionFromLabel(release.TagName);
+                    if (version != null && (latestVersion == null || _versionComparer.Compare(version, latestVersion) > 0))
+                    {
+                        latestVersion = version;
+                    }
+                }
+            }
+
             if (latestVersion is null) return string.Empty;
             var currentVersionParsed = GetVersionFromLabel(currentVersion);
             if (currentVersionParsed is null) return string.Empty;
@@ -61,6 +70,7 @@ public class UpdateService
         }
         return string.Empty;
     }
+
     private static async Task<DateTimeOffset> GetLastVerificationDateAsync(CancellationToken cancellationToken)
     {
         if (File.Exists(_lastVerificationFilePath))

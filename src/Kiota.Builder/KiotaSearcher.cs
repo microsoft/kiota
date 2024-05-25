@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +32,7 @@ public class KiotaSearcher
         _gitHubAuthenticationProvider = gitHubAuthenticationProvider;
         _isGitHubSignedInCallBack = isGitHubSignedInCallBack;
     }
+
     public async Task<IDictionary<string, SearchResult>> SearchAsync(string? searchTerm, string? version, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(searchTerm))
@@ -46,21 +46,38 @@ public class KiotaSearcher
         var oasProvider = new OpenApiSpecSearchProvider();
         var githubProvider = new GitHubSearchProvider(_httpClient, _logger, _config.ClearCache, _config.GitHub, _gitHubAuthenticationProvider, _isGitHubSignedInCallBack);
         var results = await Task.WhenAll(
-                        SearchProviderAsync(searchTerm, version, apiGurusSearchProvider, cancellationToken),
-                        SearchProviderAsync(searchTerm, version, oasProvider, cancellationToken),
-                        SearchProviderAsync(searchTerm, version, githubProvider, cancellationToken)).ConfigureAwait(false);
-        return results.SelectMany(static x => x)
-                .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
+                            SearchProviderAsync(searchTerm, version, apiGurusSearchProvider, cancellationToken),
+                            SearchProviderAsync(searchTerm, version, oasProvider, cancellationToken),
+                            SearchProviderAsync(searchTerm, version, githubProvider, cancellationToken)).ConfigureAwait(false);
+
+        var resultDictionary = new Dictionary<string, SearchResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var result in results)
+        {
+            foreach (var item in result)
+            {
+                resultDictionary[item.Key] = item.Value;
+            }
+        }
+
+        return resultDictionary;
     }
+
     private static async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string? version, ISearchProvider provider, CancellationToken cancellationToken)
     {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
         var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty, StringComparison.OrdinalIgnoreCase), version, cancellationToken).ConfigureAwait(false);
 
-        return results
-                    .Where(static x => x.Value.DescriptionUrl is not null)
-                    .Select(x => ($"{providerPrefix}{x.Key}", x.Value))
-                    .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);
+        var resultDictionary = new Dictionary<string, SearchResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in results)
+        {
+            if (item.Value.DescriptionUrl is not null)
+            {
+                resultDictionary[$"{providerPrefix}{item.Key}"] = item.Value;
+            }
+        }
+
+        return resultDictionary;
     }
+
     public const string ProviderSeparator = "::";
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
@@ -62,12 +61,18 @@ public record LanguageInformation : IOpenApiSerializable
         }
         if (rawObject.TryGetValue(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), out var structuredMimeTypes) && structuredMimeTypes is OpenApiArray structuredMimeTypesValue)
         {
-            foreach (var entry in structuredMimeTypesValue.OfType<OpenApiString>())
-                extension.StructuredMimeTypes.Add(entry.Value);
+            foreach (var entry in structuredMimeTypesValue)
+            {
+                if (entry is OpenApiString openApiString)
+                {
+                    extension.StructuredMimeTypes.Add(openApiString.Value);
+                }
+            }
         }
         return extension;
     }
 }
+
 public record LanguageDependency : IOpenApiSerializable
 {
     public string Name { get; set; } = string.Empty;

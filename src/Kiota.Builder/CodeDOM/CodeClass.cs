@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
@@ -45,43 +44,87 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
-    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.IsLegacyIndexer);
+
+    public CodeIndexer? Indexer
+    {
+        get
+        {
+            foreach (var element in InnerChildElements.Values)
+            {
+                if (element is CodeIndexer indexer && !indexer.IsLegacyIndexer)
+                {
+                    return indexer;
+                }
+            }
+            return null;
+        }
+    }
+
     public void AddIndexer(params CodeIndexer[] indexers)
     {
-        if (indexers == null || Array.Exists(indexers, static x => x == null))
+        if (indexers == null || Array.Exists(indexers, x => x == null))
+        {
             throw new ArgumentNullException(nameof(indexers));
+        }
         if (indexers.Length == 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(indexers));
+        }
 
         foreach (var value in indexers)
         {
-            var existingIndexers = InnerChildElements.Values.OfType<CodeIndexer>().ToArray();
-            if (Array.Exists(existingIndexers, x => !x.IndexParameter.Name.Equals(value.IndexParameter.Name, StringComparison.OrdinalIgnoreCase)) ||
-                    InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
+            var existingIndexers = new List<CodeIndexer>();
+            foreach (var element in InnerChildElements.Values)
+            {
+                if (element is CodeIndexer existing && !existing.IndexParameter.Name.Equals(value.IndexParameter.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingIndexers.Add(existing);
+                }
+            }
+
+            bool hasBackwardCompatibility = false;
+            foreach (var element in InnerChildElements.Values)
+            {
+                if (element is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))
+                {
+                    hasBackwardCompatibility = true;
+                    break;
+                }
+            }
+
+            if (existingIndexers.Count > 0 || hasBackwardCompatibility)
             {
                 foreach (var existingIndexer in existingIndexers)
                 {
                     RemoveChildElement(existingIndexer);
-                    AddRange(CodeMethod.FromIndexer(existingIndexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterUpperCase(), true));
+                    AddRange(CodeMethod.FromIndexer(existingIndexer, x => $"With{x.ToFirstCharacterUpperCase()}", x => x.ToFirstCharacterUpperCase(), true));
                 }
-                AddRange(CodeMethod.FromIndexer(value, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterUpperCase(), false));
+                AddRange(CodeMethod.FromIndexer(value, x => $"With{x.ToFirstCharacterUpperCase()}", x => x.ToFirstCharacterUpperCase(), false));
             }
             else
+            {
                 AddRange(value);
+            }
         }
     }
+
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
-        if (properties == null || properties.Any(static x => x == null))
-            throw new ArgumentNullException(nameof(properties));
+        ArgumentNullException.ThrowIfNull(properties);
         if (properties.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        return properties.Select(property =>
+        var addedProperties = new List<CodeProperty>();
+
+        foreach (var property in properties)
         {
+            if (property == null)
+                throw new ArgumentNullException(nameof(properties));
+
             if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
-                if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
+                var original = GetOriginalPropertyDefinedFromBaseType(property.WireName);
+                if (original != null)
                 {
                     // the property already exists in a parent type, use its name
                     property.Name = original.Name;
@@ -91,15 +134,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                 else
                 {
                     var uniquePropertyName = ResolveUniquePropertyName(property.Name);
-                    if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
+                    if (!string.IsNullOrEmpty(uniquePropertyName) && !uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
                         property.SerializationName = property.Name;
                     property.Name = uniquePropertyName;
                 }
             }
-            var result = base.AddProperty(property).First();
-            return PropertiesByWireName.GetOrAdd(result.WireName, result);
-        }).ToArray();
+            var result = base.AddProperty(property).GetEnumerator().Current;
+            addedProperties.Add(result);
+            PropertiesByWireName.GetOrAdd(result.WireName, result);
+        }
+
+        return addedProperties;
     }
+
+
     public override void RenameChildElement(string oldName, string newName)
     {
         if (InnerChildElements.TryRemove(oldName, out var element))
@@ -131,10 +179,23 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             else throw new InvalidOperationException($"The element {name} could not be found in the class {Name}");
         }
     }
+
     public void RemoveMethodByKinds(params CodeMethodKind[] kinds)
     {
-        RemoveChildElementByName(InnerChildElements.Where(x => x.Value is CodeMethod method && method.IsOfKind(kinds)).Select(static x => x.Key).ToArray());
+        var keysToRemove = new List<string>();
+
+        foreach (var kvp in InnerChildElements)
+        {
+            if (kvp.Value is CodeMethod method && method.IsOfKind(kinds))
+            {
+                keysToRemove.Add(kvp.Key);
+            }
+        }
+
+        RemoveChildElementByName(keysToRemove.ToArray());
     }
+
+
     private string ResolveUniquePropertyName(string name)
     {
         if (FindPropertyByNameInTypeHierarchy(name) == null)
@@ -173,31 +234,46 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                 return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
+
     private CodeProperty? FindPropertyByWireName(string wireName)
     {
         return PropertiesByWireName.TryGetValue(wireName, out var result) ? result : default;
     }
+
     public bool ContainsPropertyWithWireName(string wireName)
     {
         return PropertiesByWireName.ContainsKey(wireName);
     }
+
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
-        if (codeClasses == null || codeClasses.Any(static x => x == null))
+        if (codeClasses == null || Array.Exists(codeClasses, x => x == null))
+        {
             throw new ArgumentNullException(nameof(codeClasses));
+        }
         if (codeClasses.Length == 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
+        }
         return AddRange(codeClasses);
     }
+
     public IEnumerable<CodeInterface> AddInnerInterface(params CodeInterface[] codeInterfaces)
     {
-        if (codeInterfaces == null || codeInterfaces.Any(static x => x == null))
+        if (codeInterfaces == null || Array.Exists(codeInterfaces, x => x == null))
+        {
             throw new ArgumentNullException(nameof(codeInterfaces));
+        }
         if (codeInterfaces.Length == 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
+        }
         return AddRange(codeInterfaces);
     }
+
+
     public CodeClass? BaseClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
+
     /// <summary>
     /// The interface associated with this class, if any.
     /// </summary>
@@ -205,6 +281,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
+
     public bool DerivesFrom(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
@@ -215,6 +292,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
+
     public Collection<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
     {
         var parentClass = BaseClass;
@@ -262,11 +340,18 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     private CodeType? inherits;
     public CodeType? Inherits
     {
-        get => inherits; set
+        get => inherits;
+        set
         {
-            if (value != null && !value.IsExternal && Parent is CodeClass codeClass && codeClass.Properties.Any())
+            if (value != null && !value.IsExternal && Parent is CodeClass codeClass)
             {
-                throw new InvalidOperationException("Cannot change the inherits-property of an already populated type");
+                foreach (var property in codeClass.Properties)
+                {
+                    if (property != null)
+                    {
+                        throw new InvalidOperationException("Cannot change the inherits-property of an already populated type");
+                    }
+                }
             }
 
             EnsureElementsAreChildren(value);

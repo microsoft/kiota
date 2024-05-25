@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -22,17 +21,26 @@ public abstract class CodeElement : ICodeElement
             _ => Parent.GetNamespaceDepth(currentDepth),
         };
     }
-    public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
+    public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => [];
 
     public virtual string Name
     {
         get; set;
     } = string.Empty;
+
     protected void EnsureElementsAreChildren(params ICodeElement?[] elements)
     {
-        foreach (var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
-            element!.Parent = this;
+        ArgumentNullException.ThrowIfNull(elements);
+        foreach (var element in elements)
+        {
+            if (element != null && (element.Parent == null || element.Parent != this))
+            {
+                element.Parent = this;
+            }
+        }
     }
+
+
     public T GetImmediateParentOfType<T>(CodeElement? item = null)
     {
         if (item == null)

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 #pragma warning disable CA1711
@@ -14,25 +12,48 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     }
 
     public CodeDocumentation Documentation { get; set; } = new();
+
     private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
 
     public void AddOption(params CodeEnumOption[] codeEnumOptions)
     {
         if (codeEnumOptions is null) return;
-        var result = AddRange(codeEnumOptions);
-        foreach (var option in result.Distinct())
+
+        var optionsToAdd = new HashSet<CodeEnumOption>(codeEnumOptions);
+        foreach (var option in optionsToAdd)
         {
-            OptionsInternal.Enqueue(option);
+            if (option != null)
+            {
+                AddRange(option);
+                OptionsInternal.Enqueue(option);
+            }
         }
     }
+
     public IEnumerable<CodeEnumOption> Options
     {
         get
         {
-            return OptionsInternal.Join(InnerChildElements.Values.OfType<CodeEnumOption>().ToHashSet(), static x => x, static y => y, static (x, y) => x);
-            // maintaining order of the options is important for enums as they are often used with comparisons
+            var optionsSet = new HashSet<CodeEnumOption>();
+            foreach (var element in InnerChildElements.Values)
+            {
+                if (element is CodeEnumOption enumOption)
+                {
+                    optionsSet.Add(enumOption);
+                }
+            }
+
+            foreach (var option in OptionsInternal)
+            {
+                if (optionsSet.Contains(option))
+                {
+                    yield return option;
+                }
+            }
         }
     }
+
+
     public DeprecationInformation? Deprecation
     {
         get; set;
