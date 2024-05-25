@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.CodeRenderers;
@@ -12,6 +11,29 @@ public class TypeScriptCodeRenderer : CodeRenderer
         if (codeNamespace is null) return false;
         modelsNamespace ??= codeNamespace.GetRootNamespace().FindChildByName<CodeNamespace>(Configuration.ModelsNamespaceName);
         if (modelsNamespace is not null && !modelsNamespace.IsParentOf(codeNamespace) && modelsNamespace != codeNamespace) return false;
-        return codeNamespace.Interfaces.Any() || codeNamespace.Files.Any(static x => x.Interfaces.Any());
+
+        foreach (var interfaceElement in codeNamespace.Interfaces)
+        {
+            if (interfaceElement != null)
+            {
+                return true;
+            }
+        }
+
+        foreach (var file in codeNamespace.Files)
+        {
+            if (file != null)
+            {
+                foreach (var interfaceElement in file.Interfaces)
+                {
+                    if (interfaceElement != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

@@ -1,23 +1,43 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Logging;
 public class AggregateLogger<T> : ILogger<T>
 {
     private readonly ILogger<T>[] Loggers;
+
     public AggregateLogger(params ILogger<T>[] loggers)
     {
         Loggers = loggers;
     }
+
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
-        return new AggregateScope(Loggers.Select(l => l.BeginScope(state)).Where(static s => s != null).Select(static x => x!).ToArray());
+        var scopes = new List<IDisposable>();
+        foreach (var logger in Loggers)
+        {
+            var scope = logger.BeginScope(state);
+            if (scope != null)
+            {
+                scopes.Add(scope);
+            }
+        }
+        return new AggregateScope(scopes.ToArray());
     }
+
     public bool IsEnabled(LogLevel logLevel)
     {
-        return Loggers.Any(l => l.IsEnabled(logLevel));
+        foreach (var logger in Loggers)
+        {
+            if (logger.IsEnabled(logLevel))
+            {
+                return true;
+            }
+        }
+        return false;
     }
+
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         foreach (var logger in Loggers)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Kiota.Builder.Lock;
 using Microsoft.Plugins.Manifest;
 
@@ -25,7 +24,7 @@ internal class OpenAPIRuntimeComparer : IEqualityComparer<OpenApiRuntime>
     public int GetHashCode([DisallowNull] OpenApiRuntime obj)
     {
         if (obj == null) return 0;
-        return (EvaluateFunctions ? _stringIEnumerableDeepComparer.GetHashCode(obj.RunForFunctions ?? Enumerable.Empty<string>()) * 7 : 0) +
+        return (EvaluateFunctions ? _stringIEnumerableDeepComparer.GetHashCode(obj.RunForFunctions ?? []) * 7 : 0) +
             (obj.Spec is null ? 0 : _openApiRuntimeSpecComparer.GetHashCode(obj.Spec) * 5) +
             (obj.Auth is null ? 0 : _authComparer.GetHashCode(obj.Auth) * 3);
     }

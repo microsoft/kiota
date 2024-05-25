@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
@@ -138,19 +137,19 @@ public class GenerationConfiguration : ICloneable
             ApiRootUrl = ApiRootUrl,
             UsesBackingStore = UsesBackingStore,
             IncludeAdditionalData = IncludeAdditionalData,
-            Serializers = new(Serializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
-            Deserializers = new(Deserializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            Serializers = new(Serializers ?? [], StringComparer.OrdinalIgnoreCase),
+            Deserializers = new(Deserializers ?? [], StringComparer.OrdinalIgnoreCase),
             CleanOutput = CleanOutput,
-            StructuredMimeTypes = new(StructuredMimeTypes ?? Enumerable.Empty<string>()),
-            IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
-            ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            StructuredMimeTypes = new(StructuredMimeTypes ?? []),
+            IncludePatterns = new(IncludePatterns ?? [], StringComparer.OrdinalIgnoreCase),
+            ExcludePatterns = new(ExcludePatterns ?? [], StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
-            DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            DisabledValidationRules = new(DisabledValidationRules ?? [], StringComparer.OrdinalIgnoreCase),
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
             Operation = Operation,
-            PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
-            PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
+            PatternsOverride = new(PatternsOverride ?? [], StringComparer.OrdinalIgnoreCase),
+            PluginTypes = new(PluginTypes ?? []),
             DisableSSLValidation = DisableSSLValidation,
         };
     }
@@ -181,8 +180,16 @@ public class GenerationConfiguration : ICloneable
             ApiDescriptionUrl = NormalizeDescriptionLocation(targetDirectory),
             ApiDeploymentBaseUrl = ApiRootUrl?.EndsWith('/') ?? false ? ApiRootUrl : $"{ApiRootUrl}/",
             Extensions = new(),
-            Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key.DeSanitizeUrlTemplateParameter() })).ToList(),
+            Requests = new List<RequestInfo>(),
         };
+
+        foreach (var templateWithOperation in templatesWithOperations ?? [])
+        {
+            foreach (var operation in templateWithOperation.Value)
+            {
+                dependency.Requests.Add(new RequestInfo { Method = operation.ToUpperInvariant(), UriTemplate = templateWithOperation.Key.DeSanitizeUrlTemplateParameter() });
+            }
+        }
 
         if (!string.IsNullOrEmpty(configurationHash))
         {

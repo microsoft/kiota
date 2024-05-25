@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -16,15 +15,29 @@ public class TypeScriptPathSegmenter : CommonPathSegmenter
     {
         ArgumentNullException.ThrowIfNull(currentElement);
         modelsNamespace ??= currentElement.GetImmediateParentOfType<CodeNamespace>()?.GetRootNamespace().FindChildByName<CodeNamespace>($"{ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
-        return currentElement switch
+
+        switch (currentElement)
         {
-            CodeFile currentFile when modelsNamespace is not null &&
+            case CodeFile currentFile when modelsNamespace is not null &&
                         currentElement.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
-                        !(modelsNamespace.IsParentOf(currentNamespace) || modelsNamespace == currentNamespace) &&
-                        !currentFile.Interfaces.Any(static x => x.Kind is CodeInterfaceKind.RequestBuilder && x.OriginalClass is not null && x.OriginalClass.Methods.Any(static y => y.Kind is CodeMethodKind.ClientConstructor))
-                    => IndexFileName,
-            _ => GetDefaultFileName(currentElement),
-        };
+                        !(modelsNamespace.IsParentOf(currentNamespace) || modelsNamespace == currentNamespace):
+                foreach (var interfaceElement in currentFile.Interfaces)
+                {
+                    if (interfaceElement.Kind is CodeInterfaceKind.RequestBuilder && interfaceElement.OriginalClass is not null)
+                    {
+                        foreach (var method in interfaceElement.OriginalClass.Methods)
+                        {
+                            if (method.Kind is CodeMethodKind.ClientConstructor)
+                            {
+                                return GetDefaultFileName(currentElement);
+                            }
+                        }
+                    }
+                }
+                return IndexFileName;
+            default:
+                return GetDefaultFileName(currentElement);
+        }
     }
     private static string GetDefaultFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToFirstCharacterLowerCase();
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();

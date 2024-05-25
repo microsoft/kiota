@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
@@ -14,10 +13,13 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
-        foreach (var entry in this.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
+
+        var sortedEntries = new SortedDictionary<string, LanguageInformation>(this, StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in sortedEntries)
         {
             writer.WriteRequiredObject(entry.Key, entry.Value, (w, x) => x.SerializeAsV3(w));
         }
+
         writer.WriteEndObject();
     }
     public static LanguagesInformation Parse(IOpenApiAny source)

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.Extensions;
 
@@ -14,9 +13,16 @@ public static class IEnumerableExtensions
     {
         if (values == null)
             return 0;
+
+        int sum = 0;
         unchecked
         {
-            return values.Aggregate(0, static (acc, x) => acc + x);
+            foreach (var value in values)
+            {
+                sum += value;
+            }
         }
+
+        return sum;
     }
 }

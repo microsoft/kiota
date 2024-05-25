@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -16,19 +15,33 @@ namespace Kiota.Builder.Lock;
 public class LockManagementService : ILockManagementService
 {
     internal const string LockFileName = "kiota-lock.json";
+
     /// <inheritdoc/>
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(searchDirectory);
         var files = Directory.GetFiles(searchDirectory, LockFileName, SearchOption.AllDirectories);
-        return files.Select(Path.GetDirectoryName).Where(x => !string.IsNullOrEmpty(x)).OfType<string>();
+        
+        var directories = new List<string>();
+        foreach (var file in files)
+        {
+            var directory = Path.GetDirectoryName(file);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                directories.Add(directory);
+            }
+        }
+
+        return directories;
     }
+
     /// <inheritdoc/>
     public Task<KiotaLock?> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return GetLockFromDirectoryInternalAsync(directoryPath, cancellationToken);
     }
+
     private static async Task<KiotaLock?> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
@@ -46,29 +59,35 @@ public class LockManagementService : ILockManagementService
         }
         return null;
     }
+
     /// <inheritdoc/>
     public Task<KiotaLock?> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
         return GetLockFromStreamInternalAsync(stream, cancellationToken);
     }
+
     private static async Task<KiotaLock?> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken)
     {
         return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>
+
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         ArgumentNullException.ThrowIfNull(lockInfo);
         return WriteLockFileInternalAsync(directoryPath, lockInfo, cancellationToken);
     }
+
     private static readonly JsonSerializerOptions options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
     };
+
     private static readonly KiotaLockGenerationContext context = new(options);
+
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
@@ -78,7 +97,9 @@ public class LockManagementService : ILockManagementService
         lockInfo.DescriptionLocation = GetRelativeDescriptionPath(lockInfo.DescriptionLocation, lockFilePath);
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
+
     private static bool IsDescriptionLocal(string descriptionPath) => !descriptionPath.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+
     private static string GetRelativeDescriptionPath(string descriptionPath, string lockFilePath)
     {
         if (IsDescriptionLocal(descriptionPath) &&
@@ -86,12 +107,14 @@ public class LockManagementService : ILockManagementService
             return Path.GetRelativePath(lockFileDirectoryPath, descriptionPath);
         return descriptionPath;
     }
+
     /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return BackupLockFileInternalAsync(directoryPath);
     }
+
     private static Task BackupLockFileInternalAsync(string directoryPath)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
@@ -106,12 +129,14 @@ public class LockManagementService : ILockManagementService
         }
         return Task.CompletedTask;
     }
+
     /// <inheritdoc/>
     public Task RestoreLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return RestoreLockFileInternalAsync(directoryPath);
     }
+
     private static Task RestoreLockFileInternalAsync(string directoryPath)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
@@ -126,12 +151,15 @@ public class LockManagementService : ILockManagementService
         }
         return Task.CompletedTask;
     }
+
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
+
     private static string GetBackupFilePath(string outputPath)
     {
         var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "backup", hashedPath, LockFileName);
     }
+
     public void DeleteLockFile(string directoryPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);

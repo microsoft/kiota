@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Kiota.Builder.Extensions;
+
 public static partial class StringExtensions
 {
     private const int MaxStackLimit = 1024;
@@ -30,7 +30,14 @@ public static partial class StringExtensions
         if (separators is null || separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
-        return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
+
+        StringBuilder sb = new StringBuilder(chunks[0]);
+        for (int i = 1; i < chunks.Length; i++)
+        {
+            sb.Append(ToFirstCharacterUpperCase(chunks[i]));
+        }
+
+        return sb.ToString();
     }
 
     public static string ToPascalCase(this string? input, params char[] separators)
@@ -39,7 +46,14 @@ public static partial class StringExtensions
         if (separators is null || separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
-        return string.Join(string.Empty, chunks.Select(ToFirstCharacterUpperCase));
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < chunks.Length; i++)
+        {
+            sb.Append(ToFirstCharacterUpperCase(chunks[i]));
+        }
+
+        return sb.ToString();
     }
 
     public static string ReplaceValueIdentifier(this string? original) =>
@@ -117,10 +131,23 @@ public static partial class StringExtensions
         return new string(span);
     }
 
-    public static string NormalizeNameSpaceName(this string? original, string delimiter) =>
-        string.IsNullOrEmpty(original) ?
-            string.Empty :
-            original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z, y) => z + delimiter + y);
+    public static string NormalizeNameSpaceName(this string? original, string delimiter)
+    {
+        if (string.IsNullOrEmpty(original)) return string.Empty;
+
+        var chunks = original.Split('.');
+        if (chunks.Length == 0) return string.Empty;
+
+        StringBuilder sb = new StringBuilder(ToFirstCharacterUpperCase(chunks[0]));
+        for (int i = 1; i < chunks.Length; i++)
+        {
+            sb.Append(delimiter);
+            sb.Append(ToFirstCharacterUpperCase(chunks[i]));
+        }
+
+        return sb.ToString();
+    }
+
     private static readonly ThreadLocal<HashAlgorithm> sha = new(SHA256.Create); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
     public static string GetNamespaceImportSymbol(this string? importName, string prefix = "i")
     {
@@ -129,12 +156,21 @@ public static partial class StringExtensions
         return prefix + HashString(importName).ToLowerInvariant();
 #pragma warning restore CA1308
     }
+
     private static string HashString(string? input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
         var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));
-        return hash.Select(static b => b.ToString("x2", CultureInfo.InvariantCulture)).Aggregate(static (x, y) => x + y);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hash.Length; i++)
+        {
+            sb.Append(hash[i].ToString("x2", CultureInfo.InvariantCulture));
+        }
+
+        return sb.ToString();
     }
+
     /// <summary>
     /// For Php strings, having double quotes around strings might cause an issue
     /// if the string contains valid variable name.
@@ -152,46 +188,83 @@ public static partial class StringExtensions
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
     {
         if (string.IsNullOrEmpty(namespaced)) return string.Empty;
+
         var parts = namespaced.Split('.');
-        return string.Join('\\', parts.Select(ToFirstCharacterUpperCase)).Trim('\\');
+        if (parts.Length == 0) return string.Empty;
+
+        StringBuilder sb = new StringBuilder(ToFirstCharacterUpperCase(parts[0]));
+        for (int i = 1; i < parts.Length; i++)
+        {
+            sb.Append('\\');
+            sb.Append(ToFirstCharacterUpperCase(parts[i]));
+        }
+
+        return sb.ToString().Trim('\\');
     }
+
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
     [GeneratedRegex(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`’{}|~-](?<followingLetter>\w)?", RegexOptions.Singleline, 500)]
     private static partial Regex propertyCleanupRegex();
+
     private const string CleanupGroupName = "followingLetter";
+
     public static string CleanupSymbolName(this string? original)
     {
         if (string.IsNullOrEmpty(original)) return string.Empty;
 
         string result = NormalizeSymbolsBeforeCleanup(original);
 
-        result = propertyCleanupRegex().Replace(result,
-                                static x => x.Groups.Keys.Contains(CleanupGroupName) ?
-                                                x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
-                                                string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
+        var regex = propertyCleanupRegex();
+        var match = regex.Match(result);
+        if (match.Success)
+        {
+            foreach (string groupName in match.Groups.Keys)
+            {
+                if (groupName == CleanupGroupName)
+                {
+                    result = result.Replace(match.Groups[groupName].Value, ToFirstCharacterUpperCase(match.Groups[groupName].Value), StringComparison.Ordinal);
+                }
+            }
+        }
 
-        if (result.Length != 0 && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
-            result = NumbersSpellingRegex().Replace(result, static x => x.Groups["number"]
-                                                                    .Value
-                                                                    .Select(static x => SpelledOutNumbers[x])
-                                                                    .Aggregate(static (z, y) => z + y));
+        if (result.Length != 0 && int.TryParse(result.AsSpan(0, 1), out var _))
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var c in result)
+            {
+                if (SpelledOutNumbers.TryGetValue(c, out var value))
+                {
+                    sb.Append(value);
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            result = sb.ToString();
+        }
 
         result = NormalizeSymbolsAfterCleanup(result);
 
-        // if the result is empty but the original wasn't, it only contained symbols which have been removed.
-        // So try to return a non empty string by replacing the symbols with words
         if (string.IsNullOrEmpty(result) && !string.IsNullOrEmpty(original))
         {
-            result = SpelledOutSymbols.Where(symbol => original.Contains(symbol.Key, StringComparison.OrdinalIgnoreCase))
-                                      .Aggregate(original, (current, symbol) => current.Replace(symbol.Key.ToString(), symbol.Value, StringComparison.OrdinalIgnoreCase));
+            foreach (var symbol in SpelledOutSymbols)
+            {
+                if (original.Contains(symbol.Key.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    result = result.Replace(symbol.Key.ToString(), symbol.Value, StringComparison.OrdinalIgnoreCase);
+                }
+            }
         }
 
         return result;
     }
+
     [GeneratedRegex(@"^(?<number>\d+)", RegexOptions.Singleline, 500)]
     private static partial Regex NumbersSpellingRegex();
+
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
         {'1', "One"},

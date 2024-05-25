@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 public abstract class CodeTypeBase : CodeTerminal, ICloneable
@@ -59,7 +58,7 @@ public abstract class CodeTypeBase : CodeTerminal, ICloneable
                 return new[] { currentType };
             if (this is CodeComposedTypeBase currentUnion)
                 return currentUnion.Types;
-            return Enumerable.Empty<CodeType>();
+            return [];
         }
     }
 }

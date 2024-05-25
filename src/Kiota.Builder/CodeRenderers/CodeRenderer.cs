@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -82,12 +82,14 @@ public class CodeRenderer
     {
         writer.Write(element);
         if (element is not CodeNamespace)
-            foreach (var childElement in element.GetChildElements()
-                                                .Order(_rendererElementComparer))
+        {
+            var childElements = new List<CodeElement>(element.GetChildElements());
+            childElements.Sort(_rendererElementComparer);
+            foreach (var childElement in childElements)
             {
                 RenderCode(writer, childElement);
             }
-
+        }
     }
 
     public virtual bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)

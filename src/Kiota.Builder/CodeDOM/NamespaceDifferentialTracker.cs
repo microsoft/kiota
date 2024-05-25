@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -12,7 +11,20 @@ public record NamespaceDifferentialTracker
     }
     public IEnumerable<string> DownwardsSegments { get; init; } = Array.Empty<string>();
     private bool AnyUpwardsMove => UpwardsMovesCount > 0;
-    private bool AnySegment => DownwardsSegments?.Any() ?? false;
+    private bool AnySegment
+    {
+        get
+        {
+            if (DownwardsSegments != null)
+            {
+                foreach (var segment in DownwardsSegments)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
     public NamespaceDifferentialTrackerState State => (AnyUpwardsMove, AnySegment) switch
     {
         (true, true) => NamespaceDifferentialTrackerState.UpwardsAndThenDownwards,

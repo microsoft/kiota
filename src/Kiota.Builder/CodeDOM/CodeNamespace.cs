@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -19,10 +18,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     private string name = string.Empty;
     public override string Name
     {
-        get
-        {
-            return name;
-        }
+        get => name;
         set
         {
             name = value;
@@ -65,25 +61,122 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
         return this;
     }
-    public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
-    public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
-    public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
-    public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
-    public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
-    public IEnumerable<CodeConstant> Constants => InnerChildElements.Values.OfType<CodeConstant>();
-    public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
+    public IEnumerable<CodeNamespace> Namespaces
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeNamespace codeNamespace)
+                {
+                    yield return codeNamespace;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeClass> Classes
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeClass codeClass)
+                {
+                    yield return codeClass;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeEnum> Enums
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeEnum codeEnum)
+                {
+                    yield return codeEnum;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeFunction> Functions
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeFunction codeFunction)
+                {
+                    yield return codeFunction;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeInterface> Interfaces
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeInterface codeInterface)
+                {
+                    yield return codeInterface;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeConstant> Constants
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeConstant codeConstant)
+                {
+                    yield return codeConstant;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<CodeFile> Files
+    {
+        get
+        {
+            foreach (var item in InnerChildElements.Values)
+            {
+                if (item is CodeFile codeFile)
+                {
+                    yield return codeFile;
+                }
+            }
+        }
+    }
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);
         if (nsName.Equals(Name, StringComparison.OrdinalIgnoreCase)) return this;
         var result = FindChildByName<CodeNamespace>(nsName, false);
         if (result == null)
-            foreach (var childNS in InnerChildElements.Values.OfType<CodeNamespace>())
+        {
+            foreach (var childElement in InnerChildElements.Values)
             {
-                result = childNS.FindNamespaceByName(nsName);
-                if (result != null)
-                    break;
+                if (childElement is CodeNamespace childNS)
+                {
+                    result = childNS.FindNamespaceByName(nsName);
+                    if (result != null)
+                    {
+                        break;
+                    }
+                }
             }
+        }
         return result;
     }
     public CodeNamespace FindOrAddNamespace(string nsName) => FindNamespaceByName(nsName) ?? AddNamespace(nsName);
@@ -95,22 +188,31 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         var lastPresentSegmentNamespace = GetRootNamespace();
         while (lastPresentSegmentIndex < namespaceNameSegments.Length)
         {
-            var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegments.Take(lastPresentSegmentIndex + 1).Aggregate(static (x, y) => $"{x}.{y}"));
+            var segmentName = string.Empty;
+            for (int i = 0; i <= lastPresentSegmentIndex; i++)
+            {
+                segmentName += (i > 0 ? "." : "") + namespaceNameSegments[i];
+            }
+
+            var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(segmentName);
             if (segmentNameSpace is not null)
                 lastPresentSegmentNamespace = segmentNameSpace;
             else
                 break;
             lastPresentSegmentIndex++;
         }
-        foreach (var childSegment in namespaceNameSegments.Skip(lastPresentSegmentIndex))
-            lastPresentSegmentNamespace = lastPresentSegmentNamespace
-                                        .AddRange(
-                                            new CodeNamespace
-                                            {
-                                                Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
-                                                Parent = lastPresentSegmentNamespace,
-                                                IsItemNamespace = childSegment.Equals(ItemNamespaceName, StringComparison.OrdinalIgnoreCase)
-                                            }).First();
+        for (int i = lastPresentSegmentIndex; i < namespaceNameSegments.Length; i++)
+        {
+            var childSegment = namespaceNameSegments[i];
+            var newNamespace = new CodeNamespace
+            {
+                Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                Parent = lastPresentSegmentNamespace,
+                IsItemNamespace = childSegment.Equals(ItemNamespaceName, StringComparison.OrdinalIgnoreCase)
+            };
+            lastPresentSegmentNamespace?.AddRange(newNamespace);
+            lastPresentSegmentNamespace = newNamespace;
+        }
         return lastPresentSegmentNamespace;
     }
     private const string ItemNamespaceName = "item";
@@ -123,7 +225,17 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         if (IsItemNamespace) return this;
         if (string.IsNullOrEmpty(Name))
             throw new InvalidOperationException("adding an item namespace at the root is not supported");
-        var childNamespace = InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
+
+        CodeNamespace? childNamespace = null;
+        foreach (var childElement in InnerChildElements.Values)
+        {
+            if (childElement is CodeNamespace codeNamespace && codeNamespace.IsItemNamespace)
+            {
+                childNamespace = codeNamespace;
+                break;
+            }
+        }
+
         if (childNamespace == null)
         {
             childNamespace = AddNamespace($"{Name}.{ItemNamespaceName}");
@@ -187,10 +299,17 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
                 break;
         }
         var upMoves = currentNamespaceSegmentsCount - deeperMostSegmentIndex;
+
+        var downwardsSegments = new List<string>();
+        for (int i = deeperMostSegmentIndex; i < importNamespaceSegmentsCount; i++)
+        {
+            downwardsSegments.Add(importNamespaceSegments[i]);
+        }
+
         return new()
         { // we're in a parent namespace and need to import with a relative path or we're in a sub namespace and need to go "up" with dot dots
             UpwardsMovesCount = upMoves,
-            DownwardsSegments = importNamespaceSegments.Skip(deeperMostSegmentIndex)
+            DownwardsSegments = downwardsSegments
         };
     }
     internal IEnumerable<CodeConstant> AddConstant(params CodeConstant[] codeConstants)

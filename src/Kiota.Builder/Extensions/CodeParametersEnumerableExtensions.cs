@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
@@ -10,6 +9,15 @@ public static class CodeParametersEnumerableExtensions
     public static CodeParameter? OfKind(this IEnumerable<CodeParameter> parameters, CodeParameterKind kind)
     {
         ArgumentNullException.ThrowIfNull(parameters);
-        return parameters.FirstOrDefault(x => x != null && x.IsOfKind(kind));
+
+        foreach (var parameter in parameters)
+        {
+            if (parameter != null && parameter.IsOfKind(kind))
+            {
+                return parameter;
+            }
+        }
+
+        return null;
     }
 }

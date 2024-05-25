@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
@@ -17,31 +16,68 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     public StructuredMimeTypesCollection(IEnumerable<string> mimeTypes)
     {
         ArgumentNullException.ThrowIfNull(mimeTypes);
-        _mimeTypes = mimeTypes.Select(GetKeyAndPriority)
-                                .OfType<KeyValuePair<string, float>>()
-                                .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
+
+        _mimeTypes = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        foreach (var mimeType in mimeTypes)
+        {
+            var keyAndPriority = GetKeyAndPriority(mimeType);
+            if (keyAndPriority is KeyValuePair<string, float> pair)
+            {
+                _mimeTypes[pair.Key] = pair.Value;
+            }
+        }
     }
     private static readonly Func<string, bool> isPriorityParameterName = static x => x.Equals("q", StringComparison.OrdinalIgnoreCase);
     private static KeyValuePair<string, float>? GetKeyAndPriority(string rawFormat)
     {
         if (!string.IsNullOrEmpty(rawFormat) && MediaTypeHeaderValue.TryParse(rawFormat, out var parsedFormat) && parsedFormat.MediaType is not null)
         {
-            var priority = parsedFormat.Parameters.FirstOrDefault(static x => isPriorityParameterName(x.Name)) is { } priorityParameter && float.TryParse(priorityParameter.Value, CultureInfo.InvariantCulture, out var resultPriority) ? resultPriority : 1;
+            float priority = 1;
+            foreach (var parameter in parsedFormat.Parameters)
+            {
+                if (isPriorityParameterName(parameter.Name))
+                {
+                    if (float.TryParse(parameter.Value, CultureInfo.InvariantCulture, out var resultPriority))
+                    {
+                        priority = resultPriority;
+                    }
+                    break;
+                }
+            }
             return new KeyValuePair<string, float>(formatMediaType(parsedFormat), priority);
         }
         throw new ArgumentException($"The provided media type {rawFormat} is not valid");
     }
     private static string formatMediaType(MediaTypeHeaderValue value)
     {
-        var additionalParameters = string.Join(";", value.Parameters.Where(static x => !isPriorityParameterName(x.Name)).Select(static x => $"{x.Name}={x.Value}"));
+        var additionalParameters = new List<string>();
+        foreach (var parameter in value.Parameters)
+        {
+            if (!isPriorityParameterName(parameter.Name))
+            {
+                additionalParameters.Add($"{parameter.Name}={parameter.Value}");
+            }
+        }
+
+        var additionalParametersString = string.Join(";", additionalParameters);
         var mediaType = string.IsNullOrEmpty(value.MediaType) ? "*/*" : value.MediaType;
-        return string.IsNullOrEmpty(additionalParameters) ?
-                    mediaType :
-                    $"{mediaType};{additionalParameters}";
+
+        return string.IsNullOrEmpty(additionalParametersString) ?
+                        mediaType :
+                        $"{mediaType};{additionalParametersString}";
     }
     public IEnumerator<string> GetEnumerator()
     {
-        return _mimeTypes.OrderByDescending(static x => x.Value).Select(NormalizeMimeType).GetEnumerator();
+        var sortedMimeTypes = new List<KeyValuePair<string, float>>(_mimeTypes);
+        sortedMimeTypes.Sort((x, y) => y.Value.CompareTo(x.Value));
+
+        var normalizedMimeTypes = new List<string>();
+        foreach (var mimeType in sortedMimeTypes)
+        {
+            normalizedMimeTypes.Add(NormalizeMimeType(mimeType));
+        }
+
+        return normalizedMimeTypes.GetEnumerator();
     }
     IEnumerator IEnumerable.GetEnumerator()
     {
@@ -74,7 +110,17 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     /// <inheritdoc/>
     public void CopyTo(string[] array, int arrayIndex)
     {
-        _mimeTypes.OrderByDescending(static x => x.Value).Select(NormalizeMimeType).ToArray().CopyTo(array, arrayIndex);
+        ArgumentNullException.ThrowIfNull(array);
+
+        var sortedMimeTypes = new List<KeyValuePair<string, float>>(_mimeTypes);
+        sortedMimeTypes.Sort((x, y) => y.Value.CompareTo(x.Value));
+
+        int i = arrayIndex;
+        foreach (var mimeType in sortedMimeTypes)
+        {
+            array[i] = NormalizeMimeType(mimeType);
+            i++;
+        }
     }
     private static string NormalizeMimeType(KeyValuePair<string, float> mimeType)
     {
@@ -101,26 +147,59 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     public IEnumerable<string> GetAcceptedTypes(IEnumerable<string> searchTypes)
     {
         ArgumentNullException.ThrowIfNull(searchTypes);
-        return searchTypes.Select(GetKeyAndPriority)
-                        .OfType<KeyValuePair<string, float>>()
-                        .Select(static x => x.Key)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => TryGetMimeType(x, out var result) ? NormalizeMimeType(x, result) : null)
-                        .OfType<string>()
-                        .Order(StringComparer.OrdinalIgnoreCase);
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var results = new List<string>();
+
+        foreach (var searchType in searchTypes)
+        {
+            var keyAndPriority = GetKeyAndPriority(searchType);
+            if (keyAndPriority is KeyValuePair<string, float> pair)
+            {
+                if (keys.Add(pair.Key))
+                {
+                    if (TryGetMimeType(pair.Key, out var result))
+                    {
+                        results.Add(NormalizeMimeType(pair.Key, result));
+                    }
+                }
+            }
+        }
+
+        results.Sort(StringComparer.OrdinalIgnoreCase.Compare);
+        return results;
     }
     public IEnumerable<string> GetContentTypes(IEnumerable<string> searchTypes)
     {
         ArgumentNullException.ThrowIfNull(searchTypes);
-        return searchTypes.Select(GetKeyAndPriority)
-                        .OfType<KeyValuePair<string, float>>()
-                        .Select(static x => x.Key)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Select(x => TryGetMimeType(x, out var result) ? new KeyValuePair<string, float>?(new(x, result)) : null)
-                        .OfType<KeyValuePair<string, float>>()
-                        .OrderByDescending(static x => x.Value)
-                        .ThenByDescending(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                        .Select(static x => x.Key);
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var pairs = new List<KeyValuePair<string, float>>();
+
+        foreach (var searchType in searchTypes)
+        {
+            var keyAndPriority = GetKeyAndPriority(searchType);
+            if (keyAndPriority is KeyValuePair<string, float> pair)
+            {
+                if (keys.Add(pair.Key))
+                {
+                    if (TryGetMimeType(pair.Key, out var result))
+                    {
+                        pairs.Add(new KeyValuePair<string, float>(pair.Key, result));
+                    }
+                }
+            }
+        }
+
+        pairs.Sort((x, y) => y.Value != x.Value ? y.Value.CompareTo(x.Value) : StringComparer.OrdinalIgnoreCase.Compare(y.Key, x.Key));
+
+        var results = new List<string>();
+        foreach (var pair in pairs)
+        {
+            results.Add(pair.Key);
+        }
+
+        return results;
     }
     [GeneratedRegex(@"[^/+]+\+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex vendorStripRegex();

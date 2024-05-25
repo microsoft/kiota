@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 public class CodeType : CodeTypeBase, ICloneable
@@ -35,7 +34,7 @@ public class CodeType : CodeTypeBase, ICloneable
             // Clone the list so that modifications on cloned objects' property are localized
             // e.g. var y = x.Clone(); var z = y.Clone(); y.GenericTypeParameterValues.Add(value);
             // shouldn't modify x.GenericTypeParameterValues or z.GenericTypeParameterValues
-            GenericTypeParameterValues = new(GenericTypeParameterValues.ToList()),
+            GenericTypeParameterValues = new(GenericTypeParameterValues),
         }.BaseClone<CodeType>(this, TypeDefinition is null || IsExternal);
     }
     public Collection<CodeType> GenericTypeParameterValues { get; init; } = new();

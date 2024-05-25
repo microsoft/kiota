@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
@@ -30,7 +29,7 @@ public abstract class CommonPathSegmenter : IPathSegmenter
     public abstract string NormalizeNamespaceSegment(string segmentName);
     public abstract string NormalizeFileName(CodeElement currentElement);
     public virtual string NormalizePath(string fullPath) => fullPath;
-    public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
+    public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => [];
     protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement?.Name.Split('.')[^1] ?? string.Empty;
     public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true)
     {
@@ -40,13 +39,28 @@ public abstract class CommonPathSegmenter : IPathSegmenter
                                         .Replace(ClientNamespaceName, string.Empty, StringComparison.Ordinal)
                                         .TrimStart('.')
                                         .Split('.'));
-        namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates so we're building a list instead to conserve those.
-        namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
-                                        .Select(NormalizeNamespaceSegment)
-                                        .ToList();
-        var targetPath = Path.Combine(RootPath, namespacePathSegments.Count != 0 ? namespacePathSegments
-                                        .Aggregate(static (x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
-                                        fileName + FileSuffix);
+        namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName));
+
+        var normalizedSegments = new List<string>();
+        foreach (var segment in namespacePathSegments)
+        {
+            if (!string.IsNullOrEmpty(segment))
+            {
+                normalizedSegments.Add(NormalizeNamespaceSegment(segment));
+            }
+        }
+
+        string aggregatedPath = string.Empty;
+        foreach (var segment in normalizedSegments)
+        {
+            aggregatedPath += $"{Path.DirectorySeparatorChar}{segment}";
+        }
+        if (aggregatedPath.StartsWith(Path.DirectorySeparatorChar))
+        {
+            aggregatedPath = aggregatedPath.Substring(1);
+        }
+
+        var targetPath = Path.Combine(RootPath, normalizedSegments.Count != 0 ? aggregatedPath : string.Empty, fileName + FileSuffix);
         if (shouldNormalizePath)
             targetPath = NormalizePath(targetPath);
         var directoryPath = Path.GetDirectoryName(targetPath);

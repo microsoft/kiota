@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Lock;
@@ -138,7 +137,7 @@ public class KiotaLock
         IncludeAdditionalData = config.IncludeAdditionalData;
         Serializers = config.Serializers;
         Deserializers = config.Deserializers;
-        StructuredMimeTypes = config.StructuredMimeTypes.ToList();
+        StructuredMimeTypes = new List<string>(config.StructuredMimeTypes);
         IncludePatterns = config.IncludePatterns;
         ExcludePatterns = config.ExcludePatterns;
         DescriptionLocation = config.OpenAPIFilePath;

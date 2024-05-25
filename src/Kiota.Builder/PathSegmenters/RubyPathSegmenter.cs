@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -14,7 +13,7 @@ public class RubyPathSegmenter : CommonPathSegmenter
         return currentElement switch
         {
             CodeNamespace cn when !ClientNamespaceName.Equals(cn.Name, StringComparison.OrdinalIgnoreCase) => new[] { fileName },// We put barrels inside namespace folders
-            _ => Enumerable.Empty<string>(),
+            _ =>  [],
         };
     }
     public override string FileSuffix => ".rb";

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -76,7 +75,7 @@ public class GoPathSegmenter : CommonPathSegmenter
         return currentElement switch
         {
             CodeNamespace => new[] { GetLastFileNameSegment(currentElement) },// We put barrels inside namespace folders
-            _ => Enumerable.Empty<string>(),
+            _ => []
         };
     }
 

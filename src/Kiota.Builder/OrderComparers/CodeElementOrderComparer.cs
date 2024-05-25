@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.OrderComparers;
@@ -21,8 +20,10 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
                 GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * ParametersWeight,
         };
     }
+
     private const int NameWeight = 100;
     private const int TypeWeight = 10000;
+
     protected virtual int GetTypeFactor(CodeElement element)
     {
         return element switch
@@ -54,7 +55,9 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
             };
         return 0;
     }
+
     protected virtual int constantKindWeight { get; } = 1000;
+
     protected virtual int GetConstantKindFactor(CodeElement element)
     {
         if (element is CodeConstant constant)
@@ -65,11 +68,15 @@ public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement
             };
         return 0;
     }
+
     private const int ParametersWeight = 1;
+
     private static int GetParametersFactor(CodeElement element)
     {
-        if (element is CodeMethod method && (method.Parameters?.Any() ?? false))
-            return method.Parameters.Count();
-        return 0;
+        if (element is not CodeMethod method || method.Parameters is null) return 0;
+
+        int count = 0;
+        foreach (var _ in method.Parameters) count++;
+        return count;
     }
 }

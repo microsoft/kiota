@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 public class DiscriminatorInformation : CodeElement, ICloneable
@@ -10,15 +9,31 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     /// <summary>
     /// Gets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeType>> DiscriminatorMappings
+    public IEnumerable<KeyValuePair<string, CodeType>> DiscriminatorMappings
     {
         get
         {
-            return (Parent is not CodeComposedTypeBase &&
-                    Parent?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass ?
-                        discriminatorMappings.Where(x => x.Value is not CodeType currentType || currentType.TypeDefinition != parentClass) :
-                        discriminatorMappings)
-                    .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+            var filteredMappings = new List<KeyValuePair<string, CodeType>>();
+            var parentClass = Parent?.GetImmediateParentOfType<CodeClass>() as CodeClass;
+
+            foreach (var mapping in discriminatorMappings)
+            {
+                if (Parent is not CodeComposedTypeBase && parentClass != null)
+                {
+                    if (mapping.Value is not CodeType currentType || currentType.TypeDefinition != parentClass)
+                    {
+                        filteredMappings.Add(mapping);
+                    }
+                }
+                else
+                {
+                    filteredMappings.Add(mapping);
+                }
+            }
+
+            filteredMappings.Sort((x, y) => StringComparer.OrdinalIgnoreCase.Compare(x.Key, y.Key));
+
+            return filteredMappings;
         }
     }
     /// <summary>
@@ -54,7 +69,17 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public void RemoveDiscriminatorMapping(CodeClass classToRemove)
     {
         ArgumentNullException.ThrowIfNull(classToRemove);
-        var keyToRemove = discriminatorMappings.FirstOrDefault(x => x.Value is CodeType currentType && currentType.TypeDefinition == classToRemove).Key;
+        string? keyToRemove = null;
+
+        foreach (var mapping in discriminatorMappings)
+        {
+            if (mapping.Value is CodeType currentType && currentType.TypeDefinition == classToRemove)
+            {
+                keyToRemove = mapping.Key;
+                break;
+            }
+        }
+
         if (!string.IsNullOrEmpty(keyToRemove))
             discriminatorMappings.TryRemove(keyToRemove, out var _);
     }
