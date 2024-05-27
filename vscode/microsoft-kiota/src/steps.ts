@@ -1,5 +1,6 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
+import * as vscode from 'vscode';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -96,11 +97,17 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
-    }
+        }
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath || '';
+    
     let step = 1;
     let totalSteps = 4;
+   
     const folderSelectionOption = l10n.t('Browse your output directory');
-    const inputOptions = [folderSelectionOption];
+    const inputOptions = [
+        {label: l10n.t('Default folder'), description: workspaceFolder },
+        {label: folderSelectionOption}
+    ];
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
 		const option = await input.showQuickPick({
@@ -152,28 +159,37 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		return (input: MultiStepInput) => inputOutputPath(input, state);
 	}
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-		const selectedOption = await input.showQuickPick({
-			title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
-			step: step++,
-			totalSteps: totalSteps,
-            placeholder: l10n.t('Enter an output path relative to the root of the project'),
-            items: inputOptions.map(label => ({ label: label as string })), 
-			shouldResume: shouldResume
-		});
-        if (selectedOption?.label === folderSelectionOption) {
-            const folderUri = await input.showOpenDialog({
-                canSelectMany: false,
-                openLabel: 'Select',
-                canSelectFolders: true,
-                canSelectFiles: false
+        while(true) {
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
+                step: 4,
+                totalSteps: totalSteps,
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions, 
+                shouldResume: shouldResume
             });
-    
-            if (folderUri && folderUri[0]) {
-                state.outputPath = folderUri[0].fsPath;
+            if(selectedOption){
+            if (selectedOption?.label === folderSelectionOption) {
+                const folderUri = await input.showOpenDialog({
+                    canSelectMany: false,
+                    openLabel: 'Select',
+                    canSelectFolders: true,
+                    canSelectFiles: false
+                });
+        
+                if (folderUri && folderUri[0]) {
+                    state.outputPath = folderUri[0].fsPath;
+                } else{    
+                    continue;  
+                }
+            } else {
+                state.outputPath = selectedOption.description;
             }
-        } 
-        state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;	
-		return (input: MultiStepInput) => pickLanguage(input, state);
+        }
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
+            return (input: MultiStepInput) => pickLanguage(input, state); 
+        }
+ 
 	}
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = allGenerationLanguages.map(x => {
@@ -223,28 +239,37 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             pluginTypes.label === 'Microsoft'? state.pluginTypes = 'Microsoft' : state.pluginTypes = 'OpenAI';
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
-        async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {            
+        async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) { 
+            while (true) {           
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
-                step: step++,
+                step: 3,
                 totalSteps: 3,
-                placeholder:  l10n.t('Enter an output path relative to the root of the project'),
-                items: inputOptions.map(label => ({ label: label as string })), 
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions, 
                 shouldResume: shouldResume
             });
-            if (selectedOption?.label === folderSelectionOption) {
-                const folderUri = await input.showOpenDialog({
-                    canSelectMany: false,
-                    openLabel: 'Select',
-                    canSelectFolders: true,
-                    canSelectFiles: false
-                });
-        
-                if (folderUri && folderUri[0]) {
-                    state.outputPath = folderUri[0].fsPath;
-                }
+            if(selectedOption){
+                if (selectedOption?.label === folderSelectionOption) {
+                    const folderUri = await input.showOpenDialog({
+                        canSelectMany: false,
+                        openLabel: 'Select',
+                        canSelectFolders: true,
+                        canSelectFiles: false
+                    });
+            
+                    if (folderUri && folderUri[0]) {
+                        state.outputPath = folderUri[0].fsPath;
+                    } else{    
+                        continue;  
+                    }
+                } else {
+                        state.outputPath = selectedOption.description;
+                    }
             } 
-            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;	
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
+            break;
+        }	
         }
     
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
@@ -261,27 +286,37 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);      
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-		const selectedOption = await input.showQuickPick({
-			title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
-			step: step++,
-			totalSteps: 3,
-            placeholder: l10n.t('Enter an output path relative to the root of the project'),
-            items: inputOptions.map(label => ({ label: label as string })),
-			shouldResume: shouldResume
-		});
-        if (selectedOption?.label === folderSelectionOption) {
-            const folderUri = await input.showOpenDialog({
-                canSelectMany: false,
-                openLabel: 'Select',
-                canSelectFolders: true,
-                canSelectFiles: false
+        while (true) {
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
+                step: 2,
+                totalSteps: 3,
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions,
+                shouldResume: shouldResume
             });
-    
-            if (folderUri && folderUri[0]) {
-                state.outputPath = folderUri[0].fsPath;
-            }
-        }	
-        state.outputPath === ''? state.outputPath = 'output' : state.outputPath;		
+            if(selectedOption) {
+            if (selectedOption?.label === folderSelectionOption) {
+                const folderUri = await input.showOpenDialog({
+                    canSelectMany: false,
+                    openLabel: 'Select',
+                    canSelectFolders: true,
+                    canSelectFiles: false
+                });
+        
+                if (folderUri && folderUri[0]) {
+                    state.outputPath = folderUri[0].fsPath;
+                } else {    
+                    continue;  
+                }
+                } else{
+                    state.outputPath = selectedOption.description;
+                }
+            }	
+            state.outputPath === ''? state.outputPath = 'output' : state.outputPath;
+            break;	
+        }
+			
 	}
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     return state;
