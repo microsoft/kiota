@@ -3487,9 +3487,10 @@ paths:
         var directoryObjectSchema = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
+            AllOf = [
                 entitySchema,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "tenant", new OpenApiSchema {
@@ -3506,7 +3507,7 @@ paths:
                         "@odata.type"
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "microsoft.graph.directoryObject",
@@ -3517,9 +3518,10 @@ paths:
         var userSchema = new OpenApiSchema
         {
             Type = "object",
-            AllOf = new List<OpenApiSchema> {
+            AllOf = [
                 directoryObjectSchema,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "firstName", new OpenApiSchema {
@@ -3536,7 +3538,7 @@ paths:
                         "@odata.type"
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "microsoft.graph.user",
@@ -7467,6 +7469,9 @@ components:
         var memberClass = codeModel.FindChildByName<CodeClass>("member");
         Assert.NotNull(memberClass);
         Assert.Equal(2, memberClass.Properties.Count());// single prop plus additionalData
+        var memberProperty = memberClass.Properties.FirstOrDefault(static x => x.Name.Equals("group", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(memberProperty);
+        Assert.Equal("group", memberProperty.Type.Name);
         Assert.Null(memberClass.StartBlock.Inherits);//no base
         var userClass = codeModel.FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
@@ -8645,6 +8650,24 @@ components:
         }
         Assert.Equal("directory_administrativeunits_get", operations[0].Value.OperationId);
         Assert.Equal("directory_administrativeunits_post", operations[1].Value.OperationId);
+    }
+
+    [Theory]
+    [InlineData("repos/{id}/", "repos/{*}/")] // normalish case
+    [InlineData("repos/{id}", "repos/{*}")]// no trailing slash
+    [InlineData("/repos/{id}", "/repos/{*}")]// no trailing slash(slash at begining).
+    [InlineData("repos/{id}/dependencies/{dep-id}", "repos/{*}/dependencies/{*}")]// multiple indexers
+    [InlineData("/repos/{id}/dependencies/{dep-id}/", "/repos/{*}/dependencies/{*}/")]// multiple indexers(slash at begining and end).
+    [InlineData("/repos/{id}/dependencies/{dep-id}", "/repos/{*}/dependencies/{*}")]// multiple indexers(slash at begining).
+    [InlineData("repos/{id}/{dep-id}", "repos/{*}/{*}")]// indexers following each other.
+    [InlineData("/repos/{id}/{dep-id}", "/repos/{*}/{*}")]// indexers following each other(slash at begining).
+    [InlineData("repos/msft", "repos/msft")]// no indexers
+    [InlineData("/repos", "/repos")]// no indexers(slash at begining).
+    [InlineData("repos", "repos")]// no indexers
+    public void ReplacesAllIndexesWithWildcard(string inputPath, string expectedGlob)
+    {
+        var resultGlob = KiotaBuilder.ReplaceAllIndexesWithWildcard(inputPath);
+        Assert.Equal(expectedGlob, resultGlob);
     }
 
     [Fact]
