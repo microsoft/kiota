@@ -1816,7 +1816,7 @@ public partial class KiotaBuilder
             if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 
-            if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is OpenApiSchema mergedSchema &&
+            if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is {} mergedSchema &&
                 AddModelDeclarationIfDoesntExist(currentNode, currentOperation, mergedSchema, declarationName, currentNamespace, inheritsFrom) is CodeClass createdClass)
             {
                 // multiple allOf entries that do not translate to inheritance
