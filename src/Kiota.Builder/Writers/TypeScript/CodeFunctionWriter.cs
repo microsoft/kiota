@@ -105,7 +105,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             writer.StartBlock($"case \"{mappedType.Key}\":");
             var mappedTypeName = mappedType.Value.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"writer.writeObjectValue<{mappedTypeName}>(key, {paramName}, {GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)});");
+            var serializationName = GetSerializationMethodName(mappedType.Value, codeElement.OriginalLocalMethod);
+            writer.WriteLine($"writer.{serializationName}<{mappedTypeName}>(key, {paramName}, {GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)});");
             writer.WriteLine("break;");
             writer.DecreaseIndent();
         }
@@ -260,7 +261,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             codeFunction = parentNamespace?.FindChildByName<CodeFunction>(functionName);
             parentNamespace = parentNamespace?.Parent?.GetImmediateParentOfType<CodeNamespace>();
-        } while (codeFunction is null && parentNamespace is not null);
+        } while (codeFunction?.Name != functionName && parentNamespace is not null);
         return codeFunction;
     }
 
@@ -355,6 +356,23 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         ArgumentNullException.ThrowIfNull(method);
         ArgumentNullException.ThrowIfNull(composedType);
+        /* 
+        Serialization will be delegated into a generated method because we cant tell in advance, Using the Pets example, whether its a Cat or Dog 
+        without inspecting the discriminator property which only the generator can tell, so instead of writer.writeObjectValue<Cat | Dog>("pet", responseObject.pet, serializePet)
+        * it will be something like:
+
+        export function serializePet(writer: SerializationWriter, key: string, pet: Partial<Pet> | undefined = {}) : void {
+            if (pet == undefined) return;
+            switch (pet.pet_type) {
+                case "Cat":
+                    writer.writeObjectValue<Cat>(key, pet, serializeCat);
+                    break;
+                case "Dog":
+                    writer.writeObjectValue<Dog>(key, pet, serializeDog);
+                    break;
+            }
+        }
+        */
         return $"serialize{ConventionServiceInstance.GetTypeString(composedType, method)}";
     }
 
