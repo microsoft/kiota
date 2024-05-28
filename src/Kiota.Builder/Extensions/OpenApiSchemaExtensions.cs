@@ -29,7 +29,7 @@ public static class OpenApiSchemaExtensions
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
         if (schemas is null) return [];
-        return schemas.Count == 1 && !schemas[0].HasAnyProperty() ?
+        return schemas.Count == 1 && !schemas[0].HasAnyProperty() && string.IsNullOrEmpty(schemas[0].Reference?.Id) ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
