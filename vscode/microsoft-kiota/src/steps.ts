@@ -32,37 +32,49 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     let step = 1;
     let totalSteps = 2;
     async function inputPathOrSearch(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
+        const selectedOption = await input.showQuickPick({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            placeholder: l10n.t('Search or paste a path to an API description'),
+            items: [{label: l10n.t('Search')}, {label: l10n.t('Browse path')}],
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+        if(selectedOption?.label === l10n.t('Search')) {
+            return (input: MultiStepInput) => inputSearch(input, state);
+        } 
+        else if(selectedOption?.label === l10n.t('Browse path')) {
+            const fileUri = await input.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Select',
+                canSelectFolders: false,
+                canSelectFiles: true
+            });
+    
+            if (fileUri && fileUri[0]) {
+                state.descriptionPath = fileUri[0].fsPath;
+            } else{    
+                return; 
+            }
+        }
+    }
+
+    async function inputSearch(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
         state.searchQuery = await input.showInputBox({
             title,
             step: step++,
             totalSteps: totalSteps,
             value: state.searchQuery ?? '',
-            prompt: l10n.t('Search or paste a path to an API description'),
+            prompt: l10n.t('Search a path to an API description'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
-
         state.searchResults = await searchCallBack(state.searchQuery);
         if(state.searchResults && Object.keys(state.searchResults).length > 0) {
             return (input: MultiStepInput) => pickSearchResult(input, state);
         }
-        state.descriptionPath = state.searchQuery;
-        return (input: MultiStepInput) => inputPathOrUrl(input, state);
-    }
-
-    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
-       if (state.descriptionPath) {
-        return;
-       }
-       state.descriptionPath = await input.showInputBox({
-        title,
-        step: step++,
-        totalSteps: 1,
-        value: state.descriptionPath || '',
-        prompt: l10n.t('Search or paste a path to an API description'),
-        validate: validateIsNotEmpty,
-        shouldResume: shouldResume
-    });
+        
     }
     async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
         const items: QuickSearchPickItem[] = [];
@@ -270,7 +282,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
             break;
         }	
-        }
+    }
     
     async function inputManifestName(input:MultiStepInput, state: Partial<GenerateState>) {
         state.pluginName = await input.showInputBox({
@@ -422,10 +434,11 @@ interface InputBoxParameters {
     openLabel: string;
     canSelectFolders: boolean;
     canSelectFiles: boolean;
+    filters?: { [name: string]: string[] };
 }
 
 class MultiStepInput {
-    async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles} : OpenDialogParameters): Promise<Uri[] | undefined> {
+    async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles, filters} : OpenDialogParameters): Promise<Uri[] | undefined> {
     const disposables: Disposable[] = [];
 
     try {
@@ -434,7 +447,8 @@ class MultiStepInput {
                 canSelectMany,
                 openLabel,
                 canSelectFolders,
-                canSelectFiles
+                canSelectFiles,
+                filters
             };
 
             void window.showOpenDialog(input).then(folderUris => {
