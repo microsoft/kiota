@@ -105,8 +105,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             writer.StartBlock($"case \"{mappedType.Key}\":");
             var mappedTypeName = mappedType.Value.Name.ToFirstCharacterUpperCase();
-            var serializationName = GetSerializationMethodName(mappedType.Value, codeElement.OriginalLocalMethod);
-            writer.WriteLine($"writer.{serializationName}<{mappedTypeName}>(key, {paramName}, {GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)});");
+            writer.WriteLine($"{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)}(writer, {paramName});");
             writer.WriteLine("break;");
             writer.DecreaseIndent();
         }
@@ -341,39 +340,24 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         ArgumentNullException.ThrowIfNull(method);
         var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
         var composedType = GetOriginalComposedType(propertyType);
-        var currentType = propertyType as CodeType;
+        CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;
 
-        return (composedType, currentType, propertyTypeName) switch
+        return (currentType, propertyTypeName) switch
         {
-            (CodeComposedTypeBase type, _, _) => GetComposedTypeSerializationMethodName(type, method),
-            (_, CodeType type, string prop) when !string.IsNullOrEmpty(prop) && GetSerializationMethodNameForCodeType(type, prop) is string result && !string.IsNullOrWhiteSpace(result) => result,
-            (_, _, "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration") => $"write{propertyTypeName.ToFirstCharacterUpperCase()}Value",
+            (CodeType type, string prop) when !string.IsNullOrEmpty(prop) && GetSerializationMethodNameForCodeType(type, prop) is string result && !string.IsNullOrWhiteSpace(result) => result,
+            (_, "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration") => $"write{propertyTypeName.ToFirstCharacterUpperCase()}Value",
             _ => "writeObjectValue"
         };
     }
 
-    private static string GetComposedTypeSerializationMethodName(CodeComposedTypeBase composedType, CodeMethod method)
+    private static CodeType GetCodeTypeForComposedType(CodeComposedTypeBase composedType)
     {
-        ArgumentNullException.ThrowIfNull(method);
         ArgumentNullException.ThrowIfNull(composedType);
-        /* 
-        Serialization will be delegated into a generated method because we cant tell in advance, Using the Pets example, whether its a Cat or Dog 
-        without inspecting the discriminator property which only the generator can tell, so instead of writer.writeObjectValue<Cat | Dog>("pet", responseObject.pet, serializePet)
-        * it will be something like:
-
-        export function serializePet(writer: SerializationWriter, key: string, pet: Partial<Pet> | undefined = {}) : void {
-            if (pet == undefined) return;
-            switch (pet.pet_type) {
-                case "Cat":
-                    writer.writeObjectValue<Cat>(key, pet, serializeCat);
-                    break;
-                case "Dog":
-                    writer.writeObjectValue<Dog>(key, pet, serializeDog);
-                    break;
-            }
-        }
-        */
-        return $"serialize{ConventionServiceInstance.GetTypeString(composedType, method)}";
+        return new CodeType
+        {
+            Name = composedType.Name,
+            TypeDefinition = composedType
+        };
     }
 
     private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)

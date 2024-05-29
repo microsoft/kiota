@@ -302,7 +302,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         };
 
         ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
-        ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, children);
+        ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
         ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, children);
 
         return children;
@@ -324,12 +324,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, List<CodeElement> children)
+    private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
         var function = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
         if (function is not null)
         {
-            var method = CreateSerializerMethodForComposedType(codeInterface, function);
+            var method = CreateSerializerMethodForComposedType(codeInterface, function, composedType);
             var serializerFunction = new CodeFunction(method) { Name = method.Name };
             serializerFunction.AddUsing(function.Usings.ToArray());
 
@@ -363,11 +363,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return method;
     }
 
-    private static CodeMethod CreateSerializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function)
+    private static CodeMethod CreateSerializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function, CodeComposedTypeBase composedType)
     {
         var method = CreateCodeMethod(codeInterface, function);
         // Add the key parameter if the composed type is a union of primitive values
-        method.AddParameter(CreateKeyParameter());
+        if (ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+            method.AddParameter(CreateKeyParameter());
         method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
         return method;
     }
