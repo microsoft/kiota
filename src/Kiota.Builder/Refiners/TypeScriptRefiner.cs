@@ -303,7 +303,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
         ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
-        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, children);
+        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
 
         return children;
     }
@@ -339,14 +339,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, List<CodeElement> children)
+    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
         var deserializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
-        if (deserializerMethod is not null)
+
+        if (deserializerMethod is null) return;
+
+        // For code union Deserializer is not required, however its needed fo Intersection types
+        if (composedType is CodeIntersectionType)
         {
-            children.Remove(deserializerMethod);
-            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
+            var method = CreateDeserializerMethodForComposedType(codeInterface, deserializerMethod);
+            var deserializerFunction = new CodeFunction(method) { Name = method.Name };
+            deserializerFunction.AddUsing(deserializerMethod.Usings.ToArray());
+            children.Add(deserializerFunction);
         }
+
+        children.Remove(deserializerMethod);
+        RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
     }
 
     private static void RemoveChildElementFromInterfaceAndNamespace(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction function)
@@ -369,7 +378,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         // Add the key parameter if the composed type is a union of primitive values
         if (ConventionServiceInstance.IsComposedOfPrimitives(composedType))
             method.AddParameter(CreateKeyParameter());
-        method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
+        return method;
+    }
+
+    private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function)
+    {
+        var method = CreateCodeMethod(codeInterface, function);
         return method;
     }
 

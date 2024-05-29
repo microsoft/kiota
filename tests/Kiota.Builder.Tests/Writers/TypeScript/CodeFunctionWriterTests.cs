@@ -1274,5 +1274,81 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("break", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
+
+    [Fact]
+    public async Task Writes_CodeIntersectionType_DeserializerFunctions()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("FooBar", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.foobar");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("foobarRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Deserializer function
+        var deserializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeDeserializer).FirstOrDefault();
+        Assert.True(deserializerFunction is not null);
+        writer.Write(deserializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("...deserializeIntoBar(fooBar),", serializerFunctionStr);
+        Assert.Contains("...deserializeIntoFoo(fooBar),", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
+
+    [Fact]
+    public async Task Writes_CodeIntersectionType_SerializerFunctions()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("FooBar", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.foobar");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("foobarRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeSerializer).FirstOrDefault();
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("serializeBar(writer, fooBar);", serializerFunctionStr);
+        Assert.Contains("serializeFoo(writer, fooBar);", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
 }
 

@@ -55,6 +55,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             case CodeMethodKind.ComposedTypeSerializer:
                 WriteComposedTypeSerializer(codeElement, writer);
                 break;
+            case CodeMethodKind.ComposedTypeDeserializer:
+                WriteComposedTypeDeserializer(codeElement, writer);
+                break;
             default: throw new InvalidOperationException("Invalid code method kind");
         }
     }
@@ -78,6 +81,22 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.CloseBlock();
     }
 
+    private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer)
+    {
+        var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
+        if (composedParam == null) return;
+
+        if (GetOriginalComposedType(composedParam) is not CodeComposedTypeBase composedType) return;
+
+        writer.StartBlock($"return {{");
+        foreach (var mappedType in composedType.Types.ToArray())
+        {
+            var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"...{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Deserializer)}({composedParam.Name.ToFirstCharacterLowerCase()}),");
+        }
+        writer.CloseBlock();
+    }
+
     private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer)
     {
         var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
@@ -91,7 +110,22 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return;
         }
 
+        if (composedType is CodeIntersectionType)
+        {
+            WriteComposedTypeSerializationForCodeIntersectionType(composedType, composedParam, codeElement, writer);
+            return;
+        }
+
         WriteComposedTypeSerialization(composedParam, codeElement, writer);
+    }
+
+    private void WriteComposedTypeSerializationForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
+    {
+        foreach (var mappedType in composedType.Types.ToArray())
+        {
+            var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()});");
+        }
     }
 
     private void WriteComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
@@ -182,28 +216,44 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         var composedType = GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType);
-        if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
-        {
-            WriteFactoryMethodBodyForUnionOfPrimitives(composedType, codeElement, writer, parseNodeParameter);
-            return;
-        }
 
-        if (ShouldWriteDiscriminatorInformation(codeElement, composedType) && parseNodeParameter != null)
+        switch (composedType)
+        {
+            case CodeComposedTypeBase type when ConventionServiceInstance.IsComposedOfPrimitives(type):
+                WriteFactoryMethodBodyForUnionOfPrimitives(type, codeElement, writer, parseNodeParameter);
+                break;
+            case CodeUnionType _ when parseNodeParameter != null:
+                WriteFactoryMethodBodyForCodeUnionType(codeElement, writer, parseNodeParameter);
+                break;
+            case CodeIntersectionType _ when parseNodeParameter != null:
+                WriteFactoryMethodBodyForCodeIntersectionType(codeElement, returnType, writer, parseNodeParameter);
+                break;
+            default:
+                WriteNormalFactoryMethodBody(codeElement, returnType, writer);
+                break;
+        }
+    }
+
+    private void WriteFactoryMethodBodyForCodeIntersectionType(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter parseNodeParameter)
+    {
+        WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
+    }
+
+    private void WriteFactoryMethodBodyForCodeUnionType(CodeFunction codeElement, LanguageWriter writer, CodeParameter parseNodeParameter)
+    {
+        WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
+        // It's a composed type but there isn't a discriminator property
+        writer.WriteLine($"throw new Error(\"A discriminator property is required to distinguish a union type\");");
+    }
+
+    private void WriteNormalFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
+    {
+        var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
+        if (ShouldWriteDiscriminatorInformation(codeElement, null) && parseNodeParameter != null)
         {
             WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
         }
-
-        if (composedType is null)
-        {
-            WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
-            return;
-        }
-
-        if (composedType is CodeUnionType)
-        {
-            // It's a composed type but there isn't a discriminator property
-            writer.WriteLine($"throw new Error(\"A discriminator property is required to distinguish a union type\");");
-        }
+        WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
     }
 
     private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter? parseNodeParameter)
@@ -263,7 +313,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             codeFunction = parentNamespace?.FindChildByName<CodeFunction>(functionName);
             parentNamespace = parentNamespace?.Parent?.GetImmediateParentOfType<CodeNamespace>();
-        } while (codeFunction?.Name != functionName && parentNamespace is not null);
+        } while (!functionName.Equals(codeFunction?.Name, StringComparison.Ordinal) && parentNamespace is not null);
         return codeFunction;
     }
 
