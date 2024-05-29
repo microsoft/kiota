@@ -434,11 +434,10 @@ interface InputBoxParameters {
     openLabel: string;
     canSelectFolders: boolean;
     canSelectFiles: boolean;
-    filters?: { [name: string]: string[] };
 }
 
 class MultiStepInput {
-    async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles, filters} : OpenDialogParameters): Promise<Uri[] | undefined> {
+    async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles} : OpenDialogParameters): Promise<Uri[] | undefined> {
     const disposables: Disposable[] = [];
 
     try {
@@ -447,8 +446,7 @@ class MultiStepInput {
                 canSelectMany,
                 openLabel,
                 canSelectFolders,
-                canSelectFiles,
-                filters
+                canSelectFiles
             };
 
             void window.showOpenDialog(input).then(folderUris => {
