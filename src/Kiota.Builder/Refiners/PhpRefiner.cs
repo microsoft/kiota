@@ -75,7 +75,7 @@ public class PhpRefiner : CommonLanguageRefiner
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",
-                "Microsoft\\Kiota\\Abstractions"
+                AbstractionsNamespaceName
             );
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, true);
@@ -110,7 +110,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 }
             );
             cancellationToken.ThrowIfCancellationRequested();
-            AddSerializationModulesImport(generatedCode, ["Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"], null, '\\');
+            AddSerializationModulesImport(generatedCode, [$@"{AbstractionsNamespaceName}\ApiClientBuilder"], null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
@@ -123,7 +123,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     Name = "BaseRequestConfiguration",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft\\Kiota\\Abstractions",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true
                     }
                 });
@@ -210,7 +210,7 @@ public class PhpRefiner : CommonLanguageRefiner
         new(static x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "\\DateTime"),
         new(static x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "\\DateTime"),
         new(static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), AbstractionsNamespaceName, "ApiClientBuilder"),
-        new(static x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter"),
+        new(static x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), AbstractionsNamespaceName, "QueryParameter"),
         new(static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), AbstractionsNamespaceName, "RequestOption"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal),
             $@"{AbstractionsNamespaceName}\Serialization", "ParseNodeHelper"),
@@ -343,7 +343,7 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
         {
-            var typeUtilsUsing = new CodeUsing { Name = "TypeUtils", Declaration = new CodeType { Name = "Microsoft\\Kiota\\Abstractions\\Types", IsExternal = true } };
+            var typeUtilsUsing = new CodeUsing { Name = "TypeUtils", Declaration = new CodeType { Name = $@"{AbstractionsNamespaceName}\Types", IsExternal = true } };
             if (codeClass.Properties.Any(x =>
                     x.Kind == CodePropertyKind.Custom
                     && x.Type is CodeType codeType
