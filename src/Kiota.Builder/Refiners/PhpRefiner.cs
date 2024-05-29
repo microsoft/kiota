@@ -32,7 +32,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     Name = "BaseRequestBuilder",
                     Declaration = new CodeType
                     {
-                        Name = $@"{AbstractionsNamespaceName}\Serialization",
+                        Name = $@"{AbstractionsNamespaceName}",
                         IsExternal = true
                     }
                 }, AccessModifier.Public);
@@ -47,7 +47,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 false,
-                AbstractionsNamespaceName,
+                $@"{AbstractionsNamespaceName}\Serialization",
                 "ComposedTypeWrapper"
                 );
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}", new HashSet<Type> { typeof(CodeEnumOption) });
