@@ -182,9 +182,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         var composedType = GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType);
-        if (composedType is CodeUnionType codeUnion && ConventionServiceInstance.IsComposedOfPrimitives(codeUnion))
+        if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
-            WriteFactoryMethodBodyForUnionOfPrimitives(codeUnion, codeElement, writer, parseNodeParameter);
+            WriteFactoryMethodBodyForUnionOfPrimitives(composedType, codeElement, writer, parseNodeParameter);
             return;
         }
 
@@ -199,8 +199,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return;
         }
 
-        // It's a composed type but there isn't a discriminator property
-        writer.WriteLine($"throw new Error(\"A discriminator property is required to distinguish a union type\");");
+        if (composedType is CodeUnionType)
+        {
+            // It's a composed type but there isn't a discriminator property
+            writer.WriteLine($"throw new Error(\"A discriminator property is required to distinguish a union type\");");
+        }
     }
 
     private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter? parseNodeParameter)
@@ -338,10 +341,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         ArgumentNullException.ThrowIfNull(propertyType);
         ArgumentNullException.ThrowIfNull(method);
-        var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
         var composedType = GetOriginalComposedType(propertyType);
-        CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;
 
+        if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+            return $"serialize{ConventionServiceInstance.GetTypeString(composedType, method)}";
+
+        var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
+        CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;
         return (currentType, propertyTypeName) switch
         {
             (CodeType type, string prop) when !string.IsNullOrEmpty(prop) && GetSerializationMethodNameForCodeType(type, prop) is string result && !string.IsNullOrWhiteSpace(result) => result,

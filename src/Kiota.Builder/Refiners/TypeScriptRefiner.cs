@@ -358,7 +358,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
     {
         var method = CreateCodeMethod(codeInterface, function);
-        if (composedType is CodeUnionType && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
             method.ReturnType = composedType;
         return method;
     }
