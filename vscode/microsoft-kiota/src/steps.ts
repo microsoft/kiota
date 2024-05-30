@@ -54,8 +54,6 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     
             if (fileUri && fileUri[0]) {
                 state.descriptionPath = fileUri[0].fsPath;
-            } else{    
-                return; 
             }
         }
     }
