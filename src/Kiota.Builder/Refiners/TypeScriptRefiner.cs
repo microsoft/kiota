@@ -345,8 +345,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         if (deserializerMethod is null) return;
 
-        // For code union Deserializer is not required, however its needed fo Intersection types
-        if (composedType is CodeIntersectionType)
+        // For code union Deserializer is not required, however its needed for Object Intersection types
+        if (composedType is CodeIntersectionType && !ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
             var method = CreateDeserializerMethodForComposedType(codeInterface, deserializerMethod);
             var deserializerFunction = new CodeFunction(method) { Name = method.Name };
