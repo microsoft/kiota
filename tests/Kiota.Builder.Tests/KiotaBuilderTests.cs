@@ -7180,7 +7180,7 @@ paths:
         Assert.Equal("int64", select.Type.Name);
     }
     [Fact]
-    public async Task SupportsMultiPartFormAsRequestBody()
+    public async Task SupportsMultiPartFormAsRequestBodyWithDefaultMimeTypes()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStream(@"openapi: 3.0.1
@@ -7231,6 +7231,285 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
+    }
+    [Fact]
+    public async Task SupportsMultiPartFormAsRequestBodyWithoutEncodingWithDefaultMimeTypes()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false}, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("directoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
+    }
+    [Fact]
+    public async Task SupportsMultipleContentTypesAsRequestBodyWithDefaultMimeTypes()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false}, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("directoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
+    }
+    [Fact]
+    public async Task SupportsMultipleContentTypesAsRequestBodyWithMultipartPriorityNoEncoding()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection {"multipart/form-data;q=1", "application/json;q=0.1"}}, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("directoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
+    }
+    [Fact]
+    public async Task SupportsMultipleContentTypesAsRequestBodyWithMultipartPriorityAndEncoding()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+            encoding:
+              id:
+                contentType: text/plain
+              address:
+                contentType: application/json
+              profileImage:
+                contentType: image/png
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection {"multipart/form-data;q=1", "application/json;q=0.1"}}, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
