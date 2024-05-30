@@ -396,7 +396,7 @@
         "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
-        "icon": "$(add)"
+        "icon": "$(new-file)"
       },
       {
         "command": "kiota.workspace.openWorkspaceFile",
