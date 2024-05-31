@@ -202,7 +202,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(type);
 
         if (type.TypeDefinition is ITypeDefinition typeDefinition)
-            return typeDefinition.GetFullyQualifiedName();
+            return typeDefinition.GetFullName();
 
         return type.Name switch
         {
