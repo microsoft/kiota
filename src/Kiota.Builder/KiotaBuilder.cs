@@ -1561,7 +1561,7 @@ public partial class KiotaBuilder
                     PossibleValues = contentTypes.ToList()
                 });
         }
-        
+
         method.AddParameter(new CodeParameter
         {
             Name = "requestConfiguration",

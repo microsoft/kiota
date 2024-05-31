@@ -7289,7 +7289,7 @@ components:
         city:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false}, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -7360,7 +7360,7 @@ components:
         city:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false}, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -7431,7 +7431,7 @@ components:
         city:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection {"multipart/form-data;q=1", "application/json;q=0.1"}}, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1", "application/json;q=0.1" } }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -7509,7 +7509,7 @@ components:
         city:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection {"multipart/form-data;q=1", "application/json;q=0.1"}}, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1", "application/json;q=0.1" } }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
