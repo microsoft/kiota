@@ -21,24 +21,24 @@ internal static class TypeDefinitionExtensions
             throw new ArgumentException("Cannot append a full name for a type without a name.", nameof(typeDefinition));
 
         fullNameBuilder.Insert(0, typeDefinition.Name.ToFirstCharacterUpperCase());
-        if (typeDefinition.Parent is null)
-            return fullNameBuilder;
+        switch (typeDefinition.Parent)
+        {
+            case null:
+                return fullNameBuilder;
+            case ITypeDefinition parentTypeDefinition:
+            {
+                fullNameBuilder.Insert(0, '.');
+                return AppendTypeName(parentTypeDefinition, fullNameBuilder);
+            }
+            case CodeNamespace codeNamespace:
+            {
+                if (!string.IsNullOrEmpty(codeNamespace.Name))
+                    fullNameBuilder.Insert(0, $"{codeNamespace.Name}.");
 
-        if (typeDefinition.Parent is ITypeDefinition parentTypeDefinition)
-        {
-            fullNameBuilder.Insert(0, '.');
-            return AppendTypeName(parentTypeDefinition, fullNameBuilder);
-        }
-        else if (typeDefinition.Parent is CodeNamespace codeNamespace)
-        {
-            if (!string.IsNullOrEmpty(codeNamespace.Name))
-                fullNameBuilder.Insert(0, $"{codeNamespace.Name}.");
-
-            return fullNameBuilder;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Type {typeDefinition.Name} contains an invalid parent of type {typeDefinition.Parent.GetType().FullName}.");
+                return fullNameBuilder;
+            }
+            default:
+                throw new InvalidOperationException($"Type {typeDefinition.Name} contains an invalid parent of type {typeDefinition.Parent.GetType().FullName}.");
         }
     }
 }
