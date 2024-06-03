@@ -17,7 +17,7 @@ Context: you're most likely a program manager eager to demo the latest bits from
 - GitHub CLI `winget install GitHub.CLI`
 - dotnet 8 `winget install Microsoft.DotNet.SDK.8`
 - node 20 `winget install CoreyButler.NVMforWindows && nvm install lts && nvm use lts`
-- vsce & TypeScript `npm i -g TypeScript @vscode/vsce`
+- vsce & TypeScript `npm i -g typescript @vscode/vsce`
 
 ### Steps
 
