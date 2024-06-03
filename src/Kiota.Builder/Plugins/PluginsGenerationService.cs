@@ -103,9 +103,9 @@ public class PluginsGenerationService
         doc.Components ??= new OpenApiComponents();
 
         if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
-            return doc;
+            doc.Info!.Version = "1.0";
 
-        //empty out the responses with a single 2XX
+        //empty out all the responses with a single empty 2XX
         foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
         {
             operation.Responses = new OpenApiResponses()
@@ -130,7 +130,7 @@ public class PluginsGenerationService
             };
         }
 
-        // remove unused components
+        // remove unused components using the OpenApi.Net
         var requestUrls = new Dictionary<string, List<string>>();
         var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
         foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
