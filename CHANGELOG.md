@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where indexers in include/exclude patters were not normalized if the indexer was the last segment without a slash at the end [#4715](https://github.com/microsoft/kiota/issues/4715)
 - Fixes a bug where CLI generation doesnot handle parameters of type string array. [#4707](https://github.com/microsoft/kiota/issues/4707)
 - Fixed a bug where models would not be created when a multipart content schema existed with no encoding [#4734](https://github.com/microsoft/kiota/issues/4734)
+- Fixes a bug where warnings about discriminator not being inherited were generated [#4761](https://github.com/microsoft/kiota/issues/4761)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
 
 ## [1.14.0] - 2024-05-02
