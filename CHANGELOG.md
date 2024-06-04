@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where CLI generation doesn't handle parameters of type string array. [#4707](https://github.com/microsoft/kiota/issues/4707)
 - Fixed a bug where models would not be created when a multipart content schema existed with no encoding [#4734](https://github.com/microsoft/kiota/issues/4734)
 - Fixes a bug where warnings about discriminator not being inherited were generated [#4761](https://github.com/microsoft/kiota/issues/4761)
-- Fix scalar member composed type serialization in PHP [#2827](https://github.com/issues/2827)
+- Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 
 ## [1.14.0] - 2024-05-02
 
