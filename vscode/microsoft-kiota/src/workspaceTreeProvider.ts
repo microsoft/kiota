@@ -7,19 +7,47 @@ const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folde
 
 export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
+    private fileExists: boolean = false;
+
     constructor(private context: vscode.ExtensionContext) {
         void this.ensureKiotaDirectory();
     }
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (!element) {
-            return [new vscode.TreeItem(KIOTA_WORKSPACE_FILE, vscode.TreeItemCollapsibleState.None)];
+            try {
+                await fs.promises.access(workspaceJsonPath);
+                this.fileExists = true;
+            } catch {
+                this.fileExists = false;
+            }
+            const treeItem = new vscode.TreeItem(KIOTA_WORKSPACE_FILE, vscode.TreeItemCollapsibleState.None);
+            treeItem.iconPath = vscode.ThemeIcon.File;
+            if (!this.fileExists) {
+                treeItem.label = `${KIOTA_WORKSPACE_FILE} (not found)`;
+                treeItem.contextValue = 'file-not-found';
+                treeItem.iconPath = new vscode.ThemeIcon('warning'); 
+            } else {
+                const fileExtension = path.extname(KIOTA_WORKSPACE_FILE);
+                switch (fileExtension) {
+                    case '.json':
+                        treeItem.iconPath = new vscode.ThemeIcon('json'); 
+                        break;
+                    default:
+                        treeItem.iconPath = vscode.ThemeIcon.File;
+                }
+            }
+            return [treeItem];
         }
         return [];
     }
 
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-        if (element) {
-            element.command = { command: 'kiota.workspace.openWorkspaceFile', title: vscode.l10n.t("Open File"), arguments: [vscode.Uri.file(workspaceJsonPath)], };
+        if (this.fileExists) {
+            element.command = { 
+                command: 'kiota.workspace.openWorkspaceFile', 
+                title: vscode.l10n.t("Open File"), 
+                arguments: [vscode.Uri.file(workspaceJsonPath)] 
+            };
             element.contextValue = 'file';
         }
         return element;
@@ -33,13 +61,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
             return;
         }
         const kiotaDir = path.dirname(workspaceJsonPath);
-        try {
-            await fs.promises.access(kiotaDir);
-        } catch (error) {
-            await vscode.window.showErrorMessage(
-                vscode.l10n.t("Kiota directory not found")
-            );
-        }
+        await fs.promises.access(kiotaDir).catch(() => {});
     }
 }
 
@@ -49,13 +71,13 @@ export class KiotaWorkspace {
         context.subscriptions.push(vscode.window.createTreeView('kiota.workspace', { treeDataProvider }));
         vscode.commands.registerCommand('kiota.workspace.openWorkspaceFile', async (resource) => await this.openResource(resource));
     }
+
     private async openResource(resource: vscode.Uri): Promise<void> {
-        try{
+        try {
             await vscode.window.showTextDocument(resource);
         } catch (error) {
             await fs.promises.writeFile(workspaceJsonPath, Buffer.from('{}'));
             await vscode.window.showTextDocument(resource);
         }
-        
     }
 }
