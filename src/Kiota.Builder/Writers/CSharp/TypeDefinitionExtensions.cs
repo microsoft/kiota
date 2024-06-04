@@ -26,17 +26,17 @@ internal static class TypeDefinitionExtensions
             case null:
                 return fullNameBuilder;
             case ITypeDefinition parentTypeDefinition:
-            {
-                fullNameBuilder.Insert(0, '.');
-                return AppendTypeName(parentTypeDefinition, fullNameBuilder);
-            }
+                {
+                    fullNameBuilder.Insert(0, '.');
+                    return AppendTypeName(parentTypeDefinition, fullNameBuilder);
+                }
             case CodeNamespace codeNamespace:
-            {
-                if (!string.IsNullOrEmpty(codeNamespace.Name))
-                    fullNameBuilder.Insert(0, $"{codeNamespace.Name}.");
+                {
+                    if (!string.IsNullOrEmpty(codeNamespace.Name))
+                        fullNameBuilder.Insert(0, $"{codeNamespace.Name}.");
 
-                return fullNameBuilder;
-            }
+                    return fullNameBuilder;
+                }
             default:
                 throw new InvalidOperationException($"Type {typeDefinition.Name} contains an invalid parent of type {typeDefinition.Parent.GetType().FullName}.");
         }
