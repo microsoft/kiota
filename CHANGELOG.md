@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where warnings about discriminator not being inherited were generated [#4761](https://github.com/microsoft/kiota/issues/4761)
 - Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
+- Fixes missing imports for UntypedNode when backingstore is enabled in Java. 
 
 ## [1.14.0] - 2024-05-02
 
