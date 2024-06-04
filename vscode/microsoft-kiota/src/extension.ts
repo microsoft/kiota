@@ -199,8 +199,6 @@ export async function activate(
         }));
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
-          await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
-          await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
         }
       }
     ),

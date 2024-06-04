@@ -233,6 +233,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     this.setAllSelected(result.rootNode, false);
                 }
                 this.rawRootNode = result.rootNode;
+                await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
+                await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
             }
         }
     }
