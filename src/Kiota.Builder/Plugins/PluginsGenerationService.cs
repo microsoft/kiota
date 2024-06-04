@@ -51,7 +51,8 @@ public class PluginsGenerationService
         await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
-        OAIDocument.SerializeAsV3(descriptionWriter);
+        var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
         // write the plugins
@@ -93,6 +94,55 @@ public class PluginsGenerationService
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
+
+
+    private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
+    {
+        // ensure the info and components are not null
+        doc.Info ??= new OpenApiInfo();
+        doc.Components ??= new OpenApiComponents();
+
+        if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
+            doc.Info!.Version = "1.0";
+
+        //empty out all the responses with a single empty 2XX
+        foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
+        {
+            operation.Responses = new OpenApiResponses()
+            {
+                {
+                    "2XX",new OpenApiResponse
+                    {
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            {
+                                "text/plain", new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // remove unused components using the OpenApi.Net
+        var requestUrls = new Dictionary<string, List<string>>();
+        var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
+        foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
+        {
+            var key = string.IsNullOrEmpty(basePath) ? path.Key : $"{basePath}/{path.Key.TrimStart(KiotaBuilder.ForwardSlash)}";
+            requestUrls[key] = path.Value.Operations.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
+        }
+
+        var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
+        return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
+    }
+
     private PluginManifestDocument GetV1ManifestDocument(string openApiDocumentPath)
     {
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
