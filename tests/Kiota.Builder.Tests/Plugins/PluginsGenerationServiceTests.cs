@@ -74,7 +74,7 @@ paths:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.Microsoft, PluginType.APIManifest, PluginType.OpenAI],
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
@@ -108,7 +108,7 @@ paths:
         Assert.Equal(OpenApiFileName, v1Manifest.Document.Api.URL);
         Assert.Empty(v1Manifest.Problems);
     }
-    private const string ManifestFileName = "client-microsoft.json";
+    private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
     private const string OpenApiFileName = "client-openapi.yml";
 
@@ -171,7 +171,7 @@ components:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.Microsoft],
+            PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
