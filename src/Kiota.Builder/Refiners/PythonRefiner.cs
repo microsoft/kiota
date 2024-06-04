@@ -20,7 +20,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 static s => s,
-                true,
+                false,
                 $"{SerializationModuleName}",
                 "ComposedTypeWrapper"
             );
