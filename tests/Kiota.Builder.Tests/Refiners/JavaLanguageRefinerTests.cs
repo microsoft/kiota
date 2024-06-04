@@ -703,8 +703,10 @@ public class JavaLanguageRefinerTests
         Assert.Equal("String", model.Methods.First(static x => x.IsOverload).Parameters.First().Type.Name);
     }
 
-    [Fact]
-    public async Task AddsUsingForUntypedNode()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AddsUsingForUntypedNode(bool usesBackingStore)
     {
         var model = root.AddClass(new CodeClass
         {
@@ -720,11 +722,11 @@ public class JavaLanguageRefinerTests
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java, UsesBackingStore = usesBackingStore }, root);
         Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        Assert.Single(nodeUsing);
+        Assert.Equal(2, nodeUsing.Length); // one for the getter and another for setter. Writer will unionise
         Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
     }
     #endregion
