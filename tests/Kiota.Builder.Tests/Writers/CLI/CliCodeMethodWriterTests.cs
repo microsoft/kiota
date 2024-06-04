@@ -241,7 +241,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var builder = new TestClass", result);
+        Assert.Contains("var builder = new Test.Name.Sub.TestClass", result);
         Assert.Contains("var commands = new List<Command>();", result);
         Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
@@ -325,7 +325,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var testItemIdx = new TestItemRequestBuilder();", result);
+        Assert.Contains("var testItemIdx = new Test.Name.Sub.TestItemRequestBuilder();", result);
         Assert.Contains("var command = testItemIdx.BuildTestMethod1();", result);
         Assert.Contains("var cmds = testItemIdx.BuildTestMethod2();", result);
         Assert.DoesNotContain("execCommands.AddRange(cmds.Item1)", result);
@@ -418,12 +418,12 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var testItemIndexer = new TestIndexItemRequestBuilder();", result);
+        Assert.Contains("var testItemIndexer = new Test.Name.Sub.TestIndexItemRequestBuilder();", result);
         Assert.Contains("var command = testItemIndexer.BuildTestMethod1();", result);
         Assert.Contains("var cmds = testItemIndexer.BuildTestMethod2();", result);
         Assert.DoesNotContain("execCommands.AddRange(cmds.Item1);", result);
         Assert.Contains("nonExecCommands.AddRange(cmds.Item2);", result);
-        Assert.Contains("var builder = new TestNavItemRequestBuilder", result);
+        Assert.Contains("var builder = new Test.TestNavItemRequestBuilder", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod11());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("nonExecCommands.Add(builder.BuildTestMethod3());", result);
@@ -553,7 +553,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestNavItemRequestBuilder();", result);
+        Assert.Contains("var builder = new Test.TestNavItemRequestBuilder();", result);
         Assert.Contains("execCommands.Add(builder.BuildExecutableTestMethod());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("BuildNavTestMethod", result);
@@ -596,7 +596,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestClass1", result);
+        Assert.Contains("var builder = new Test.Name.Sub1.Sub2.TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);
@@ -637,7 +637,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestClass1", result);
+        Assert.Contains("var builder = new Test.Name.Sub1.Sub2.TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);
@@ -1085,7 +1085,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<Test.Content>(Test.Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
@@ -1171,7 +1171,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("var contentType = invocationContext.ParseResult.GetValueForOption(contentTypeOption);", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<Test.Content>(Test.Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation(model, contentType", result);
@@ -1242,7 +1242,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue)?.ToList();", result);
+        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Test.Content>(Test.Content.CreateFromDiscriminatorValue)?.ToList();", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
