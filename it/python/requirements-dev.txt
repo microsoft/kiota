@@ -42,7 +42,7 @@ pluggy==1.5.0 ; python_version >= '3.7'
 
 pylint==3.2.2
 
-pytest==8.2.1
+pytest==8.2.2
 
 pytest-asyncio==0.23.7
 
@@ -64,7 +64,7 @@ wrapt==1.15.0 ; python_version < '3.11'
 
 yapf==0.40.2
 
-zipp==3.19.1 ; python_version >= '3.7'
+zipp==3.19.2 ; python_version >= '3.7'
 
 aiohttp==3.9.5 ; python_version >= '3.6'
 
@@ -82,7 +82,7 @@ azure-identity==1.16.0
 
 cffi==1.16.0
 
-cryptography==42.0.7 ; python_version >= '3.7'
+cryptography==42.0.8 ; python_version >= '3.7'
 
 frozenlist==1.4.1 ; python_version >= '3.7'
 
