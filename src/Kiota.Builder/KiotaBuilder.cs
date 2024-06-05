@@ -1473,26 +1473,37 @@ public partial class KiotaBuilder
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
             CodeTypeBase requestBodyType;
-            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes))
+            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes)
+                && operation.RequestBody.Content.IsMultipartTopMimeType(config.StructuredMimeTypes))
             {
-                requestBodyType = new CodeType
-                {
-                    Name = "MultipartBody",
-                    IsExternal = true,
-                };
                 var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
-                foreach (var encodingEntry in mediaType.Encoding
-                                                        .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
-                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType)))
+                if (mediaType.Encoding.Any())
                 {
-                    if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
-                        propertyType.TypeDefinition is not null)
-                        multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
+                    foreach (var encodingEntry in mediaType.Encoding
+                                 .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
+                                             config.StructuredMimeTypes.Contains(x.Value.ContentType)))
+                    {
+                        if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key],
+                                operation, method, $"{operationType}RequestBody",
+                                isRequestBody: true) is CodeType propertyType &&
+                            propertyType.TypeDefinition is not null)
+                            multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    }
+                }
+                else
+                {
+                    requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
+                                          $"{operationType}RequestBody", isRequestBody: true) ??
+                                      throw new InvalidSchemaException();
                 }
             }
             else
-                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
-                    throw new InvalidSchemaException();
+            {
+                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
+                                      $"{operationType}RequestBody", isRequestBody: true) ??
+                                  throw new InvalidSchemaException();
+            }
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1550,6 +1561,7 @@ public partial class KiotaBuilder
                     PossibleValues = contentTypes.ToList()
                 });
         }
+
         method.AddParameter(new CodeParameter
         {
             Name = "requestConfiguration",
@@ -2152,7 +2164,8 @@ public partial class KiotaBuilder
         }
         if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
         {
-            logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
+            if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case. 
+                logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
             return null;
         }
         return result;

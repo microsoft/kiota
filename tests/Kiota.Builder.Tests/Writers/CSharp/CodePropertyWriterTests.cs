@@ -74,7 +74,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("get =>", result);
-        Assert.Contains($"new {TypeName}", result);
+        Assert.Contains($"new {rootNamespace.Name}.{TypeName}", result);
         Assert.Contains("RequestAdapter", result);
         Assert.Contains("PathParameters", result);
     }
@@ -103,7 +103,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<SomeCustomClass>(\"propertyName\"); }", result);
+        Assert.Contains("get { return BackingStore?.Get<" + rootNamespace.Name + ".SomeCustomClass>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
@@ -113,7 +113,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.AdditionalData;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore.Get<SomeCustomClass>(\"propertyName\") ?? new Dictionary<string, object>(); }", result);
+        Assert.Contains("get { return BackingStore.Get<" + rootNamespace.Name + ".SomeCustomClass>(\"propertyName\") ?? new Dictionary<string, object>(); }", result);
         Assert.Contains("set { BackingStore.Set(\"propertyName\", value);", result);
     }
     [Fact]
@@ -207,7 +207,7 @@ public sealed class CodePropertyWriterTests : IDisposable
 
         // Assert: properties types are disambiguated.
         Assert.Contains("namespaceLevelOne.SomeCustomClass", result);
-        Assert.Contains("defaultNamespace.SomeCustomClass", result);
+        Assert.Contains($"{rootNamespace.Name}.SomeCustomClass", result);
     }
     [Fact]
     public void WritesDeprecationInformation()

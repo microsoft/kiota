@@ -541,7 +541,12 @@ public static partial class KiotaHost
     }
     internal static Option<LogLevel> GetLogLevelOption()
     {
-        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+#if DEBUG
+        static LogLevel DefaultLogLevel() => LogLevel.Debug;
+#else
+        static LogLevel DefaultLogLevel() => LogLevel.Warning;
+#endif
+        var logLevelOption = new Option<LogLevel>("--log-level", DefaultLogLevel, "The log level to use when logging messages to the main output.");
         logLevelOption.AddAlias("--ll");
         AddEnumValidator(logLevelOption, "log level");
         return logLevelOption;

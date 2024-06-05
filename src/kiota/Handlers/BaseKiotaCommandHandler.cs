@@ -136,9 +136,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")
     {
         LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);
-#if DEBUG
-        logLevel = logLevel > LogLevel.Debug ? LogLevel.Debug : logLevel;
-#endif
         var loggerFactory = LoggerFactory.Create(builder =>
         {
             var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
