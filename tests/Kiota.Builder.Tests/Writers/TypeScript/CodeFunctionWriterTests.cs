@@ -1163,15 +1163,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         * Creates a new instance of the appropriate class based on discriminator value
         * @returns {ValidationError_errors_value}
         *\/
-        export function createValidationError_errors_valueFromDiscriminatorValue(node: ParseNode | undefined) : ValidationError_errors_value | undefined {
-            const nodeValue = node?.getNodeValue();
-            switch (typeof nodeValue) {
-                case "number":
-                case "string":
-                    return nodeValue;
-                default:
-                    return undefined;
-         }
+           export function createPrimitivesFromDiscriminatorValue(parseNode: ParseNode | undefined) : Primitives | undefined {
+                if (parseNode) {
+                    parseNode.getNumberValue() || parseNode.getStringValue();
+                }
+                return undefined;
+            }
          
          */
 
@@ -1180,13 +1177,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("return", result);
-        Assert.Contains("const", result);
-        Assert.Contains("switch (typeof", result);
-        Assert.Contains("case \"number\":", result);
-        Assert.Contains("case \"string\":", result);
-        Assert.Contains("return nodeValue;", result);
-        Assert.Contains("default", result);
+        Assert.Contains("if (parseNode) {", result);
+        Assert.Contains("return parseNode.getNumberValue() || parseNode.getStringValue();", result);
         Assert.Contains("return undefined;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }

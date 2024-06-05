@@ -25,7 +25,6 @@ public abstract class CodeComposedTypeBaseWriter<TCodeComposedTypeBase, TConvent
 
         var codeUnionString = string.Join($" {TypesDelimiter} ", codeElement.Types.Select(x => conventions.GetTypeString(x, codeElement)));
 
-        // TODO: documentation info
         writer.WriteLine($"export type {codeElement.Name.ToFirstCharacterUpperCase()} = {codeUnionString};");
     }
 }

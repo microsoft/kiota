@@ -62,23 +62,16 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private static void WriteFactoryMethodBodyForUnionOfPrimitives(CodeComposedTypeBase composedType, CodeFunction codeElement, LanguageWriter writer, CodeParameter? parseNodeParameter)
+    private static void WriteFactoryMethodBodyForPrimitives(CodeComposedTypeBase composedType, CodeFunction codeElement, LanguageWriter writer, CodeParameter? parseNodeParameter)
     {
         ArgumentNullException.ThrowIfNull(parseNodeParameter);
-        writer.WriteLine($"const nodeValue = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}?.getNodeValue();");
-        writer.StartBlock($"switch (typeof nodeValue) {{");
-        foreach (var type in composedType.Types)
-        {
-            var nodeType = ConventionServiceInstance.GetTypeString(type, codeElement, false);
-            writer.WriteLine($"case \"{nodeType}\":");
-        }
-        writer.IncreaseIndent();
-        writer.WriteLine($"return nodeValue;");
-        writer.DecreaseIndent();
-        writer.StartBlock($"default:");
-        writer.WriteLine($"return undefined;");
-        writer.DecreaseIndent();
+        var parseNodeParameterName = parseNodeParameter.Name.ToFirstCharacterLowerCase();
+        writer.StartBlock($"if ({parseNodeParameterName}) {{");
+
+        string getPrimitiveValueString = string.Join($" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
+        writer.WriteLine($"return {getPrimitiveValueString};");
         writer.CloseBlock();
+        writer.WriteLine($"return undefined;");
     }
 
     private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer)
@@ -220,7 +213,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         switch (composedType)
         {
             case CodeComposedTypeBase type when ConventionServiceInstance.IsComposedOfPrimitives(type):
-                WriteFactoryMethodBodyForUnionOfPrimitives(type, codeElement, writer, parseNodeParameter);
+                WriteFactoryMethodBodyForPrimitives(type, codeElement, writer, parseNodeParameter);
                 break;
             case CodeUnionType _ when parseNodeParameter != null:
                 WriteFactoryMethodBodyForCodeUnionType(codeElement, writer, parseNodeParameter);
