@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
 - Fixes missing imports for UntypedNode when backingstore is enabled in Java. 
+- Renames `name_to_be_defined` plugin type to `apiplugin` [#4713](https://github.com/microsoft/kiota/issues/4713)
 
 ## [1.14.0] - 2024-05-02
 

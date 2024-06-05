@@ -352,7 +352,7 @@
         "--type",
         "ApiManifest",
         "--type",
-        "microsoft",
+        "ApiPlugin",
         "--type",
         "OpenAI"
       ],
