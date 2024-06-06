@@ -111,7 +111,7 @@ export enum KiotaPluginType {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ApiManifest = 1,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Microsoft = 2,
+    ApiPlugin = 2,
 }
 
 export enum ConsumerOperation {
@@ -130,8 +130,8 @@ export function parsePluginType(value: string): KiotaPluginType {
             return KiotaPluginType.OpenAI;
         case "ApiManifest":
             return KiotaPluginType.ApiManifest;
-        case "Microsoft":
-            return KiotaPluginType.Microsoft;
+        case "ApiPlugin":
+            return KiotaPluginType.ApiPlugin;
         default:
             throw new Error("unknown plugin type");
     }
