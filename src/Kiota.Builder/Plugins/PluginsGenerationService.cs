@@ -67,7 +67,7 @@ public class PluginsGenerationService
 
             switch (pluginType)
             {
-                case PluginType.Microsoft:
+                case PluginType.APIPlugin:
                     var pluginDocument = GetManifestDocument(descriptionRelativePath);
                     pluginDocument.Write(writer);
                     break;
@@ -173,7 +173,8 @@ public class PluginsGenerationService
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
         {
-            SchemaVersion = "v2",
+            Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+            SchemaVersion = "v2.1",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
