@@ -41,11 +41,11 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), TypeScriptConventionService.ReferenceTypePrefix, TypeScriptConventionService.ReferenceTypeSuffix, TypeScriptConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark])
-                                            .Union(GetThrownExceptionsRemarks(code, typeScriptConventionService)));
+                                            .Union(GetThrownExceptionsRemarks(code)));
     }
-    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code, TypeScriptConventionService typeScriptConventionService)
+    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code)
     {
         if (code.Kind is not CodeMethodKind.RequestExecutor) yield break;
         foreach (var errorMapping in code.ErrorMappings)
