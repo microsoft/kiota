@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.15.0] - 2024-06-06
+
+### Added
+
 - Added support for multipart form data request body in PHP. [#3029](https://github.com/microsoft/kiota/issues/3029)
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
 - Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
@@ -51,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
 - Fixes missing imports for UntypedNode when backingstore is enabled in Java. 
+- Renames `name_to_be_defined` plugin type to `apiplugin` [#4713](https://github.com/microsoft/kiota/issues/4713)
 
 ## [1.14.0] - 2024-05-02
 
@@ -1362,3 +1369,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
