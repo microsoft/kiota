@@ -308,40 +308,59 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return children;
     }
 
+    private static CodeFunction? FindFunctionOfKind(List<CodeElement> elements, CodeMethodKind kind)
+    {
+        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind == kind);
+    }
+
+    private static void RemoveOldCodeFunctionAndAddNewOne(List<CodeElement> children, CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction oldCodeFunction, CodeFunction newCodeFunction)
+    {
+        children.Remove(oldCodeFunction);
+        RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, oldCodeFunction);
+        children.Add(newCodeFunction);
+    }
+
+    private static void RemoveUnusedDeserializerImport(List<CodeElement> children, CodeFunction factoryFunction)
+    {
+        var deserializerMethod = FindFunctionOfKind(children, CodeMethodKind.Deserializer);
+        if (deserializerMethod is not null)
+            factoryFunction.RemoveUsingsByDeclarationName(deserializerMethod.Name);
+    }
+
     private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var factoryMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Factory);
+        var factoryMethod = FindFunctionOfKind(children, CodeMethodKind.Factory);
 
-        if (factoryMethod is not null)
+        if (factoryMethod is null) return;
+
+        var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
+        var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
+        factoryFunction.AddUsing(factoryMethod.Usings.ToArray());
+
+        RemoveOldCodeFunctionAndAddNewOne(children, codeInterface, codeNamespace, factoryMethod, factoryFunction);
+
+        // Remove the deserializer import statement if its not being used
+        if (composedType is CodeUnionType || ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
-            var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
-            var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
-            factoryFunction.AddUsing(factoryMethod.Usings.ToArray());
-
-            children.Remove(factoryMethod);
-            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, factoryMethod);
-            children.Add(factoryFunction);
+            RemoveUnusedDeserializerImport(children, factoryFunction);
         }
     }
 
     private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var function = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Serializer);
-        if (function is not null)
-        {
-            var method = CreateSerializerMethodForComposedType(codeInterface, function, composedType);
-            var serializerFunction = new CodeFunction(method) { Name = method.Name };
-            serializerFunction.AddUsing(function.Usings.ToArray());
+        var function = FindFunctionOfKind(children, CodeMethodKind.Serializer);
+        if (function is null) return;
 
-            children.Remove(function);
-            RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, function);
-            children.Add(serializerFunction);
-        }
+        var method = CreateSerializerMethodForComposedType(codeInterface, function, composedType);
+        var serializerFunction = new CodeFunction(method) { Name = method.Name };
+        serializerFunction.AddUsing(function.Usings.ToArray());
+
+        RemoveOldCodeFunctionAndAddNewOne(children, codeInterface, codeNamespace, function, serializerFunction);
     }
 
     private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var deserializerMethod = children.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer);
+        var deserializerMethod = FindFunctionOfKind(children, CodeMethodKind.Deserializer);
 
         if (deserializerMethod is null) return;
 
