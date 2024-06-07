@@ -2,12 +2,8 @@
 
 namespace Kiota.Builder.Writers.TypeScript;
 
-public class CodeIntersectionTypeWriter : CodeComposedTypeBaseWriter<CodeIntersectionType, TypeScriptConventionService>
+public class CodeIntersectionTypeWriter(TypeScriptConventionService conventionService) : CodeComposedTypeBaseWriter<CodeIntersectionType, TypeScriptConventionService>(conventionService)
 {
-    public CodeIntersectionTypeWriter(TypeScriptConventionService conventionService) : base(conventionService)
-    {
-    }
-
     public override string TypesDelimiter
     {
         get => "&";

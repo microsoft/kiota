@@ -30,7 +30,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var returnType = codeMethod.Kind is CodeMethodKind.Factory || (codeMethod.Kind is CodeMethodKind.ComposedTypeFactory && !isComposedOfPrimitives) ?
             factoryMethodReturnType :
-            conventions.GetTypeString(codeMethod.ReturnType, codeElement);
+            GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         CodeMethodWriter.WriteMethodDocumentationInternal(codeElement.OriginalLocalMethod, writer, isVoid, conventions);
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, isVoid, conventions, true);
@@ -355,7 +355,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var propTypeName = conventions.GetTypeString(codeProperty.Type, codeProperty.Parent!, false);
+        var propTypeName = GetTypescriptTypeString(codeProperty.Type, codeProperty.Parent!, false, inlineComposedTypeString: true);
 
         var serializationName = GetSerializationMethodName(codeProperty.Type, codeFunction.OriginalLocalMethod);
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) ? $" ?? {dft}" : string.Empty;
@@ -387,7 +387,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var composedType = GetOriginalComposedType(propertyType);
 
         if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
-            return $"serialize{ConventionServiceInstance.GetTypeString(composedType, method)}";
+            return $"serialize{composedType.Name.ToFirstCharacterUpperCase()}";
 
         var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
         CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;

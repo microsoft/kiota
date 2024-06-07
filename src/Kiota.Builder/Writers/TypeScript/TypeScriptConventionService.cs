@@ -72,7 +72,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var paramType = GetTypeString(parameter.Type, targetElement);
+        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, inlineComposedTypeString: true);
         var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
@@ -87,26 +87,65 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
         return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
     }
+
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
+    {
+        return GetTypescriptTypeString(code, targetElement, includeCollectionInformation, writer);
+    }
+
+    public static string GetTypescriptTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null, bool inlineComposedTypeString = false)
     {
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(targetElement);
 
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
 
-        CodeTypeBase codeType = GetOriginalComposedType(code) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : code;
+        var composedType = GetOriginalComposedType(code);
 
-        if (codeType is not CodeType currentType)
+        if (inlineComposedTypeString && composedType?.Types.Any() == true)
+        {
+            return GetComposedTypeTypeString(composedType, targetElement, collectionSuffix);
+        }
+
+        CodeTypeBase codeType = composedType is not null ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : code;
+
+        if (!(codeType is CodeType currentType))
         {
             throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
-        var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
-            $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
-            string.Empty;
+        var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias)
+            ? alias
+            : ConventionServiceInstance.TranslateType(currentType);
+
+        var genericParameters = currentType.GenericTypeParameterValues.Count != 0
+            ? $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation)))}>"
+            : string.Empty;
 
         return $"{typeName}{collectionSuffix}{genericParameters}";
+    }
+
+    /**
+    * Gets the composed type string representation e.g `type1 | type2 | type3[]` or `(type1 & type2 & type3)[]`
+    * @param composedType The composed type to get the string representation for
+    * @param targetElement The target element
+    * @returns The composed type string representation 
+    */
+    private static string GetComposedTypeTypeString(CodeComposedTypeBase composedType, CodeElement targetElement, string collectionSuffix)
+    {
+        if (!composedType.Types.Any()) throw new InvalidOperationException($"Composed type should be comprised of at least one type");
+        var returnTypeString = string.Join(GetTypesDelimiterToken(composedType), composedType.Types.Select(x => GetTypescriptTypeString(x, targetElement)));
+        return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
+    }
+
+    private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
+    {
+        return codeComposedTypeBase switch
+        {
+            CodeUnionType _ => " | ",
+            CodeIntersectionType _ => " & ",
+            _ => throw new InvalidOperationException("unknown composed type"),
+        };
     }
 
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
