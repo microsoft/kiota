@@ -141,7 +141,15 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         const segment = segments.shift();
         if (segment) {
-            let child = currentNode.children.find(x => x.segment === segment);
+            let child: KiotaOpenApiNode | undefined;
+        if (currentNode.clientNameOrPluginName) {
+            const rootChild = currentNode.children.find(x => x.segment === '/');
+            if (rootChild) {
+                child = rootChild.children.find(x => x.segment === segment);
+            }
+        } else {
+            child = currentNode.children.find(x => x.segment === segment);
+        }
             if (child) {
                 return this.findApiNode(segments, child);
             } else if (segment.startsWith('{') && segment.endsWith('}')) {
