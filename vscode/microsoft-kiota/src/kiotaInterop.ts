@@ -41,6 +41,7 @@ export interface KiotaOpenApiNode {
     selected?: boolean,
     isOperation?: boolean;
     documentationUrl?: string;
+    clientNameOrPluginName?: string;
 }
 interface CacheClearableConfiguration {
     clearCache: boolean;

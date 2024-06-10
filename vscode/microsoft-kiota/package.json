@@ -271,22 +271,22 @@
         },
         {
           "command": "kiota.openApiExplorer.addToSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer && viewItem != apiTitle",
+          "when": "view == kiota.openApiExplorer && viewItem != apiTitle && viewItem != clientNameOrPluginName",
           "group": "inline@2"
         },
         {
           "command": "kiota.openApiExplorer.addAllToSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != clientNameOrPluginName",
           "group": "inline@4"
         },
         {
           "command": "kiota.openApiExplorer.removeFromSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer && viewItem != apiTitle",
+          "when": "view == kiota.openApiExplorer && viewItem != apiTitle && viewItem != clientNameOrPluginName",
           "group": "inline@3"
         },
         {
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != clientNameOrPluginName",
           "group": "inline@5"
         }
       ],

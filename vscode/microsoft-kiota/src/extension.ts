@@ -225,7 +225,7 @@ export async function activate(
      clientOrPluginKey = clientKey;
      clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
-     await loadEditPaths(clientObject, openApiTreeProvider);
+     await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
      await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
      await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
     }),
@@ -579,8 +579,8 @@ async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenA
   await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
 }
 
-async function loadEditPaths(clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientObject));
+async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientObject));
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {

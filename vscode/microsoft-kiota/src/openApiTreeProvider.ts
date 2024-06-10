@@ -40,15 +40,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
       }
     }
-    public async loadEditPaths(clientObject: any): Promise<void> {
+    public async loadEditPaths(clientOrPluginKey: string, clientObject: any): Promise<void> {
         this.closeDescription(false);
         this._lockFile = clientObject;
+        this._lockFile!.clientClassName = clientOrPluginKey;
         if (this._lockFile?.descriptionLocation) {
           this._descriptionUrl = this._lockFile.descriptionLocation;
           this.includeFilters = this._lockFile.includePatterns;
           this.excludeFilters = this._lockFile.excludePatterns;
           const settings = this.settingsGetter();
-          await this.loadNodes(settings.clearCache);
+          await this.loadNodes(settings.clearCache, clientOrPluginKey);
           if (this.rawRootNode) {
               this.refreshView();
           }
@@ -213,7 +214,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         return [];
     }
-    private async loadNodes(clearCache: boolean): Promise<void> {
+    private async loadNodes(clearCache: boolean, clientNameOrPluginName?: string): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
@@ -233,6 +234,17 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     this.setAllSelected(result.rootNode, false);
                 }
                 this.rawRootNode = result.rootNode;
+                if (clientNameOrPluginName) {
+                    this.rawRootNode = createKiotaOpenApiNode(
+                        clientNameOrPluginName,
+                        '/',
+                        [this.rawRootNode],
+                        false,
+                        false,
+                        undefined,
+                        clientNameOrPluginName
+                    );
+                }
                 await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
                 await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
             }
@@ -256,6 +268,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             this.apiTitle,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
             node.documentationUrl,
+            node.clientNameOrPluginName
         );
     }
     getChildren(element?: OpenApiTreeNode): vscode.ProviderResult<OpenApiTreeNode[]> {
@@ -279,6 +292,26 @@ function getPathSegments(path: string): string[] {
 function trimOperation(path: string): string {
     return path.split(operationSeparator)[0];
 }
+
+function createKiotaOpenApiNode(
+    segment: string,
+    path: string,
+    children: KiotaOpenApiNode[] = [],
+    selected?: boolean,
+    isOperation?: boolean,
+    documentationUrl?: string,
+    clientNameOrPluginName?: string
+): KiotaOpenApiNode {
+    return {
+        segment,
+        path,
+        children,
+        selected,
+        isOperation,
+        documentationUrl,
+        clientNameOrPluginName
+    };
+}
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
@@ -293,12 +326,17 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         filterTokens: string[],
         apiTitle: string | undefined,
         public readonly children: OpenApiTreeNode[] = [],
-        public readonly documentationUrl?: string
+        public readonly documentationUrl?: string,
+        public readonly clientNameOrPluginName?: string
     ) {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
         this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' :  (this.documentationUrl ? 'documentationUrl' : '');
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
+        if(clientNameOrPluginName) {
+            this.label = clientNameOrPluginName;
+            this.contextValue = 'clientNameOrPluginName';
+        }
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (tokenizedFilter.length === 0) {
