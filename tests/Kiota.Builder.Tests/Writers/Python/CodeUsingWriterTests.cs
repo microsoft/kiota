@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
@@ -21,6 +22,7 @@ public class CodeUsingWriterTests
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
     }
+
     [Fact]
     public void WritesAliasedSymbol()
     {
@@ -88,5 +90,101 @@ public class CodeUsingWriterTests
         usingWriter.WriteInternalImports(codeClass, writer);
         var result = tw.ToString();
         Assert.Contains("from .bar import Bar", result);
+    }
+
+    [Fact]
+    public void WritesFutureImportsFirst()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+
+        var cd = new ClassDeclaration
+        {
+            Name = "bar",
+        };
+
+        /* Add external imports */
+        // import datetime
+        // from __future__ import annotations
+        // from dataclasses import dataclass, field
+        // from kiota_abstractions.serialization import Parsable, ParseNode, SerializationWriter
+        // from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union
+
+        cd.AddUsings(new CodeUsing
+        {
+            Name = "datetime",
+            Declaration = new CodeType
+            {
+                Name = "-",
+                IsExternal = true
+            },
+
+        });
+
+        cd.AddUsings(new CodeUsing
+        {
+            Name = "annotations",
+            Declaration = new CodeType
+            {
+                Name = "__future__",
+                IsExternal = true
+            },
+
+        });
+
+        cd.AddUsings(new CodeUsing
+        {
+            Name = "dataclass",
+            Declaration = new CodeType
+            {
+                Name = "dataclasses",
+                IsExternal = true
+            }
+        });
+
+        cd.AddUsings(new CodeUsing
+        {
+            Name = "field",
+            Declaration = new CodeType
+            {
+                Name = "dataclasses",
+                IsExternal = true
+            }
+        });
+
+        cd.AddUsings(new CodeUsing[]
+        {
+            new CodeUsing
+            {
+                Name = "Parsable",
+                Declaration = new CodeType
+                {
+                    Name = "kiota_abstractions.serialization",
+                    IsExternal = true
+                }
+            }, new CodeUsing
+            {
+                Name = "ParseNode",
+                Declaration = new CodeType
+                {
+                    Name = "kiota_abstractions.serialization",
+                    IsExternal = true
+                }
+            },
+            new CodeUsing
+            {
+                Name = "SerializationWriter",
+                Declaration = new CodeType
+                {
+                    Name = "kiota_abstractions.serialization",
+                    IsExternal = true
+                }
+            }}
+        );
+
+        usingWriter.WriteExternalImports(cd, writer);
+        var result = tw.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("from __future__ import annotations", result[0]);
+        Assert.Equal("import datetime", result[1]);
     }
 }
