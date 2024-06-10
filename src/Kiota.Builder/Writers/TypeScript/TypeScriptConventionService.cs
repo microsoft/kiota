@@ -137,7 +137,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         CodeTypeBase codeType = composedType is not null ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : code;
 
-        if (!(codeType is CodeType currentType))
+        if (codeType is not CodeType currentType)
         {
             throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
@@ -216,8 +216,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : codeType.Name).ToFirstCharacterUpperCase();
     }
-#pragma warning disable CA1822 // Method should be static
-    public static bool IsPrimitiveType(string typeName)
+
+    public bool IsPrimitiveType(string typeName)
     {
         return typeName switch
         {
@@ -229,7 +229,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             _ => false,
         };
     }
-#pragma warning restore CA1822 // Method should be static
+
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {

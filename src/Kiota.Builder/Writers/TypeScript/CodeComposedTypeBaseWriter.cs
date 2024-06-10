@@ -5,11 +5,8 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 
-public abstract class CodeComposedTypeBaseWriter<TCodeComposedTypeBase, TConventionsService> : BaseElementWriter<TCodeComposedTypeBase, TConventionsService> where TCodeComposedTypeBase : CodeComposedTypeBase where TConventionsService : TypeScriptConventionService
+public abstract class CodeComposedTypeBaseWriter<TCodeComposedTypeBase, TConventionsService>(TypeScriptConventionService conventionService) : BaseElementWriter<TCodeComposedTypeBase, TypeScriptConventionService>(conventionService) where TCodeComposedTypeBase : CodeComposedTypeBase
 {
-    protected CodeComposedTypeBaseWriter(TConventionsService conventionService) : base(conventionService)
-    {
-    }
     public abstract string TypesDelimiter
     {
         get;

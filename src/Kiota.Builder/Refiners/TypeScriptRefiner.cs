@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.TypeScript;
-using static Kiota.Builder.Writers.TypeScript.CodeFunctionWriter;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
@@ -1028,7 +1026,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static string GetFinalInterfaceName(CodeInterface codeInterface)
     {
-        return codeInterface.OriginalClass?.Name.ToFirstCharacterUpperCase() ?? throw new InvalidOperationException($"The refiner was unable to find the original class for {codeInterface.Name}");
+        return codeInterface.OriginalClass.Name.ToFirstCharacterUpperCase();
     }
 
     private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
