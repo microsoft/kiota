@@ -68,10 +68,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var parseNodeParameterName = parseNodeParameter.Name.ToFirstCharacterLowerCase();
         writer.StartBlock($"if ({parseNodeParameterName}) {{");
 
-        string getPrimitiveValueString = string.Join($" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
+        string getPrimitiveValueString = string.Join(" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
         writer.WriteLine($"return {getPrimitiveValueString};");
         writer.CloseBlock();
-        writer.WriteLine($"return undefined;");
+        writer.WriteLine("return undefined;");
     }
 
     private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer)
@@ -80,7 +80,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (composedParam is null || GetOriginalComposedType(composedParam) is not CodeComposedTypeBase composedType) return;
 
-        writer.StartBlock($"return {{");
+        writer.StartBlock("return {");
         foreach (var mappedType in composedType.Types.ToArray())
         {
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
@@ -123,7 +123,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName ?? throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} == undefined) return;");
+        writer.WriteLine($"if ({paramName} === undefined) return;");
         writer.StartBlock($"switch ({paramName}.{discriminatorPropertyName}) {{");
 
         foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
@@ -156,7 +156,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var nodeType = conventions.GetTypeString(type, method, false);
         var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
-        if (serializationName == null || nodeType == null) return;
+        if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
 
         writer.StartBlock($"case \"{nodeType}\":");
         writer.WriteLine($"writer.{serializationName}(key, {paramName});");
