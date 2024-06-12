@@ -3,7 +3,18 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
-import { connectToKiota, KiotaGetManifestDetailsConfiguration, KiotaLogEntry, KiotaManifestResult, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResult, LockFile } from './kiotaInterop';
+import { 
+    ClientObjectProperties, 
+    ClientOrPluginProperties, 
+    connectToKiota, 
+    KiotaGetManifestDetailsConfiguration, 
+    KiotaLogEntry, 
+    KiotaManifestResult, 
+    KiotaOpenApiNode, 
+    KiotaShowConfiguration, 
+    KiotaShowResult, 
+    LockFile, 
+    PluginObjectProperties } from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
 import { treeViewId } from './constants';
 
@@ -13,48 +24,83 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private apiTitle?: string;
     constructor(
         private readonly context: vscode.ExtensionContext,
-        private readonly settingsGetter:() => ExtensionSettings,
+        private readonly settingsGetter: () => ExtensionSettings,
         private _descriptionUrl?: string,
         public includeFilters: string[] = [],
         public excludeFilters: string[] = []) {
-        
+
     }
     private _lockFilePath?: string;
-    private _lockFile?: LockFile;
+    private _lockFile?: LockFile | Partial<LockFile> = {};
     public get isLockFileLoaded(): boolean {
         return !!this._lockFile;
     }
-    public async loadLockFile(path: string): Promise<void> {
-      this.closeDescription(false);
-      this._lockFilePath = path;
-      const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
-      this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
-      if (this._lockFile?.descriptionLocation) {
-        this._descriptionUrl = this._lockFile.descriptionLocation;
-        this.includeFilters = this._lockFile.includePatterns;
-        this.excludeFilters = this._lockFile.excludePatterns;
-        const settings = this.settingsGetter();
-        await this.loadNodes(settings.clearCache);
-        if (this.rawRootNode) {
-            this.refreshView();
-        }
-      }
-    }
-    public async loadEditPaths(clientOrPluginKey: string, clientObject: any): Promise<void> {
+    public async loadLockFile(path: string, clientOrPluginName?: string): Promise<void> {
         this.closeDescription(false);
-        this._lockFile = clientObject;
-        this._lockFile!.clientClassName = clientOrPluginKey;
-        if (this._lockFile?.descriptionLocation) {
-          this._descriptionUrl = this._lockFile.descriptionLocation;
-          this.includeFilters = this._lockFile.includePatterns;
-          this.excludeFilters = this._lockFile.excludePatterns;
-          const settings = this.settingsGetter();
-          await this.loadNodes(settings.clearCache, clientOrPluginKey);
-          if (this.rawRootNode) {
-              this.refreshView();
-          }
+        this._lockFilePath = path;
+        const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+        let parsedLockFile = JSON.parse(lockFileData.toString()) as LockFile;
+
+        if (clientOrPluginName) {
+            let filteredData: Partial<LockFile> = { version: parsedLockFile.version };
+
+            if (parsedLockFile.clients && parsedLockFile.clients[clientOrPluginName]) {
+                filteredData.clients = {
+                    [clientOrPluginName]: parsedLockFile.clients[clientOrPluginName]
+                };
+            }
+
+            if (parsedLockFile.plugins && parsedLockFile.plugins[clientOrPluginName]) {
+                filteredData.plugins = {
+                    [clientOrPluginName]: parsedLockFile.plugins[clientOrPluginName]
+                };
+            }
+
+            parsedLockFile = filteredData as LockFile;
         }
-      }
+
+        this._lockFile = parsedLockFile;
+
+        const clientOrPlugin: ClientOrPluginProperties | undefined =
+            Object.values(this._lockFile.clients ?? {})[0] ||
+            Object.values(this._lockFile.plugins ?? {})[0];
+
+        if (clientOrPlugin) {
+            this._descriptionUrl = clientOrPlugin.descriptionLocation;
+            this.includeFilters = clientOrPlugin.includePatterns;
+            this.excludeFilters = clientOrPlugin.excludePatterns;
+
+            const settings = this.settingsGetter();
+            await this.loadNodes(settings.clearCache, clientOrPluginName);
+
+            if (this.rawRootNode) {
+                this.refreshView();
+            }
+        }
+    }
+    public async loadEditPaths(clientOrPluginKey: string, clientObject: ClientOrPluginProperties): Promise<void> {
+        this.closeDescription(false);
+        this._lockFile = { version: '1.0.0', clients: {}, plugins: {} };
+
+        if ((clientObject as ClientObjectProperties).clientNamespaceName) {
+            this._lockFile.clients![clientOrPluginKey] = clientObject as ClientObjectProperties;
+        } else {
+            this._lockFile.plugins![clientOrPluginKey] = clientObject as PluginObjectProperties;
+        }
+
+        if (clientObject.descriptionLocation) {
+            this._descriptionUrl = clientObject.descriptionLocation;
+            this.includeFilters = clientObject.includePatterns;
+            this.excludeFilters = clientObject.excludePatterns;
+
+            const settings = this.settingsGetter();
+            await this.loadNodes(settings.clearCache, clientOrPluginKey);
+
+            if (this.rawRootNode) {
+                this.refreshView();
+            }
+        }
+    }
     public async loadManifestFromUri(path: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         this.closeDescription(false);
         const logs = await this.loadNodesFromManifest(path, apiIdentifier);
@@ -74,17 +120,34 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         node.selected = selected;
         node.children.forEach(x => this.setAllSelected(x, selected));
     }
+    private getFirstClient(): ClientObjectProperties | undefined {
+        return this._lockFile?.clients ? Object.values(this._lockFile.clients)[0] : undefined;
+    }
     public get outputPath(): string {
-      return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
+        return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
     }
     public get clientClassName(): string {
-        return this._lockFile?.clientClassName ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.clientNamespaceName : '';
+        }
+        return '';
     }
+
     public get clientNamespaceName(): string {
-        return this._lockFile?.clientNamespaceName ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.clientNamespaceName : '';
+        }
+        return '';
     }
+
     public get language(): string {
-        return this._lockFile?.language ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.language : '';
+        }
+        return '';
     }
     public closeDescription(shouldRefresh = true) {
         this._descriptionUrl = '';
@@ -93,10 +156,12 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this._lockFilePath = undefined;
         this.tokenizedFilter = [];
         this._filterText = '';
+        this.includeFilters = [];
+        this.excludeFilters = [];
         if (shouldRefresh) {
             this.refreshView();
         }
-        void vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
+        void vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, false);
     }
     public isEmpty(): boolean {
         return this.rawRootNode === undefined;
@@ -116,7 +181,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             return;
         }
         const apiNode = this.findApiNode(getPathSegments(item.path), this.rawRootNode);
-        if(apiNode) {
+        if (apiNode) {
             this.selectInternal(apiNode, selected, recursive);
             this.refreshView();
         }
@@ -124,7 +189,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
         const isOperationNode = apiNode.isOperation ?? false;
-        if(recursive) {
+        if (recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
         } else if (!isOperationNode) {
             apiNode.children.filter(x => x.isOperation ?? false).forEach(x => this.selectInternal(x, selected, false));
@@ -177,7 +242,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
-        if(currentNode.selected || false) {
+        if (currentNode.selected || false) {
             if ((currentNode.isOperation || false) && this.rawRootNode) {
                 const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
                 if (parent && !parent.selected) {
@@ -235,10 +300,10 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 clearCache
             });
         });
-        if(result) {
+        if (result) {
             this.apiTitle = result.apiTitle;
-            if(result.rootNode) {
-                if(this.includeFilters.length === 0){
+            if (result.rootNode) {
+                if (this.includeFilters.length === 0) {
                     this.setAllSelected(result.rootNode, false);
                 }
                 this.rawRootNode = result.rootNode;
@@ -253,17 +318,17 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                         clientNameOrPluginName
                     );
                 }
-                await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
+                await vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, true);
                 await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
             }
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {
         return node.children.length === 0 ?
-                vscode.TreeItemCollapsibleState.None :
-                (this.tokenizedFilter.length === 0 ?
-                    vscode.TreeItemCollapsibleState.Collapsed : 
-                    vscode.TreeItemCollapsibleState.Expanded);
+            vscode.TreeItemCollapsibleState.None :
+            (this.tokenizedFilter.length === 0 ?
+                vscode.TreeItemCollapsibleState.Collapsed :
+                vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, collapsibleStateOverride: vscode.TreeItemCollapsibleState | undefined = undefined): OpenApiTreeNode {
         return new OpenApiTreeNode(
@@ -339,9 +404,9 @@ export class OpenApiTreeNode extends vscode.TreeItem {
     ) {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
-        this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' :  (this.documentationUrl ? 'documentationUrl' : '');
+        this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' : (this.documentationUrl ? 'documentationUrl' : '');
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
-        if(clientNameOrPluginName) {
+        if (clientNameOrPluginName) {
             this.label = clientNameOrPluginName;
             this.contextValue = 'clientNameOrPluginName';
         }

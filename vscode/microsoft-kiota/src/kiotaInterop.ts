@@ -255,22 +255,9 @@ export function maturityLevelToString(level: MaturityLevel): string {
     }
 }
 export interface LockFile {
-    clientClassName: string;
-    clientNamespaceName: string;
-    descriptionHash: string;
-    descriptionLocation: string;
-    deserializers: string[];
-    disabledValidationRules: string[];
-    excludeBackwardCompatible: boolean;
-    excludePatterns: string[];
-    includeAdditionalData: boolean;
-    includePatterns: string[];
-    kiotaVersion: string;
-    language: string;
-    lockFileVersion: string;
-    serializers: string[];
-    structuredMimeTypes: string[];
-    usesBackingStore: boolean;
+    version: string;
+    clients?: Record<string, ClientObjectProperties>;
+    plugins?: Record<string, PluginObjectProperties>;
 }
 
 export interface GenerationConfiguration {
@@ -301,7 +288,7 @@ interface WorkspaceObjectProperties {
     outputPath: string;
 }
 
-interface ClientObjectProperties extends WorkspaceObjectProperties {
+export interface ClientObjectProperties extends WorkspaceObjectProperties {
     language: string;
     structuredMimeTypes: string[];
     clientNamespaceName: string;
@@ -311,7 +298,7 @@ interface ClientObjectProperties extends WorkspaceObjectProperties {
     disabledValidationRules: string[];
 }
 
-interface PluginObjectProperties extends WorkspaceObjectProperties {
+export interface PluginObjectProperties extends WorkspaceObjectProperties {
     types: string[];
 }
 

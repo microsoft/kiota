@@ -45,6 +45,7 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
+  const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join('') || '', KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
   const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
@@ -300,6 +301,8 @@ export async function activate(
     if (result)
     {
       await checkForSuccess(result);
+      openApiTreeProvider.refreshView();
+      await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -339,6 +342,8 @@ export async function activate(
     if (result)
     {
       await checkForSuccess(result);
+      openApiTreeProvider.refreshView();
+      await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -402,11 +407,13 @@ export async function activate(
         result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
           const WORKSPACE_FOLDER = vscode.workspace.workspaceFolders[0].uri.fsPath;
           const KIOTA_WORKSPACE_PATH = path.join(WORKSPACE_FOLDER, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
-          await openApiTreeProvider.loadLockFile(KIOTA_WORKSPACE_PATH);
+          await openApiTreeProvider.loadLockFile(KIOTA_WORKSPACE_PATH, config.clientClassName);
         }
     if (result)
     {
       await checkForSuccess(result);
+      openApiTreeProvider.refreshView();
+      await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.clientClassName);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -574,8 +581,8 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
   }
 }
 
-async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath));
+async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider, clientOrPluginName?: string): Promise<void> {
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath, clientOrPluginName));
   await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
 }
 
