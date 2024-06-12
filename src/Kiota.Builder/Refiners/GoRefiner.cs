@@ -19,7 +19,6 @@ public class GoRefiner : CommonLanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
-            NormalizeNamespaceNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -207,6 +206,7 @@ public class GoRefiner : CommonLanguageRefiner
                 "Error",
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
             );
+            NormalizeNamespaceNames(generatedCode);
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }
