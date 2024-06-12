@@ -217,7 +217,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : codeType.Name).ToFirstCharacterUpperCase();
     }
 
-    public bool IsPrimitiveType(string typeName)
+    public static bool IsPrimitiveType(string typeName)
     {
         return typeName switch
         {
