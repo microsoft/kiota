@@ -17,7 +17,7 @@ public class CodeUsingWriterTests
     private readonly CodeNamespace root;
     public CodeUsingWriterTests()
     {
-        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
@@ -95,96 +95,45 @@ public class CodeUsingWriterTests
     [Fact]
     public void WritesFutureImportsFirst()
     {
-        var usingWriter = new CodeUsingWriter("foo");
+        // Generated with Kiota mcr.microsoft.com/openapi/kiota:1.15.0
 
-        var cd = new ClassDeclaration
-        {
-            Name = "bar",
-        };
-
-        /* Add external imports */
         // import datetime
         // from __future__ import annotations
         // from dataclasses import dataclass, field
-        // from kiota_abstractions.serialization import Parsable, ParseNode, SerializationWriter
+        // from kiota_abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode, SerializationWriter
         // from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
-        cd.AddUsings(new CodeUsing
+        var usingWriter = new CodeUsingWriter("foo");
+
+        var codeClass = new ClassDeclaration
         {
-            Name = "datetime",
-            Declaration = new CodeType
-            {
-                Name = "-",
-                IsExternal = true
-            },
+            Name = "Test",
+        };
 
-        });
+        codeClass.AddUsings(new CodeUsing { Name = "annotations", Declaration = new CodeType { Name = "__future__", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "dataclass", Declaration = new CodeType { Name = "dataclasses", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "field", Declaration = new CodeType { Name = "dataclasses", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "AdditionalDataHolder", Declaration = new CodeType { Name = "kiota_abstractions.serialization", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Parsable", Declaration = new CodeType { Name = "kiota_abstractions.serialization", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "ParseNode", Declaration = new CodeType { Name = "kiota_abstractions.serialization", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "SerializationWriter", Declaration = new CodeType { Name = "kiota_abstractions.serialization", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Any", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Callable", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Dict", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "List", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Optional", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "TYPE_CHECKING", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "Union", Declaration = new CodeType { Name = "typing", IsExternal = true } });
+        codeClass.AddUsings(new CodeUsing { Name = "datetime", Declaration = new CodeType { Name = "-", IsExternal = true } });
 
-        cd.AddUsings(new CodeUsing
-        {
-            Name = "annotations",
-            Declaration = new CodeType
-            {
-                Name = "__future__",
-                IsExternal = true
-            },
+        usingWriter.WriteExternalImports(codeClass, writer);
 
-        });
+        string[] usings = tw.ToString().Split(tw.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
-        cd.AddUsings(new CodeUsing
-        {
-            Name = "dataclass",
-            Declaration = new CodeType
-            {
-                Name = "dataclasses",
-                IsExternal = true
-            }
-        });
-
-        cd.AddUsings(new CodeUsing
-        {
-            Name = "field",
-            Declaration = new CodeType
-            {
-                Name = "dataclasses",
-                IsExternal = true
-            }
-        });
-
-        cd.AddUsings(new CodeUsing[]
-        {
-            new CodeUsing
-            {
-                Name = "Parsable",
-                Declaration = new CodeType
-                {
-                    Name = "kiota_abstractions.serialization",
-                    IsExternal = true
-                }
-            }, new CodeUsing
-            {
-                Name = "ParseNode",
-                Declaration = new CodeType
-                {
-                    Name = "kiota_abstractions.serialization",
-                    IsExternal = true
-                }
-            },
-            new CodeUsing
-            {
-                Name = "SerializationWriter",
-                Declaration = new CodeType
-                {
-                    Name = "kiota_abstractions.serialization",
-                    IsExternal = true
-                }
-            }}
-        );
-
-        usingWriter.WriteExternalImports(cd, writer);
-        var result = tw.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-
-        Assert.Equal("from __future__ import annotations", result[0]);
-        Assert.Equal("import datetime", result[1]);
+        Assert.Equal("from __future__ import annotations", usings.First());
+        Assert.Equal("import datetime", usings[1]);
+        Assert.Equal("from dataclasses import dataclass, field", usings[2]);
+        Assert.Equal("from kiota_abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode, SerializationWriter", usings[3]);
+        Assert.Equal("from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union", usings[4]);
     }
 }
