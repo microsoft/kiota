@@ -1195,6 +1195,6 @@ components:
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models", models.Name);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels.camelcase", camelCaseModel.Name);
     }
-    
+
     #endregion
 }
