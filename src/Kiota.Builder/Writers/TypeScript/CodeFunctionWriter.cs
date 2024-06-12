@@ -254,7 +254,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()}{parseNodeParameterForPrimitiveValues};");
     }
 
-    private bool ShouldWriteDiscriminatorInformation(CodeFunction codeElement, CodeComposedTypeBase? composedType)
+    private static bool ShouldWriteDiscriminatorInformation(CodeFunction codeElement, CodeComposedTypeBase? composedType)
     {
         return codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType || composedType is CodeUnionType;
     }
