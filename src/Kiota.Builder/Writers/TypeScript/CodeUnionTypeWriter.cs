@@ -2,7 +2,7 @@
 
 namespace Kiota.Builder.Writers.TypeScript;
 
-public class CodeUnionTypeWriter(TypeScriptConventionService conventionService) : CodeComposedTypeBaseWriter<CodeUnionType, TypeScriptConventionService>(conventionService)
+public class CodeUnionTypeWriter(TypeScriptConventionService conventionService) : CodeComposedTypeBaseWriter<CodeUnionType>(conventionService)
 {
     public override string TypesDelimiter
     {

@@ -308,7 +308,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFunction? FindFunctionOfKind(List<CodeElement> elements, CodeMethodKind kind)
     {
-        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind == kind);
+        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.IsOfKind(kind));
     }
 
     private static void RemoveOldCodeFunctionAndAddNewOne(List<CodeElement> children, CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction oldCodeFunction, CodeFunction newCodeFunction)
@@ -365,7 +365,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         // For code union Deserializer is not required, however its needed for Object Intersection types
         if (composedType is CodeIntersectionType && !ConventionServiceInstance.IsComposedOfPrimitives(composedType))
         {
-            var method = CreateDeserializerMethodForComposedType(codeInterface, deserializerMethod);
+            var method = CreateCodeMethod(codeInterface, deserializerMethod);
             var deserializerFunction = new CodeFunction(method) { Name = method.Name };
             deserializerFunction.AddUsing(deserializerMethod.Usings.ToArray());
             children.Add(deserializerFunction);
@@ -395,12 +395,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         // Add the key parameter if the composed type is a union of primitive values
         if (ConventionServiceInstance.IsComposedOfPrimitives(composedType))
             method.AddParameter(CreateKeyParameter());
-        return method;
-    }
-
-    private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function)
-    {
-        var method = CreateCodeMethod(codeInterface, function);
         return method;
     }
 
