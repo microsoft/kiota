@@ -78,7 +78,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
 
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not CodeComposedTypeBase composedType) return;
+        if (composedParam is null || GetOriginalComposedType(composedParam) is not {} composedType) return;
 
         writer.StartBlock("return {");
         foreach (var mappedType in composedType.Types.ToArray())
@@ -93,7 +93,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
 
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not CodeComposedTypeBase composedType) return;
+        if (composedParam is null || GetOriginalComposedType(composedParam) is not {} composedType) return;
 
         if (conventions.IsComposedOfPrimitives(composedType))
         {
@@ -141,7 +141,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteComposedTypeSerializationForPrimitives(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} == undefined) return;");
+        writer.WriteLine($"if ({paramName} === undefined) return;");
         writer.StartBlock($"switch (typeof {paramName}) {{");
 
         foreach (var type in composedType.Types)
