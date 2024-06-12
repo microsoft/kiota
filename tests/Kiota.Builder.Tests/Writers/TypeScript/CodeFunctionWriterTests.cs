@@ -1184,6 +1184,63 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task Writes_UnionOfObjects_FactoryMethod()
+    {
+        var expectedResultString = @"/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Cat | Dog}
+ */
+export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    const mappingValueNode = parseNode.getChildNode(""pet_type"");
+    if (mappingValueNode) {
+        const mappingValue = mappingValueNode.getStringValue();
+        if (mappingValue) {
+            switch (mappingValue) {
+                case ""Cat"":
+                    return deserializeIntoCat;
+                case ""Dog"":
+                    return deserializeIntoDog;
+            }
+        }
+    }
+    throw new Error(""A discriminator property is required to distinguish a union type"");
+";
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Pets", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeFactory).FirstOrDefault();
+        Assert.True(factoryFunction is not null);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains(expectedResultString, result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
     public async Task Writes_UnionOfPrimitiveValues_SerializerFunction()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
@@ -1305,9 +1362,9 @@ export function createFooBarFromDiscriminatorValue(parseNode: ParseNode | undefi
         var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeFactory).FirstOrDefault();
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
-        var serializerFunctionStr = tw.ToString();
-        Assert.Contains(expectedFactoryFunctionString, serializerFunctionStr);
-        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+        var result = tw.ToString();
+        Assert.Contains(expectedFactoryFunctionString, result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
     [Fact]
