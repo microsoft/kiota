@@ -10,8 +10,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 {
     public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
-
     }
+
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -350,7 +350,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (isCollection)
             {
-                var collectionMethod = propType.IsArray ? "?.ToArray()" : "?.ToList()";
+                var collectionMethod = propType.IsArray ? "?.AsArray()" : "?.AsList()";
                 if (currentType.TypeDefinition == null)
                     return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
                 else if (currentType.TypeDefinition is CodeEnum)
