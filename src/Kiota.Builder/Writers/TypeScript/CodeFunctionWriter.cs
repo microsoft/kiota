@@ -78,7 +78,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
 
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not {} composedType) return;
+        if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
         foreach (var mappedType in composedType.Types.ToArray())
@@ -93,7 +93,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
 
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not {} composedType) return;
+        if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         if (conventions.IsComposedOfPrimitives(composedType))
         {
