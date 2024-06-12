@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes bug with model names in Go generated from camel case namespace. [https://github.com/microsoftgraph/msgraph-sdk-go/issues/721]
+
 ## [1.15.0] - 2024-06-06
 
 ### Added
