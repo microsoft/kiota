@@ -542,7 +542,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendCollectionAsync", result);
-        Assert.Contains("return collectionResult?.ToList()", result);
+        Assert.Contains("return collectionResult?.AsList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
@@ -592,7 +592,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
-        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
+        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
@@ -631,7 +631,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("if(parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
-        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
+        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("return result", result);
