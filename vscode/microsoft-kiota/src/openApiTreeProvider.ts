@@ -13,7 +13,7 @@ import {
     KiotaOpenApiNode, 
     KiotaShowConfiguration, 
     KiotaShowResult, 
-    LockFile, 
+    ConfigurationFile, 
     PluginObjectProperties } from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
 import { treeViewId } from './constants';
@@ -31,7 +31,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
 
     }
     private _lockFilePath?: string;
-    private _lockFile?: LockFile | Partial<LockFile> = {};
+    private _lockFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
     public get isLockFileLoaded(): boolean {
         return !!this._lockFile;
     }
@@ -39,10 +39,10 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this.closeDescription(false);
         this._lockFilePath = path;
         const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
-        let parsedLockFile = JSON.parse(lockFileData.toString()) as LockFile;
+        let parsedLockFile = JSON.parse(lockFileData.toString()) as ConfigurationFile;
 
         if (clientOrPluginName) {
-            let filteredData: Partial<LockFile> = { version: parsedLockFile.version };
+            let filteredData: Partial<ConfigurationFile> = { version: parsedLockFile.version };
 
             if (parsedLockFile.clients && parsedLockFile.clients[clientOrPluginName]) {
                 filteredData.clients = {
@@ -56,7 +56,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 };
             }
 
-            parsedLockFile = filteredData as LockFile;
+            parsedLockFile = filteredData as ConfigurationFile;
         }
 
         this._lockFile = parsedLockFile;
@@ -80,14 +80,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     public async loadEditPaths(clientOrPluginKey: string, clientObject: ClientOrPluginProperties): Promise<void> {
         this.closeDescription(false);
-        this._lockFile = { version: '1.0.0', clients: {}, plugins: {} };
+        const newLockFile: ConfigurationFile = { version: '1.0.0', clients: {}, plugins: {} };
 
         if ((clientObject as ClientObjectProperties).clientNamespaceName) {
-            this._lockFile.clients![clientOrPluginKey] = clientObject as ClientObjectProperties;
+            newLockFile.clients![clientOrPluginKey] = clientObject as ClientObjectProperties;
         } else {
-            this._lockFile.plugins![clientOrPluginKey] = clientObject as PluginObjectProperties;
+            newLockFile.plugins![clientOrPluginKey] = clientObject as PluginObjectProperties;
         }
-
+        this._lockFile = newLockFile;
         if (clientObject.descriptionLocation) {
             this._descriptionUrl = clientObject.descriptionLocation;
             this.includeFilters = clientObject.includePatterns;
