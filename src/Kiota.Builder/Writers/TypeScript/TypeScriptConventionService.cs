@@ -91,10 +91,10 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
+    public static bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
     {
         // Primitive values don't have a discriminator property so it should be handled differently if any of the values is primitive
-        return composedType?.Types.All(x => IsPrimitiveType(GetTypeString(x, composedType))) ?? false;
+        return composedType?.Types.All(x => IsPrimitiveType(GetTypescriptTypeString(x, composedType))) ?? false;
     }
 
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)

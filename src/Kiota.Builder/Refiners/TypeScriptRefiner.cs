@@ -338,7 +338,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         RemoveOldCodeFunctionAndAddNewOne(children, codeInterface, codeNamespace, factoryMethod, factoryFunction);
 
         // Remove the deserializer import statement if its not being used
-        if (composedType is CodeUnionType || ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        if (composedType is CodeUnionType || IsComposedOfPrimitives(composedType))
         {
             RemoveUnusedDeserializerImport(children, factoryFunction);
         }
@@ -363,7 +363,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (deserializerMethod is null) return;
 
         // For code union Deserializer is not required, however its needed for Object Intersection types
-        if (composedType is CodeIntersectionType && !ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        if (composedType is CodeIntersectionType && !IsComposedOfPrimitives(composedType))
         {
             var method = CreateDeserializerMethodForComposedType(codeInterface, deserializerMethod);
             var deserializerFunction = new CodeFunction(method) { Name = method.Name };
@@ -384,7 +384,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
     {
         var method = CreateCodeMethod(codeInterface, function);
-        if (composedType is not null && ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        if (composedType is not null && IsComposedOfPrimitives(composedType))
             method.ReturnType = composedType;
         return method;
     }
@@ -393,7 +393,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         var method = CreateCodeMethod(codeInterface, function);
         // Add the key parameter if the composed type is a union of primitive values
-        if (ConventionServiceInstance.IsComposedOfPrimitives(composedType))
+        if (IsComposedOfPrimitives(composedType))
             method.AddParameter(CreateKeyParameter());
         return method;
     }
