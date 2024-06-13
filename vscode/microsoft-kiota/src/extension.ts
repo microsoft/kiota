@@ -591,9 +591,6 @@ async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openA
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
-  const informationMessages = result
-    ? getLogEntriesForLevel(result, LogLevel.information)
-    : [];
   const errorMessages = result
     ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error)
     : [];
@@ -604,10 +601,6 @@ async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> 
   if (errorMessages.length > 0) {
     await Promise.all(errorMessages.map((element) => {
       return vscode.window.showErrorMessage(element.message);
-    }));
-  } else {
-    await Promise.all(informationMessages.map((element) => {
-      return vscode.window.showInformationMessage(element.message);
     }));
   }
 }
