@@ -30,6 +30,7 @@ import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
 import { CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -179,7 +180,7 @@ export async function activate(
       `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
         const yesAnswer = vscode.l10n.t("Yes, override it");
-        if (!openApiTreeProvider.isEmpty()) {
+        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasSelectionChanged()) {
           const response = await vscode.window.showWarningMessage(
             vscode.l10n.t(
               "Before adding a new API description, consider that your changes and current selection will be lost."),
@@ -213,7 +214,7 @@ export async function activate(
       );
       if(response === yesAnswer) {
         openApiTreeProvider.closeDescription();
-        await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
+        await updateTreeViewIcons(treeViewId, false);
       }
     }
     ),
@@ -227,8 +228,7 @@ export async function activate(
      clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-     await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, false);
-     await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
+     await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
       const settings = getExtensionSettings(extensionId); 
@@ -303,6 +303,7 @@ export async function activate(
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
+      await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -344,6 +345,7 @@ export async function activate(
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
+      await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -414,6 +416,7 @@ export async function activate(
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.clientClassName);
+      await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
     }
   }
@@ -583,7 +586,7 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider, clientOrPluginName?: string): Promise<void> {
   await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath, clientOrPluginName));
-  await vscode.commands.executeCommand('setContext',`${treeViewId}.showIcons`, true);
+  await updateTreeViewIcons(treeViewId, true);
 }
 
 async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
@@ -662,8 +665,6 @@ async function checkForSuccess(results: KiotaLogEntry[]) {
     if (result && result.message) {
       if (result.message.includes("Generation completed successfully")) {
         void vscode.window.showInformationMessage('Generation completed successfully.');
-        await vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, false);
-        await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, true);
       }
     }
   }

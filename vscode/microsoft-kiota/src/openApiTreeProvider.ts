@@ -17,11 +17,13 @@ import {
     PluginObjectProperties } from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
 import { treeViewId } from './constants';
+import { updateTreeViewIcons } from './util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
     private apiTitle?: string;
+    private selectionChanged: boolean = false;
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly settingsGetter: () => ExtensionSettings,
@@ -161,10 +163,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (shouldRefresh) {
             this.refreshView();
         }
-        void vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, false);
+        void updateTreeViewIcons(treeViewId, false);
     }
     public isEmpty(): boolean {
         return this.rawRootNode === undefined;
+    }
+    public hasSelectionChanged(): boolean {
+        return this.selectionChanged;
+    }
+    public setSelectionChanged() {
+        this.selectionChanged = true;
     }
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
@@ -188,6 +196,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
+        this.setSelectionChanged();
         const isOperationNode = apiNode.isOperation ?? false;
         if (recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
@@ -197,6 +206,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
             if (parent) {
                 parent.selected = selected;
+                this.setSelectionChanged();
             }
         }
     }
@@ -318,8 +328,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                         clientNameOrPluginName
                     );
                 }
-                await vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, true);
-                await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, false);
+               await updateTreeViewIcons(treeViewId, true, false);
             }
         }
     }
