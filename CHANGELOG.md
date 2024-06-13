@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - TypeScript imports are now using ES6 imports with the .js extension.
 - Remove LINQ usage in generated code.
+- Ensures descriptions are not empty in sliced OpenApi file when generating a plugin. 
 
 ## [1.15.0] - 2024-06-06
 
