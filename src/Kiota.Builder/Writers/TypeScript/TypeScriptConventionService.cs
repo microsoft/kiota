@@ -12,16 +12,6 @@ using static Kiota.Builder.Refiners.TypeScriptRefiner;
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypeScriptConventionService : CommonLanguageConventionService
 {
-    private static TypeScriptConventionService? conventionService;
-    public static TypeScriptConventionService ConventionServiceInstance
-    {
-        get
-        {
-            conventionService ??= new TypeScriptConventionService();
-            return conventionService;
-        }
-    }
-
 #pragma warning disable CA1707 // Remove the underscores
     public const string TYPE_INTEGER = "integer";
     public const string TYPE_INT64 = "int64";
@@ -144,7 +134,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias)
             ? alias
-            : ConventionServiceInstance.TranslateType(currentType);
+            : TranslateTypescriptType(currentType);
 
         var genericParameters = currentType.GenericTypeParameterValues.Count != 0
             ? $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation)))}>"
@@ -196,6 +186,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public override string TranslateType(CodeType type)
     {
+        return TranslateTypescriptType(type);
+    }
+
+    public static string TranslateTypescriptType(CodeTypeBase type)
+    {
         return type?.Name switch
         {
             TYPE_INTEGER or TYPE_INT64 or TYPE_FLOAT or TYPE_DOUBLE or TYPE_BYTE or TYPE_SBYTE or TYPE_DECIMAL => TYPE_NUMBER,
@@ -203,7 +198,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_GUID => TYPE_GUID,
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),
             null => TYPE_OBJECT,
-            _ => GetCodeTypeName(type) is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : TYPE_OBJECT,
+            _ when type is CodeType codeType => GetCodeTypeName(codeType) is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : TYPE_OBJECT,
+            _ => throw new InvalidOperationException($"Unable to translate type {type.Name}")
         };
     }
 
@@ -285,17 +281,13 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter? writer = null)
     {
         var composedType = GetOriginalComposedType(targetClassType);
-        string targetClassName = composedType is not null ? TranslateType(composedType) : ConventionServiceInstance.TranslateType(targetClassType);
+        string targetClassName = composedType is not null ? TranslateType(composedType) : TranslateTypescriptType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (ConventionServiceInstance.GetTypeString(targetClassType, currentElement, false, writer) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
-        if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
+        if (GetTypescriptTypeString(targetClassType, currentElement, false, writer) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
+        if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)
         {
-            var factoryMethod = GetFactoryMethod(definitionClass, resultName);
-            if (factoryMethod != null)
-            {
-                var methodName = ConventionServiceInstance.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-                return methodName.ToFirstCharacterUpperCase();// static function is aliased
-            }
+            var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
+            return methodName.ToFirstCharacterUpperCase();// static function is aliased
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
@@ -319,12 +311,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public static string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method)
+    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method)
     {
         ArgumentNullException.ThrowIfNull(codeType);
         ArgumentNullException.ThrowIfNull(method);
         var isCollection = codeType.CollectionKind != CodeTypeCollectionKind.None;
-        var propertyType = ConventionServiceInstance.GetTypeString(codeType, method, false);
+        var propertyType = GetTypescriptTypeString(codeType, method, false);
 
         CodeTypeBase _codeType = GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : codeType;
 
@@ -333,7 +325,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return (currentType.TypeDefinition, isCollection, propertyType) switch
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
-                (_, _, string prop) when ConventionServiceInstance.StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
+                (_, _, string prop) when StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
                 (_, true, string prop) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{prop}>()",
                 (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method)

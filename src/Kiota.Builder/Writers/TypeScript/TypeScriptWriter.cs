@@ -1,5 +1,4 @@
 ﻿using Kiota.Builder.PathSegmenters;
-using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 
@@ -8,7 +7,7 @@ public class TypeScriptWriter : LanguageWriter
     public TypeScriptWriter(string rootPath, string clientNamespaceName)
     {
         PathSegmenter = new TypeScriptPathSegmenter(rootPath, clientNamespaceName);
-        var conventionService = ConventionServiceInstance;
+        var conventionService = new TypeScriptConventionService();
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));

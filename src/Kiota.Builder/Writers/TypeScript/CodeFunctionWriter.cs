@@ -61,13 +61,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private static void WriteFactoryMethodBodyForPrimitives(CodeComposedTypeBase composedType, CodeFunction codeElement, LanguageWriter writer, CodeParameter? parseNodeParameter)
+    private void WriteFactoryMethodBodyForPrimitives(CodeComposedTypeBase composedType, CodeFunction codeElement, LanguageWriter writer, CodeParameter? parseNodeParameter)
     {
         ArgumentNullException.ThrowIfNull(parseNodeParameter);
         var parseNodeParameterName = parseNodeParameter.Name.ToFirstCharacterLowerCase();
         writer.StartBlock($"if ({parseNodeParameterName}) {{");
 
-        string getPrimitiveValueString = string.Join(" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
+        string getPrimitiveValueString = string.Join(" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + conventions.GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
         writer.WriteLine($"return {getPrimitiveValueString};");
         writer.CloseBlock();
         writer.WriteLine("return undefined;");
@@ -288,7 +288,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var functionName = GetFunctionName(returnType, kind);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         var codeFunction = FindCodeFunctionInParentNamespaces(functionName, parentNamespace);
-        return ConventionServiceInstance.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
+        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
     }
 
     private CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
@@ -373,7 +373,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     }
 
 
-    public static string GetSerializationMethodName(CodeTypeBase propertyType, CodeMethod method)
+    public string GetSerializationMethodName(CodeTypeBase propertyType, CodeMethod method)
     {
         ArgumentNullException.ThrowIfNull(propertyType);
         ArgumentNullException.ThrowIfNull(method);
@@ -384,7 +384,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return $"serialize{composedType.Name.ToFirstCharacterUpperCase()}";
         }
 
-        var propertyTypeName = ConventionServiceInstance.TranslateType(propertyType);
+        var propertyTypeName = TranslateTypescriptType(propertyType);
         CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;
 
         if (currentType != null && !string.IsNullOrEmpty(propertyTypeName))
@@ -414,12 +414,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         };
     }
 
-    private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    private string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         return propType switch
         {
             _ when propType.TypeDefinition is CodeEnum currentEnum => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>",
-            _ when ConventionServiceInstance.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
+            _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
             _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
             _ => null
         };
@@ -481,7 +481,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         else
         {
             var defaultValueSuffix = GetDefaultValueLiteralForProperty(otherProp) is string dft && !string.IsNullOrEmpty(dft) ? $" ?? {dft}" : string.Empty;
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction.OriginalLocalMethod)}{defaultValueSuffix};{suffix} }},");
+            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{conventions.GetDeserializationMethodName(otherProp.Type, codeFunction.OriginalLocalMethod)}{defaultValueSuffix};{suffix} }},");
         }
     }
 
