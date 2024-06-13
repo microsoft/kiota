@@ -10,8 +10,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 {
     public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
-
     }
+
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -350,7 +350,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (isCollection)
             {
-                var collectionMethod = propType.IsArray ? "?.ToArray()" : "?.ToList()";
+                var collectionMethod = propType.IsArray ? "?.AsArray()" : "?.AsList()";
                 if (currentType.TypeDefinition == null)
                     return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
                 else if (currentType.TypeDefinition is CodeEnum)
@@ -407,7 +407,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         };
         writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken).ConfigureAwait(false);");
         if (codeElement.ReturnType.IsCollection)
-            writer.WriteLine("return collectionResult?.ToList();");
+            writer.WriteLine("return collectionResult?.AsList();");
     }
     private const string RequestInfoVarName = "requestInfo";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
