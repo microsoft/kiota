@@ -41,6 +41,7 @@ export interface KiotaOpenApiNode {
     selected?: boolean,
     isOperation?: boolean;
     documentationUrl?: string;
+    clientNameOrPluginName?: string;
 }
 interface CacheClearableConfiguration {
     clearCache: boolean;
@@ -253,23 +254,10 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
-export interface LockFile {
-    clientClassName: string;
-    clientNamespaceName: string;
-    descriptionHash: string;
-    descriptionLocation: string;
-    deserializers: string[];
-    disabledValidationRules: string[];
-    excludeBackwardCompatible: boolean;
-    excludePatterns: string[];
-    includeAdditionalData: boolean;
-    includePatterns: string[];
-    kiotaVersion: string;
-    language: string;
-    lockFileVersion: string;
-    serializers: string[];
-    structuredMimeTypes: string[];
-    usesBackingStore: boolean;
+export interface ConfigurationFile {
+    version: string;
+    clients: Record<string, ClientObjectProperties>;
+    plugins: Record<string, PluginObjectProperties>;
 }
 
 export interface GenerationConfiguration {
@@ -300,7 +288,7 @@ interface WorkspaceObjectProperties {
     outputPath: string;
 }
 
-interface ClientObjectProperties extends WorkspaceObjectProperties {
+export interface ClientObjectProperties extends WorkspaceObjectProperties {
     language: string;
     structuredMimeTypes: string[];
     clientNamespaceName: string;
@@ -310,7 +298,7 @@ interface ClientObjectProperties extends WorkspaceObjectProperties {
     disabledValidationRules: string[];
 }
 
-interface PluginObjectProperties extends WorkspaceObjectProperties {
+export interface PluginObjectProperties extends WorkspaceObjectProperties {
     types: string[];
 }
 
