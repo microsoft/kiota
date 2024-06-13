@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
@@ -92,8 +94,45 @@ public class CodeUsingWriterTests
         Assert.Contains("from .bar import Bar", result);
     }
 
-    [Fact]
-    public void WritesFutureImportsFirst()
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("en-GB")]
+    [InlineData("fr-FR")]
+    [InlineData("de-DE")]
+    [InlineData("es-ES")]
+    [InlineData("it-IT")]
+    [InlineData("ja-JP")]
+    [InlineData("ko-KR")]
+    [InlineData("pt-BR")]
+    [InlineData("ru-RU")]
+    [InlineData("zh-CN")]
+    [InlineData("zh-TW")]
+    public void FutureShouldBeSortedBeforeDatetimeInDifferentCultures(string cultureName)
+    {
+        var cultureInfo = new CultureInfo(cultureName);
+        var compareInfo = cultureInfo.CompareInfo;
+
+        var sorted = new string[] { null, "__future__" }.OrderBy(x => x, StringComparer.Create(cultureInfo, CompareOptions.IgnoreCase)).ToArray();
+
+        // Half pass, half fail
+        // I know in the CodeUsingWriter - We are grouping on x.Declaration?.Name - Which can be null?
+        Assert.True(sorted[0] == "__future__");
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("en-GB")]
+    [InlineData("fr-FR")]
+    [InlineData("de-DE")]
+    [InlineData("es-ES")]
+    [InlineData("it-IT")]
+    [InlineData("ja-JP")]
+    [InlineData("ko-KR")]
+    [InlineData("pt-BR")]
+    [InlineData("ru-RU")]
+    [InlineData("zh-CN")]
+    [InlineData("zh-TW")]
+    public void WritesFutureImportsFirst(string cultureName)
     {
         // Generated with Kiota mcr.microsoft.com/openapi/kiota:1.15.0
 
@@ -102,6 +141,13 @@ public class CodeUsingWriterTests
         // from dataclasses import dataclass, field
         // from kiota_abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode, SerializationWriter
         // from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union
+
+        Thread.CurrentThread.CurrentCulture = new CultureInfo(cultureName);
+
+        var writer2 = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
+        var tw2 = new StringWriter();
+        writer2.SetTextWriter(tw2);
+        var root2 = CodeNamespace.InitRootNamespace();
 
         var usingWriter = new CodeUsingWriter("foo");
 
@@ -126,9 +172,9 @@ public class CodeUsingWriterTests
         codeClass.AddUsings(new CodeUsing { Name = "Union", Declaration = new CodeType { Name = "typing", IsExternal = true } });
         codeClass.AddUsings(new CodeUsing { Name = "datetime", Declaration = new CodeType { Name = "-", IsExternal = true } });
 
-        usingWriter.WriteExternalImports(codeClass, writer);
+        usingWriter.WriteExternalImports(codeClass, writer2);
 
-        string[] usings = tw.ToString().Split(tw.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        string[] usings = tw2.ToString().Split(tw2.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal("from __future__ import annotations", usings.First());
         Assert.Equal("import datetime", usings[1]);
