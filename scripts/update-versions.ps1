@@ -6,7 +6,8 @@ function Get-LatestNugetVersion {
 
     $url = "https://api.nuget.org/v3/registration5-gz-semver2/$($packageId.ToLowerInvariant())/index.json"
     $response = Invoke-RestMethod -Uri $url -Method Get
-    $response.items[$response.items.Count - 1].upper
+    $version = $response.items | Select-Object -ExpandProperty upper | ForEach-Object { [System.Management.Automation.SemanticVersion]$_ } | sort-object | Select-Object -Last 1
+    $version.ToString()
 }
 # Get the latest github release
 function Get-LatestGithubRelease {
