@@ -254,7 +254,7 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
-export interface LockFile {
+export interface ConfigurationFile {
     version: string;
     clients?: Record<string, ClientObjectProperties>;
     plugins?: Record<string, PluginObjectProperties>;
