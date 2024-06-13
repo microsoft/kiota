@@ -108,11 +108,14 @@ public class PluginsGenerationService
         //empty out all the responses with a single empty 2XX
         foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
         {
+            var responseDescription = operation.Responses.Values.Select(static response => response.Description)
+                                                                      .FirstOrDefault(static desc => !string.IsNullOrEmpty(desc)) ?? "Api Response";
             operation.Responses = new OpenApiResponses()
             {
                 {
                     "2XX",new OpenApiResponse
                     {
+                        Description = responseDescription,
                         Content = new Dictionary<string, OpenApiMediaType>
                         {
                             {
