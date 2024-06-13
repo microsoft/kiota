@@ -453,33 +453,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return element switch
         {
             CodeParameter param => GetOriginalComposedType(param.Type),
-            CodeType codeType => GetOriginalComposedType(codeType),
-            CodeClass codeClass => GetOriginalComposedType(codeClass),
-            CodeInterface codeInterface => GetOriginalComposedType(codeInterface),
+            CodeType codeType when codeType.TypeDefinition is not null => GetOriginalComposedType(codeType.TypeDefinition),
+            CodeClass codeClass => codeClass.OriginalComposedType,
+            CodeInterface codeInterface => codeInterface.OriginalClass.OriginalComposedType,
             CodeComposedTypeBase composedType => composedType,
             _ => null,
         };
-    }
-
-    public static CodeComposedTypeBase? GetOriginalComposedType(CodeType codeType)
-    {
-        return codeType?.TypeDefinition switch
-        {
-            CodeComposedTypeBase composedType => composedType,
-            CodeInterface ci => GetOriginalComposedType(ci),
-            CodeClass cc => GetOriginalComposedType(cc),
-            _ => null,
-        };
-    }
-
-    public static CodeComposedTypeBase? GetOriginalComposedType(CodeInterface codeInterface)
-    {
-        return codeInterface?.OriginalClass is CodeClass originalClass ? GetOriginalComposedType(originalClass) : null;
-    }
-
-    public static CodeComposedTypeBase? GetOriginalComposedType(CodeClass codeClass)
-    {
-        return codeClass?.OriginalComposedType;
     }
 
     private static readonly CodeUsing[] navigationMetadataUsings = [
