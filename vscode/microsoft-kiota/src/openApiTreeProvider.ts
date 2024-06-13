@@ -83,9 +83,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const newLockFile: ConfigurationFile = { version: '1.0.0', clients: {}, plugins: {} };
 
         if ((clientObject as ClientObjectProperties).clientNamespaceName) {
-            newLockFile.clients![clientOrPluginKey] = clientObject as ClientObjectProperties;
+            newLockFile.clients[clientOrPluginKey] = clientObject as ClientObjectProperties;
         } else {
-            newLockFile.plugins![clientOrPluginKey] = clientObject as PluginObjectProperties;
+            newLockFile.plugins[clientOrPluginKey] = clientObject as PluginObjectProperties;
         }
         this._lockFile = newLockFile;
         if (clientObject.descriptionLocation) {

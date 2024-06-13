@@ -256,8 +256,8 @@ export function maturityLevelToString(level: MaturityLevel): string {
 }
 export interface ConfigurationFile {
     version: string;
-    clients?: Record<string, ClientObjectProperties>;
-    plugins?: Record<string, PluginObjectProperties>;
+    clients: Record<string, ClientObjectProperties>;
+    plugins: Record<string, PluginObjectProperties>;
 }
 
 export interface GenerationConfiguration {
