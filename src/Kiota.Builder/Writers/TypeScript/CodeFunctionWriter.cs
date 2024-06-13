@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.TypeScript;
 public class CodeFunctionWriter(TypeScriptConventionService conventionService) : BaseElementWriter<CodeFunction, TypeScriptConventionService>(conventionService)
 {
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
+    private const string FactoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
@@ -26,10 +27,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is CodeComposedTypeBase composedType && conventions.IsComposedOfPrimitives(composedType);
 
-        var factoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
-
         var returnType = codeMethod.Kind is CodeMethodKind.Factory || (codeMethod.Kind is CodeMethodKind.ComposedTypeFactory && !isComposedOfPrimitives) ?
-            factoryMethodReturnType :
+            FactoryMethodReturnType :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         CodeMethodWriter.WriteMethodDocumentationInternal(codeElement.OriginalLocalMethod, writer, isVoid, conventions);
@@ -107,7 +106,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return;
         }
 
-        WriteComposedTypeSerialization(composedParam, codeElement, writer);
+        WriteDefaultComposedTypeSerialization(composedParam, codeElement, writer);
     }
 
     private void WriteComposedTypeSerializationForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
@@ -119,7 +118,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private void WriteComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
+    private void WriteDefaultComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
         var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName ?? throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
