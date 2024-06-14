@@ -1137,7 +1137,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1210,7 +1210,7 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1247,7 +1247,7 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1288,7 +1288,7 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1337,7 +1337,7 @@ export function createFooBarFromDiscriminatorValue(parseNode: ParseNode | undefi
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1374,7 +1374,7 @@ export function createFooBarFromDiscriminatorValue(parseNode: ParseNode | undefi
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1412,7 +1412,7 @@ export function createFooBarFromDiscriminatorValue(parseNode: ParseNode | undefi
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", OpenAPIFilePath = "https://api.example.com/v1", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
