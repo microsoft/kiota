@@ -71,7 +71,7 @@ public class GoConventionService : CommonLanguageConventionService
                 CodeTypeBase.CodeTypeCollectionKind.Array or CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
-            var genericTypeParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+            var genericTypeParameters = currentType.GenericTypeParameterValues.Any() ?
                             $"[{string.Join(",", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, true, false, true)))}]" :
                             string.Empty;
             if (currentType.ActionOf)

@@ -40,6 +40,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(key);
+        EnsureElementsAreChildren(type);
         discriminatorMappings.TryAdd(key, type);
     }
 
