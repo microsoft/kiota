@@ -16,6 +16,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         get; set;
     }
     protected ConcurrentDictionary<string, CodeElement> InnerChildElements { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+    [JsonIgnore]
     public TBlockEnd EndBlock
     {
         get; set;
