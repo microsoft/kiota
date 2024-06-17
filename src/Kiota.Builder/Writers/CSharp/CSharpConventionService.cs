@@ -206,7 +206,9 @@ public class CSharpConventionService : CommonLanguageConventionService
 
         return type.Name switch
         {
+            "int" => "int",
             "integer" => "int",
+            "bool" => "bool",
             "boolean" => "bool",
             "int64" => "long",
             "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
