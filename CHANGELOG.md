@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Plugins OpenAPI extensions are only added when generating plugins to reduce the risk of parsing errors. [#4834](https://github.com/microsoft/kiota/issues/4834)
 - TypeScript imports are now using ES6 imports with the .js extension.
 - Remove LINQ usage in generated code.
-- Ensures descriptions are not empty in sliced OpenApi file when generating a plugin. 
+- Ensures descriptions are not empty in sliced OpenApi file when generating a plugin.
 
 ## [1.15.0] - 2024-06-06
 
