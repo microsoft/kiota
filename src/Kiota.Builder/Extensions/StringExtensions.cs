@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
@@ -293,4 +294,9 @@ public static partial class StringExtensions
 
     public static string TrimSuffix(this string s, string suffix, StringComparison stringComparison = StringComparison.Ordinal) =>
         !string.IsNullOrEmpty(s) && !string.IsNullOrEmpty(suffix) && s.EndsWith(suffix, stringComparison) ? s[..^suffix.Length] : s;
+    public static string GetFileExtension(this string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        return Path.GetExtension(path).TrimStart('.');
+    }
 }
