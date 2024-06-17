@@ -46,9 +46,9 @@ public class CodeType : CodeTypeBase, ICloneable
         }.BaseClone<CodeType>(this, TypeDefinition is null || IsExternal);
     }
     [JsonPropertyName("genericTypeParameterValues")]
-    public IDictionary<string, CodeType> GenericTypeParameterValuesJSON
+    public IDictionary<string, CodeType>? GenericTypeParameterValuesJSON
     {
-        get => GenericTypeParameterValues.ToDictionary(static x => x.Name, static x => x);
+        get => GenericTypeParameterValues.ToDictionary(static x => x.Name, static x => x) is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public Collection<CodeType> GenericTypeParameterValues { get; init; } = [];

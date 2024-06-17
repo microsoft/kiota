@@ -9,9 +9,9 @@ public class DiscriminatorInformation : CodeElement, ICloneable
 {
     private ConcurrentDictionary<string, CodeType> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
     [JsonPropertyName("discriminatorMappings")]
-    public Dictionary<string, CodeType> DiscriminatorMappingsJSON
+    public IDictionary<string, CodeType>? DiscriminatorMappingsJSON
     {
-        get => DiscriminatorMappings.ToDictionary(static x => x.Key, static x => x.Value);
+        get => DiscriminatorMappings.ToDictionary(static x => x.Key, static x => x.Value) is { Count: > 0 } expanded ? expanded : null;
     }
     /// <summary>
     /// Gets the discriminator values for the class where the key is the value as represented in the payload.

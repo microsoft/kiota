@@ -27,9 +27,9 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         }
     }
     [JsonPropertyName("options")]
-    public IDictionary<string, CodeEnumOption> OptionsJSON
+    public IDictionary<string, CodeEnumOption>? OptionsJSON
     {
-        get => OptionsInternal.ToDictionary(static x => x.Name, static x => x);
+        get => OptionsInternal.ToDictionary(static x => x.Name, static x => x) is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public IEnumerable<CodeEnumOption> Options

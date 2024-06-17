@@ -166,9 +166,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         parameters.Clear();
     }
     [JsonPropertyName("parameters")]
-    public IDictionary<string, CodeParameter> ParametersJSON
+    public IDictionary<string, CodeParameter>? ParametersJSON
     {
-        get => parameters;
+        get => parameters is { Count: > 0 } expanded ? expanded : null;
     }
     private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     [JsonIgnore]
@@ -302,9 +302,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
     [JsonPropertyName("errorMappings")]
-    public IDictionary<string, CodeTypeBase> ErrorMappingsJSON
+    public IDictionary<string, CodeTypeBase>? ErrorMappingsJSON
     {
-        get => errorMappings;
+        get => errorMappings is { Count: > 0 } expanded ? expanded : null;
     }
 
     /// <summary>
