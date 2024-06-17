@@ -23,7 +23,8 @@ public class KiotaDiffService
         Converters =
         {
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-        }
+        },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
     private static readonly DomJsonSerializationContext context = new(options);
     private readonly string OutputDirectoryPath;
@@ -34,10 +35,6 @@ public class KiotaDiffService
         var filePath = Path.Combine(OutputDirectoryPath, DomExportFileName);
         using var fileStream = File.Create(filePath);
         await JsonSerializer.SerializeAsync(fileStream, rootNamespace, context.CodeNamespace, cancellationToken).ConfigureAwait(false);
-    }
-    public async Task SerializeDomAsync(CodeNamespace rootNamespace, Stream outputStream, CancellationToken cancellationToken = default)
-    {
-        await JsonSerializer.SerializeAsync(outputStream, rootNamespace, context.CodeNamespace, cancellationToken).ConfigureAwait(false);
     }
     public async Task<CodeNamespace?> DeserializeDomAsync(Stream inputStream, CancellationToken cancellationToken = default)
     {
