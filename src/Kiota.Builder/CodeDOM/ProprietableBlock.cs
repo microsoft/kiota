@@ -70,27 +70,27 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
         GetPropertyOfKind(kind) ?? GetMethodByAccessedPropertyOfKind(kind);
 
     [JsonPropertyName("properties")]
-    public IDictionary<string, CodeProperty> PropertiesJSON
+    public IDictionary<string, CodeProperty>? PropertiesJSON
     {
-        get => InnerChildElements.Where(static x => x.Value is CodeProperty { Access: AccessModifier.Public or AccessModifier.Protected }).ToDictionary(static x => x.Key, static x => (CodeProperty)x.Value);
+        get => InnerChildElements.Where(static x => x.Value is CodeProperty { Access: AccessModifier.Public or AccessModifier.Protected }).ToDictionary(static x => x.Key, static x => (CodeProperty)x.Value) is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     [JsonIgnore]
     public IEnumerable<CodeProperty> UnorderedProperties => InnerChildElements.Values.OfType<CodeProperty>();
     [JsonPropertyName("methods")]
-    public IDictionary<string, CodeMethod> MethodsJSON
+    public IDictionary<string, CodeMethod>? MethodsJSON
     {
-        get => InnerChildElements.Where(static x => x.Value is CodeMethod).ToDictionary(static x => x.Key, static x => (CodeMethod)x.Value);
+        get => InnerChildElements.Where(static x => x.Value is CodeMethod).ToDictionary(static x => x.Key, static x => (CodeMethod)x.Value) is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     [JsonIgnore]
     public IEnumerable<CodeMethod> UnorderedMethods => InnerChildElements.Values.OfType<CodeMethod>();
     [JsonPropertyName("innerClasses")]
-    public IDictionary<string, CodeClass> InnerClassesJSON
+    public IDictionary<string, CodeClass>? InnerClassesJSON
     {
-        get => InnerChildElements.Where(static x => x.Value is CodeClass).ToDictionary(static x => x.Key, static x => (CodeClass)x.Value);
+        get => InnerChildElements.Where(static x => x.Value is CodeClass).ToDictionary(static x => x.Key, static x => (CodeClass)x.Value) is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public IEnumerable<CodeClass> InnerClasses => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
@@ -144,9 +144,9 @@ public class ProprietableBlockDeclaration : BlockDeclaration
             implements.TryRemove(type.Name, out var _);
     }
     [JsonPropertyName("implements")]
-    public IDictionary<string, CodeType> ImplementsJSON
+    public IDictionary<string, CodeType>? ImplementsJSON
     {
-        get => implements;
+        get => implements is { Count: > 0 } expanded ? expanded : null;
     }
     [JsonIgnore]
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
