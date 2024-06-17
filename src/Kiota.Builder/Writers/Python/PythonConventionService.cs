@@ -87,7 +87,7 @@ public class PythonConventionService : CommonLanguageConventionService
                 typeName = targetElement.Parent.Name;
             if (code.ActionOf && writer != null)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
-            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
               $"[{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}]" : string.Empty;
             return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}";
         }

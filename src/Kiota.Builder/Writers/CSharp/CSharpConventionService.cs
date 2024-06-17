@@ -186,7 +186,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                 CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
-            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             if (currentType.ActionOf && includeActionInformation)

@@ -281,10 +281,10 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         {
             Name = "Tuple",
             IsExternal = true,
-            GenericTypeParameterValues = new() {
+            GenericTypeParameterValues = [
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
-            },
+            ],
         };
         type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", SimpleName = "User", ReturnType = new CodeType() });
         type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", SimpleName = "User", ReturnType = tupleReturn });
@@ -374,10 +374,10 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         {
             Name = "Tuple",
             IsExternal = true,
-            GenericTypeParameterValues = new() {
+            GenericTypeParameterValues = [
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
-            },
+            ],
         };
         type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", SimpleName = "User", ReturnType = new CodeType() });
         type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", SimpleName = "User", ReturnType = tupleReturn });

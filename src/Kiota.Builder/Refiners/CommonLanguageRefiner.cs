@@ -1406,7 +1406,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 };
                 if (addCurrentTypeAsGenericTypeParameter)
                 {
-                    currentClass.StartBlock.Inherits.GenericTypeParameterValues.Add(new CodeType
+                    currentClass.StartBlock.Inherits.AddGenericTypeParameterValue(new CodeType
                     {
                         TypeDefinition = currentClass,
                     });
@@ -1497,7 +1497,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
     {
         var newType = (CodeType)configurationParameterType.Clone();
-        newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+        newType.AddGenericTypeParameterValue(genericTypeParamValue);
         return newType;
     }
 
