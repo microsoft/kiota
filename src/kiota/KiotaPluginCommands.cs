@@ -124,7 +124,7 @@ public static class KiotaPluginCommands
     }
     public static Command GetGenerateCommand()
     {
-        var pluginNameOption = GetPluginNameOption();
+        var pluginNameOption = GetPluginNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var refreshOption = KiotaClientCommands.GetRefreshOption();
         var command = new Command("generate", "Generates one or all plugin from the Kiota configuration")

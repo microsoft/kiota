@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixes bug with model names in Go generated from camel case namespace. [https://github.com/microsoftgraph/msgraph-sdk-go/issues/721]
+- Plugins OpenAPI extensions are only added when generating plugins to reduce the risk of parsing errors. [#4834](https://github.com/microsoft/kiota/issues/4834)
+- TypeScript imports are now using ES6 imports with the .js extension.
+- Remove LINQ usage in generated code.
+- Ensures descriptions are not empty in sliced OpenApi file when generating a plugin.
+- Plugins do not emit parameters anymore. [#4841](https://github.com/microsoft/kiota/issues/4841)
 
 ## [1.15.0] - 2024-06-06
 
@@ -58,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where warnings about discriminator not being inherited were generated [#4761](https://github.com/microsoft/kiota/issues/4761)
 - Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
-- Fixes missing imports for UntypedNode when backingstore is enabled in Java. 
+- Fixes missing imports for UntypedNode when backingstore is enabled in Java.
 - Renames `name_to_be_defined` plugin type to `apiplugin` [#4713](https://github.com/microsoft/kiota/issues/4713)
 
 ## [1.14.0] - 2024-05-02
@@ -622,7 +627,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unused generated import for PHP Generation.
 - Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
-- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
+- Changed signature of escaped reserved names from {x}*escaped to {x}* in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
@@ -1371,4 +1376,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
