@@ -860,9 +860,9 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", OpenAPIFilePath = "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -870,7 +870,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var codeModel = builder.CreateSourceModel(node);
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
-        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
         Assert.NotNull(clientBuilder);
         var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
         Assert.NotNull(constructor);
@@ -878,9 +878,9 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Empty(constructor.DeserializerModules);
         await ILanguageRefiner.Refine(generationConfiguration, rootNS);
         Assert.NotNull(rootNS);
-        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
         Assert.NotNull(modelsNS);
-        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
         Assert.NotNull(modelCodeFile);
         var unionType = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && TypeScriptRefiner.GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).ToList();
         Assert.True(unionType.Count > 0);

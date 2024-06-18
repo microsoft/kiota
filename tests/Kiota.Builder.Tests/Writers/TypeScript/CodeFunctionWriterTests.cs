@@ -1135,9 +1135,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1145,7 +1145,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var codeModel = builder.CreateSourceModel(node);
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
-        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
         Assert.NotNull(clientBuilder);
         var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
         Assert.NotNull(constructor);
@@ -1153,9 +1153,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Empty(constructor.DeserializerModules);
         await ILanguageRefiner.Refine(generationConfiguration, rootNS);
         Assert.NotNull(rootNS);
-        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
         Assert.NotNull(modelsNS);
-        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
         Assert.NotNull(modelCodeFile);
 
         /*
@@ -1245,9 +1245,9 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, GithubRepos.OpenApiYaml);
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Github", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
@@ -1255,7 +1255,7 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
         var codeModel = builder.CreateSourceModel(node);
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
-        var clientBuilder = rootNS.FindChildByName<CodeClass>("Github", false);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
         Assert.NotNull(clientBuilder);
         var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
         Assert.NotNull(constructor);
@@ -1263,9 +1263,9 @@ export function createPetsPatchRequestBodyFromDiscriminatorValue(parseNode: Pars
         Assert.Empty(constructor.DeserializerModules);
         await ILanguageRefiner.Refine(generationConfiguration, rootNS);
         Assert.NotNull(rootNS);
-        var modelsNS = rootNS.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
         Assert.NotNull(modelsNS);
-        var modelCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
         Assert.NotNull(modelCodeFile);
 
         // Test Serializer function

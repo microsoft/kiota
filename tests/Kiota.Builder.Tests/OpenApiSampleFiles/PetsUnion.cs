@@ -3,6 +3,9 @@
 
 public static class PetsUnion
 {
+    /**
+    * An OpenAPI 3.0.1 sample document with a union of objects, comprising a union of Cats and Dogs.
+    */
     public static readonly string OpenApiYaml = @"
 openapi: 3.0.0
 info:

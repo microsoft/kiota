@@ -2,6 +2,9 @@
 
 public static class CodeIntersectionTypeSampleYml
 {
+    /**
+    * An OpenAPI 3.0.1 sample document with intersection object types, comprising an intersection of Foo and Bar.
+    */
     public static readonly string OpenApiYaml = @"
 openapi: 3.0.3
 info:
