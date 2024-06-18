@@ -77,7 +77,7 @@ public class WorkspaceManagementService
             manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations, WorkingDirectory));
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
             if (descriptionStream != Stream.Null)
-                await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, descriptionStream, new Uri(generationConfiguration.OpenAPIFilePath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
+                await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, descriptionStream, generationConfiguration.OpenAPIFilePath.GetFileExtension(), cancellationToken).ConfigureAwait(false);
         }
         else
         {

@@ -249,12 +249,6 @@ public class PluginsGenerationService
                     },
                     RunForFunctions = [operation.OperationId]
                 });
-                var oasParameters = operation.Parameters
-                                        .Union(pathItem.Parameters.Where(static x => x.In is ParameterLocation.Path))
-                                        .Where(static x => x.Schema?.Type is not null && scalarTypes.Contains(x.Schema.Type))
-                                        .ToArray();
-                //TODO add request body
-
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
@@ -262,22 +256,6 @@ public class PluginsGenerationService
                         operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary)
                             ? summary
                             : operation.Description.CleanupXMLString(),
-                    Parameters = oasParameters.Length == 0
-                        ? null
-                        : new Parameters
-                        {
-                            Type = "object",
-                            Properties = new Properties(oasParameters.ToDictionary(
-                                static x => x.Name,
-                                static x => new FunctionParameter()
-                                {
-                                    Type = x.Schema.Type ?? string.Empty,
-                                    Description = x.Description.CleanupXMLString(),
-                                    Default = x.Schema.Default?.ToString() ?? string.Empty,
-                                    //TODO enums
-                                })),
-                            Required = oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()
-                        },
                     States = GetStatesFromOperation(operation),
                 });
             }
@@ -324,6 +302,4 @@ public class PluginsGenerationService
         }
         return null;
     }
-    private static readonly HashSet<string> scalarTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "number", "integer", "boolean" };
-    //TODO validate this is right, in OAS integer are under type number for the json schema, but integer is ok for query parameters
 }
