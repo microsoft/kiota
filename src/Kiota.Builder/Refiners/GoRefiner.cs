@@ -39,6 +39,7 @@ public class GoRefiner : CommonLanguageRefiner
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);
+            NormalizeNamespaceNames(generatedCode);
             AddInnerClasses(
                 generatedCode,
                 true,
@@ -206,7 +207,6 @@ public class GoRefiner : CommonLanguageRefiner
                 "Error",
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
             );
-            NormalizeNamespaceNames(generatedCode);
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }
