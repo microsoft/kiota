@@ -137,7 +137,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private const string ResultVarName = "result";
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {
-        writer.WriteLine($"{ResultVarName} = {parentClass.Name}()");
+        var className = parentClass.Name;
+        if (parentClass.Parent is CodeClass pc &&
+            !string.IsNullOrEmpty(pc.Name) &&
+            pc.InnerClasses.Any(x => x == parentClass))
+        {
+            className = $"{pc.Name}.{parentClass.Name}";
+        }
+        writer.WriteLine($"{ResultVarName} = {className}()");
         var includeElse = false;
         foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .OrderBy(static x => x, CodePropertyTypeForwardComparer)
@@ -508,7 +515,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name)
                                         .Select(static x => x.Name))
         {
-            writer.StartBlock($"if self.{otherPropName}:");
+            writer.StartBlock($"if hasattr(self, \"{otherPropName}\"):");
             writer.WriteLine($"return self.{otherPropName}.{method.Name}()");
             writer.DecreaseIndent();
         }
@@ -659,7 +666,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name}:");
+            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if hasattr(self, \"{otherProp.Name}\"):");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(None, self.{otherProp.Name})");
             writer.DecreaseIndent();
             if (!includeElse)
@@ -676,7 +683,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name}:");
+            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if hasattr(self, \"{otherProp.Name}\"):");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(None, self.{otherProp.Name})");
             writer.DecreaseIndent();
             if (!includeElse)
