@@ -18,17 +18,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        if (isNullableReferenceType)
-        {
-            CSharpConventionService.WriteNullableOpening(writer);
-            WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            CSharpConventionService.WriteNullableMiddle(writer);
-        }
-
-        WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
-
-        if (isNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
+        WritePropertyInternal(codeElement, writer, isNullableReferenceType ? $"{propertyType}?" : propertyType);
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)

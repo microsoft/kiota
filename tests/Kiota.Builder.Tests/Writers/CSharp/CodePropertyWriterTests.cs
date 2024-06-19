@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
@@ -84,7 +84,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"{TypeName} {PropertyName}", result);
+        Assert.Contains($"{TypeName}? {PropertyName}", result);
         Assert.Contains("get; set;", result);
     }
     [Fact]
@@ -103,7 +103,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<" + rootNamespace.Name + ".SomeCustomClass>(\"propertyName\"); }", result);
+        Assert.Contains("get { return BackingStore?.Get<" + rootNamespace.Name + ".SomeCustomClass?>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]

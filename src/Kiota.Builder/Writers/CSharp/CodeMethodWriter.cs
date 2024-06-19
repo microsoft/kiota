@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
@@ -631,18 +631,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                                         GetParameterSignatureWithNullableRefType(p, code) :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            CSharpConventionService.WriteNullableOpening(writer);
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix}");
-            writer.WriteLine("{");
-            CSharpConventionService.WriteNullableMiddle(writer);
         }
-
-        writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix}");
+        else
+        {
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix}");
+        }
         writer.WriteLine("{");
-
-        if (includeNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
-
     }
 
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -21,23 +21,6 @@ public class CSharpConventionService : CommonLanguageConventionService
     public const string NullableEnableDirective = "#nullable enable";
     public const string NullableRestoreDirective = "#nullable restore";
 
-    public static void WriteNullableOpening(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER", false);
-        writer.WriteLine(NullableEnableDirective, false);
-    }
-    public static void WriteNullableMiddle(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine(NullableRestoreDirective, false);
-        writer.WriteLine("#else", false);
-    }
-    public static void WriteNullableClosing(LanguageWriter writer)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteLine("#endif", false);
-    }
     private const string ReferenceTypePrefix = "<see cref=\"";
     private const string ReferenceTypeSuffix = "\"/>";
 #pragma warning disable S1006 // Method overrides should not change parameter defaults
