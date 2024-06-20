@@ -54,7 +54,42 @@ _The resulting API Plugin named `github-apiplugin.json` will look like this:_
 
 ```jsonc
 {
-    
+  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "GitHub v3 REST API",
+  "description_for_human": "GitHub\u0026apos;s v3 REST API.",
+  "description_for_model": "GitHub\u0026apos;s v3 REST API.",
+  "logo_url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_github_profile_image.jpeg",
+  "contact_email": "publisher-email@example.com",
+  "namespace": "GitHubReposOwner",
+  "capabilities": {
+    "localization": {}
+  },
+  "functions": [
+    {
+      "name": "repos_get",
+      "description": "Get a repository"
+    },
+    {
+      "name": "repos_update",
+      "description": "Update a repository"
+    }
+  ],
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "None"
+      },
+      "spec": {
+        "url": "githubreposowner-openapi.yml"
+      },
+      "run_for_functions": [
+        "repos_get",
+        "repos_update"
+      ]
+    }
+  ]
 }
 ```
 
