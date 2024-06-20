@@ -171,7 +171,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Threading.Tasks", "Task"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-            "System.Linq", "Enumerable"),
+            ExtensionsNamespaceName, "Enumerable"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             StoreNamespaceName,  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
@@ -218,6 +218,10 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         ArgumentNullException.ThrowIfNull(currentMethod);
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+                                                .Select(x => x.Type)
+                                                .Union(new[] { currentMethod.ReturnType })
+                                                .ToArray());
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.PathQueryAndHeaderParameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());

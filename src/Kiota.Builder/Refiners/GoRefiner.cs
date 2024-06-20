@@ -19,6 +19,7 @@ public class GoRefiner : CommonLanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
+            NormalizeNamespaceNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -756,5 +757,26 @@ public class GoRefiner : CommonLanguageRefiner
                 parameter.Type.Name = currentInnerClass.Name;
         }
         CrawlTree(currentElement, RenameInnerModelsToAppended);
+    }
+
+    private void NormalizeNamespaceNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            var clientNamespace = _configuration.ClientNamespaceName;
+            var namespaceName = codeNamespace.Name;
+            if (namespaceName.StartsWith(clientNamespace, StringComparison.OrdinalIgnoreCase) && !namespaceName.Equals(clientNamespace, StringComparison.OrdinalIgnoreCase))
+            {
+                var secondPart = namespaceName[clientNamespace.Length..]; // The rest of the name after the clientNamespace
+                var withEmptyRemoved = string.Join('.', secondPart.Split('.', StringSplitOptions.RemoveEmptyEntries));
+                var normalizedString = string.IsNullOrEmpty(withEmptyRemoved) switch
+                {
+                    true => string.Empty,
+                    false => $".{withEmptyRemoved}"
+                };
+                codeNamespace.Name = $"{clientNamespace}{normalizedString.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, NormalizeNamespaceNames);
     }
 }

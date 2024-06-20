@@ -2,7 +2,7 @@
 
 astroid==3.2.2 ; python_full_version >= '3.7.2'
 
-certifi==2024.2.2 ; python_version >= '3.6'
+certifi==2024.6.2 ; python_version >= '3.6'
 
 charset-normalizer==3.3.2 ; python_full_version >= '3.7.0'
 
@@ -34,19 +34,19 @@ mypy==1.10.0
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
-packaging==24.0 ; python_version >= '3.7'
+packaging==24.1 ; python_version >= '3.7'
 
 platformdirs==4.2.2 ; python_version >= '3.7'
 
 pluggy==1.5.0 ; python_version >= '3.7'
 
-pylint==3.2.2
+pylint==3.2.3
 
-pytest==8.2.1
+pytest==8.2.2
 
 pytest-asyncio==0.23.7
 
-requests==2.31.0 ; python_version >= '3.7'
+requests==2.32.3 ; python_version >= '3.7'
 
 toml==0.10.2
 
@@ -56,33 +56,33 @@ tomli-w==1.0.0 ; python_version >= '3.7'
 
 tomlkit==0.12.5 ; python_version >= '3.7'
 
-typing-extensions==4.11.0 ; python_version >= '3.7'
+typing-extensions==4.12.2 ; python_version >= '3.7'
 
-urllib3==2.2.1 ; python_version >= '3.7'
+urllib3==2.2.2 ; python_version >= '3.7'
 
 wrapt==1.15.0 ; python_version < '3.11'
 
 yapf==0.40.2
 
-zipp==3.18.2 ; python_version >= '3.7'
+zipp==3.19.2 ; python_version >= '3.7'
 
 aiohttp==3.9.5 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
-anyio==4.3.0 ; python_version >= '3.7'
+anyio==4.4.0 ; python_version >= '3.7'
 
 async-timeout==4.0.3 ; python_version >= '3.6'
 
 attrs==23.2.0 ; python_version >= '3.7'
 
-azure-core==1.30.1 ; python_version >= '3.7'
+azure-core==1.30.2 ; python_version >= '3.7'
 
-azure-identity==1.16.0
+azure-identity==1.17.0
 
 cffi==1.16.0
 
-cryptography==42.0.7 ; python_version >= '3.7'
+cryptography==42.0.8 ; python_version >= '3.7'
 
 frozenlist==1.4.1 ; python_version >= '3.7'
 
@@ -98,7 +98,7 @@ httpx[http2]==0.27.0
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.3.2
+microsoft-kiota-abstractions==1.3.3
 
 microsoft-kiota-authentication-azure==1.0.0
 
@@ -112,7 +112,7 @@ microsoft-kiota-serialization-form==0.1.0
 
 microsoft-kiota-serialization-multipart==0.1.0
 
-msal==1.28.0
+msal==1.28.1
 
 msal-extensions==1.1.0
 

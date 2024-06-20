@@ -10,18 +10,20 @@ on:
       - opened
     branches:
       - "main"
+  workflow_dispatch:
+    
 
 jobs:
   track_issue:
-    if: github.actor != 'dependabot[bot]'
+    if: github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.GRAPHBOT_APP_ID }}
-          private_key: ${{ secrets.GRAPHBOT_APP_PEM }}
+          app-id: ${{ secrets.GRAPHBOT_APP_ID }}
+          private-key: ${{ secrets.GRAPHBOT_APP_PEM }}
 
       - name: Check if issue has language specified
         env:
@@ -86,7 +88,7 @@ jobs:
 
           echo 'ITEM_ID='$item_id >> $GITHUB_ENV
 
-      - name: Set Language
+      - name: Set Language to Project
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
@@ -108,3 +110,42 @@ jobs:
                   }
               }
             }' -f project=$PROJECT_ID -f item=$ITEM_ID -f language_field=$LANGUAGE_FIELD_ID -f language_value=${{ env.LANGUAGE_OPTION_ID }} --silent
+
+      - name: Get label for selected language in repository
+        if: ${{ env.SELECTED_LANGUAGE != 'Multiple Languages'}}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          gh api graphql -f query='
+            query($repoOwner: String!, $repoName: String!) {
+              repository(owner: $repoOwner, name: $repoName) {
+                id,
+                labels(first: 100) {
+                  nodes{
+                    id,
+                    name
+                  }
+                }
+              }
+            }' -f repoOwner=${{github.repository_owner}} -f repoName=${{github.event.repository.name}} > issue_data.json
+
+          echo 'LANGUAGELABEL_ID='$(jq --arg lang "$SELECTED_LANGUAGE" '.data.repository.labels.nodes[] | select(.name==$lang) | .id' issue_data.json) >> $GITHUB_ENV
+
+      - name: Add label to issue
+        if: ${{ env.SELECTED_LANGUAGE != 'Multiple Languages'}}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          ISSUE_ID: ${{ github.event_name == 'issues' && github.event.issue.node_id || github.event.pull_request.node_id }}
+        run: |
+          gh api graphql -f query='
+            mutation (
+              $issue: ID!
+              $label: ID!
+            ) {
+              addLabelsToLabelable(input: {
+                labelableId: $issue
+                labelIds : [$label]
+              }) {
+                clientMutationId
+              }
+            }' -f issue=$ISSUE_ID -f label=$LANGUAGELABEL_ID --silent

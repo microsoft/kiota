@@ -51,7 +51,8 @@ public class PluginsGenerationService
         await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
-        OAIDocument.SerializeAsV3(descriptionWriter);
+        var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
         // write the plugins
@@ -66,7 +67,7 @@ public class PluginsGenerationService
 
             switch (pluginType)
             {
-                case PluginType.Microsoft:
+                case PluginType.APIPlugin:
                     var pluginDocument = GetManifestDocument(descriptionRelativePath);
                     pluginDocument.Write(writer);
                     break;
@@ -93,6 +94,58 @@ public class PluginsGenerationService
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
+
+
+    private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
+    {
+        // ensure the info and components are not null
+        doc.Info ??= new OpenApiInfo();
+        doc.Components ??= new OpenApiComponents();
+
+        if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
+            doc.Info!.Version = "1.0";
+
+        //empty out all the responses with a single empty 2XX
+        foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
+        {
+            var responseDescription = operation.Responses.Values.Select(static response => response.Description)
+                                                                      .FirstOrDefault(static desc => !string.IsNullOrEmpty(desc)) ?? "Api Response";
+            operation.Responses = new OpenApiResponses()
+            {
+                {
+                    "2XX",new OpenApiResponse
+                    {
+                        Description = responseDescription,
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            {
+                                "text/plain", new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // remove unused components using the OpenApi.Net
+        var requestUrls = new Dictionary<string, List<string>>();
+        var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
+        foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
+        {
+            var key = string.IsNullOrEmpty(basePath) ? path.Key : $"{basePath}/{path.Key.TrimStart(KiotaBuilder.ForwardSlash)}";
+            requestUrls[key] = path.Value.Operations.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
+        }
+
+        var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
+        return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
+    }
+
     private PluginManifestDocument GetV1ManifestDocument(string openApiDocumentPath)
     {
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
@@ -123,7 +176,8 @@ public class PluginsGenerationService
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
         {
-            SchemaVersion = "v2",
+            Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+            SchemaVersion = "v2.1",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
@@ -195,12 +249,6 @@ public class PluginsGenerationService
                     },
                     RunForFunctions = [operation.OperationId]
                 });
-                var oasParameters = operation.Parameters
-                                        .Union(pathItem.Parameters.Where(static x => x.In is ParameterLocation.Path))
-                                        .Where(static x => x.Schema?.Type is not null && scalarTypes.Contains(x.Schema.Type))
-                                        .ToArray();
-                //TODO add request body
-
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
@@ -208,22 +256,6 @@ public class PluginsGenerationService
                         operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary)
                             ? summary
                             : operation.Description.CleanupXMLString(),
-                    Parameters = oasParameters.Length == 0
-                        ? null
-                        : new Parameters
-                        {
-                            Type = "object",
-                            Properties = new Properties(oasParameters.ToDictionary(
-                                static x => x.Name,
-                                static x => new FunctionParameter()
-                                {
-                                    Type = x.Schema.Type ?? string.Empty,
-                                    Description = x.Description.CleanupXMLString(),
-                                    Default = x.Schema.Default?.ToString() ?? string.Empty,
-                                    //TODO enums
-                                })),
-                            Required = oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()
-                        },
                     States = GetStatesFromOperation(operation),
                 });
             }
@@ -270,6 +302,4 @@ public class PluginsGenerationService
         }
         return null;
     }
-    private static readonly HashSet<string> scalarTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "number", "integer", "boolean" };
-    //TODO validate this is right, in OAS integer are under type number for the json schema, but integer is ok for query parameters
 }

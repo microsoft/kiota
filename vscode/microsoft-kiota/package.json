@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.89.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
@@ -426,25 +426,25 @@
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.6",
     "@types/node": "20.x",
-    "@types/vscode": "^1.89.0",
+    "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
-    "@vscode/test-electron": "^2.3.10",
+    "@vscode/test-electron": "^2.4.0",
     "eslint": "^8.57.0",
-    "glob": "^10.3.15",
+    "glob": "^10.4.2",
     "mocha": "^10.4.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
-    "webpack": "^5.91.0",
+    "webpack": "^5.92.1",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.6",
     "@vscode/l10n": "^0.0.18",
-    "adm-zip": "^0.5.12",
+    "adm-zip": "^0.5.14",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
-    "vscode-jsonrpc": "^8.2.0"
+    "vscode-jsonrpc": "^8.2.1"
   },
   "preview": true,
   "runtimeDependencies": [

@@ -45,6 +45,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
+    public string GetComponentSchemaName(CodeNamespace modelsNamespace)
+    {
+        if (Kind is not CodeClassKind.Model ||
+                Parent is not CodeNamespace parentNamespace ||
+                !parentNamespace.IsChildOf(modelsNamespace))
+            return string.Empty;
+        return $"{parentNamespace.Name[(modelsNamespace.Name.Length + 1)..]}.{Name}";
+    }
     public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.IsLegacyIndexer);
     public void AddIndexer(params CodeIndexer[] indexers)
     {
