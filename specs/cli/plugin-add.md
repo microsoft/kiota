@@ -161,7 +161,7 @@ _The resulting `workspace.json` file will look like this:_
       "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "includePatterns": ["/repos/{owner}/{repo}"],
       "excludePatterns": [],
-      "type": ["openai", "apimanifest"],
+      "type": ["apiplugin", "apimanifest"],
       "outputDirectory": "./generated/plugins/github",
       "overlayDirectory": "./kiota/documents/github/overlay.yaml"
     }
@@ -172,7 +172,49 @@ _The resulting `workspace.json` file will look like this:_
 _The resulting API Plugin named `github-apiplugin.json` will look like this:_
 
 ```jsonc
-
+{
+  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "GitHub v3 REST API",
+  "description_for_human": "GitHub\u0026apos;s v3 REST API.",
+  "description_for_model": "GitHub\u0026apos;s v3 REST API.",
+  "logo_url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_github_profile_image.jpeg",
+  "contact_email": "publisher-email@example.com",
+  "namespace": "GitHubReposOwner",
+  "capabilities": {
+    "localization": {}
+  },
+  "functions": [
+    {
+      "name": "repos_delete",
+      "description": "Delete a repository"
+    },
+    {
+      "name": "repos_get",
+      "description": "Get a repository"
+    },
+    {
+      "name": "repos_update",
+      "description": "Update a repository"
+    }
+  ],
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "None"
+      },
+      "spec": {
+        "url": "githubreposowner-openapi.yml"
+      },
+      "run_for_functions": [
+        "repos_delete",
+        "repos_get",
+        "repos_update"
+      ]
+    }
+  ]
+}
 ```
 
 _The resulting API Manifest named `github-apimanifest.json` will look like this:_
