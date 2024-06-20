@@ -120,7 +120,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDefaultComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
-        var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName ?? throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
+        var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+        if (string.IsNullOrEmpty(discriminatorPropertyName))
+            throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"if ({paramName} === undefined) return;");
         writer.StartBlock($"switch ({paramName}.{discriminatorPropertyName}) {{");

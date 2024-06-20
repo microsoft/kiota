@@ -320,13 +320,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void RemoveUnusedDeserializerImport(List<CodeElement> children, CodeFunction factoryFunction)
     {
-        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is {} deserializerMethod)
+        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is { } deserializerMethod)
             factoryFunction.RemoveUsingsByDeclarationName(deserializerMethod.Name);
     }
 
     private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        if (FindFunctionOfKind(children, CodeMethodKind.Factory) is not {} factoryMethod) return;
+        if (FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } factoryMethod) return;
 
         var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
         var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
