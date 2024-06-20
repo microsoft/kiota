@@ -258,7 +258,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        var functions = GetRelevantFunctions(codeInterface, codeNamespace).ToArray();
+        var functions = GetSerializationAndFactoryFunctions(codeInterface, codeNamespace).ToArray();
 
         if (functions.Length == 0)
             return null;
@@ -269,7 +269,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
     }
 
-    private static IEnumerable<CodeFunction> GetRelevantFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    private static IEnumerable<CodeFunction> GetSerializationAndFactoryFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
         return codeNamespace.GetChildElements(true)
             .OfType<CodeFunction>()
@@ -281,7 +281,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static bool IsRelevantDeserializerOrSerializer(CodeFunction codeFunction, CodeInterface codeInterface)
     {
         return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
-            codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase));
+            codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type is CodeType codeType && codeType.TypeDefinition == codeInterface);
     }
 
     private static bool IsRelevantFactory(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
@@ -308,7 +308,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFunction? FindFunctionOfKind(List<CodeElement> elements, CodeMethodKind kind)
     {
-        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.Kind == kind);
+        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.IsOfKind(kind));
     }
 
     private static void RemoveOldCodeFunctionAndAddNewOne(List<CodeElement> children, CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction oldCodeFunction, CodeFunction newCodeFunction)
@@ -320,16 +320,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void RemoveUnusedDeserializerImport(List<CodeElement> children, CodeFunction factoryFunction)
     {
-        var deserializerMethod = FindFunctionOfKind(children, CodeMethodKind.Deserializer);
-        if (deserializerMethod is not null)
+        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is {} deserializerMethod)
             factoryFunction.RemoveUsingsByDeclarationName(deserializerMethod.Name);
     }
 
     private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var factoryMethod = FindFunctionOfKind(children, CodeMethodKind.Factory);
-
-        if (factoryMethod is null) return;
+        if (FindFunctionOfKind(children, CodeMethodKind.Factory) is not {} factoryMethod) return;
 
         var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
         var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
