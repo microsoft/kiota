@@ -295,13 +295,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
     {
-        CodeFunction? codeFunction;
-        do
-        {
-            codeFunction = parentNamespace?.FindChildByName<CodeFunction>(functionName);
-            parentNamespace = parentNamespace?.Parent?.GetImmediateParentOfType<CodeNamespace>();
-        } while (!functionName.Equals(codeFunction?.Name, StringComparison.Ordinal) && parentNamespace is not null);
-        return codeFunction;
+        return parentNamespace?.GetRootNamespace()?.FindChildByName<CodeFunction>(functionName);
     }
 
     private static string GetFunctionName(string returnType, CodeMethodKind functionKind)
