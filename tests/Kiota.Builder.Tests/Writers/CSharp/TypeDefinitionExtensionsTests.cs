@@ -37,7 +37,7 @@ public sealed class TypeDefinitionExtensionsTests
 
         var fullName = TypeDefinitionExtensions.GetFullName(myClass);
 
-        Assert.Equal("MyNamespace.MyClass", fullName);
+        Assert.Equal("global::MyNamespace.MyClass", fullName);
     }
 
     [Fact]
@@ -62,8 +62,8 @@ public sealed class TypeDefinitionExtensionsTests
         var parentClassFullName = TypeDefinitionExtensions.GetFullName(myParentClass);
         var nestedClassFullName = TypeDefinitionExtensions.GetFullName(myNestedClass);
 
-        Assert.Equal("MyNamespace.MyParentClass", parentClassFullName);
-        Assert.Equal("MyNamespace.MyParentClass.MyNestedClass", nestedClassFullName);
+        Assert.Equal("global::MyNamespace.MyParentClass", parentClassFullName);
+        Assert.Equal("global::MyNamespace.MyParentClass.MyNestedClass", nestedClassFullName);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public sealed class TypeDefinitionExtensionsTests
 
         var nestedClassFullName = TypeDefinitionExtensions.GetFullName(myNestedClass);
 
-        Assert.Equal("myNamespace.MyParentClass.MyNestedClass", nestedClassFullName);
+        Assert.Equal("global::myNamespace.MyParentClass.MyNestedClass", nestedClassFullName);
     }
 
     [Fact]

@@ -33,7 +33,7 @@ internal static class TypeDefinitionExtensions
             case CodeNamespace codeNamespace:
                 {
                     if (!string.IsNullOrEmpty(codeNamespace.Name))
-                        fullNameBuilder.Insert(0, $"{codeNamespace.Name}.");
+                        fullNameBuilder.Insert(0, $"global::{codeNamespace.Name}.");
 
                     return fullNameBuilder;
                 }
