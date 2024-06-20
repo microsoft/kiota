@@ -18,7 +18,7 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 | `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | Yes, without its value |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /repos/{owner}/{repo}#DELETE | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
-| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `name_to_be_defined`, `openai` and `apimanifest`.| Yes |
+| `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `apiplugin`, `openai` and `apimanifest`.| Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the current working directory. Defaults to `./output`. | Yes, without its value |
 
@@ -50,25 +50,46 @@ _The resulting `workspace.json` file will look like this:_
 }
 ```
 
-_The resulting OpenAI plugin named `openai-plugins.json` will look like this:_
+_The resulting API Plugin named `github-apiplugin.json` will look like this:_
 
 ```jsonc
 {
-    "schema_version": "v1",
-    "name_for_human": "GitHub Repository Plugin",
-    "name_for_model": "github",
-    "description_for_human": "Manage GitHub repositories.",
-    "description_for_model": "Help the user with managing a GitHub repositories. You can view and update repositories.",
-    "auth": {
-        "type": "none"
+  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "GitHub v3 REST API",
+  "description_for_human": "GitHub\u0026apos;s v3 REST API.",
+  "description_for_model": "GitHub\u0026apos;s v3 REST API.",
+  "logo_url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_github_profile_image.jpeg",
+  "contact_email": "publisher-email@example.com",
+  "namespace": "GitHubReposOwner",
+  "capabilities": {
+    "localization": {}
+  },
+  "functions": [
+    {
+      "name": "repos_get",
+      "description": "Get a repository"
     },
-    "api": {
-        "type": "openapi",
-        "url": "./github-openapi.json"
-    },
-    "logo_url": "https://example.com/logo.png",
-    "contact_email": "githubsupport@example.com",
-    "legal_info_url": "http://www.example.com/view-plugin-information"
+    {
+      "name": "repos_update",
+      "description": "Update a repository"
+    }
+  ],
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "None"
+      },
+      "spec": {
+        "url": "githubreposowner-openapi.yml"
+      },
+      "run_for_functions": [
+        "repos_get",
+        "repos_update"
+      ]
+    }
+  ]
 }
 ```
 
@@ -141,8 +162,9 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
  └─generated
     └─plugins
       └─github
+          └─manifest.json # App manifest
           └─github-apimanifest.json # Specific API Manifest
-          └─openai-plugins.json #OpenAI Plugin
+          └─github-apiplugin.json #API Plugin
           └─github-openapi.json # Sliced and augmented OpenAPI document
 ```
 
