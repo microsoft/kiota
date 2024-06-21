@@ -8,6 +8,10 @@ This repository contains the specifications for the Kiota project. The goal of t
 * [kiota client edit](./cli/client-edit.md)
 * [kiota client remove](./cli/client-remove.md)
 * [kiota client generate](./cli/client-generate.md)
+* [kiota plugin add](./cli/plugin-add.md)
+* [kiota plugin edit](./cli/plugin-edit.md)
+* [kiota plugin remove](./cli/plugin-remove.md)
+* [kiota plugin generate](./cli/plugin-generate.md)
 * [kiota workspace init](./cli/workspace-init.md)
 * [kiota workspace migrate](./cli/workspace-migrate.md)
 * [kiota download](./cli/download.md)
@@ -17,11 +21,13 @@ This repository contains the specifications for the Kiota project. The goal of t
 * [kiota search](./cli/search.md)
 * [kiota show](./cli/show.md)
 
-## Extension
+## OpenAPI Extensions
+* [OpenAPI extensions](./extensions/openapi-extensions.md)
 
 ## Scenarios
 
 * [Kiota Config](./scenarios/kiota-workspace.md)
+* [Plugins](./scenarios/plugins.md)
 * [Telemetry](./scenarios/telemetry.md)
 
 ## Schemas
