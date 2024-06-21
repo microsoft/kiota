@@ -137,4 +137,20 @@ public sealed class TypeDefinitionExtensionsTests
 
         Assert.Equal("MyClass", fullName);
     }
+
+    [Fact]
+    public void PrependsGlobalNamespaceAliasToNamespaces()
+    {
+        var rootNamespace = CodeNamespace.InitRootNamespace();
+        var myNamespace = rootNamespace.AddNamespace("MyNamespace");
+        var myClass = new CodeClass()
+        {
+            Name = "MyClass"
+        };
+        myNamespace.AddClass(myClass);
+
+        var fullName = TypeDefinitionExtensions.GetFullName(myClass);
+
+        Assert.StartsWith("global::", fullName, StringComparison.Ordinal);
+    }
 }
