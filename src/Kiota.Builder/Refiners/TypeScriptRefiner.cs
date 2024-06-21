@@ -380,7 +380,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
     {
-        var method = CreateCodeMethod(codeInterface, function);
+        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
         if (composedType is not null && IsComposedOfPrimitives(composedType))
             method.ReturnType = composedType;
         return method;
@@ -388,7 +388,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeMethod CreateSerializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function, CodeComposedTypeBase composedType)
     {
-        var method = CreateCodeMethod(codeInterface, function);
+        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
         // Add the key parameter if the composed type is a union of primitive values
         if (IsComposedOfPrimitives(composedType))
             method.AddParameter(CreateKeyParameter());
@@ -397,26 +397,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function)
     {
-        var method = CreateCodeMethod(codeInterface, function);
-        return method;
-    }
-
-    private static CodeMethod CreateCodeMethod(CodeInterface codeInterface, CodeFunction function)
-    {
-        var method = new CodeMethod
-        {
-            Name = function.OriginalLocalMethod.Name,
-            ReturnType = function.OriginalLocalMethod.ReturnType,
-            Kind = GetComposedTypeMethodKind(function),
-            Access = function.OriginalLocalMethod.Access,
-            IsAsync = function.OriginalLocalMethod.IsAsync,
-            IsStatic = function.OriginalLocalMethod.IsStatic,
-            Documentation = function.OriginalLocalMethod.Documentation,
-            Parent = codeInterface.OriginalClass,
-        };
-
-        method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
-
+        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
         return method;
     }
 

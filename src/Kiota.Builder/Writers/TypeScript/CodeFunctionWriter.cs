@@ -278,7 +278,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string GetParseNodeParameterForPrimitiveValues(CodeFunction codeElement, CodeParameter? parseNodeParameter)
     {
-        if (GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType) && parseNodeParameter is not null)
+        if (GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType) is { } composedType && IsComposedOfPrimitives(composedType) && parseNodeParameter is not null)
         {
             return $"({parseNodeParameter.Name.ToFirstCharacterLowerCase()})";
         }
@@ -287,7 +287,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind)
     {
-        var functionName = GetFunctionName(returnType, kind);
+        var functionName = CreateSerializationFunctionNameFromType(returnType, kind);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         var codeFunction = FindCodeFunctionInParentNamespaces(functionName, parentNamespace);
         return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
@@ -295,16 +295,19 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
     {
-        CodeFunction? codeFunction;
-        do
+        CodeFunction? codeFunction = null;
+
+        for (var currentNamespace = parentNamespace; 
+            currentNamespace is not null && !functionName.Equals(codeFunction?.Name, StringComparison.Ordinal); 
+            currentNamespace = currentNamespace.Parent?.GetImmediateParentOfType<CodeNamespace>())
         {
-            codeFunction = parentNamespace?.FindChildByName<CodeFunction>(functionName);
-            parentNamespace = parentNamespace?.Parent?.GetImmediateParentOfType<CodeNamespace>();
-        } while (!functionName.Equals(codeFunction?.Name, StringComparison.Ordinal) && parentNamespace is not null);
+            codeFunction = currentNamespace.FindChildByName<CodeFunction>(functionName);
+        }
+
         return codeFunction;
     }
 
-    private static string GetFunctionName(string returnType, CodeMethodKind functionKind)
+    private static string CreateSerializationFunctionNameFromType(string returnType, CodeMethodKind functionKind)
     {
         return functionKind switch
         {
