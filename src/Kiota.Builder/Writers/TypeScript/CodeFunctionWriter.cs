@@ -297,8 +297,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         CodeFunction? codeFunction = null;
 
-        for (var currentNamespace = parentNamespace; 
-            currentNamespace is not null && !functionName.Equals(codeFunction?.Name, StringComparison.Ordinal); 
+        for (var currentNamespace = parentNamespace;
+            currentNamespace is not null && !functionName.Equals(codeFunction?.Name, StringComparison.Ordinal);
             currentNamespace = currentNamespace.Parent?.GetImmediateParentOfType<CodeNamespace>())
         {
             codeFunction = currentNamespace.FindChildByName<CodeFunction>(functionName);
