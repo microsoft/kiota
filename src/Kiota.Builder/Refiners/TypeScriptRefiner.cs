@@ -343,8 +343,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var function = FindFunctionOfKind(children, CodeMethodKind.Serializer);
-        if (function is null) return;
+        if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
 
         var method = CreateSerializerMethodForComposedType(codeInterface, function, composedType);
         var serializerFunction = new CodeFunction(method) { Name = method.Name };
@@ -355,9 +354,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
-        var deserializerMethod = FindFunctionOfKind(children, CodeMethodKind.Deserializer);
-
-        if (deserializerMethod is null) return;
+        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
 
         // For code union Deserializer is not required, however its needed for Object Intersection types
         if (composedType is CodeIntersectionType && !IsComposedOfPrimitives(composedType))
