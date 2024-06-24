@@ -78,7 +78,7 @@ attrs==23.2.0 ; python_version >= '3.7'
 
 azure-core==1.30.2 ; python_version >= '3.7'
 
-azure-identity==1.17.0
+azure-identity==1.17.1
 
 cffi==1.16.0
 
