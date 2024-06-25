@@ -498,7 +498,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
         if (otherProp.Kind is CodePropertyKind.BackingStore)
             writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
-        else if (GetOriginalComposedType(otherProp.Type) is not null)
+        else if (GetOriginalComposedType(otherProp.Type) is { } composedType && IsComposedOfPrimitives(composedType))
         {
             writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = {GetFactoryMethodName(otherProp.Type, codeFunction)}(n); }},");
         }
