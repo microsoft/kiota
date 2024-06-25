@@ -120,14 +120,33 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDefaultComposedTypeSerialization(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
-        var discriminatorPropertyName = codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+        var discriminatorInfo = codeElement.OriginalMethodParentClass.DiscriminatorInformation;
+        var discriminatorPropertyName = discriminatorInfo.DiscriminatorPropertyName;
+
         if (string.IsNullOrEmpty(discriminatorPropertyName))
-            throw new InvalidOperationException("Discriminator property name is required for composed type serialization");
+        {
+            WriteMissingDiscriminatorPropertyComment(composedParam, codeElement, writer);
+            return;
+        }
+
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"if ({paramName} === undefined) return;");
-        writer.StartBlock($"switch ({paramName}.{discriminatorPropertyName}) {{");
+        WriteDiscriminatorSwitchBlock(discriminatorInfo, paramName, codeElement, writer);
+    }
 
-        foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
+    private void WriteMissingDiscriminatorPropertyComment(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
+    {
+        var typeString = GetTypescriptTypeString(composedParam.Type, codeElement, inlineComposedTypeString: true);
+        var comment = $"The composed parameter '{composedParam.Name}' consists of {typeString}. However, it lacks a discriminator property, which is necessary for proper type differentiation. Please update the OpenAPI specification to include a discriminator property to ensure correct method generation.";
+        writer.WriteLine($"// {comment}");
+        writer.WriteLine("return;");
+    }
+
+    private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
+    {
+        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName}) {{");
+
+        foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
             writer.StartBlock($"case \"{mappedType.Key}\":");
             var mappedTypeName = mappedType.Value.Name.ToFirstCharacterUpperCase();
