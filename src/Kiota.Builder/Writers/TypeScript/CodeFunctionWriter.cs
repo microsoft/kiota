@@ -434,7 +434,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return new CodeType
         {
             Name = composedType.Name,
-            TypeDefinition = composedType
+            TypeDefinition = composedType,
+            CollectionKind = composedType.CollectionKind
         };
     }
 
