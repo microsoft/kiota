@@ -124,7 +124,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
+        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.type\")", result);
         Assert.Contains("if (mappingValueNode) {", result);
         Assert.Contains("const mappingValue = mappingValueNode.getStringValue()", result);
         Assert.Contains("if (mappingValue) {", result);
