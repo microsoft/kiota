@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Implemented partial class model declarations. [4894](https://github.com/microsoft/kiota/issues/4894)
+
 ### Added
 
 ### Changed
