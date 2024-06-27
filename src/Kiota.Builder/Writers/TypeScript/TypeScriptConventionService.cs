@@ -178,12 +178,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 
-    public static string TranslateType(CodeComposedTypeBase composedType)
-    {
-        ArgumentNullException.ThrowIfNull(composedType);
-        return composedType.Name.ToFirstCharacterUpperCase();
-    }
-
     public override string TranslateType(CodeType type)
     {
         return TranslateTypescriptType(type);
@@ -198,6 +192,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_GUID => TYPE_GUID,
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),
             null => TYPE_OBJECT,
+            _ when type is CodeComposedTypeBase composedType => composedType.Name.ToFirstCharacterUpperCase(),
             _ when type is CodeType codeType => GetCodeTypeName(codeType) is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : TYPE_OBJECT,
             _ => throw new InvalidOperationException($"Unable to translate type {type.Name}")
         };
@@ -281,7 +276,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter? writer = null)
     {
         var composedType = GetOriginalComposedType(targetClassType);
-        string targetClassName = composedType is not null ? TranslateType(composedType) : TranslateTypescriptType(targetClassType);
+        string targetClassName = TranslateTypescriptType(composedType ?? targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
         if (GetTypescriptTypeString(targetClassType, currentElement, false, writer) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
         if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)

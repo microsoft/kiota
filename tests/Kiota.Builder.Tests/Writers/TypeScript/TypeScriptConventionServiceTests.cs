@@ -31,14 +31,15 @@ public class TypeScriptConventionServiceTests
     [Fact]
     public void TranslateType_ThrowsArgumentNullException_WhenComposedTypeIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => TypeScriptConventionService.TranslateType(null));
+        var result = TypeScriptConventionService.TranslateTypescriptType(null);
+        Assert.Equal(result, TypeScriptConventionService.TYPE_OBJECT);
     }
 
     [Fact]
     public void TranslateType_ReturnsCorrectTranslation_WhenComposedTypeIsNotNull()
     {
         var composedType = new CodeUnionType { Name = "test" };
-        var result = TypeScriptConventionService.TranslateType(composedType);
+        var result = TypeScriptConventionService.TranslateTypescriptType(composedType);
         Assert.Equal("Test", result);
     }
 }

@@ -134,7 +134,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         WriteDiscriminatorSwitchBlock(discriminatorInfo, paramName, codeElement, writer);
     }
 
-    private void WriteMissingDiscriminatorPropertyComment(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
+    private static void WriteMissingDiscriminatorPropertyComment(CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
         var typeString = GetTypescriptTypeString(composedParam.Type, codeElement, inlineComposedTypeString: true);
         var comment = $"The composed parameter '{composedParam.Name}' consists of {typeString}. However, it lacks a discriminator property, which is necessary for proper type differentiation. Please update the OpenAPI specification to include a discriminator property to ensure correct method generation.";
