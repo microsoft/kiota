@@ -392,12 +392,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return method;
     }
 
-    private static CodeMethod CreateDeserializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function)
-    {
-        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
-        return method;
-    }
-
     private static CodeMethodKind GetComposedTypeMethodKind(CodeFunction function)
     {
         return function.OriginalLocalMethod.Kind switch
