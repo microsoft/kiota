@@ -32,7 +32,7 @@ public class TypeScriptConventionServiceTests
     public void TranslateType_ThrowsArgumentNullException_WhenComposedTypeIsNull()
     {
         var result = TypeScriptConventionService.TranslateTypescriptType(null);
-        Assert.Equal(result, TypeScriptConventionService.TYPE_OBJECT);
+        Assert.Equal(TypeScriptConventionService.TYPE_OBJECT, result);
     }
 
     [Fact]
