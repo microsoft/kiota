@@ -180,6 +180,7 @@ export async function activate(
       `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
         const yesAnswer = vscode.l10n.t("Yes, override it");
+        console.log(openApiTreeProvider.hasSelectionChanged());
         if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasSelectionChanged()) {
           const response = await vscode.window.showWarningMessage(
             vscode.l10n.t(
@@ -302,8 +303,9 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
-      await updateTreeViewIcons(treeViewId, false, true);
+      await updateTreeViewIcons(treeViewId, false, true);      
       await exportLogsAndShowErrors(result);
     }
   }
@@ -344,6 +346,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -415,6 +418,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.clientClassName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);

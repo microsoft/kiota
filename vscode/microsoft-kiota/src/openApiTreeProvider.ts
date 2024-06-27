@@ -171,8 +171,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public hasSelectionChanged(): boolean {
         return this.selectionChanged;
     }
-    public setSelectionChanged() {
-        this.selectionChanged = true;
+    public setSelectionChanged(state: boolean) {
+        this.selectionChanged = state;
     }
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
@@ -196,7 +196,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
-        this.setSelectionChanged();
+        this.setSelectionChanged(true);
+        console.log("selected:", this.hasSelectionChanged())
         const isOperationNode = apiNode.isOperation ?? false;
         if (recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
@@ -206,7 +207,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
             if (parent) {
                 parent.selected = selected;
-                this.setSelectionChanged();
+                this.setSelectionChanged(true);
             }
         }
     }
