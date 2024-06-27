@@ -1,0 +1,290 @@
+{
+    "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+    "schema_version": "v2.1",
+    "name_for_human": "GitHub v3 REST API",
+    "description_for_human": "GitHub\u0026apos;s v3 REST API.",
+    "description_for_model": "GitHub\u0026apos;s v3 REST API.",
+    "logo_url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_github_profile_image.jpeg",
+    "namespace": "GitHubSearchPlugin",
+    "capabilities": {
+        "localization": {}
+    },
+    "functions": [
+        {
+            "name": "repos/list-public",
+            "description": "List public repositories",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "since": {
+                        "type": "integer",
+                        "description": "A repository ID. Only return repositories with an ID greater than this ID."
+                    }
+                },
+                "required": []
+            }
+        },
+        {
+            "name": "search/code",
+            "description": "Search code",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See \u0026quot;[Searching code](https://docs.github.com/search-github/searching-on-github/searching-code)\u0026quot; for a detailed list of qualifiers."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query. Can only be \u0060indexed\u0060, which indicates how recently a file has been indexed by the GitHub search infrastructure. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/commits",
+            "description": "Search commits",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See \u0026quot;[Searching commits](https://docs.github.com/search-github/searching-on-github/searching-commits)\u0026quot; for a detailed list of qualifiers."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query by \u0060author-date\u0060 or \u0060committer-date\u0060. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/issues-and-pull-requests",
+            "description": "Search issues and pull requests",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See \u0026quot;[Searching issues and pull requests](https://docs.github.com/search-github/searching-on-github/searching-issues-and-pull-requests)\u0026quot; for a detailed list of qualifiers."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query by the number of \u0060comments\u0060, \u0060reactions\u0060, \u0060reactions-\u002B1\u0060, \u0060reactions--1\u0060, \u0060reactions-smile\u0060, \u0060reactions-thinking_face\u0060, \u0060reactions-heart\u0060, \u0060reactions-tada\u0060, or \u0060interactions\u0060. You can also sort results by how recently the items were \u0060created\u0060 or \u0060updated\u0060, Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/labels",
+            "description": "Search labels",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "repository_id": {
+                        "type": "integer",
+                        "description": "The id of the repository."
+                    },
+                    "q": {
+                        "type": "string",
+                        "description": "The search keywords. This endpoint does not accept qualifiers in the query. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query)."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query by when the label was \u0060created\u0060 or \u0060updated\u0060. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "repository_id",
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/repos",
+            "description": "Search repositories",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See \u0026quot;[Searching for repositories](https://docs.github.com/articles/searching-for-repositories/)\u0026quot; for a detailed list of qualifiers."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query by number of \u0060stars\u0060, \u0060forks\u0060, or \u0060help-wanted-issues\u0060 or how recently the items were \u0060updated\u0060. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/topics",
+            "description": "Search topics",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query)."
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        },
+        {
+            "name": "search/users",
+            "description": "Search users",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See \u0026quot;[Searching users](https://docs.github.com/search-github/searching-on-github/searching-users)\u0026quot; for a detailed list of qualifiers."
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sorts the results of your query by number of \u0060followers\u0060 or \u0060repositories\u0060, or when the person \u0060joined\u0060 GitHub. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "description": "Determines whether the first search result returned is the highest number of matches (\u0060desc\u0060) or lowest number of matches (\u0060asc\u0060). This parameter is ignored unless you provide \u0060sort\u0060.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiString"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "The number of results per page (max 100).",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "description": "Page number of the results to fetch.",
+                        "default": "Microsoft.OpenApi.Any.OpenApiInteger"
+                    }
+                },
+                "required": [
+                    "q"
+                ]
+            }
+        }
+    ],
+    "runtimes": [
+        {
+            "type": "OpenApi",
+            "auth": {
+                "type": "None"
+            },
+            "spec": {
+                "url": "githubsearchplugin-openapi.yml"
+            },
+            "run_for_functions": [
+                "repos/list-public",
+                "search/code",
+                "search/commits",
+                "search/issues-and-pull-requests",
+                "search/labels",
+                "search/repos",
+                "search/topics",
+                "search/users"
+            ]
+        }
+    ]
+}

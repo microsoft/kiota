@@ -74,7 +74,7 @@ jobs:
         run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, env.PREVIEW_BRANCH)
-        uses: docker/build-push-action@v6.0.0
+        uses: docker/build-push-action@v6.2.0
         with:
           push: true
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
@@ -84,7 +84,7 @@ jobs:
           # we can't get the sequence number from ADO so we default it back to github run number
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
-        uses: docker/build-push-action@v6.0.0
+        uses: docker/build-push-action@v6.2.0
         with:
           push: true
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7

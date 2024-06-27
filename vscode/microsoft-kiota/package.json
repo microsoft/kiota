@@ -439,18 +439,18 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
-    "@types/mocha": "^10.0.6",
+    "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
     "@vscode/test-electron": "^2.4.0",
     "eslint": "^8.57.0",
-    "glob": "^10.4.1",
-    "mocha": "^10.4.0",
+    "glob": "^10.4.2",
+    "mocha": "^10.5.2",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.5",
-    "webpack": "^5.92.0",
+    "typescript": "^5.5.2",
+    "webpack": "^5.92.1",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {

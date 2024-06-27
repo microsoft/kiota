@@ -737,8 +737,8 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.Contains("return mappingValue switch", result);
-        Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
-        Assert.Contains("_ => new models.ConflictingModelBaseClass()", result);
+        Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new global::namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
+        Assert.Contains("_ => new global::models.ConflictingModelBaseClass()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1532,7 +1532,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::{modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesConstructorAndIncludesSanitizedEnumValue()
@@ -1557,7 +1557,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("PictureSize.Slash", result);//ensure symbol is cleaned up
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::{modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesConstructorAndDisambiguatesEnumType()
@@ -1581,8 +1581,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains("models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+        Assert.Contains("global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
