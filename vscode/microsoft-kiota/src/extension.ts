@@ -302,6 +302,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -344,6 +345,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -415,6 +417,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.clientClassName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
