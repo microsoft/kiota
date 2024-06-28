@@ -29,7 +29,7 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -242,10 +242,10 @@ export async function activate(
       );
       return;
     }
-    if(workspaceGenerationType === 'client') {
+    if(workspaceGenerationType === CLIENT) {
       await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);    
     }
-    else if (workspaceGenerationType === 'plugin')  {
+    else if (workspaceGenerationType === PLUGIN)  {
       await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
     }
     }),
