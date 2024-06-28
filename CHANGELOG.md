@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Implemented partial class model declarations. [4894](https://github.com/microsoft/kiota/issues/4894)
+- Fixed a bug where the Go file names were too long
 
 ### Added
 
