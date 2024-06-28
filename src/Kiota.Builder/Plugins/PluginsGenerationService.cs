@@ -97,11 +97,11 @@ public class PluginsGenerationService
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
-        
+
         // 3. write the app manifest
         var manifestFullPath = Path.Combine(Configuration.OutputPath, AppManifestFileName);
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
-        var developerInfo = new Developer(OAIDocument.Info?.Contact?.Name, OAIDocument.Info?.Contact?.Url?.OriginalString , manifestInfo.PrivacyUrl,OAIDocument.Info?.TermsOfService?.OriginalString);
+        var developerInfo = new Developer(OAIDocument.Info?.Contact?.Name, OAIDocument.Info?.Contact?.Url?.OriginalString, manifestInfo.PrivacyUrl, OAIDocument.Info?.TermsOfService?.OriginalString);
         // create default model
         AppManifestModel manifestModel = new AppManifestModel(
             Configuration.ClientClassName,
@@ -110,13 +110,13 @@ public class PluginsGenerationService
         {
             Developer = developerInfo
         };
-        
+
         if (File.Exists(manifestFullPath)) // No need for default, try to update the model from the file
         {
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
             await using var fileStream = File.OpenRead(manifestFullPath);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-            var manifestModelFromFile = await JsonSerializer.DeserializeAsync(fileStream,AppManifestModelGenerationContext.AppManifestModel,cancellationToken).ConfigureAwait(false);
+            var manifestModelFromFile = await JsonSerializer.DeserializeAsync(fileStream, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
             if (manifestModelFromFile != null)
                 manifestModel = manifestModelFromFile;
         }
@@ -128,20 +128,21 @@ public class PluginsGenerationService
         }
         else
         {
-            manifestModel.CopilotExtensions.Plugins.Add(new Plugin(Configuration.ClientClassName,pluginFileName));
+            manifestModel.CopilotExtensions.Plugins.Add(new Plugin(Configuration.ClientClassName, pluginFileName));
         }
 
 #pragma warning disable CA2007
         await using var appManifestStream = File.Open(manifestFullPath, FileMode.Create);
 #pragma warning restore CA2007
-        await JsonSerializer.SerializeAsync(appManifestStream,  manifestModel, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
+        await JsonSerializer.SerializeAsync(appManifestStream, manifestModel, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
     }
 
-    private static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions{
+    private static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions
+    {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
     });
-    
+
     private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
     {
         // ensure the info and components are not null

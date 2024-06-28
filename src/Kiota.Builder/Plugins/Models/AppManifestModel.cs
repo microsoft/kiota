@@ -11,13 +11,13 @@ public class AppManifestModel(string pluginName, string documentName, string doc
     public string ManifestVersion { get; set; } = "devPreview";
     public string Version { get; set; } = "1.0.0";
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    public Developer Developer { get; init; } = new ();
+    public Developer Developer { get; init; } = new();
     public string PackageName { get; set; } = $"com.microsoft.kiota.plugin.{pluginName}";
-    public Name Name { get; set; } = new (pluginName,documentName);
-    public Description Description { get; set; } = new (documentDescription,documentName);
-    public Icons Icons { get; set; } = new ();
+    public Name Name { get; set; } = new(pluginName, documentName);
+    public Description Description { get; set; } = new(documentDescription, documentName);
+    public Icons Icons { get; set; } = new();
     public string AccentColor { get; set; } = "#FFFFFF";
-    public CopilotExtensions CopilotExtensions { get; set; } = new ();
+    public CopilotExtensions CopilotExtensions { get; set; } = new();
 }
 
 [JsonSerializable(typeof(AppManifestModel))]
@@ -26,16 +26,16 @@ internal partial class AppManifestModelGenerationContext : JsonSerializerContext
 }
 
 #pragma warning disable CA1054
-public class Developer(string? name = null, string? websiteUrl= null, string? privacyUrl =null, string? termsOfUseUrl=null)
+public class Developer(string? name = null, string? websiteUrl = null, string? privacyUrl = null, string? termsOfUseUrl = null)
 #pragma warning restore CA1054
-{ 
-    public string Name { get; set; } = !string.IsNullOrEmpty(name) ? name: "Kiota Generator, Inc.";
+{
+    public string Name { get; set; } = !string.IsNullOrEmpty(name) ? name : "Kiota Generator, Inc.";
 #pragma warning disable CA1056
-    public string WebsiteUrl { get; set; } = !string.IsNullOrEmpty(websiteUrl) ? websiteUrl:"https://www.example.com/contact/";
-    public string PrivacyUrl { get; set; } = !string.IsNullOrEmpty(privacyUrl) ? privacyUrl:"https://www.example.com/privacy/";
-    public string TermsOfUseUrl { get; set; } = !string.IsNullOrEmpty(termsOfUseUrl) ? termsOfUseUrl:"https://www.example.com/terms/";
+    public string WebsiteUrl { get; set; } = !string.IsNullOrEmpty(websiteUrl) ? websiteUrl : "https://www.example.com/contact/";
+    public string PrivacyUrl { get; set; } = !string.IsNullOrEmpty(privacyUrl) ? privacyUrl : "https://www.example.com/privacy/";
+    public string TermsOfUseUrl { get; set; } = !string.IsNullOrEmpty(termsOfUseUrl) ? termsOfUseUrl : "https://www.example.com/terms/";
 #pragma warning restore CA1056
-} 
+}
 
 public class Name(string pluginName, string documentName)
 {
@@ -43,7 +43,7 @@ public class Name(string pluginName, string documentName)
     public string ShortName { get; private set; } = pluginName;
     [JsonPropertyName("full")]
     public string FullName { get; private set; } = $"API Plugin {pluginName} for {documentName}";
-} 
+}
 
 public class Description(string description, string documentName)
 {
@@ -51,7 +51,7 @@ public class Description(string description, string documentName)
     public string ShortName { get; private set; } = !string.IsNullOrEmpty(description) ? $"API Plugin for {description}." : documentName;
     [JsonPropertyName("full")]
     public string FullName { get; private set; } = !string.IsNullOrEmpty(description) ? $"API Plugin for {description}." : documentName;
-} 
+}
 
 public class Icons
 {
