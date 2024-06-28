@@ -37,6 +37,7 @@ let kiotaOutputChannel: vscode.LogOutputChannel;
 let clientOrPluginKey: string;
 let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
+let config: Partial<GenerateState>;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -137,7 +138,7 @@ export async function activate(
           return;
         }
         let languagesInformation = await getLanguageInformation(context);
-        const config = await generateSteps(
+        config = await generateSteps(
           {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
@@ -159,6 +160,7 @@ export async function activate(
         }
         
         const settings = getExtensionSettings(extensionId);
+        workspaceGenerationType = config.generationType as string;
         switch (generationType) {
           case GenerationType.Client:
             await generateClientAndRefreshUI(config, settings, outputPath, selectedPaths);
@@ -231,6 +233,7 @@ export async function activate(
      await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
+      clientOrPluginKey = config.clientClassName ? config.clientClassName! : config.pluginName!;
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -239,11 +242,11 @@ export async function activate(
       );
       return;
     }
-    if(workspaceGenerationType === CLIENTS) {
-      await regenerateClient(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);    
+    if(workspaceGenerationType === 'client') {
+      await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);    
     }
-    else if (workspaceGenerationType === PLUGINS)  {
-      await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
+    else if (workspaceGenerationType === 'plugin')  {
+      await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
     }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
@@ -432,22 +435,22 @@ export async function activate(
     }, async (progress, _) => {
       const result = await generateClient(
         context,
-        clientObject.descriptionLocation,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
         language,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
-        clientObject.excludePatterns,
+        clientObject.excludePatterns ? clientObject.excludePatterns : [],
         clientKey,
         clientObject.clientNamespaceName,
-        clientObject.usesBackingStore,
+        clientObject.usesBackingStore ? clientObject.usesBackingStore : settings.backingStore,
         true, // clearCache
         true, // cleanOutput
-        clientObject.excludeBackwardCompatible,
-        clientObject.disabledValidationRules,
+        clientObject.excludeBackwardCompatible ? clientObject.excludeBackwardCompatible : settings.excludeBackwardCompatible  ,
+        clientObject.disabledValidationRules  ? clientObject.disabledValidationRules : settings.disableValidationRules,
         settings.languagesSerializationConfiguration[language].serializers,
         settings.languagesSerializationConfiguration[language].deserializers,
-        clientObject.structuredMimeTypes,
-        clientObject.includeAdditionalData,
+        clientObject.structuredMimeTypes ? clientObject.structuredMimeTypes : settings.structuredMimeTypes,
+        clientObject.includeAdditionalData ? clientObject.includeAdditionalData : settings.includeAdditionalData,
         ConsumerOperation.Edit
     );
     return result;
@@ -465,7 +468,7 @@ export async function activate(
       const start = performance.now();
       const result = await generatePlugin(
         context,
-        clientObject.descriptionLocation,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
         [pluginTypes],
         selectedPaths ? selectedPaths : clientObject.includePatterns,
