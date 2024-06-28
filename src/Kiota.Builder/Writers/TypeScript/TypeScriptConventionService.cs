@@ -287,23 +287,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
-    public static T? GetParentOfTypeOrNull<T>(CodeElement codeElement) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(codeElement);
-        try
-        {
-            return codeElement.GetImmediateParentOfType<T>();
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-    }
-
     private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
     {
-        return GetParentOfTypeOrNull<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName)
-            ?? GetParentOfTypeOrNull<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
+        return definitionClass.GetImmediateParentOfType<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
     public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method)
