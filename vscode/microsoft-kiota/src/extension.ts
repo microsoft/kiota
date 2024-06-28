@@ -455,8 +455,8 @@ export async function activate(
     );
     return result;
     });
-    
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+  openApiTreeProvider.setSelectionChanged(false);
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
     const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.ApiPlugin;
@@ -490,6 +490,7 @@ export async function activate(
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+    openApiTreeProvider.setSelectionChanged(false);
   }
 
   // create a new status bar item that we can now manage
