@@ -35,7 +35,6 @@ import { updateTreeViewIcons } from "./util";
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
 let clientOrPluginKey: string;
-let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
 let config: Partial<GenerateState>;
 
@@ -227,7 +226,6 @@ export async function activate(
     ),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
      clientOrPluginKey = clientKey;
-     clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
      await updateTreeViewIcons(treeViewId, false, true);
