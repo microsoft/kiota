@@ -207,7 +207,6 @@ public class GoRefiner : CommonLanguageRefiner
                 "Error",
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
             );
-            NormalizeNamespaceNames(generatedCode);
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }
