@@ -490,7 +490,7 @@ paths:
         Assert.Null(originalAppManifestModelObject.PackageName);// package wasn't present
         Assert.Equal("Name of your app", originalAppManifestModelObject.Name.ShortName); // app name is same
         Assert.Equal("Publisher Name", originalAppManifestModelObject.Developer.Name); // app name is same
-        Assert.Empty(originalAppManifestModelObject.CopilotExtensions.Plugins); // no plugins present
+        Assert.Null(originalAppManifestModelObject.CopilotExtensions?.Plugins); // no plugins present
 
         // Run the plugin generation
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);

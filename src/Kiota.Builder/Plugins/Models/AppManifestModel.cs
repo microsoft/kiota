@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -8,33 +7,51 @@ namespace Kiota.Builder.Plugins.Models;
 
 internal class AppManifestModel
 {
-    public AppManifestModel()
-    {
-        // empty constructor to not mess with deserializers
-    }
-
-    public AppManifestModel(string pluginName, string documentName, string documentDescription)
-    {
-        PackageName = $"com.microsoft.kiota.plugin.{pluginName}";
-        Name = new(pluginName, documentName);
-        Description = new(documentDescription, documentName);
-    }
-
     [JsonPropertyName("$schema")]
-    public string Schema { get; set; } = "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json";
-    public string ManifestVersion { get; set; } = "devPreview";
-    public string Version { get; set; } = "1.0.0";
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public Developer Developer { get; init; } = new();
+    public string? Schema
+    {
+        get; set;
+    }
+    public string? ManifestVersion
+    {
+        get; set;
+    }
+    public string? Version
+    {
+        get; set;
+    }
+    public string? Id
+    {
+        get; set;
+    }
+    public Developer? Developer
+    {
+        get; init;
+    }
     public string? PackageName
     {
         get; set;
     }
-    public Name Name { get; set; } = new();
-    public Description Description { get; set; } = new();
-    public Icons Icons { get; set; } = new();
-    public string AccentColor { get; set; } = "#FFFFFF";
-    public CopilotExtensions CopilotExtensions { get; set; } = new();
+    public Name? Name
+    {
+        get; set;
+    }
+    public Description? Description
+    {
+        get; set;
+    }
+    public Icons? Icons
+    {
+        get; set;
+    }
+    public string? AccentColor
+    {
+        get; set;
+    }
+    public CopilotExtensions? CopilotExtensions
+    {
+        get; set;
+    }
 
     [JsonExtensionData]
     public Dictionary<string, Object> AdditionalData { get; set; } = new();
@@ -47,14 +64,26 @@ internal partial class AppManifestModelGenerationContext : JsonSerializerContext
 }
 
 #pragma warning disable CA1054
-internal class Developer(string? name = null, string? websiteUrl = null, string? privacyUrl = null, string? termsOfUseUrl = null)
+internal class Developer
 #pragma warning restore CA1054
 {
-    public string Name { get; set; } = !string.IsNullOrEmpty(name) ? name : "Kiota Generator, Inc.";
+    public string? Name
+    {
+        get; set;
+    }
 #pragma warning disable CA1056
-    public string WebsiteUrl { get; set; } = !string.IsNullOrEmpty(websiteUrl) ? websiteUrl : "https://www.example.com/contact/";
-    public string PrivacyUrl { get; set; } = !string.IsNullOrEmpty(privacyUrl) ? privacyUrl : "https://www.example.com/privacy/";
-    public string TermsOfUseUrl { get; set; } = !string.IsNullOrEmpty(termsOfUseUrl) ? termsOfUseUrl : "https://www.example.com/terms/";
+    public string? WebsiteUrl
+    {
+        get; set;
+    }
+    public string? PrivacyUrl
+    {
+        get; set;
+    }
+    public string? TermsOfUseUrl
+    {
+        get; set;
+    }
 #pragma warning restore CA1056
 
     [JsonExtensionData]
@@ -63,46 +92,42 @@ internal class Developer(string? name = null, string? websiteUrl = null, string?
 
 internal class Name
 {
-    public Name()
-    {
-        // empty constructor to not mess with deserializers
-    }
-
-    public Name(string pluginName, string documentName)
-    {
-        ShortName = pluginName;
-        FullName = $"API Plugin {pluginName} for {documentName}";
-    }
-
     [JsonPropertyName("short")]
-    public string ShortName { get; set; } = string.Empty;
+    public string? ShortName
+    {
+        get; set;
+    }
     [JsonPropertyName("full")]
-    public string FullName { get; set; } = string.Empty;
+    public string? FullName
+    {
+        get; set;
+    }
 }
 
 internal class Description
 {
-    public Description()
-    {
-        // empty constructor to not mess with deserializers
-    }
-
-    public Description(string description, string documentName)
-    {
-        ShortName = !string.IsNullOrEmpty(description) ? $"API Plugin for {description}." : documentName;
-        FullName = !string.IsNullOrEmpty(description) ? $"API Plugin for {description}." : documentName;
-    }
-
     [JsonPropertyName("short")]
-    public string ShortName { get; set; } = string.Empty;
+    public string? ShortName
+    {
+        get; set;
+    }
     [JsonPropertyName("full")]
-    public string FullName { get; set; } = string.Empty;
+    public string? FullName
+    {
+        get; set;
+    }
 }
 
 internal class Icons
 {
-    public string Color { get; set; } = "color.png";
-    public string Outline { get; set; } = "outline.png";
+    public string? Color
+    {
+        get; set;
+    }
+    public string? Outline
+    {
+        get; set;
+    }
 }
 
 internal class CopilotExtensions
@@ -112,17 +137,12 @@ internal class CopilotExtensions
 
 internal class Plugin
 {
-    public Plugin()
+    public string? Id
     {
-        // empty constructor to not mess with deserializers
+        get; set;
     }
-
-    public Plugin(string pluginName, string fileName)
+    public string? File
     {
-        Id = pluginName;
-        File = fileName;
+        get; set;
     }
-
-    public string Id { get; set; } = string.Empty;
-    public string File { get; set; } = string.Empty;
 }

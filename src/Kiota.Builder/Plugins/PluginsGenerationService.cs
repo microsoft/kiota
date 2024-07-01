@@ -114,14 +114,37 @@ public class PluginsGenerationService
     private async Task<AppManifestModel> GetAppManifestModelAsync(string pluginFileName, string manifestFullPath, CancellationToken cancellationToken)
     {
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
-        var developerInfo = new Developer(OAIDocument.Info?.Contact?.Name, OAIDocument.Info?.Contact?.Url?.OriginalString, manifestInfo.PrivacyUrl, OAIDocument.Info?.TermsOfService?.OriginalString);
         // create default model
-        AppManifestModel manifestModel = new AppManifestModel(
-            Configuration.ClientClassName,
-            OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document",
-            OAIDocument.Info?.Description.CleanupXMLString() ?? "OpenApi Description")
+        var manifestModel = new AppManifestModel
         {
-            Developer = developerInfo
+            Schema = "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
+            ManifestVersion = "devPreview",
+            Version = "1.0.0",
+            Id = Guid.NewGuid().ToString(),
+            Developer = new Developer
+            {
+                Name = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name) ? OAIDocument.Info?.Contact?.Name : "Kiota Generator, Inc.",
+                WebsiteUrl = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Url?.OriginalString) ? OAIDocument.Info?.Contact?.Url?.OriginalString : "https://www.example.com/contact/",
+                PrivacyUrl = !string.IsNullOrEmpty(manifestInfo.PrivacyUrl) ? manifestInfo.PrivacyUrl : "https://www.example.com/privacy/",
+                TermsOfUseUrl = !string.IsNullOrEmpty(OAIDocument.Info?.TermsOfService?.OriginalString) ? OAIDocument.Info?.TermsOfService?.OriginalString : "https://www.example.com/terms/",
+            },
+            PackageName = $"com.microsoft.kiota.plugin.{Configuration.ClientClassName}",
+            Name = new Name
+            {
+                ShortName = Configuration.ClientClassName,
+                FullName = $"API Plugin {Configuration.ClientClassName} for {OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document"}"
+            },
+            Description = new Description
+            {
+                ShortName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document",
+                FullName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document"
+            },
+            Icons = new Icons
+            {
+                Color = "color.png",
+                Outline = "outline.png"
+            },
+            AccentColor = "#FFFFFF"
         };
 
         if (File.Exists(manifestFullPath)) // No need for default, try to update the model from the file
@@ -134,14 +157,20 @@ public class PluginsGenerationService
                 manifestModel = manifestModelFromFile;
         }
 
-        if (manifestModel.CopilotExtensions.Plugins.FirstOrDefault(pluginItem =>
-                pluginItem.Id.Equals(Configuration.ClientClassName, StringComparison.OrdinalIgnoreCase)) is { } plugin)
+        manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
+
+        if (manifestModel.CopilotExtensions.Plugins.FirstOrDefault(pluginItem => Configuration.ClientClassName.Equals(pluginItem.Id, StringComparison.OrdinalIgnoreCase)) is { } plugin)
         {
-            plugin.File = pluginFileName;
+            plugin.File = pluginFileName; // id is already consitent so make sure the file name is ok
         }
         else
         {
-            manifestModel.CopilotExtensions.Plugins.Add(new Plugin(Configuration.ClientClassName, pluginFileName));
+            // Add a new plugin entry
+            manifestModel.CopilotExtensions.Plugins.Add(new Plugin
+            {
+                File = pluginFileName,
+                Id = Configuration.ClientClassName
+            });
         }
 
         return manifestModel;
