@@ -303,6 +303,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -345,6 +346,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.pluginName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -416,6 +418,7 @@ export async function activate(
     {
       await checkForSuccess(result);
       openApiTreeProvider.refreshView();
+      openApiTreeProvider.setSelectionChanged(false);
       await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, config.clientClassName);
       await updateTreeViewIcons(treeViewId, false, true);
       await exportLogsAndShowErrors(result);
@@ -453,8 +456,8 @@ export async function activate(
     );
     return result;
     });
-    
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+  openApiTreeProvider.setSelectionChanged(false);
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
     const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.ApiPlugin;
@@ -488,6 +491,7 @@ export async function activate(
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+    openApiTreeProvider.setSelectionChanged(false);
   }
 
   // create a new status bar item that we can now manage
