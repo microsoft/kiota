@@ -125,7 +125,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return GetComposedTypeTypeString(composedType, targetElement, collectionSuffix);
         }
 
-        CodeTypeBase codeType = composedType is not null ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : code;
+        CodeTypeBase codeType = composedType is not null ? new CodeType() { TypeDefinition = composedType } : code;
 
         if (codeType is not CodeType currentType)
         {
@@ -306,9 +306,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return (currentType.TypeDefinition, isCollection, propertyType) switch
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
-                (_, _, string prop) when StreamTypeName.Equals(prop, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
-                (_, true, string prop) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{prop}>()",
-                (_, true, string prop) => $"getCollectionOfObjectValues<{prop.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
+                (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
+                (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
+                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method)
             };
         }
