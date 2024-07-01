@@ -309,7 +309,7 @@ export async function activate(
     }
   }
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<void> {
-    const pluginTypes = typeof config.pluginTypes === 'string' ? parsePluginType(config.pluginTypes) : KiotaPluginType.ApiPlugin;
+    const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -320,7 +320,7 @@ export async function activate(
         context,
         openApiTreeProvider.descriptionUrl,
         outputPath,
-        [pluginTypes],
+        pluginTypes,
         selectedPaths,
         [],
         typeof config.pluginName === "string"
@@ -459,7 +459,7 @@ export async function activate(
   openApiTreeProvider.setSelectionChanged(false);
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
-    const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.ApiPlugin;
+    const pluginTypes =  Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -470,7 +470,7 @@ export async function activate(
         context,
         clientObject.descriptionLocation,
         clientObject.outputPath,
-        [pluginTypes],
+        pluginTypes,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
         [],
         clientKey,
