@@ -130,6 +130,7 @@ paths:
 info:
   title: test
   version: 1.0
+  description: A sample test api
 servers:
   - url: http://localhost/
     description: There's no place like home
@@ -514,6 +515,114 @@ paths:
         Assert.True(rootJsonElement.TryGetProperty("activities", out _));// no loss of information
         Assert.True(rootJsonElement.TryGetProperty("devicePermissions", out _));// no loss of information
         Assert.True(rootJsonElement.TryGetProperty("composeExtensions", out _));// no loss of information
+    }
+
+    [Fact]
+    public async Task GeneratesManifestAndUpdatesExistingAppManifestWithExistingPlugins()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test/{id}:
+    get:
+      description: description for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: test";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        Directory.CreateDirectory(outputDirectory);
+        var preExistingManifestContents = @"{
+    ""$schema"": ""https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json"",
+    ""manifestVersion"": ""devPreview"",
+    ""version"": ""1.0.0"",
+    ""id"": ""<generated_GUID>"",
+    ""developer"": {
+        ""name"": ""Test Name"",
+        ""websiteUrl"": ""<Defaults to `contact.url` from the OpenAPI document. If the `contact.url` is not available, it defaults to `https://www.example.com/contact/`>"",
+        ""privacyUrl"": ""<Defaults to `x-privacy-policy-url` extension from the OpenAPI document. If the `x-privacy-policy-url` is not available, it defaults to `https://www.example.com/privacy/`>"",
+        ""termsOfUseUrl"": ""<Defaults to `termsOfService` from the OpenAPI document. If the `termsOfService` is not available, it defaults to `https://www.example.com/terms/`>""
+    },
+    ""packageName"": ""com.microsoft.kiota.plugin.client"",
+    ""name"": {
+        ""short"": ""client"",
+        ""full"": ""API Plugin <plugin_name> for <OpenAPI document title>""
+    },
+   ""description"": {
+        ""short"": ""API Plugin for <description from the OpenAPI document>. If the description is not available, it defaults to `API Plugin for <OpenAPI document title>`"",
+        ""full"": ""API Plugin for <description from the OpenAPI document>. If the description is not available, it defaults to `API Plugin for <OpenAPI document title>`""
+    },
+    ""icons"": {
+        ""color"": ""color.png"", 
+        ""outline"": ""outline.png""
+    },
+   ""accentColor"": ""#FFFFFF"",
+   ""copilotExtensions"": {
+        ""plugins"": [
+            {
+                ""id"": ""client"",
+                ""file"": ""dummyFile.json""
+            }
+        ]
+    }
+}";
+        var preExistingManifestPath = Path.Combine(outputDirectory, "manifest.json");
+        await File.WriteAllTextAsync(preExistingManifestPath, preExistingManifestContents);
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        // Assert manifest exists before generation and is parsable
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));
+        var originalManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
+        var originalAppManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(originalManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        Assert.Equal("com.microsoft.kiota.plugin.client", originalAppManifestModelObject.PackageName);// package was present
+        Assert.NotNull(originalAppManifestModelObject.CopilotExtensions);
+        Assert.Single(originalAppManifestModelObject.CopilotExtensions.Plugins);//one plugin present
+        Assert.Equal("dummyFile.json", originalAppManifestModelObject.CopilotExtensions.Plugins[0].File); // no plugins present
+
+        // Run the plugin generation
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));// Assert manifest exists after generation
+
+        // Validate the manifest file
+        var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
+        var appManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        Assert.Equal("com.microsoft.kiota.plugin.client", originalAppManifestModelObject.PackageName);// package was present
+        Assert.Equal("client", appManifestModelObject.Name.ShortName); // app name is same
+        Assert.Equal("Test Name", originalAppManifestModelObject.Developer.Name); // developer name is same
+        Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
+        Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);// file name is updated
     }
     [Fact]
     public async Task GeneratesManifestAndCleansUpInputDescription()
