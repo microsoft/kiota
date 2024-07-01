@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.Plugins.Models;
@@ -24,15 +26,22 @@ internal class AppManifestModel
     public string Version { get; set; } = "1.0.0";
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public Developer Developer { get; init; } = new();
-    public string PackageName { get; set; } = String.Empty;
+    public string? PackageName
+    {
+        get; set;
+    }
     public Name Name { get; set; } = new();
     public Description Description { get; set; } = new();
     public Icons Icons { get; set; } = new();
     public string AccentColor { get; set; } = "#FFFFFF";
     public CopilotExtensions CopilotExtensions { get; set; } = new();
+
+    [JsonExtensionData]
+    public Dictionary<string, Object> AdditionalData { get; set; } = new();
 }
 
 [JsonSerializable(typeof(AppManifestModel))]
+[JsonSerializable(typeof(JsonElement))]
 internal partial class AppManifestModelGenerationContext : JsonSerializerContext
 {
 }
@@ -47,6 +56,9 @@ internal class Developer(string? name = null, string? websiteUrl = null, string?
     public string PrivacyUrl { get; set; } = !string.IsNullOrEmpty(privacyUrl) ? privacyUrl : "https://www.example.com/privacy/";
     public string TermsOfUseUrl { get; set; } = !string.IsNullOrEmpty(termsOfUseUrl) ? termsOfUseUrl : "https://www.example.com/terms/";
 #pragma warning restore CA1056
+
+    [JsonExtensionData]
+    public Dictionary<string, Object> AdditionalData { get; set; } = new();
 }
 
 internal class Name
