@@ -361,14 +361,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
     }
 
-    private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)
+    private static bool IsCollectionOfEnum(CodeProperty property)
     {
-        return property.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
+        return property.Type is CodeType codeType && codeType.IsCollection && codeType.TypeDefinition is CodeEnum;
     }
 
     private void WritePropertySerializer(string modelParamName, CodeProperty codeProperty, LanguageWriter writer, CodeFunction codeFunction)
     {
-        var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
+        var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var propTypeName = GetTypescriptTypeString(codeProperty.Type, codeProperty.Parent!, false, inlineComposedTypeString: true);
