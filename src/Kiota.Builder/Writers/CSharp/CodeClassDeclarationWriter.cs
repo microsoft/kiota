@@ -33,13 +33,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })
                                         .Union(codeElement.Implements.Select(static x => x.Name))
                                         .OfType<string>()
-                                        .Select(static x => x.ToFirstCharacterUpperCase())
                                         .ToArray();
         var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
         bool hasDescription = conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
-        writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
+        writer.WriteLine($"public partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
         if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
         writer.StartBlock();
     }

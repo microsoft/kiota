@@ -51,7 +51,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("public class", result);
+        Assert.Contains("public partial class", result);
     }
 
     [Fact]

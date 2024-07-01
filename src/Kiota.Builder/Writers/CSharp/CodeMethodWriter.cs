@@ -365,7 +365,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "GetByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"Get{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
-            _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.CreateFromDiscriminatorValue)",
+            _ => $"GetObjectValue<{propertyType}>({propertyType}.CreateFromDiscriminatorValue)",
         };
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
@@ -671,7 +671,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "WriteByteArrayValue",
             _ when conventions.IsPrimitiveType(propertyType) => $"Write{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
-            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : string.Empty)}>",
+            _ => $"WriteObjectValue<{propertyType}{(includeNullableRef ? "?" : string.Empty)}>",
         };
     }
 }
