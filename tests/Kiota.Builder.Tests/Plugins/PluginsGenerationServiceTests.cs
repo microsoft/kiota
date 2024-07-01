@@ -522,7 +522,11 @@ paths:
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
 info:
-  version: 1.0
+  termsOfService: http://example.com/terms/
+  contact:
+    name: API Support
+    email: support@example.com
+    url: http://example.com/support
 servers:
   - url: http://localhost/
     description: There's no place like home
