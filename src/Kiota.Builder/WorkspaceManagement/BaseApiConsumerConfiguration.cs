@@ -18,8 +18,8 @@ public abstract class BaseApiConsumerConfiguration
     {
         ArgumentNullException.ThrowIfNull(config);
         DescriptionLocation = config.OpenAPIFilePath;
-        IncludePatterns = new HashSet<string>(config.IncludePatterns);
-        ExcludePatterns = new HashSet<string>(config.ExcludePatterns);
+        IncludePatterns = new HashSet<string>(config.IncludePatterns, StringComparer.OrdinalIgnoreCase);
+        ExcludePatterns = new HashSet<string>(config.ExcludePatterns, StringComparer.OrdinalIgnoreCase);
         OutputPath = config.OutputPath;
     }
     /// <summary>
@@ -60,8 +60,8 @@ public abstract class BaseApiConsumerConfiguration
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(clientName);
-        config.IncludePatterns = IncludePatterns;
-        config.ExcludePatterns = ExcludePatterns;
+        config.IncludePatterns = IncludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.ExcludePatterns = ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.OpenAPIFilePath = DescriptionLocation;
         config.OutputPath = OutputPath;
         config.ClientClassName = clientName;
