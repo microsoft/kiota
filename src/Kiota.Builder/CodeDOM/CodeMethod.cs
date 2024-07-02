@@ -15,6 +15,9 @@ public enum CodeMethodKind
     RequestGenerator,
     Serializer,
     Deserializer,
+    ComposedTypeFactory,
+    ComposedTypeDeserializer,
+    ComposedTypeSerializer,
     Constructor,
     Getter,
     Setter,
@@ -118,6 +121,27 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         };
         parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
+        return method;
+    }
+    public static CodeMethod FromCodeFunctionAndInterface(CodeInterface codeInterface, CodeFunction function, CodeMethodKind kind)
+    {
+        ArgumentNullException.ThrowIfNull(codeInterface);
+        ArgumentNullException.ThrowIfNull(function);
+        ArgumentNullException.ThrowIfNull(kind);
+        var method = new CodeMethod
+        {
+            Name = function.OriginalLocalMethod.Name,
+            ReturnType = function.OriginalLocalMethod.ReturnType,
+            Kind = kind,
+            Access = function.OriginalLocalMethod.Access,
+            IsAsync = function.OriginalLocalMethod.IsAsync,
+            IsStatic = function.OriginalLocalMethod.IsStatic,
+            Documentation = function.OriginalLocalMethod.Documentation,
+            Parent = codeInterface.OriginalClass,
+        };
+
+        method.AddParameter(function.OriginalLocalMethod.Parameters.ToArray());
+
         return method;
     }
     public HttpMethod? HttpMethod

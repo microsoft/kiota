@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
+
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
@@ -19,6 +21,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore,
+                s => s.ToFirstCharacterLowerCase(),
+                false
+            );
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -250,20 +258,178 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
-            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
-                codeFunction.OriginalLocalMethod.Parameters
-                    .Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase)) ||
-
-            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
-                        codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
-                        codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace)
-        ).ToArray();
+        var functions = GetSerializationAndFactoryFunctions(codeInterface, codeNamespace).ToArray();
 
         if (functions.Length == 0)
             return null;
-        return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
+
+        var composedType = GetOriginalComposedType(codeInterface);
+        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedType, functions);
+
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
     }
+
+    private static IEnumerable<CodeFunction> GetSerializationAndFactoryFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        return codeNamespace.GetChildElements(true)
+            .OfType<CodeFunction>()
+            .Where(codeFunction =>
+                IsRelevantDeserializerOrSerializer(codeFunction, codeInterface) ||
+                IsRelevantFactory(codeFunction, codeInterface, codeNamespace));
+    }
+
+    private static bool IsRelevantDeserializerOrSerializer(CodeFunction codeFunction, CodeInterface codeInterface)
+    {
+        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
+            codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type is CodeType codeType && codeType.TypeDefinition == codeInterface);
+    }
+
+    private static bool IsRelevantFactory(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
+            codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+            codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
+    }
+
+    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
+    {
+        var children = new List<CodeElement>(functions)
+        {
+            // Add the composed type, The writer will output the composed type as a type definition e.g export type Pet = Cat | Dog
+            composedType
+        };
+
+        ReplaceFactoryMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+        ReplaceSerializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
+
+        return children;
+    }
+
+    private static CodeFunction? FindFunctionOfKind(List<CodeElement> elements, CodeMethodKind kind)
+    {
+        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.IsOfKind(kind));
+    }
+
+    private static void RemoveOldCodeFunctionAndAddNewOne(List<CodeElement> children, CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction oldCodeFunction, CodeFunction newCodeFunction)
+    {
+        children.Remove(oldCodeFunction);
+        RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, oldCodeFunction);
+        children.Add(newCodeFunction);
+    }
+
+    private static void RemoveUnusedDeserializerImport(List<CodeElement> children, CodeFunction factoryFunction)
+    {
+        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is { } deserializerMethod)
+            factoryFunction.RemoveUsingsByDeclarationName(deserializerMethod.Name);
+    }
+
+    private static void ReplaceFactoryMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        if (FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } factoryMethod) return;
+
+        var method = CreateFactoryMethodForComposedType(codeInterface, composedType, factoryMethod);
+        var factoryFunction = new CodeFunction(method) { Name = method.Name, Parent = codeInterface.OriginalClass };
+        factoryFunction.AddUsing(factoryMethod.Usings.ToArray());
+
+        RemoveOldCodeFunctionAndAddNewOne(children, codeInterface, codeNamespace, factoryMethod, factoryFunction);
+
+        // Remove the deserializer import statement if its not being used
+        if (composedType is CodeUnionType || IsComposedOfPrimitives(composedType))
+        {
+            RemoveUnusedDeserializerImport(children, factoryFunction);
+        }
+    }
+
+    private static void ReplaceSerializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
+
+        var method = CreateSerializerMethodForComposedType(codeInterface, function, composedType);
+        var serializerFunction = new CodeFunction(method) { Name = method.Name };
+        serializerFunction.AddUsing(function.Usings.ToArray());
+
+        RemoveOldCodeFunctionAndAddNewOne(children, codeInterface, codeNamespace, function, serializerFunction);
+    }
+
+    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
+    {
+        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
+
+        // For code union Deserializer is not required, however its needed for Object Intersection types
+        if (composedType is CodeIntersectionType && !IsComposedOfPrimitives(composedType))
+        {
+            var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, deserializerMethod, GetComposedTypeMethodKind(deserializerMethod));
+            var deserializerFunction = new CodeFunction(method) { Name = method.Name };
+            deserializerFunction.AddUsing(deserializerMethod.Usings.ToArray());
+            children.Add(deserializerFunction);
+        }
+
+        children.Remove(deserializerMethod);
+        RemoveChildElementFromInterfaceAndNamespace(codeInterface, codeNamespace, deserializerMethod);
+    }
+
+    private static void RemoveChildElementFromInterfaceAndNamespace(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeFunction function)
+    {
+        codeInterface.RemoveChildElement(function);
+        codeNamespace.RemoveChildElement(function);
+    }
+
+    private static CodeMethod CreateFactoryMethodForComposedType(CodeInterface codeInterface, CodeComposedTypeBase composedType, CodeFunction function)
+    {
+        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
+        if (composedType is not null && IsComposedOfPrimitives(composedType))
+            method.ReturnType = composedType;
+        return method;
+    }
+
+    private static CodeMethod CreateSerializerMethodForComposedType(CodeInterface codeInterface, CodeFunction function, CodeComposedTypeBase composedType)
+    {
+        var method = CodeMethod.FromCodeFunctionAndInterface(codeInterface, function, GetComposedTypeMethodKind(function));
+        // Add the key parameter if the composed type is a union of primitive values
+        if (IsComposedOfPrimitives(composedType))
+            method.AddParameter(CreateKeyParameter());
+        return method;
+    }
+
+    private static CodeMethodKind GetComposedTypeMethodKind(CodeFunction function)
+    {
+        return function.OriginalLocalMethod.Kind switch
+        {
+            CodeMethodKind.Factory => CodeMethodKind.ComposedTypeFactory,
+            CodeMethodKind.Serializer => CodeMethodKind.ComposedTypeSerializer,
+            CodeMethodKind.Deserializer => CodeMethodKind.ComposedTypeDeserializer,
+            _ => throw new InvalidOperationException($"Unsupported method type :: {function.OriginalLocalMethod.Kind}")
+        };
+    }
+
+    private static CodeParameter CreateKeyParameter()
+    {
+        return new CodeParameter
+        {
+            Name = "key",
+            Type = new CodeType { Name = "string", IsExternal = true, IsNullable = false },
+            Optional = false,
+            Documentation = new()
+            {
+                DescriptionTemplate = "The name of the property to write in the serialization.",
+            },
+        };
+    }
+
+    public static CodeComposedTypeBase? GetOriginalComposedType(CodeElement element)
+    {
+        return element switch
+        {
+            CodeParameter param => GetOriginalComposedType(param.Type),
+            CodeType codeType when codeType.TypeDefinition is not null => GetOriginalComposedType(codeType.TypeDefinition),
+            CodeClass codeClass => codeClass.OriginalComposedType,
+            CodeInterface codeInterface => codeInterface.OriginalClass.OriginalComposedType,
+            CodeComposedTypeBase composedType => composedType,
+            _ => null,
+        };
+    }
+
     private static readonly CodeUsing[] navigationMetadataUsings = [
         new CodeUsing
         {
@@ -738,9 +904,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         method.AddParameter(new CodeParameter
         {
-            Name = ReturnFinalInterfaceName(modelInterface),
+            Name = GetFinalInterfaceName(modelInterface),
             DefaultValue = "{}",
-            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
+            Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
         });
 
@@ -751,7 +917,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = modelInterface.Parent.Name,
                 Declaration = new CodeType
                 {
-                    Name = ReturnFinalInterfaceName(modelInterface),
+                    Name = GetFinalInterfaceName(modelInterface),
                     TypeDefinition = modelInterface
                 }
             });
@@ -782,7 +948,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
-            var finalName = ReturnFinalInterfaceName(modelInterface);
+            var finalName = GetFinalInterfaceName(modelInterface);
             if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
             {
                 if (parentNS.FindChildByName<CodeClass>(finalName, false) is CodeClass existingClassToRemove)
@@ -802,11 +968,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
         {
-            param.Name = ReturnFinalInterfaceName(paramInterface);
+            param.Name = GetFinalInterfaceName(paramInterface);
         }
     }
 
-    private static string ReturnFinalInterfaceName(CodeInterface codeInterface)
+    private static string GetFinalInterfaceName(CodeInterface codeInterface)
     {
         return codeInterface.OriginalClass.Name.ToFirstCharacterUpperCase();
     }
@@ -926,7 +1092,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = interfaceElement.Name,
             TypeDefinition = interfaceElement,
         };
-        requestBuilder.RemoveUsingsByDeclarationName(ReturnFinalInterfaceName(interfaceElement));
+        requestBuilder.RemoveUsingsByDeclarationName(GetFinalInterfaceName(interfaceElement));
         if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
@@ -970,7 +1136,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Kind = CodeInterfaceKind.Model,
             Documentation = modelClass.Documentation,
             Deprecation = modelClass.Deprecation,
-            OriginalClass = modelClass
+            OriginalClass = modelClass,
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
@@ -995,7 +1161,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var parentInterface = CreateModelInterface(baseClass, tempInterfaceNamingCallback);
             var codeType = new CodeType
             {
-                Name = ReturnFinalInterfaceName(parentInterface),
+                Name = GetFinalInterfaceName(parentInterface),
                 TypeDefinition = parentInterface,
             };
             modelInterface.StartBlock.AddImplements(codeType);

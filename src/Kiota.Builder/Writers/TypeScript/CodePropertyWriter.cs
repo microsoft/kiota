@@ -1,6 +1,7 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConventionService>
@@ -12,7 +13,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType)
             return;
-        var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
+        var returnType = GetTypescriptTypeString(codeElement.Type, codeElement, inlineComposedTypeString: true);
         var isFlagEnum = codeElement.Type is CodeType { TypeDefinition: CodeEnum { Flags: true } }
                          && !codeElement.Type.IsCollection;//collection of flagged enums are not supported/don't make sense
 
