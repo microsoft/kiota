@@ -602,7 +602,7 @@ public partial class KiotaBuilder
             var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
-                Name = className.CleanupSymbolName(),
+                Name = currentNamespace.Name.EndsWith("item_escaped", StringComparison.InvariantCultureIgnoreCase) ? className.CleanupSymbolName().Replace("item", "item_escaped", StringComparison.InvariantCultureIgnoreCase) : className.CleanupSymbolName(),
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {

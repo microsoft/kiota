@@ -13,7 +13,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
-    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
+    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : ("item".Equals(x, StringComparison.OrdinalIgnoreCase) ? "item_escaped" : x);
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
     private const string EscapedSuffix = "Escaped";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
