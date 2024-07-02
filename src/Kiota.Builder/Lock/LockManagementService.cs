@@ -83,7 +83,12 @@ public class LockManagementService : ILockManagementService
     {
         if (IsDescriptionLocal(descriptionPath) &&
             Path.GetDirectoryName(lockFilePath) is string lockFileDirectoryPath)
-            return Path.GetRelativePath(lockFileDirectoryPath, descriptionPath);
+        {
+            var relativePath = Path.GetRelativePath(lockFileDirectoryPath, descriptionPath);
+            if (Path.DirectorySeparatorChar != '/')
+                relativePath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
+            return relativePath;
+        }
         return descriptionPath;
     }
     /// <inheritdoc/>
