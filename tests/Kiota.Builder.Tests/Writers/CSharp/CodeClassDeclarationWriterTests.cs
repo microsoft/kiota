@@ -107,4 +107,13 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("Project.Graph", result);
         Assert.Contains("System.Util", result);
     }
+
+    [Fact]
+    public void WritesGeneratedCodeAttribute()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""\)\]";
+        Assert.Matches(pattern, result);
+    }
 }
