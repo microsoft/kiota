@@ -117,13 +117,10 @@ public class PluginsGenerationService
         // create default model
         var manifestModel = new AppManifestModel
         {
-            Schema = "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
-            ManifestVersion = "devPreview",
-            Version = "1.0.0",
             Id = Guid.NewGuid().ToString(),
             Developer = new Developer
             {
-                Name = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name) ? OAIDocument.Info?.Contact?.Name : "Kiota Generator, Inc.",
+                Name = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name) ? OAIDocument.Info?.Contact?.Name : "Microsoft Kiota.",
                 WebsiteUrl = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Url?.OriginalString) ? OAIDocument.Info?.Contact?.Url?.OriginalString : "https://www.example.com/contact/",
                 PrivacyUrl = !string.IsNullOrEmpty(manifestInfo.PrivacyUrl) ? manifestInfo.PrivacyUrl : "https://www.example.com/privacy/",
                 TermsOfUseUrl = !string.IsNullOrEmpty(OAIDocument.Info?.TermsOfService?.OriginalString) ? OAIDocument.Info?.TermsOfService?.OriginalString : "https://www.example.com/terms/",
@@ -139,11 +136,7 @@ public class PluginsGenerationService
                 ShortName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document",
                 FullName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document"
             },
-            Icons = new Icons
-            {
-                Color = "color.png",
-                Outline = "outline.png"
-            },
+            Icons = new Icons(),
             AccentColor = "#FFFFFF"
         };
 

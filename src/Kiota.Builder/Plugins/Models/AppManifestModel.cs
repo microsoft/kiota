@@ -7,19 +7,28 @@ namespace Kiota.Builder.Plugins.Models;
 
 internal class AppManifestModel
 {
+    private const string DefaultSchema = "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json";
+    private const string DefaultManifestVersion = "devPreview";
+    private const string DefaultVersion = "1.0.0";
+
     [JsonPropertyName("$schema")]
     public string? Schema
     {
-        get; set;
-    }
+        get;
+        set;
+    } = DefaultSchema;
+
     public string? ManifestVersion
     {
-        get; set;
-    }
+        get;
+        set;
+    } = DefaultManifestVersion;
+
     public string? Version
     {
-        get; set;
-    }
+        get;
+        set;
+    } = DefaultVersion;
     public string? Id
     {
         get; set;
@@ -122,12 +131,15 @@ internal class Icons
 {
     public string? Color
     {
-        get; set;
-    }
+        get;
+        set;
+    } = "color.png";
+
     public string? Outline
     {
-        get; set;
-    }
+        get;
+        set;
+    } = "outline.png";
 }
 
 internal class CopilotExtensions

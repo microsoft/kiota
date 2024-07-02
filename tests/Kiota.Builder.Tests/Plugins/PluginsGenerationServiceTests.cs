@@ -115,6 +115,8 @@ paths:
         var appManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
         Assert.Equal("com.microsoft.kiota.plugin.client", appManifestModelObject.PackageName);
         Assert.Equal("client", appManifestModelObject.Name.ShortName);
+        Assert.Equal("Microsoft Kiota.", appManifestModelObject.Developer.Name);
+        Assert.Equal("color.png", appManifestModelObject.Icons.Color);
         Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
         Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);
     }
