@@ -3,41 +3,105 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
-import { connectToKiota, KiotaGetManifestDetailsConfiguration, KiotaLogEntry, KiotaManifestResult, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResult, LockFile } from './kiotaInterop';
+import { 
+    ClientObjectProperties, 
+    ClientOrPluginProperties, 
+    connectToKiota, 
+    KiotaGetManifestDetailsConfiguration, 
+    KiotaLogEntry, 
+    KiotaManifestResult, 
+    KiotaOpenApiNode, 
+    KiotaShowConfiguration, 
+    KiotaShowResult, 
+    ConfigurationFile, 
+    PluginObjectProperties } from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
+import { treeViewId } from './constants';
+import { updateTreeViewIcons } from './util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
     private apiTitle?: string;
+    private selectionChanged: boolean = false;
     constructor(
         private readonly context: vscode.ExtensionContext,
-        private readonly settingsGetter:() => ExtensionSettings,
+        private readonly settingsGetter: () => ExtensionSettings,
         private _descriptionUrl?: string,
         public includeFilters: string[] = [],
         public excludeFilters: string[] = []) {
-        
+
     }
     private _lockFilePath?: string;
-    private _lockFile?: LockFile;
+    private _lockFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
     public get isLockFileLoaded(): boolean {
         return !!this._lockFile;
     }
-    public async loadLockFile(path: string): Promise<void> {
-      this.closeDescription(false);
-      this._lockFilePath = path;
-      const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
-      this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
-      if (this._lockFile?.descriptionLocation) {
-        this._descriptionUrl = this._lockFile.descriptionLocation;
-        this.includeFilters = this._lockFile.includePatterns;
-        this.excludeFilters = this._lockFile.excludePatterns;
-        const settings = this.settingsGetter();
-        await this.loadNodes(settings.clearCache);
-        if (this.rawRootNode) {
-            this.refreshView();
+    public async loadLockFile(path: string, clientOrPluginName?: string): Promise<void> {
+        this.closeDescription(false);
+        this._lockFilePath = path;
+        const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+        let parsedLockFile = JSON.parse(lockFileData.toString()) as ConfigurationFile;
+
+        if (clientOrPluginName) {
+            let filteredData: Partial<ConfigurationFile> = { version: parsedLockFile.version };
+
+            if (parsedLockFile.clients && parsedLockFile.clients[clientOrPluginName]) {
+                filteredData.clients = {
+                    [clientOrPluginName]: parsedLockFile.clients[clientOrPluginName]
+                };
+            }
+
+            if (parsedLockFile.plugins && parsedLockFile.plugins[clientOrPluginName]) {
+                filteredData.plugins = {
+                    [clientOrPluginName]: parsedLockFile.plugins[clientOrPluginName]
+                };
+            }
+
+            parsedLockFile = filteredData as ConfigurationFile;
         }
-      }
+
+        this._lockFile = parsedLockFile;
+
+        const clientOrPlugin: ClientOrPluginProperties | undefined =
+            Object.values(this._lockFile.clients ?? {})[0] ||
+            Object.values(this._lockFile.plugins ?? {})[0];
+
+        if (clientOrPlugin) {
+            this._descriptionUrl = clientOrPlugin.descriptionLocation;
+            this.includeFilters = clientOrPlugin.includePatterns;
+            this.excludeFilters = clientOrPlugin.excludePatterns;
+
+            const settings = this.settingsGetter();
+            await this.loadNodes(settings.clearCache, clientOrPluginName);
+
+            if (this.rawRootNode) {
+                this.refreshView();
+            }
+        }
+    }
+    public async loadEditPaths(clientOrPluginKey: string, clientObject: ClientOrPluginProperties): Promise<void> {
+        this.closeDescription(false);
+        const newLockFile: ConfigurationFile = { version: '1.0.0', clients: {}, plugins: {} };
+
+        if ((clientObject as ClientObjectProperties).clientNamespaceName) {
+            newLockFile.clients[clientOrPluginKey] = clientObject as ClientObjectProperties;
+        } else {
+            newLockFile.plugins[clientOrPluginKey] = clientObject as PluginObjectProperties;
+        }
+        this._lockFile = newLockFile;
+        if (clientObject.descriptionLocation) {
+            this._descriptionUrl = clientObject.descriptionLocation;
+            this.includeFilters = clientObject.includePatterns;
+            this.excludeFilters = clientObject.excludePatterns;
+
+            const settings = this.settingsGetter();
+            await this.loadNodes(settings.clearCache, clientOrPluginKey);
+
+            if (this.rawRootNode) {
+                this.refreshView();
+            }
+        }
     }
     public async loadManifestFromUri(path: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         this.closeDescription(false);
@@ -58,17 +122,34 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         node.selected = selected;
         node.children.forEach(x => this.setAllSelected(x, selected));
     }
+    private getFirstClient(): ClientObjectProperties | undefined {
+        return this._lockFile?.clients ? Object.values(this._lockFile.clients)[0] : undefined;
+    }
     public get outputPath(): string {
-      return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
+        return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
     }
     public get clientClassName(): string {
-        return this._lockFile?.clientClassName ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.clientNamespaceName : '';
+        }
+        return '';
     }
+
     public get clientNamespaceName(): string {
-        return this._lockFile?.clientNamespaceName ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.clientNamespaceName : '';
+        }
+        return '';
     }
+
     public get language(): string {
-        return this._lockFile?.language ?? '';
+        if (this._lockFile?.clients) {
+            const client = this.getFirstClient();
+            return client ? client.language : '';
+        }
+        return '';
     }
     public closeDescription(shouldRefresh = true) {
         this._descriptionUrl = '';
@@ -77,9 +158,21 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this._lockFilePath = undefined;
         this.tokenizedFilter = [];
         this._filterText = '';
+        this.includeFilters = [];
+        this.excludeFilters = [];
         if (shouldRefresh) {
             this.refreshView();
         }
+        void updateTreeViewIcons(treeViewId, false);
+    }
+    public isEmpty(): boolean {
+        return this.rawRootNode === undefined;
+    }
+    public hasSelectionChanged(): boolean {
+        return this.selectionChanged;
+    }
+    public setSelectionChanged(state: boolean) {
+        this.selectionChanged = state;
     }
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
@@ -96,15 +189,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             return;
         }
         const apiNode = this.findApiNode(getPathSegments(item.path), this.rawRootNode);
-        if(apiNode) {
+        if (apiNode) {
             this.selectInternal(apiNode, selected, recursive);
             this.refreshView();
         }
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
+        this.setSelectionChanged(true);
         const isOperationNode = apiNode.isOperation ?? false;
-        if(recursive) {
+        if (recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
         } else if (!isOperationNode) {
             apiNode.children.filter(x => x.isOperation ?? false).forEach(x => this.selectInternal(x, selected, false));
@@ -112,6 +206,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
             if (parent) {
                 parent.selected = selected;
+                this.setSelectionChanged(true);
             }
         }
     }
@@ -121,7 +216,15 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         const segment = segments.shift();
         if (segment) {
-            let child = currentNode.children.find(x => x.segment === segment);
+            let child: KiotaOpenApiNode | undefined;
+            if (currentNode.clientNameOrPluginName) {
+                const rootChild = currentNode.children.find(x => x.segment === '/');
+                if (rootChild) {
+                    child = rootChild.children.find(x => x.segment === segment);
+                }
+            } else {
+                child = currentNode.children.find(x => x.segment === segment);
+            }
             if (child) {
                 return this.findApiNode(segments, child);
             } else if (segment.startsWith('{') && segment.endsWith('}')) {
@@ -149,7 +252,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
-        if(currentNode.selected || false) {
+        if (currentNode.selected || false) {
             if ((currentNode.isOperation || false) && this.rawRootNode) {
                 const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
                 if (parent && !parent.selected) {
@@ -194,7 +297,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         return [];
     }
-    private async loadNodes(clearCache: boolean): Promise<void> {
+    private async loadNodes(clearCache: boolean, clientNameOrPluginName?: string): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
@@ -207,19 +310,34 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 clearCache
             });
         });
-        if(result) {
+        if (result) {
             this.apiTitle = result.apiTitle;
-            if(result.rootNode) {
+            if (result.rootNode) {
+                if (this.includeFilters.length === 0) {
+                    this.setAllSelected(result.rootNode, false);
+                }
                 this.rawRootNode = result.rootNode;
+                if (clientNameOrPluginName) {
+                    this.rawRootNode = createKiotaOpenApiNode(
+                        clientNameOrPluginName,
+                        '/',
+                        [this.rawRootNode],
+                        false,
+                        false,
+                        undefined,
+                        clientNameOrPluginName
+                    );
+                }
+               await updateTreeViewIcons(treeViewId, true, false);
             }
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {
         return node.children.length === 0 ?
-                vscode.TreeItemCollapsibleState.None :
-                (this.tokenizedFilter.length === 0 ?
-                    vscode.TreeItemCollapsibleState.Collapsed : 
-                    vscode.TreeItemCollapsibleState.Expanded);
+            vscode.TreeItemCollapsibleState.None :
+            (this.tokenizedFilter.length === 0 ?
+                vscode.TreeItemCollapsibleState.Collapsed :
+                vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, collapsibleStateOverride: vscode.TreeItemCollapsibleState | undefined = undefined): OpenApiTreeNode {
         return new OpenApiTreeNode(
@@ -229,8 +347,10 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             collapsibleStateOverride ?? this.getCollapsedState(node),
             node.isOperation ?? false,
             this.tokenizedFilter,
+            this.apiTitle,
             node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
-            node.documentationUrl
+            node.documentationUrl,
+            node.clientNameOrPluginName
         );
     }
     getChildren(element?: OpenApiTreeNode): vscode.ProviderResult<OpenApiTreeNode[]> {
@@ -254,10 +374,31 @@ function getPathSegments(path: string): string[] {
 function trimOperation(path: string): string {
     return path.split(operationSeparator)[0];
 }
+
+function createKiotaOpenApiNode(
+    segment: string,
+    path: string,
+    children: KiotaOpenApiNode[] = [],
+    selected?: boolean,
+    isOperation?: boolean,
+    documentationUrl?: string,
+    clientNameOrPluginName?: string
+): KiotaOpenApiNode {
+    return {
+        segment,
+        path,
+        children,
+        selected,
+        isOperation,
+        documentationUrl,
+        clientNameOrPluginName
+    };
+}
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
     private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
+
     constructor(
         public readonly path: string,
         public readonly label: string,
@@ -265,13 +406,19 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
         filterTokens: string[],
+        apiTitle: string | undefined,
         public readonly children: OpenApiTreeNode[] = [],
         public readonly documentationUrl?: string,
+        public readonly clientNameOrPluginName?: string
     ) {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
-        this.contextValue = documentationUrl;
+        this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' : (this.documentationUrl ? 'documentationUrl' : '');
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
+        if (clientNameOrPluginName) {
+            this.label = clientNameOrPluginName;
+            this.contextValue = 'clientNameOrPluginName';
+        }
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (tokenizedFilter.length === 0) {

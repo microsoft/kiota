@@ -17,7 +17,7 @@ Context: you're most likely a program manager eager to demo the latest bits from
 - GitHub CLI `winget install GitHub.CLI`
 - dotnet 8 `winget install Microsoft.DotNet.SDK.8`
 - node 20 `winget install CoreyButler.NVMforWindows && nvm install lts && nvm use lts`
-- vsce & TypeScript `npm i -g TypeScript @vscode/vsce`
+- vsce & TypeScript `npm i -g typescript @vscode/vsce`
 
 ### Steps
 
@@ -46,3 +46,27 @@ Where kiotaVersionInPackage is the kiotaVersion field and versionInPackage is th
 > Note: the **.vscode** segment might change to **.vscode-server** if you're remoting to WSL.
 
 > Note: alternatively to building executable yourself, you can download it from [the pipeline](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) by filtering the branch (top right corner) with the pull request branch, selecting the latest run, and downloading the right OS version from the artifacts. The only remaining work will be to move the downloaded files to the right path above.
+
+#### Using the ready-made script
+
+If you want to automate these steps, you can use the following script to automate the process:
+
+```powershell
+.\scripts\execute-vscode-sideload.ps1 -Platform "win-x64|linux-x64|osx-x64" 
+```
+
+If you are using WSL, you can use the following:
+
+```powershell
+.\scripts\execute-vscode-sideload.ps1 -WSL
+```
+
+## FAQ
+
+### VS Code keeps reinstalling from the marketplace
+
+This is most likely caused by the fact that there's a newer released version. Run the following script replacing the version argument with the latest version of kiota.
+
+```powershell
+.\scripts\update-vscode-releases.ps1 -version "versionWithoutVPrefix" -online -filePath .\vscode\microsoft-kiota\package.json
+```
