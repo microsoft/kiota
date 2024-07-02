@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+using Kiota.Builder.Plugins.Models;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
@@ -38,9 +40,10 @@ public class PluginsGenerationService
     private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionPathSuffix = "openapi.yml";
     private const string OpenAIManifestFileName = "openai-plugins";
+    private const string AppManifestFileName = "manifest.json";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        // write the description
+        // 1. write the OpenApi description
         var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
@@ -55,7 +58,8 @@ public class PluginsGenerationService
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
-        // write the plugins
+        // 2. write the plugins
+
         foreach (var pluginType in Configuration.PluginTypes)
         {
             var manifestFileName = pluginType == PluginType.OpenAI ? OpenAIManifestFileName : $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
@@ -93,8 +97,84 @@ public class PluginsGenerationService
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        // 3. write the app manifest if its an Api Plugin
+        if (Configuration.PluginTypes.Any(static plugin => plugin == PluginType.APIPlugin))
+        {
+            var manifestFullPath = Path.Combine(Configuration.OutputPath, AppManifestFileName);
+            var pluginFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{PluginType.APIPlugin.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}";
+            var appManifestModel = await GetAppManifestModelAsync(pluginFileName, manifestFullPath, cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA2007
+            await using var appManifestStream = File.Open(manifestFullPath, FileMode.Create);
+#pragma warning restore CA2007
+            await JsonSerializer.SerializeAsync(appManifestStream, appManifestModel, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
+        }
     }
 
+    private async Task<AppManifestModel> GetAppManifestModelAsync(string pluginFileName, string manifestFullPath, CancellationToken cancellationToken)
+    {
+        var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
+        // create default model
+        var manifestModel = new AppManifestModel
+        {
+            Id = Guid.NewGuid().ToString(),
+            Developer = new Developer
+            {
+                Name = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name) ? OAIDocument.Info?.Contact?.Name : "Microsoft Kiota.",
+                WebsiteUrl = !string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Url?.OriginalString) ? OAIDocument.Info?.Contact?.Url?.OriginalString : "https://www.example.com/contact/",
+                PrivacyUrl = !string.IsNullOrEmpty(manifestInfo.PrivacyUrl) ? manifestInfo.PrivacyUrl : "https://www.example.com/privacy/",
+                TermsOfUseUrl = !string.IsNullOrEmpty(OAIDocument.Info?.TermsOfService?.OriginalString) ? OAIDocument.Info?.TermsOfService?.OriginalString : "https://www.example.com/terms/",
+            },
+            PackageName = $"com.microsoft.kiota.plugin.{Configuration.ClientClassName}",
+            Name = new Name
+            {
+                ShortName = Configuration.ClientClassName,
+                FullName = $"API Plugin {Configuration.ClientClassName} for {OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document"}"
+            },
+            Description = new Description
+            {
+                ShortName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document",
+                FullName = !string.IsNullOrEmpty(OAIDocument.Info?.Description.CleanupXMLString()) ? $"API Plugin for {OAIDocument.Info?.Description.CleanupXMLString()}." : OAIDocument.Info?.Title.CleanupXMLString() ?? "OpenApi Document"
+            },
+            Icons = new Icons(),
+            AccentColor = "#FFFFFF"
+        };
+
+        if (File.Exists(manifestFullPath)) // No need for default, try to update the model from the file
+        {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+            await using var fileStream = File.OpenRead(manifestFullPath);
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+            var manifestModelFromFile = await JsonSerializer.DeserializeAsync(fileStream, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
+            if (manifestModelFromFile != null)
+                manifestModel = manifestModelFromFile;
+        }
+
+        manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
+
+        if (manifestModel.CopilotExtensions.Plugins.FirstOrDefault(pluginItem => Configuration.ClientClassName.Equals(pluginItem.Id, StringComparison.OrdinalIgnoreCase)) is { } plugin)
+        {
+            plugin.File = pluginFileName; // id is already consitent so make sure the file name is ok
+        }
+        else
+        {
+            // Add a new plugin entry
+            manifestModel.CopilotExtensions.Plugins.Add(new Plugin
+            {
+                File = pluginFileName,
+                Id = Configuration.ClientClassName
+            });
+        }
+
+        return manifestModel;
+    }
+
+    internal static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    });
 
     private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
     {
