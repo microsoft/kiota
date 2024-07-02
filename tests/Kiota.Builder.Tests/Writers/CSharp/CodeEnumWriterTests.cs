@@ -136,7 +136,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(new CodeEnumOption { Name = "option2" });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""\)\]";
+        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\""\)\]";
         Assert.Matches(pattern, result);
     }
 }
