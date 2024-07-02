@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<!-- markdownlint-disable-file MD024 -->
+
 ## [Unreleased]
 
 ### Added
@@ -881,7 +883,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
 - Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
 - Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
-- Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
+- Reduce code verbosity on Go Getters and Setters. [G0#26](https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26)
 
 ## [0.3.0] - 2022-07-08
 
