@@ -310,8 +310,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     }
     protected void DisplayUrlInformation(string? apiRootUrl, bool isPlugin = false)
     {
-        if (!string.IsNullOrEmpty(apiRootUrl))
-            DisplayInfo($"{(isPlugin ? "Plugin" : "Client")} base url set to {apiRootUrl}");
+        if (!string.IsNullOrEmpty(apiRootUrl) && !isPlugin)
+            DisplayInfo($"Client base url set to {apiRootUrl}");
     }
     protected void DisplayGenerateCommandHint()
     {
