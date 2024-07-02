@@ -125,18 +125,21 @@ export enum ConsumerOperation {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Generate
 }
-export function parsePluginType(value: string): KiotaPluginType {
-    switch (value) {
-        case "OpenAI":
-            return KiotaPluginType.OpenAI;
-        case "ApiManifest":
-            return KiotaPluginType.ApiManifest;
-        case "ApiPlugin":
-            return KiotaPluginType.ApiPlugin;
-        default:
-            throw new Error("unknown plugin type");
-    }
+export function parsePluginType(values: string[]): KiotaPluginType[] {
+    return values.map(value => {
+        switch (value.toLowerCase()) {
+            case "openai":
+                return KiotaPluginType.OpenAI;
+            case "apimanifest":
+                return KiotaPluginType.ApiManifest;
+            case "apiplugin":
+                return KiotaPluginType.ApiPlugin;
+            default:
+                throw new Error(`unknown plugin type: ${value}`);
+        }
+    });
 }
+
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
     switch (language) {
         case KiotaGenerationLanguage.CSharp:
