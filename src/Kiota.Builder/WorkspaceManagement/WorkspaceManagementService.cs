@@ -331,7 +331,7 @@ public class WorkspaceManagementService
         }
         var generationConfiguration = new GenerationConfiguration();
         lockInfo.UpdateGenerationConfigurationFromLock(generationConfiguration);
-        generationConfiguration.OutputPath = "./" + Path.GetRelativePath(WorkingDirectory, lockFileDirectory);
+        generationConfiguration.OutputPath = "./" + Path.GetRelativePath(WorkingDirectory, lockFileDirectory).NormalizePathSeparators();
         if (!string.IsNullOrEmpty(clientName))
         {
             generationConfiguration.ClientClassName = clientName;

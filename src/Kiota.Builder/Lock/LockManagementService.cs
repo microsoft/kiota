@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Lock;
 
@@ -83,12 +84,7 @@ public class LockManagementService : ILockManagementService
     {
         if (IsDescriptionLocal(descriptionPath) &&
             Path.GetDirectoryName(lockFilePath) is string lockFileDirectoryPath)
-        {
-            var relativePath = Path.GetRelativePath(lockFileDirectoryPath, descriptionPath);
-            if (Path.DirectorySeparatorChar != '/')
-                relativePath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
-            return relativePath;
-        }
+            return Path.GetRelativePath(lockFileDirectoryPath, descriptionPath).NormalizePathSeparators();
         return descriptionPath;
     }
     /// <inheritdoc/>
