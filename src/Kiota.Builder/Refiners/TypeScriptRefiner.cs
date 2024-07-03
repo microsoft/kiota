@@ -335,10 +335,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
 
-        var method = function.OriginalLocalMethod;
         // Add the key parameter if the composed type is a union of primitive values
         if (IsComposedOfPrimitives(composedType))
-            method.AddParameter(CreateKeyParameter());
+            function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
     }
 
     private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
