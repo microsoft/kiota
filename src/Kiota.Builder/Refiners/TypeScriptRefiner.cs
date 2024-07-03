@@ -274,17 +274,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return codeNamespace.GetChildElements(true)
             .OfType<CodeFunction>()
             .Where(codeFunction =>
-                IsDeserializerOrSerializerFuntion(codeFunction, codeInterface) ||
-                IsFactoryFuntion(codeFunction, codeInterface, codeNamespace));
+                IsDeserializerOrSerializerFunction(codeFunction, codeInterface) ||
+                IsFactoryFunction(codeFunction, codeInterface, codeNamespace));
     }
 
-    private static bool IsDeserializerOrSerializerFuntion(CodeFunction codeFunction, CodeInterface codeInterface)
+    private static bool IsDeserializerOrSerializerFunction(CodeFunction codeFunction, CodeInterface codeInterface)
     {
         return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
             codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type is CodeType codeType && codeType.TypeDefinition == codeInterface);
     }
 
-    private static bool IsFactoryFuntion(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
+    private static bool IsFactoryFunction(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
         return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
             codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&

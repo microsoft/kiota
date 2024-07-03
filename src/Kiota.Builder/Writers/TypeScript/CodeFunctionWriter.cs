@@ -27,7 +27,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is { } composedType && IsComposedOfPrimitives(composedType);
 
-        var returnType = codeMethod.Kind is CodeMethodKind.Factory  && !isComposedOfPrimitives ?
+        var returnType = codeMethod.Kind is CodeMethodKind.Factory && !isComposedOfPrimitives ?
             FactoryMethodReturnType :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
@@ -73,7 +73,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
-        
+
         if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
@@ -457,7 +457,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         // handle the composed type deserializer differently
         var composedParam = GetComposedTypeParameter(codeFunction);
-        if (composedParam is not null) 
+        if (composedParam is not null)
         {
             WriteComposedTypeDeserializer(codeFunction, writer, composedParam);
             return;
