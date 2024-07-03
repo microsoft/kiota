@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dropped `client base url set to` message when generating plugins. [#4905](https://github.com/microsoft/kiota/issues/4905)
 - Emit `[GeneratedCode]` attribute for C# types. [#4907](https://github.com/microsoft/kiota/issues/4907)
 - Fixes error property disambiguation when the property has the same name as class [#4893](https://github.com/microsoft/kiota/issues/)
+- Fixes missing imports for `UntypedNode` for method parameter and return value scenarios. [#4925](https://github.com/microsoft/kiota/issues/4925)
 
 ## [1.15.0] - 2024-06-06
 
