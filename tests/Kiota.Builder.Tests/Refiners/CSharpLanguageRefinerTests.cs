@@ -509,6 +509,32 @@ public class CSharpLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed
         Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Single(exception.Properties);
+        Assert.Equal("message", exception.Properties.First().Name, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task RenamesExceptionClassWithReservedPropertyNameWhenPropertyIsInitiallyAbsent()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "message",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "something",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed
+        Assert.Equal("something", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(2, exception.Properties.Count()); // initial property plus primary message
+        Assert.Equal("Message", exception.Properties.ToArray()[0].Name);
+        Assert.Equal("Something", exception.Properties.ToArray()[1].Name);
     }
     [Fact]
     public async Task DoesNotReplaceNonExceptionPropertiesNames()
