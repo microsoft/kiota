@@ -264,7 +264,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
 
         var composedType = GetOriginalComposedType(codeInterface);
-        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedType, functions);
+        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(composedType, functions);
 
         return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
     }
