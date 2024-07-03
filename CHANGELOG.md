@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensures HashSet properties in `KiotaLock` maintain IgnoreCase comparer across runs [#4916](https://github.com/microsoft/kiota/issues/4916)
 - Dropped `client base url set to` message when generating plugins. [#4905](https://github.com/microsoft/kiota/issues/4905)
 - Emit `[GeneratedCode]` attribute for C# types. [#4907](https://github.com/microsoft/kiota/issues/4907)
+- Fixes error property disambiguation when the property has the same name as class [#4893](https://github.com/microsoft/kiota/issues/)
 
 ## [1.15.0] - 2024-06-06
 

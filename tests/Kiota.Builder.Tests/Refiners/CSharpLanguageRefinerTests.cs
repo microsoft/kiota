@@ -455,6 +455,51 @@ public class CSharpLanguageRefinerTests
         }).First();
         var propToAdd = exception.AddProperty(new CodeProperty
         {
+            Name = "stacktrace",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("stacktraceEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("stacktrace", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task DoesNotRenamePrimaryErrorMessageIfMatchAlreadyExists()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        Assert.False(exception.Properties.First().IsOfKind(CodePropertyKind.ErrorMessageOverride));// property is NOT message override
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);// property remains
+        Assert.Single(exception.Properties);
+        Assert.True(exception.Properties.First().IsOfKind(CodePropertyKind.ErrorMessageOverride));// property is now message override
+        Assert.Equal("Message", exception.Properties.First().Name);
+    }
+    [Fact]
+    public async Task RenamesExceptionClassWithReservedPropertyName()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "message",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
             Name = "message",
             Type = new CodeType
             {
@@ -462,8 +507,8 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("messageEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed
+        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task DoesNotReplaceNonExceptionPropertiesNames()
