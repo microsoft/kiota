@@ -291,7 +291,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
     }
 
-    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
+    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeComposedTypeBase composedType, CodeFunction[] functions)
     {
         var children = new List<CodeElement>(functions)
         {
