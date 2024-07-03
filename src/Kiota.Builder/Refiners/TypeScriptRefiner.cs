@@ -264,7 +264,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             return null;
 
         var composedType = GetOriginalComposedType(codeInterface);
-        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(composedType, functions);
+        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedType, functions);
 
         return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
     }
@@ -291,7 +291,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
     }
 
-    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeComposedTypeBase composedType, CodeFunction[] functions)
+    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
     {
         var children = new List<CodeElement>(functions)
         {
@@ -301,7 +301,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         ReplaceFactoryMethodForComposedType(composedType, children);
         ReplaceSerializerMethodForComposedType(composedType, children);
-        ReplaceDeserializerMethodForComposedType(composedType, children);
+        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
 
         return children;
     }
@@ -341,7 +341,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             method.AddParameter(CreateKeyParameter());
     }
 
-    private static void ReplaceDeserializerMethodForComposedType(CodeComposedTypeBase composedType, List<CodeElement> children)
+    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
     {
         if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
 
@@ -349,6 +349,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (composedType is not CodeIntersectionType || IsComposedOfPrimitives(composedType))
         {
             children.Remove(deserializerMethod);
+            codeInterface.RemoveChildElement(deserializerMethod);
+            codeNamespace.RemoveChildElement(deserializerMethod);
         }
     }
 
