@@ -25,9 +25,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var codeMethod = codeElement.OriginalLocalMethod;
 
-        var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
+        var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is { } composedType && IsComposedOfPrimitives(composedType);
 
-        var returnType = codeMethod.Kind is CodeMethodKind.Factory || (codeMethod.Kind is CodeMethodKind.ComposedTypeFactory && !isComposedOfPrimitives) ?
+        var returnType = codeMethod.Kind is CodeMethodKind.Factory  && !isComposedOfPrimitives ?
             FactoryMethodReturnType :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
@@ -45,17 +45,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 WriteSerializerFunction(codeElement, writer);
                 break;
             case CodeMethodKind.Factory:
-            case CodeMethodKind.ComposedTypeFactory:
                 WriteDiscriminatorFunction(codeElement, writer);
                 break;
             case CodeMethodKind.ClientConstructor:
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
-                break;
-            case CodeMethodKind.ComposedTypeSerializer:
-                WriteComposedTypeSerializer(codeElement, writer);
-                break;
-            case CodeMethodKind.ComposedTypeDeserializer:
-                WriteComposedTypeDeserializer(codeElement, writer);
                 break;
             default: throw new InvalidOperationException("Invalid code method kind");
         }
@@ -73,10 +66,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine("return undefined;");
     }
 
-    private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer)
+    private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)
     {
-        var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
+        return codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
+    }
 
+    private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
+    {
+        
         if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
@@ -88,10 +85,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.CloseBlock();
     }
 
-    private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer)
+    private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
-        var composedParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
-
         if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         if (IsComposedOfPrimitives(composedType))
@@ -338,6 +333,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
+        // Determine if the function serializes a composed type
+        var composedParam = GetComposedTypeParameter(codeElement);
+        if (composedParam is not null)
+        {
+            WriteComposedTypeSerializer(codeElement, writer, composedParam);
+            return;
+        }
+
         if (codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType type && type.TypeDefinition is CodeInterface) is not
             {
                 Type: CodeType
@@ -452,6 +455,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
+        // handle the composed type deserializer differently
+        var composedParam = GetComposedTypeParameter(codeFunction);
+        if (composedParam is not null) 
+        {
+            WriteComposedTypeDeserializer(codeFunction, writer, composedParam);
+            return;
+        }
+
         var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
         if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {

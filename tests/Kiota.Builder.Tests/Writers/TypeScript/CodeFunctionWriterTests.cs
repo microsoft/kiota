@@ -1212,7 +1212,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Serializer function
-        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeFactory).FirstOrDefault();
+        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory).FirstOrDefault();
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
         var result = tw.ToString();
@@ -1335,7 +1335,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Factory Function
-        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeFactory).FirstOrDefault();
+        var factoryFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory).FirstOrDefault();
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
         var result = tw.ToString();
@@ -1373,7 +1373,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Deserializer function
-        var deserializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeDeserializer).FirstOrDefault();
+        var deserializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Deserializer).FirstOrDefault();
         Assert.True(deserializerFunction is not null);
         writer.Write(deserializerFunction);
         var serializerFunctionStr = tw.ToString();
@@ -1411,7 +1411,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Serializer function
-        var serializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.ComposedTypeSerializer).FirstOrDefault();
+        var serializerFunction = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer).FirstOrDefault();
         Assert.True(serializerFunction is not null);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
