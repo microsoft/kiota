@@ -485,9 +485,9 @@ public class CSharpLanguageRefinerTests
         Assert.False(exception.Properties.First().IsOfKind(CodePropertyKind.ErrorMessageOverride));// property is NOT message override
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);// property remains
-        Assert.Single(exception.Properties);
+        Assert.Single(exception.Properties); // no new properties added
         Assert.True(exception.Properties.First().IsOfKind(CodePropertyKind.ErrorMessageOverride));// property is now message override
-        Assert.Equal("Message", exception.Properties.First().Name);
+        Assert.Equal("message", exception.Properties.First().Name, StringComparer.OrdinalIgnoreCase); // name is expected.
     }
     [Fact]
     public async Task RenamesExceptionClassWithReservedPropertyName()
@@ -507,9 +507,9 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed
-        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Single(exception.Properties);
+        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed to avoid removing special overidden property
+        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase); // property is unchanged
+        Assert.Single(exception.Properties); // no new properties added
         Assert.Equal("message", exception.Properties.First().Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
@@ -530,11 +530,11 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed
-        Assert.Equal("something", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed to avoid removing special overidden property
+        Assert.Equal("something", propToAdd.Name, StringComparer.OrdinalIgnoreCase); // existing property remains
         Assert.Equal(2, exception.Properties.Count()); // initial property plus primary message
-        Assert.Equal("Message", exception.Properties.ToArray()[0].Name);
-        Assert.Equal("Something", exception.Properties.ToArray()[1].Name);
+        Assert.Equal("message", exception.Properties.ToArray()[0].Name, StringComparer.OrdinalIgnoreCase); // primary error message is present
+        Assert.Equal("something", exception.Properties.ToArray()[1].Name, StringComparer.OrdinalIgnoreCase);// existing property remains
     }
     [Fact]
     public async Task DoesNotReplaceNonExceptionPropertiesNames()
