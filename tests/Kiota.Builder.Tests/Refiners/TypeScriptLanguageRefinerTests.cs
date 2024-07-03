@@ -974,5 +974,55 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var result = TypeScriptRefiner.GetOriginalComposedType(codeInterface);
         Assert.Equal(composedType.Object, result);
     }
+    [Fact]
+    public async Task AddsUsingForUntypedNodeInReturnType()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var model = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType
+            {
+                Name = KiotaBuilder.UntypedNodeName
+            }
+        };
+        requestBuilderClass.AddMethod(model);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, model.ReturnType.Name);// type is renamed
+        Assert.NotEmpty(requestBuilderClass.StartBlock.Usings);
+        var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
+    }
+    [Fact]
+    public async Task AddsUsingForUntypedNodeInMethodParameter()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var method = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsExternal = true
+            }
+        };
+        method.AddParameter(new CodeParameter()
+        {
+            Name = "jsonData",
+            Type = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            }
+        });
+        requestBuilderClass.AddMethod(method);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, method.Parameters.First().Type.Name);// type is renamed
+        Assert.NotEmpty(requestBuilderClass.StartBlock.Usings);
+        var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
+    }
     #endregion
 }

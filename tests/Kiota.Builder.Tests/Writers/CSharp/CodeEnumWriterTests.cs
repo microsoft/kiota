@@ -110,6 +110,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("= 1", result);
         Assert.Contains("= 2", result);
     }
+
     [Fact]
     public void WritesEnumOptionDescription()
     {
@@ -120,11 +121,22 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains($"<summary>{Option.Documentation.DescriptionTemplate}</summary>", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+
     [Fact]
     public void DoesntWriteAnythingOnNoOption()
     {
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void WritesGeneratedCodeAttribute()
+    {
+        currentEnum.AddOption(new CodeEnumOption { Name = "option2" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\""\)\]";
+        Assert.Matches(pattern, result);
     }
 }
