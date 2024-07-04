@@ -299,4 +299,10 @@ public static partial class StringExtensions
         if (string.IsNullOrEmpty(path)) return string.Empty;
         return Path.GetExtension(path).TrimStart('.');
     }
+    public static string NormalizePathSeparators(this string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        if (Path.DirectorySeparatorChar != '/') return path.Replace(Path.DirectorySeparatorChar, '/');
+        return path;
+    }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
@@ -41,12 +42,12 @@ public abstract class BaseApiConsumerConfiguration
     public void NormalizeOutputPath(string targetDirectory)
     {
         if (Path.IsPathRooted(OutputPath))
-            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath).NormalizePathSeparators();
     }
     public void NormalizeDescriptionLocation(string targetDirectory)
     {
         if (Path.IsPathRooted(DescriptionLocation) && Path.GetFullPath(DescriptionLocation).StartsWith(Path.GetFullPath(targetDirectory), StringComparison.Ordinal) && !DescriptionLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            DescriptionLocation = "./" + Path.GetRelativePath(targetDirectory, DescriptionLocation);
+            DescriptionLocation = "./" + Path.GetRelativePath(targetDirectory, DescriptionLocation).NormalizePathSeparators();
     }
     protected void CloneBase(BaseApiConsumerConfiguration target)
     {
