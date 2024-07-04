@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Emit `[GeneratedCode]` attribute for C# types. [#4907](https://github.com/microsoft/kiota/issues/4907)
 - Fixes error property disambiguation when the property has the same name as class [#4893](https://github.com/microsoft/kiota/issues/)
 - Fixes missing imports for `UntypedNode` for method parameter and return value scenarios. [#4925](https://github.com/microsoft/kiota/issues/4925)
+- Normalize path separators in lock and workspace files to use `/` as the path separator. [#4228](https://github.com/microsoft/kiota/issues/4228)
 
 ## [1.15.0] - 2024-06-06
 
