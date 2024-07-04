@@ -9,11 +9,10 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
-public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
+public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration), ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
 
-    public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -21,6 +20,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
+            // Invoke the ConvertUnionTypesToWrapper method to maintain a consistent CodeDOM structure. 
+            // Note that in the later stages, specifically within the GenerateModelCodeFile() function, the introduced wrapper interface is disregarded. 
+            // Instead, a ComposedType is created, which has its own writer, along with the associated Factory, Serializer, and Deserializer functions 
+            // that are incorporated into the CodeFile.
             ConvertUnionTypesToWrapper(
                 generatedCode,
                 _configuration.UsesBackingStore,

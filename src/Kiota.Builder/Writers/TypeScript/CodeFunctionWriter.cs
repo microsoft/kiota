@@ -455,7 +455,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
-        // handle the composed type deserializer differently
+        // handle composed types
         var composedParam = GetComposedTypeParameter(codeFunction);
         if (composedParam is not null)
         {
@@ -466,20 +466,28 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
         if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
-            var properties = codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.BackingStore) && !x.ExistsInBaseType);
-
-            writer.StartBlock("return {");
-            WriteInheritsBlock(codeInterface, param, writer);
-            var (primaryErrorMapping, primaryErrorMappingKey) = GetPrimaryErrorMapping(codeFunction, param);
-
-            foreach (var otherProp in properties)
-            {
-                WritePropertyBlock(otherProp, param, primaryErrorMapping, primaryErrorMappingKey, codeFunction, writer);
-            }
-
-            writer.CloseBlock();
+            WriteDeserializerFunctionProperties(param, codeInterface, codeFunction, writer);
         }
-        else throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
+        else
+        {
+            throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
+        }
+    }
+
+    private void WriteDeserializerFunctionProperties(CodeParameter param, CodeInterface codeInterface, CodeFunction codeFunction, LanguageWriter writer)
+    {
+        var properties = codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.BackingStore) && !x.ExistsInBaseType);
+
+        writer.StartBlock("return {");
+        WriteInheritsBlock(codeInterface, param, writer);
+        var (primaryErrorMapping, primaryErrorMappingKey) = GetPrimaryErrorMapping(codeFunction, param);
+
+        foreach (var otherProp in properties)
+        {
+            WritePropertyBlock(otherProp, param, primaryErrorMapping, primaryErrorMappingKey, codeFunction, writer);
+        }
+
+        writer.CloseBlock();
     }
 
     private void WriteInheritsBlock(CodeInterface codeInterface, CodeParameter param, LanguageWriter writer)
