@@ -197,7 +197,7 @@ public class GenerationConfiguration : ICloneable
             !OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
             Path.IsPathRooted(OpenAPIFilePath) &&
             Path.GetFullPath(OpenAPIFilePath).StartsWith(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
-            return "./" + Path.GetRelativePath(targetDirectory, OpenAPIFilePath);
+            return "./" + Path.GetRelativePath(targetDirectory, OpenAPIFilePath).NormalizePathSeparators();
         return OpenAPIFilePath;
     }
     public bool IsPluginConfiguration => PluginTypes.Count != 0;
