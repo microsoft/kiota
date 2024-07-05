@@ -27,7 +27,6 @@ public class DomReferenceResolver : ReferenceResolver
             (null, CodeNamespace) when string.IsNullOrEmpty(value.Name) => "root",
             (CodeNamespace parentNS, not null and not CodeNamespace) => $"{parentNS.Name}.{value.Name}",
             (CodeNamespace, CodeNamespace) or (null, not null) => value.Name,
-            (_, CodeType { IsExternal: true } import) => import.Name,
             (not null, not null) => $"{GetReferenceId(value.Parent)}.{value.Name}",
             _ => throw new InvalidOperationException($"Invalid state {value?.GetType()?.Name} parent {value?.Parent?.GetType()?.Name}")
         };
