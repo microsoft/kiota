@@ -146,6 +146,8 @@ internal class CopilotExtensions
 {
     public IList<Plugin> Plugins { get; set; } = [];
     public IList<DeclarativeCopilot> DeclarativeCopilots { get; set; } = [];
+    [JsonExtensionData]
+    public Dictionary<string, Object> AdditionalData { get; set; } = new();
 }
 
 internal class Plugin
