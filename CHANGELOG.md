@@ -13,8 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.16.0] - 2024-07-05
+
+### Added
+
+### Changed
+
 - Implemented partial class model declarations. [4894](https://github.com/microsoft/kiota/issues/4894)
 - Fixed a bug where the Go file names were too long
+- Fixed a bug where the declarative copilot information would be erased if any. [#4935](https://github.com/microsoft/kiota/issues/4935)
 - Fixes bug with model names in Go generated from camel case namespace. [https://github.com/microsoftgraph/msgraph-sdk-go/issues/721]
 - Plugins OpenAPI extensions are only added when generating plugins to reduce the risk of parsing errors. [#4834](https://github.com/microsoft/kiota/issues/4834)
 - TypeScript imports are now using ES6 imports with the .js extension.
@@ -1387,3 +1394,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
