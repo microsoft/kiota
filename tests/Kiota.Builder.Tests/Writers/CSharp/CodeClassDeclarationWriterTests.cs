@@ -113,7 +113,6 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\""\)\]";
-        Assert.Matches(pattern, result);
+        Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
     }
 }
