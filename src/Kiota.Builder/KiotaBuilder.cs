@@ -272,7 +272,7 @@ public partial class KiotaBuilder
             // Generate dom export
             //TODO hide this behind an environment variable
             sw.Start();
-            var diffService = new KiotaDiffService(config.OutputPath);
+            var diffService = new DomExportService(config.OutputPath);
             await diffService.SerializeDomAsync(generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - generated dom export - took");
 

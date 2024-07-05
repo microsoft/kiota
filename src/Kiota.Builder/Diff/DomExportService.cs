@@ -8,9 +8,9 @@ using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Diff;
 
-public class KiotaDiffService
+public class DomExportService
 {
-    public KiotaDiffService(string outputDirectoryPath)
+    public DomExportService(string outputDirectoryPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectoryPath);
         OutputDirectoryPath = outputDirectoryPath;
@@ -28,7 +28,7 @@ public class KiotaDiffService
     };
     private static readonly DomJsonSerializationContext context = new(options);
     private readonly string OutputDirectoryPath;
-    private const string DomExportFileName = "diff.json";
+    private const string DomExportFileName = "kiota-dom-export.json";
     public async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
         //TODO there are things were order matter like enum options and parameters
