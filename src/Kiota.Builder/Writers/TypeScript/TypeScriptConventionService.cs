@@ -79,7 +79,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (code is CodeType currentType)
         {
             var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
-            var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             return $"{typeName}{collectionSuffix}{genericParameters}";

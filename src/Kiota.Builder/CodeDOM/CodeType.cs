@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -35,8 +36,20 @@ public class CodeType : CodeTypeBase, ICloneable
             // Clone the list so that modifications on cloned objects' property are localized
             // e.g. var y = x.Clone(); var z = y.Clone(); y.GenericTypeParameterValues.Add(value);
             // shouldn't modify x.GenericTypeParameterValues or z.GenericTypeParameterValues
-            GenericTypeParameterValues = new(GenericTypeParameterValues.ToList()),
+            genericTypeParameterValues = [.. genericTypeParameterValues],
         }.BaseClone<CodeType>(this, TypeDefinition is null || IsExternal);
     }
-    public Collection<CodeType> GenericTypeParameterValues { get; init; } = new();
+    public IEnumerable<CodeType> GenericTypeParameterValues
+    {
+        get => genericTypeParameterValues;
+        init => AddGenericTypeParameterValue([.. value]);
+    }
+    private Collection<CodeType> genericTypeParameterValues = [];
+    public void AddGenericTypeParameterValue(params CodeType[] types)
+    {
+        if (types is null) return;
+        EnsureElementsAreChildren(types);
+        foreach (var type in types)
+            genericTypeParameterValues.Add(type);
+    }
 }

@@ -327,10 +327,10 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             {
                 Name = "Tuple",
                 IsExternal = true,
-                GenericTypeParameterValues = new() {
+                GenericTypeParameterValues = [
                     CreateCommandType(collectionKind),
                     CreateCommandType(collectionKind),
-                }
+                ]
             },
             SimpleName = indexer.Name.CleanupSymbolName()
         };
