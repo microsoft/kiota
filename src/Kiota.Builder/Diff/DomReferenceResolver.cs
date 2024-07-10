@@ -27,7 +27,7 @@ public class DomReferenceResolver : ReferenceResolver
             (null, CodeNamespace) when string.IsNullOrEmpty(value.Name) => "root",
             (CodeNamespace parentNS, not null and not CodeNamespace) => $"{parentNS.Name}.{value.Name}",
             (CodeNamespace, CodeNamespace) or (null, not null) => value.Name,
-            (not null, not null) => $"{GetReferenceId(value.Parent)}.{value.Name}",
+            (not null, not null) => $"{GetReferenceId(value.Parent)}.{value.Name}-{value.GetType().Name.Split('.')[^1].ToLowerInvariant()}",
             _ => throw new InvalidOperationException($"Invalid state {value?.GetType()?.Name} parent {value?.Parent?.GetType()?.Name}")
         };
     }
@@ -102,6 +102,7 @@ public class DomReferenceResolver : ReferenceResolver
                 _referenceCount++;
                 referenceId = _referenceCount.ToString(CultureInfo.InvariantCulture);
             }
+            // TODO this doesn't work because we create multiple instances for the same reference, we need to deduplicate the references by types and other factors
             _objectToReferenceIdMap.Add(value, referenceId);
             alreadyExists = false;
             return referenceId;
