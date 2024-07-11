@@ -132,6 +132,7 @@ export async function activate(
           );
           return;
         }
+    
         let languagesInformation = await getLanguageInformation(context);
         const config = await generateSteps(
           {
@@ -153,23 +154,24 @@ export async function activate(
           );
           return;
         }
-        
+    
         const settings = getExtensionSettings(extensionId);
         let result;
         switch (generationType) {
           case GenerationType.Client:
             result = await generateClientAndRefreshUI(config, settings, outputPath, selectedPaths);
-          break;
+            break;
           case GenerationType.Plugin:
             result = await generatePluginAndRefreshUI(config, settings, outputPath, selectedPaths);
-          break;
+            break;
           case GenerationType.ApiManifest:
             result = await generateManifestAndRefreshUI(config, settings, outputPath, selectedPaths);
+            break;
           default:
             await vscode.window.showErrorMessage(
               vscode.l10n.t("Invalid generation type")
             );
-          break;
+            return;
         }
 
         if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
@@ -180,7 +182,6 @@ export async function activate(
             clientClassName: config.clientClassName || config.pluginName
           } as GeneratedOutputState);
           if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.window.showInformationMessage('Opening a new window with the output folder as workspace.');
             await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(outputPath), true);
           } else {
             await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
