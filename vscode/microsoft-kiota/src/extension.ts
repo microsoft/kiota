@@ -155,6 +155,7 @@ export async function activate(
         }
     
         const settings = getExtensionSettings(extensionId);
+        workspaceGenerationType = config.generationType as string;
         let result;
         switch (generationType) {
           case GenerationType.Client:
