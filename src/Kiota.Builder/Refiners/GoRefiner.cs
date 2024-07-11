@@ -19,7 +19,6 @@ public class GoRefiner : CommonLanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             DeduplicateErrorMappings(generatedCode);
-            NormalizeNamespaceNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -40,6 +39,7 @@ public class GoRefiner : CommonLanguageRefiner
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);
+            NormalizeNamespaceNames(generatedCode);
             AddInnerClasses(
                 generatedCode,
                 true,

@@ -8,4 +8,6 @@ export const KIOTA_WORKSPACE_FILE = "workspace.json";
 export const KIOTA_DIRECTORY = '.kiota';
 export const CLIENTS = "clients";
 export const PLUGINS = "plugins";
+export const CLIENT = "client";
+export const PLUGIN = "plugin";
 

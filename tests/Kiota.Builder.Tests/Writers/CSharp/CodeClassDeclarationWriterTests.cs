@@ -107,4 +107,12 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("Project.Graph", result);
         Assert.Contains("System.Util", result);
     }
+
+    [Fact]
+    public void WritesGeneratedCodeAttribute()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
+    }
 }

@@ -2,7 +2,7 @@
 
 astroid==3.2.2 ; python_full_version >= '3.7.2'
 
-certifi==2024.6.2 ; python_version >= '3.6'
+certifi==2024.7.4 ; python_version >= '3.6'
 
 charset-normalizer==3.3.2 ; python_full_version >= '3.7.0'
 
@@ -40,7 +40,7 @@ platformdirs==4.2.2 ; python_version >= '3.7'
 
 pluggy==1.5.0 ; python_version >= '3.7'
 
-pylint==3.2.4
+pylint==3.2.5
 
 pytest==8.2.2
 
@@ -54,7 +54,7 @@ tomli==2.0.1 ; python_version < '3.11'
 
 tomli-w==1.0.0 ; python_version >= '3.7'
 
-tomlkit==0.12.5 ; python_version >= '3.7'
+tomlkit==0.13.0 ; python_version >= '3.7'
 
 typing-extensions==4.12.2 ; python_version >= '3.7'
 
@@ -102,7 +102,7 @@ microsoft-kiota-abstractions==1.3.3
 
 microsoft-kiota-authentication-azure==1.0.0
 
-microsoft-kiota-http==1.3.1
+microsoft-kiota-http==1.3.2
 
 microsoft-kiota-serialization-json==1.2.0
 

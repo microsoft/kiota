@@ -29,18 +29,17 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import {  KiotaWorkspace } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
 let clientOrPluginKey: string;
-let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
+let config: Partial<GenerateState>;
 
 interface GeneratedOutputState {
   outputPath: string;
-  config: Partial<GenerateState>;
   clientClassName: string;
 }
 
@@ -134,7 +133,7 @@ export async function activate(
         }
     
         let languagesInformation = await getLanguageInformation(context);
-        const config = await generateSteps(
+        config = await generateSteps(
           {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
@@ -192,7 +191,7 @@ export async function activate(
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
       if (generatedOutput) {
-        const { outputPath, config } = generatedOutput;
+        const { outputPath} = generatedOutput;
         await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
         // Clear the state 
         void context.workspaceState.update('generatedOutput', undefined);
@@ -247,12 +246,12 @@ export async function activate(
     ),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
      clientOrPluginKey = clientKey;
-     clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
      await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
+      clientOrPluginKey = config.clientClassName ? config.clientClassName! : config.pluginName!;
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -261,11 +260,11 @@ export async function activate(
       );
       return;
     }
-    if(workspaceGenerationType === CLIENTS) {
-      await regenerateClient(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);    
+    if(workspaceGenerationType === CLIENT) {
+      await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);    
     }
-    else if (workspaceGenerationType === PLUGINS)  {
-      await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
+    else if (workspaceGenerationType === PLUGIN)  {
+      await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
     }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
@@ -327,7 +326,7 @@ export async function activate(
     return result;
   }
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<any> {
-    const pluginTypes = typeof config.pluginTypes === 'string' ? parsePluginType(config.pluginTypes) : KiotaPluginType.ApiPlugin;
+    const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -338,7 +337,7 @@ export async function activate(
         context,
         openApiTreeProvider.descriptionUrl,
         outputPath,
-        [pluginTypes],
+        pluginTypes,
         selectedPaths,
         [],
         typeof config.pluginName === "string"
@@ -447,22 +446,22 @@ export async function activate(
     }, async (progress, _) => {
       const result = await generateClient(
         context,
-        clientObject.descriptionLocation,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
         language,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
-        clientObject.excludePatterns,
+        clientObject.excludePatterns ? clientObject.excludePatterns : [],
         clientKey,
         clientObject.clientNamespaceName,
-        clientObject.usesBackingStore,
+        clientObject.usesBackingStore ? clientObject.usesBackingStore : settings.backingStore,
         true, // clearCache
         true, // cleanOutput
-        clientObject.excludeBackwardCompatible,
-        clientObject.disabledValidationRules,
+        clientObject.excludeBackwardCompatible ? clientObject.excludeBackwardCompatible : settings.excludeBackwardCompatible  ,
+        clientObject.disabledValidationRules  ? clientObject.disabledValidationRules : settings.disableValidationRules,
         settings.languagesSerializationConfiguration[language].serializers,
         settings.languagesSerializationConfiguration[language].deserializers,
-        clientObject.structuredMimeTypes,
-        clientObject.includeAdditionalData,
+        clientObject.structuredMimeTypes ? clientObject.structuredMimeTypes : settings.structuredMimeTypes,
+        clientObject.includeAdditionalData ? clientObject.includeAdditionalData : settings.includeAdditionalData,
         ConsumerOperation.Edit
     );
     return result;
@@ -471,7 +470,7 @@ export async function activate(
   openApiTreeProvider.setSelectionChanged(false);
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
-    const pluginTypes = typeof clientObject.pluginTypes === 'string' ? parsePluginType(clientObject.pluginTypes) : KiotaPluginType.ApiPlugin;
+    const pluginTypes =  Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -480,9 +479,9 @@ export async function activate(
       const start = performance.now();
       const result = await generatePlugin(
         context,
-        clientObject.descriptionLocation,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
-        [pluginTypes],
+        pluginTypes,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
         [],
         clientKey,
