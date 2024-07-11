@@ -53,9 +53,9 @@ async function isKiotaWorkspaceFilePresent(): Promise<boolean> {
 
 export async function loadTreeView(context: vscode.ExtensionContext): Promise<void> {
     const treeDataProvider = new WorkspaceTreeProvider(await isKiotaWorkspaceFilePresent());
-    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
         treeDataProvider.isWSPresent = await isKiotaWorkspaceFilePresent();
-    });
+    }));
     context.subscriptions.push(vscode.window.createTreeView('kiota.workspace', { treeDataProvider }));
     context.subscriptions.push(vscode.commands.registerCommand('kiota.workspace.openWorkspaceFile', openResource));
 }
