@@ -257,7 +257,10 @@ internal partial class Server : IServer
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
                             .ToArray();
-        return new PathItem(node.Path, node.DeduplicatedSegment(), children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
+        bool isSelected = filteredPaths.Count == 0 || // There are no filtered paths
+                          Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected) || // All operations have been selected
+                          !Array.Exists(children, static x => x.isOperation) && Array.TrueForAll(children, static x => x.selected); // All paths selected but no operations present
+        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected);
     }
     private static string GetAbsolutePath(string source)
     {
