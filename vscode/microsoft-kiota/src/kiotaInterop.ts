@@ -2,12 +2,13 @@ import * as vscode from "vscode";
 import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
+import { getKiotaWorkspacePath } from "./util";
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
   const kiotaPath = getKiotaPath(context);
   await ensureKiotaIsPresent(context);
   const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined,
+    cwd: getKiotaWorkspacePath(),
     env: {
         ...process.env,
         // eslint-disable-next-line @typescript-eslint/naming-convention
