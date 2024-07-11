@@ -50,7 +50,7 @@ public class LockManagementServiceTests
         var outputDirectory = Path.Combine(tmpPath, "output");
         Directory.CreateDirectory(outputDirectory);
         await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile);
-        Assert.Equal($"..{Path.DirectorySeparatorChar}information{Path.DirectorySeparatorChar}description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task DeletesALock()

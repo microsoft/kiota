@@ -1189,9 +1189,12 @@ components:
         root.Name = "github.com/OrgName/RepoName";
         var models = root.AddNamespace("ApiSdk.models");
         var submodels = models.AddNamespace("ApiSdk.models.submodels");
+        var camelCaseModel = submodels.AddNamespace("ApiSdk.models.submodels.camelCase");
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, ClientNamespaceName = "github.com/OrgName/RepoName" }, root);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels", submodels.Name);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models", models.Name);
+        Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels.camelcase", camelCaseModel.Name);
     }
+
     #endregion
 }
