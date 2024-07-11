@@ -26,7 +26,7 @@ import { getLanguageInformation, getLanguageInformationForDescription } from "./
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
-import {  KiotaWorkspace } from "./workspaceTreeProvider";
+import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
 import { CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
@@ -52,7 +52,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
-  new KiotaWorkspace(context);
+  await loadTreeView(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
     vscode.window.registerUriHandler({

@@ -3,13 +3,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE } from './constants';
 
-const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join('') || '', KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
+const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? 
+                                        vscode.workspace.workspaceFolders[0].uri.fsPath :
+                                        '~/', 
+                                        KIOTA_DIRECTORY,
+                                        KIOTA_WORKSPACE_FILE);
 
 export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-
-    constructor(private context: vscode.ExtensionContext) {
-        void this.ensureKiotaDirectory();
-    }
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (!element) {
             return [new vscode.TreeItem(KIOTA_WORKSPACE_FILE, vscode.TreeItemCollapsibleState.None)];
@@ -24,38 +24,33 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         }
         return element;
     }
+}
 
-    private async ensureKiotaDirectory(): Promise<unknown> {
-        if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.window.showErrorMessage(
-                vscode.l10n.t("No workspace folder found, open a folder first")
-            );
-            return;
-        }
-        const kiotaDir = path.dirname(workspaceJsonPath);
-        try {
-            await fs.promises.access(kiotaDir);
-        } catch (error) {
-            await vscode.window.showErrorMessage(
-                vscode.l10n.t("Kiota directory not found")
-            );
-        }
+async function openResource(resource: vscode.Uri): Promise<void> {
+    try{
+        await vscode.window.showTextDocument(resource);
+    } catch (error) {
+        await fs.promises.writeFile(workspaceJsonPath, Buffer.from('{}'));
+        await vscode.window.showTextDocument(resource);
+    }
+}
+async function ensureKiotaDirectory(): Promise<void> {
+    if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+        return;
+    }
+    const kiotaDir = path.dirname(workspaceJsonPath);
+    try {
+        await fs.promises.access(kiotaDir);
+    } catch (error) {
+        await vscode.window.showErrorMessage(
+            vscode.l10n.t("Kiota directory not found")
+        );
     }
 }
 
-export class KiotaWorkspace {
-    constructor(context: vscode.ExtensionContext) {
-        const treeDataProvider = new WorkspaceTreeProvider(context);
-        context.subscriptions.push(vscode.window.createTreeView('kiota.workspace', { treeDataProvider }));
-        vscode.commands.registerCommand('kiota.workspace.openWorkspaceFile', async (resource) => await this.openResource(resource));
-    }
-    private async openResource(resource: vscode.Uri): Promise<void> {
-        try{
-            await vscode.window.showTextDocument(resource);
-        } catch (error) {
-            await fs.promises.writeFile(workspaceJsonPath, Buffer.from('{}'));
-            await vscode.window.showTextDocument(resource);
-        }
-        
-    }
+export async function loadTreeView(context: vscode.ExtensionContext): Promise<void> {
+    await ensureKiotaDirectory();
+    const treeDataProvider = new WorkspaceTreeProvider();
+    context.subscriptions.push(vscode.window.createTreeView('kiota.workspace', { treeDataProvider }));
+    context.subscriptions.push(vscode.commands.registerCommand('kiota.workspace.openWorkspaceFile', async (resource) => await openResource(resource)));
 }
