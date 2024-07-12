@@ -42,16 +42,23 @@ internal class DomExportService
         {
             CodeProperty property when property.Parent is not null =>
                 $"{GetEntryPath(property.Parent)}::{property.Name}:{GetEntryType(property.Type)}",
-            //TODO method
-            //TODO index
+            CodeMethod method when method.Parent is not null =>
+                $"{GetEntryPath(method.Parent)}::{method.Name}({GetParameters(method.Parameters)}):{GetEntryType(method.ReturnType)}",
+            CodeFunction function when function.Parent is not null =>
+                $"{GetEntryPath(function.Parent)}::{function.Name}({GetParameters(function.OriginalLocalMethod.Parameters)}):{GetEntryType(function.OriginalLocalMethod.ReturnType)}",
+            CodeIndexer codeIndexer when codeIndexer.Parent is not null =>
+                $"{GetEntryPath(codeIndexer.Parent)}::[{GetParameters([codeIndexer.IndexParameter])}]:{GetEntryType(codeIndexer.ReturnType)}",
             //TODO enum member
-            //TODO functions
             //TODO class/interface inheritance
             CodeClass codeClass when includeDefinitions => GetEntryPath(codeClass),
             CodeEnum codeEnum when includeDefinitions => GetEntryPath(codeEnum),
             CodeInterface codeInterface when includeDefinitions => GetEntryPath(codeInterface),
             _ => string.Empty,
         };
+    }
+    private static string GetParameters(IEnumerable<CodeParameter> parameters)
+    {
+        return string.Join(", ", parameters.Select(static x => $"{x.Name}:{GetEntryType(x.Type)}"));
     }
     private static string GetEntryType(CodeTypeBase codeElementTypeBase)
     {
