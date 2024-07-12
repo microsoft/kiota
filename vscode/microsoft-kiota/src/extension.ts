@@ -13,7 +13,6 @@ import {
   KiotaGenerationLanguage,
   KiotaLogEntry,
   KiotaPluginType,
-  LanguageInformation,
   LogLevel,
   parseGenerationLanguage,
   parsePluginType,
@@ -26,15 +25,16 @@ import { getLanguageInformation, getLanguageInformationForDescription } from "./
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
-import {  KiotaWorkspace } from "./workspaceTreeProvider";
+import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { updateTreeViewIcons } from "./util";
+import { KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { isClientType, isPluginType, updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
 let clientOrPluginKey: string;
+let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
 let config: Partial<GenerateState>;
 
@@ -56,7 +56,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
-  new KiotaWorkspace(context);
+  await loadTreeView(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
     vscode.window.registerUriHandler({
@@ -247,12 +247,21 @@ export async function activate(
     ),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
      clientOrPluginKey = clientKey;
+     clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
      await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
-      clientOrPluginKey = config.clientClassName ? config.clientClassName! : config.pluginName!;
+      if (!clientOrPluginKey || clientOrPluginKey === '') {
+        clientOrPluginKey = config.clientClassName || config.pluginName || '';
+      }
+      if (!config) {
+        config = {
+          outputPath: clientOrPluginObject.outputPath,
+          clientClassName: clientOrPluginKey,          
+        };
+      }    
       const settings = getExtensionSettings(extensionId); 
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
      if (selectedPaths.length === 0) {
@@ -261,10 +270,10 @@ export async function activate(
       );
       return;
     }
-    if(workspaceGenerationType === CLIENT) {
+    if(isClientType(workspaceGenerationType)) {
       await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);    
     }
-    else if (workspaceGenerationType === PLUGIN)  {
+    if (isPluginType(workspaceGenerationType)) {
       await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
     }
     }),
@@ -278,10 +287,10 @@ export async function activate(
           );
           return;
       }
-      if (generationType === CLIENTS) {
+      if (isClientType(generationType)) {
       await regenerateClient(clientKey, clientObject, settings);
       }
-      else if (generationType === PLUGINS) {
+      if (isClientType(generationType)) {
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
