@@ -134,7 +134,7 @@ paths:
 ## x-openai-isConsequential
 Specifies whether a confirmation dialog should be displayed before running the operation. Possible values are:
 
-true: must always prompt the user for confirmation before running and don't show "Alaways allow" button
+true: must always prompt the user for confirmation before running and don't show "Always allow" button
 false: it will show the prompt for confirmation with the "Always allow" button
 
 If the `x-openai-isConsequential` is not present, all GET operation will default to `false` and show the "Always allow" button; all other operations will default to `true` and must always prompt the user for confirmation.
