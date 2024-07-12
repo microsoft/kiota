@@ -34,7 +34,7 @@ internal class DomExportService
             foreach (var childElementEntry in GetEntriesFromDom(childElement))
                 yield return childElementEntry;
     }
-    private static string GetEntry(CodeElement codeElement)
+    private static string GetEntry(CodeElement codeElement, bool includeDefinitions = false)
     {
         if (codeElement is IAccessibleElement accessibleElement && accessibleElement.Access is AccessModifier.Private)
             return string.Empty;
@@ -47,16 +47,22 @@ internal class DomExportService
             //TODO enum member
             //TODO functions
             //TODO class/interface inheritance
+            CodeClass codeClass when includeDefinitions => GetEntryPath(codeClass),
+            CodeEnum codeEnum when includeDefinitions => GetEntryPath(codeEnum),
+            CodeInterface codeInterface when includeDefinitions => GetEntryPath(codeInterface),
             _ => string.Empty,
         };
     }
     private static string GetEntryType(CodeTypeBase codeElementTypeBase)
     {
+        var collectionPrefix = codeElementTypeBase.IsArray ? "[" : codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "[" : string.Empty;
+        var collectionSuffix = codeElementTypeBase.IsArray ? "]" : codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "]" : string.Empty;
+        //TODO use the collection types from the convention service
         return codeElementTypeBase switch
         {
-            CodeType codeElementType when codeElementType.TypeDefinition is not null => GetEntry(codeElementType.TypeDefinition),
-            CodeType codeElementType when codeElementType.TypeDefinition is null => codeElementType.Name,
-            _ => codeElementTypeBase.Name,
+            CodeType codeElementType when codeElementType.TypeDefinition is not null => $"{collectionPrefix}{GetEntry(codeElementType.TypeDefinition, true)}{collectionSuffix}",
+            CodeType codeElementType when codeElementType.TypeDefinition is null => $"{collectionPrefix}{codeElementType.Name}{collectionSuffix}",
+            _ => $"{collectionPrefix}{codeElementTypeBase.Name}{collectionSuffix}",
         };
     }
     private static string GetEntryPath(CodeElement codeElement)
