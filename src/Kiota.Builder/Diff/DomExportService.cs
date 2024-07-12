@@ -28,32 +28,33 @@ internal class DomExportService
     }
     private static IEnumerable<string> GetEntriesFromDom(CodeElement currentElement)
     {
-        if (GetEntry(currentElement) is string currentElementEntry && !string.IsNullOrEmpty(currentElementEntry))
+        foreach (var currentElementEntry in GetEntry(currentElement).Where(static x => !string.IsNullOrEmpty(x)))
             yield return currentElementEntry;
         foreach (var childElement in currentElement.GetChildElements())
             foreach (var childElementEntry in GetEntriesFromDom(childElement))
                 yield return childElementEntry;
     }
-    private static string GetEntry(CodeElement codeElement, bool includeDefinitions = false)
+    private static IEnumerable<string> GetEntry(CodeElement codeElement, bool includeDefinitions = false)
     {
         if (codeElement is IAccessibleElement accessibleElement && accessibleElement.Access is AccessModifier.Private)
-            return string.Empty;
+            return [];
         return codeElement switch
         {
             CodeProperty property when property.Parent is not null =>
-                $"{GetEntryPath(property.Parent)}::{property.Name}:{GetEntryType(property.Type)}",
+                [$"{GetEntryPath(property.Parent)}::{property.Name}:{GetEntryType(property.Type)}"],
             CodeMethod method when method.Parent is not null =>
-                $"{GetEntryPath(method.Parent)}::{method.Name}({GetParameters(method.Parameters)}):{GetEntryType(method.ReturnType)}",
+                [$"{GetEntryPath(method.Parent)}::{method.Name}({GetParameters(method.Parameters)}):{GetEntryType(method.ReturnType)}"],
             CodeFunction function when function.Parent is not null =>
-                $"{GetEntryPath(function.Parent)}::{function.Name}({GetParameters(function.OriginalLocalMethod.Parameters)}):{GetEntryType(function.OriginalLocalMethod.ReturnType)}",
+                [$"{GetEntryPath(function.Parent)}::{function.Name}({GetParameters(function.OriginalLocalMethod.Parameters)}):{GetEntryType(function.OriginalLocalMethod.ReturnType)}"],
             CodeIndexer codeIndexer when codeIndexer.Parent is not null =>
-                $"{GetEntryPath(codeIndexer.Parent)}::[{GetParameters([codeIndexer.IndexParameter])}]:{GetEntryType(codeIndexer.ReturnType)}",
-            //TODO enum member
+                [$"{GetEntryPath(codeIndexer.Parent)}::[{GetParameters([codeIndexer.IndexParameter])}]:{GetEntryType(codeIndexer.ReturnType)}"],
+            CodeEnum codeEnum1 when !includeDefinitions =>
+                codeEnum1.Options.Select((x, y) => $"{GetEntryPath(codeEnum1)}::{y:D4}-{x.Name}"),
             //TODO class/interface inheritance
-            CodeClass codeClass when includeDefinitions => GetEntryPath(codeClass),
-            CodeEnum codeEnum when includeDefinitions => GetEntryPath(codeEnum),
-            CodeInterface codeInterface when includeDefinitions => GetEntryPath(codeInterface),
-            _ => string.Empty,
+            CodeClass codeClass when includeDefinitions => [GetEntryPath(codeClass)],
+            CodeEnum codeEnum when includeDefinitions => [GetEntryPath(codeEnum)],
+            CodeInterface codeInterface when includeDefinitions => [GetEntryPath(codeInterface)],
+            _ => [],
         };
     }
     private static string GetParameters(IEnumerable<CodeParameter> parameters)
@@ -67,7 +68,7 @@ internal class DomExportService
         //TODO use the collection types from the convention service
         return codeElementTypeBase switch
         {
-            CodeType codeElementType when codeElementType.TypeDefinition is not null => $"{collectionPrefix}{GetEntry(codeElementType.TypeDefinition, true)}{collectionSuffix}",
+            CodeType codeElementType when codeElementType.TypeDefinition is not null => $"{collectionPrefix}{GetEntry(codeElementType.TypeDefinition, true).First()}{collectionSuffix}",
             CodeType codeElementType when codeElementType.TypeDefinition is null => $"{collectionPrefix}{codeElementType.Name}{collectionSuffix}",
             _ => $"{collectionPrefix}{codeElementTypeBase.Name}{collectionSuffix}",
         };
