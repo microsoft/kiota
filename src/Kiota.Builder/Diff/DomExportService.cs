@@ -9,7 +9,7 @@ using Kiota.Builder.CodeDOM;
 namespace Kiota.Builder.Diff;
 
 internal class DomExportService
-{
+{//TODO rename the service and the namespace to something more meaningful
     internal DomExportService(string outputDirectoryPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectoryPath);
@@ -36,17 +36,20 @@ internal class DomExportService
     }
     private static IEnumerable<string> GetEntry(CodeElement codeElement, bool includeDefinitions = false)
     {
-        if (codeElement is IAccessibleElement accessibleElement && accessibleElement.Access is AccessModifier.Private)
-            return [];
-        //TODO access modifiers
-        //TODO static modifiers
-        //TODO optional parameters
+        string accessModifierValue;
+        if (codeElement is IAccessibleElement accessibleElement)
+            if (accessibleElement.Access is AccessModifier.Private)
+                return [];
+            else
+                accessModifierValue = $"|{accessibleElement.Access.ToString().ToLowerInvariant()}|";
+        else
+            accessModifierValue = string.Empty;
         return codeElement switch
         {
             CodeProperty property when property.Parent is not null =>
-                [$"{GetEntryPath(property.Parent)}::{property.Name}:{GetEntryType(property.Type)}"],
+                [$"{GetEntryPath(property.Parent)}::{accessModifierValue}{property.Name}:{GetEntryType(property.Type)}"],
             CodeMethod method when method.Parent is not null =>
-                [$"{GetEntryPath(method.Parent)}::{method.Name}({GetParameters(method.Parameters)}):{GetEntryType(method.ReturnType)}"],
+                [$"{GetEntryPath(method.Parent)}::{(method.IsStatic ? "|static" : string.Empty)}{accessModifierValue}{method.Name}({GetParameters(method.Parameters)}):{GetEntryType(method.ReturnType)}"],
             CodeFunction function when function.Parent is not null =>
                 [$"{GetEntryPath(function.Parent)}::{function.Name}({GetParameters(function.OriginalLocalMethod.Parameters)}):{GetEntryType(function.OriginalLocalMethod.ReturnType)}"],
             CodeIndexer codeIndexer when codeIndexer.Parent is not null =>
@@ -69,7 +72,7 @@ internal class DomExportService
     private const string ImplementsSymbol = "~~>";
     private static string GetParameters(IEnumerable<CodeParameter> parameters)
     {
-        return string.Join(", ", parameters.Select(static x => $"{x.Name}:{GetEntryType(x.Type)}"));
+        return string.Join(", ", parameters.Select(static x => $"{x.Name}{(x.Optional ? "?" : string.Empty)}:{GetEntryType(x.Type)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
     }
     private static string GetEntryType(CodeTypeBase codeElementTypeBase)
     {
