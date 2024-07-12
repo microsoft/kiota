@@ -38,6 +38,9 @@ internal class DomExportService
     {
         if (codeElement is IAccessibleElement accessibleElement && accessibleElement.Access is AccessModifier.Private)
             return [];
+        //TODO access modifiers
+        //TODO static modifiers
+        //TODO optional parameters
         return codeElement switch
         {
             CodeProperty property when property.Parent is not null =>
@@ -50,13 +53,20 @@ internal class DomExportService
                 [$"{GetEntryPath(codeIndexer.Parent)}::[{GetParameters([codeIndexer.IndexParameter])}]:{GetEntryType(codeIndexer.ReturnType)}"],
             CodeEnum codeEnum1 when !includeDefinitions =>
                 codeEnum1.Options.Select((x, y) => $"{GetEntryPath(codeEnum1)}::{y:D4}-{x.Name}"),
-            //TODO class/interface inheritance
+            CodeClass codeClass1 when !includeDefinitions && codeClass1.StartBlock.Inherits is not null =>
+                [$"{GetEntryPath(codeClass1)}{InheritsSymbol}{GetEntryType(codeClass1.StartBlock.Inherits)}"],
+            CodeClass codeClass2 when !includeDefinitions && codeClass2.StartBlock.Implements.Any() =>
+                [$"{GetEntryPath(codeClass2)}{ImplementsSymbol}{string.Join(", ", codeClass2.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
+            CodeInterface codeInterface1 when !includeDefinitions && codeInterface1.StartBlock.Implements.Any() =>
+                [$"{GetEntryPath(codeInterface1)}{ImplementsSymbol}{string.Join(", ", codeInterface1.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
             CodeClass codeClass when includeDefinitions => [GetEntryPath(codeClass)],
             CodeEnum codeEnum when includeDefinitions => [GetEntryPath(codeEnum)],
             CodeInterface codeInterface when includeDefinitions => [GetEntryPath(codeInterface)],
             _ => [],
         };
     }
+    private const string InheritsSymbol = "-->";
+    private const string ImplementsSymbol = "~~>";
     private static string GetParameters(IEnumerable<CodeParameter> parameters)
     {
         return string.Join(", ", parameters.Select(static x => $"{x.Name}:{GetEntryType(x.Type)}"));
