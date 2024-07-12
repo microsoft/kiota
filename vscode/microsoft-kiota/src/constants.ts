@@ -10,4 +10,5 @@ export const CLIENTS = "clients";
 export const PLUGINS = "plugins";
 export const CLIENT = "client";
 export const PLUGIN = "plugin";
+export const APIMANIFEST = "apimanifest";
 
