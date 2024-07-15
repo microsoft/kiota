@@ -130,13 +130,13 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Empty(result);
     }
 
+    internal const string GeneratedCodePattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+(?:-preview\.\d+)?""\)\]";
     [Fact]
     public void WritesGeneratedCodeAttribute()
     {
         currentEnum.AddOption(new CodeEnumOption { Name = "option2" });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        var pattern = @"\s+\[global::System\.CodeDom\.Compiler\.GeneratedCode\(""Kiota"", ""[0-9]+\.[0-9]+\.[0-9]+\""\)\]";
-        Assert.Matches(pattern, result);
+        Assert.Matches(GeneratedCodePattern, result);
     }
 }

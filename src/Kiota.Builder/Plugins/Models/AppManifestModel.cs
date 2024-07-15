@@ -144,10 +144,25 @@ internal class Icons
 
 internal class CopilotExtensions
 {
-    public IList<Plugin> Plugins { get; set; } = new List<Plugin>();
+    public IList<Plugin> Plugins { get; set; } = [];
+    public IList<DeclarativeCopilot> DeclarativeCopilots { get; set; } = [];
+    [JsonExtensionData]
+    public Dictionary<string, Object> AdditionalData { get; set; } = new();
 }
 
 internal class Plugin
+{
+    public string? Id
+    {
+        get; set;
+    }
+    public string? File
+    {
+        get; set;
+    }
+}
+
+internal class DeclarativeCopilot
 {
     public string? Id
     {

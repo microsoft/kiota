@@ -586,6 +586,12 @@ paths:
                 ""id"": ""client"",
                 ""file"": ""dummyFile.json""
             }
+        ],
+        ""declarativeCopilots"": [
+            {
+                ""id"": ""client"",
+                ""file"": ""dummyFile.json""
+            }
         ]
     }
 }";
@@ -612,6 +618,9 @@ paths:
         Assert.NotNull(originalAppManifestModelObject.CopilotExtensions);
         Assert.Single(originalAppManifestModelObject.CopilotExtensions.Plugins);//one plugin present
         Assert.Equal("dummyFile.json", originalAppManifestModelObject.CopilotExtensions.Plugins[0].File); // no plugins present
+        Assert.Single(originalAppManifestModelObject.CopilotExtensions.DeclarativeCopilots);// one declarative copilot present
+        Assert.Equal("dummyFile.json", originalAppManifestModelObject.CopilotExtensions.DeclarativeCopilots[0].File); // no plugins present
+
 
         // Run the plugin generation
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
@@ -629,6 +638,8 @@ paths:
         Assert.Equal("Test Name", originalAppManifestModelObject.Developer.Name); // developer name is same
         Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
         Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);// file name is updated
+        Assert.Single(appManifestModelObject.CopilotExtensions.DeclarativeCopilots);// we didn't erase the existing declarative copilots
+        Assert.Equal("dummyFile.json", appManifestModelObject.CopilotExtensions.DeclarativeCopilots[0].File); // no plugins present
     }
     [Fact]
     public async Task GeneratesManifestAndCleansUpInputDescription()
