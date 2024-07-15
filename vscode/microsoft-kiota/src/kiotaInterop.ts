@@ -7,8 +7,9 @@ import { getWorkspaceJsonDirectory } from "./util";
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
   const kiotaPath = getKiotaPath(context);
   await ensureKiotaIsPresent(context);
+  const workspaceDirectory = getWorkspaceJsonDirectory();
   const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : getWorkspaceJsonDirectory(),
+    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : workspaceDirectory,
     env: {
         ...process.env,
         // eslint-disable-next-line @typescript-eslint/naming-convention
