@@ -112,11 +112,13 @@ paths:
 
         // Validate the manifest file
         var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
-        var appManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        var appManifestModelObject = JsonSerializer.Deserialize(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
         Assert.Equal("com.microsoft.kiota.plugin.client", appManifestModelObject.PackageName);
         Assert.Equal("client", appManifestModelObject.Name.ShortName);
         Assert.Equal("Microsoft Kiota.", appManifestModelObject.Developer.Name);
         Assert.Equal("color.png", appManifestModelObject.Icons.Color);
+        Assert.NotNull(appManifestModelObject.CopilotExtensions.Plugins);
+        Assert.Single(appManifestModelObject.CopilotExtensions.Plugins);
         Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
         Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);
     }
@@ -505,10 +507,13 @@ paths:
 
         // Validate the manifest file
         var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
-        var appManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        var appManifestModelObject = JsonSerializer.Deserialize(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
         Assert.Null(appManifestModelObject.PackageName);// package wasn't present
         Assert.Equal("Name of your app", appManifestModelObject.Name.ShortName); // app name is same
         Assert.Equal("Publisher Name", originalAppManifestModelObject.Developer.Name); // developer name is same
+        Assert.NotNull(appManifestModelObject.CopilotExtensions);
+        Assert.NotNull(appManifestModelObject.CopilotExtensions.Plugins);
+        Assert.Single(appManifestModelObject.CopilotExtensions.Plugins);//one plugin present
         Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
         Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);
         var rootJsonElement = JsonDocument.Parse(appManifestFile).RootElement;
@@ -613,11 +618,13 @@ paths:
         // Assert manifest exists before generation and is parsable
         Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));
         var originalManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
-        var originalAppManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(originalManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        var originalAppManifestModelObject = JsonSerializer.Deserialize(originalManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
         Assert.Equal("com.microsoft.kiota.plugin.client", originalAppManifestModelObject.PackageName);// package was present
         Assert.NotNull(originalAppManifestModelObject.CopilotExtensions);
+        Assert.NotNull(originalAppManifestModelObject.CopilotExtensions.Plugins);
         Assert.Single(originalAppManifestModelObject.CopilotExtensions.Plugins);//one plugin present
         Assert.Equal("dummyFile.json", originalAppManifestModelObject.CopilotExtensions.Plugins[0].File); // no plugins present
+        Assert.NotNull(originalAppManifestModelObject.CopilotExtensions.DeclarativeCopilots);
         Assert.Single(originalAppManifestModelObject.CopilotExtensions.DeclarativeCopilots);// one declarative copilot present
         Assert.Equal("dummyFile.json", originalAppManifestModelObject.CopilotExtensions.DeclarativeCopilots[0].File); // no plugins present
 
@@ -632,7 +639,7 @@ paths:
 
         // Validate the manifest file
         var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
-        var appManifestModelObject = JsonSerializer.Deserialize<AppManifestModel>(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        var appManifestModelObject = JsonSerializer.Deserialize(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
         Assert.Equal("com.microsoft.kiota.plugin.client", originalAppManifestModelObject.PackageName);// package was present
         Assert.Equal("client", appManifestModelObject.Name.ShortName); // app name is same
         Assert.Equal("Test Name", originalAppManifestModelObject.Developer.Name); // developer name is same
@@ -640,6 +647,24 @@ paths:
         Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);// file name is updated
         Assert.Single(appManifestModelObject.CopilotExtensions.DeclarativeCopilots);// we didn't erase the existing declarative copilots
         Assert.Equal("dummyFile.json", appManifestModelObject.CopilotExtensions.DeclarativeCopilots[0].File); // no plugins present
+    }
+    [Fact]
+    public async Task DoesNotGenerateEmptyPluginOrDeclarativeCopilots()
+    {
+        var manifestModel = new AppManifestModel
+        {
+            CopilotExtensions = new CopilotExtensions
+            {
+            }
+        };
+
+        using var appManifestStream = new MemoryStream();
+        await JsonSerializer.SerializeAsync(appManifestStream, manifestModel, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
+        appManifestStream.Seek(0, SeekOrigin.Begin);
+        var stringRepresentation = await new StreamReader(appManifestStream).ReadToEndAsync();
+
+        Assert.DoesNotContain("\"plugins\":", stringRepresentation);
+        Assert.DoesNotContain("\"declarativeCopilots\":", stringRepresentation);
     }
     [Fact]
     public async Task GeneratesManifestAndCleansUpInputDescription()
