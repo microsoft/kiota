@@ -31,8 +31,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             writer.WriteLine($"namespace {codeNamespace.Name}");
             writer.StartBlock();
         }
-        writer.WriteLine(GeneratedCodeAttribute);
         bool hasDescription = conventions.WriteShortDescription(codeElement, writer);
+        writer.WriteLine(GeneratedCodeAttribute);
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
