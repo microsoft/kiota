@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import * as os from 'os';
 import * as path from 'path';
-import { APIMANIFEST, CLIENT, CLIENTS, PLUGIN, PLUGINS } from './constants';
+import { APIMANIFEST, CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS } from './constants';
 
 const clientTypes = [CLIENT, CLIENTS];
 const pluginTypes = [PLUGIN, PLUGINS, APIMANIFEST];
@@ -21,8 +20,18 @@ export async function updateTreeViewIcons(treeViewId: string, showIcons: boolean
     }
 }
 
-export function getKiotaWorkspacePath(): string {
-    return vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
-      ? vscode.workspace.workspaceFolders[0].uri.fsPath
-      : path.join(os.homedir(), 'kiota');
-  }
+export function getWorkspaceJsonPath(): string {
+    return path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
+        vscode.workspace.workspaceFolders[0].uri.fsPath :
+        process.env.HOME ?? process.env.USERPROFILE ?? process.cwd(),
+        KIOTA_DIRECTORY,
+        KIOTA_WORKSPACE_FILE);
+};
+
+export function getWorkspaceJsonDirectory(): string {
+  return path.join(
+      vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
+          vscode.workspace.workspaceFolders[0].uri.fsPath :
+          process.env.HOME ?? process.env.USERPROFILE ?? process.cwd(),
+      'kiota');
+}

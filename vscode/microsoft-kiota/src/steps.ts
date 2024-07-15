@@ -1,7 +1,7 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import * as fs from 'fs';
-import { getKiotaWorkspacePath } from './util';
+import { getWorkspaceJsonDirectory } from './util';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -109,7 +109,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
         }
-        const workspaceFolder = getKiotaWorkspacePath();
+        const workspaceFolder = getWorkspaceJsonDirectory();
         if (!fs.existsSync(workspaceFolder)) {
             fs.mkdirSync(workspaceFolder, { recursive: true });
         }
