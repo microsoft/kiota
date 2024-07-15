@@ -4,6 +4,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -230,6 +231,21 @@ internal partial class Server : IServer
         ArgumentException.ThrowIfNullOrEmpty(descriptionPath);
         return InfoInternalAsync(descriptionPath, clearCache, cancellationToken);
     }
+
+    public async Task<List<LogEntry>> MigrateFromLockFileAsync(string lockDirectoryPath, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(lockDirectoryPath);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+        var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(string.Empty, lockDirectoryPath, cancellationToken).ConfigureAwait(false);
+        if (!clientNames.Any())
+        {
+            logger.LogWarning("no client configuration was migrated");
+        }
+        logger.LogInformation("Client configurations migrated successfully: {Clients}", string.Join(", ", clientNames));
+        return logger.LogEntries;
+    }
+
     private async Task<LanguagesInformation> InfoInternalAsync(string descriptionPath, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
