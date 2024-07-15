@@ -236,13 +236,20 @@ internal partial class Server : IServer
     {
         ArgumentException.ThrowIfNullOrEmpty(lockDirectoryPath);
         var logger = new ForwardedLogger<KiotaBuilder>();
-        var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
-        var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(string.Empty, lockDirectoryPath, cancellationToken).ConfigureAwait(false);
-        if (!clientNames.Any())
+        try
         {
-            logger.LogWarning("no client configuration was migrated");
+            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+            var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(string.Empty, lockDirectoryPath, cancellationToken).ConfigureAwait(false);
+            if (!clientNames.Any())
+            {
+                logger.LogWarning("no client configuration was migrated");
+            }
+            logger.LogInformation("Client configurations migrated successfully: {Clients}", string.Join(", ", clientNames));
         }
-        logger.LogInformation("Client configurations migrated successfully: {Clients}", string.Join(", ", clientNames));
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "error migrating the lock file: {ExceptionMessage}", ex.Message);
+        }
         return logger.LogEntries;
     }
 
