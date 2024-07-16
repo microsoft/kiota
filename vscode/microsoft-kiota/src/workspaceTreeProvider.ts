@@ -48,11 +48,11 @@ export async function loadTreeView(context: vscode.ExtensionContext): Promise<vo
     const treeDataProvider = new WorkspaceTreeProvider(await isKiotaWorkspaceFilePresent());
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       treeDataProvider.isWSPresent = await isKiotaWorkspaceFilePresent();
-      void vscode.commands.executeCommand('kiota.workspace.refresh'); // Refresh the tree view when workspace folders change
+      await vscode.commands.executeCommand('kiota.workspace.refresh'); // Refresh the tree view when workspace folders change
   }));
     context.subscriptions.push(vscode.window.createTreeView('kiota.workspace', { treeDataProvider }));
     context.subscriptions.push(vscode.commands.registerCommand('kiota.workspace.openWorkspaceFile', openResource));
     context.subscriptions.push(vscode.commands.registerCommand('kiota.workspace.refresh', async () => { 
       treeDataProvider.isWSPresent = await isKiotaWorkspaceFilePresent();
-    })); // Register refresh command
+    }));
 }

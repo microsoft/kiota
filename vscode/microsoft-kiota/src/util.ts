@@ -22,11 +22,7 @@ export async function updateTreeViewIcons(treeViewId: string, showIcons: boolean
 }
 
 export function getWorkspaceJsonPath(): string {
-    return path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
-        vscode.workspace.workspaceFolders[0].uri.fsPath :
-        process.env.HOME ?? process.env.USERPROFILE ?? process.cwd(),
-        KIOTA_DIRECTORY,
-        KIOTA_WORKSPACE_FILE);
+    return path.join(getWorkspaceJsonDirectory(),KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
 };
 
 export function getWorkspaceJsonDirectory(): string {
