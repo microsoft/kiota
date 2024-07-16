@@ -108,10 +108,10 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
-        return GetTypescriptTypeString(code, targetElement, includeCollectionInformation, writer);
+        return GetTypescriptTypeString(code, targetElement, includeCollectionInformation);
     }
 
-    public static string GetTypescriptTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null, bool inlineComposedTypeString = false)
+    public static string GetTypescriptTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, bool inlineComposedTypeString = false)
     {
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(targetElement);
@@ -278,7 +278,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var composedType = GetOriginalComposedType(targetClassType);
         string targetClassName = TranslateTypescriptType(composedType ?? targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (GetTypescriptTypeString(targetClassType, currentElement, false, writer) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
+        if (GetTypescriptTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
         if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)
         {
             var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
