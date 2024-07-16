@@ -26,9 +26,11 @@ export function getWorkspaceJsonPath(): string {
 };
 
 export function getWorkspaceJsonDirectory(): string {
-  const workspaceFolder = path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
+  const baseDir = path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
   vscode.workspace.workspaceFolders[0].uri.fsPath :
-  process.env.HOME ?? process.env.USERPROFILE ?? process.cwd(),'kiota');
+  process.env.HOME ?? process.env.USERPROFILE ?? process.cwd());
+  const workspaceFolder = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0 ? 
+  path.join(baseDir, 'kiota') : baseDir ;
   if (!fs.existsSync(workspaceFolder)) {
     fs.mkdirSync(workspaceFolder, { recursive: true });
 }
