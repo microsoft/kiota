@@ -152,12 +152,13 @@ public class PluginsGenerationService
 
         manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
 
-        if (manifestModel.CopilotExtensions.Plugins.FirstOrDefault(pluginItem => Configuration.ClientClassName.Equals(pluginItem.Id, StringComparison.OrdinalIgnoreCase)) is { } plugin)
+        if (manifestModel.CopilotExtensions.Plugins is not null && manifestModel.CopilotExtensions.Plugins.FirstOrDefault(pluginItem => Configuration.ClientClassName.Equals(pluginItem.Id, StringComparison.OrdinalIgnoreCase)) is { } plugin)
         {
-            plugin.File = pluginFileName; // id is already consitent so make sure the file name is ok
+            plugin.File = pluginFileName; // id is already consistent so make sure the file name is ok
         }
         else
         {
+            manifestModel.CopilotExtensions.Plugins ??= [];
             // Add a new plugin entry
             manifestModel.CopilotExtensions.Plugins.Add(new Plugin
             {
