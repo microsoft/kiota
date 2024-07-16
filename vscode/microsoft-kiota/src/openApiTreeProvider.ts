@@ -433,7 +433,8 @@ export class OpenApiTreeNode extends vscode.TreeItem {
             return true;
         }
 
-        const segments = getPathSegments(splatPath);
+        // "tokenizedFilter" is lowercased so ensure the same is dome for the path segments for proper matching
+        const segments = getPathSegments(splatPath).map(x => x.trim().toLowerCase());
 
         return tokenizedFilter.some(x => segments.some(s => s.includes(x)))
             || this.children.some(x => x.isNodeVisible(tokenizedFilter));
