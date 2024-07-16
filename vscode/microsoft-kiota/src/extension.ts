@@ -173,7 +173,6 @@ export async function activate(
             );
             return;
         }
-
         if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
           // Save state before opening the new window
           void context.workspaceState.update('generatedOutput', {
@@ -296,7 +295,7 @@ export async function activate(
     }),
   );
 
-  async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<any> {
+  async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[]| undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -335,7 +334,7 @@ export async function activate(
     }
     return result;
   }
-  async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<any> {
+  async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -374,7 +373,7 @@ export async function activate(
     }
     return result;
   }
-  async function generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<any> {
+  async function generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
     const language =
           typeof config.language === "string"
             ? parseGenerationLanguage(config.language)
