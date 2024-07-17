@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug in dotnet where CS1587 warnings are generated in generated enums with descriptions [#4957](https://github.com/microsoft/kiota/issues/4957)
+- Fixed a bug where the copilot teams toolkit integration would serialize empty declarative copilots. [#4974](https://github.com/microsoft/kiota/issues/4974)
+
 ## [1.16.0] - 2024-07-05
 
 ### Added
@@ -1394,4 +1397,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
