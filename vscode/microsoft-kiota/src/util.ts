@@ -26,13 +26,43 @@ export function getWorkspaceJsonPath(): string {
 };
 
 export function getWorkspaceJsonDirectory(): string {
-  const baseDir = path.join(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ?
-  vscode.workspace.workspaceFolders[0].uri.fsPath :
-  process.env.HOME ?? process.env.USERPROFILE ?? process.cwd());
-  const workspaceFolder = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0 ? 
-  path.join(baseDir, 'kiota') : baseDir ;
-  if (!fs.existsSync(workspaceFolder)) {
+  const baseDir = path.join(
+    vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+      ? vscode.workspace.workspaceFolders[0].uri.fsPath
+      : process.env.HOME ?? process.env.USERPROFILE ?? process.cwd()
+  );
+
+  let workspaceFolder = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0
+    ? path.join(baseDir, 'kiota')
+    : baseDir;
+
+if (!fs.existsSync(workspaceFolder)) {
     fs.mkdirSync(workspaceFolder, { recursive: true });
-}
+  }
   return workspaceFolder;
+}
+
+export function findAppPackageDirectory(directory: string): string | null {
+  if (!fs.existsSync(directory)) {
+    return null;
+  }
+
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      if (entry.name === 'appPackage') {
+        return fullPath;
+      }
+
+      const subDirectory = findAppPackageDirectory(fullPath);
+      if (subDirectory) {
+        return subDirectory;
+      }
+    }
+  }
+
+  return null;
 }
