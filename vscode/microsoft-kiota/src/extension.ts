@@ -270,7 +270,7 @@ export async function activate(
       if (isClientType(generationType)) {
       await regenerateClient(clientKey, clientObject, settings);
       }
-      if (isClientType(generationType)) {
+      if (isPluginType(generationType)) {
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
