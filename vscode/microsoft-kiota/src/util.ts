@@ -36,7 +36,7 @@ export function getWorkspaceJsonDirectory(): string {
     ? path.join(baseDir, 'kiota')
     : baseDir;
 
-if (!fs.existsSync(workspaceFolder)) {
+  if (!fs.existsSync(workspaceFolder)) {
     fs.mkdirSync(workspaceFolder, { recursive: true });
   }
   return workspaceFolder;
