@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
@@ -119,10 +120,20 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     let totalSteps = 4;
    
     const folderSelectionOption = l10n.t('Browse your output directory');
-    const inputOptions = [
+    let inputOptions = [
         {label: l10n.t('Default folder'), description: workspaceFolder },
         {label: folderSelectionOption}
     ];
+
+    function updateWorkspaceFolder(name: string | undefined) {
+        if (name && (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0)) {
+            workspaceFolder = getWorkspaceJsonDirectory(name);
+            inputOptions = [
+                { label: l10n.t('Default folder'), description: workspaceFolder },
+                { label: folderSelectionOption }
+            ];
+        }
+    }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
 		const option = await input.showQuickPick({
@@ -158,6 +169,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
+        updateWorkspaceFolder(state.clientClassName);
 		return (input: MultiStepInput) => inputClientNamespaceName(input, state);
 	}
     async function inputClientNamespaceName(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -238,6 +250,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        updateWorkspaceFolder(state.pluginName);
         return (input: MultiStepInput) => inputPluginType(input, state);      
     }    
         async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -298,6 +311,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        updateWorkspaceFolder(state.pluginName);
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);      
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {

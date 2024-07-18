@@ -25,7 +25,7 @@ export function getWorkspaceJsonPath(): string {
     return path.join(getWorkspaceJsonDirectory(),KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
 };
 
-export function getWorkspaceJsonDirectory(): string {
+export function getWorkspaceJsonDirectory(clientNameOrPluginName?: string): string {
   const baseDir = path.join(
     vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
       ? vscode.workspace.workspaceFolders[0].uri.fsPath
@@ -33,7 +33,7 @@ export function getWorkspaceJsonDirectory(): string {
   );
 
   let workspaceFolder = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0
-    ? path.join(baseDir, 'kiota')
+    ? path.join(baseDir, 'kiota', clientNameOrPluginName ?? '')
     : baseDir;
 
 if (!fs.existsSync(workspaceFolder)) {

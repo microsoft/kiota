@@ -29,7 +29,7 @@ import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { isClientType, isPluginType, updateTreeViewIcons } from "./util";
+import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, isClientType, isPluginType, updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -181,7 +181,7 @@ export async function activate(
             clientClassName: config.clientClassName || config.pluginName
           } as GeneratedOutputState);
           if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(outputPath), true);
+            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(getWorkspaceJsonDirectory()), true);
           } else {
             await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
           }
@@ -439,7 +439,7 @@ export async function activate(
     const clientNameOrPluginName = config.clientClassName || config.pluginName;
     openApiTreeProvider.refreshView();
     openApiTreeProvider.setSelectionChanged(false);
-    const workspaceJsonPath = path.join(vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join('') || '', KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE);
+    const workspaceJsonPath = getWorkspaceJsonPath();
     await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
     await updateTreeViewIcons(treeViewId, false, true);
   }
