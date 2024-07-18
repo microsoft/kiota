@@ -59,9 +59,9 @@ internal class DomExportService
             CodeClass codeClass1 when !includeDefinitions && codeClass1.StartBlock.Inherits is not null =>
                 [$"{GetEntryPath(codeClass1)}{InheritsSymbol}{GetEntryType(codeClass1.StartBlock.Inherits)}"],
             CodeClass codeClass2 when !includeDefinitions && codeClass2.StartBlock.Implements.Any() =>
-                [$"{GetEntryPath(codeClass2)}{ImplementsSymbol}{string.Join(", ", codeClass2.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
+                [$"{GetEntryPath(codeClass2)}{ImplementsSymbol}{string.Join("; ", codeClass2.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
             CodeInterface codeInterface1 when !includeDefinitions && codeInterface1.StartBlock.Implements.Any() =>
-                [$"{GetEntryPath(codeInterface1)}{ImplementsSymbol}{string.Join(", ", codeInterface1.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
+                [$"{GetEntryPath(codeInterface1)}{ImplementsSymbol}{string.Join("; ", codeInterface1.StartBlock.Implements.Select(static x => GetEntryType(x)))}"],
             CodeClass codeClass when includeDefinitions => [GetEntryPath(codeClass)],
             CodeEnum codeEnum when includeDefinitions => [GetEntryPath(codeEnum)],
             CodeInterface codeInterface when includeDefinitions => [GetEntryPath(codeInterface)],
@@ -72,7 +72,7 @@ internal class DomExportService
     private const string ImplementsSymbol = "~~>";
     private static string GetParameters(IEnumerable<CodeParameter> parameters)
     {
-        return string.Join(", ", parameters.Select(static x => $"{x.Name}{(x.Optional ? "?" : string.Empty)}:{GetEntryType(x.Type)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
+        return string.Join("; ", parameters.Select(static x => $"{x.Name}{(x.Optional ? "?" : string.Empty)}:{GetEntryType(x.Type)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
     }
     private static string GetEntryType(CodeTypeBase codeElementTypeBase)
     {
