@@ -36,7 +36,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
             title,
             step: step++,
             totalSteps: totalSteps,
-            placeholder: l10n.t('Search or paste a path to an API description'),
+            placeholder: l10n.t('Search or browse a path to an API description'),
             items: [{label: l10n.t('Search')}, {label: l10n.t('Browse path')}],
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
@@ -64,16 +64,34 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
             step: step++,
             totalSteps: totalSteps,
             value: state.searchQuery ?? '',
-            prompt: l10n.t('Search a path to an API description'),
+            prompt: l10n.t('Search or paste a path to an API description'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
         state.searchResults = await searchCallBack(state.searchQuery);
         if(state.searchResults && Object.keys(state.searchResults).length > 0) {
             return (input: MultiStepInput) => pickSearchResult(input, state);
+        } else {
+            state.descriptionPath = state.searchQuery;
+            return (input: MultiStepInput) => inputPathOrUrl(input, state);
         }
-        
     }
+    
+    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
+        if (state.descriptionPath) {
+            return;
+        }
+        state.descriptionPath = await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: 1,
+            value: state.descriptionPath || '',
+            prompt: l10n.t('Search or paste a path to an API description'),
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+    }    
+        
     async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
         const items: QuickSearchPickItem[] = [];
         if(state.searchResults) {
@@ -236,7 +254,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputPluginType(input, state);      
     }    
         async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
-            const items = ['ApiPlugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
+            const items = ['Api Plugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a plugin type'),
                 step: step++,
@@ -246,7 +264,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'ApiPlugin' ? state.pluginTypes = 'ApiPlugin' : state.pluginTypes = 'OpenAI';
+            pluginTypes.label === 'Api Plugin' ? state.pluginTypes = 'ApiPlugin' : state.pluginTypes = 'OpenAI';
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
         async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) { 
