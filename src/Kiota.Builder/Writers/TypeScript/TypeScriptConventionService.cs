@@ -158,12 +158,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
     {
-        return codeComposedTypeBase switch
-        {
-            CodeUnionType _ => " | ",
-            CodeIntersectionType _ => " & ",
-            _ => throw new InvalidOperationException("unknown composed type"),
-        };
+        return codeComposedTypeBase is CodeUnionType or CodeIntersectionType ? " | " : throw new InvalidOperationException("Unknown composed type");
     }
 
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)

@@ -80,7 +80,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         foreach (var mappedType in composedType.Types.ToArray())
         {
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"...{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Deserializer)}({composedParam.Name.ToFirstCharacterLowerCase()}),");
+            writer.WriteLine($"...{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Deserializer)}({composedParam.Name.ToFirstCharacterLowerCase()} as {mappedTypeName}),");
         }
         writer.CloseBlock();
     }
@@ -109,7 +109,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         foreach (var mappedType in composedType.Types.ToArray())
         {
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()});");
+            writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()} as {mappedTypeName});");
         }
     }
 

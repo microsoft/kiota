@@ -61,6 +61,6 @@ public sealed class CodeIntersectionTypeWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(composedType, writer);
 
         var result = tw.ToString();
-        Assert.Contains("export type Test = Type1 & Type2;", result);
+        Assert.Contains("export type Test = Type1 | Type2;", result);
     }
 }
