@@ -58,12 +58,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         ArgumentNullException.ThrowIfNull(parseNodeParameter);
         var parseNodeParameterName = parseNodeParameter.Name.ToFirstCharacterLowerCase();
-        writer.StartBlock($"if ({parseNodeParameterName}) {{");
 
-        string getPrimitiveValueString = string.Join(" || ", composedType.Types.Select(x => $"{parseNodeParameterName}." + conventions.GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
+        string getPrimitiveValueString = string.Join(" ?? ", composedType.Types.Select(x => $"{parseNodeParameterName}?." + conventions.GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
         writer.WriteLine($"return {getPrimitiveValueString};");
-        writer.CloseBlock();
-        writer.WriteLine("return undefined;");
     }
 
     private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)

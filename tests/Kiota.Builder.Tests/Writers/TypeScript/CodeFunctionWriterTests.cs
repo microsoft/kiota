@@ -1177,9 +1177,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("if (parseNode) {", result);
-        Assert.Contains("return parseNode.getNumberValue() || parseNode.getStringValue();", result);
-        Assert.Contains("return undefined;", result);
+        Assert.Contains("return parseNode?.getNumberValue() ?? parseNode?.getStringValue();", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
