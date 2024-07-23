@@ -6,11 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder.Diff;
+namespace Kiota.Builder.Export;
 
-internal class DomExportService
+internal class PublicApiExportService
 {//TODO rename the service and the namespace to something more meaningful
-    internal DomExportService(string outputDirectoryPath)
+    internal PublicApiExportService(string outputDirectoryPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectoryPath);
         OutputDirectoryPath = outputDirectoryPath;

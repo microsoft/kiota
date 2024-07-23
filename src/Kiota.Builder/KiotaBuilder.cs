@@ -17,7 +17,7 @@ using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Diff;
+using Kiota.Builder.Export;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
@@ -269,12 +269,14 @@ public partial class KiotaBuilder
             await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
 
-            // Generate dom export
-            //TODO hide this behind an environment variable
-            sw.Start();
-            var diffService = new DomExportService(config.OutputPath);
-            await diffService.SerializeDomAsync(generatedCode, cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - generated dom export - took");
+            if (config.ExportPublicApi)
+            {
+                // Generate public API export
+                sw.Start();
+                var diffService = new PublicApiExportService(config.OutputPath);
+                await diffService.SerializeDomAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - generated public API export - took");
+            }
 
             // Write language source
             sw.Start();
