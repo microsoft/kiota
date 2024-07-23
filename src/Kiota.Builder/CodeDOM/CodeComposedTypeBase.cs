@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.CodeDOM;
 /// <summary>
@@ -71,4 +72,5 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         get;
         set;
     }
+    public bool IsComposedOfPrimitives() => Types.All(x => IsPrimitiveType(GetTypescriptTypeString(x, this)));
 }
