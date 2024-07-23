@@ -9,7 +9,7 @@ using Kiota.Builder.CodeDOM;
 namespace Kiota.Builder.Export;
 
 internal class PublicApiExportService
-{//TODO rename the service and the namespace to something more meaningful
+{
     internal PublicApiExportService(string outputDirectoryPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectoryPath);
