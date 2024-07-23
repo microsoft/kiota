@@ -25,7 +25,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var codeMethod = codeElement.OriginalLocalMethod;
 
-        var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is { } composedType && IsComposedOfPrimitives(composedType);
+        var isComposedOfPrimitives = GetOriginalComposedType(codeMethod.ReturnType) is { } composedType && composedType.IsComposedOfPrimitives();
 
         var returnType = codeMethod.Kind is CodeMethodKind.Factory && !isComposedOfPrimitives ?
             FactoryMethodReturnType :
@@ -89,7 +89,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
 
-        if (IsComposedOfPrimitives(composedType))
+        if (composedType.IsComposedOfPrimitives())
         {
             WriteComposedTypeSerializationForPrimitives(composedType, composedParam, codeElement, writer);
             return;
@@ -225,7 +225,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         switch (composedType)
         {
-            case CodeComposedTypeBase type when IsComposedOfPrimitives(type):
+            case CodeComposedTypeBase type when type.IsComposedOfPrimitives():
                 WriteFactoryMethodBodyForPrimitives(type, codeElement, writer, parseNodeParameter);
                 break;
             case CodeUnionType _ when parseNodeParameter != null:
@@ -292,7 +292,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string GetParseNodeParameterForPrimitiveValues(CodeFunction codeElement, CodeParameter? parseNodeParameter)
     {
-        if (GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType) is { } composedType && IsComposedOfPrimitives(composedType) && parseNodeParameter is not null)
+        if (GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType) is { } composedType && composedType.IsComposedOfPrimitives() && parseNodeParameter is not null)
         {
             return $"({parseNodeParameter.Name.ToFirstCharacterLowerCase()})";
         }
@@ -392,7 +392,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             {
                 writer.WriteLine($"if({modelParamName}.{codePropertyName})");
             }
-            if (composedType is not null && IsComposedOfPrimitives(composedType))
+            if (composedType is not null && composedType.IsComposedOfPrimitives())
                 writer.WriteLine($"{serializationName}(writer, \"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
             else
                 writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
@@ -406,7 +406,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         ArgumentNullException.ThrowIfNull(method);
 
         var composedType = GetOriginalComposedType(propertyType);
-        if (composedType is not null && IsComposedOfPrimitives(composedType))
+        if (composedType is not null && composedType.IsComposedOfPrimitives())
         {
             return $"serialize{composedType.Name.ToFirstCharacterUpperCase()}";
         }
@@ -518,7 +518,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
         if (otherProp.Kind is CodePropertyKind.BackingStore)
             writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = true;{suffix} }},");
-        else if (GetOriginalComposedType(otherProp.Type) is { } composedType && IsComposedOfPrimitives(composedType))
+        else if (GetOriginalComposedType(otherProp.Type) is { } composedType && composedType.IsComposedOfPrimitives())
         {
             writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = {GetFactoryMethodName(otherProp.Type, codeFunction)}(n); }},");
         }

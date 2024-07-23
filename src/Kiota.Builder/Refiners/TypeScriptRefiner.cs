@@ -324,11 +324,11 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     {
         if (FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } function) return;
 
-        if (composedType is not null && IsComposedOfPrimitives(composedType))
+        if (composedType is not null && composedType.IsComposedOfPrimitives())
             function.OriginalLocalMethod.ReturnType = composedType;
 
         // Remove the deserializer import statement if its not being used
-        if (composedType is CodeUnionType || composedType is not null && IsComposedOfPrimitives(composedType))
+        if (composedType is CodeUnionType || composedType is not null && composedType.IsComposedOfPrimitives())
         {
             RemoveUnusedDeserializerImport(children, function);
         }
@@ -339,7 +339,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
 
         // Add the key parameter if the composed type is a union of primitive values
-        if (IsComposedOfPrimitives(composedType))
+        if (composedType.IsComposedOfPrimitives())
             function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
     }
 
@@ -348,7 +348,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
 
         // For code union Deserializer is not required, however its needed for Object Intersection types
-        if (composedType is not CodeIntersectionType || IsComposedOfPrimitives(composedType))
+        if (composedType is not CodeIntersectionType || composedType.IsComposedOfPrimitives())
         {
             children.Remove(deserializerMethod);
             codeInterface.RemoveChildElement(deserializerMethod);

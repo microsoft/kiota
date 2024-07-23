@@ -5,7 +5,6 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Refiners;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
@@ -81,17 +80,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public static bool IsComposedOfPrimitives(CodeComposedTypeBase composedType)
-    {
-        // Primitive values don't have a discriminator property so it should be handled differently if any of the values is primitive
-        return composedType?.Types.All(x => IsPrimitiveType(GetTypescriptTypeString(x, composedType))) ?? false;
-    }
-
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var paramType = GetTypescriptTypeString(parameter.Type, targetElement, inlineComposedTypeString: true);
-        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && IsComposedOfPrimitives(composedType);
+        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives();
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
