@@ -419,10 +419,11 @@
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "^2.3.0",
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
