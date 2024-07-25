@@ -10,7 +10,7 @@ Every time a plugin is added, a copy of the OpenAPI document file will be stored
 
 An [API Manifest][def] file named `apimanifest.json` will be generated (if non existing) or updated (if already existing) in the root folder `./kiota` next to `workspace.json`. This API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `apiplugin`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) an [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) file named `manifest.json` which conforms with the schema <https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema>.
+Developers can generate `apiplugin`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) an [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) file named `manifest.json` which conforms with the [schema](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema).
 > [!NOTE]
 > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one will only be generated when providing `--type apimanifest` when generating a plugin, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
@@ -25,14 +25,14 @@ will include only the endpoints that matches `--include-path` and `--exclude-pat
 
 #### API Plugin
 
-For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the schema <https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json>.
+For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the [schema](https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json).
 
 Requiring fields default as the following:
 
 | API Plugin field | Default value |
 | -- | -- |
-| $schema | "<https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json>" |
-| schema_version | "v2.1" |
+| $schema | `https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json` |
+| schema_version | `v2.1` |
 | name_for_human | Defaults to the OpenAPI document title. |
 | name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
@@ -59,7 +59,7 @@ For `openai`, the generated plugin will be named `openai-plugins.json` and the m
 | name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
 | description_for_model | Defaults to `x-ai-description` extension from the OpenAPI document.  If the `x-ai-description` is not available, it defaults to `description_for_human` or `Description for {name_for_human}`. |
-| contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to '<publisher-email@example.com>'. |
+| contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to `publisher-email@example.com`. |
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
 | legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
 |  |  |
@@ -74,7 +74,7 @@ For `apimanifest`, the generated file will be named `{plugin-name}-apimanifest.j
 | -- | -- |
 | apiDependencies.Key | Defaults to `{plugin-name}`. |
 | publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
-| publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to '<publisher-email@example.com>'. |
+| publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to `publisher-email@example.com`. |
 |  |  |
 
 ### App manifest
@@ -142,7 +142,7 @@ For `manifest.json` file, we will:
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
 | `--plugin-name \| --pn` | Yes | GitHub | Name of the plugin. Unique within the parent API. Defaults to `Plugin` | No |
-| `--openapi \| -d` | Yes | <https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json> | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
+| `--openapi \| -d` | Yes | `https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json` | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `apiplugin`, `openai` and `apimanifest`.| Yes |
