@@ -93,9 +93,16 @@ public class GoRefiner : CommonLanguageRefiner
             FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
+                new GoNamespaceReservedNamesProvider(),
+                x => $"{x}Escaped",
+                shouldReplaceCallback: x => x is CodeNamespace
+            );
+            ReplaceReservedNames(
+                generatedCode,
                 new GoReservedNamesProvider(),
                 x => $"{x}Escaped",
-                shouldReplaceCallback: x => (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
+                shouldReplaceCallback: x => (x is not CodeNamespace) &&
+                                            (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
                                             (x is not CodeProperty currentProp ||
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
