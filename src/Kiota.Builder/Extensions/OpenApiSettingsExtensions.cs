@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Readers;
 
@@ -17,5 +19,25 @@ public static class OpenApiSettingsExtensions
         settings.ExtensionParsers.TryAdd(OpenApiLegalInfoUrlExtension.Name, static (i, _) => OpenApiLegalInfoUrlExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiReasoningInstructionsExtension.Name, static (i, _) => OpenApiAiReasoningInstructionsExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiRespondingInstructionsExtension.Name, static (i, _) => OpenApiAiRespondingInstructionsExtension.Parse(i));
+    }
+
+    public static void AddGenerationExtensions(this OpenApiReaderSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        settings.AddMicrosoftExtensionParsers();
+        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
+    }
+
+    public static HashSet<string> KiotaSupportedExtensions()
+    {
+        var dummySettings = new OpenApiReaderSettings();
+        dummySettings.AddGenerationExtensions();
+        dummySettings.AddPluginsExtensions();
+
+        var supportedExtensions = dummySettings.ExtensionParsers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        supportedExtensions.Add("x-openai-isConsequential");// add extension we don't parse to the list 
+
+        return supportedExtensions;
     }
 }

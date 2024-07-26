@@ -681,6 +681,7 @@ paths:
   /test:
     get:
       description: description for test path
+      x-random-extension: true
       responses:
         '200':
           description: test
@@ -690,6 +691,7 @@ paths:
     get:
       description: description for test path with id
       operationId: test.WithId
+      x-openai-isConsequential: true
       parameters:
       - name: id
         in: path
@@ -760,7 +762,9 @@ components:
         Assert.Single(originalDocument.Extensions); // single unsupported extension at root
         Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
         Assert.Equal(2, originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
         Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
 
         // Validate the output open api file
         var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
@@ -773,7 +777,9 @@ components:
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
         Assert.Single(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses); // other responses are removed from the document
         Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["2XX"].Description); // response description string is not empty
+        Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses); // 2 responses originally
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["2XX"].Description);// response description string is not empty
+        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
 }

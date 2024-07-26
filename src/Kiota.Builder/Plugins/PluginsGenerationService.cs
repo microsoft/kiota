@@ -186,35 +186,11 @@ public class PluginsGenerationService
         if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
             doc.Info!.Version = "1.0";
 
-        //empty out all the responses with a single empty 2XX
-        foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
-        {
-            var responseDescription = operation.Responses.Values.Select(static response => response.Description)
-                                                                      .FirstOrDefault(static desc => !string.IsNullOrEmpty(desc)) ?? "Api Response";
-            operation.Responses = new OpenApiResponses()
-            {
-                {
-                    "2XX",new OpenApiResponse
-                    {
-                        Description = responseDescription,
-                        Content = new Dictionary<string, OpenApiMediaType>
-                        {
-                            {
-                                "text/plain", new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema
-                                    {
-                                        Type = "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-        }
+        //empty out all the responses with a single empty 2XX and cleanup the extensions
+        var openApiWalker = new OpenApiWalker(new OpenApiPluginWalker());
+        openApiWalker.Walk(doc);
 
-        // remove unused components using the OpenApi.Net
+        // remove unused components using the OpenApi.Net library
         var requestUrls = new Dictionary<string, List<string>>();
         var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
         foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
