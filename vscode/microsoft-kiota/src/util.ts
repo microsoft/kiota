@@ -42,6 +42,7 @@ export function getWorkspaceJsonDirectory(clientNameOrPluginName?: string): stri
   return workspaceFolder;
 }
 
+//used to store output in the App Package directory in the case where the workspace is a Teams Toolkit Project
 export function findAppPackageDirectory(directory: string): string | null {
   if (!fs.existsSync(directory)) {
     return null;
