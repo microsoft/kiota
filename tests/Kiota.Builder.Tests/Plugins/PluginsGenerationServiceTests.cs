@@ -33,8 +33,11 @@ public sealed class PluginsGenerationServiceTests : IDisposable
         _httpClient.Dispose();
     }
 
-    [Fact]
-    public async Task GeneratesManifest()
+    [Theory]
+    [InlineData("client", "client")]
+    [InlineData("Budget Tracker", "BudgetTracker")]//drop the space
+    [InlineData("My-Super complex() %@#$& Name", "MySupercomplexName")]//drop the space and special characters
+    public async Task GeneratesManifest(string inputPluginName, string expectedPluginName)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
 info:
@@ -76,7 +79,7 @@ paths:
             OutputPath = outputDirectory,
             OpenAPIFilePath = "openapiPath",
             PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
-            ClientClassName = "client",
+            ClientClassName = inputPluginName,
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
         var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
@@ -87,19 +90,20 @@ paths:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
         await pluginsGenerationService.GenerateManifestAsync();
 
-        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "client-apimanifest.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apimanifest.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-openapi.yml")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, AppManifestFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json"));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
-        Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
         // Validate the v1 plugin
@@ -107,20 +111,20 @@ paths:
         using var v1JsonDocument = JsonDocument.Parse(v1ManifestContent);
         var v1Manifest = PluginManifestDocument.Load(v1JsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
-        Assert.Equal(OpenApiFileName, v1Manifest.Document.Api.URL);
+        Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", v1Manifest.Document.Api.URL);
         Assert.Empty(v1Manifest.Problems);
 
         // Validate the manifest file
         var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
         var appManifestModelObject = JsonSerializer.Deserialize(appManifestFile, PluginsGenerationService.AppManifestModelGenerationContext.AppManifestModel);
-        Assert.Equal("com.microsoft.kiota.plugin.client", appManifestModelObject.PackageName);
-        Assert.Equal("client", appManifestModelObject.Name.ShortName);
+        Assert.Equal($"com.microsoft.kiota.plugin.{expectedPluginName}", appManifestModelObject.PackageName);
+        Assert.Equal(expectedPluginName, appManifestModelObject.Name.ShortName);
         Assert.Equal("Microsoft Kiota.", appManifestModelObject.Developer.Name);
         Assert.Equal("color.png", appManifestModelObject.Icons.Color);
         Assert.NotNull(appManifestModelObject.CopilotExtensions.Plugins);
         Assert.Single(appManifestModelObject.CopilotExtensions.Plugins);
-        Assert.Equal("client", appManifestModelObject.CopilotExtensions.Plugins[0].Id);
-        Assert.Equal(ManifestFileName, appManifestModelObject.CopilotExtensions.Plugins[0].File);
+        Assert.Equal(expectedPluginName, appManifestModelObject.CopilotExtensions.Plugins[0].Id);
+        Assert.Equal($"{expectedPluginName.ToLower()}-apiplugin.json", appManifestModelObject.CopilotExtensions.Plugins[0].File);
     }
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
