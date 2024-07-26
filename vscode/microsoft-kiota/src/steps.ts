@@ -1,6 +1,8 @@
+import * as vscode from 'vscode';
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import * as vscode from 'vscode';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
+import * as path from 'path';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -125,17 +127,33 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
-        }
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath || '';
-    
+    }
+    const workspaceOpen = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+
+    let workspaceFolder = getWorkspaceJsonDirectory();
+    const appPackagePath = findAppPackageDirectory(workspaceFolder);
+    if (appPackagePath) {
+      workspaceFolder = appPackagePath;
+    }
+
     let step = 1;
     let totalSteps = 4;
    
     const folderSelectionOption = l10n.t('Browse your output directory');
-    const inputOptions = [
+    let inputOptions = [
         {label: l10n.t('Default folder'), description: workspaceFolder },
         {label: folderSelectionOption}
     ];
+
+    function updateWorkspaceFolder(name: string | undefined) {
+        if (name && (workspaceOpen)) {
+            workspaceFolder = getWorkspaceJsonDirectory(name);
+            inputOptions = [
+                { label: l10n.t('Default folder'), description: workspaceFolder },
+                { label: folderSelectionOption }
+            ];
+        }
+    }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
 		const option = await input.showQuickPick({
@@ -171,6 +189,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
+        updateWorkspaceFolder(state.clientClassName);
 		return (input: MultiStepInput) => inputClientNamespaceName(input, state);
 	}
     async function inputClientNamespaceName(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -212,6 +231,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 }
             } else {
                 state.outputPath = selectedOption.description;
+                if(workspaceOpen){
+                    state.workingDirectory = path.dirname(selectedOption.description!);
+                }
             }
         }
             state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
@@ -251,6 +273,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        updateWorkspaceFolder(state.pluginName);
         return (input: MultiStepInput) => inputPluginType(input, state);      
     }    
         async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -264,7 +287,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'Api Plugin' ? state.pluginTypes = 'ApiPlugin' : state.pluginTypes = 'OpenAI';
+            pluginTypes.label === 'ApiPlugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
         async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) { 
@@ -293,6 +316,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                     }
                 } else {
                         state.outputPath = selectedOption.description;
+                        if(workspaceOpen){
+                            state.workingDirectory = path.dirname(selectedOption.description!);
+                        }
                     }
             } 
             state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
@@ -311,6 +337,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        updateWorkspaceFolder(state.pluginName);
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);      
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -339,14 +366,20 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 }
                 } else{
                     state.outputPath = selectedOption.description;
+                    if(workspaceOpen){
+                        state.workingDirectory = path.dirname(selectedOption.description!);
+                    }
                 }
             }	
             state.outputPath === ''? state.outputPath = 'output' : state.outputPath;
             break;	
         }
 			
-	}
+	}   
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
+    if(!state.workingDirectory){
+        state.workingDirectory = state.outputPath as string; 
+    }
     return state;
 }
 
@@ -384,12 +417,13 @@ type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export interface GenerateState extends BaseStepsState {
     generationType: QuickPickItem | string;
-    pluginTypes: QuickPickItem | string;
+    pluginTypes: QuickPickItem | string[];
     pluginName:string;
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;
     outputPath: QuickPickItem | string;
+    workingDirectory: string;
 }
 export enum GenerationType {
     // eslint-disable-next-line @typescript-eslint/naming-convention
