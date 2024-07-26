@@ -1,6 +1,7 @@
 import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType } from "./kiotaInterop";
 import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import { getWorkspaceJsonDirectory } from "./util";
 
 export function generatePlugin(context: vscode.ExtensionContext, 
   descriptionPath: string,
@@ -12,7 +13,8 @@ export function generatePlugin(context: vscode.ExtensionContext,
   clearCache: boolean,
   cleanOutput: boolean,
   disableValidationRules: string[],
-  operation: ConsumerOperation ): Promise<KiotaLogEntry[] | undefined> {
+  operation: ConsumerOperation,
+  workingDirectory: string = getWorkspaceJsonDirectory() ): Promise<KiotaLogEntry[] | undefined> {
     return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
       const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
         "GeneratePlugin"
@@ -32,5 +34,5 @@ export function generatePlugin(context: vscode.ExtensionContext,
           operation: operation
         } as GenerationConfiguration,
       );
-    });
+    }, workingDirectory);
 };

@@ -181,7 +181,7 @@ export async function activate(
             clientClassName: config.clientClassName || config.pluginName
           } as GeneratedOutputState);
           if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(getWorkspaceJsonDirectory()), true);
+            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
           } else {
             await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
           }
@@ -316,7 +316,8 @@ export async function activate(
         settings.clearCache,
         settings.cleanOutput,
         settings.disableValidationRules,
-        ConsumerOperation.Add
+        ConsumerOperation.Add,
+        config.workingDirectory
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -355,7 +356,8 @@ export async function activate(
         settings.clearCache,
         settings.cleanOutput,
         settings.disableValidationRules,
-        ConsumerOperation.Add
+        ConsumerOperation.Add,
+        config.workingDirectory
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -406,7 +408,8 @@ export async function activate(
         settings.languagesSerializationConfiguration[language].deserializers,
         settings.structuredMimeTypes,
         settings.includeAdditionalData,
-        ConsumerOperation.Add
+        ConsumerOperation.Add,
+        config.workingDirectory
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
