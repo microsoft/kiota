@@ -29,6 +29,7 @@
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
     <IsTrimmable>true</IsTrimmable>
     <AnalysisMode>All</AnalysisMode>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
   <PropertyGroup>
     <!-- the source generators emit warnings -->
@@ -49,6 +50,7 @@
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.14" />
     <PackageReference Include="Microsoft.Plugins.Manifest" Version="0.0.7-preview" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.7" />
     <PackageReference Include="YamlDotNet" Version="15.1.2" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -57,5 +59,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource  Include="../../resources/color.png"/>
+    <EmbeddedResource  Include="../../resources/outline.png"/>
   </ItemGroup>
 </Project>

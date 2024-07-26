@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -10,6 +11,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins.Models;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
@@ -111,6 +113,9 @@ public class PluginsGenerationService
         }
     }
 
+    private const string ColorFileName = "color.png";
+    private const string OutlineFileName = "outline.png";
+
     private async Task<AppManifestModel> GetAppManifestModelAsync(string pluginFileName, string manifestFullPath, CancellationToken cancellationToken)
     {
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
@@ -148,6 +153,33 @@ public class PluginsGenerationService
             var manifestModelFromFile = await JsonSerializer.DeserializeAsync(fileStream, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
             if (manifestModelFromFile != null)
                 manifestModel = manifestModelFromFile;
+        }
+        else
+        {
+            // The manifest file did not exist, so setup any dependencies needed.
+            // If it already existed, the user has setup them up in another way. 
+
+            // 1. Check if icons exist and write them out.
+            var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            var iconFilePath = Path.Combine(Configuration.OutputPath, ColorFileName);
+            if (!File.Exists(iconFilePath))
+            {
+#pragma warning disable CA2007
+                await using var reader = embeddedProvider.GetFileInfo(ColorFileName).CreateReadStream();
+                await using var defaultColorFile = File.Open(iconFilePath, FileMode.Create);
+#pragma warning restore CA2007
+                await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
+            }
+            // 2. Check if outline exist and write them out.
+            var outlineFilePath = Path.Combine(Configuration.OutputPath, OutlineFileName);
+            if (!File.Exists(outlineFilePath))
+            {
+#pragma warning disable CA2007
+                await using var reader = embeddedProvider.GetFileInfo(OutlineFileName).CreateReadStream();
+                await using var defaultColorFile = File.Open(outlineFilePath, FileMode.Create);
+#pragma warning restore CA2007
+                await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
