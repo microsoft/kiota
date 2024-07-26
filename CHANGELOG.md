@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug in dotnet where CS1587 warnings are generated in generated enums with descriptions [#4957](https://github.com/microsoft/kiota/issues/4957)
 - Fixed a bug where the copilot teams toolkit integration would serialize empty declarative copilots. [#4974](https://github.com/microsoft/kiota/issues/4974)
+- Fixed a bug for the docker image where the volume path would not match the expected configuration for the description.
 - Fixed a bug in Go where certain namespaces were escaped unexpectedly. [#5012](https://github.com/microsoft/kiota/issues/5012)
 
 ## [1.16.0] - 2024-07-05

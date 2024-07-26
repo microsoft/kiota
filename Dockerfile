@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net8.0 ./
 
 VOLUME /app/output
-VOLUME /app/openapi.yml
+VOLUME /app/openapi.yaml
 VOLUME /app/apimanifest.json
 ENV KIOTA_CONTAINER=true DOTNET_TieredPGO=1 DOTNET_TC_QuickJitForLoops=1
 ENTRYPOINT ["dotnet", "kiota.dll"]
