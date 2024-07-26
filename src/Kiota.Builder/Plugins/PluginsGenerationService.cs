@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins.Models;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
@@ -114,6 +116,8 @@ public partial class PluginsGenerationService
         }
     }
 
+    private const string ColorFileName = "color.png";
+    private const string OutlineFileName = "outline.png";
     [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex PluginNameCleanupRegex();
 
@@ -155,6 +159,16 @@ public partial class PluginsGenerationService
             if (manifestModelFromFile != null)
                 manifestModel = manifestModelFromFile;
         }
+        else
+        {
+            // The manifest file did not exist, so setup any dependencies needed.
+            // If it already existed, the user has setup them up in another way. 
+
+            // 1. Check if icons exist and write them out.
+            var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            await CopyResourceFileToDirectoryIfNotExistsAsync(ColorFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
+            await CopyResourceFileToDirectoryIfNotExistsAsync(OutlineFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
+        }
 
         manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
 
@@ -175,7 +189,18 @@ public partial class PluginsGenerationService
 
         return manifestModel;
     }
-
+    private async Task CopyResourceFileToDirectoryIfNotExistsAsync(string fileName, EmbeddedFileProvider embeddedProvider, CancellationToken cancellationToken)
+    {
+        var targetPath = Path.Combine(Configuration.OutputPath, fileName);
+        if (!File.Exists(targetPath))
+        {
+#pragma warning disable CA2007
+            await using var reader = embeddedProvider.GetFileInfo(fileName).CreateReadStream();
+            await using var defaultColorFile = File.Open(targetPath, FileMode.Create);
+#pragma warning restore CA2007
+            await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
+        }
+    }
     internal static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
