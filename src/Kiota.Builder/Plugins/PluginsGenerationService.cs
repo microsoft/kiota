@@ -166,25 +166,8 @@ public partial class PluginsGenerationService
 
             // 1. Check if icons exist and write them out.
             var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-            var iconFilePath = Path.Combine(Configuration.OutputPath, ColorFileName);
-            if (!File.Exists(iconFilePath))
-            {
-#pragma warning disable CA2007
-                await using var reader = embeddedProvider.GetFileInfo(ColorFileName).CreateReadStream();
-                await using var defaultColorFile = File.Open(iconFilePath, FileMode.Create);
-#pragma warning restore CA2007
-                await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
-            }
-            // 2. Check if outline exist and write them out.
-            var outlineFilePath = Path.Combine(Configuration.OutputPath, OutlineFileName);
-            if (!File.Exists(outlineFilePath))
-            {
-#pragma warning disable CA2007
-                await using var reader = embeddedProvider.GetFileInfo(OutlineFileName).CreateReadStream();
-                await using var defaultColorFile = File.Open(outlineFilePath, FileMode.Create);
-#pragma warning restore CA2007
-                await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
-            }
+            await CopyResourceFileToDirectoryIfNotExistsAsync(ColorFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
+            await CopyResourceFileToDirectoryIfNotExistsAsync(OutlineFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
         }
 
         manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
@@ -206,7 +189,18 @@ public partial class PluginsGenerationService
 
         return manifestModel;
     }
-
+    private async Task CopyResourceFileToDirectoryIfNotExistsAsync(string fileName, EmbeddedFileProvider embeddedProvider, CancellationToken cancellationToken)
+    {
+        var targetPath = Path.Combine(Configuration.OutputPath, fileName);
+        if (!File.Exists(targetPath))
+        {
+#pragma warning disable CA2007
+            await using var reader = embeddedProvider.GetFileInfo(fileName).CreateReadStream();
+            await using var defaultColorFile = File.Open(targetPath, FileMode.Create);
+#pragma warning restore CA2007
+            await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
+        }
+    }
     internal static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
