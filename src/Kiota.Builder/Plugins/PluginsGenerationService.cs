@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins.Models;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
@@ -18,7 +21,7 @@ using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.Plugins;
-public class PluginsGenerationService
+public partial class PluginsGenerationService
 {
     private readonly OpenApiDocument OAIDocument;
     private readonly OpenApiUrlTreeNode TreeNode;
@@ -43,7 +46,9 @@ public class PluginsGenerationService
     private const string AppManifestFileName = "manifest.json";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        // 1. write the OpenApi description
+        // 1. cleanup any namings to be used later on.
+        Configuration.ClientClassName = PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty); //drop any special characters
+        // 2. write the OpenApi description
         var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
@@ -58,7 +63,7 @@ public class PluginsGenerationService
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
-        // 2. write the plugins
+        // 3. write the plugins
 
         foreach (var pluginType in Configuration.PluginTypes)
         {
@@ -98,7 +103,7 @@ public class PluginsGenerationService
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        // 3. write the app manifest if its an Api Plugin
+        // 4. write the app manifest if its an Api Plugin
         if (Configuration.PluginTypes.Any(static plugin => plugin == PluginType.APIPlugin))
         {
             var manifestFullPath = Path.Combine(Configuration.OutputPath, AppManifestFileName);
@@ -110,6 +115,11 @@ public class PluginsGenerationService
             await JsonSerializer.SerializeAsync(appManifestStream, appManifestModel, AppManifestModelGenerationContext.AppManifestModel, cancellationToken).ConfigureAwait(false);
         }
     }
+
+    private const string ColorFileName = "color.png";
+    private const string OutlineFileName = "outline.png";
+    [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex PluginNameCleanupRegex();
 
     private async Task<AppManifestModel> GetAppManifestModelAsync(string pluginFileName, string manifestFullPath, CancellationToken cancellationToken)
     {
@@ -149,6 +159,16 @@ public class PluginsGenerationService
             if (manifestModelFromFile != null)
                 manifestModel = manifestModelFromFile;
         }
+        else
+        {
+            // The manifest file did not exist, so setup any dependencies needed.
+            // If it already existed, the user has setup them up in another way. 
+
+            // 1. Check if icons exist and write them out.
+            var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            await CopyResourceFileToDirectoryIfNotExistsAsync(ColorFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
+            await CopyResourceFileToDirectoryIfNotExistsAsync(OutlineFileName, embeddedProvider, cancellationToken).ConfigureAwait(false);
+        }
 
         manifestModel.CopilotExtensions ??= new CopilotExtensions();// ensure its not null.
 
@@ -169,7 +189,18 @@ public class PluginsGenerationService
 
         return manifestModel;
     }
-
+    private async Task CopyResourceFileToDirectoryIfNotExistsAsync(string fileName, EmbeddedFileProvider embeddedProvider, CancellationToken cancellationToken)
+    {
+        var targetPath = Path.Combine(Configuration.OutputPath, fileName);
+        if (!File.Exists(targetPath))
+        {
+#pragma warning disable CA2007
+            await using var reader = embeddedProvider.GetFileInfo(fileName).CreateReadStream();
+            await using var defaultColorFile = File.Open(targetPath, FileMode.Create);
+#pragma warning restore CA2007
+            await reader.CopyToAsync(defaultColorFile, cancellationToken).ConfigureAwait(false);
+        }
+    }
     internal static readonly AppManifestModelGenerationContext AppManifestModelGenerationContext = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -186,35 +217,11 @@ public class PluginsGenerationService
         if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
             doc.Info!.Version = "1.0";
 
-        //empty out all the responses with a single empty 2XX
-        foreach (var operation in doc.Paths.SelectMany(static item => item.Value.Operations.Values))
-        {
-            var responseDescription = operation.Responses.Values.Select(static response => response.Description)
-                                                                      .FirstOrDefault(static desc => !string.IsNullOrEmpty(desc)) ?? "Api Response";
-            operation.Responses = new OpenApiResponses()
-            {
-                {
-                    "2XX",new OpenApiResponse
-                    {
-                        Description = responseDescription,
-                        Content = new Dictionary<string, OpenApiMediaType>
-                        {
-                            {
-                                "text/plain", new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema
-                                    {
-                                        Type = "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-        }
+        //empty out all the responses with a single empty 2XX and cleanup the extensions
+        var openApiWalker = new OpenApiWalker(new OpenApiPluginWalker());
+        openApiWalker.Walk(doc);
 
-        // remove unused components using the OpenApi.Net
+        // remove unused components using the OpenApi.Net library
         var requestUrls = new Dictionary<string, List<string>>();
         var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
         foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
