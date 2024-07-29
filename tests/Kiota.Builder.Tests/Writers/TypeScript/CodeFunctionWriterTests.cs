@@ -1164,12 +1164,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         * @returns {ValidationError_errors_value}
         *\/
            export function createPrimitivesFromDiscriminatorValue(parseNode: ParseNode | undefined) : Primitives | undefined {
-                if (parseNode) {
-                    parseNode.getNumberValue() || parseNode.getStringValue();
-                }
-                return undefined;
+                return parseNode?.getNumberValue() ?? parseNode?.getStringValue();
             }
-         
          */
 
         // Test Factory function
@@ -1292,7 +1288,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Serializer function
-        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null)) is not null);
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
         Assert.True(serializerFunction is not null);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
