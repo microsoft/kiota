@@ -79,7 +79,7 @@ namespace Kiota.Builder.Tests.CodeDOM
                 Name = "test",
                 Parent = currentType
             };
-            
+
             CodeClass td = new CodeClass
             {
                 Name = "SomeClass"

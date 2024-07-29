@@ -443,7 +443,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.WriteLine($"break;");
             writer.DecreaseIndent();
         }
-        
+
         writer.CloseBlock();
     }
 
