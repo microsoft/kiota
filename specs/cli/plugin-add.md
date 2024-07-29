@@ -1,6 +1,6 @@
 # kiota plugin add
 
-## Description 
+## Description
 
 `kiota plugin add` allows a developer to add a new plugin to the [`workspace.json`](workspace) file. If no `workspace.json` file is found, a new `workspace.json` file would be created in the `.kiota` directory under the current working directory. The command will add a new entry to the `plugins` section of the `workspace.json` file. Once this is done, a local copy of the OpenAPI document is generated and kept in the `.kiota/documents/{plugin-name}` folder. If a plugin or client with the same name already exists, the command will fail and display an actionable error message.
 
@@ -10,31 +10,34 @@ Every time a plugin is added, a copy of the OpenAPI document file will be stored
 
 An [API Manifest][def] file named `apimanifest.json` will be generated (if non existing) or updated (if already existing) in the root folder `./kiota` next to `workspace.json`. This API Manifest represents a snapshot of API dependencies and permissions required to access those APIs. This file will represent a concatenated surface of all APIs used across plugins and clients. Both files, `apimanifest.json` and `workspace.json` will be used to generate the code files. A new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and would trigger an update to the [API Manifest][def].
 
-Developers can generate `apiplugin`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) an [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) file named `manifest.json` which conforms with the schema https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema.
-> [!NOTE] 
+Developers can generate `apiplugin`, `openai` and `apimanifest` type of plugins. By generating plugins, three outputs will be generated: 1\) a sliced OpenAPI document named `{plugin-name}-openapi.json|yaml`, 2\) the plugin type you have chosen and  3\) an [app manifest](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema) file named `manifest.json` which conforms with the [schema](https://learn.microsoft.com/en-us/microsoftteams/platform/resources/schema/manifest-schema).
+> [!NOTE]
 > In one's solution, there might be two different [API Manifests][def]. The `apimanifest.json` in the `./kiota` folder represents a single artifact surface of all APIs and it will always be generated. The second one will only be generated when providing `--type apimanifest` when generating a plugin, will be named `{plugin-name}-apimanifest.json` and saved in the chosen output directory.
 
 Once the [`workspace.json`](workspace) file is generated and the OpenAPI document file is saved locally, the generation will be executed and the plugin, the sliced OpenAPI document and the `manifest.json` will become available.
 
 ### Sliced OpenAPI document
-The generated sliced OpenAPI document 
+
+The generated sliced OpenAPI document
 will include only the endpoints that matches `--include-path` and `--exclude-path`, if provided, along with their referenced components. All unused components will be removed as well as all OpenAPI extensions (starts with x-) that don't match with supported extensions in Kiota. See [OpenAPI extensions](../extensions/openapi-extensions.md) supported by Kiota for compreensive list.
 
 ### Plugins
+
 #### API Plugin
-For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the schema https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json.
+
+For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the [schema](https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json).
 
 Requiring fields default as the following:
 
 | API Plugin field | Default value |
 | -- | -- |
-| $schema | "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json" |
-| schema_version | "v2.1" |
+| $schema | `https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json` |
+| schema_version | `v2.1` |
 | name_for_human | Defaults to the OpenAPI document title. |
 | name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
 | description_for_model | Defaults to `x-ai-description` extension from the OpenAPI document.  If the `x-ai-description` is not available, it defaults to `description_for_human` or `Description for {name_for_human}` if description is not available. |
-| namespace | Defaults to `{plugin-name}` |
+| namespace | Defaults to `{plugin-name}` sanitized to match [a-zA-Z0-9] format. |
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
 | legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
 | functions[n].name | Defaults to `paths[n].operationId` from the OpenAPI document. If the `operationId` is not available or does not match the format ^[a-zA-Z0-9_]*$, Kiota will generate the name based on path and operation. |
@@ -47,6 +50,7 @@ Requiring fields default as the following:
 See [suno-with-extensions-apiplugins.json example](../examples/suno-with-extensions-apiplugins.json) for reference.
 
 #### OpenAI Plugin
+
 For `openai`, the generated plugin will be named `openai-plugins.json` and the mapping should follow [Hidi logic to generate OpenAI Plugin](https://github.com/microsoft/OpenAPI.NET/blob/vnext/src/Microsoft.OpenApi.Hidi/OpenApiService.cs#L748). Requiring fields default as the following:
 
 | OpenAI field | Default value |
@@ -55,7 +59,7 @@ For `openai`, the generated plugin will be named `openai-plugins.json` and the m
 | name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
 | description_for_model | Defaults to `x-ai-description` extension from the OpenAPI document.  If the `x-ai-description` is not available, it defaults to `description_for_human` or `Description for {name_for_human}`. |
-| contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
+| contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to `publisher-email@example.com`. |
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
 | legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
 |  |  |
@@ -63,18 +67,21 @@ For `openai`, the generated plugin will be named `openai-plugins.json` and the m
 See [openai-plugins.json example](../examples/openai-plugins.json) for reference.
 
 #### API Manifest
+
 For `apimanifest`, the generated file will be named `{plugin-name}-apimanifest.json` and the mapping should follow the [OpenApi.ApiManifest lib map](https://github.com/microsoft/OpenApi.ApiManifest/blob/main/docs/OpenApiToApiManifestMapping.md). Requiring fields are as the following:
 
 | API Manifest field | Default value |
 | -- | -- |
 | apiDependencies.Key | Defaults to `{plugin-name}`. |
 | publisherName | Defaults to the contact name from the OpenAPI document. If the contact name is not available, it defaults to 'publisher-name'. |
-| publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to 'publisher-email@example.com'. |
+| publisherEmail | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to `publisher-email@example.com`. |
 |  |  |
 
 ### App manifest
+
 The app manifest file describes how one's plugin integrates into Microsoft 365 and it's not related to plugin types. App manifests are required for [publishing apps to Microsoft 365 app stores](https://learn.microsoft.com/en-us/partner-center/marketplace/checklist#step-3-check-that-your-manifest-is-compliant).
 For `manifest.json` file, we will:
+
 1. Add a plugin node to the `manifest.json` file if a `manifest.json` file already exists in the output directory.
 
 ```jsonc
@@ -85,8 +92,9 @@ For `manifest.json` file, we will:
       "file": "<generated_plugin_file>.json"
     }
   ]
-},
+}
 ```
+
 2. If a `plugins` node already exists and there is no plugin with the same `id`, add the new plugin information. If the `id` already exists, replace the current content.
 3. If there is no `manifest.json` file, we should create a basic manifest with only required information as the following example:
 
@@ -134,14 +142,14 @@ For `manifest.json` file, we will:
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
 | `--plugin-name \| --pn` | Yes | GitHub | Name of the plugin. Unique within the parent API. Defaults to `Plugin` | No |
-| `--openapi \| -d` | Yes | https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
+| `--openapi \| -d` | Yes | `https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json` | The location of the OpenAPI document in JSON or YAML format to use to generate the plugin. Accepts a URL or a local directory. | No |
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /advisories | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `apiplugin`, `openai` and `apimanifest`.| Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the location of `workspace.json`. Defaults to `./output`. | Yes, without its value |
 
-> [!NOTE] 
+> [!NOTE]
 > It is not required to use the CLI to add new plugins. It is possible to add a new plugin by adding a new entry in the `plugins` section of the `workspace.json` file. See the [workspace.json schema](../schemas/workspace.json) for more information. Using `kiota plugin generate --plugin-name myPlugin` would be required to generate the plugins after manually adding them.
 
 ## Using `kiota plugin add`
@@ -283,6 +291,7 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
 ```
 
 ## File structure
+
 ```bash
  └─.kiota
     └─workspace.json
@@ -301,4 +310,3 @@ _The resulting API Manifest named `apimanifest.json` in the `./kiota` folder (co
 ```
 
 [def]: https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html
-[workspace]: (../scenarios/kiota-workspace.md)

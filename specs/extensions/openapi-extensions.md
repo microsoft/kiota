@@ -20,6 +20,8 @@ Kiota supports OpenAPI extensions to help users extend OpenAPI documents to cust
 
 [x-ai-responding-instructions](#x-ai-responding-instructions)
 
+[x-openai-isConsequential](#x-openai-isconsequential)
+
 ## x-logo
 Specifies the custom logo image.
 
@@ -127,4 +129,29 @@ paths:
                 - "I **should not** respond with either sample or full form of lyrics to the song because the song created by createSong(**params) is shown to the user directly along with the lyrics."
                 - "If createSong(**params) was not invoked because the service was overloaded or the user reached their invocation limit, I **must** tell the user they can visit the https://app.suno.ai website to create more songs and display the link using Markdown syntax."
                 - "I **shall** tell the user they can visit the https://app.suno.ai website to create more songs and display the link using Markdown syntax."
+```
+
+## x-openai-isConsequential
+Specifies whether a confirmation dialog should be displayed before running the operation. Possible values are:
+
+true: must always prompt the user for confirmation before running and don't show "Always allow" button
+false: it will show the prompt for confirmation with the "Always allow" button
+
+If the `x-openai-isConsequential` is not present, all GET operation will default to `false` and show the "Always allow" button; all other operations will default to `true` and must always prompt the user for confirmation.
+
+Applies to: Operations
+
+```yaml
+openapi: 3.0.0
+info:
+    title: Title
+    description: Description
+    version: 1.0.0
+paths:
+    /createSong:
+        post:
+            summary: Create a song given the user preferences
+            operationId: createSong
+            description: description
+            x-openai-isConsequential: true
 ```
