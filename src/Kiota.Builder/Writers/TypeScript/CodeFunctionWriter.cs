@@ -53,12 +53,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private string GetReturnTypeForPrimitiveComposedTypes(CodeComposedTypeBase? composedType)
-    {
-        if (composedType == null) return string.Empty;
-        return " | " + string.Join(" | ", composedType.GetPrimitiveTypes().Select(x => conventions.GetTypeString(x, composedType, false)));
-    }
-
     private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFunction codeElement, bool nodeParameterCanBeNull = true)
     {
         var optionalChainingSymbol = nodeParameterCanBeNull ? "?" : string.Empty;
