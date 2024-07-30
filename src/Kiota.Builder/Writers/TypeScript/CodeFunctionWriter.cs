@@ -247,7 +247,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 WriteFactoryMethodBodyForCodeUnionType(codeElement, returnType, writer, parseNodeParameter);
                 break;
             case CodeIntersectionType _ when parseNodeParameter != null:
-                WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
+                WriteDefaultDiscriminator(codeElement, returnType, writer);
                 break;
             default:
                 WriteNormalFactoryMethodBody(codeElement, returnType, writer);
@@ -259,7 +259,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
         // The default discriminator is useful when the discriminator information is not provided.
-        WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
+        WriteDefaultDiscriminator(codeElement, returnType, writer);
     }
 
     private void WriteNormalFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
@@ -269,12 +269,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
         }
-        WriteDefaultDiscriminator(codeElement, returnType, writer, parseNodeParameter);
+        WriteDefaultDiscriminator(codeElement, returnType, writer);
     }
 
-    private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter? parseNodeParameter)
+    private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer)
     {
-        var composedType = GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType);
         var deserializationFunction = GetFunctionName(codeElement, returnType, CodeMethodKind.Deserializer);
         writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()};");
     }

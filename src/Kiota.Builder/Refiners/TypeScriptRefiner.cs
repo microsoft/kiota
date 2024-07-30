@@ -1359,8 +1359,45 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         }
     }
 
+    /// <summary>
+    /// Adds all the required import statements (CodeUsings) to the deserialization function which have a dependency on ComposedTypes.
+    /// Composed types can be comprised of other interfaces/classes.
+    /// </summary>
+    /// <param name="codeElement">The code element to process.</param>
+    private static void AddDeserializerUsingToDiscriminatorFactoryForComposedTypeParameters(CodeElement codeElement)
+    {
+        if (codeElement is not CodeFunction function) return;
+
+        var composedTypeParam = function.OriginalLocalMethod.Parameters
+            .FirstOrDefault(x => GetOriginalComposedType(x) is not null);
+
+        if (composedTypeParam is null) return;
+
+        var composedType = GetOriginalComposedType(composedTypeParam);
+        if (composedType is null) return;
+
+        foreach (var type in composedType.AllTypes)
+        {
+            if (type.TypeDefinition is not CodeInterface codeInterface) continue;
+
+            var modelDeserializerFunction = GetSerializationFunctionsForNamespace(codeInterface.OriginalClass).Item2;
+            if (modelDeserializerFunction.Parent is null) continue;
+
+            function.AddUsing(new CodeUsing
+            {
+                Name = modelDeserializerFunction.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = modelDeserializerFunction.Name,
+                    TypeDefinition = modelDeserializerFunction
+                },
+            });
+        }
+    }
+
     private static void AddDeserializerUsingToDiscriminatorFactory(CodeElement codeElement)
     {
+        AddDeserializerUsingToDiscriminatorFactoryForComposedTypeParameters(codeElement);
         if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
             parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
         {
@@ -1398,7 +1435,6 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
                     }
                 }
             }
-
         }
         CrawlTree(codeElement, AddDeserializerUsingToDiscriminatorFactory);
     }

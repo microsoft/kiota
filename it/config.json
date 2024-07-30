@@ -235,10 +235,6 @@
   "apisguru::stripe.com": {
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "This document includes an intersection between objects and primitive values, which is not supported in the TypeScript language and results in compilation errors."
-      },
-      {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2834"
       },
