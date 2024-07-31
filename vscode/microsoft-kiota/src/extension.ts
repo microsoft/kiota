@@ -249,6 +249,7 @@ export async function activate(
      clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
+     openApiTreeProvider.resetInitialState();
      await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
@@ -332,7 +333,6 @@ export async function activate(
     if (result)
     {
       await exportLogsAndShowErrors(result);
-      openApiTreeProvider.resetInitialState();
     }
     return result;
   }
@@ -373,7 +373,6 @@ export async function activate(
     if (result)
     {
       await exportLogsAndShowErrors(result);
-      openApiTreeProvider.resetInitialState();
     }
     return result;
   }
@@ -436,7 +435,6 @@ export async function activate(
     if (result)
     {
       await exportLogsAndShowErrors(result);
-      openApiTreeProvider.resetInitialState();
     }
     return result;
   }
@@ -446,6 +444,7 @@ export async function activate(
     openApiTreeProvider.refreshView();
     const workspaceJsonPath = getWorkspaceJsonPath();
     await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
+    openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }
   async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]): Promise<void> {
@@ -481,6 +480,7 @@ export async function activate(
     return result;
     });
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+  openApiTreeProvider.resetInitialState();
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
     const pluginTypes =  Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
@@ -514,6 +514,7 @@ export async function activate(
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+    openApiTreeProvider.resetInitialState();
   }
 
   // create a new status bar item that we can now manage
