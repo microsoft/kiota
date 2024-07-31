@@ -444,6 +444,7 @@ export async function activate(
     openApiTreeProvider.refreshView();
     const workspaceJsonPath = getWorkspaceJsonPath();
     await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
     openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }

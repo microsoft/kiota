@@ -409,6 +409,10 @@
       {
         "command": "kiota.regenerate",
         "title": "%kiota.openApiExplorer.regenerateButton.title%"
+      },
+      {
+        "command": "kiota.workspace.refresh",
+        "title": "%kiota.openApiExplorer.refresh.title%"
       }
     ],
     "languages": [
