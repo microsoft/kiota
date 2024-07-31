@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
+import * as crypto from 'crypto';
 import { 
     ClientObjectProperties, 
     ClientOrPluginProperties, 
@@ -23,7 +24,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
     private apiTitle?: string;
-    private selectionChanged: boolean = false;
+    private initialStateHash: string = '';
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly settingsGetter: () => ExtensionSettings,
@@ -168,17 +169,12 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public isEmpty(): boolean {
         return this.rawRootNode === undefined;
     }
-    public hasSelectionChanged(): boolean {
-        return this.selectionChanged;
-    }
-    public setSelectionChanged(state: boolean) {
-        this.selectionChanged = state;
-    }
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
         const settings = this.settingsGetter();
         await this.loadNodes(settings.clearCache);
+        this.initialStateHash = this.hashDescription(this.rawRootNode);
         this.refreshView();
     }
     public get descriptionUrl(): string {
@@ -196,7 +192,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
-        this.setSelectionChanged(true);
         const isOperationNode = apiNode.isOperation ?? false;
         if (recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
@@ -206,7 +201,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
             if (parent) {
                 parent.selected = selected;
-                this.setSelectionChanged(true);
             }
         }
     }
@@ -236,6 +230,23 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             }
         }
         return undefined;
+    }
+
+    private hashDescription(description: any): string {
+        const json = JSON.stringify(description);
+        return crypto.createHash('sha256').update(json).digest('hex');
+    }
+
+    public hasChanges(): boolean {
+        if (!this.rawRootNode) {
+            return false;
+        }
+        const currentStateHash = this.hashDescription(this.rawRootNode);
+        return currentStateHash !== this.initialStateHash;
+    }
+    
+    public resetInitialState(): void {
+        this.initialStateHash = this.hashDescription(this.rawRootNode);
     }
 
     refreshView(): void {
