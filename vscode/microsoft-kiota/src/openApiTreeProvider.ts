@@ -234,7 +234,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
 
     private hashDescription(description: any): string {
         const json = JSON.stringify(description);
-        return crypto.createHash('sha256').update(json).digest('hex');
+        return crypto.createHash('md5').update(json).digest('hex');
     }
 
     public hasChanges(): boolean {
@@ -244,7 +244,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const currentStateHash = this.hashDescription(this.rawRootNode);
         return currentStateHash !== this.initialStateHash;
     }
-    
+
     public resetInitialState(): void {
         this.initialStateHash = this.hashDescription(this.rawRootNode);
     }
