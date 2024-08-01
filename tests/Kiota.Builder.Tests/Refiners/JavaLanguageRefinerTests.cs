@@ -579,13 +579,13 @@ public class JavaLanguageRefinerTests
             }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.StartBlock.Implements.Where(static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => additionalDataDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Methods, static x => deserializeDefaultName.Equals(x.ReturnType.Name));
+        Assert.DoesNotContain(model.Methods.SelectMany(static x => x.Parameters), static x => serializerDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.StartBlock.Implements, static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Contains(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
