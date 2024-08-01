@@ -232,9 +232,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return undefined;
     }
 
-    private hashDescription(description: any): string {
+    private hashDescription(description: KiotaOpenApiNode | undefined): string {
         const json = JSON.stringify(description);
-        return crypto.createHash('md5').update(json).digest('hex');
+        return crypto.createHash('sha256').update(json).digest('hex');
     }
 
     public hasChanges(): boolean {
@@ -244,7 +244,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const currentStateHash = this.hashDescription(this.rawRootNode);
         return currentStateHash !== this.initialStateHash;
     }
-
+    
     public resetInitialState(): void {
         this.initialStateHash = this.hashDescription(this.rawRootNode);
     }
