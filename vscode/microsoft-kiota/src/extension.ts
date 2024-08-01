@@ -201,7 +201,7 @@ export async function activate(
       `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
         const yesAnswer = vscode.l10n.t("Yes, override it");
-        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasSelectionChanged()) {
+        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
           const response = await vscode.window.showWarningMessage(
             vscode.l10n.t(
               "Before adding a new API description, consider that your changes and current selection will be lost."),
@@ -249,6 +249,7 @@ export async function activate(
      clientOrPluginObject = clientObject;
      workspaceGenerationType = generationType;
      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
+     openApiTreeProvider.resetInitialState();
      await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
@@ -441,10 +442,10 @@ export async function activate(
   async function displayGenerationResults(context: vscode.ExtensionContext, openApiTreeProvider: OpenApiTreeProvider, config: any, outputPath: string) {
     const clientNameOrPluginName = config.clientClassName || config.pluginName;
     openApiTreeProvider.refreshView();
-    openApiTreeProvider.setSelectionChanged(false);
     const workspaceJsonPath = getWorkspaceJsonPath();
     await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
     await vscode.commands.executeCommand('kiota.workspace.refresh');
+    openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }
   async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]): Promise<void> {
@@ -480,7 +481,7 @@ export async function activate(
     return result;
     });
   void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
-  openApiTreeProvider.setSelectionChanged(false);
+  openApiTreeProvider.resetInitialState();
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
     const pluginTypes =  Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
@@ -514,7 +515,7 @@ export async function activate(
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
-    openApiTreeProvider.setSelectionChanged(false);
+    openApiTreeProvider.resetInitialState();
   }
 
   // create a new status bar item that we can now manage
