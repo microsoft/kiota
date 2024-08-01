@@ -53,6 +53,19 @@
       }
     ]
   },
+  "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
+    "MockServerITFolder": "discriminator",
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/4434"
+      }
+    ]
+  },
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
     "MockServerITFolder": "basic",
     "Suppressions": [
@@ -329,9 +342,7 @@
     ]
   },
   "apisguru::apis.guru": {
-    "Suppressions": [
-    ],
-    "IdempotencySuppressions": [
-    ]
+    "Suppressions": [],
+    "IdempotencySuppressions": []
   }
 }
