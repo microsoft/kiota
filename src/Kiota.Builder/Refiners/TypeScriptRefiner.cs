@@ -1265,6 +1265,20 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         CrawlTree(currentElement, AddEnumObjectUsings);
     }
 
+    private static void AddCodeUsingForComposedTypeProperty(CodeType propertyType, CodeInterface modelInterface, Func<CodeClass, string> interfaceNamingCallback)
+    {
+        // If the property is a composed type then add code using for each of the classes contained in the composed type
+        if (GetOriginalComposedType(propertyType) is not { } composedTypeProperty) return;
+        foreach (var composedType in composedTypeProperty.AllTypes)
+        {
+            if (composedType.TypeDefinition is CodeClass composedTypePropertyClass)
+            {
+                var composedTypePropertyInterfaceTypeAndUsing = GetUpdatedModelInterfaceAndCodeUsing(composedTypePropertyClass, composedType, interfaceNamingCallback);
+                SetUsingInModelInterface(modelInterface, composedTypePropertyInterfaceTypeAndUsing);
+            }
+        }
+    }
+
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)
     {
         /*
@@ -1290,7 +1304,9 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             }
             else if (mProp.Type is CodeType propertyType && propertyType.TypeDefinition is CodeClass propertyClass)
             {
-                var interfaceTypeAndUsing = ReturnUpdatedModelInterfaceTypeAndUsing(propertyClass, propertyType, interfaceNamingCallback);
+                AddCodeUsingForComposedTypeProperty(propertyType, modelInterface, interfaceNamingCallback);
+
+                var interfaceTypeAndUsing = GetUpdatedModelInterfaceAndCodeUsing(propertyClass, propertyType, interfaceNamingCallback);
                 SetUsingInModelInterface(modelInterface, interfaceTypeAndUsing);
 
                 // In case of a serializer function, the object serializer function will hold reference to serializer function of the property type.
@@ -1309,7 +1325,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     private const string FactorySuffix = "FromDiscriminatorValue";
     private static string GetFactoryFunctionNameFromTypeName(string? typeName) => string.IsNullOrEmpty(typeName) ? string.Empty : $"{FactoryPrefix}{typeName.ToFirstCharacterUpperCase()}{FactorySuffix}";
 
-    private static (CodeInterface?, CodeUsing?) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
+    private static (CodeInterface?, CodeUsing?) GetUpdatedModelInterfaceAndCodeUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         if (propertyInterfaceType.Parent is null)
