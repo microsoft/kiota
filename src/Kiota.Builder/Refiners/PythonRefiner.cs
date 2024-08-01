@@ -288,6 +288,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
+        else if (currentProperty.Kind is CodePropertyKind.Custom && currentProperty.Type.IsNullable && string.IsNullOrEmpty(currentProperty.DefaultValue))
+        {
+            currentProperty.DefaultValue = "None";
+        }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
