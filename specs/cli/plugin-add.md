@@ -41,7 +41,7 @@ Requiring fields default as the following:
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
 | legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
 | functions[n].name | Defaults to `paths[n].operationId` from the OpenAPI document. If the `operationId` is not available or does not match the format ^[a-zA-Z0-9_]*$, Kiota will generate the name based on path and operation. |
-| functions[n].description | Defaults to `paths[n].description` from the OpenAPI document. |
+| functions[n].description | Defaults to `paths[n].description` from the OpenAPI document. If there is no description, defaults to `paths[n].summary`. |
 | functions[n].parameters | Defaults to `paths[n].parameters` from the OpenAPI document. |
 | functions[n].state.reasoning.instructions | Defaults to `x-ai-reasoning-instructions` from the OpenAPI document. If `x-ai-reasoning-instructions` is not available, the `functions[n].state.reasoning.instructions` will not be added in the plugin|
 | functions[n].state.responding.instructions | Defaults to `x-ai-responding-instructions` from the OpenAPI document. If `x-ai-responding-instructions` is not available, the `functions[n].state.responding.instructions` will not be added in the plugin|
