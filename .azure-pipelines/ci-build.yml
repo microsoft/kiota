@@ -584,7 +584,10 @@ extends:
                 inputs:
                   targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
                   sourceFolder: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-                  contents: "*.vsix,*.manifest,*.signature.p7s"
+                  contents: |
+                    *.vsix
+                    *.manifest
+                    *.signature.p7s
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: VSCode"
                 inputs:
