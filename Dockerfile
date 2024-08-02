@@ -3,6 +3,7 @@ ARG version_suffix
 WORKDIR /app
 
 COPY ./src ./kiota/src
+COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; \
