@@ -81,7 +81,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         foreach (var mappedType in composedType.GetNonPrimitiveTypes().ToArray())
         {
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"...{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Deserializer)}({composedParam.Name.ToFirstCharacterLowerCase()} as {mappedTypeName}),");
+            writer.WriteLine($"...{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Deserializer)}({composedParam.Name.ToFirstCharacterLowerCase()} as {GetTypescriptTypeString(mappedType, codeElement, includeCollectionInformation: false, inlineComposedTypeString: true)}),");
         }
         writer.CloseBlock();
     }
@@ -111,8 +111,26 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         foreach (var mappedType in composedType.GetNonPrimitiveTypes().ToArray())
         {
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()} as {mappedTypeName});");
+            writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()} as {GetTypescriptTypeString(mappedType, method, includeCollectionInformation: false, inlineComposedTypeString: true)});");
         }
+    }
+
+    public static bool IsComposedOfCollectionOfObjects(CodeComposedTypeBase composedType)
+    {
+        ArgumentNullException.ThrowIfNull(composedType);
+        // Get the objects
+        var composedTypeObjects = composedType.Types.Where(x => !IsPrimitiveType(GetTypescriptTypeString(x, composedType)));
+        // Get the collections count
+        return composedTypeObjects.Any(x => x.IsCollection);
+    }
+
+    public static bool IsComposedOfNonCollectionOfObjects(CodeComposedTypeBase composedType)
+    {
+        ArgumentNullException.ThrowIfNull(composedType);
+        // Get the objects
+        var composedTypeObjects = composedType.Types.Where(x => !IsPrimitiveType(GetTypescriptTypeString(x, composedType)));
+        // Get the non collections count
+        return composedTypeObjects.Any(x => !x.IsCollection);
     }
 
     private void WriteSerializationFunctionForCodeUnionTypes(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
@@ -418,7 +436,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var propTypeName = GetTypescriptTypeString(codeProperty.Type, codeProperty.Parent!, false, inlineComposedTypeString: true);
 
-        var serializationName = GetSerializationMethodName(codeProperty.Type, method.OriginalLocalMethod);
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
 
         writer.StartBlock($"switch (typeof {modelParamName}.{codePropertyName}) {{");
@@ -432,7 +449,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             // write the default statement serialization statement for the object
             writer.StartBlock($"default:");
-            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+            if (IsComposedOfCollectionOfObjects(composedType))
+            {
+                writer.WriteLine($"writer.writeCollectionOfObjectValues<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+            }
+            if (IsComposedOfNonCollectionOfObjects(composedType))
+            {
+                writer.WriteLine($"writer.writeObjectValue<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+            }
             writer.WriteLine($"break;");
             writer.DecreaseIndent();
         }
@@ -588,19 +612,43 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {paramName}.{propName} = true;{suffix} }},");
     }
 
-    private void WriteComposedTypePropertyDeserialization(LanguageWriter writer, CodeProperty otherProp, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
+    private void WriteComposedTypePropertyDeserialization(LanguageWriter writer, CodeProperty codeProperty, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
     {
+        var defaultValueSuffix = GetDefaultValueSuffix(codeProperty);
         if (composedType.IsComposedOfPrimitives())
         {
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = {GetFactoryMethodName(otherProp.Type, codeFunction)}(n); }},");
+            writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = {GetFactoryMethodName(codeProperty.Type, codeFunction)}(n); }},");
         }
         else if (composedType.IsComposedOfObjectsAndPrimitives())
         {
-            var objectSerializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFunction.OriginalLocalMethod);
             var primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, "n", codeFunction, false);
-            var defaultValueSuffix = GetDefaultValueSuffix(otherProp);
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = {primitiveValuesUnionString} ?? n.{objectSerializationMethodName}{defaultValueSuffix};{suffix} }},");
+            writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = {primitiveValuesUnionString} ?? n.{GetObjectTypeSerializationMethodName(codeProperty, codeFunction)}{defaultValueSuffix};{suffix} }},");
         }
+        else // its composed of objects
+        {
+            // check if its all comprised items are a collection
+            if (IsComposedOfNonCollectionOfObjects(composedType))
+            {
+                var serializationMethodName = composedType.IsCollection ? GetCollectionOfObjectsSerializationMethodName(codeProperty, codeFunction) : GetObjectTypeSerializationMethodName(codeProperty, codeFunction);
+                writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = n.{serializationMethodName}{defaultValueSuffix};{suffix} }},");
+            }
+            else if (IsComposedOfCollectionOfObjects(composedType))
+            {
+                writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = n.{GetCollectionOfObjectsSerializationMethodName(codeProperty, codeFunction)}{defaultValueSuffix};{suffix} }},");
+            }
+        }
+    }
+
+    private string GetObjectTypeSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
+    {
+        var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
+        return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
+    }
+
+    private string GetCollectionOfObjectsSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
+    {
+        var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
+        return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
     }
 
     private void WriteDefaultPropertyDeserialization(LanguageWriter writer, CodeProperty otherProp, string paramName, string propName, CodeFunction codeFunction, string suffix)

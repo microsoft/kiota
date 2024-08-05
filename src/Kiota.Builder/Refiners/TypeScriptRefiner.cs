@@ -339,6 +339,41 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         // Add the key parameter if the composed type is a union of primitive values
         if (composedType.IsComposedOfPrimitives())
             function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
+
+        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
+        AddSerializationUsingsForCodeComposed(composedType, function, CodeMethodKind.Serializer);
+    }
+
+    private static void AddSerializationUsingsForCodeComposed(CodeComposedTypeBase composedType, CodeFunction function, CodeMethodKind kind)
+    {
+        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
+        foreach (var type in composedType.GetNonPrimitiveTypes())
+        {
+            if (type.TypeDefinition is CodeInterface codeInterface && codeInterface.OriginalClass is CodeClass codeClass)
+            {
+                var (serializer, deserializer) = GetSerializationFunctionsForNamespace(codeClass);
+                if (kind == CodeMethodKind.Serializer)
+                    AddSerializationUsingsToFunction(function, serializer);
+                if (kind == CodeMethodKind.Deserializer)
+                    AddSerializationUsingsToFunction(function, deserializer);
+            }
+        }
+    }
+
+    private static void AddSerializationUsingsToFunction(CodeFunction function, CodeFunction serializationFunction)
+    {
+        if (serializationFunction.Parent is not null)
+        {
+            function.AddUsing(new CodeUsing
+            {
+                Name = serializationFunction.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = serializationFunction.Name,
+                    TypeDefinition = serializationFunction
+                }
+            });
+        }
     }
 
     private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
@@ -352,6 +387,9 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             codeInterface.RemoveChildElement(deserializerMethod);
             codeNamespace.RemoveChildElement(deserializerMethod);
         }
+
+        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
+        AddSerializationUsingsForCodeComposed(composedType, deserializerMethod, CodeMethodKind.Deserializer);
     }
 
     private static CodeParameter CreateKeyParameter()
