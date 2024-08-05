@@ -642,13 +642,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string GetObjectTypeSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
     {
         var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
-        return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
+        return $"getObjectValue<{propertyType}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
     }
 
     private string GetCollectionOfObjectsSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
     {
         var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
-        return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
+        return $"getCollectionOfObjectValues<{propertyType}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
     }
 
     private void WriteDefaultPropertyDeserialization(LanguageWriter writer, CodeProperty otherProp, string paramName, string propName, CodeFunction codeFunction, string suffix)
