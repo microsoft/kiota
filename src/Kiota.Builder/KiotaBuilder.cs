@@ -1221,6 +1221,12 @@ public partial class KiotaBuilder
                     var obsoleteFactoryMethod = (CodeMethod)originalFactoryMethod.Clone();
                     obsoleteFactoryMethod.ReturnType = new CodeType { Name = obsoleteTypeName, TypeDefinition = obsoleteClassDefinition };
                     obsoleteClassDefinition.AddMethod(obsoleteFactoryMethod);
+                    var originalSerializerMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Serializer);
+                    var obsoleteSerializerMethod = (CodeMethod)originalSerializerMethod.Clone();
+                    obsoleteClassDefinition.AddMethod(obsoleteSerializerMethod);
+                    var originalDeserializerMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Deserializer);
+                    var obsoleteDeserializerMethod = (CodeMethod)originalDeserializerMethod.Clone();
+                    obsoleteClassDefinition.AddMethod(obsoleteDeserializerMethod);
                     obsoleteClassDefinition.StartBlock.Inherits = (CodeType)codeType.Clone();
                     var obsoleteClass = codeClass.Parent switch
                     {
