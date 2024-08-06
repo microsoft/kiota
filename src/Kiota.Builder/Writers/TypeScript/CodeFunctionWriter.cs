@@ -621,8 +621,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else if (composedType.IsComposedOfObjectsAndPrimitives())
         {
+            var serializationMethodName = composedType.IsCollection || IsComposedOfCollectionOfObjects(composedType) ? GetCollectionOfObjectsSerializationMethodName(codeProperty, codeFunction) : GetObjectTypeSerializationMethodName(codeProperty, codeFunction);
             var primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, "n", codeFunction, false);
-            writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = {primitiveValuesUnionString} ?? n.{GetObjectTypeSerializationMethodName(codeProperty, codeFunction)}{defaultValueSuffix};{suffix} }},");
+            writer.WriteLine($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = {primitiveValuesUnionString} ?? n.{serializationMethodName}{defaultValueSuffix};{suffix} }},");
         }
         else // its composed of objects
         {
