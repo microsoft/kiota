@@ -287,7 +287,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'ApiPlugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
+            pluginTypes.label === 'Api Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
         async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) { 
