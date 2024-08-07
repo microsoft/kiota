@@ -277,7 +277,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputPluginType(input, state);      
     }    
         async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
-            const items = ['Api Plugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
+            const items = ['API Plugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a plugin type'),
                 step: step++,
@@ -287,7 +287,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'Api Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
+            pluginTypes.label === 'API Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
             return (input: MultiStepInput) => inputPluginOutputPath(input, state);
         }
         async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) { 
