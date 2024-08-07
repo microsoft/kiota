@@ -34,7 +34,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType};");
                 break;
             default:
-                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)} | null;");
                 break;
         }
     }
