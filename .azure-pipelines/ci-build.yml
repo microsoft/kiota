@@ -200,7 +200,7 @@ extends:
                   projects: '$(Build.SourcesDirectory)\kiota.sln'
                   arguments: "--configuration $(BuildConfiguration) --no-build"
 
-              - task: EsrpCodeSigning@7
+              - task: EsrpCodeSigning@5
                 displayName: "ESRP CodeSigning"
                 inputs:
                   ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
@@ -275,7 +275,7 @@ extends:
                 condition: eq(variables['isPrerelease'], 'false')
                 displayName: "pack kiota builder"
 
-              - task: EsrpCodeSigning@7
+              - task: EsrpCodeSigning@5
                 displayName: "ESRP CodeSigning Nuget Packages"
                 inputs:
                   ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
@@ -395,7 +395,7 @@ extends:
                     displayName: Set Hardened Entitlements
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
 
-                  - task: EsrpCodeSigning@7
+                  - task: EsrpCodeSigning@5
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'win'))
                     inputs:
                       ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
@@ -461,7 +461,7 @@ extends:
                       archiveType: zip
                       archiveFile: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip
                       replaceExistingArchive: true
-                  - task: EsrpCodeSigning@7
+                  - task: EsrpCodeSigning@5
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
                     inputs:
                       ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
@@ -491,7 +491,7 @@ extends:
                       PendingAnalysisWaitTimeoutMinutes: 5
                       Pattern: |
                         **/*.zip
-                  - task: EsrpCodeSigning@7
+                  - task: EsrpCodeSigning@5
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
                     inputs:
                       ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
@@ -597,7 +597,7 @@ extends:
               - script: cp $(getExtensionFileName.extensionFileName).manifest $(getExtensionFileName.extensionFileName).signature.p7s
                 displayName: 'Prepare manifest for signing'
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-              - task: EsrpCodeSigning@7
+              - task: EsrpCodeSigning@5
                 inputs:
                   ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
                   AppRegistrationClientId: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
