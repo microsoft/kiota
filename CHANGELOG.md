@@ -11,16 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds generation of default 'color.png` and `outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
+- Adds generation of default 'color.png`and`outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
 
 ### Changed
 
+- Fixed a bug where properties would be missing in Python models if they didn't have additional properties. [#5037](https://github.com/microsoft/kiota/issues/5037)
 - Fixed a bug in dotnet where CS1587 warnings are generated in generated enums with descriptions [#4957](https://github.com/microsoft/kiota/issues/4957)
 - Fixed a bug where the copilot teams toolkit integration would serialize empty declarative copilots. [#4974](https://github.com/microsoft/kiota/issues/4974)
 - Fixed a bug for the docker image where the volume path would not match the expected configuration for the description.
 - Fixed a bug in Go where certain namespaces were escaped unexpectedly. [#5012](https://github.com/microsoft/kiota/issues/5012)
 - Exclude the `x-openai-isConsequential` extension from cleanup. [#4962](https://github.com/microsoft/kiota/issues/4962)
 - Fixed file name and namespace sanitization when generating plugins. [#5019](https://github.com/microsoft/kiota/issues/5019)
+- Added TypeScript typecheck suppression to generated method prototype, where anused arguments can cause build fail in projects which use `noUnusedLocals: true` compiler option. [#5095](https://github.com/microsoft/kiota/issues/5095)
 
 ## [1.16.0] - 2024-07-05
 
@@ -53,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
 - Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
 - Added optional parameter --disable-ssl-validation for generate, show, and download commands. [#4176](https://github.com/microsoft/kiota/issues/4176)
-- For *Debug* builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for *Debug* builds and `Warning` for *Release* builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
+- For _Debug_ builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for _Debug_ builds and `Warning` for _Release_ builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
 
 ### Changed
 
@@ -654,7 +656,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unused generated import for PHP Generation.
 - Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
-- Changed signature of escaped reserved names from {x}*escaped to {x}* in line with Python style guides.
+- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)

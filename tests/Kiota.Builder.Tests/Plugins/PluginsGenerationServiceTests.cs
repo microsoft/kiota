@@ -699,7 +699,7 @@ paths:
           description: client error response
   /test/{id}:
     get:
-      description: description for test path with id
+      summary: description for test path with id
       operationId: test.WithId
       x-openai-isConsequential: true
       parameters:
@@ -770,6 +770,8 @@ components:
         var originalDocument = openApiReader.Read(originalOpenApiFile, out var originalDiagnostic);
         Assert.Empty(originalDiagnostic.Errors);
 
+        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
         Assert.Single(originalDocument.Components.Schemas);// one schema originally
         Assert.Single(originalDocument.Extensions); // single unsupported extension at root
         Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
