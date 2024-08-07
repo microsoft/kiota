@@ -128,7 +128,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
-    const workspaceOpen = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+    const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
 
     let workspaceFolder = getWorkspaceJsonDirectory();
     const appPackagePath = findAppPackageDirectory(workspaceFolder);
@@ -146,7 +146,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     ];
 
     function updateWorkspaceFolder(name: string | undefined) {
-        if (name && (workspaceOpen)) {
+        if (name && (!workspaceOpen)) {
             workspaceFolder = getWorkspaceJsonDirectory(name);
             inputOptions = [
                 { label: l10n.t('Default folder'), description: workspaceFolder },
@@ -231,7 +231,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 }
             } else {
                 state.outputPath = selectedOption.description;
-                if(workspaceOpen){
+                if (workspaceOpen) {
+                    state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                } else {
                     state.workingDirectory = path.dirname(selectedOption.description!);
                 }
             }
@@ -316,7 +318,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                     }
                 } else {
                         state.outputPath = selectedOption.description;
-                        if(workspaceOpen){
+                        if (workspaceOpen) {
+                            state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                        } else {
                             state.workingDirectory = path.dirname(selectedOption.description!);
                         }
                     }
@@ -364,9 +368,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 } else {    
                     continue;  
                 }
-                } else{
+                } else {
                     state.outputPath = selectedOption.description;
-                    if(workspaceOpen){
+                    if (workspaceOpen) {
+                        state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                    } else {
                         state.workingDirectory = path.dirname(selectedOption.description!);
                     }
                 }
@@ -378,7 +384,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 	}   
     await MultiStepInput.run(input => inputGenerationType(input, state), () => step-=2);
     if(!state.workingDirectory){
-        state.workingDirectory = state.outputPath as string; 
+        state.workingDirectory = workspaceOpen ? vscode.workspace.workspaceFolders![0].uri.fsPath : state.outputPath as string; 
     }
     return state;
 }
