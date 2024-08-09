@@ -712,7 +712,7 @@ paths:
           format: int32
       responses:
         '200':
-          description: test
+          description:
         '500':
           description: api error response
 components:
@@ -789,11 +789,11 @@ components:
         Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
         Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
-        Assert.Single(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses); // other responses are removed from the document
-        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["2XX"].Description); // response description string is not empty
+        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
         Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
-        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses); // 2 responses originally
-        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["2XX"].Description);// response description string is not empty
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
 }
