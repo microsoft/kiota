@@ -40,7 +40,7 @@ public enum CodePropertyKind
     ErrorMessageOverride
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement, IAccessibleElement
 {
     public bool ReadOnly
     {

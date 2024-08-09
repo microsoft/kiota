@@ -39,6 +39,10 @@ public class GenerationConfiguration : ICloneable
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
+    public bool ExportPublicApi
+    {
+        get; set;
+    }
     internal const string ModelsNamespaceSegmentName = "models";
     public string ModelsNamespaceName
     {
@@ -152,6 +156,7 @@ public class GenerationConfiguration : ICloneable
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
             DisableSSLValidation = DisableSSLValidation,
+            ExportPublicApi = ExportPublicApi,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
