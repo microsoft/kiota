@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.17.0] - 2024-08-09
+
+### Added
+
 - Adds generation of default `color.png` and `outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
 
 ### Changed
@@ -1406,3 +1412,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

@@ -61,7 +61,7 @@
     <None Include="../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource  Include="../../resources/color.png"/>
-    <EmbeddedResource  Include="../../resources/outline.png"/>
+    <EmbeddedResource Include="../../resources/color.png" />
+    <EmbeddedResource Include="../../resources/outline.png" />
   </ItemGroup>
 </Project>
