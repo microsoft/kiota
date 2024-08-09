@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.CodeDOM;
 /// <summary>
@@ -70,5 +71,26 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     {
         get;
         set;
+    }
+    public bool IsComposedOfPrimitives() => Types.All(x => IsPrimitiveType(GetTypescriptTypeString(x, this)));
+    public bool IsComposedOfObjectsAndPrimitives()
+    {
+        // Count the number of primitives in Types
+        int primitiveCount = Types.Count(x => IsPrimitiveType(GetTypescriptTypeString(x, this)));
+
+        // If the number of primitives is less than the total count, it means the rest are objects
+        return primitiveCount > 0 && primitiveCount < Types.Count();
+    }
+
+    public IEnumerable<CodeType> GetPrimitiveTypes()
+    {
+        // Return only the primitive types from the Types collection
+        return Types.Where(x => IsPrimitiveType(GetTypescriptTypeString(x, this)));
+    }
+
+    public IEnumerable<CodeType> GetNonPrimitiveTypes()
+    {
+        // Return only the non primitive types from the Types collection
+        return Types.Where(x => !IsPrimitiveType(GetTypescriptTypeString(x, this)));
     }
 }
