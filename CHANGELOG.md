@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reverts modification of responses in output openApi file when generating plugings [#4945](https://github.com/microsoft/kiota/issues/4945)
+
 ## [1.17.0] - 2024-08-09
 
 ### Added
