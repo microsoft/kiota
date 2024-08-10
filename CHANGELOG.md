@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Expand properties types with null type for Typescript. [#4993](https://github.com/microsoft/kiota-typescript/issues/1188)
+
 ### Added
 
 - Adds generation of default 'color.png`and`outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
