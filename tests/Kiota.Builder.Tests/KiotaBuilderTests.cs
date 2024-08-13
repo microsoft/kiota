@@ -287,11 +287,11 @@ components:
         Assert.NotNull(mediaBuilderNs);
         var mediaRequestBuilder = mediaBuilderNs.FindChildByName<CodeClass>("MediaRequestBuilder", false);
         Assert.NotNull(mediaRequestBuilder);
-        Assert.NotNull(mediaRequestBuilder.Properties.FirstOrDefault(prop =>
+        var navigationProperty = mediaRequestBuilder.Properties.FirstOrDefault(prop =>
             prop.IsOfKind(CodePropertyKind.RequestBuilder) &&
-            prop.Name.Equals("Item", StringComparison.OrdinalIgnoreCase)));
-        // The follow assert fails with the current implementation
-        //Assert.Equal("Item_escapedRequestBuilder", mediaRequestBuilder.Properties.FirstOrDefault().Type.Name);
+            prop.Name.Equals("Item", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(navigationProperty);
+        Assert.Equal("Item_escapedRequestBuilder", navigationProperty.Type.Name);
         var itemBuilderNs = mediaBuilderNs.FindNamespaceByName("ApiSdk.media.item_escaped");
         Assert.NotNull(itemBuilderNs);
         var itemRequestBuilder = itemBuilderNs.FindChildByName<CodeClass>("Item_escapedRequestBuilder", false);

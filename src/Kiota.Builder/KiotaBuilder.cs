@@ -605,7 +605,7 @@ public partial class KiotaBuilder
             var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
-                Name = currentNamespace.Name.EndsWith("item_escaped", StringComparison.InvariantCultureIgnoreCase) ? className.CleanupSymbolName().Replace("item", "item_escaped", StringComparison.InvariantCultureIgnoreCase) : className.CleanupSymbolName(),
+                Name = currentNamespace.Name.EndsWith("item_escaped", StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace("Item", "Item_escaped", StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
@@ -621,6 +621,8 @@ public partial class KiotaBuilder
         {
             var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
             var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            if (child.Path.EndsWith("item", StringComparison.OrdinalIgnoreCase))
+                propType = propType.Replace("Item", "Item_escaped", StringComparison.OrdinalIgnoreCase);
 
             if (child.IsPathSegmentWithSingleSimpleParameter())
             {
