@@ -112,10 +112,12 @@ internal class OpenApiDocumentDownloadService
         {
             RuleSet = ruleSet,
         };
-        settings.AddMicrosoftExtensionParsers();
+
+        // Add all extensions for generation
+        settings.AddGenerationExtensions();
         if (config.IsPluginConfiguration)
-            settings.AddPluginsExtensions();
-        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
+            settings.AddPluginsExtensions();// Add all extensions for plugins
+
         try
         {
             var rawUri = config.OpenAPIFilePath.TrimEnd(KiotaBuilder.ForwardSlash);

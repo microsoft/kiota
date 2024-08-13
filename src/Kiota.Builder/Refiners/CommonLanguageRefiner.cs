@@ -294,7 +294,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             provider,
             replacement,
             null,
-            static x => ((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
+            x => (((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition) // rename properties or method of error classes matching the reserved names.
+                                                || (x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model) && codeClass.IsErrorDefinition
+                                                    && codeClass.Properties.FirstOrDefault(classProp => provider.ReservedNames.Contains(classProp.Name)) is { } matchingProperty && matchingProperty.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase)) // rename the a class if it has a matching property and the class has the same name as the property.
         );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
@@ -1507,6 +1509,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (asProperty)
             {
+                if (currentClass.Properties.FirstOrDefault(property => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } sameNameProperty)
+                {
+                    if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
+                        currentClass.RemoveChildElementByName(name); // type matches so just remove it for replacement
+                    else
+                        currentClass.RenameChildElement(name, $"{name}Escaped"); // type mismatch so just rename it
+                }
+
                 currentClass.AddProperty(new CodeProperty
                 {
                     Name = name,

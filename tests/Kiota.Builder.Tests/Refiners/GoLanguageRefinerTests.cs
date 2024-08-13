@@ -108,7 +108,7 @@ public class GoLanguageRefinerTests
         baseModel.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType { Name = derivedModel.Name, TypeDefinition = derivedModel });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
-        Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(baseModel.Usings, x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -912,7 +912,7 @@ components:
             Flags = true
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.DoesNotContain(testEnum.Usings, static x => "errors".Equals(x.Name, StringComparison.Ordinal));
         Assert.Single(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
     }
     [Fact]
@@ -924,8 +924,8 @@ components:
             Flags = false
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
-        Assert.Empty(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.DoesNotContain(testEnum.Usings, static x => "errors".Equals(x.Name, StringComparison.Ordinal));
+        Assert.DoesNotContain(testEnum.Usings, static x => "strings".Equals(x.Name, StringComparison.Ordinal));
     }
     [Fact]
     public async Task CorrectsCoreType()
@@ -1035,12 +1035,12 @@ components:
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => additionalDataDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Methods, static x => deserializeDefaultName.Equals(x.ReturnType.Name));
+        Assert.DoesNotContain(model.Methods.SelectMany(static x => x.Parameters), static x => serializerDefaultName.Equals(x.Type.Name));
         Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);
         Assert.False(rawUrlParam.Type.IsNullable);
@@ -1103,7 +1103,7 @@ components:
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(mainModel.Properties);
-        Assert.Empty(mainModel.Methods.Where(x => x.IsAccessor));
+        Assert.DoesNotContain(mainModel.Methods, x => x.IsAccessor);
     }
     [Fact]
     public async Task AddsMethodsOverloads()
@@ -1153,7 +1153,7 @@ components:
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var childMethods = builder.Methods;
         Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor)); // no executor overloads
-        Assert.Empty(childMethods.Where(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator))); // no generator overloads
+        Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator)); // no generator overloads
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 2);// body + query
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 3);// ctx + body + query config
         Assert.Equal(2, childMethods.Count());
@@ -1189,9 +1189,12 @@ components:
         root.Name = "github.com/OrgName/RepoName";
         var models = root.AddNamespace("ApiSdk.models");
         var submodels = models.AddNamespace("ApiSdk.models.submodels");
+        var camelCaseModel = submodels.AddNamespace("ApiSdk.models.submodels.camelCase");
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, ClientNamespaceName = "github.com/OrgName/RepoName" }, root);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels", submodels.Name);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models", models.Name);
+        Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels.camelcase", camelCaseModel.Name);
     }
+
     #endregion
 }

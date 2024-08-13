@@ -75,7 +75,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");
-                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
+                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl, true);
                 }
                 else if (skipGeneration)
                 {

@@ -85,7 +85,7 @@ public class GoPathSegmenter : CommonPathSegmenter
         return currentElement switch
         {
             CodeNamespace => "go",
-            _ => GetLastFileNameSegment(currentElement).ToSnakeCase().EscapeSuffix(specialFileNameSuffixes).ShortenFileName(),
+            _ => GetLastFileNameSegment(currentElement).ToSnakeCase().EscapeSuffix(specialFileNameSuffixes).ShortenFileName(100),
         };
     }
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName?.ToLowerInvariant() ?? string.Empty;
