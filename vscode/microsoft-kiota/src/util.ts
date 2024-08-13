@@ -67,3 +67,34 @@ export function findAppPackageDirectory(directory: string): string | null {
 
   return null;
 }
+
+export async function findLockFile(directory: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    fs.readdir(directory, (err, files) => {
+      if (err) {
+        resolve(undefined);
+        return;
+      }
+      for (const file of files) {
+        const fullPath = path.join(directory, file);
+        
+        if (file === 'kiota-lock.json') {
+          resolve(fullPath);
+          return;
+        }
+        
+        // Check directories recursively
+        if (fs.statSync(fullPath).isDirectory()) {
+          void findLockFile(fullPath).then((result) => {
+            if (result) {
+              resolve(result);
+              return;
+            }
+          });
+        }
+      }
+      
+      resolve(undefined);
+    });
+  });
+}

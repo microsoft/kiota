@@ -11,4 +11,5 @@ export const PLUGINS = "plugins";
 export const CLIENT = "client";
 export const PLUGIN = "plugin";
 export const APIMANIFEST = "apimanifest";
+export const REMIND_ME_LATER_FLAG = 'remindMeLater';
 
