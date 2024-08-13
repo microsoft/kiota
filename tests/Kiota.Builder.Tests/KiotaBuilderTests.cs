@@ -242,10 +242,10 @@ info:
 servers:
   - url: https://api.funtranslations.com
 paths:
-  /media/item/{{path}}:
+  /media/item/{{id}}:
     get:
       parameters:
-        - name: path
+        - name: id
           in: path
           required: true
           schema:
@@ -296,11 +296,10 @@ components:
         Assert.NotNull(itemBuilderNs);
         var itemRequestBuilder = itemBuilderNs.FindChildByName<CodeClass>("Item_escapedRequestBuilder", false);
         Assert.NotNull(itemRequestBuilder.Indexer);
-        // I'm unsure why the following class is called WithPathItemRequestBuilder. In the generated client I get, it's simply called ItemRequestBuilder
-        Assert.Equal("WithPathItemRequestBuilder", itemRequestBuilder.Indexer.ReturnType.Name);
+        Assert.Equal("ItemItemRequestBuilder", itemRequestBuilder.Indexer.ReturnType.Name);
         var nestedItemBuilderNs = itemBuilderNs.FindNamespaceByName("ApiSdk.media.item_escaped.item");
         Assert.NotNull(nestedItemBuilderNs);
-        var nestedItemRequestBuilder = nestedItemBuilderNs.FindChildByName<CodeClass>("WithPathItemRequestBuilder", false);
+        var nestedItemRequestBuilder = nestedItemBuilderNs.FindChildByName<CodeClass>("ItemItemRequestBuilder", false);
         Assert.NotNull(nestedItemRequestBuilder);
         Assert.NotNull(nestedItemRequestBuilder.Methods.FirstOrDefault(m =>
             m.HttpMethod == HttpMethod.Get &&
