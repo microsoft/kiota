@@ -273,7 +273,7 @@ components:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
-            ClientClassName = "Graph", 
+            ClientClassName = "Graph",
             OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
         }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
@@ -302,9 +302,9 @@ components:
         Assert.NotNull(nestedItemBuilderNs);
         var nestedItemRequestBuilder = nestedItemBuilderNs.FindChildByName<CodeClass>("WithPathItemRequestBuilder", false);
         Assert.NotNull(nestedItemRequestBuilder);
-        Assert.NotNull(nestedItemRequestBuilder.Methods.FirstOrDefault(m => 
-            m.HttpMethod == HttpMethod.Get && 
-            m.IsAsync && 
+        Assert.NotNull(nestedItemRequestBuilder.Methods.FirstOrDefault(m =>
+            m.HttpMethod == HttpMethod.Get &&
+            m.IsAsync &&
             m.Name.Equals("Get", StringComparison.OrdinalIgnoreCase)));
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
         Assert.NotNull(modelsNS);
