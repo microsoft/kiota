@@ -25,39 +25,16 @@ public class OpenApiPluginWalker : OpenApiVisitorBase
         }
     }
     /// <summary>
-    /// Visits the operations.
+    /// Visits the OpenAPI response.
     /// </summary>
-    public override void Visit(IDictionary<OperationType, OpenApiOperation> operations)
+    public override void Visit(OpenApiResponses response)
     {
-        ArgumentNullException.ThrowIfNull(operations);
+        ArgumentNullException.ThrowIfNull(response);
 
-        // Cleanup responses for the operation
-        foreach (var operation in operations.Values)
+        // Ensure description strings are not empty strings.
+        foreach (var responseItem in response.Where(static res => string.IsNullOrEmpty(res.Value.Description)))
         {
-            var responseDescription = operation.Responses.Values.Select(static response => response.Description)
-                .FirstOrDefault(static desc => !string.IsNullOrEmpty(desc)) ?? "Api Response";
-
-            operation.Responses = new OpenApiResponses()
-            {
-                {
-                    "2XX",new OpenApiResponse
-                    {
-                        Description = responseDescription,
-                        Content = new Dictionary<string, OpenApiMediaType>
-                        {
-                            {
-                                "text/plain", new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema
-                                    {
-                                        Type = "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
+            responseItem.Value.Description = "Api Response";
         }
     }
 }
