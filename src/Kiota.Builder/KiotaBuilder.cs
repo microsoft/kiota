@@ -1741,7 +1741,7 @@ public partial class KiotaBuilder
                     className = $"{unionType.Name}Member{++membersWithNoName}";
             var declarationType = new CodeType
             {
-                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null, true),
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
                 CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };
             if (!unionType.ContainsType(declarationType))
@@ -1831,7 +1831,7 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
-    private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null, bool isViaDiscriminator = false)
+    private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
@@ -1839,12 +1839,12 @@ public partial class KiotaBuilder
                 return enumDeclaration;
 
             if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is { } mergedSchema &&
-                AddModelDeclarationIfDoesntExist(currentNode, currentOperation, mergedSchema, declarationName, currentNamespace, inheritsFrom, isViaDiscriminator) is CodeClass createdClass)
+                AddModelDeclarationIfDoesntExist(currentNode, currentOperation, mergedSchema, declarationName, currentNamespace, inheritsFrom) is CodeClass createdClass)
             {
                 // multiple allOf entries that do not translate to inheritance
                 return createdClass;
             }
-            return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom, isViaDiscriminator);
+            return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom);
         }
         return existingDeclaration;
     }
@@ -1920,7 +1920,7 @@ public partial class KiotaBuilder
         }
         return currentNamespace;
     }
-    private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, OpenApiOperation? currentOperation, CodeClass? inheritsFrom = null, bool? isViaDiscriminator = false)
+    private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, OpenApiOperation? currentOperation, CodeClass? inheritsFrom = null)
     {
         if (inheritsFrom == null && schema.AllOf.Where(static x => x.Reference != null).ToArray() is { Length: 1 } referencedSchemas)
         {// any non-reference would be the current class in some description styles
