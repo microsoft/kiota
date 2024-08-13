@@ -13,7 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds generation of default 'color.png`and`outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
+### Changed
+
+- Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
+- Reverts modification of responses in output openApi file when generating plugins [#4945](https://github.com/microsoft/kiota/issues/4945)
+
+## [1.17.0] - 2024-08-09
+
+### Added
+
+- Adds generation of default `color.png` and `outline.png` files when generating plugins. [#4993](https://github.com/microsoft/kiota/issues/4993)
 
 ### Changed
 
@@ -25,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exclude the `x-openai-isConsequential` extension from cleanup. [#4962](https://github.com/microsoft/kiota/issues/4962)
 - Fixed file name and namespace sanitization when generating plugins. [#5019](https://github.com/microsoft/kiota/issues/5019)
 - Added TypeScript typecheck suppression to generated method prototype, where anused arguments can cause build fail in projects which use `noUnusedLocals: true` compiler option. [#5095](https://github.com/microsoft/kiota/issues/5095)
+- Fixed a bug where defensive programming would consider some default values as invalid in Python.
 
 ## [1.16.0] - 2024-07-05
 
