@@ -58,58 +58,59 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
+  await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  vscode.workspace.onDidOpenTextDocument(async () => {
+  async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
 
     if (workspaceFolders) {
+      let lockFilePath: string | undefined;
       for (const folder of workspaceFolders) {
-        const lockFilePath = await findLockFile(folder.uri.fsPath);
-            
+        lockFilePath = await findLockFile(folder.uri.fsPath);
         if (lockFilePath) {
-          const remindMeLater = context.globalState.get<boolean>(REMIND_ME_LATER_FLAG);
-          
-          if (remindMeLater === undefined || remindMeLater) {
-            // Show the prompt again if the user selected "Remind me later" and the lock-file.json is still present
-            const result = await vscode.window.showInformationMessage(
-                vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
-                vscode.l10n.t("OK"),
-                vscode.l10n.t("Remind me later")
-            );
-          
-            if (result === vscode.l10n.t("OK")) {
-              await context.globalState.update(REMIND_ME_LATER_FLAG, false);
-        
-              vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: vscode.l10n.t("Migrating API clients..."),
-                cancellable: false
-              }, async (progress) => {
-                progress.report({ increment: 0 });
-                
-                try {
-                  const migrationResult = await migrateFromLockFile(context, lockFilePath);
-                  
-                  progress.report({ increment: 100 });
-                  
-                  if (migrationResult) {
+            break;
+        }
+      }
+
+      const remindMeLater = context.globalState.get<boolean>(REMIND_ME_LATER_FLAG);
+
+      if (lockFilePath || remindMeLater) {
+        const result = await vscode.window.showInformationMessage(
+          vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
+          vscode.l10n.t("OK"),
+          vscode.l10n.t("Remind me later")
+        );
+
+        if (result === vscode.l10n.t("OK")) {
+          await context.globalState.update(REMIND_ME_LATER_FLAG, false);
+
+          vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: vscode.l10n.t("Migrating API clients..."),
+            cancellable: false
+          }, async (progress) => {
+            progress.report({ increment: 0 });
+
+            try {
+                const migrationResult = await migrateFromLockFile(context, lockFilePath!);
+
+                progress.report({ increment: 100 });
+
+                if (migrationResult) {
                     vscode.window.showInformationMessage(vscode.l10n.t("API clients migrated successfully!"));
-                  } else {
+                } else {
                     vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
-                  }
-                } catch (error) {
-                  vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
                 }
-              });
-            } else if (result === vscode.l10n.t("Remind me later")) {
-              await context.globalState.update(REMIND_ME_LATER_FLAG, true);
+            } catch (error) {
+                vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
             }
-          }
-          break;
+          });
+        } else if (result === vscode.l10n.t("Remind me later")) {
+          await context.globalState.update(REMIND_ME_LATER_FLAG, true);
         }
       }
     }
-});
+  };
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
