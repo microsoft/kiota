@@ -7,6 +7,8 @@ import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
+import { OpenApiTreeNodeCommand } from "./commands/OpenApiTreeNodeCommand";
+
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
@@ -58,6 +60,8 @@ export async function activate(
     context.extensionUri
   );
   const kiotaStatusCommand = new KiotaStatusCommand();
+  const openApiTreeNodeCommand = new OpenApiTreeNodeCommand();
+  
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
   let codeLensProvider = new CodeLensProvider();
@@ -97,7 +101,7 @@ export async function activate(
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.openDocumentationPage`,
-      (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
+      (x: OpenApiTreeNode) => openApiTreeNodeCommand.openDocumentPage(x)
     ),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.addToSelectedEndpoints`,
