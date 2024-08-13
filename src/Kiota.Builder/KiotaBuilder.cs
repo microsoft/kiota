@@ -617,21 +617,21 @@ public partial class KiotaBuilder
         logger.LogTrace("Creating class {Class}", codeClass.Name);
 
         // Add properties for children
-        foreach (var child in currentNode.Children)
+        foreach (var child in currentNode.Children.Select(static x => x.Value))
         {
-            var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
+            var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
 
-            if (child.Value.IsPathSegmentWithSingleSimpleParameter())
+            if (child.IsPathSegmentWithSingleSimpleParameter())
             {
-                var indexerParameterType = GetIndexerParameter(child.Value, currentNode);
-                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
+                var indexerParameterType = GetIndexerParameter(child, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child, currentNode));
             }
-            else if (child.Value.IsComplexPathMultipleParameters())
-                CreateMethod(propIdentifier, propType, codeClass, child.Value);
+            else if (child.IsComplexPathMultipleParameters())
+                CreateMethod(propIdentifier, propType, codeClass, child);
             else
             {
-                var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
+                var description = child.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                 if (prop is null)
                 {
