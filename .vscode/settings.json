@@ -35,6 +35,7 @@
     "ghes",
     "inheritdoc",
     "Kiota",
+    "microsoftgraph",
     "NETCOREAPP",
     "Nethttplibrary",
     "NETSTANDARD",
@@ -44,6 +45,7 @@
     "pwsh",
     "samespaceprefix",
     "serializers",
+    "sonarcloud",
     "Xunit"
   ],
   "java.configuration.updateBuildConfiguration": "automatic",
