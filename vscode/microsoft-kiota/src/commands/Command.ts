@@ -1,7 +1,5 @@
 export abstract class Command {
-  public toString():string {
-    return this.constructor.name;
-  } 
+  public abstract toString():string;
 
   abstract execute(args: unknown):void;
 }

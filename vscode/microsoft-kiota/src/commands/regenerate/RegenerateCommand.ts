@@ -10,7 +10,8 @@ import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
 export class RegenerateCommand extends Command {
-  
+
+
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _clientKey: string;
@@ -25,6 +26,10 @@ export class RegenerateCommand extends Command {
     this._clientKey = clientKey;
     this._clientObject = clientObject;
     this._workspaceGenerationType = workspaceGenerationType;
+  }
+
+  public toString(): string {
+    return `${extensionId}.regenerate`;
   }
 
   async execute(): Promise<void> {

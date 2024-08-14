@@ -29,6 +29,7 @@ import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreePro
 import { loadTreeView } from './providers/workspaceTreeProvider';
 import { GenerateState } from "./steps";
 import { updateStatusBarItem } from './utilities/status-bar';
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddAllToSelectedEndpointsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -57,7 +58,7 @@ export async function activate(
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
   const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
-  const addAllToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
@@ -68,7 +69,7 @@ export async function activate(
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
-  
+
   context.subscriptions.push(
     reporter,
 
@@ -77,20 +78,20 @@ export async function activate(
     vscode.window.registerWebviewViewProvider(dependenciesInfo, dependenciesInfoProvider),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
 
-    registerCommandWithTelemetry(reporter, `${extensionId}.selectLock`, (x) => selectLockCommand.execute(x)),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async () => regenerateCommand.execute()),
+    registerCommandWithTelemetry(reporter, selectLockCommand.toString(), (x) => selectLockCommand.execute(x)),
+    registerCommandWithTelemetry(reporter, editPathsCommand.toString(), async () => editPathsCommand.execute()),
+    registerCommandWithTelemetry(reporter, regenerateCommand.toString(), async () => regenerateCommand.execute()),
 
-    registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.addToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.addAllToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.removeFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.removeAllFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateClientCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.searchOrOpenApiDescription`, () => searchOrOpenApiDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => regenerateButtonCommand.execute(config)),
+    registerCommandWithTelemetry(reporter, openDocumentationPageCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addToSelectedEndpointsCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addAllToSelectedEndpointsCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeFromSelectedEndpointsCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeAllFromSelectedEndpointsCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, generateClientCommand.toString(), () => generateClientCommand.execute()),
+    registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.toString(), () => searchOrOpenApiDescriptionCommand.execute()),
+    registerCommandWithTelemetry(reporter, closeDescriptionCommand.toString(), () => closeDescriptionCommand.execute()),
+    registerCommandWithTelemetry(reporter, filterDescriptionCommand.toString(), () => filterDescriptionCommand.execute()),
+    registerCommandWithTelemetry(reporter, regenerateButtonCommand.toString(), async () => regenerateButtonCommand.execute(config)),
 
     registerCommandWithTelemetry(reporter, statusBarCommandId, async () => kiotaStatusCommand.execute()),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => displayGenerationResultsCommand.execute(config)),
@@ -103,7 +104,7 @@ export async function activate(
 
   // update status bar item once at start
   await updateStatusBarItem(context, kiotaStatusBarItem);
-  context.subscriptions.push(registerCommandWithTelemetry(reporter, `${extensionId}.updateClients`, async () => updateClientsCommand.execute(kiotaStatusBarItem)));
+  context.subscriptions.push(registerCommandWithTelemetry(reporter, updateClientsCommand.toString(), async () => updateClientsCommand.execute(kiotaStatusBarItem)));
 }
 
 

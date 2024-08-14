@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId, treeViewFocusCommand } from "../../constants";
+import { extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
 import { generateClient } from '../../generateClient';
 import { generatePlugin } from '../../generatePlugin';
@@ -30,6 +30,10 @@ export class GenerateClientCommand extends Command {
     super();
     this._context = context;
     this._openApiTreeProvider = openApiTreeProvider;
+  }
+
+  public toString(): string {
+    return `${treeViewId}.generateClient`;
   }
 
   public async execute() {
@@ -97,7 +101,7 @@ export class GenerateClientCommand extends Command {
     }
   }
 
-  async generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const language =
       typeof config.language === "string"
         ? parseGenerationLanguage(config.language)
@@ -166,7 +170,7 @@ export class GenerateClientCommand extends Command {
     return result;
   }
 
-  async generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -210,7 +214,7 @@ export class GenerateClientCommand extends Command {
     return result;
   }
 
-  async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,

@@ -5,8 +5,10 @@ import { GenerateState } from "../../steps";
 import { Command } from "../Command";
 import { GeneratedOutputState } from "../GeneratedOutputState";
 import { displayGenerationResults } from "./generation-results";
+import { extensionId } from "../../constants";
 
 export class DisplayGenerationResultsCommand extends Command {
+  
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
 
@@ -14,6 +16,10 @@ export class DisplayGenerationResultsCommand extends Command {
     super();
     this._context = context;
     this._openApiTreeProvider = openApiTreeProvider;
+  }
+
+  public toString(): string {
+    return `${extensionId}.displayGenerationResults`;
   }
 
   async execute(config: Partial<GenerateState>): Promise<void> {
@@ -25,6 +31,4 @@ export class DisplayGenerationResultsCommand extends Command {
       void this._context.workspaceState.update('generatedOutput', undefined);
     }
   }
-
-  
 }

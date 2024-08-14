@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId } from "../constants";
+import { extensionId, treeViewId } from "../constants";
 import { getExtensionSettings } from "../extensionSettings";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { searchDescription } from "../searchDescription";
@@ -10,6 +10,7 @@ import { openTreeViewWithProgress } from "../utilities/file";
 import { Command } from "./Command";
 
 export class SearchOrOpenApiDescriptionCommand extends Command {
+
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
 
@@ -17,6 +18,10 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
     super();
     this._context = context;
     this._openApiTreeProvider = openApiTreeProvider;
+  }
+
+  public toString(): string {
+    return `${treeViewId}.searchOrOpenApiDescription`;
   }
 
   async execute(): Promise<void> {

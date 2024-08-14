@@ -13,6 +13,10 @@ export class CloseDescriptionCommand extends Command {
     this._openApiTreeProvider = openApiTreeProvider;
   }
 
+  public toString(): string {
+    return `${treeViewId}.closeDescription`;
+  }
+
   async execute(): Promise<void> {
     const yesAnswer = vscode.l10n.t("Yes");
     const response = await vscode.window.showInformationMessage(

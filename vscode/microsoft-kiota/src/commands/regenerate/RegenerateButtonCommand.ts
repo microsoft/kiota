@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId } from "../../constants";
+import { extensionId, treeViewId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { ClientOrPluginProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -11,7 +11,6 @@ import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
 export class RegenerateButtonCommand extends Command {
-
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _clientKey: string;
@@ -26,6 +25,10 @@ export class RegenerateButtonCommand extends Command {
     this._clientKey = clientKey;
     this._clientObject = clientObject;
     this._workspaceGenerationType = workspaceGenerationType;
+  }
+
+  public toString(): string {
+    return `${treeViewId}.regenerateButton`;
   }
 
   async execute(config: Partial<GenerateState>): Promise<void> {

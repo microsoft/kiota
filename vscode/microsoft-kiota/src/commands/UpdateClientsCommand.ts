@@ -11,12 +11,15 @@ import { updateStatusBarItem } from '../utilities/status-bar';
 import { Command } from "./Command";
 
 export class UpdateClientsCommand extends Command {
-
   private _context: ExtensionContext;
 
   public constructor(context: ExtensionContext) {
     super();
     this._context = context;
+  }
+
+  public toString(): string {
+    return `${extensionId}.updateClients`;
   }
 
   async execute(kiotaStatusBarItem: StatusBarItem): Promise<void> {
