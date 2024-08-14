@@ -9,40 +9,29 @@ import { CodeLensProvider } from "./codelensProvider";
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
 import { OpenApiTreeNodeCommand } from "./commands/OpenApiTreeNodeCommand";
 
+import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
+import { EditPathsCommand } from './commands/EditPathsCommand';
+import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
 import { GenerateCommand } from './commands/GenerateCommand';
 import { GeneratedOutputState } from './commands/GeneratedOutputState';
+import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
+import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
+import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
-import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
-import { generateClient } from "./generateClient";
-import { generatePlugin } from "./generatePlugin";
+import { getExtensionSettings } from "./extensionSettings";
 import { getKiotaVersion } from "./getKiotaVersion";
 import {
   ClientOrPluginProperties,
-  ConsumerOperation,
-  KiotaGenerationLanguage,
-  KiotaLogEntry,
-  KiotaPluginType,
-  LogLevel,
-  getLogEntriesForLevel,
-  parseGenerationLanguage,
-  parsePluginType
+  KiotaLogEntry
 } from "./kiotaInterop";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, searchSteps } from "./steps";
+import { GenerateState } from "./steps";
 import { updateClients } from "./updateClients";
-import { isClientType, isPluginType, updateTreeViewIcons } from "./util";
 import { loadLockFile, openTreeViewWithProgress } from './utilities/file';
 import { exportLogsAndShowErrors, kiotaOutputChannel } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
 import { loadTreeView } from "./workspaceTreeProvider";
-import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
-import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
-import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
-import { EditPathsCommand } from './commands/EditPathsCommand';
-import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
-import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
