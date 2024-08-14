@@ -21,7 +21,7 @@ export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext
     const workspaceFolders = vscode.workspace.workspaceFolders;
 
     if(workspaceFolders) {
-      const lockFile = await vscode.workspace.findFiles(`**/${KIOTA_LOCK_FILE}`);
+      const lockFile = await vscode.workspace.findFiles(`{**/${KIOTA_LOCK_FILE},${KIOTA_LOCK_FILE}}`);
 
       if (lockFile.length > 0) {
         const result = await vscode.window.showInformationMessage(
