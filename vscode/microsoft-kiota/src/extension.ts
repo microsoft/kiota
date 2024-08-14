@@ -41,6 +41,7 @@ import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDes
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
+import { RegenerateButtonCommand } from './commands/RegenerateButtonCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -65,6 +66,7 @@ export async function activate(
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
+  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -123,9 +125,7 @@ export async function activate(
       `${treeViewId}.removeAllFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
     ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.generateClient`, () => generateCommand.execute()
-    ),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateCommand.execute()),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
       if (generatedOutput) {
@@ -139,31 +139,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
-      if (!clientOrPluginKey || clientOrPluginKey === '') {
-        clientOrPluginKey = config.clientClassName || config.pluginName || '';
-      }
-      if (!config) {
-        config = {
-          outputPath: clientOrPluginObject.outputPath,
-          clientClassName: clientOrPluginKey,
-        };
-      }
-      const settings = getExtensionSettings(extensionId);
-      const selectedPaths = openApiTreeProvider.getSelectedPaths();
-      if (selectedPaths.length === 0) {
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("No endpoints selected, select endpoints first")
-        );
-        return;
-      }
-      if (isClientType(workspaceGenerationType)) {
-        await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);
-      }
-      if (isPluginType(workspaceGenerationType)) {
-        await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
-      }
-    }),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => regenerateButtonCommand.execute(config)),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       const settings = getExtensionSettings(extensionId);
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
