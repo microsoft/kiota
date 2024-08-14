@@ -28,7 +28,7 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { KIOTA_WORKSPACE_FILE, REMIND_ME_LATER_FLAG, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { KIOTA_LOCK_FILE, KIOTA_WORKSPACE_FILE, REMIND_ME_LATER_FLAG, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, handleMigration, isClientType, isPluginType, updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -63,20 +63,24 @@ export async function activate(
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const remindMeLater = context.globalState.get<boolean>(REMIND_ME_LATER_FLAG);
 
-    if (workspaceFolders || remindMeLater) {
-      const result = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
-        vscode.l10n.t("OK"),
-        vscode.l10n.t("Remind me later")
-      );
+    if(workspaceFolders) {
+      const lockFile = await vscode.workspace.findFiles(`**/${KIOTA_LOCK_FILE}`);
 
-      if (result === vscode.l10n.t("OK")) {
-        await context.globalState.update(REMIND_ME_LATER_FLAG, false);
-        await handleMigration(context, workspaceFolders![0]);
-      } else if (result === vscode.l10n.t("Remind me later")) {
-        await context.globalState.update(REMIND_ME_LATER_FLAG, true);
+      if (lockFile || remindMeLater) {
+        const result = await vscode.window.showInformationMessage(
+          vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
+          vscode.l10n.t("OK"),
+          vscode.l10n.t("Remind me later")
+        );
+
+        if (result === vscode.l10n.t("OK")) {
+          await context.globalState.update(REMIND_ME_LATER_FLAG, false);
+          await handleMigration(context, workspaceFolders![0]);
+        } else if (result === vscode.l10n.t("Remind me later")) {
+          await context.globalState.update(REMIND_ME_LATER_FLAG, true);
+        }
       }
-    }
+  }
   };
   context.subscriptions.push(
     vscode.window.registerUriHandler({
