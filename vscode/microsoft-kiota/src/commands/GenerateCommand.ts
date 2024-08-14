@@ -26,10 +26,10 @@ export class GenerateCommand extends Command {
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
 
-  public constructor(context: ExtensionContext) {
+  public constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider) {
     super();
     this._context = context;
-    this._openApiTreeProvider = new OpenApiTreeProvider(this._context, () => getExtensionSettings(extensionId));
+    this._openApiTreeProvider = openApiTreeProvider;
   }
 
   public async execute() {

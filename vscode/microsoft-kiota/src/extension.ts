@@ -37,6 +37,7 @@ import { loadLockFile, openTreeViewWithProgress } from './utilities/file';
 import { exportLogsAndShowErrors, kiotaOutputChannel } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -56,7 +57,8 @@ export async function activate(
   );
   const kiotaStatusCommand = new KiotaStatusCommand();
   const openApiTreeNodeCommand = new OpenApiTreeNodeCommand();
-  const generateCommand = new GenerateCommand(context);
+  const generateCommand = new GenerateCommand(context, openApiTreeProvider);
+  const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(context, openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -129,31 +131,7 @@ export async function activate(
     }),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
-      async () => {
-        const yesAnswer = vscode.l10n.t("Yes, override it");
-        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
-          const response = await vscode.window.showWarningMessage(
-            vscode.l10n.t(
-              "Before adding a new API description, consider that your changes and current selection will be lost."),
-            yesAnswer,
-            vscode.l10n.t("Cancel")
-          );
-          if (response !== yesAnswer) {
-            return;
-          }
-        }
-        const config = await searchSteps(x => vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Searching...")
-        }, (progress, _) => {
-          const settings = getExtensionSettings(extensionId);
-          return searchDescription(context, x, settings.clearCache);
-        }));
-        if (config.descriptionPath) {
-          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
-        }
-      }
+      () => searchOrOpenApiDescriptionCommand.execute()
     ),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
