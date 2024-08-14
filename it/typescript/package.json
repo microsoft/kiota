@@ -20,7 +20,7 @@
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@stylistic/eslint-plugin-ts": "^2.6.2",
-    "@types/node": "^22.2.0",
+    "@types/node": "^22.3.0",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
     "esbuild": "^0.23.0",
