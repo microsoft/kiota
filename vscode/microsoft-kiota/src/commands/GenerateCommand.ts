@@ -21,7 +21,7 @@ import { GeneratedOutputState } from './GeneratedOutputState';
 import { loadLockFile } from "../utilities/file";
 import { Command } from "./Command";
 
-export class GenerateCommand extends Command {
+export class GenerateClientCommand extends Command {
 
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;

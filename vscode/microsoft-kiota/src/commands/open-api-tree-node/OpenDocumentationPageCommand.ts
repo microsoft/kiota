@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { OpenApiTreeNode } from "../openApiTreeProvider";
-import { Command } from "./Command";
+import { OpenApiTreeNode } from "../../openApiTreeProvider";
+import { Command } from "../Command";
 
-export class OpenApiTreeNodeCommand extends Command {
+export class OpenDocumentationPageCommand extends Command {
   constructor() {
     super();
   }

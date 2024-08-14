@@ -6,14 +6,16 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
-import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
-import { OpenApiTreeNodeCommand } from "./commands/OpenApiTreeNodeCommand";
-
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
-import { GenerateCommand } from './commands/GenerateCommand';
+import { GenerateClientCommand } from './commands/GenerateCommand';
 import { GeneratedOutputState } from './commands/GeneratedOutputState';
+import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
+import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddToSelectedEndpointsCommand';
+import { OpenDocumentationPageCommand } from "./commands/open-api-tree-node/OpenDocumentationPageCommand";
+import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-node/RemoveAllFromSelectedEndpointsCommand';
+import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-node/RemoveFromSelectedEndpointsCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
@@ -51,14 +53,18 @@ export async function activate(
   );
 
   const kiotaStatusCommand = new KiotaStatusCommand();
-  const openApiTreeNodeCommand = new OpenApiTreeNodeCommand();
-  const generateCommand = new GenerateCommand(context, openApiTreeProvider);
+  const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+  const generateClientCommand = new GenerateClientCommand(context, openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(context, openApiTreeProvider);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
+  const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const addAllToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
+  const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -97,32 +103,17 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.openDocumentationPage`,
-      (x: OpenApiTreeNode) => openApiTreeNodeCommand.execute(x)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addAllToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeAllFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
-    ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateCommand.execute()),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)), 
+    registerCommandWithTelemetry(reporter, `${treeViewId}.addToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.addAllToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.removeFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.removeAllFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateClientCommand.execute()),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
       if (generatedOutput) {
         const { outputPath } = generatedOutput;
-        await generateCommand.displayGenerationResults(config, outputPath);
+        await generateClientCommand.displayGenerationResults(config, outputPath);
         // Clear the state 
         void context.workspaceState.update('generatedOutput', undefined);
       }
