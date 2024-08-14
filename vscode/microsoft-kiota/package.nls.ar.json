@@ -28,5 +28,6 @@
   "kiota.generate.includeAdditionalData.description": "سيتم تضمين خاصية 'Additional Data' للنماذج",
   "kiota.workspace.name": "",
   "kiota.openApiExplorer.regenerateButton.title": "",
-  "kiota.openApiExplorer.editPaths.title": ""
+  "kiota.openApiExplorer.editPaths.title": "",
+  "kiota.migrateClients.title": ""
 }

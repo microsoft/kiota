@@ -76,5 +76,6 @@
   "Migrating API clients...":"",
   "Migration completed, but no changes were detected.":"",
   "Migration failed":"",
-  "Api clients migrated successfully!":""
+  "Api clients migrated successfully!":"",
+  "Could not determine the workspace folder.": "Nie można określić folderu przestrzeni roboczej."
 }

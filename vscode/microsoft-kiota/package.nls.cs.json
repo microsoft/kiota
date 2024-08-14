@@ -28,5 +28,6 @@
   "kiota.generate.includeAdditionalData.description": "Bude zahrnuta vlastnost 'AdditionalData' pro modely",
   "kiota.workspace.name": "Můj pracovní prostor",
   "kiota.openApiExplorer.regenerateButton.title": "Znovu vygenerovat",
-  "kiota.openApiExplorer.editPaths.title": "Upravit cesty"
+  "kiota.openApiExplorer.editPaths.title": "Upravit cesty",
+  "kiota.migrateClients.title": "Migrovat API klienty"
 }

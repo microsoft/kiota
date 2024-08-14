@@ -76,5 +76,6 @@
   "Migrating API clients...":"",
   "Migration completed, but no changes were detected.":"",
   "Migration failed":"",
-  "Api client migrateds successfully!":""
+  "Api client migrateds successfully!":"",
+  "Could not determine the workspace folder.": "Haiwezekani kubaini folda ya kazi."
 }
