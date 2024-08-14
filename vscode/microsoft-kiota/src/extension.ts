@@ -21,15 +21,16 @@ import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDes
 import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
 import { updateStatusBarItem } from './utilities/status-bar';
 
+import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
+import { SelectLockCommand } from './commands/SelectLockCommand';
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
-import { ClientOrPluginProperties, KiotaLogEntry } from "./kiotaInterop";
+import { ClientOrPluginProperties } from "./kiotaInterop";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { GenerateState } from "./steps";
-import { loadLockFile, openTreeViewWithProgress } from './utilities/file';
+import { openTreeViewWithProgress } from './utilities/file';
 import { loadTreeView } from "./workspaceTreeProvider";
-import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -63,6 +64,7 @@ export async function activate(
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
   const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
+  const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -85,17 +87,11 @@ export async function activate(
     );
   };
   context.subscriptions.push(
-    vscode.window.registerUriHandler({
-      handleUri
-    }),
-
+    vscode.window.registerUriHandler({ handleUri }),
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
-    registerCommandWithTelemetry(reporter,
-      `${extensionId}.selectLock`,
-      (x) => loadLockFile(x, openApiTreeProvider)
-    ),
-    registerCommandWithTelemetry(reporter, statusBarCommandId, await kiotaStatusCommand.execute()),
+    registerCommandWithTelemetry(reporter, `${extensionId}.selectLock`, (x) => selectLockCommand.execute(x)),
+    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => kiotaStatusCommand.execute()),
     vscode.window.registerWebviewViewProvider(dependenciesInfo, dependenciesInfoProvider),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
@@ -114,10 +110,7 @@ export async function activate(
   );
 
   // create a new status bar item that we can now manage
-  kiotaStatusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100
-  );
+  kiotaStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   kiotaStatusBarItem.command = statusBarCommandId;
   context.subscriptions.push(kiotaStatusBarItem);
 
@@ -149,16 +142,6 @@ function getQueryParameters(uri: vscode.Uri): Record<string, string> {
   });
   return parameters;
 }
-async function checkForSuccess(results: KiotaLogEntry[]) {
-  for (const result of results) {
-    if (result && result.message) {
-      if (result.message.includes("Generation completed successfully")) {
-        void vscode.window.showInformationMessage('Generation completed successfully.');
-      }
-    }
-  }
-}
-
 
 // This method is called when your extension is deactivated
 export function deactivate() { }
