@@ -40,6 +40,7 @@ import { loadTreeView } from "./workspaceTreeProvider";
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
+import { EditPathsCommand } from './commands/EditPathsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -63,6 +64,7 @@ export async function activate(
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(context, openApiTreeProvider);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -136,14 +138,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, `${treeViewId}.searchOrOpenApiDescription`, () => searchOrOpenApiDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-      clientOrPluginKey = clientKey;
-      clientOrPluginObject = clientObject;
-      workspaceGenerationType = generationType;
-      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-      openApiTreeProvider.resetInitialState();
-      await updateTreeViewIcons(treeViewId, false, true);
-    }),
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       if (!clientOrPluginKey || clientOrPluginKey === '') {
         clientOrPluginKey = config.clientClassName || config.pluginName || '';
@@ -328,10 +323,6 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientObject));
 }
 
 async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {
