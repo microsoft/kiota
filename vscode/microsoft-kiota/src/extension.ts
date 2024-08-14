@@ -9,8 +9,7 @@ import { CodeLensProvider } from "./codelensProvider";
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
-import { GenerateClientCommand } from './commands/GenerateClientCommand';
-import { GeneratedOutputState } from './commands/GeneratedOutputState';
+import { GenerateClientCommand } from './commands/generate-client/GenerateClientCommand';
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddToSelectedEndpointsCommand';
 import { OpenDocumentationPageCommand } from "./commands/open-api-tree-node/OpenDocumentationPageCommand";
@@ -19,8 +18,8 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-nod
 import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
-import { updateStatusBarItem } from './utilities/status-bar';
 import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
+import { updateStatusBarItem } from './utilities/status-bar';
 
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
@@ -30,6 +29,7 @@ import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { GenerateState } from "./steps";
 import { loadLockFile, openTreeViewWithProgress } from './utilities/file';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -62,6 +62,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
+  const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -95,10 +96,7 @@ export async function activate(
       (x) => loadLockFile(x, openApiTreeProvider)
     ),
     registerCommandWithTelemetry(reporter, statusBarCommandId, await kiotaStatusCommand.execute()),
-    vscode.window.registerWebviewViewProvider(
-      dependenciesInfo,
-      dependenciesInfoProvider
-    ),
+    vscode.window.registerWebviewViewProvider(dependenciesInfo, dependenciesInfoProvider),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.addToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
@@ -106,15 +104,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, `${treeViewId}.removeFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.removeAllFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateClientCommand.execute()),
-    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-      const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
-      if (generatedOutput) {
-        const { outputPath } = generatedOutput;
-        await generateClientCommand.displayGenerationResults(config, outputPath);
-        // Clear the state 
-        void context.workspaceState.update('generatedOutput', undefined);
-      }
-    }),
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => displayGenerationResultsCommand.execute(config)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.searchOrOpenApiDescription`, () => searchOrOpenApiDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),

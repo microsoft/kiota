@@ -1,25 +1,25 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId, treeViewFocusCommand, treeViewId } from "../constants";
-import { DependenciesViewProvider } from '../dependenciesViewProvider';
-import { ExtensionSettings, getExtensionSettings } from "../extensionSettings";
-import { generateClient } from '../generateClient';
-import { generatePlugin } from '../generatePlugin';
-import { getLanguageInformation, getLanguageInformationForDescription } from "../getLanguageInformation";
+import { extensionId, treeViewFocusCommand } from "../../constants";
+import { DependenciesViewProvider } from '../../dependenciesViewProvider';
+import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
+import { generateClient } from '../../generateClient';
+import { generatePlugin } from '../../generatePlugin';
+import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import {
   ConsumerOperation,
   getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType,
   LogLevel, parseGenerationLanguage, parsePluginType
-} from "../kiotaInterop";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
-import { GenerateState, generateSteps, GenerationType, parseGenerationType } from "../steps";
-import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, updateTreeViewIcons } from "../util";
-import { exportLogsAndShowErrors } from '../utilities/logging';
-import { showUpgradeWarningMessage } from "../utilities/messaging";
-import { GeneratedOutputState } from './GeneratedOutputState';
-import { loadLockFile } from "../utilities/file";
-import { Command } from "./Command";
+} from "../../kiotaInterop";
+import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { GenerateState, generateSteps, GenerationType, parseGenerationType } from "../../steps";
+import { getWorkspaceJsonDirectory } from "../../util";
+import { exportLogsAndShowErrors } from '../../utilities/logging';
+import { showUpgradeWarningMessage } from "../../utilities/messaging";
+import { Command } from "../Command";
+import { GeneratedOutputState } from '../GeneratedOutputState';
+import { displayGenerationResults } from "./generation-results";
 
 export class GenerateClientCommand extends Command {
 
@@ -92,19 +92,9 @@ export class GenerateClientCommand extends Command {
       if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
         await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
       } else {
-        await this.displayGenerationResults(config, outputPath);
+        await displayGenerationResults(config, outputPath, this._openApiTreeProvider);
       }
     }
-  }
-
-  public async displayGenerationResults(config: Partial<GenerateState>, _outputPath: string) {
-    const clientNameOrPluginName = config.clientClassName || config.pluginName;
-    this._openApiTreeProvider.refreshView();
-    const workspaceJsonPath = getWorkspaceJsonPath();
-    await loadLockFile({ fsPath: workspaceJsonPath }, this._openApiTreeProvider, clientNameOrPluginName);
-    await vscode.commands.executeCommand('kiota.workspace.refresh');
-    this._openApiTreeProvider.resetInitialState();
-    await updateTreeViewIcons(treeViewId, false, true);
   }
 
   async generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
