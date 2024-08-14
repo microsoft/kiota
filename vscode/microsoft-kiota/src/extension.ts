@@ -2,7 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
-import { commands } from 'vscode';
 
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
@@ -65,32 +64,36 @@ export async function activate(
   const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const uriHandler = new UriHandler(openApiTreeProvider);
+  const codeLensProvider = new CodeLensProvider();
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
-  let codeLensProvider = new CodeLensProvider();
   
   context.subscriptions.push(
+    reporter,
+
     vscode.window.registerUriHandler({ handleUri: uriHandler.handleUri }),
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
-    reporter,
-    registerCommandWithTelemetry(reporter, `${extensionId}.selectLock`, (x) => selectLockCommand.execute(x)),
-    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => kiotaStatusCommand.execute()),
     vscode.window.registerWebviewViewProvider(dependenciesInfo, dependenciesInfoProvider),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
+
+    registerCommandWithTelemetry(reporter, `${extensionId}.selectLock`, (x) => selectLockCommand.execute(x)),
+    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async () => regenerateCommand.execute()),
+
     registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.addToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.addAllToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.removeFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.removeAllFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.generateClient`, () => generateClientCommand.execute()),
-    vscode.workspace.onDidChangeWorkspaceFolders(async () => displayGenerationResultsCommand.execute(config)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.searchOrOpenApiDescription`, () => searchOrOpenApiDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => regenerateButtonCommand.execute(config)),
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async () => regenerateCommand.execute()),
+
+    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => kiotaStatusCommand.execute()),
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => displayGenerationResultsCommand.execute(config)),
   );
 
   // create a new status bar item that we can now manage
@@ -100,7 +103,7 @@ export async function activate(
 
   // update status bar item once at start
   await updateStatusBarItem(context, kiotaStatusBarItem);
-  context.subscriptions.push(commands.registerCommand(`${extensionId}.updateClients`, async () => updateClientsCommand.execute(kiotaStatusBarItem)));
+  context.subscriptions.push(registerCommandWithTelemetry(reporter, `${extensionId}.updateClients`, async () => updateClientsCommand.execute(kiotaStatusBarItem)));
 }
 
 
