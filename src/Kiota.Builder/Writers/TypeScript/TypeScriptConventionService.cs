@@ -58,7 +58,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var paramType = GetTypeString(parameter.Type, targetElement);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind) switch
         {
-            (false, CodeParameterKind.DeserializationTarget) when parameter.Parent is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer
+            (false, CodeParameterKind.DeserializationTarget) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
                 => $" | null = {parameter.DefaultValue}",
             (false, CodeParameterKind.DeserializationTarget) => $" = {parameter.DefaultValue}",
             (false, _) => $" = {parameter.DefaultValue} as {paramType}",
