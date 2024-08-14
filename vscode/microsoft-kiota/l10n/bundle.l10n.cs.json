@@ -70,5 +70,11 @@
   "Generating manifest...": "Generování manifestu...",
   "Generating plugin...": "Generování pluginu...",
   "Re-generating client...": "Opětovné generování klienta...",
-  "Re-generating plugin...": "Opětovné generování pluginu..."
+  "Re-generating plugin...": "Opětovné generování pluginu...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":""
 }

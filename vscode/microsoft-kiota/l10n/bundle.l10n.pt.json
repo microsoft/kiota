@@ -70,5 +70,11 @@
   "Generating manifest...": "Gerando o manifesto...",
   "Generating plugin...": "Gerando o plugin...",
   "Re-generating client...": "Regerando o cliente...",
-  "Re-generating plugin...": "Regerando o plugin..."
+  "Re-generating plugin...": "Regerando o plugin...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":""
 }

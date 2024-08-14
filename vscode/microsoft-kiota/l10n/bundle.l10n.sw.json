@@ -70,5 +70,11 @@
   "Generating manifest...": "Inatengeneza  dhariri..",
   "Generating plugin...": "Inatengeneza programu-jalizi...",
   "Re-generating client...": "Inatengeneza mteja upya...",
-  "Re-generating plugin...": "Inatengeneza programu-jalizi upya ..."
+  "Re-generating plugin...": "Inatengeneza programu-jalizi upya ...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api client migrateds successfully!":""
 }
