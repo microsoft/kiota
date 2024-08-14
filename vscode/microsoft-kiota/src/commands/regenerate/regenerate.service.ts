@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
+import TelemetryReporter from "@vscode/extension-telemetry";
 
 import { extensionId } from "../../constants";
 import { ExtensionSettings } from "../../extensionSettings";
@@ -11,7 +12,6 @@ import {
   PluginObjectProperties
 } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
-import { Telemetry } from "../../telemetry";
 
 export class RegenerateService {
   private _context: ExtensionContext;
@@ -90,7 +90,7 @@ export class RegenerateService {
 
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      const reporter = Telemetry.reporter;
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
         "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),

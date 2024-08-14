@@ -29,7 +29,6 @@ import { DependenciesViewProvider } from './providers/dependenciesViewProvider';
 import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreeProvider';
 import { loadTreeView } from './providers/workspaceTreeProvider';
 import { GenerateState } from "./steps";
-import { Telemetry } from './telemetry';
 import { updateStatusBarItem } from './utilities/status-bar';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -65,10 +64,10 @@ export async function activate(
   const updateClientsCommand = new UpdateClientsCommand(context);
   const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
-  const uriHandler = new UriHandler(openApiTreeProvider);
+  const uriHandler = new UriHandler(context, openApiTreeProvider);
   const codeLensProvider = new CodeLensProvider();
 
-  const reporter =  Telemetry.reporter;
+  const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
 
   await loadTreeView(context);
 

@@ -1,13 +1,17 @@
+import TelemetryReporter from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
+import { ExtensionContext } from "vscode";
+
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
-import { Telemetry } from "../telemetry";
 import { openTreeViewWithProgress } from "../utilities/file";
 
 export class UriHandler {
+  private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
 
-  constructor(openApiTreeProvider: OpenApiTreeProvider) {
+  constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider,) {
     this._openApiTreeProvider = openApiTreeProvider;
+    this._context = context;
   }
 
   async handleUri(uri: vscode.Uri) {
@@ -17,7 +21,7 @@ export class UriHandler {
     const queryParameters = this.getQueryParameters(uri);
     if (uri.path.toLowerCase() === "/opendescription") {
 
-      const reporter = Telemetry.reporter;
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendTelemetryEvent("DeepLink.OpenDescription");
       const descriptionUrl = queryParameters["descriptionurl"];
       if (descriptionUrl) {

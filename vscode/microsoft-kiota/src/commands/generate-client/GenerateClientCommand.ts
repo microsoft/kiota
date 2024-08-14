@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
+import TelemetryReporter from "@vscode/extension-telemetry";
 
 import { extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
@@ -15,7 +16,6 @@ import {
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState, generateSteps, GenerationType, parseGenerationType } from "../../steps";
-import { Telemetry } from "../../telemetry";
 import { getWorkspaceJsonDirectory } from "../../util";
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
@@ -142,8 +142,7 @@ export class GenerateClientCommand extends Command {
 
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      const reporter = Telemetry.reporter;
-
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generateClient.completed`, {
         "language": generationLanguageToString(language),
         "errorsCount": errorsCount.toString(),
@@ -198,7 +197,7 @@ export class GenerateClientCommand extends Command {
 
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      const reporter = Telemetry.reporter;
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generatePlugin.completed`, {
         "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),
@@ -239,8 +238,8 @@ export class GenerateClientCommand extends Command {
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      const reporter = Telemetry.reporter;
-      
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
+    
       reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
         "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),
