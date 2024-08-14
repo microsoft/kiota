@@ -75,7 +75,7 @@ export async function handleMigration(
 ): Promise<void> {
   vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
-      title: vscode.l10n.t("Migrating API clients..."),
+      title: vscode.l10n.t("Migrating your API clients..."),
       cancellable: false
   }, async (progress) => {
       progress.report({ increment: 0 });

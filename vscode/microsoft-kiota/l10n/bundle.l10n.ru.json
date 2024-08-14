@@ -72,7 +72,7 @@
   "Re-generating plugin...": "Перегенерация плагина...",
   "Please migrate your API clients to Kiota workspace.":"",
   "Remind me later":"",
-  "Migrating API clients...":"",
+  "Migrating your API clients...":"",
   "Migration completed, but no changes were detected.":"",
   "Migration failed":"",
   "Api clients migrated successfully!":"",
