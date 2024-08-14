@@ -1,63 +1,24 @@
 import * as vscode from "vscode";
+
 import { ExtensionContext } from "vscode";
+import { ExtensionSettings } from "../../extensionSettings";
+import { generateClient } from "../../generateClient";
+import { generatePlugin } from "../../generatePlugin";
+import { ClientObjectProperties, parseGenerationLanguage, KiotaGenerationLanguage, ConsumerOperation, PluginObjectProperties, parsePluginType, KiotaPluginType, ClientOrPluginProperties } from "../../kiotaInterop";
+import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 
-import { extensionId } from "../constants";
-import { ExtensionSettings, getExtensionSettings } from "../extensionSettings";
-import { generateClient } from "../generateClient";
-import { generatePlugin } from "../generatePlugin";
-import {
-  ClientObjectProperties,
-  ClientOrPluginProperties, ConsumerOperation, getLogEntriesForLevel,
-  KiotaGenerationLanguage, KiotaPluginType, parseGenerationLanguage, parsePluginType,
-  PluginObjectProperties
-} from "../kiotaInterop";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
-import { GenerateState } from "../steps";
-import { isClientType, isPluginType } from "../util";
-import { Command } from "./Command";
-
-export class RegenerateButtonCommand extends Command {
-
+export class RegenerateService {
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _clientKey: string;
   private _clientObject: ClientOrPluginProperties;
-  private _workspaceGenerationType: string;
 
   public constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider,
-    clientKey: string, clientObject: ClientOrPluginProperties, workspaceGenerationType: string) {
-    super();
+    clientKey: string, clientObject: ClientOrPluginProperties) {
     this._context = context;
     this._openApiTreeProvider = openApiTreeProvider;
     this._clientKey = clientKey;
     this._clientObject = clientObject;
-    this._workspaceGenerationType = workspaceGenerationType;
-  }
-
-  async execute(config: Partial<GenerateState>): Promise<void> {
-    if (!this._clientKey || this._clientKey === '') {
-      this._clientKey = config.clientClassName || config.pluginName || '';
-    }
-    if (!config) {
-      config = {
-        outputPath: this._clientObject.outputPath,
-        clientClassName: this._clientKey,
-      };
-    }
-    const settings = getExtensionSettings(extensionId);
-    const selectedPaths = this._openApiTreeProvider.getSelectedPaths();
-    if (selectedPaths.length === 0) {
-      await vscode.window.showErrorMessage(
-        vscode.l10n.t("No endpoints selected, select endpoints first")
-      );
-      return;
-    }
-    if (isClientType(this._workspaceGenerationType)) {
-      await this.regenerateClient(settings, selectedPaths);
-    }
-    if (isPluginType(this._workspaceGenerationType)) {
-      await this.regeneratePlugin(settings, selectedPaths);
-    }
   }
 
   async regenerateClient(settings: ExtensionSettings, selectedPaths?: string[]): Promise<void> {
@@ -96,6 +57,7 @@ export class RegenerateButtonCommand extends Command {
     void vscode.window.showInformationMessage(`Client ${this._clientKey} re-generated successfully.`);
     this._openApiTreeProvider.resetInitialState();
   }
+
   async regeneratePlugin(settings: ExtensionSettings, selectedPaths?: string[]) {
     const clientObjectItem = this._clientObject as PluginObjectProperties;
 
