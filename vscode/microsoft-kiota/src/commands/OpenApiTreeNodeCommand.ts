@@ -1,13 +1,16 @@
 import * as vscode from "vscode";
 import { OpenApiTreeNode } from "../openApiTreeProvider";
+import { Command } from "./Command";
 
-export class OpenApiTreeNodeCommand {
-  constructor() { }
+export class OpenApiTreeNodeCommand extends Command {
+  constructor() {
+    super();
+  }
 
-  public openDocumentPage(openApiTreeNode: OpenApiTreeNode) {
+  execute(openApiTreeNode: OpenApiTreeNode): void {
     if (openApiTreeNode.documentationUrl) {
       vscode.env.openExternal(vscode.Uri.parse(openApiTreeNode.documentationUrl));
     }
   }
-  
+
 }

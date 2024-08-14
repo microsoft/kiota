@@ -89,7 +89,7 @@ export async function activate(
       `${extensionId}.selectLock`,
       (x) => loadLockFile(x, openApiTreeProvider)
     ),
-    registerCommandWithTelemetry(reporter, statusBarCommandId, await kiotaStatusCommand.run()),
+    registerCommandWithTelemetry(reporter, statusBarCommandId, await kiotaStatusCommand.execute()),
     vscode.window.registerWebviewViewProvider(
       dependenciesInfo,
       dependenciesInfoProvider
@@ -97,7 +97,7 @@ export async function activate(
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.openDocumentationPage`,
-      (x: OpenApiTreeNode) => openApiTreeNodeCommand.openDocumentPage(x)
+      (x: OpenApiTreeNode) => openApiTreeNodeCommand.execute(x)
     ),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.addToSelectedEndpoints`,
@@ -116,7 +116,7 @@ export async function activate(
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
     ),
     registerCommandWithTelemetry(reporter,
-      `${treeViewId}.generateClient`, () => generateCommand.run()
+      `${treeViewId}.generateClient`, () => generateCommand.execute()
     ),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');

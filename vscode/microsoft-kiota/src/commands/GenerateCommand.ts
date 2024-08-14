@@ -19,17 +19,20 @@ import { exportLogsAndShowErrors } from '../utilities/logging';
 import { showUpgradeWarningMessage } from "../utilities/messaging";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { loadLockFile } from "../utilities/file";
+import { Command } from "./Command";
 
-export class GenerateCommand {
+export class GenerateCommand extends Command {
+
   private _context: ExtensionContext;
   private _openApiTreeProvider: OpenApiTreeProvider;
 
-  constructor(context: ExtensionContext) {
+  public constructor(context: ExtensionContext) {
+    super();
     this._context = context;
     this._openApiTreeProvider = new OpenApiTreeProvider(this._context, () => getExtensionSettings(extensionId));
   }
 
-  public async run() {
+  public async execute() {
     const selectedPaths = this._openApiTreeProvider.getSelectedPaths();
     if (selectedPaths.length === 0) {
       await vscode.window.showErrorMessage(
