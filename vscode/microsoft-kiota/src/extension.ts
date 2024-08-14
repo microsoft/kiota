@@ -1,15 +1,15 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import TelemetryReporter from '@vscode/extension-telemetry';
-
-import * as path from 'path';
 import * as vscode from "vscode";
+import { commands } from 'vscode';
 
 import { CodeLensProvider } from "./codelensProvider";
+
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
-import { GenerateClientCommand } from './commands/GenerateCommand';
+import { GenerateClientCommand } from './commands/GenerateClientCommand';
 import { GeneratedOutputState } from './commands/GeneratedOutputState';
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddToSelectedEndpointsCommand';
@@ -19,20 +19,16 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-nod
 import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
-import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
+import { updateStatusBarItem } from './utilities/status-bar';
+import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
+
+import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
-import { getKiotaVersion } from "./getKiotaVersion";
-import {
-  ClientOrPluginProperties,
-  KiotaLogEntry
-} from "./kiotaInterop";
+import { ClientOrPluginProperties, KiotaLogEntry } from "./kiotaInterop";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { GenerateState } from "./steps";
-import { updateClients } from "./updateClients";
 import { loadLockFile, openTreeViewWithProgress } from './utilities/file';
-import { exportLogsAndShowErrors, kiotaOutputChannel } from './utilities/logging';
-import { showUpgradeWarningMessage } from './utilities/messaging';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -65,6 +61,7 @@ export async function activate(
   const addAllToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
+  const updateClientsCommand = new UpdateClientsCommand(context);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -103,7 +100,7 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)), 
+    registerCommandWithTelemetry(reporter, `${treeViewId}.openDocumentationPage`, (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.addToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.addAllToSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, `${treeViewId}.removeFromSelectedEndpoints`, (openApiTreeNode: OpenApiTreeNode) => removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
@@ -135,57 +132,8 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem(context);
-  let disposable = vscode.commands.registerCommand(
-    `${extensionId}.updateClients`,
-    async () => {
-      if (
-        !vscode.workspace.workspaceFolders ||
-        vscode.workspace.workspaceFolders.length === 0
-      ) {
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("No workspace folder found, open a folder first")
-        );
-        return;
-      }
-      const existingLockFileUris = await vscode.workspace.findFiles(`**/${KIOTA_WORKSPACE_FILE}`);
-      if (existingLockFileUris.length > 0) {
-        await Promise.all(existingLockFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(context, x)));
-      }
-      await updateStatusBarItem(context);
-      try {
-        kiotaOutputChannel.clear();
-        kiotaOutputChannel.show();
-        kiotaOutputChannel.info(
-          vscode.l10n.t("updating client with path {path}", {
-            path: vscode.workspace.workspaceFolders[0].uri.fsPath,
-          })
-        );
-        const res = await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Updating clients...")
-        }, (progress, _) => {
-          const settings = getExtensionSettings(extensionId);
-          return updateClients(context, settings.cleanOutput, settings.clearCache);
-        });
-        if (res) {
-          await exportLogsAndShowErrors(res);
-        }
-      } catch (error) {
-        kiotaOutputChannel.error(
-          vscode.l10n.t("error updating the clients {error}"),
-          error
-        );
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("error updating the clients {error}"),
-          error as string
-        );
-      }
-    }
-  );
-
-  context.subscriptions.push(disposable);
+  await updateStatusBarItem(context, kiotaStatusBarItem);
+  context.subscriptions.push(commands.registerCommand(`${extensionId}.updateClients`, async () => updateClientsCommand.execute(kiotaStatusBarItem)));
 }
 
 
@@ -196,24 +144,6 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {
-  try {
-    const version = await getKiotaVersion(context, kiotaOutputChannel);
-    if (!version) {
-      throw new Error("kiota not found");
-    }
-    kiotaStatusBarItem.text = `$(extensions-info-message) kiota ${version}`;
-  } catch (error) {
-    kiotaStatusBarItem.text = `$(extensions-warning-message) kiota ${vscode.l10n.t(
-      "not found"
-    )}`;
-    kiotaStatusBarItem.backgroundColor = new vscode.ThemeColor(
-      "statusBarItem.errorBackground"
-    );
-  }
-  kiotaStatusBarItem.show();
 }
 
 function getQueryParameters(uri: vscode.Uri): Record<string, string> {
