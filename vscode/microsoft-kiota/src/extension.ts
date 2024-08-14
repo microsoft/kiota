@@ -9,6 +9,7 @@ import { CodeLensProvider } from "./codelensProvider";
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
+import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
 import { GenerateClientCommand } from './commands/generate-client/GenerateClientCommand';
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddToSelectedEndpointsCommand';
@@ -18,18 +19,17 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-nod
 import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
-import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
-import { updateStatusBarItem } from './utilities/status-bar';
-
-import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
 import { SelectLockCommand } from './commands/SelectLockCommand';
+import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
+
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
+import { UriHandler } from './handlers/uri.handler';
 import { ClientOrPluginProperties } from "./kiotaInterop";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { GenerateState } from "./steps";
-import { openTreeViewWithProgress } from './utilities/file';
+import { updateStatusBarItem } from './utilities/status-bar';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -65,29 +65,14 @@ export async function activate(
   const updateClientsCommand = new UpdateClientsCommand(context);
   const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
+  const uriHandler = new UriHandler(openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
   let codeLensProvider = new CodeLensProvider();
-  const handleUri = async (uri: vscode.Uri) => {
-    if (uri.path === "/") {
-      return;
-    }
-    const queryParameters = getQueryParameters(uri);
-    if (uri.path.toLowerCase() === "/opendescription") {
-      reporter.sendTelemetryEvent("DeepLink.OpenDescription");
-      const descriptionUrl = queryParameters["descriptionurl"];
-      if (descriptionUrl) {
-        await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
-        return;
-      }
-    }
-    void vscode.window.showErrorMessage(
-      vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
-    );
-  };
+  
   context.subscriptions.push(
-    vscode.window.registerUriHandler({ handleUri }),
+    vscode.window.registerUriHandler({ handleUri: uriHandler.handleUri }),
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
     registerCommandWithTelemetry(reporter, `${extensionId}.selectLock`, (x) => selectLockCommand.execute(x)),
@@ -127,20 +112,6 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-function getQueryParameters(uri: vscode.Uri): Record<string, string> {
-  const query = uri.query;
-  if (!query) {
-    return {};
-  }
-  const queryParameters = (query.startsWith('?') ? query.substring(1) : query).split("&");
-  const parameters = {} as Record<string, string>;
-  queryParameters.forEach((element) => {
-    const keyValue = element.split("=");
-    parameters[keyValue[0].toLowerCase()] = decodeURIComponent(keyValue[1]);
-  });
-  return parameters;
 }
 
 // This method is called when your extension is deactivated
