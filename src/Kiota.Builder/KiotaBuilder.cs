@@ -1661,7 +1661,7 @@ public partial class KiotaBuilder
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries()!, className, shortestNamespace),
             // meaningless scenario
             (false, { Length: 0 }, { Length: 0 }) =>
-                throw new InvalidOperationException("the type does not contain any information"),
+                throw new InvalidOperationException($"The type does not contain any information Path: {currentNode.Path}, Reference Id: {referenceId}"),
         };
         if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
         if (!currentClass.Documentation.DescriptionAvailable &&
