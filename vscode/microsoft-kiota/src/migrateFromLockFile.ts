@@ -1,6 +1,8 @@
 import { connectToKiota, KiotaLogEntry, LogLevel } from "./kiotaInterop";
 import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import { KIOTA_LOCK_FILE } from "./constants";
+import { handleMigration } from "./util";
 
 export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
     return connectToKiota(context, async (connection) => {
@@ -14,6 +16,27 @@ export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDi
         return result;
     });
 };
+
+export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+
+    if(workspaceFolders) {
+      const lockFile = await vscode.workspace.findFiles(`**/${KIOTA_LOCK_FILE}`);
+
+      if (lockFile.length > 0) {
+        const result = await vscode.window.showInformationMessage(
+          vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
+          vscode.l10n.t("OK"),
+          vscode.l10n.t("Remind me later")
+        );
+
+        if (result === vscode.l10n.t("OK")) {
+          await handleMigration(context, workspaceFolders![0]);
+          await vscode.commands.executeCommand('kiota.workspace.refresh');
+        }  
+      }
+    }
+  };
 
 export function displayMigrationMessages(logEntries: KiotaLogEntry[]) {
     const successEntries = logEntries.filter(entry => 
