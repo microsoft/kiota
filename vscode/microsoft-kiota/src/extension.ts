@@ -29,8 +29,8 @@ import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_WORKSPACE_FILE, REMIND_ME_LATER_FLAG, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { findLockFile, getWorkspaceJsonDirectory, getWorkspaceJsonPath, isClientType, isPluginType, updateTreeViewIcons } from "./util";
-import { migrateFromLockFile } from "./migrateFromLockFile";
+import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, isClientType, isPluginType, updateTreeViewIcons } from "./util";
+import { displayMigrationMessages, migrateFromLockFile } from "./migrateFromLockFile";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -62,52 +62,41 @@ export async function activate(
   let codeLensProvider = new CodeLensProvider();
   async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
+    const remindMeLater = context.globalState.get<boolean>(REMIND_ME_LATER_FLAG);
 
-    if (workspaceFolders) {
-      let lockFilePath: string | undefined;
-      for (const folder of workspaceFolders) {
-        lockFilePath = await findLockFile(folder.uri.fsPath);
-        if (lockFilePath) {
-            break;
-        }
-      }
+    if (workspaceFolders || remindMeLater) {
+      const result = await vscode.window.showInformationMessage(
+        vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
+        vscode.l10n.t("OK"),
+        vscode.l10n.t("Remind me later")
+      );
 
-      const remindMeLater = context.globalState.get<boolean>(REMIND_ME_LATER_FLAG);
+      if (result === vscode.l10n.t("OK")) {
+        await context.globalState.update(REMIND_ME_LATER_FLAG, false);
 
-      if (lockFilePath || remindMeLater) {
-        const result = await vscode.window.showInformationMessage(
-          vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
-          vscode.l10n.t("OK"),
-          vscode.l10n.t("Remind me later")
-        );
+        vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: vscode.l10n.t("Migrating API clients..."),
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ increment: 0 });
 
-        if (result === vscode.l10n.t("OK")) {
-          await context.globalState.update(REMIND_ME_LATER_FLAG, false);
+          try {
+            const migrationResult = await migrateFromLockFile(context, workspaceFolders![0].uri.fsPath);
 
-          vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: vscode.l10n.t("Migrating API clients..."),
-            cancellable: false
-          }, async (progress) => {
-            progress.report({ increment: 0 });
+            progress.report({ increment: 100 });
 
-            try {
-                const migrationResult = await migrateFromLockFile(context, lockFilePath!);
-
-                progress.report({ increment: 100 });
-
-                if (migrationResult) {
-                    vscode.window.showInformationMessage(vscode.l10n.t("API clients migrated successfully!"));
-                } else {
-                    vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
-                }
-            } catch (error) {
-                vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
+            if (migrationResult && migrationResult.length > 0) {
+              displayMigrationMessages(migrationResult);
+            } else {
+              vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
             }
-          });
-        } else if (result === vscode.l10n.t("Remind me later")) {
-          await context.globalState.update(REMIND_ME_LATER_FLAG, true);
-        }
+          } catch (error) {
+            vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
+          }
+        });
+      } else if (result === vscode.l10n.t("Remind me later")) {
+        await context.globalState.update(REMIND_ME_LATER_FLAG, true);
       }
     }
   };
