@@ -42,6 +42,7 @@ import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/RegenerateButtonCommand';
+import { RegenerateCommand } from './commands/regenerate/RegenerateCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -59,6 +60,7 @@ export async function activate(
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
+
   const kiotaStatusCommand = new KiotaStatusCommand();
   const openApiTreeNodeCommand = new OpenApiTreeNodeCommand();
   const generateCommand = new GenerateCommand(context, openApiTreeProvider);
@@ -67,6 +69,7 @@ export async function activate(
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
+  const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, workspaceGenerationType);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -140,9 +143,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async () => editPathsCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => regenerateButtonCommand.execute(config)),
-    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-    }
-  ),
+    registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async () => regenerateCommand.execute()),
   );
 
   // create a new status bar item that we can now manage
