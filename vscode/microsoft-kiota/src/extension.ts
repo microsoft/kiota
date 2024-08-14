@@ -38,6 +38,7 @@ import { exportLogsAndShowErrors, kiotaOutputChannel } from './utilities/logging
 import { showUpgradeWarningMessage } from './utilities/messaging';
 import { loadTreeView } from "./workspaceTreeProvider";
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
+import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -59,6 +60,7 @@ export async function activate(
   const openApiTreeNodeCommand = new OpenApiTreeNodeCommand();
   const generateCommand = new GenerateCommand(context, openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(context, openApiTreeProvider);
+  const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -133,19 +135,7 @@ export async function activate(
       `${treeViewId}.searchOrOpenApiDescription`,
       () => searchOrOpenApiDescriptionCommand.execute()
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
-      const yesAnswer = vscode.l10n.t("Yes");
-      const response = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Do you want to remove this API description?"),
-        yesAnswer,
-        vscode.l10n.t("No")
-      );
-      if (response === yesAnswer) {
-        openApiTreeProvider.closeDescription();
-        await updateTreeViewIcons(treeViewId, false);
-      }
-    }
-    ),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
       async () => {
         await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
