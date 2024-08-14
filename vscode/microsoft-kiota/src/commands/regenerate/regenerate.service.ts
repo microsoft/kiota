@@ -4,8 +4,8 @@ import { ExtensionContext } from "vscode";
 import { ExtensionSettings } from "../../extensionSettings";
 import { generateClient } from "../../generateClient";
 import { generatePlugin } from "../../generatePlugin";
-import { ClientObjectProperties, parseGenerationLanguage, KiotaGenerationLanguage, ConsumerOperation, PluginObjectProperties, parsePluginType, KiotaPluginType, ClientOrPluginProperties } from "../../kiotaInterop";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, KiotaGenerationLanguage, KiotaPluginType, PluginObjectProperties, parseGenerationLanguage, parsePluginType } from "../../kiotaInterop";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 
 export class RegenerateService {
   private _context: ExtensionContext;

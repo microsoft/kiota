@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { openTreeViewWithProgress } from "../utilities/file";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
 
 export class UriHandler {
   private _openApiTreeProvider: OpenApiTreeProvider;

@@ -1,4 +1,4 @@
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { loadLockFile } from "../utilities/file";
 import { Command } from "./Command";
 

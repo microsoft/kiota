@@ -23,14 +23,14 @@ import { SelectLockCommand } from './commands/SelectLockCommand';
 import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
 
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
-import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
 import { UriHandler } from './handlers/uri.handler';
 import { ClientOrPluginProperties } from "./kiotaInterop";
-import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
+import { DependenciesViewProvider } from './providers/dependenciesViewProvider';
+import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreeProvider';
+import { loadTreeView } from './providers/workspaceTreeProvider';
 import { GenerateState } from "./steps";
 import { updateStatusBarItem } from './utilities/status-bar';
-import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;

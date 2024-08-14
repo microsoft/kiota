@@ -3,7 +3,7 @@ import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../constants";
 import { getExtensionSettings } from "../extensionSettings";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { searchDescription } from "../searchDescription";
 import { searchSteps } from "../steps";
 import { openTreeViewWithProgress } from "../utilities/file";

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { treeViewId } from "../../constants";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState } from "../../steps";
 import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
 import { loadLockFile } from "../../utilities/file";

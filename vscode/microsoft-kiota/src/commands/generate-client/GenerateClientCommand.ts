@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId, treeViewFocusCommand } from "../../constants";
-import { DependenciesViewProvider } from '../../dependenciesViewProvider';
 import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
 import { generateClient } from '../../generateClient';
 import { generatePlugin } from '../../generatePlugin';
@@ -12,7 +11,8 @@ import {
   getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType,
   LogLevel, parseGenerationLanguage, parsePluginType
 } from "../../kiotaInterop";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState, generateSteps, GenerationType, parseGenerationType } from "../../steps";
 import { getWorkspaceJsonDirectory } from "../../util";
 import { exportLogsAndShowErrors } from '../../utilities/logging';

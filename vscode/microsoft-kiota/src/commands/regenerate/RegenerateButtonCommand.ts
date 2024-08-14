@@ -4,7 +4,7 @@ import { ExtensionContext } from "vscode";
 import { extensionId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { ClientOrPluginProperties } from "../../kiotaInterop";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState } from "../../steps";
 import { isClientType, isPluginType } from "../../util";
 import { Command } from "../Command";

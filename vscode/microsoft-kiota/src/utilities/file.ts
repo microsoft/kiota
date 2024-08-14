@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { treeViewFocusCommand, treeViewId } from "../constants";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { updateTreeViewIcons } from "../util";
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider, clientOrPluginName?: string): Promise<void> {
@@ -23,6 +23,6 @@ function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
 
 export {
   loadLockFile,
-  openTreeViewWithProgress,
+  openTreeViewWithProgress
 };
 

@@ -4,7 +4,7 @@ import { ExtensionContext } from "vscode";
 import { extensionId, KIOTA_WORKSPACE_FILE } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { ClientOrPluginProperties } from "../../kiotaInterop";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { isClientType, isPluginType } from "../../util";
 import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";

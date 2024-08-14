@@ -1,4 +1,4 @@
-import { OpenApiTreeNode, OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeNode, OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { Command } from "../Command";
 
 export class AddToSelectedEndpointsCommand extends Command {

@@ -1,6 +1,6 @@
 import { ExtensionContext } from "vscode";
 
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState } from "../../steps";
 import { Command } from "../Command";
 import { GeneratedOutputState } from "../GeneratedOutputState";
