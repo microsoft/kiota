@@ -177,6 +177,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
         else
         {
+            if (!string.IsNullOrWhiteSpace(spreadOperator))
+            {
+                writer.WriteLine($"if({modelParamName}.{codePropertyName})");
+            }
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
         }
     }
