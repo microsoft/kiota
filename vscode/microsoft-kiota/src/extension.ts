@@ -39,6 +39,7 @@ import { showUpgradeWarningMessage } from './utilities/messaging';
 import { loadTreeView } from "./workspaceTreeProvider";
 import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDescriptionCommand';
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
+import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -61,6 +62,7 @@ export async function activate(
   const generateCommand = new GenerateCommand(context, openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(context, openApiTreeProvider);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
+  const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
 
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
@@ -131,16 +133,9 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.searchOrOpenApiDescription`,
-      () => searchOrOpenApiDescriptionCommand.execute()
-    ),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.searchOrOpenApiDescription`, () => searchOrOpenApiDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () => closeDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
-      async () => {
-        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
-      }
-    ),
+    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`, () => filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
