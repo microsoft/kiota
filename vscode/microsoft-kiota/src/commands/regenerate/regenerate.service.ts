@@ -1,11 +1,17 @@
 import * as vscode from "vscode";
-
 import { ExtensionContext } from "vscode";
+
+import { extensionId } from "../../constants";
 import { ExtensionSettings } from "../../extensionSettings";
 import { generateClient } from "../../generateClient";
 import { generatePlugin } from "../../generatePlugin";
-import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, KiotaGenerationLanguage, KiotaPluginType, PluginObjectProperties, parseGenerationLanguage, parsePluginType } from "../../kiotaInterop";
+import {
+  ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, getLogEntriesForLevel,
+  KiotaGenerationLanguage, KiotaPluginType, LogLevel, parseGenerationLanguage, parsePluginType,
+  PluginObjectProperties
+} from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
+import { Telemetry } from "../../telemetry";
 
 export class RegenerateService {
   private _context: ExtensionContext;
@@ -82,16 +88,15 @@ export class RegenerateService {
         ConsumerOperation.Edit
       );
 
-      // TODO: uncomment when telemetry is implemented
-
-      /* const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, vscode.LogLevel.critical, vscode.LogLevel.error).length : 0;
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const reporter = Telemetry.reporter;
       reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
         "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
-      }); */
+      });
       return result;
     });
     void vscode.window.showInformationMessage(`Plugin ${this._clientKey} re-generated successfully.`);

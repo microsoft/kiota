@@ -8,12 +8,14 @@ import { generatePlugin } from '../../generatePlugin';
 import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import {
   ConsumerOperation,
+  generationLanguageToString,
   getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType,
   LogLevel, parseGenerationLanguage, parsePluginType
 } from "../../kiotaInterop";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState, generateSteps, GenerationType, parseGenerationType } from "../../steps";
+import { Telemetry } from "../../telemetry";
 import { getWorkspaceJsonDirectory } from "../../util";
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
@@ -137,18 +139,17 @@ export class GenerateClientCommand extends Command {
         ConsumerOperation.Add,
         config.workingDirectory
       );
-      // TODO: uncomment when telemetry is implemented
 
-      /* 
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      
+      const reporter = Telemetry.reporter;
+
       reporter.sendRawTelemetryEvent(`${extensionId}.generateClient.completed`, {
         "language": generationLanguageToString(language),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
-      }); */
+      });
       return result;
     });
 
@@ -194,18 +195,16 @@ export class GenerateClientCommand extends Command {
         ConsumerOperation.Add,
         config.workingDirectory
       );
-      /* 
-      // TODO: uncomment when telemetry is implemented
- 
+
       const duration = performance.now() - start;
-       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-       reporter.sendRawTelemetryEvent(`${extensionId}.generatePlugin.completed`, {
-         "pluginType": pluginTypes.toString(),
-         "errorsCount": errorsCount.toString(),
-       }, {
-         "duration": duration,
-       }); 
-       */
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const reporter = Telemetry.reporter;
+      reporter.sendRawTelemetryEvent(`${extensionId}.generatePlugin.completed`, {
+        "pluginType": pluginTypes.toString(),
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
       return result;
     });
     if (result) {
@@ -238,15 +237,16 @@ export class GenerateClientCommand extends Command {
         ConsumerOperation.Add,
         config.workingDirectory
       );
-      // TODO: uncomment when telemetry is implemented
-      /* const duration = performance.now() - start;
+      const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const reporter = Telemetry.reporter;
+      
       reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
         "pluginType": pluginTypes.toString(),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
-      }); */
+      });
       return result;
     });
     if (result) {

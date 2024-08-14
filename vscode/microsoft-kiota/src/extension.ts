@@ -19,6 +19,7 @@ import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDes
 import { SelectLockCommand } from './commands/SelectLockCommand';
 import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
 
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddAllToSelectedEndpointsCommand';
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getExtensionSettings } from "./extensionSettings";
 import { UriHandler } from './handlers/uri.handler';
@@ -28,8 +29,8 @@ import { DependenciesViewProvider } from './providers/dependenciesViewProvider';
 import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreeProvider';
 import { loadTreeView } from './providers/workspaceTreeProvider';
 import { GenerateState } from "./steps";
+import { Telemetry } from './telemetry';
 import { updateStatusBarItem } from './utilities/status-bar';
-import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddAllToSelectedEndpointsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let clientOrPluginKey: string;
@@ -67,7 +68,8 @@ export async function activate(
   const uriHandler = new UriHandler(openApiTreeProvider);
   const codeLensProvider = new CodeLensProvider();
 
-  const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  const reporter =  Telemetry.reporter;
+
   await loadTreeView(context);
 
   context.subscriptions.push(

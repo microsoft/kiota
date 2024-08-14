@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
+import { Telemetry } from "../telemetry";
 import { openTreeViewWithProgress } from "../utilities/file";
 
 export class UriHandler {
   private _openApiTreeProvider: OpenApiTreeProvider;
 
-  constructor(private openApiTreeProvider: OpenApiTreeProvider) {
+  constructor(openApiTreeProvider: OpenApiTreeProvider) {
     this._openApiTreeProvider = openApiTreeProvider;
   }
 
@@ -16,8 +17,8 @@ export class UriHandler {
     const queryParameters = this.getQueryParameters(uri);
     if (uri.path.toLowerCase() === "/opendescription") {
 
-      // TODO: uncomment when telemetry is implemented
-      // reporter.sendTelemetryEvent("DeepLink.OpenDescription");
+      const reporter = Telemetry.reporter;
+      reporter.sendTelemetryEvent("DeepLink.OpenDescription");
       const descriptionUrl = queryParameters["descriptionurl"];
       if (descriptionUrl) {
         await openTreeViewWithProgress(() => this._openApiTreeProvider.setDescriptionUrl(descriptionUrl));
