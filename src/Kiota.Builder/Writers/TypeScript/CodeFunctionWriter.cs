@@ -139,6 +139,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             } param)
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
+        writer.StartBlock($"if ({param.Name.ToFirstCharacterLowerCase()}) {{");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
             writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
@@ -151,6 +152,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+        writer.CloseBlock();
     }
 
     private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)
@@ -175,10 +177,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
         else
         {
-            if (!string.IsNullOrWhiteSpace(spreadOperator))
-            {
-                writer.WriteLine($"if({modelParamName}.{codePropertyName})");
-            }
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
         }
     }
