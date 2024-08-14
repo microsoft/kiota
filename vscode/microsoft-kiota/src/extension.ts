@@ -4,8 +4,6 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 import { commands } from 'vscode';
 
-import { CodeLensProvider } from "./codelensProvider";
-
 import { CloseDescriptionCommand } from './commands/CloseDescriptionCommand';
 import { EditPathsCommand } from './commands/EditPathsCommand';
 import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
@@ -26,6 +24,7 @@ import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from ".
 import { getExtensionSettings } from "./extensionSettings";
 import { UriHandler } from './handlers/uri.handler';
 import { ClientOrPluginProperties } from "./kiotaInterop";
+import { CodeLensProvider } from "./providers/codelensProvider";
 import { DependenciesViewProvider } from './providers/dependenciesViewProvider';
 import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreeProvider';
 import { loadTreeView } from './providers/workspaceTreeProvider';

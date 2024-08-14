@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { l10n } from 'vscode';
-import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from './constants';
+import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from '../constants';
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
