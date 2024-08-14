@@ -29,8 +29,7 @@ import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_WORKSPACE_FILE, REMIND_ME_LATER_FLAG, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, isClientType, isPluginType, updateTreeViewIcons } from "./util";
-import { displayMigrationMessages, migrateFromLockFile } from "./migrateFromLockFile";
+import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, handleMigration, isClientType, isPluginType, updateTreeViewIcons } from "./util";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -73,28 +72,7 @@ export async function activate(
 
       if (result === vscode.l10n.t("OK")) {
         await context.globalState.update(REMIND_ME_LATER_FLAG, false);
-
-        vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          title: vscode.l10n.t("Migrating API clients..."),
-          cancellable: false
-        }, async (progress) => {
-          progress.report({ increment: 0 });
-
-          try {
-            const migrationResult = await migrateFromLockFile(context, workspaceFolders![0].uri.fsPath);
-
-            progress.report({ increment: 100 });
-
-            if (migrationResult && migrationResult.length > 0) {
-              displayMigrationMessages(migrationResult);
-            } else {
-              vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
-            }
-          } catch (error) {
-            vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
-          }
-        });
+        await handleMigration(context, workspaceFolders![0]);
       } else if (result === vscode.l10n.t("Remind me later")) {
         await context.globalState.update(REMIND_ME_LATER_FLAG, true);
       }
@@ -336,7 +314,17 @@ export async function activate(
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
-  );
+    registerCommandWithTelemetry(reporter, `${extensionId}.migrateFromLockFile`, async (uri: vscode.Uri) => {
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+
+      if (!workspaceFolder) {
+          vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
+          return;
+      }
+
+      await handleMigration(context, workspaceFolder);
+  })
+);
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[]| undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
