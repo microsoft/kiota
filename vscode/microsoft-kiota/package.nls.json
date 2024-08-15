@@ -30,5 +30,6 @@
   "kiota.workspace.name": "My Workspace",
   "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
   "kiota.openApiExplorer.editPaths.title": "Edit paths",
-  "kiota.openApiExplorer.refresh.title": "Refresh"
+  "kiota.openApiExplorer.refresh.title": "Refresh",
+  "kiota.migrateClients.title": "Migrate API clients"
 }

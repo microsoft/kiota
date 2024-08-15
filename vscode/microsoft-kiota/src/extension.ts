@@ -28,8 +28,9 @@ import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import { loadTreeView } from "./workspaceTreeProvider";
 import { generatePlugin } from "./generatePlugin";
 import { CodeLensProvider } from "./codelensProvider";
-import { KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, isClientType, isPluginType, updateTreeViewIcons } from "./util";
+import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, handleMigration, isClientType, isPluginType, updateTreeViewIcons } from "./util";
+import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -57,6 +58,7 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   await loadTreeView(context);
+  await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
     vscode.window.registerUriHandler({
@@ -294,7 +296,17 @@ export async function activate(
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
-  );
+    registerCommandWithTelemetry(reporter, `${extensionId}.migrateFromLockFile`, async (uri: vscode.Uri) => {
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+
+      if (!workspaceFolder) {
+          vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
+          return;
+      }
+
+      await handleMigration(context, workspaceFolder);
+  })
+);
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[]| undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;

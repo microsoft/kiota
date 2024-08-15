@@ -70,5 +70,12 @@
   "Generating manifest...": "Génération du manifeste...",
   "Generating plugin...": "Génération du composant...",
   "Re-generating client...": "Rafraichissement du client...",
-  "Re-generating plugin...": "Refraichissement du composant..."
+  "Re-generating plugin...": "Refraichissement du composant...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating your API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":"",
+  "Could not determine the workspace folder.": "Impossible de déterminer le dossier de l'espace de travail."
 }

@@ -20,5 +20,7 @@
   "kiota.openApiExplorer.openFile.title": "fungua faili",
   "kiota.workspace.name": "Mahali pa kazi yangu",
   "kiota.openApiExplorer.regenerateButton.title": "Kuunda upya",
-  "kiota.openApiExplorer.editPaths.title": "Hariri pointi za mwisho"
+  "kiota.openApiExplorer.editPaths.title": "Hariri pointi za mwisho",
+  "kiota.openApiExplorer.refresh.title": "Sasisha",
+  "kiota.migrateClients.title": "Hamisha wateja wa API"
 }

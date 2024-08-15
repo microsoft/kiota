@@ -70,5 +70,12 @@
   "Generating manifest...": "Generowanie manifestu...",
   "Generating plugin...": "Generowanie wtyczki",
   "Re-generating client...": "Ponowne generowanie klienta...",
-  "Re-generating plugin...": "Ponowne generowanie wtyczki..."
+  "Re-generating plugin...": "Ponowne generowanie wtyczki...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating your API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":"",
+  "Could not determine the workspace folder.": "Nie można określić folderu przestrzeni roboczej."
 }

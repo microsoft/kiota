@@ -69,5 +69,12 @@
   "Generating manifest...": "正在生成清单...",
   "Generating plugin...": "正在生成插件...",
   "Re-generating client...": "重新生成客户端...",
-  "Re-generating plugin...": "正在重新生成插件..."
+  "Re-generating plugin...": "正在重新生成插件...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating your API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":"",
+  "Could not determine the workspace folder.": "无法确定工作区文件夹"
 }
