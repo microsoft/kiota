@@ -28,5 +28,5 @@ export class CloseDescriptionCommand extends Command {
       this._openApiTreeProvider.closeDescription();
       await updateTreeViewIcons(treeViewId, false);
     }
-}  
+  }
 }
