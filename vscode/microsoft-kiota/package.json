@@ -234,6 +234,11 @@
           "command": "kiota.selectLock",
           "group": "2_kiota@1",
           "when": "resourceLangId == json && resourceFilename =~ /workspace\\.json$/"
+        },
+        {
+          "command": "kiota.migrateFromLockFile",
+          "when": "resourceExtname == .json && resourceFilename == kiota-lock.json",
+          "group": "navigation"
         }
       ],
       "view/title": [
@@ -314,6 +319,13 @@
         {
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
           "when": "false"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "kiota.migrateFromLockFile",
+          "when": "resourceExtname == .json && resourceFilename == kiota-lock.json",
+          "group": "navigation"
         }
       ]
     },
@@ -413,7 +425,12 @@
       {
         "command": "kiota.workspace.refresh",
         "title": "%kiota.openApiExplorer.refresh.title%"
+      },
+      {
+        "command": "kiota.migrateFromLockFile",
+        "title": "%kiota.migrateClients.title%"
       }
+
     ],
     "languages": [
       {

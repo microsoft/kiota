@@ -9,6 +9,8 @@ import { FilterDescriptionCommand } from './commands/FilterDescriptionCommand';
 import { DisplayGenerationResultsCommand } from './commands/generate-client/DisplayGenerationResultsCommand';
 import { GenerateClientCommand } from './commands/generate-client/GenerateClientCommand';
 import { KiotaStatusCommand } from "./commands/KiotaStatusCommand";
+import { MigrateFromLockFileCommand } from './commands/MigrateFromLockFileCommand';
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddToSelectedEndpointsCommand';
 import { OpenDocumentationPageCommand } from "./commands/open-api-tree-node/OpenDocumentationPageCommand";
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-node/RemoveAllFromSelectedEndpointsCommand';
@@ -19,11 +21,11 @@ import { SearchOrOpenApiDescriptionCommand } from './commands/SearchOrOpenApiDes
 import { SelectLockCommand } from './commands/SelectLockCommand';
 import { UpdateClientsCommand } from './commands/UpdateClientsCommand';
 
-import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-node/AddAllToSelectedEndpointsCommand';
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getExtensionSettings } from "./extensionSettings";
 import { UriHandler } from './handlers/uri.handler';
 import { ClientOrPluginProperties } from "./kiotaInterop";
+import { checkForLockFileAndPrompt } from './migrateFromLockFile';
 import { CodeLensProvider } from "./providers/codelensProvider";
 import { DependenciesViewProvider } from './providers/dependenciesViewProvider';
 import { OpenApiTreeNode, OpenApiTreeProvider } from './providers/openApiTreeProvider';
@@ -63,6 +65,7 @@ export async function activate(
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
   const displayGenerationResultsCommand = new DisplayGenerationResultsCommand(context, openApiTreeProvider);
+  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const uriHandler = new UriHandler(context, openApiTreeProvider);
   const codeLensProvider = new CodeLensProvider();
@@ -70,6 +73,7 @@ export async function activate(
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
 
   await loadTreeView(context);
+  await checkForLockFileAndPrompt(context);
 
   context.subscriptions.push(
     reporter,
@@ -82,6 +86,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, selectLockCommand.toString(), (x) => selectLockCommand.execute(x)),
     registerCommandWithTelemetry(reporter, editPathsCommand.toString(), async () => editPathsCommand.execute()),
     registerCommandWithTelemetry(reporter, regenerateCommand.toString(), async () => regenerateCommand.execute()),
+    registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.toString(), async (uri: vscode.Uri) => migrateFromLockFileCommand.execute(uri)),
 
     registerCommandWithTelemetry(reporter, openDocumentationPageCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => openDocumentationPageCommand.execute(openApiTreeNode)),
     registerCommandWithTelemetry(reporter, addToSelectedEndpointsCommand.toString(), (openApiTreeNode: OpenApiTreeNode) => addToSelectedEndpointsCommand.execute(openApiTreeNode)),

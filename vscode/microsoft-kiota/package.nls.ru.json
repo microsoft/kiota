@@ -16,5 +16,19 @@
   "kiota.openApiExplorer.openDescription.title": "Открыть описание API",
   "kiota.searchLock.title": "Искать файл блокировки",
   "kiota.openApiExplorer.filterDescription.title": "Отфильтровать описание API",
-  "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации"
+  "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации",
+  "kiota.generate.backingStore.description": "Включить резервное хранилище для моделей",
+  "kiota.generate.excludeBackwardCompatible.description": "Исключить совместимые с предыдущими версиями и устаревшие активы из сгенерированного результата. Следует использовать для новых клиентов",
+  "kiota.cleanOutput.description": "Удалить все файлы из каталога вывода перед созданием файлов кода",
+  "kiota.generate.disabledValidationRules.description": "Правила проверки описания OpenAPI для отключения: \nDivergentResponseSchema\nGetWithBody\nInconsistentTypeFormatPair\nKnownAndNotSupportedFormats\nMissingDiscriminator\nMultipleServerEntries\nNoContentWithBody\nNoServerEntry\nUrlFormEncodedComplex\nValidationRuleSetExtensions\nAll",
+  "kiota.clearCache.description": "Очистить любые кэшированные данные",
+  "kiota.generate.serializer.description": "Полностью квалифицированные имена классов для сериализаторов",
+  "kiota.generate.deserializer.description": "Полностью квалифицированные имена классов для десериализаторов",
+  "kiota.generate.structuredMimeTypes.description": "Типы MIME и предпочтения для использования при создании структурированных моделей данных. Согласно нотации заголовка Accept RFC9110.",
+  "kiota.generate.includeAdditionalData.description": "Будет включено свойство 'Дополнительные данные' для моделей",
+  "kiota.workspace.name": "Мое рабочее пространство",
+  "kiota.openApiExplorer.regenerateButton.title": "Пересоздать",
+  "kiota.openApiExplorer.editPaths.title": "Изменить пути",
+  "kiota.openApiExplorer.refresh.title": "Обновить",
+  "kiota.migrateClients.title": "Перенести API-клиенты"
 }

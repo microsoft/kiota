@@ -7840,6 +7840,80 @@ components:
         Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
         Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
     }
+
+    [Fact]
+    public async Task InheritanceWithAllOfBaseClassNoAdditionalProperties()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryResult'
+components:
+  schemas:
+    microsoft.graph.directoryResult:
+      required: ['fstype']
+      oneOf:
+        - $ref: '#/components/schemas/microsoft.graph.file'
+        - $ref: '#/components/schemas/microsoft.graph.folder'
+        - $ref: '#/components/schemas/microsoft.graph.link'
+      properties:
+        fstype:
+          type: string
+      discriminator:
+        propertyName: 'fstype'
+        mapping:
+          'file': '#/components/schemas/microsoft.graph.file'
+          'folder': '#/components/schemas/microsoft.graph.folder'
+          'link': '#/components/schemas/microsoft.graph.link'
+    microsoft.graph.baseDirectoryObject:
+      properties:
+        path:
+          type: string
+    microsoft.graph.file:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.baseDirectoryObject'
+    microsoft.graph.folder:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.baseDirectoryObject'
+    microsoft.graph.link:
+      allOf:
+        - '$ref': '#/components/schemas/microsoft.graph.baseDirectoryObject'
+      properties:
+        target:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify that all three classes referenced by the discriminator inherit from baseDirectoryObject
+        var folder = codeModel.FindChildByName<CodeClass>("Folder");
+        Assert.NotNull(folder.StartBlock.Inherits);
+        Assert.Equal("baseDirectoryObject", folder.StartBlock.Inherits.Name);
+
+        var file = codeModel.FindChildByName<CodeClass>("File");
+        Assert.NotNull(file.StartBlock.Inherits);
+        Assert.Equal("baseDirectoryObject", file.StartBlock.Inherits.Name);
+
+        var link = codeModel.FindChildByName<CodeClass>("Link");
+        Assert.NotNull(link.StartBlock.Inherits);
+        Assert.Equal("baseDirectoryObject", link.StartBlock.Inherits.Name);
+    }
+
     [Fact]
     public async Task NestedIntersectionTypeAllOf()
     {

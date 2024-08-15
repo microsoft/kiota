@@ -70,5 +70,12 @@
   "Generating manifest...": "Generando manifesto...",
   "Generating plugin...": "Generando plugin...",
   "Re-generating client...": "Re-generando cliente...",
-  "Re-generating plugin...": "Re-generando plugin..."
+  "Re-generating plugin...": "Re-generando plugin...",
+  "Please migrate your API clients to Kiota workspace.":"",
+  "Remind me later":"",
+  "Migrating your API clients...":"",
+  "Migration completed, but no changes were detected.":"",
+  "Migration failed":"",
+  "Api clients migrated successfully!":"",
+  "Could not determine the workspace folder.": "No se pudo determinar la carpeta de espacio de trabajo."
 }

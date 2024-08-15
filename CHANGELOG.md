@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Reverts modification of responses in output openApi file when generating plugings [#4945](https://github.com/microsoft/kiota/issues/4945)
+- Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
+- Reverts modification of responses in output openApi file when generating plugins [#4945](https://github.com/microsoft/kiota/issues/4945)
+- Expand properties types with null type for Typescript. [#4993](https://github.com/microsoft/kiota-typescript/issues/1188)
 
 ## [1.17.0] - 2024-08-09
 
@@ -30,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug in Go where certain namespaces were escaped unexpectedly. [#5012](https://github.com/microsoft/kiota/issues/5012)
 - Exclude the `x-openai-isConsequential` extension from cleanup. [#4962](https://github.com/microsoft/kiota/issues/4962)
 - Fixed file name and namespace sanitization when generating plugins. [#5019](https://github.com/microsoft/kiota/issues/5019)
-- Added TypeScript typecheck suppression to generated method prototype, where anused arguments can cause build fail in projects which use `noUnusedLocals: true` compiler option. [#5095](https://github.com/microsoft/kiota/issues/5095)
+- Added TypeScript type check suppression to generated method prototype, where unused arguments can cause build fail in projects which use `noUnusedLocals: true` compiler option. [#5095](https://github.com/microsoft/kiota/issues/5095)
 - Fixed a bug where defensive programming would consider some default values as invalid in Python.
 
 ## [1.16.0] - 2024-07-05
@@ -101,8 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where warnings about discriminator not being inherited were generated [#4761](https://github.com/microsoft/kiota/issues/4761)
 - Fix scalar member composed type serialization in PHP [#2827](https://github.com/microsoft/kiota/issues/2827)
 - Trims unused components from output openApi document when generating plugins [#4672](https://github.com/microsoft/kiota/issues/4672)
-- Fixes missing imports for UntypedNode when backingstore is enabled in Java.
-- Renames `name_to_be_defined` plugin type to `apiplugin` [#4713](https://github.com/microsoft/kiota/issues/4713)
+- Fixes missing imports for UntypedNode when BackingStore is enabled in Java.
+- Renames `name_to_be_defined` plugin type to `APIplugin` [#4713](https://github.com/microsoft/kiota/issues/4713)
 
 ## [1.14.0] - 2024-05-02
 
@@ -132,14 +134,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a warning message in the CLI when using preview languages. [#4316](https://github.com/microsoft/kiota/issues/4316)
 - Added support for handling untyped Json content in C#,Golang, TypeScript and Java. [#2319](https://github.com/microsoft/kiota/issues/2319)
-- Added TypeScript typecheck suppression to `.ts` files where unused imports cause build fail in projects which use `noUnusedLocals: true` compiler option. [#4397](https://github.com/microsoft/kiota/issues/4397)
+- Added TypeScript type check suppression to `.ts` files where unused imports cause build fail in projects which use `noUnusedLocals: true` compiler option. [#4397](https://github.com/microsoft/kiota/issues/4397)
 - Fixed TypeScript generation bug when returning enums from endpoints. [#4426](https://github.com/microsoft/kiota/issues/4426)
 
 ### Changed
 
 - Fixed Go generation bug when dealing with scalar collection body. [#4380](https://github.com/microsoft/kiota/issues/4380)
 - Fixed a bug where multiple Visual Studio Code instances would make the extension install/update fail. [#3686](https://github.com/microsoft/kiota/issues/3686)
-- Fixed a bug where models properties named "additionalData" or "backingstore" would be ignored. [#4224](https://github.com/microsoft/kiota/issues/4224)
+- Fixed a bug where models properties named "additionalData" or "BackingStore" would be ignored. [#4224](https://github.com/microsoft/kiota/issues/4224)
 - PREVIEW: Renamed the config commands to workspace. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved preview configuration files to the .kiota directory. [#4310](https://github.com/microsoft/kiota/issues/4310)
 - PREVIEW: Moved the copy descriptions to dedicated folders. [#4310](https://github.com/microsoft/kiota/issues/4310)
@@ -254,7 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where path parameters deduplication would create collisions on sub path segments. [#3757](https://github.com/microsoft/kiota/issues/3757)
 - Moved from net7 to net8.
 - Removed windows OS from docker multi-platform image to align with [dotnet changes](https://github.com/dotnet/dotnet-docker/issues/4492).
-- Fixed a bug where the emitted CSharp would not be compatible with netstandad2.0. [#3829](https://github.com/microsoft/kiota/issues/3829)
+- Fixed a bug where the emitted CSharp would not be compatible with netstandard2.0. [#3829](https://github.com/microsoft/kiota/issues/3829)
 - Fixed a bug where import statements for additionalDataHolder and enumSet are missing when BackingStore is enabled in java. [#3643](https://github.com/microsoft/kiota/pull/3643)
 - Fixed an issue where Kiota's regex's might time out. [#3797](https://github.com/microsoft/kiota/issues/3797)
 - Fixed a bug where getBackingStore method body was malformed for java. [#3643](https://github.com/microsoft/kiota/pull/3643)
@@ -472,7 +474,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Changed python model classes to dataclasses. [#2684](https://github.com/microsoft/kiota/issues/2684)
+- Changed python model classes to data classes. [#2684](https://github.com/microsoft/kiota/issues/2684)
 - Fix issue with command conflicts causing CLI crashes. (Shell)
 - Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
 - Fixed including unused imports in Go [#2699](https://github.com/microsoft/kiota/pull/2410)
@@ -656,7 +658,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
 - The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
 - Fixed a bug in ruby where file names or paths could be too long to be packaged.
-- Fixed a bug where models descriptions would be undeterministic. [#2130](https://github.com/microsoft/kiota/issues/2130)
+- Fixed a bug where models descriptions would be non-deterministic. [#2130](https://github.com/microsoft/kiota/issues/2130)
 - Fixed a bug in dotnet where default values for Enum properties with special characters would not match the model. [#2091](https://github.com/microsoft/kiota/issues/2091)
 - Sets the base url to make use of request information easier in CSharp/Java/TypeScript/Go/Ruby. [#2061](https://github.com/microsoft/kiota/issues/2061)
 - Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
@@ -760,7 +762,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for scalar request bodies in PHP [#1937](https://github.com/microsoft/kiota/pull/1937)
 - Added accept header for all schematized requests Python. [#1617](https://github.com/microsoft/kiota/issues/1617)
 - Added optional backing store support for PHP. [#1976](https://github.com/microsoft/kiota/pull/1976)
-- Fixed a bug where OdataErrors had wrong inherited class name in Python.
+- Fixed a bug where ODataErrors had wrong inherited class name in Python.
 - Fixed a bug where empty path parameters dictionary would throw an error in request builders in Python.
 
 ### Changed
@@ -793,7 +795,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for enum and collection of enum return types for Java.
 - Added support for types with more than 500 discriminator entries in Java.
 - Added a confirmation message once the generation is successful. [#1898](https://github.com/microsoft/kiota/issues/1898)
-- Added colour scheme for all console messages to improve readability. [#1895](https://github.com/microsoft/kiota/issues/1895)
+- Added color scheme for all console messages to improve readability. [#1895](https://github.com/microsoft/kiota/issues/1895)
 
 ### Changed
 
@@ -807,7 +809,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where info and show commands would crash in case of invalid description URL. [#1894](https://github.com/microsoft/kiota/issues/1894)
 - Show command now reads descriptions directly from APIs.guru instead of their origin. [#1897](https://github.com/microsoft/kiota/issues/1897)
 - Fixed a classnames having the same name as extensions would cause generation to fail. [#1892](https://github.com/microsoft/kiota/issues/1892)
-- Fixed an issue where CSharp defensive programing would use string.IsNullOrEmpty for collections parameters.
+- Fixed an issue where CSharp defensive programming would use string.IsNullOrEmpty for collections parameters.
 
 ## [0.6.0] - 2022-10-06
 
@@ -861,7 +863,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where Go clients would panic in case of nil response value.
-- Fixed a bug to properly add request headers to Nethttp requests in Ruby.
+- Fixed a bug to properly add request headers to NetHttp requests in Ruby.
 - Fixed a bug to properly reject invalid URLs in Ruby.
 - Fixed an issue with require statements being generated instead of require relative in Ruby.
 - Updated AdditionDataHolder with the correct namespace. (Ruby)
@@ -887,7 +889,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
 - Fixed a bug where Java would not convert date types for query parameters.
 - Fixed a bug where Java doc comments could contain invalid characters.
-- Fixed a bug where function parameters would be reodered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
+- Fixed a bug where function parameters would be reordered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
 
 ## [0.4.0] - 2022-08-18
 
@@ -907,11 +909,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where collections types would generate invalid return types in CSharp.
 - Fixed a bug where a nullable entry in anyOf schemas would create unnecessary composed types.
-- Removed duplicate properties defined in base types from model serialization and deserialization methods and initialise property defaults in constructor. [#1737](https://github.com/microsoft/kiota/pull/1737)
+- Removed duplicate properties defined in base types from model serialization and deserialization methods and initialize property defaults in constructor. [#1737](https://github.com/microsoft/kiota/pull/1737)
 - Fixed a bug where the generated code had incorrect casing within a method (Ruby). [#1672](https://github.com/microsoft/kiota/issues/1672)
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
-- Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
+- Changed format of datetime in Go to be converted to ISO 8601 by default when place in path parameters(Go)
 - Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
 - Reduce code verbosity on Go Getters and Setters. [G0#26](https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26)
 
@@ -935,7 +937,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where query parameter types would not consider the format. [#1721](https://github.com/microsoft/kiota/issues/1721)
 - Fixed a bug where discriminator mappings across namespaces could create circular dependencies in Go. [#1712](https://github.com/microsoft/kiota/issues/1712)
 - Fixed a bug where Go binary downloads would try to parse a structured object.
-- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
+- Aligned mime types model generation behavior for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
 - Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
 - Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
@@ -1136,9 +1138,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BREAKING: Remove synchronous version of WriteOutput that accepts a string input (Shell) #1326
 - BREAKING: Remove synchronous version of FilterOutput that accepts a string input (Shell) #1326
 - Fixed a bug where error responses without schema would make generation fail #1272
-- Fixed indeterministic parameters ordering #1358
-- Fixed indeterministic error mappings ordering #1358
-- Fixed indeterministic discriminator mapping ordering #1358
+- Fixed non-deterministic parameters ordering #1358
+- Fixed non-deterministic error mappings ordering #1358
+- Fixed non-deterministic discriminator mapping ordering #1358
 - Fixed race condition when removing child items leading to erratic code generation results #1358
 - Replaced models namespaces flattening by circular properties trimming in Go #1358
 - Fixed a bug where inherited interfaces would be missing imports in Go #1358
@@ -1235,7 +1237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
 - Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet.
-- Fixes a bug where deserialzation of enums would throw an ArgumentException if the member didn't exist in dotnet.
+- Fixes a bug where deserialization of enums would throw an ArgumentException if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08
 
@@ -1273,7 +1275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renames middlewareoption into requestoption to stay agnostic from implementation #635
+- Renames MiddlewareOption into RequestOption to stay agnostic from implementation #635
 - Aligned http packages on naming convention #444
 
 ## [0.0.9] - 2021-10-01
@@ -1306,7 +1308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes an issue where type could conflict with namespace names and prevent CSharp compilation #573
 - Fixes an issue where primitive types would map to the wrong serialization method in dotnet #573
 - Fixes an issue where union models would not be able to deserialize because of missing members #573
-- Fixes an issue where request builder methods would refer to unexisting properties in dotnet #573
+- Fixes an issue where request builder methods would refer to non-existent properties in dotnet #573
 - Fixes an issue where duplicated symbols for different imports would make java compilation fail #573
 - Adds missing type mappings in java #573
 - Fixes an issue where Go generation could use reserved keywords #573
@@ -1414,4 +1416,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-

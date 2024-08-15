@@ -28,5 +28,7 @@
   "kiota.generate.includeAdditionalData.description": "Incluera la propriété 'AdditionalData' pour les modèles générés.",
   "kiota.workspace.name": "Mon espace de travail",
   "kiota.openApiExplorer.regenerateButton.title": "Générer de nouveau",
-  "kiota.openApiExplorer.editPaths.title": "Modifier les chemins"
+  "kiota.openApiExplorer.editPaths.title": "Modifier les chemins",
+  "kiota.openApiExplorer.refresh.title": "Rafraîchir",
+  "kiota.migrateClients.title": "Migrer les clients d'API"
 }

@@ -26,7 +26,9 @@
   "kiota.generate.deserializer.description": "デシリアライザの完全修飾クラス名",
   "kiota.generate.structuredMimeTypes.description": "構造化データモデル生成に使用するMIMEタイプと設定（RFC 9110のAcceptヘッダー表記）",
   "kiota.generate.includeAdditionalData.description": "モデルのための“AdditionalData”プロパティを含める",
-  "kiota.workspace.name": "My Workspace",
-  "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
-  "kiota.openApiExplorer.editPaths.title": "Edit paths"
+  "kiota.workspace.name": "ワークスペース",
+  "kiota.openApiExplorer.regenerateButton.title": "再生成",
+  "kiota.openApiExplorer.editPaths.title": "パスを編集",
+  "kiota.openApiExplorer.refresh.title": "リフレッシュ",
+  "kiota.migrateClients.title": "APIクライアントを移行"
 }
