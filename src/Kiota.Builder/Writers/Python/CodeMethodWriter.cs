@@ -43,7 +43,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name))
             {
                 var parameterName = parameter.Name;
-                writer.StartBlock($"if not {parameterName}:");
+                writer.StartBlock($"if {parameterName} is None:");
                 writer.WriteLine($"raise TypeError(\"{parameterName} cannot be null.\")");
                 writer.DecreaseIndent();
             }
