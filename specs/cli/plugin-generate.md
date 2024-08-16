@@ -2,7 +2,7 @@
 
 ## Description
 
-Now that we have a `workspace.json` file, all the parameters required to generate the plugins are stored in the file. The `kiota plugin generate` command will read the `workspace.json` file and generate the output files for each of the available plugins. 
+Now that we have a `workspace.json` file, all the parameters required to generate the plugins are stored in the file. The `kiota plugin generate` command will read the `workspace.json` file and generate the output files for each of the available plugins.
 
 It's also possible to specify for which plugin the output files should be generated. This is useful when there are multiple plugin plugins. The `kiota plugin generate --plugin-name "Myplugin"` command will read the `workspace.json` file and generate the output files for the specified plugin. If it can't find the specified plugin, it will throw an error.
 
