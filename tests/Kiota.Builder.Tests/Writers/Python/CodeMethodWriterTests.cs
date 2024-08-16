@@ -2086,7 +2086,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if not original_name:", result);
+        Assert.Contains("if original_name is None:", result);
         Assert.Contains("if original_name == \"select\":", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("if original_name == \"expand\":", result);
@@ -2124,7 +2124,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if not original_name:", result);
+        Assert.Contains("if original_name is None:", result);
         Assert.Contains("if original_name == \"start_date_time\":", result);
         Assert.Contains("return \"startDateTime\"", result);
         Assert.Contains("return original_name", result);
