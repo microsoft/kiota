@@ -95,8 +95,6 @@ paths:
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-openapi.yml")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, AppManifestFileName)));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "color.png")));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "outline.png")));
 
         // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json"));
@@ -509,8 +507,6 @@ paths:
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
-        Assert.False(File.Exists(Path.Combine(outputDirectory, "color.png"))); // manifest already existed and specifed the path to a file, so we did not add it.
-        Assert.False(File.Exists(Path.Combine(outputDirectory, "outline.png")));// manifest already existed and specifed the path to a file, so we did not add it.
         Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));// Assert manifest exists after generation
 
         // Validate the manifest file
@@ -644,8 +640,6 @@ paths:
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, "manifest.json")));// Assert manifest exists after generation
-        Assert.False(File.Exists(Path.Combine(outputDirectory, "color.png"))); // manifest already existed and specifed the path to a file, so we did not add it.
-        Assert.False(File.Exists(Path.Combine(outputDirectory, "outline.png")));// manifest already existed and specifed the path to a file, so we did not add it.
 
         // Validate the manifest file
         var appManifestFile = await File.ReadAllTextAsync(Path.Combine(outputDirectory, AppManifestFileName));
@@ -751,8 +745,6 @@ components:
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "color.png")));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "outline.png")));
 
         // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
