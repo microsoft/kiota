@@ -146,7 +146,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} === undefined) return;");
+        writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
         WriteDiscriminatorSwitchBlock(discriminatorInfo, paramName, codeElement, writer);
     }
 
@@ -190,7 +190,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteSerializationFunctionForTypeComposedOfPrimitives(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} === undefined) return;");
+        writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
         writer.StartBlock($"switch (typeof {paramName}) {{");
 
         foreach (var type in composedType.GetPrimitiveTypes(IsComposedPrimitive))
@@ -220,7 +220,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (method.Parameters.OfKind(CodeParameterKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string requestAdapterArgumentName) return;
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.StartBlock($"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === \"\") {{");
+            writer.StartBlock($"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterArgumentName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
         }

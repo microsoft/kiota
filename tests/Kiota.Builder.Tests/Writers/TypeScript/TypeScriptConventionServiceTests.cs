@@ -22,7 +22,7 @@ public class TypeScriptConventionServiceTests
         var result = TypeScriptConventionService.TranslateTypescriptType(composedType);
         Assert.Equal("Test", result);
     }
-    
+
     public CodeType CurrentType()
     {
         CodeType currentType = new CodeType { Name = "SomeType" };
