@@ -20,7 +20,9 @@ internal class PublicApiExportService
     internal async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
         var filePath = Path.Combine(OutputDirectoryPath, DomExportFileName);
-        using var fileStream = File.Create(filePath);
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+        await using var fileStream = File.Create(filePath);
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
         var content = string.Join(Environment.NewLine, entries);
         var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
