@@ -83,16 +83,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<" : string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
-        var accessorPrefix = code.Kind switch
-        {
-            CodeMethodKind.Getter => "get ",
-            CodeMethodKind.Setter => "set ",
-            _ => string.Empty
-        };
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && !string.IsNullOrEmpty(returnType);
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         var openBracketSuffix = code.Parent is CodeClass || isFunction ? " {" : ";";
-        writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
+        writer.WriteLine($"{accessModifier}{functionPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
     }
 
     internal static void WriteMethodTypecheckIgnoreInternal(CodeMethod code, LanguageWriter writer)
