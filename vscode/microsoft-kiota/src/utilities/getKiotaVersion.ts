@@ -1,4 +1,4 @@
-import { connectToKiota } from "./kiotaInterop";
+import { connectToKiota } from "../kiotaInterop";
 import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
 

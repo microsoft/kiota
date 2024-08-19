@@ -1,9 +1,9 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
-import { KIOTA_WORKSPACE_FILE } from './constants';
-import { getWorkspaceJsonPath } from './util';
+import * as path from 'path';
+import * as vscode from 'vscode';
 
+import { KIOTA_WORKSPACE_FILE } from '../constants';
+import { getWorkspaceJsonPath } from '../util';
 
 export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   public isWSPresent: boolean;

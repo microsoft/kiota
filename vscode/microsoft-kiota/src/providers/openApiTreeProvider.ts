@@ -4,21 +4,15 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import * as crypto from 'crypto';
-import { 
-    ClientObjectProperties, 
-    ClientOrPluginProperties, 
-    connectToKiota, 
-    KiotaGetManifestDetailsConfiguration, 
-    KiotaLogEntry, 
-    KiotaManifestResult, 
-    KiotaOpenApiNode, 
-    KiotaShowConfiguration, 
-    KiotaShowResult, 
-    ConfigurationFile, 
-    PluginObjectProperties } from './kiotaInterop';
-import { ExtensionSettings } from './extensionSettings';
-import { treeViewId } from './constants';
-import { updateTreeViewIcons } from './util';
+
+import { treeViewId } from '../constants';
+import { ExtensionSettings } from '../extensionSettings';
+import {
+    ConfigurationFile, ClientOrPluginProperties, ClientObjectProperties, PluginObjectProperties,
+    KiotaLogEntry, KiotaOpenApiNode, connectToKiota, KiotaGetManifestDetailsConfiguration, KiotaManifestResult,
+    KiotaShowConfiguration, KiotaShowResult
+} from '../kiotaInterop';
+import { updateTreeViewIcons } from '../util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
@@ -244,7 +238,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const currentStateHash = this.hashDescription(this.rawRootNode);
         return currentStateHash !== this.initialStateHash;
     }
-    
+
     public resetInitialState(): void {
         this.initialStateHash = this.hashDescription(this.rawRootNode);
     }
@@ -339,7 +333,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                         clientNameOrPluginName
                     );
                 }
-               await updateTreeViewIcons(treeViewId, true, false);
+                await updateTreeViewIcons(treeViewId, true, false);
             }
         }
     }
