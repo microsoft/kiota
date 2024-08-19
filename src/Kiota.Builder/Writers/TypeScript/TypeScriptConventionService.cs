@@ -92,7 +92,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(parameter);
         var includeCollectionInformation = ShouldIncludeCollectionInformationForParameter(parameter);
         var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: includeCollectionInformation, inlineComposedTypeString: true);
-        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives();
+        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives(IsComposedPrimitive);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
@@ -218,6 +218,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             _ => false,
         };
     }
+
+    public static bool IsComposedPrimitive(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase));
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")

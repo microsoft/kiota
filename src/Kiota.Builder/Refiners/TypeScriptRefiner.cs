@@ -324,7 +324,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     {
         if (composedType is null || FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } function) return;
 
-        if (composedType.IsComposedOfPrimitives())
+        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
         {
             function.OriginalLocalMethod.ReturnType = composedType;
             // Remove the deserializer import statement if its not being used
@@ -337,7 +337,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
 
         // Add the key parameter if the composed type is a union of primitive values
-        if (composedType.IsComposedOfPrimitives())
+        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
             function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
 
         // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
@@ -347,7 +347,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     private static void AddSerializationUsingsForCodeComposed(CodeComposedTypeBase composedType, CodeFunction function, CodeMethodKind kind)
     {
         // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        foreach (var type in composedType.GetNonPrimitiveTypes())
+        foreach (var type in composedType.GetNonPrimitiveTypes(IsComposedPrimitive))
         {
             if (type.TypeDefinition is CodeInterface codeInterface && codeInterface.OriginalClass is CodeClass codeClass)
             {
@@ -381,7 +381,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
 
         // Deserializer function is not required for primitive values
-        if (composedType.IsComposedOfPrimitives())
+        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
         {
             children.Remove(deserializerMethod);
             codeInterface.RemoveChildElement(deserializerMethod);
