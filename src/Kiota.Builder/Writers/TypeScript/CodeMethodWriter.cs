@@ -92,4 +92,9 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         var openBracketSuffix = code.Parent is CodeClass || isFunction ? " {" : ";";
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
     }
+
+    internal static void WriteMethodTypecheckIgnoreInternal(CodeMethod code, LanguageWriter writer)
+    {
+        writer.WriteLine("// @ts-ignore");
+    }
 }

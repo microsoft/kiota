@@ -31,6 +31,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         CodeMethodWriter.WriteMethodDocumentationInternal(codeElement.OriginalLocalMethod, writer, isVoid, conventions);
+        CodeMethodWriter.WriteMethodTypecheckIgnoreInternal(codeElement.OriginalLocalMethod, writer);
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, isVoid, conventions, true);
 
         writer.IncreaseIndent();
@@ -379,6 +380,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             } param)
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
+        writer.StartBlock($"if ({param.Name.ToFirstCharacterLowerCase()}) {{");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
             writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
@@ -391,6 +393,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+        writer.CloseBlock();
     }
 
     private static bool IsCollectionOfEnum(CodeProperty property)

@@ -95,6 +95,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives();
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
+            (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
+                => $" | null = {parameter.DefaultValue}",
             (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
             (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
             _ => string.Empty,

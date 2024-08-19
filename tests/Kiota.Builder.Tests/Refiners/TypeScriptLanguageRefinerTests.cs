@@ -379,12 +379,12 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var serializationFunction = codeFile.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(deserializerFunction);
         Assert.NotNull(serializationFunction);
-        Assert.Empty(interFaceModel.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => AdditionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
+        Assert.DoesNotContain(interFaceModel.Properties, x => HttpCoreDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(interFaceModel.Properties, x => FactoryDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(interFaceModel.Properties, x => DateTimeOffsetDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(interFaceModel.Properties, x => AdditionalDataDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(interFaceModel.Properties, x => PathParametersDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(interFaceModel.Properties, x => PathParametersDefaultValue.Equals(x.DefaultValue));
         Assert.Contains(deserializerFunction.OriginalLocalMethod.Parameters, x => interFaceModel.Name.Equals(x.Type.Name));
         Assert.Contains(serializationFunction.OriginalLocalMethod.Parameters, x => "SerializationWriter".Equals(x.Type.Name));
 
@@ -591,8 +591,8 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var source1Interface = modelCodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
         var source2Interface = modelCodeFile.Interfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
 
-        Assert.Empty(modelInterface.Usings.Where(x => x.Declaration?.TypeDefinition == source2Interface));
-        Assert.Empty(modelInterface.Usings.Where(x => x.Declaration?.TypeDefinition == source1Interface));
+        Assert.DoesNotContain(modelInterface.Usings, x => x.Declaration?.TypeDefinition == source2Interface);
+        Assert.DoesNotContain(modelInterface.Usings, x => x.Declaration?.TypeDefinition == source1Interface);
     }
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()

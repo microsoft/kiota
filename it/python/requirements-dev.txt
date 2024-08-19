@@ -30,7 +30,7 @@ lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.11.0
+mypy==1.11.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -54,7 +54,7 @@ tomli==2.0.1 ; python_version < '3.11'
 
 tomli-w==1.0.0 ; python_version >= '3.7'
 
-tomlkit==0.13.0 ; python_version >= '3.7'
+tomlkit==0.13.2 ; python_version >= '3.7'
 
 typing-extensions==4.12.2 ; python_version >= '3.7'
 
@@ -64,9 +64,9 @@ wrapt==1.15.0 ; python_version < '3.11'
 
 yapf==0.40.2
 
-zipp==3.19.2 ; python_version >= '3.7'
+zipp==3.20.0 ; python_version >= '3.7'
 
-aiohttp==3.9.5 ; python_version >= '3.6'
+aiohttp==3.10.3 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
@@ -74,13 +74,13 @@ anyio==4.4.0 ; python_version >= '3.7'
 
 async-timeout==4.0.3 ; python_version >= '3.6'
 
-attrs==23.2.0 ; python_version >= '3.7'
+attrs==24.2.0 ; python_version >= '3.7'
 
 azure-core==1.30.2 ; python_version >= '3.7'
 
 azure-identity==1.17.1
 
-cffi==1.16.0
+cffi==1.17.0
 
 cryptography==43.0.0 ; python_version >= '3.7'
 
@@ -102,7 +102,7 @@ microsoft-kiota-abstractions==1.3.3
 
 microsoft-kiota-authentication-azure==1.0.0
 
-microsoft-kiota-http==1.3.2
+microsoft-kiota-http==1.3.3
 
 microsoft-kiota-serialization-json==1.3.0
 
@@ -122,7 +122,7 @@ portalocker==2.10.1 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.22
 
-pyjwt[crypto]==2.8.0 ; python_version >= '3.7'
+pyjwt[crypto]==2.9.0 ; python_version >= '3.7'
 
 python-dateutil==2.9.0.post0 ; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'
 
