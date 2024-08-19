@@ -71,11 +71,11 @@
   "Generating plugin...": "Generando il plugin...",
   "Re-generating client...": "Ri-generando il client...",
   "Re-generating plugin...": "Ri-generando il plugin...",
-  "Please migrate your API clients to Kiota workspace.":"",
-  "Remind me later":"",
-  "Migrating your API clients...":"",
-  "Migration completed, but no changes were detected.":"",
-  "Migration failed":"",
-  "Api clients migrated successfully!":"",
+  "Please migrate your API clients to Kiota workspace.":"Per favore effettua la migrazione dei tuoi client API al workspace Kiota.",
+  "Remind me later":"Ricordamelo dopo",
+  "Migrating your API clients...":"Migrazione client API in corso...",
+  "Migration completed, but no changes were detected.":"Migrazione completa, nessuna modifica rilevata.",
+  "Migration failed":"Migrazione fallita",
+  "API clients migrated successfully!":"Client API migrati con successo!",
   "Could not determine the workspace folder.": "Impossibile determinare la cartella di lavoro."
 }

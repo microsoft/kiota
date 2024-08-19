@@ -70,11 +70,11 @@
   "Generating plugin...": "正在生成插件...",
   "Re-generating client...": "重新生成客户端...",
   "Re-generating plugin...": "正在重新生成插件...",
-  "Please migrate your API clients to Kiota workspace.":"",
-  "Remind me later":"",
-  "Migrating your API clients...":"",
-  "Migration completed, but no changes were detected.":"",
-  "Migration failed":"",
-  "Api clients migrated successfully!":"",
+  "Please migrate your API clients to Kiota workspace.":"请将您的 API 客户端迁移到 Kiota 工作区",
+  "Remind me later":"稍后提醒我",
+  "Migrating your API clients...":"正在迁移您的 API 客户端...",
+  "Migration completed, but no changes were detected.":"迁移已完成，但未检测到任何更改",
+  "Migration failed":"迁移失败",
+  "API clients migrated successfully!":"Api客户端迁移成功!",
   "Could not determine the workspace folder.": "无法确定工作区文件夹"
 }

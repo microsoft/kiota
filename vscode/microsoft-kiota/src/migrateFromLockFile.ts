@@ -46,7 +46,7 @@ export function displayMigrationMessages(logEntries: KiotaLogEntry[]) {
 
     if (successEntries.length > 0) {
         successEntries.forEach(entry => {
-            vscode.window.showInformationMessage(vscode.l10n.t("Api clients migrated successfully!"));
+            vscode.window.showInformationMessage(vscode.l10n.t("API clients migrated successfully!"));
             vscode.commands.executeCommand('kiota.workspace.refresh');
             vscode.commands.executeCommand('kiota.workspace.openWorkspaceFile', workspaceJsonUri);
         });

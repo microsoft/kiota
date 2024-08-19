@@ -71,11 +71,11 @@
   "Generating plugin...": "Inatengeneza programu-jalizi...",
   "Re-generating client...": "Inatengeneza mteja upya...",
   "Re-generating plugin...": "Inatengeneza programu-jalizi upya ...",
-  "Please migrate your API clients to Kiota workspace.":"",
-  "Remind me later":"",
-  "Migrating your API clients...":"",
-  "Migration completed, but no changes were detected.":"",
-  "Migration failed":"",
-  "Api client migrateds successfully!":"",
+  "Please migrate your API clients to Kiota workspace." : "Tafadhali hamisha wateja wako wa API kwenye nafasi ya kazi ya Kiota.",
+  "Remind me later": "Nikumbushe baadaye",
+  "Migrating your API clients..." : "Inahamisha wateja wako wa API...",
+  "Migration completed, but no changes were detected." : "Uhamisho umekamilika, lakini hakuna mabadiliko yaligunduliwa.",
+  "Migration failed" : "Uhamisho ulishindikana",
+  "API client migrateds successfully!" : "Wateja wa API wamehamishwa kwa mafanikio!",
   "Could not determine the workspace folder.": "Haiwezekani kubaini folda ya kazi."
 }

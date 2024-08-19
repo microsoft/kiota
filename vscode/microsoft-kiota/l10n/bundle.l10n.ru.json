@@ -70,11 +70,11 @@
   "Generating plugin...": "Генерация плагина...",
   "Re-generating client...": "Перегенерация клиента...",
   "Re-generating plugin...": "Перегенерация плагина...",
-  "Please migrate your API clients to Kiota workspace.":"",
-  "Remind me later":"",
-  "Migrating your API clients...":"",
-  "Migration completed, but no changes were detected.":"",
-  "Migration failed":"",
-  "Api clients migrated successfully!":"",
+  "Please migrate your API clients to Kiota workspace.":"Пожалуйста, перенесите ваши клиенты API в рабочее пространство Kiota.",
+  "Remind me later":"Напомнить позже",
+  "Migrating your API clients...":"Миграция ваших клиентов API...",
+  "Migration completed, but no changes were detected.":"Миграция завершена, но изменения не обнаружены.",
+  "Migration failed":"Миграция не удалась",
+  "API clients migrated successfully!" : "Клиенты API успешно перенесены!",
   "Could not determine the workspace folder.": "Не удалось определить папку рабочего пространства."
 }

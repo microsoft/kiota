@@ -76,6 +76,6 @@
   "Migrating your API clients...": "Migration de vos clients en cours...",
   "Migration completed, but no changes were detected.": "Migration terminée, mais aucun changement n'a été détecté.",
   "Migration failed": "Echec de la migration",
-  "Api clients migrated successfully!": "Clients d'API migrés avec succès!",
+  "API clients migrated successfully!": "Clients d'API migrés avec succès!",
   "Could not determine the workspace folder.": "Impossible de déterminer le dossier de l'espace de travail."
 }

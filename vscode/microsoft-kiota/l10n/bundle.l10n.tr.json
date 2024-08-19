@@ -71,11 +71,11 @@
   "Generating plugin...": "",
   "Re-generating client...": "",
   "Re-generating plugin...": "",
-  "Please migrate your API clients to Kiota workspace.":"",
-  "Remind me later":"",
-  "Migrating your API clients...":"",
-  "Migration completed, but no changes were detected.":"",
-  "Migration failed":"",
-  "Api clients migrated successfully!":"",
-  "Could not determine the workspace folder.": ""
+  "Please migrate your API clients to Kiota workspace.":"Lütfen API istemcilerinizi Kiota çalışma alanına taşıyın.",
+  "Remind me later":"Bana daha sonra hatırlat.",
+  "Migrating your API clients...":"API istemcileriniz taşınıyor...",
+  "Migration completed, but no changes were detected.":"Taşıma tamamlandı, ancak herhangi bir değişiklik tespit edilmedi.",
+  "Migration failed":"Taşıma başarısız oldu.",
+  "API clients migrated successfully!":"API istemcileri başarıyla taşındı!",
+  "Could not determine the workspace folder.": "Çalışma alanı klasörü belirlenemedi."
 }
