@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -100,8 +100,8 @@ public partial class PluginsGenerationService
         }
     }
 
-    private static partial Regex PluginNameCleanupRegex();
     [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex PluginNameCleanupRegex();
 
     private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
     {

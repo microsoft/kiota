@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -92,7 +92,10 @@ paths:
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apimanifest.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-openapi.yml")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "manifest.json")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "color.png")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "outline.png")));
 
         // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json"));
