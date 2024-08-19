@@ -15,11 +15,9 @@ export function isPluginType(type: string): boolean {
   return pluginTypes.includes(type);
 }
 
-export async function updateTreeViewIcons(treeViewId: string, showIcons: boolean, showRegenerateIcon?: boolean) {
+export async function updateTreeViewIcons(treeViewId: string, showIcons: boolean, showRegenerateIcon: boolean = false) {
     await vscode.commands.executeCommand('setContext', `${treeViewId}.showIcons`, showIcons);
-    if (showRegenerateIcon !== undefined) {
-        await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, showRegenerateIcon);
-    }
+    await vscode.commands.executeCommand('setContext', `${treeViewId}.showRegenerateIcon`, showRegenerateIcon);
 }
 
 export function getWorkspaceJsonPath(): string {
