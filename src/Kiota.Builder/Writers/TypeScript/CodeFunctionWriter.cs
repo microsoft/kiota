@@ -179,7 +179,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             writer.StartBlock($"case \"{mappedType.Key}\":");
             var mappedTypeName = mappedType.Value.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)}(writer, {paramName});");
+            writer.WriteLine($"{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
             writer.WriteLine("break;");
             writer.DecreaseIndent();
         }
