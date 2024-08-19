@@ -17,16 +17,21 @@ internal class PublicApiExportService
     }
     private readonly string OutputDirectoryPath;
     private const string DomExportFileName = "kiota-dom-export.txt";
+    private const string InheritsSymbol = "-->";
+    private const string ImplementsSymbol = "~~>";
+    private const string OptionalSymbol = "?";
     internal async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
         var filePath = Path.Combine(OutputDirectoryPath, DomExportFileName);
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
         await using var fileStream = File.Create(filePath);
+        await using var streamWriter = new StreamWriter(fileStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
-        var content = string.Join(Environment.NewLine, entries);
-        var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
-        await fileStream.WriteAsync(contentBytes, cancellationToken).ConfigureAwait(false);
+        foreach (var entry in entries)
+        {
+            await streamWriter.WriteLineAsync(entry.AsMemory(), cancellationToken).ConfigureAwait(false);
+        }
     }
     private static IEnumerable<string> GetEntriesFromDom(CodeElement currentElement)
     {
@@ -70,16 +75,14 @@ internal class PublicApiExportService
             _ => [],
         };
     }
-    private const string InheritsSymbol = "-->";
-    private const string ImplementsSymbol = "~~>";
     private static string GetParameters(IEnumerable<CodeParameter> parameters)
     {
-        return string.Join("; ", parameters.Select(static x => $"{x.Name}{(x.Optional ? "?" : string.Empty)}:{GetEntryType(x.Type)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
+        return string.Join("; ", parameters.Select(static x => $"{x.Name}{(x.Optional ? OptionalSymbol : string.Empty)}:{GetEntryType(x.Type)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
     }
     private static string GetEntryType(CodeTypeBase codeElementTypeBase)
     {
-        var collectionPrefix = codeElementTypeBase.IsArray ? "[" : codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "[" : string.Empty;
-        var collectionSuffix = codeElementTypeBase.IsArray ? "]" : codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "]" : string.Empty;
+        var collectionPrefix = codeElementTypeBase.IsArray || codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "[" : string.Empty;
+        var collectionSuffix = codeElementTypeBase.IsArray || codeElementTypeBase.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex ? "]" : string.Empty;
         //TODO use the collection types from the convention service
         return codeElementTypeBase switch
         {
@@ -95,7 +98,8 @@ internal class PublicApiExportService
             CodeClass x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
             CodeEnum x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
             CodeInterface x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
-            CodeNamespace => $"{codeElement.Name}",
+            CodeFile x when x.Parent is CodeNamespace codeNamespace => GetEntryPath(codeNamespace), // get back the namespace names instead
+            CodeNamespace x => x.Name,
             _ => string.Empty,
         };
     }
