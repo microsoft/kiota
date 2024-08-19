@@ -185,7 +185,7 @@ export async function activate(
           if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
             await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
           } else {
-            await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
+            await displayGenerationResults(context, openApiTreeProvider, config);
           }
         }
       }
@@ -194,7 +194,7 @@ export async function activate(
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
       if (generatedOutput) {
         const { outputPath} = generatedOutput;
-        await displayGenerationResults(context, openApiTreeProvider, config, outputPath);
+        await displayGenerationResults(context, openApiTreeProvider, config);
         // Clear the state 
         void context.workspaceState.update('generatedOutput', undefined);
       }
@@ -343,9 +343,13 @@ export async function activate(
       return result;
     });
     if (result)
-    {
-      await exportLogsAndShowErrors(result);
-    }
+      {
+        const isSuccess = await checkForSuccess(result);
+        if (!isSuccess) {
+          await exportLogsAndShowErrors(result);
+        }
+        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+      }
     return result;
   }
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
@@ -383,9 +387,13 @@ export async function activate(
       return result;
     });
     if (result)
-    {
-      await exportLogsAndShowErrors(result);
-    }
+      {
+        const isSuccess = await checkForSuccess(result);
+        if (!isSuccess) {
+          await exportLogsAndShowErrors(result);
+        }
+        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+      }
     return result;
   }
   async function generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
@@ -445,13 +453,17 @@ export async function activate(
       await vscode.commands.executeCommand(treeViewFocusCommand);
     }
     if (result)
-    {
-      await exportLogsAndShowErrors(result);
-    }
+      {
+        const isSuccess = await checkForSuccess(result);
+        if (!isSuccess) {
+          await exportLogsAndShowErrors(result);
+        }
+        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+      }
     return result;
   }
 
-  async function displayGenerationResults(context: vscode.ExtensionContext, openApiTreeProvider: OpenApiTreeProvider, config: any, outputPath: string) {
+  async function displayGenerationResults(context: vscode.ExtensionContext, openApiTreeProvider: OpenApiTreeProvider, config: any) {
     const clientNameOrPluginName = config.clientClassName || config.pluginName;
     openApiTreeProvider.refreshView();
     const workspaceJsonPath = getWorkspaceJsonPath();
@@ -490,9 +502,17 @@ export async function activate(
         clientObject.includeAdditionalData ? clientObject.includeAdditionalData : settings.includeAdditionalData,
         ConsumerOperation.Edit
     );
-    return result;
+    if (result)
+      {
+        const isSuccess = await checkForSuccess(result);
+        if (!isSuccess) {
+          await exportLogsAndShowErrors(result);
+        }
+        void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+      }
+      return result;
     });
-  void vscode.window.showInformationMessage(`Client ${clientKey} re-generated successfully.`);
+  
   openApiTreeProvider.resetInitialState();
   }
   async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
@@ -524,9 +544,16 @@ export async function activate(
       }, {
         "duration": duration,
       });
-      return result;
+      if (result)
+        {
+          const isSuccess = await checkForSuccess(result);
+          if (!isSuccess) {
+            await exportLogsAndShowErrors(result);
+          }
+          void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+        }
+        return result;
     });
-    void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
     openApiTreeProvider.resetInitialState();
   }
 
@@ -705,10 +732,11 @@ async function checkForSuccess(results: KiotaLogEntry[]) {
   for (const result of results) {
     if (result && result.message) {
       if (result.message.includes("Generation completed successfully")) {
-        void vscode.window.showInformationMessage('Generation completed successfully.');
+        return true;
       }
     }
   }
+  return false;
 }
 
 
