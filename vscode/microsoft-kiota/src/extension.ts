@@ -85,7 +85,7 @@ export async function activate(
     reporter,
     registerCommandWithTelemetry(reporter, 
       `${extensionId}.selectLock`,
-      (x) => loadLockFile(x, openApiTreeProvider)
+      (x) => loadWorkspaceFile(x, openApiTreeProvider)
     ),
     registerCommandWithTelemetry(reporter, statusBarCommandId, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
@@ -455,7 +455,7 @@ export async function activate(
     const clientNameOrPluginName = config.clientClassName || config.pluginName;
     openApiTreeProvider.refreshView();
     const workspaceJsonPath = getWorkspaceJsonPath();
-    await loadLockFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
+    await loadWorkspaceFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
     await vscode.commands.executeCommand('kiota.workspace.refresh');
     openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
@@ -625,8 +625,8 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
   }
 }
 
-async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider, clientOrPluginName?: string): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath, clientOrPluginName));
+async function loadWorkspaceFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider, clientOrPluginName?: string): Promise<void> {
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadWorkspaceFile(node.fsPath, clientOrPluginName));
   await updateTreeViewIcons(treeViewId, true);
 }
 

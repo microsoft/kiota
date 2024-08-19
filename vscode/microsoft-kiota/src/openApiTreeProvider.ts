@@ -33,40 +33,40 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         public excludeFilters: string[] = []) {
 
     }
-    private _lockFilePath?: string;
-    private _lockFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
+    private _workspaceFilePath?: string;
+    private _workspaceFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
     public get isLockFileLoaded(): boolean {
-        return !!this._lockFile;
+        return !!this._workspaceFile;
     }
-    public async loadLockFile(path: string, clientOrPluginName?: string): Promise<void> {
+    public async loadWorkspaceFile(path: string, clientOrPluginName?: string): Promise<void> {
         this.closeDescription(false);
-        this._lockFilePath = path;
-        const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
-        let parsedLockFile = JSON.parse(lockFileData.toString()) as ConfigurationFile;
+        this._workspaceFilePath = path;
+        const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+        let parsedWorkspaceFile = JSON.parse(workspaceFileData.toString()) as ConfigurationFile;
 
         if (clientOrPluginName) {
-            let filteredData: Partial<ConfigurationFile> = { version: parsedLockFile.version };
+            let filteredData: Partial<ConfigurationFile> = { version: parsedWorkspaceFile.version };
 
-            if (parsedLockFile.clients && parsedLockFile.clients[clientOrPluginName]) {
+            if (parsedWorkspaceFile.clients && parsedWorkspaceFile.clients[clientOrPluginName]) {
                 filteredData.clients = {
-                    [clientOrPluginName]: parsedLockFile.clients[clientOrPluginName]
+                    [clientOrPluginName]: parsedWorkspaceFile.clients[clientOrPluginName]
                 };
             }
 
-            if (parsedLockFile.plugins && parsedLockFile.plugins[clientOrPluginName]) {
+            if (parsedWorkspaceFile.plugins && parsedWorkspaceFile.plugins[clientOrPluginName]) {
                 filteredData.plugins = {
-                    [clientOrPluginName]: parsedLockFile.plugins[clientOrPluginName]
+                    [clientOrPluginName]: parsedWorkspaceFile.plugins[clientOrPluginName]
                 };
             }
 
-            parsedLockFile = filteredData as ConfigurationFile;
+            parsedWorkspaceFile = filteredData as ConfigurationFile;
         }
 
-        this._lockFile = parsedLockFile;
+        this._workspaceFile = parsedWorkspaceFile;
 
         const clientOrPlugin: ClientOrPluginProperties | undefined =
-            Object.values(this._lockFile.clients ?? {})[0] ||
-            Object.values(this._lockFile.plugins ?? {})[0];
+            Object.values(this._workspaceFile.clients ?? {})[0] ||
+            Object.values(this._workspaceFile.plugins ?? {})[0];
 
         if (clientOrPlugin) {
             this._descriptionUrl = clientOrPlugin.descriptionLocation;
@@ -83,14 +83,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     public async loadEditPaths(clientOrPluginKey: string, clientObject: ClientOrPluginProperties): Promise<void> {
         this.closeDescription(false);
-        const newLockFile: ConfigurationFile = { version: '1.0.0', clients: {}, plugins: {} };
+        const newWorkspaceFile: ConfigurationFile = { version: '1.0.0', clients: {}, plugins: {} };
 
         if ((clientObject as ClientObjectProperties).clientNamespaceName) {
-            newLockFile.clients[clientOrPluginKey] = clientObject as ClientObjectProperties;
+            newWorkspaceFile.clients[clientOrPluginKey] = clientObject as ClientObjectProperties;
         } else {
-            newLockFile.plugins[clientOrPluginKey] = clientObject as PluginObjectProperties;
+            newWorkspaceFile.plugins[clientOrPluginKey] = clientObject as PluginObjectProperties;
         }
-        this._lockFile = newLockFile;
+        this._workspaceFile = newWorkspaceFile;
         if (clientObject.descriptionLocation) {
             this._descriptionUrl = clientObject.descriptionLocation;
             this.includeFilters = clientObject.includePatterns;
@@ -124,13 +124,13 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         node.children.forEach(x => this.setAllSelected(x, selected));
     }
     private getFirstClient(): ClientObjectProperties | undefined {
-        return this._lockFile?.clients ? Object.values(this._lockFile.clients)[0] : undefined;
+        return this._workspaceFile?.clients ? Object.values(this._workspaceFile.clients)[0] : undefined;
     }
     public get outputPath(): string {
-        return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
+        return this._workspaceFilePath ? path.parse(this._workspaceFilePath).dir : '';
     }
     public get clientClassName(): string {
-        if (this._lockFile?.clients) {
+        if (this._workspaceFile?.clients) {
             const client = this.getFirstClient();
             return client ? client.clientNamespaceName : '';
         }
@@ -138,7 +138,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
 
     public get clientNamespaceName(): string {
-        if (this._lockFile?.clients) {
+        if (this._workspaceFile?.clients) {
             const client = this.getFirstClient();
             return client ? client.clientNamespaceName : '';
         }
@@ -146,7 +146,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
 
     public get language(): string {
-        if (this._lockFile?.clients) {
+        if (this._workspaceFile?.clients) {
             const client = this.getFirstClient();
             return client ? client.language : '';
         }
@@ -155,8 +155,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public closeDescription(shouldRefresh = true) {
         this._descriptionUrl = '';
         this.rawRootNode = undefined;
-        this._lockFile = undefined;
-        this._lockFilePath = undefined;
+        this._workspaceFile = undefined;
+        this._workspaceFilePath = undefined;
         this.tokenizedFilter = [];
         this._filterText = '';
         this.includeFilters = [];
