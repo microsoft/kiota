@@ -80,10 +80,10 @@ export async function activate(
         );
       }
     }),
-    
+
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${extensionId}.selectLock`,
       (x) => loadWorkspaceFile(x, openApiTreeProvider)
     ),
@@ -103,27 +103,27 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.openDocumentationPage`,
       (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
     ),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.addToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
     ),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.addAllToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
     ),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.removeFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
     ),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.removeAllFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
     ),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateClient`,
       async () => {
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
@@ -133,7 +133,7 @@ export async function activate(
           );
           return;
         }
-    
+
         let languagesInformation = await getLanguageInformation(context);
         config = await generateSteps(
           {
@@ -146,8 +146,8 @@ export async function activate(
         );
         const generationType = parseGenerationType(config.generationType);
         const outputPath = typeof config.outputPath === "string"
-              ? config.outputPath
-              : "./output";
+          ? config.outputPath
+          : "./output";
         await showUpgradeWarningMessage(outputPath, context);
         if (!openApiTreeProvider.descriptionUrl) {
           await vscode.window.showErrorMessage(
@@ -155,7 +155,7 @@ export async function activate(
           );
           return;
         }
-    
+
         const settings = getExtensionSettings(extensionId);
         workspaceGenerationType = config.generationType as string;
         let result;
@@ -193,13 +193,13 @@ export async function activate(
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       const generatedOutput = context.workspaceState.get<GeneratedOutputState>('generatedOutput');
       if (generatedOutput) {
-        const { outputPath} = generatedOutput;
+        const { outputPath } = generatedOutput;
         await displayGenerationResults(context, openApiTreeProvider, config);
         // Clear the state 
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(reporter, 
+    registerCommandWithTelemetry(reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
       async () => {
         const yesAnswer = vscode.l10n.t("Yes, override it");
@@ -207,13 +207,13 @@ export async function activate(
           const response = await vscode.window.showWarningMessage(
             vscode.l10n.t(
               "Before adding a new API description, consider that your changes and current selection will be lost."),
-              yesAnswer,
-              vscode.l10n.t("Cancel")
+            yesAnswer,
+            vscode.l10n.t("Cancel")
           );
           if (response !== yesAnswer) {
-              return; 
+            return;
           }
-      }
+        }
         const config = await searchSteps(x => vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
           cancellable: false,
@@ -227,15 +227,14 @@ export async function activate(
         }
       }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () =>
-      {
+    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
       const response = await vscode.window.showInformationMessage(
         vscode.l10n.t("Do you want to remove this API description?"),
         yesAnswer,
         vscode.l10n.t("No")
       );
-      if(response === yesAnswer) {
+      if (response === yesAnswer) {
         openApiTreeProvider.closeDescription();
         await updateTreeViewIcons(treeViewId, false);
       }
@@ -247,50 +246,50 @@ export async function activate(
       }
     ),
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-     clientOrPluginKey = clientKey;
-     clientOrPluginObject = clientObject;
-     workspaceGenerationType = generationType;
-     await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-     openApiTreeProvider.resetInitialState();
-     await updateTreeViewIcons(treeViewId, false, true);
+      clientOrPluginKey = clientKey;
+      clientOrPluginObject = clientObject;
+      workspaceGenerationType = generationType;
+      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
+      openApiTreeProvider.resetInitialState();
+      await updateTreeViewIcons(treeViewId, false, true);
     }),
-    registerCommandWithTelemetry(reporter,`${treeViewId}.regenerateButton`, async () => {
+    registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       if (!clientOrPluginKey || clientOrPluginKey === '') {
         clientOrPluginKey = config.clientClassName || config.pluginName || '';
       }
       if (!config) {
         config = {
           outputPath: clientOrPluginObject.outputPath,
-          clientClassName: clientOrPluginKey,          
+          clientClassName: clientOrPluginKey,
         };
-      }    
-      const settings = getExtensionSettings(extensionId); 
+      }
+      const settings = getExtensionSettings(extensionId);
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
-     if (selectedPaths.length === 0) {
-      await vscode.window.showErrorMessage(
-        vscode.l10n.t("No endpoints selected, select endpoints first")
-      );
-      return;
-    }
-    if(isClientType(workspaceGenerationType)) {
-      await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);    
-    }
-    if (isPluginType(workspaceGenerationType)) {
-      await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
-    }
+      if (selectedPaths.length === 0) {
+        await vscode.window.showErrorMessage(
+          vscode.l10n.t("No endpoints selected, select endpoints first")
+        );
+        return;
+      }
+      if (isClientType(workspaceGenerationType)) {
+        await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);
+      }
+      if (isPluginType(workspaceGenerationType)) {
+        await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
+      }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-      const settings = getExtensionSettings(extensionId); 
+      const settings = getExtensionSettings(extensionId);
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
       if (workspaceJson && workspaceJson.isDirty) {
-          await vscode.window.showInformationMessage(
-              vscode.l10n.t("Please save the workspace.json file before re-generation."),
-              vscode.l10n.t("OK")
-          );
-          return;
+        await vscode.window.showInformationMessage(
+          vscode.l10n.t("Please save the workspace.json file before re-generation."),
+          vscode.l10n.t("OK")
+        );
+        return;
       }
       if (isClientType(generationType)) {
-      await regenerateClient(clientKey, clientObject, settings);
+        await regenerateClient(clientKey, clientObject, settings);
       }
       if (isPluginType(generationType)) {
         await regeneratePlugin(clientKey, clientObject, settings);
@@ -300,15 +299,15 @@ export async function activate(
       const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
 
       if (!workspaceFolder) {
-          vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
-          return;
+        vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
+        return;
       }
 
       await handleMigration(context, workspaceFolder);
-  })
-);
+    })
+  );
 
-  async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[]| undefined> {
+  async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -342,17 +341,16 @@ export async function activate(
       });
       return result;
     });
-    if (result)
-      {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result);
-        }
-        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
       }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
     return result;
   }
-  async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
+  async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -386,21 +384,20 @@ export async function activate(
       });
       return result;
     });
-    if (result)
-      {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result);
-        }
-        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
       }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
     return result;
   }
-  async function generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]):Promise<KiotaLogEntry[] | undefined> {
+  async function generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const language =
-          typeof config.language === "string"
-            ? parseGenerationLanguage(config.language)
-            : KiotaGenerationLanguage.CSharp;
+      typeof config.language === "string"
+        ? parseGenerationLanguage(config.language)
+        : KiotaGenerationLanguage.CSharp;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -442,7 +439,7 @@ export async function activate(
       });
       return result;
     });
-    
+
     let languagesInformation = await getLanguageInformationForDescription(
       context,
       openApiTreeProvider.descriptionUrl,
@@ -452,14 +449,13 @@ export async function activate(
       dependenciesInfoProvider.update(languagesInformation, language);
       await vscode.commands.executeCommand(treeViewFocusCommand);
     }
-    if (result)
-      {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result);
-        }
-        void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
       }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
     return result;
   }
 
@@ -467,24 +463,24 @@ export async function activate(
     const clientNameOrPluginName = config.clientClassName || config.pluginName;
     openApiTreeProvider.refreshView();
     const workspaceJsonPath = getWorkspaceJsonPath();
-    await loadWorkspaceFile({fsPath: workspaceJsonPath}, openApiTreeProvider, clientNameOrPluginName );
+    await loadWorkspaceFile({ fsPath: workspaceJsonPath }, openApiTreeProvider, clientNameOrPluginName);
     await vscode.commands.executeCommand('kiota.workspace.refresh');
     openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }
-  async function regenerateClient(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]): Promise<void> {
+  async function regenerateClient(clientKey: string, clientObject: any, settings: ExtensionSettings, selectedPaths?: string[]): Promise<void> {
     const language =
-          typeof clientObject.language === "string"
-            ? parseGenerationLanguage(clientObject.language)
-            : KiotaGenerationLanguage.CSharp;
-     await vscode.window.withProgress({
+      typeof clientObject.language === "string"
+        ? parseGenerationLanguage(clientObject.language)
+        : KiotaGenerationLanguage.CSharp;
+    await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
-      title: vscode.l10n.t("Re-generating client...")  
+      title: vscode.l10n.t("Re-generating client...")
     }, async (progress, _) => {
       const result = await generateClient(
         context,
-        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation : openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
         language,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
@@ -494,16 +490,15 @@ export async function activate(
         clientObject.usesBackingStore ? clientObject.usesBackingStore : settings.backingStore,
         true, // clearCache
         true, // cleanOutput
-        clientObject.excludeBackwardCompatible ? clientObject.excludeBackwardCompatible : settings.excludeBackwardCompatible  ,
-        clientObject.disabledValidationRules  ? clientObject.disabledValidationRules : settings.disableValidationRules,
+        clientObject.excludeBackwardCompatible ? clientObject.excludeBackwardCompatible : settings.excludeBackwardCompatible,
+        clientObject.disabledValidationRules ? clientObject.disabledValidationRules : settings.disableValidationRules,
         settings.languagesSerializationConfiguration[language].serializers,
         settings.languagesSerializationConfiguration[language].deserializers,
         clientObject.structuredMimeTypes ? clientObject.structuredMimeTypes : settings.structuredMimeTypes,
         clientObject.includeAdditionalData ? clientObject.includeAdditionalData : settings.includeAdditionalData,
         ConsumerOperation.Edit
-    );
-    if (result)
-      {
+      );
+      if (result) {
         const isSuccess = await checkForSuccess(result);
         if (!isSuccess) {
           await exportLogsAndShowErrors(result);
@@ -512,11 +507,11 @@ export async function activate(
       }
       return result;
     });
-  
-  openApiTreeProvider.resetInitialState();
+
+    openApiTreeProvider.resetInitialState();
   }
-  async function regeneratePlugin(clientKey: string, clientObject:any, settings: ExtensionSettings,  selectedPaths?: string[]) {
-    const pluginTypes =  Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
+  async function regeneratePlugin(clientKey: string, clientObject: any, settings: ExtensionSettings, selectedPaths?: string[]) {
+    const pluginTypes = Array.isArray(clientObject.types) ? parsePluginType(clientObject.types) : [KiotaPluginType.ApiPlugin];
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -525,7 +520,7 @@ export async function activate(
       const start = performance.now();
       const result = await generatePlugin(
         context,
-        clientObject.descriptionLocation ? clientObject.descriptionLocation: openApiTreeProvider.descriptionUrl,
+        clientObject.descriptionLocation ? clientObject.descriptionLocation : openApiTreeProvider.descriptionUrl,
         clientObject.outputPath,
         pluginTypes,
         selectedPaths ? selectedPaths : clientObject.includePatterns,
@@ -544,15 +539,14 @@ export async function activate(
       }, {
         "duration": duration,
       });
-      if (result)
-        {
-          const isSuccess = await checkForSuccess(result);
-          if (!isSuccess) {
-            await exportLogsAndShowErrors(result);
-          }
-          void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+      if (result) {
+        const isSuccess = await checkForSuccess(result);
+        if (!isSuccess) {
+          await exportLogsAndShowErrors(result);
         }
-        return result;
+        void vscode.window.showInformationMessage(`Plugin ${clientKey} re-generated successfully.`);
+      }
+      return result;
     });
     openApiTreeProvider.resetInitialState();
   }
@@ -641,11 +635,11 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
   const kiotaVersion = context.extension.packageJSON.kiotaVersion.toLocaleLowerCase();
   const workspaceFilePath = path.join(clientPath, KIOTA_WORKSPACE_FILE);
-  if(!fs.existsSync(workspaceFilePath)) {
+  if (!fs.existsSync(workspaceFilePath)) {
     return;
   }
   const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(workspaceFilePath));
-  const workspaceFile = JSON.parse(workspaceFileData.toString()) as {kiotaVersion: string};
+  const workspaceFile = JSON.parse(workspaceFileData.toString()) as { kiotaVersion: string };
   const clientVersion = workspaceFile.kiotaVersion.toLocaleLowerCase();
   if (clientVersion.toLocaleLowerCase() !== kiotaVersion) {
     await vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, kiotaVersion));
@@ -661,7 +655,7 @@ async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openA
   await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientObject));
 }
 
-async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
+async function exportLogsAndShowErrors(result: KiotaLogEntry[]): Promise<void> {
   const errorMessages = result
     ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error)
     : [];
@@ -741,4 +735,4 @@ async function checkForSuccess(results: KiotaLogEntry[]) {
 
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
