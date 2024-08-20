@@ -35,7 +35,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private _workspaceFilePath?: string;
     private _workspaceFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
-    public get isLockFileLoaded(): boolean {
+    public get isWorkspaceFileLoaded(): boolean {
         return !!this._workspaceFile;
     }
     public async loadWorkspaceFile(path: string, clientOrPluginName?: string): Promise<void> {
