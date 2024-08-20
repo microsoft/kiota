@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the ability to export the CodeDom to a file showing the public APIs to be generated in a given language [#4627](https://github.com/microsoft/kiota/issues/4627)
+
 ### Changed
 
 - Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
