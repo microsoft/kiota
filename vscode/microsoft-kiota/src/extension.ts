@@ -640,7 +640,7 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
 
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
   const kiotaVersion = context.extension.packageJSON.kiotaVersion.toLocaleLowerCase();
-  const lockFilePath = path.join(clientPath, KIOTA_WORKSPACE_FILE);
+  const workspaceFilePath = path.join(clientPath, KIOTA_WORKSPACE_FILE);
   if(!fs.existsSync(lockFilePath)) {
     return;
   }
