@@ -41,16 +41,18 @@ internal class PublicApiExportService
             foreach (var childElementEntry in GetEntriesFromDom(childElement))
                 yield return childElementEntry;
     }
+
     private static IEnumerable<string> GetEntry(CodeElement codeElement, bool includeDefinitions = false)
     {
-        string accessModifierValue;
+        string accessModifierValue = string.Empty;
         if (codeElement is IAccessibleElement accessibleElement)
+        {
             if (accessibleElement.Access is AccessModifier.Private)
-                return [];
-            else
-                accessModifierValue = $"|{accessibleElement.Access.ToString().ToLowerInvariant()}|";
-        else
-            accessModifierValue = string.Empty;
+                return []; // we are not interested in private props as they are not used externally
+
+            accessModifierValue = $"|{accessibleElement.Access.ToString().ToLowerInvariant()}|";
+        }
+
         return codeElement switch
         {
             CodeProperty property when property.Parent is not null =>
@@ -72,6 +74,7 @@ internal class PublicApiExportService
             CodeClass codeClass when includeDefinitions => [GetEntryPath(codeClass)],
             CodeEnum codeEnum when includeDefinitions => [GetEntryPath(codeEnum)],
             CodeInterface codeInterface when includeDefinitions => [GetEntryPath(codeInterface)],
+            CodeConstant codeConstant => [GetEntryPath(codeConstant)],
             _ => [],
         };
     }
@@ -98,7 +101,8 @@ internal class PublicApiExportService
             CodeClass x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
             CodeEnum x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
             CodeInterface x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
-            CodeFile x when x.Parent is CodeNamespace codeNamespace => GetEntryPath(codeNamespace), // get back the namespace names instead
+            CodeConstant x when x.Parent is not null => $"{GetEntryPath(x.Parent)}.{codeElement.Name}",
+            CodeFile x when x.Parent is not null => GetEntryPath(x.Parent),
             CodeNamespace x => x.Name,
             _ => string.Empty,
         };
