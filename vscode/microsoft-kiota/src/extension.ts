@@ -579,9 +579,9 @@ export async function activate(
         );
         return;
       }
-      const existingLockFileUris = await vscode.workspace.findFiles(`**/${KIOTA_WORKSPACE_FILE}`);
-      if (existingLockFileUris.length > 0) {
-        await Promise.all(existingLockFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(x, context)));
+      const existingworkspaceFileUris = await vscode.workspace.findFiles(`**/${KIOTA_WORKSPACE_FILE}`);
+      if (existingworkspaceFileUris.length > 0) {
+        await Promise.all(existingworkspaceFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(x, context)));
       }
       await updateStatusBarItem(context);
       try {
@@ -641,12 +641,12 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
   const kiotaVersion = context.extension.packageJSON.kiotaVersion.toLocaleLowerCase();
   const workspaceFilePath = path.join(clientPath, KIOTA_WORKSPACE_FILE);
-  if(!fs.existsSync(lockFilePath)) {
+  if(!fs.existsSync(workspaceFilePath)) {
     return;
   }
-  const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(lockFilePath));
-  const lockFile = JSON.parse(lockFileData.toString()) as {kiotaVersion: string};
-  const clientVersion = lockFile.kiotaVersion.toLocaleLowerCase();
+  const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(workspaceFilePath));
+  const workspaceFile = JSON.parse(workspaceFileData.toString()) as {kiotaVersion: string};
+  const clientVersion = workspaceFile.kiotaVersion.toLocaleLowerCase();
   if (clientVersion.toLocaleLowerCase() !== kiotaVersion) {
     await vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, kiotaVersion));
   }
