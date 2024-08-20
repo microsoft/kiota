@@ -75,7 +75,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
 
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
+        if (GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
         // Serialization/Deserialization functions can be called for object types only
@@ -89,7 +89,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
-        if (composedParam is null || GetOriginalComposedType(composedParam) is not { } composedType) return;
+        if (GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
         {
@@ -615,8 +615,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"\"{BackingStoreEnabledKey}\": n => {{ {paramName}.{propName} = true;{suffix} }},");
     }
 
-    private void WriteComposedTypePropertyDeserialization(LanguageWriter writer, CodeProperty codeProperty, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
+    private void WriteComposedTypePropertyDeserialization1(LanguageWriter writer, CodeProperty codeProperty, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
     {
+        // for composed types with a discriminator, 
         var defaultValueSuffix = GetDefaultValueSuffix(codeProperty);
         if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
         {
@@ -643,16 +644,82 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
+    private void WriteComposedTypePropertyDeserialization2(LanguageWriter writer, CodeProperty codeProperty, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
+    {
+        // iterate over all the types and generate a statement per type
+        // i,e collection of primitives , collection of objects , enum , enum collection , objects
+
+        // start type
+        writer.Write($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = ");
+        // loop over all the type
+        int position = 0;
+        foreach (var codeType in composedType.Types)
+        {
+            if (position > 0)
+            {
+                writer.Write(" ?? ");
+            }
+            if (!codeType.IsCollection)
+            {
+                // if not a collection
+                if (IsPrimitiveType(TranslateTypescriptType(codeType)))
+                {
+                    writer.Write($"n.{conventions.GetDeserializationMethodName(codeType, codeFunction.OriginalLocalMethod)}");
+                }
+                else
+                {
+                    // this is an object / enum
+                    var serializationMethodName = GetObjectTypeSerializationMethodName(codeType, codeFunction);
+                    writer.Write($"n.{serializationMethodName}{GetDefaultValueSuffix(codeProperty)}");
+                }
+            }
+            else
+            {
+                // if is a collection
+                var defaultValueSuffix = GetDefaultValueSuffix(codeProperty);
+                if (IsPrimitiveType(TranslateTypescriptType(codeType)))
+                {
+                    writer.Write($"{GetSerializationMethodsForPrimitiveUnionTypes(composedType, "n", codeFunction, false)}");
+                }
+                else
+                {
+                    writer.Write($"n.{GetCollectionOfObjectsSerializationMethodName(codeType, codeFunction)}{defaultValueSuffix}");
+                }
+            }
+            position++;
+        }
+        writer.WriteLine($" }},");
+        //writer.WriteLine(";");
+    }
+
+    private void WriteComposedTypePropertyDeserialization(LanguageWriter writer, CodeProperty codeProperty, string paramName, string propName, CodeComposedTypeBase composedType, CodeFunction codeFunction, string suffix)
+    {
+        var expression = string.Join(" ?? ", composedType.Types.Select(x => $"n." + conventions.GetDeserializationMethodName(x, codeFunction.OriginalLocalMethod)));
+        writer.Write($"\"{codeProperty.WireName}\": n => {{ {paramName}.{propName} = {expression} }},");
+    }
+
     private string GetObjectTypeSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
     {
         var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
         return $"getObjectValue<{propertyType}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
     }
 
+    private string GetObjectTypeSerializationMethodName(CodeType codeType, CodeFunction codeFunction)
+    {
+        var propertyType = GetTypescriptTypeString(codeType, codeFunction, false, inlineComposedTypeString: true);
+        return $"getObjectValue<{propertyType}>({GetFactoryMethodName(codeType, codeFunction)})";
+    }
+
     private string GetCollectionOfObjectsSerializationMethodName(CodeProperty codeProperty, CodeFunction codeFunction)
     {
         var propertyType = GetTypescriptTypeString(codeProperty.Type, codeFunction, false, inlineComposedTypeString: true);
         return $"getCollectionOfObjectValues<{propertyType}>({GetFactoryMethodName(codeProperty.Type, codeFunction)})";
+    }
+
+    private string GetCollectionOfObjectsSerializationMethodName(CodeType codeType, CodeFunction codeFunction)
+    {
+        var propertyType = GetTypescriptTypeString(codeType, codeFunction, false, inlineComposedTypeString: true);
+        return $"getCollectionOfObjectValues<{propertyType}>({GetFactoryMethodName(codeType, codeFunction)})";
     }
 
     private void WriteDefaultPropertyDeserialization(LanguageWriter writer, CodeProperty otherProp, string paramName, string propName, CodeFunction codeFunction, string suffix)
