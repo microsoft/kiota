@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
-import { GenerationType, KiotaGenerationLanguage, KiotaPluginType, parseGenerationType } from "./enums";
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType, parseGenerationLanguage, parseGenerationType, parsePluginType } from "./enums";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
 import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
@@ -20,8 +20,6 @@ import {
   LogLevel,
   generationLanguageToString,
   getLogEntriesForLevel,
-  parseGenerationLanguage,
-  parsePluginType,
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
@@ -749,7 +747,7 @@ async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<vo
   kiotaStatusBarItem.show();
 }
 
-export function getQueryParameters(uri: vscode.Uri): Record<string, string> {
+function getQueryParameters(uri: vscode.Uri): Record<string, string> {
   const query = uri.query;
   if (!query) {
     return {};

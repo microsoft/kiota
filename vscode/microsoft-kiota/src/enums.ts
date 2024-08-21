@@ -54,3 +54,43 @@ export function parseGenerationType(generationType: string | QuickPickItem | und
             throw new Error(`Unknown generation type ${generationType}`);
     }
 }
+
+export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
+    switch (value) {
+        case "CSharp":
+            return KiotaGenerationLanguage.CSharp;
+        case "Java":
+            return KiotaGenerationLanguage.Java;
+        case "TypeScript":
+            return KiotaGenerationLanguage.TypeScript;
+        case "PHP":
+            return KiotaGenerationLanguage.PHP;
+        case "Python":
+            return KiotaGenerationLanguage.Python;
+        case "Go":
+            return KiotaGenerationLanguage.Go;
+        case "Swift":
+            return KiotaGenerationLanguage.Swift;
+        case "Ruby":
+            return KiotaGenerationLanguage.Ruby;
+        case "CLI":
+            return KiotaGenerationLanguage.CLI;
+        default:
+            throw new Error("unknown language");
+    }
+}
+
+export function parsePluginType(values: string[]): KiotaPluginType[] {
+    return values.map(value => {
+        switch (value.toLowerCase()) {
+            case "openai":
+                return KiotaPluginType.OpenAI;
+            case "apimanifest":
+                return KiotaPluginType.ApiManifest;
+            case "apiplugin":
+                return KiotaPluginType.ApiPlugin;
+            default:
+                throw new Error(`unknown plugin type: ${value}`);
+        }
+    });
+}
