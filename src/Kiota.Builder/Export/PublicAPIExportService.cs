@@ -94,7 +94,7 @@ internal class PublicApiExportService
     }
     private string GetParameters(IEnumerable<CodeParameter> parameters)
     {
-        return string.Join("; ", parameters.Select(x => $"{x.Name}{(x.Optional ? OptionalSymbol : string.Empty)}:{_conventionService.GetTypeString(x.Type, x)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
+        return string.Join("; ", parameters.Select(x => $"{x.Name}{(x.Optional ? OptionalSymbol : string.Empty)}:{GetEntryType(x.Type, x)}{(string.IsNullOrEmpty(x.DefaultValue) ? string.Empty : $"={x.DefaultValue}")}"));
     }
 
     private string GetEntryType(CodeTypeBase codeElementTypeBase, CodeElement targetElement) => _conventionService.GetTypeString(codeElementTypeBase, targetElement)
