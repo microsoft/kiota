@@ -94,18 +94,6 @@ export async function handleMigration(
   });
 }
 
-export function getParsedEnumValueOrUndefined(
-  enumValue:any, enumParsingFunction:Function
-): any 
-{
-    try {
-      return enumParsingFunction(enumValue);
-    }
-    catch {
-      return undefined;
-    }
-}
-
 export function getSanitizedString(rawValue?: string): string| undefined{
   return rawValue?.replace(/[^a-zA-Z0-9_]+/g, '');
 };
