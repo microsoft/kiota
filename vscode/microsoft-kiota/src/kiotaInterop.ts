@@ -1,6 +1,7 @@
-import * as vscode from "vscode";
 import * as cp from 'child_process';
+import * as vscode from "vscode";
 import * as rpc from 'vscode-jsonrpc/node';
+import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { getWorkspaceJsonDirectory } from "./util";
 
@@ -85,35 +86,6 @@ export interface KiotaSearchResultItem {
   DescriptionUrl?: string;
   // eslint-disable-next-line @typescript-eslint/naming-convention
   VersionLabels?: string[];
-}
-
-export enum KiotaGenerationLanguage {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CSharp = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Java = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    TypeScript = 2,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    PHP = 3,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Python = 4,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Go = 5,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Swift = 6,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Ruby = 7,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CLI = 8,
-}
-export enum KiotaPluginType {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    OpenAI = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiManifest = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiPlugin = 2,
 }
 
 export enum ConsumerOperation {

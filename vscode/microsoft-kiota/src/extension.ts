@@ -1,36 +1,35 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from "vscode";
 import TelemetryReporter from '@vscode/extension-telemetry';
-import * as path from 'path';
 import * as fs from 'fs';
-import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
+import * as path from 'path';
+import * as vscode from "vscode";
+import { CodeLensProvider } from "./codelensProvider";
+import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { DependenciesViewProvider } from "./dependenciesViewProvider";
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType, parseGenerationType } from "./enums";
+import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
+import { generateClient } from "./generateClient";
+import { generatePlugin } from "./generatePlugin";
+import { getKiotaVersion } from "./getKiotaVersion";
+import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 import {
   ClientOrPluginProperties,
   ConsumerOperation,
+  KiotaLogEntry,
+  LogLevel,
   generationLanguageToString,
   getLogEntriesForLevel,
-  KiotaGenerationLanguage,
-  KiotaLogEntry,
-  KiotaPluginType,
-  LogLevel,
   parseGenerationLanguage,
   parsePluginType,
 } from "./kiotaInterop";
-import { GenerateState, GenerationType, filterSteps, generateSteps, parseGenerationType, searchSteps } from "./steps";
-import { getKiotaVersion } from "./getKiotaVersion";
-import { searchDescription } from "./searchDescription";
-import { generateClient } from "./generateClient";
-import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
-import { DependenciesViewProvider } from "./dependenciesViewProvider";
-import { updateClients } from "./updateClients";
-import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
-import { loadTreeView } from "./workspaceTreeProvider";
-import { generatePlugin } from "./generatePlugin";
-import { CodeLensProvider } from "./codelensProvider";
-import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
-import { getWorkspaceJsonDirectory, getWorkspaceJsonPath, handleMigration, isClientType, isPluginType, updateTreeViewIcons } from "./util";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
+import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
+import { searchDescription } from "./searchDescription";
+import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
+import { updateClients } from "./updateClients";
+import { getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath, handleMigration, isClientType, isPluginType, updateTreeViewIcons } from "./util";
+import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -60,21 +59,53 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
+  let deepLinkParams: Record<string, string|undefined> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
         if (uri.path === "/") {
           return;
         }
+        console.log(uri);
         const queryParameters = getQueryParameters(uri);
+        console.log(queryParameters);
         if (uri.path.toLowerCase() === "/opendescription") {
           reporter.sendTelemetryEvent("DeepLink.OpenDescription");
           const descriptionUrl = queryParameters["descriptionurl"];
+          const name = getSanitizedString(queryParameters["name"]);
+          const source = getSanitizedString(queryParameters["source"]);
+          reporter.sendTelemetryEvent("DeepLink.OpenDescription", {"source": source}); 
+          let lowercasedKind: string = queryParameters["kind"]?.toLowerCase();
+          let validKind: string | undefined = ["plugin", "client"].indexOf(lowercasedKind) > -1 ? lowercasedKind : undefined ;
+          if (!validKind){
+            vscode.window.showInformationMessage("Invalid parameter 'kind' deeplinked.");
+          }
+          let acceptedLanguages: string [] = Object.keys(KiotaGenerationLanguage).filter(x => !Number(x)&& x !=='0');
+          let givenLanguage:string | undefined = acceptedLanguages.indexOf(queryParameters["language"]) > -1 ? queryParameters["language"] : undefined ;
+          if (!givenLanguage && validKind === "client"){
+            vscode.window.showInformationMessage("Invalid parameter 'language' deeplinked. Ensure language is properly cased or/and supported");
+          }
+          let acceptedPluginTypes: string [] = Object.keys(KiotaPluginType).filter(x => !Number(x) && x !=='0').map(x => x.toString().toLowerCase());
+          let providedType = queryParameters["type"]?.toLowerCase();
+          let validtype : string | undefined = acceptedPluginTypes.indexOf(providedType) > -1? providedType : undefined;
+          if (!validtype && validKind === "plugin"){
+            vscode.window.showInformationMessage("Invalid parameter 'type' deeplinked.");
+          }
+
+          deepLinkParams = {
+            descriptionUrl: descriptionUrl,
+            name: name,
+            kind: validKind,
+            type: validtype,
+            language: givenLanguage,
+            source: source,
+          };
           if (descriptionUrl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
             return;
           }
-        }
+        }  
+        // show error message if uri.path != "/opendescription"
         void vscode.window.showErrorMessage(
           vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
         );
@@ -135,13 +166,22 @@ export async function activate(
         }
 
         let languagesInformation = await getLanguageInformation(context);
-        config = await generateSteps(
-          {
+        let availableStateInfo: any = {};
+        if(deepLinkParams){
+          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
+            deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
+          } 
+          availableStateInfo = transformToGenerationconfig(deepLinkParams);
+        }else{
+          availableStateInfo = {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
             language: openApiTreeProvider.language,
             outputPath: openApiTreeProvider.outputPath,
-          },
+          };
+        }
+        config = await generateSteps(
+          availableStateInfo,
           languagesInformation
         );
         const generationType = parseGenerationType(config.generationType);
@@ -709,7 +749,7 @@ async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<vo
   kiotaStatusBarItem.show();
 }
 
-function getQueryParameters(uri: vscode.Uri): Record<string, string> {
+export function getQueryParameters(uri: vscode.Uri): Record<string, string> {
   const query = uri.query;
   if (!query) {
     return {};

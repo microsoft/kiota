@@ -1,29 +1,30 @@
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
-import * as crypto from 'crypto';
-import { 
-    ClientObjectProperties, 
-    ClientOrPluginProperties, 
-    connectToKiota, 
-    KiotaGetManifestDetailsConfiguration, 
-    KiotaLogEntry, 
-    KiotaManifestResult, 
-    KiotaOpenApiNode, 
-    KiotaShowConfiguration, 
-    KiotaShowResult, 
-    ConfigurationFile, 
-    PluginObjectProperties } from './kiotaInterop';
-import { ExtensionSettings } from './extensionSettings';
 import { treeViewId } from './constants';
+import { ExtensionSettings } from './extensionSettings';
+import {
+    ClientObjectProperties,
+    ClientOrPluginProperties,
+    ConfigurationFile,
+    connectToKiota,
+    KiotaGetManifestDetailsConfiguration,
+    KiotaLogEntry,
+    KiotaManifestResult,
+    KiotaOpenApiNode,
+    KiotaShowConfiguration,
+    KiotaShowResult,
+    PluginObjectProperties
+} from './kiotaInterop';
 import { updateTreeViewIcons } from './util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
-    private apiTitle?: string;
+    public apiTitle?: string;
     private initialStateHash: string = '';
     constructor(
         private readonly context: vscode.ExtensionContext,
