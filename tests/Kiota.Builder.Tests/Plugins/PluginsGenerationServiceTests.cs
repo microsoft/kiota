@@ -237,4 +237,65 @@ components:
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
+
+    [Fact]
+    public async Task GeneratesManifestWithApiKeyAuthAsync()
+    {
+        const string apiDescription = """
+                                      openapi: 3.0.0
+                                      info:
+                                        title: test
+                                        version: "1.0"
+                                      paths:
+                                        /test:
+                                          get:
+                                            description: description for test path
+                                            responses:
+                                              '200':
+                                                description: test
+                                            security:
+                                            - apiKey0: []
+                                      components: 
+                                        securitySchemes: 
+                                          apiKey0:
+                                            type: apiKey
+                                            name: x-api-key
+                                            in: header
+                                      """;
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openApiDocumentStream, _) = await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
+        Assert.NotNull(openApiDocument);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+        
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Empty(resultingManifest.Problems);
+        Assert.NotEmpty(resultingManifest.Document.Runtimes);
+        Assert.Equal(AuthType.ApiKeyPluginVault, resultingManifest.Document.Runtimes[0].Auth?.Type);
+    }
 }

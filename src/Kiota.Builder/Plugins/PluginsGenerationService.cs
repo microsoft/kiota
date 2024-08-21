@@ -219,13 +219,17 @@ public partial class PluginsGenerationService
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
+        // TODO: Do we need to consider the global security as well? What to do if both global & operation security are provided?
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
+                // Only one security object is allowed
+                var opSecurity = operation.Security?.SingleOrDefault()?.Keys.SingleOrDefault();
+                var auth = opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
                 runtimes.Add(new OpenApiRuntime
                 {
-                    Auth = new AnonymousAuth(),
+                    Auth = auth,
                     Spec = new OpenApiRuntimeSpec()
                     {
                         Url = openApiDocumentPath,
@@ -236,7 +240,7 @@ public partial class PluginsGenerationService
                 {
                     Name = operation.OperationId,
                     Description =
-                        operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary)
+                        operation.Summary.CleanupXMLString() is { } summary && !string.IsNullOrEmpty(summary)
                             ? summary
                             : operation.Description.CleanupXMLString(),
                     States = GetStatesFromOperation(operation),
@@ -250,6 +254,17 @@ public partial class PluginsGenerationService
             functions.AddRange(childFunctions);
         }
         return (runtimes.ToArray(), functions.ToArray());
+    }
+
+    private static Auth GetAuthFromSecurityScheme(OpenApiSecurityScheme securityScheme)
+    {
+        return securityScheme.Type switch
+        {
+            SecuritySchemeType.ApiKey => new ApiKeyPluginVault {ReferenceId = $"${{{{{securityScheme.Name}_REGISTRATION_ID}}}}"},
+            SecuritySchemeType.Http => throw new NotImplementedException("Http security scheme is not supported."),
+            SecuritySchemeType.OAuth2 => new OAuthPluginVault {ReferenceId = $"${{{{{securityScheme.Name}_CONFIGURATION_ID}}}}"},
+            _ => new AnonymousAuth()
+        };
     }
     private static States? GetStatesFromOperation(OpenApiOperation openApiOperation)
     {
