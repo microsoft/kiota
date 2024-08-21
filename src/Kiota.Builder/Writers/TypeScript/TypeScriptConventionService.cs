@@ -292,11 +292,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return definitionClass.GetImmediateParentOfType<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method)
+    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method, bool? IsCollection = null)
     {
         ArgumentNullException.ThrowIfNull(codeType);
         ArgumentNullException.ThrowIfNull(method);
-        var isCollection = codeType.CollectionKind != CodeTypeCollectionKind.None;
+        var isCollection = IsCollection == true || codeType.IsCollection;
         var propertyType = GetTypescriptTypeString(codeType, method, false);
 
         CodeTypeBase _codeType = GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : codeType;
