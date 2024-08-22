@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Go;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 

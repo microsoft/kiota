@@ -177,9 +177,42 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             GenerateRequestBuilderCodeFiles(modelsNamespace);
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
+            AddAliasToCodeFileUsings(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
+    
+    private static void AddAliasToCodeFileUsings(CodeElement currentElement)
+    {
+        if (currentElement is CodeFile codeFile)
+        {            
+            var enumeratedUsings = codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).ToArray();
+            var duplicatedUsings = enumeratedUsings.Where(static x => !x.IsExternal)
+                .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
+                .Where(static x => string.IsNullOrEmpty(x.Alias))
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(static x => x.Count() > 1)
+                .Where(static x => x.DistinctBy(static y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
+                    .Count() > 1)
+                .SelectMany(static x => x)
+                .ToArray();
+            
+            if(duplicatedUsings.Length > 0)
+                foreach (var usingElement in duplicatedUsings)
+                    usingElement.Alias = (usingElement.Declaration
+                                              ?.TypeDefinition
+                                              ?.GetImmediateParentOfType<CodeNamespace>()
+                                              .Name +
+                                          usingElement.Declaration
+                                              ?.TypeDefinition
+                                              ?.Name.ToFirstCharacterUpperCase())
+                        .GetNamespaceImportSymbol()
+                        .ToFirstCharacterUpperCase();
+        }
+
+        CrawlTree(currentElement, AddAliasToCodeFileUsings);
+    }
+    
     private static void GenerateEnumObjects(CodeElement currentElement)
     {
         AddEnumObject(currentElement);
