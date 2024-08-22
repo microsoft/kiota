@@ -2,12 +2,18 @@ import * as vscode from "vscode";
 import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
+import { getWorkspaceJsonDirectory } from "./util";
 
-export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
+export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory:string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
   const kiotaPath = getKiotaPath(context);
   await ensureKiotaIsPresent(context);
   const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined
+    cwd: workingDirectory,
+    env: {
+        ...process.env,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        KIOTA_CONFIG_PREVIEW: "true",
+    }
   });
   let connection = rpc.createMessageConnection(
     new rpc.StreamMessageReader(childProcess.stdout),
@@ -36,6 +42,7 @@ export interface KiotaOpenApiNode {
     selected?: boolean,
     isOperation?: boolean;
     documentationUrl?: string;
+    clientNameOrPluginName?: string;
 }
 interface CacheClearableConfiguration {
     clearCache: boolean;
@@ -100,6 +107,40 @@ export enum KiotaGenerationLanguage {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     CLI = 8,
 }
+export enum KiotaPluginType {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    OpenAI = 0,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ApiManifest = 1,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ApiPlugin = 2,
+}
+
+export enum ConsumerOperation {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Add,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Edit,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Remove,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Generate
+}
+export function parsePluginType(values: string[]): KiotaPluginType[] {
+    return values.map(value => {
+        switch (value.toLowerCase()) {
+            case "openai":
+                return KiotaPluginType.OpenAI;
+            case "apimanifest":
+                return KiotaPluginType.ApiManifest;
+            case "apiplugin":
+                return KiotaPluginType.ApiPlugin;
+            default:
+                throw new Error(`unknown plugin type: ${value}`);
+        }
+    });
+}
+
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
     switch (language) {
         case KiotaGenerationLanguage.CSharp:
@@ -217,23 +258,10 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
-export interface LockFile {
-    clientClassName: string;
-    clientNamespaceName: string;
-    descriptionHash: string;
-    descriptionLocation: string;
-    deserializers: string[];
-    disabledValidationRules: string[];
-    excludeBackwardCompatible: boolean;
-    excludePatterns: string[];
-    includeAdditionalData: boolean;
-    includePatterns: string[];
-    kiotaVersion: string;
-    language: string;
-    lockFileVersion: string;
-    serializers: string[];
-    structuredMimeTypes: string[];
-    usesBackingStore: boolean;
+export interface ConfigurationFile {
+    version: string;
+    clients: Record<string, ClientObjectProperties>;
+    plugins: Record<string, PluginObjectProperties>;
 }
 
 export interface GenerationConfiguration {
@@ -253,4 +281,29 @@ export interface GenerationConfiguration {
     serializers: string[];
     structuredMimeTypes: string[];
     usesBackingStore: boolean;
+    pluginTypes: KiotaPluginType[];
+    operation: ConsumerOperation;
 }
+
+interface WorkspaceObjectProperties {
+    descriptionLocation: string;
+    includePatterns: string[];
+    excludePatterns: string[];
+    outputPath: string;
+}
+
+export interface ClientObjectProperties extends WorkspaceObjectProperties {
+    language: string;
+    structuredMimeTypes: string[];
+    clientNamespaceName: string;
+    usesBackingStore: boolean;
+    includeAdditionalData: boolean;
+    excludeBackwardCompatible: boolean;
+    disabledValidationRules: string[];
+}
+
+export interface PluginObjectProperties extends WorkspaceObjectProperties {
+    types: string[];
+}
+
+export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;

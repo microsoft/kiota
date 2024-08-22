@@ -4,6 +4,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
+using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -137,7 +138,7 @@ internal partial class Server : IServer
             return indexingNormalizationRegex().Replace(name, "{}");
         return name;
     }
-    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -151,7 +152,7 @@ internal partial class Server : IServer
         configuration.ClearCache = clearCache;
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
-        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        configuration.Operation = operation;
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (serializers is { Length: > 0 })
@@ -183,7 +184,7 @@ internal partial class Server : IServer
         }
         return logger.LogEntries;
     }
-    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var globalLogger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -194,7 +195,7 @@ internal partial class Server : IServer
             configuration.ClientClassName = clientClassName;
         configuration.CleanOutput = cleanOutput;
         configuration.ClearCache = clearCache;
-        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        configuration.Operation = operation;
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (pluginTypes is { Length: > 0 })
@@ -230,6 +231,28 @@ internal partial class Server : IServer
         ArgumentException.ThrowIfNullOrEmpty(descriptionPath);
         return InfoInternalAsync(descriptionPath, clearCache, cancellationToken);
     }
+
+    public async Task<List<LogEntry>> MigrateFromLockFileAsync(string lockDirectoryPath, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(lockDirectoryPath);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        try
+        {
+            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+            var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(string.Empty, lockDirectoryPath, cancellationToken).ConfigureAwait(false);
+            if (!clientNames.Any())
+            {
+                logger.LogWarning("no client configuration was migrated");
+            }
+            logger.LogInformation("Client configurations migrated successfully: {Clients}", string.Join(", ", clientNames));
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "error migrating the lock file: {ExceptionMessage}", ex.Message);
+        }
+        return logger.LogEntries;
+    }
+
     private async Task<LanguagesInformation> InfoInternalAsync(string descriptionPath, bool clearCache, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
@@ -257,7 +280,10 @@ internal partial class Server : IServer
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
                             .ToArray();
-        return new PathItem(node.Path, node.DeduplicatedSegment(), children, filteredPaths.Count == 0 || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
+        bool isSelected = filteredPaths.Count == 0 || // There are no filtered paths
+                          Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected) || // All operations have been selected
+                          !Array.Exists(children, static x => x.isOperation) && Array.TrueForAll(children, static x => x.selected); // All paths selected but no operations present
+        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected);
     }
     private static string GetAbsolutePath(string source)
     {
