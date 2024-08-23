@@ -733,6 +733,153 @@ public class CSharpLanguageRefinerTests
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnlyObject", method.ReturnType.Name);
     }
+
+    [Fact]
+    public async Task ReplacesIndexerDateOnlyTypeWithAbstractedDateType()
+    {
+        // Arrange
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "requestBuilder"
+        }).First();
+
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            IndexParameter = new CodeParameter
+            {
+                Type = new CodeType
+                {
+                    Name = "DateOnly",
+                    IsExternal = true
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "SomeType"
+            }
+        });
+
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Assert
+        Assert.Equal("Date", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ReplacesIndexerTimeOnlyTypeWithAbstractedTimeType()
+    {
+        // Arrange
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "requestBuilder"
+        }).First();
+
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            IndexParameter = new CodeParameter
+            {
+                Type = new CodeType
+                {
+                    Name = "TimeOnly",
+                    IsExternal = true
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "SomeType"
+            }
+        });
+
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Assert
+        Assert.Equal("Time", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ReplacesIndexerLocallyDefinedDateOnlyTypeWithAbstractedDateType()
+    {
+        // Arrange
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "requestBuilder"
+        }).First();
+
+        var dateOnlyModel = root.AddClass(new CodeClass
+        {
+            Name = "DateOnly",
+            Kind = CodeClassKind.Model
+        }).First();
+
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            IndexParameter = new CodeParameter
+            {
+                Type = new CodeType
+                {
+                    Name = "DateOnly",
+                    IsExternal = false,
+                    TypeDefinition = dateOnlyModel
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "SomeType"
+            }
+        });
+
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Assert
+        Assert.Equal("DateOnlyObject", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ReplacesIndexerLocallyDefinedTimeOnlyTypeWithAbstractedTimeType()
+    {
+        // Arrange
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "requestBuilder"
+        }).First();
+
+        var timeOnlyModel = root.AddClass(new CodeClass
+        {
+            Name = "TimeOnly",
+            Kind = CodeClassKind.Model
+        }).First();
+
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            IndexParameter = new CodeParameter
+            {
+                Type = new CodeType
+                {
+                    Name = "TimeOnly",
+                    IsExternal = false,
+                    TypeDefinition = timeOnlyModel
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "SomeType"
+            }
+        });
+
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Assert
+        Assert.Equal("TimeOnlyObject", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task AddsUsingForUntypedNode()
     {

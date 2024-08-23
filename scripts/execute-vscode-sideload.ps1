@@ -21,11 +21,12 @@ $PackageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
 # Install the extension
 code --install-extension "./kiota-$($PackageJson.version).vsix"
 
-$VsCodeRootPath = (Resolve-Path "~/.vscode").Path
-
 if ($WSL) {
     $Platform = "linux-x64"
     $VsCodeRootPath = (Resolve-Path "~/.vscode-server").Path
+}
+else {
+    $VsCodeRootPath = (Resolve-Path "~/.vscode").Path
 }
 
 $KiotaBin = "$VsCodeRootPath/extensions/ms-graph.kiota-$($PackageJson.version)/.kiotabin/$($PackageJson.kiotaVersion)/$Platform"
