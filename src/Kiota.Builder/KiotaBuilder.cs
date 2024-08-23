@@ -580,6 +580,8 @@ public partial class KiotaBuilder
     private const string CoreInterfaceType = "IRequestAdapter";
     private const string RequestAdapterParameterName = "requestAdapter";
     private const string ConstructorMethodName = "constructor";
+    private const string ReservedItemName = "Item";
+    private const string ReservedItemNameEscaped = "Item_escaped";
     internal const string UntypedNodeName = "UntypedNode";
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
@@ -605,7 +607,7 @@ public partial class KiotaBuilder
             var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
-                Name = currentNamespace.Name.EndsWith("item_escaped", StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace("Item", "Item_escaped", StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
+                Name = currentNamespace.Name.EndsWith(ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace(ReservedItemName, ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
@@ -621,8 +623,8 @@ public partial class KiotaBuilder
         {
             var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
             var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
-            if (child.Path.EndsWith("item", StringComparison.OrdinalIgnoreCase))
-                propType = propType.Replace("Item", "Item_escaped", StringComparison.OrdinalIgnoreCase);
+            if (child.Path.EndsWith(ReservedItemName, StringComparison.OrdinalIgnoreCase))
+                propType = propType.Replace(ReservedItemName, ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase);
 
             if (child.IsPathSegmentWithSingleSimpleParameter())
             {
