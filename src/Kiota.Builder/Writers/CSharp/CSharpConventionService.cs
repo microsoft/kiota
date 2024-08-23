@@ -249,7 +249,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };
-        return $"{GetDeprecationInformation(parameter)}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
+        return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
     }
     private string GetDeprecationInformation(IDeprecableElement element)
     {
