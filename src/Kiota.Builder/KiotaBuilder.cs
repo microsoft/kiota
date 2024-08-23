@@ -273,8 +273,7 @@ public partial class KiotaBuilder
             {
                 // Generate public API export
                 sw.Start();
-                var diffService = new PublicApiExportService(config);
-                await diffService.SerializeDomAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new PublicApiExportService(config).SerializeDomAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 StopLogAndReset(sw, $"step {++stepId} - generated public API export - took");
             }
 
