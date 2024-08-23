@@ -787,7 +787,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         foreach (var childElement in currentElement.GetChildElements(innerOnly))
             function.Invoke(childElement);
     }
-    protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod>? correctMethodType, Action<CodeProperty>? correctPropertyType, Action<ProprietableBlockDeclaration>? correctImplements = default)
+    protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod>? correctMethodType, Action<CodeProperty>? correctPropertyType, Action<ProprietableBlockDeclaration>? correctImplements = default, Action<CodeIndexer>? correctIndexer = default)
     {
         switch (currentElement)
         {
@@ -800,8 +800,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             case ProprietableBlockDeclaration block:
                 correctImplements?.Invoke(block);
                 break;
+            case CodeIndexer indexer:
+                correctIndexer?.Invoke(indexer);
+                break;
         }
-        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements), false);
+        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements, correctIndexer), false);
     }
     protected static void MakeModelPropertiesNullable(CodeElement currentElement)
     {
