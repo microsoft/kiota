@@ -1450,6 +1450,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return new", result);
     }
     [Fact]
+    public void DoesNotWriteDeprecatedBodyParameterRequestBuilder()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParam",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Deprecation = new DeprecationInformation("parameter")
+        });
+        method.Deprecation = new DeprecationInformation("method");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[Obsolete(\"method\")]", result);
+        Assert.DoesNotContain("[Obsolete(\"parameter\")]", result);
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
