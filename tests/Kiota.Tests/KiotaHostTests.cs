@@ -1,14 +1,12 @@
-﻿using System.CommandLine;
-using System.Threading.Tasks;
-using Moq;
-
-using kiota;
-
-using Xunit;
+﻿using System;
 using System.Collections.Generic;
-using System;
-using System.IO;
+using System.CommandLine;
 using System.CommandLine.IO;
+using System.IO;
+using System.Threading.Tasks;
+using kiota;
+using Moq;
+using Xunit;
 
 namespace Kiota.Tests;
 public sealed class KiotaHostTests : IDisposable
