@@ -44,7 +44,7 @@ pylint==3.2.6
 
 pytest==8.3.2
 
-pytest-asyncio==0.23.8
+pytest-asyncio==0.24.0
 
 requests==2.32.3 ; python_version >= '3.7'
 
@@ -66,7 +66,7 @@ yapf==0.40.2
 
 zipp==3.20.0 ; python_version >= '3.7'
 
-aiohttp==3.10.3 ; python_version >= '3.6'
+aiohttp==3.10.5 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
@@ -100,7 +100,7 @@ hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
 microsoft-kiota-abstractions==1.3.3
 
-microsoft-kiota-authentication-azure==1.0.0
+microsoft-kiota-authentication-azure==1.1.0
 
 microsoft-kiota-http==1.3.3
 
@@ -108,7 +108,7 @@ microsoft-kiota-serialization-json==1.3.0
 
 microsoft-kiota-serialization-text==1.0.0
 
-microsoft-kiota-serialization-form==0.1.0
+microsoft-kiota-serialization-form==0.1.1
 
 microsoft-kiota-serialization-multipart==0.1.0
 
