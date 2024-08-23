@@ -18,6 +18,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             writer.WriteLine(AutoGenerationHeader);
+            writer.WriteLine("#pragma warning disable CS0618");
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(static x => x.Declaration?.IsExternal ?? false ?
