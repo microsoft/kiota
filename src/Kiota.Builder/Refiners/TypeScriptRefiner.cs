@@ -181,11 +181,11 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
-    
+
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
     {
         if (currentElement is CodeFile codeFile)
-        {            
+        {
             var enumeratedUsings = codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).ToArray();
             var duplicatedUsings = enumeratedUsings.Where(static x => !x.IsExternal)
                 .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
@@ -196,8 +196,8 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
                     .Count() > 1)
                 .SelectMany(static x => x)
                 .ToArray();
-            
-            if(duplicatedUsings.Length > 0)
+
+            if (duplicatedUsings.Length > 0)
                 foreach (var usingElement in duplicatedUsings)
                     usingElement.Alias = (usingElement.Declaration
                                               ?.TypeDefinition
@@ -212,7 +212,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
 
         CrawlTree(currentElement, AddAliasToCodeFileUsings);
     }
-    
+
     private static void GenerateEnumObjects(CodeElement currentElement)
     {
         AddEnumObject(currentElement);
@@ -577,7 +577,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         codeNamespace.TryAddCodeFile(codeInterface.Name, elements);
     }
 
-    private static IEnumerable<CodeUsing> GetUsingsFromCodeElement(CodeElement codeElement)
+    public static IEnumerable<CodeUsing> GetUsingsFromCodeElement(CodeElement codeElement)
     {
         return codeElement switch
         {

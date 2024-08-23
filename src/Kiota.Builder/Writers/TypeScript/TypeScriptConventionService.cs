@@ -166,14 +166,24 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
-        if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock &&
-            parentBlock.Usings
-                        .FirstOrDefault(x => !x.IsExternal &&
-                                        x.Declaration?.TypeDefinition != null &&
-                                        x.Declaration.TypeDefinition == targetType.TypeDefinition &&
-                                        !string.IsNullOrEmpty(x.Alias)) is CodeUsing aliasedUsing)
-            return aliasedUsing.Alias;
-        return string.Empty;
+        if (targetElement is CodeFile codeFile)
+            return GetTypeAlias(targetType, codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement));
+        if (targetElement.GetImmediateParentOfTypeOrDefault<CodeFile>() is CodeFile parentCodeFile)
+            return GetTypeAlias(targetType, parentCodeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement));
+        if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock)
+            return GetTypeAlias(targetType, parentBlock.Usings);
+
+        return GetTypeAlias(targetType, Array.Empty<CodeUsing>());
+    }
+
+    private static string GetTypeAlias(CodeType targetType, IEnumerable<CodeUsing> usings)
+    {
+        var aliasedUsing = usings.FirstOrDefault(x => !x.IsExternal &&
+                                                      x.Declaration?.TypeDefinition != null &&
+                                                      x.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                                                      !string.IsNullOrEmpty(x.Alias));
+
+        return aliasedUsing != null ? aliasedUsing.Alias : string.Empty;
     }
 
     public override string TranslateType(CodeType type)

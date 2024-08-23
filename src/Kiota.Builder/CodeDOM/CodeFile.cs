@@ -24,7 +24,9 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
     public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements(true)
         .SelectMany(static x => x.GetChildElements(false))
         .OfType<ProprietableBlockDeclaration>()
-        .SelectMany(static x => x.Usings);
+        .SelectMany(static x => x.Usings)
+        .Union(GetChildElements(true).Where(x => x is CodeConstant).Cast<CodeConstant>()
+            .SelectMany(static x => x.StartBlock.Usings));
 }
 public class CodeFileDeclaration : ProprietableBlockDeclaration
 {

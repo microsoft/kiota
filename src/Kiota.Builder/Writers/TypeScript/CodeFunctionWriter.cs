@@ -330,9 +330,16 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind)
     {
-        var functionName = CreateSerializationFunctionNameFromType(returnType, kind);
+        var functionName = kind switch
+        {
+            CodeMethodKind.Serializer => $"serialize{returnType}",
+            CodeMethodKind.Deserializer => $"deserializeInto{returnType}",
+            _ => throw new InvalidOperationException($"Unsupported function kind :: {kind}")
+        };
+
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         var codeFunction = FindCodeFunctionInParentNamespaces(functionName, parentNamespace);
+
         return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
     }
 
@@ -348,16 +355,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         return codeFunction;
-    }
-
-    private static string CreateSerializationFunctionNameFromType(string returnType, CodeMethodKind functionKind)
-    {
-        return functionKind switch
-        {
-            CodeMethodKind.Serializer => $"serialize{returnType}",
-            CodeMethodKind.Deserializer => $"deserializeInto{returnType}",
-            _ => throw new InvalidOperationException($"Unsupported function kind :: {functionKind}")
-        };
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
