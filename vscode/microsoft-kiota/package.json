@@ -3,8 +3,8 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.12.100000001",
-  "kiotaVersion": "1.12.0",
+  "version": "1.18.100000001",
+  "kiotaVersion": "1.17.0",
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
@@ -190,12 +190,6 @@
         }
       }
     },
-    "viewsWelcome": [
-      {
-        "view": "kiota.openApiExplorer",
-        "contents": "%kiota.openApiExplorer.welcome%"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -216,9 +210,11 @@
       "kiota-openapi-explorer": [
         {
           "id": "kiota.openApiExplorer",
-          "name": "%kiota.openApiExplorer.name%",
-          "icon": "media/logo.svg",
-          "contextualTitle": "%kiota.openApiExplorer.contextualTitle%"
+          "name": "%kiota.openApiExplorer.name%"
+        },
+        {
+          "id": "kiota.workspace",
+          "name": "%kiota.workspace.name%"
         }
       ],
       "kiota-dependencies-info": [
@@ -237,60 +233,65 @@
         {
           "command": "kiota.selectLock",
           "group": "2_kiota@1",
-          "when": "resourceLangId == json && resourceFilename =~ /kiota-lock\\.json$/"
+          "when": "resourceLangId == json && resourceFilename =~ /workspace\\.json$/"
+        },
+        {
+          "command": "kiota.migrateFromLockFile",
+          "when": "resourceExtname == .json && resourceFilename == kiota-lock.json",
+          "group": "navigation"
         }
       ],
       "view/title": [
         {
-          "command": "kiota.openApiExplorer.openDescription",
-          "when": "view == kiota.openApiExplorer",
-          "group": "navigation@2"
-        },
-        {
-          "command": "kiota.searchApiDescription",
+          "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@1"
         },
         {
           "command": "kiota.openApiExplorer.filterDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@4"
+          "group": "navigation@3"
         },
         {
-          "command": "kiota.openApiExplorer.closeDescription",
+          "command": "kiota.openApiExplorer.regenerateButton",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation@5"
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
         {
+          "command": "kiota.openApiExplorer.closeDescription",
+          "when": "view == kiota.openApiExplorer && viewItem == apiTitle",
+          "group": "inline@6"
+        },
+        {
           "command": "kiota.openApiExplorer.openDocumentationPage",
-          "when": "view == kiota.openApiExplorer && (viewItem || false)",
+          "when": "view == kiota.openApiExplorer && (viewItem == documentationUrl)",
           "group": "inline@1"
         },
         {
           "command": "kiota.openApiExplorer.addToSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != apiTitle && viewItem != clientNameOrPluginName",
           "group": "inline@2"
         },
         {
           "command": "kiota.openApiExplorer.addAllToSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != clientNameOrPluginName",
           "group": "inline@4"
         },
         {
           "command": "kiota.openApiExplorer.removeFromSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != apiTitle && viewItem != clientNameOrPluginName",
           "group": "inline@3"
         },
         {
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer",
+          "when": "view == kiota.openApiExplorer && viewItem != clientNameOrPluginName",
           "group": "inline@5"
         }
       ],
@@ -319,19 +320,16 @@
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
           "when": "false"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "kiota.migrateFromLockFile",
+          "when": "resourceExtname == .json && resourceFilename == kiota-lock.json",
+          "group": "navigation"
+        }
       ]
     },
     "commands": [
-      {
-        "command": "kiota.openApiExplorer.pasteManifest",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.pasteManifest.title%"
-      },
-      {
-        "command": "kiota.openApiExplorer.openManifestPath",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.openManifestPath.title%"
-      },
       {
         "command": "kiota.selectLock",
         "category": "Kiota",
@@ -353,19 +351,22 @@
         "command": "kiota.openApiExplorer.generateClient",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.generateClient.title%",
-        "icon": "$(play)"
+        "enablement": "kiota.openApiExplorer.showIcons",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "kiota.openApiExplorer.regenerateButton",
+        "category": "Kiota",
+        "title": "%kiota.openApiExplorer.regenerateButton.title%",
+        "enablement": "kiota.openApiExplorer.showRegenerateIcon",
+        "icon": "$(debug-rerun)"
       },
       {
         "command": "kiota.openApiExplorer.filterDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.filterDescription.title%",
+        "enablement": "kiota.openApiExplorer.showIcons",
         "icon": "$(filter)"
-      },
-      {
-        "command": "kiota.searchApiDescription",
-        "category": "Kiota",
-        "title": "%kiota.searchApiDescription.title%",
-        "icon": "$(search)"
       },
       {
         "command": "kiota.openApiExplorer.addToSelectedEndpoints",
@@ -401,13 +402,48 @@
         "command": "kiota.openApiExplorer.closeDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.closeDescription.title%",
-        "icon": "$(close)"
+        "icon": "$(trash)"
       },
       {
-        "command": "kiota.openApiExplorer.openDescription",
+        "command": "kiota.openApiExplorer.searchOrOpenApiDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
-        "icon": "$(go-to-file)"
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "kiota.workspace.openWorkspaceFile",
+        "title": "%kiota.openApiExplorer.openFile.title%"
+      },
+      {
+        "command": "kiota.editPaths",
+        "title": "%kiota.openApiExplorer.editPaths.title%"
+      },
+      {
+        "command": "kiota.regenerate",
+        "title": "%kiota.openApiExplorer.regenerateButton.title%"
+      },
+      {
+        "command": "kiota.workspace.refresh",
+        "title": "%kiota.openApiExplorer.refresh.title%"
+      },
+      {
+        "command": "kiota.migrateFromLockFile",
+        "title": "%kiota.migrateClients.title%"
+      }
+
+    ],
+    "languages": [
+      {
+        "id": "json",
+        "extensions": [
+          ".json"
+        ]
+      }
+    ],
+    "codeLensProviders": [
+      {
+        "language": "json",
+        "provideCodeLenses": true
       }
     ]
   },
@@ -423,20 +459,20 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.6.2",
+    "@stylistic/eslint-plugin-ts": "^2.6.4",
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.7",
     "@types/node": "22.x",
     "@types/vscode": "^1.92.0",
-    "@typescript-eslint/eslint-plugin": "^8.1.0",
-    "@typescript-eslint/parser": "^8.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.9.0",
     "glob": "^11.0.0",
     "mocha": "^10.7.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.4",
-    "webpack": "^5.93.0",
+    "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
@@ -451,23 +487,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "04884ED264534CCE1708F0377809A98BFBE73F1B916432B71845CFF426B4E15D"
+      "sha256": "103A685302D9F3DC6D87B446414DDE7099F36749959AD3B31506AA306E6106B7"
     },
     {
       "platformId": "win-x86",
-      "sha256": "9324A3B58889B0DD123B478608E6A59FED3147B3268C4EF37F172BC9517B1233"
+      "sha256": "C79D2108129C3187DE14320478AE9588DF100FF5E37270BEBACFBBDC2EF9AEED"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "C093782E42DFA98574A1503D27F661F54F1C8CA92B66F6ED7B9DF475447E1769"
+      "sha256": "C8F518D723B8ADFCE699E1E4E03BB3E03A300D9BA4F10558351634396EF3AA1E"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "7911E277474EFF71D00C9983A9F3E43460F5C3C3FBB565CFE069854BA4069FCD"
+      "sha256": "8EEFB9BF46871E8830BC59F3A52B0C2F20643F0C094611539A00548C70A2223A"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "032AFBCF63FFF1C21215277E5EAFDD1909E1EFE5213B15F52ED4BBBDF3695C0A"
+      "sha256": "5FE16C08C749ABEB286520A7A2C9E7F62BE4102765486211433CAE6E8252E44F"
     }
   ]
 }

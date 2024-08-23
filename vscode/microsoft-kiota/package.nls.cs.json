@@ -8,19 +8,15 @@
   "kiota.selectLock.title": "Vyberte soubor zámku pro průzkumníka API",
   "kiota.updateClients.title": "Aktualizovat klienty v aktuálním pracovním prostoru",
   "kiota.openApiExplorer.generateClient.title": "Vygenerovat API klienta",
-  "kiota.searchApiDescription.title": "Hledat popis API",
   "kiota.openApiExplorer.addToSelectedEndpoints.title": "Přidat",
   "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Odebrat",
   "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Přidat vše",
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Odebrat vše",
   "kiota.openApiExplorer.closeDescription.title": "Zavřít popis API",
   "kiota.openApiExplorer.openDescription.title": "Otevřít popis API",
-  "kiota.openApiExplorer.welcome": "Není vybrán žádný popis API.\n[Hledat](command:kiota.searchApiDescription)\n[Otevřít popis API](command:kiota.openApiExplorer.openDescription)\n[Otevřít manifest](command:kiota.openApiExplorer.openManifestPath)\n[Vložit manifest](command:kiota.openApiExplorer.pasteManifest)\n[Vybrat soubor se zámkem](command:kiota.searchLock)",
   "kiota.searchLock.title": "Hledat soubor se zámkem",
   "kiota.openApiExplorer.filterDescription.title": "Filtrovat popis API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Otevřít stránku dokumentace",
-  "kiota.openApiExplorer.openManifestPath.title": "Otevřít API manifest",
-  "kiota.openApiExplorer.pasteManifest.title": "Vložit API manifest",
   "kiota.generate.backingStore.description": "Povoluje úložiště pro modely",
   "kiota.generate.excludeBackwardCompatible.description": "Vylučuje zpětně kompatibilní a zastaralé prvky z vygenerovaného výsledku. Mělo by se používat pro nové klienty",
   "kiota.cleanOutput.description": "Odstraní všechny soubory z výstupního adresáře před generováním souborů s kódem",
@@ -31,5 +27,7 @@
   "kiota.generate.structuredMimeTypes.description": "MIME typy a preference pro generování strukturovaných datových modelů. Podle notace Accept hlavičky dle RFC9110.",
   "kiota.generate.includeAdditionalData.description": "Bude zahrnuta vlastnost 'AdditionalData' pro modely",
   "kiota.workspace.name": "Můj pracovní prostor",
-  "kiota.openApiExplorer.openFile.title": "Otevřít soubor"
+  "kiota.openApiExplorer.regenerateButton.title": "Znovu vygenerovat",
+  "kiota.openApiExplorer.editPaths.title": "Upravit cesty",
+  "kiota.migrateClients.title": "Migrovat API klienty"
 }
