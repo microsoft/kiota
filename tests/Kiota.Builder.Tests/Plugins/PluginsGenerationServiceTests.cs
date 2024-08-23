@@ -91,7 +91,8 @@ paths:
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apimanifest.json")));
-        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
+        // v1 plugins are not generated anymore
+        Assert.False(File.Exists(Path.Combine(outputDirectory, OpenAIPluginFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-openapi.yml")));
         Assert.False(File.Exists(Path.Combine(outputDirectory, "manifest.json")));
         Assert.False(File.Exists(Path.Combine(outputDirectory, "color.png")));
@@ -106,14 +107,6 @@ paths:
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
-
-        // Validate the v1 plugin
-        var v1ManifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenAIPluginFileName));
-        using var v1JsonDocument = JsonDocument.Parse(v1ManifestContent);
-        var v1Manifest = PluginManifestDocument.Load(v1JsonDocument.RootElement);
-        Assert.NotNull(resultingManifest.Document);
-        Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", v1Manifest.Document.Api.URL);
-        Assert.Empty(v1Manifest.Problems);
     }
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
