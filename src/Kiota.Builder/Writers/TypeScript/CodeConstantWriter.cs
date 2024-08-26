@@ -56,7 +56,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         {
             writer.StartBlock($"{navigationMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
