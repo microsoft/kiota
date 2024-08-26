@@ -527,7 +527,7 @@ export async function activate(
         [],
         clientKey,
         settings.clearCache,
-        settings.cleanOutput,
+        false,
         settings.disableValidationRules,
         ConsumerOperation.Edit
       );
