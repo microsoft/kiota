@@ -287,13 +287,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: multiple matches found, use the key as the search term to display the details of a specific description.", example);
         }
     }
+    private static string GenerateCommand => KiotaHost.IsConfigPreviewEnabled.Value ? "client add" : "generate";
     protected void DisplayGenerateHint(string path, string manifest, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths)
     {
         var includedPathsSuffix = (includedPaths.Any() ? " -i " : string.Empty) + string.Join(" -i ", includedPaths.Select(static x => $"\"{x}\""));
         var excludedPathsSuffix = (excludedPaths.Any() ? " -e " : string.Empty) + string.Join(" -e ", excludedPaths.Select(static x => $"\"{x}\""));
         var sourceArg = GetSourceArg(path, manifest);
-        var example = $"Example: kiota generate -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
-        DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
+        var example = $"Example: kiota {GenerateCommand} -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
+        DisplayHint($"Hint: use kiota {GenerateCommand} to generate a client for the OpenAPI description.", example);
     }
     protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest, string commandName = "generate")
     {
