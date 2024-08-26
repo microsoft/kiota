@@ -18,7 +18,7 @@ flit==3.9.0
 
 flit-core==3.9.0 ; python_version >= '3.6'
 
-idna==3.7
+idna==3.8
 
 importlib-metadata==6.8.0 ; python_version >= '3.7'
 
