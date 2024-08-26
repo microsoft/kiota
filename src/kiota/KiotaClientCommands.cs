@@ -174,7 +174,7 @@ public static class KiotaClientCommands
     internal static Option<bool> GetRefreshOption()
     {
         var refresh = new Option<bool>("--refresh", "Refreshes the client OpenAPI description before generating the client");
-        refresh.AddAlias("--r");
+        refresh.AddAlias("-r");
         return refresh;
     }
 }

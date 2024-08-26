@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed shorthand for refresh option in workspace experience. [#5240](https://github.com/microsoft/kiota/issues/5240)
 - Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
 - Removed OpenAI plugins generation since the service does not support them anymore.
 - Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
