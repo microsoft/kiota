@@ -182,13 +182,13 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
-    
+
     private static void CorrectSerializerParameters(CodeElement currentElement)
     {
         if (currentElement is CodeFunction currentFunction &&
             currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
         {
-            
+
             foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters)
             {
                 if (GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType &&
@@ -202,7 +202,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
 
             }
         }
-       
+
         CrawlTree(currentElement, CorrectSerializerParameters);
     }
 
