@@ -18,7 +18,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             writer.WriteLine(AutoGenerationHeader);
-            writer.WriteLine("#pragma warning disable CS0618");
+            conventions.WritePragmaDisable(writer, CSharpConventionService.CS0618);
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(static x => x.Declaration?.IsExternal ?? false ?
@@ -40,9 +40,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         bool hasDescription = conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.WriteLine(GeneratedCodeAttribute);
-        if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
+        if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
         writer.WriteLine($"public partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
-        if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
+        if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
     }
 }
