@@ -178,8 +178,32 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
+            CorrectSerializerParameters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+    }
+    
+    private static void CorrectSerializerParameters(CodeElement currentElement)
+    {
+        if (currentElement is CodeFunction currentFunction &&
+            currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
+        {
+            
+            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters)
+            {
+                if (GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType &&
+                    composedType.IsComposedOfObjectsAndPrimitives(IsComposedPrimitive))
+                {
+                    var newType = (composedType.Clone() as CodeComposedTypeBase)!;
+                    var nonPrimitiveTypes = composedType.Types.Where(x => !IsComposedPrimitive(x, composedType)).ToArray();
+                    newType.SetTypes(nonPrimitiveTypes);
+                    parameter.Type = newType;
+                }
+
+            }
+        }
+       
+        CrawlTree(currentElement, CorrectSerializerParameters);
     }
 
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
@@ -380,16 +404,17 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     private static void AddSerializationUsingsForCodeComposed(CodeComposedTypeBase composedType, CodeFunction function, CodeMethodKind kind)
     {
         // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        foreach (var type in composedType.GetNonPrimitiveTypes(IsComposedPrimitive))
+        foreach (var codeClass in composedType.GetNonPrimitiveTypes(IsComposedPrimitive)
+                .Select(static x => x.TypeDefinition)
+                     .OfType<CodeInterface>()
+                     .Select(static x => x.OriginalClass)
+                     .OfType<CodeClass>())
         {
-            if (type.TypeDefinition is CodeInterface codeInterface && codeInterface.OriginalClass is CodeClass codeClass)
-            {
-                var (serializer, deserializer) = GetSerializationFunctionsForNamespace(codeClass);
-                if (kind == CodeMethodKind.Serializer)
-                    AddSerializationUsingsToFunction(function, serializer);
-                if (kind == CodeMethodKind.Deserializer)
-                    AddSerializationUsingsToFunction(function, deserializer);
-            }
+            var (serializer, deserializer) = GetSerializationFunctionsForNamespace(codeClass);
+            if (kind == CodeMethodKind.Serializer)
+                AddSerializationUsingsToFunction(function, serializer);
+            if (kind == CodeMethodKind.Deserializer)
+                AddSerializationUsingsToFunction(function, deserializer);
         }
     }
 

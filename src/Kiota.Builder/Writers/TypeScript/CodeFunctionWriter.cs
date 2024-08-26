@@ -92,7 +92,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
         {
-            WriteSerializationFunctionForTypeComposedOfPrimitives(composedType, composedParam, codeElement, writer);
+            var paramName = composedParam.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
+            writer.StartBlock($"switch (typeof {paramName}) {{");
+            foreach (var type in composedType.GetPrimitiveTypes(IsComposedPrimitive))
+            {
+                WriteCaseStatementForPrimitiveTypeSerialization(type, "key", paramName, codeElement, writer);
+            }
+            writer.CloseBlock();
             return;
         }
 
@@ -113,24 +120,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var mappedTypeName = mappedType.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{GetFunctionName(method, mappedTypeName, CodeMethodKind.Serializer)}(writer, {composedParam.Name.ToFirstCharacterLowerCase()} as {GetTypescriptTypeString(mappedType, method, includeCollectionInformation: false, inlineComposedTypeString: true)});");
         }
-    }
-
-    public static bool IsComposedOfCollectionOfObjects(CodeComposedTypeBase composedType)
-    {
-        ArgumentNullException.ThrowIfNull(composedType);
-        // Get the objects
-        var composedTypeObjects = composedType.Types.Where(x => !IsPrimitiveType(GetTypescriptTypeString(x, composedType)));
-        // Get the collections count
-        return composedTypeObjects.Any(x => x.IsCollection);
-    }
-
-    public static bool IsComposedOfNonCollectionOfObjects(CodeComposedTypeBase composedType)
-    {
-        ArgumentNullException.ThrowIfNull(composedType);
-        // Get the objects
-        var composedTypeObjects = composedType.Types.Where(x => !IsPrimitiveType(GetTypescriptTypeString(x, composedType)));
-        // Get the non collections count
-        return composedTypeObjects.Any(x => !x.IsCollection);
     }
 
     private void WriteSerializationFunctionForCodeUnionTypes(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
@@ -181,20 +170,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.WriteLine($"{GetFunctionName(codeElement, mappedTypeName, CodeMethodKind.Serializer)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
             writer.WriteLine("break;");
             writer.DecreaseIndent();
-        }
-
-        writer.CloseBlock();
-    }
-
-    private void WriteSerializationFunctionForTypeComposedOfPrimitives(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
-    {
-        var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-        writer.StartBlock($"switch (typeof {paramName}) {{");
-
-        foreach (var type in composedType.GetPrimitiveTypes(IsComposedPrimitive))
-        {
-            WriteCaseStatementForPrimitiveTypeSerialization(type, "key", paramName, method, writer);
         }
 
         writer.CloseBlock();
@@ -433,46 +408,55 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var propTypeName = GetTypescriptTypeString(codeProperty.Type, codeProperty.Parent!, false, inlineComposedTypeString: true);
 
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
 
-        writer.StartBlock($"switch (typeof {modelParamName}.{codePropertyName}) {{");
+        writer.StartBlock("switch (true) {");
 
-        foreach (var type in composedType.GetPrimitiveTypes(IsComposedPrimitive))
+        foreach (var type in composedType.Types.Where(x => IsComposedPrimitive(x, composedType)))
         {
-            WriteCaseStatementForPrimitiveTypeSerialization(type, $"\"{codeProperty.WireName}\"", $"{spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix}", method, writer);
+            var nodeType = conventions.GetTypeString(type, method, false);
+            var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
+            if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
+
+            writer.StartBlock(type.IsCollection
+                ? $"Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}') :"
+                : $"case typeof {modelParamName}.{codePropertyName} === \"{nodeType}\":");
+
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.CloseBlock("break;");
         }
 
-        if (composedType.IsComposedOfObjectsAndPrimitives(IsComposedPrimitive))
+        var nonPrimitiveTypes = composedType.Types.Where(x => !IsComposedPrimitive(x, composedType)).ToArray();
+        if (nonPrimitiveTypes.Length > 0)
         {
-            // write the default statement serialization statement for the object
-            writer.StartBlock($"default:");
-            if (IsComposedOfCollectionOfObjects(composedType))
+            writer.StartBlock("default:");
+            foreach (var groupedTypes in nonPrimitiveTypes.GroupBy(static x => x.IsCollection))
             {
-                writer.WriteLine($"writer.writeCollectionOfObjectValues<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+                var collectionCodeType = (composedType.Clone() as CodeComposedTypeBase)!;
+                collectionCodeType.SetTypes(groupedTypes.ToArray());
+                var propTypeName = GetTypescriptTypeString(collectionCodeType!, codeProperty.Parent!, false, inlineComposedTypeString: true);
+                
+                var writerFunction = groupedTypes.Key ? "writeCollectionOfObjectValues" : "writeObjectValue";
+                var propertyTypes = collectionCodeType.IsNullable ? " | undefined | null" : string.Empty;
+                var groupSymbol = groupedTypes.Key ? "[]" : string.Empty;
+               
+                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
             }
-            if (IsComposedOfNonCollectionOfObjects(composedType))
-            {
-                writer.WriteLine($"writer.writeObjectValue<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
-            }
-            writer.WriteLine($"break;");
-            writer.DecreaseIndent();
+            writer.CloseBlock("break;");
         }
 
         writer.CloseBlock();
     }
 
-    public string GetSerializationMethodName(CodeTypeBase propertyType, CodeMethod method)
+    private string GetSerializationMethodName(CodeTypeBase propertyType, CodeMethod method)
     {
         ArgumentNullException.ThrowIfNull(propertyType);
         ArgumentNullException.ThrowIfNull(method);
 
         var composedType = GetOriginalComposedType(propertyType);
         if (composedType is not null && composedType.IsComposedOfPrimitives(IsComposedPrimitive))
-        {
             return $"serialize{composedType.Name.ToFirstCharacterUpperCase()}";
-        }
 
         var propertyTypeName = TranslateTypescriptType(propertyType);
         CodeType? currentType = composedType is not null ? GetCodeTypeForComposedType(composedType) : propertyType as CodeType;
@@ -487,9 +471,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         if (propertyTypeName is TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION)
-        {
             return $"write{propertyTypeName.ToFirstCharacterUpperCase()}Value";
-        }
 
         return "writeObjectValue";
     }

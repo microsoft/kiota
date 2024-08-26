@@ -26,6 +26,13 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         ArgumentNullException.ThrowIfNull(codeType);
         return types.ContainsKey(NormalizeKey(codeType));
     }
+    public void SetTypes(params CodeType[] codeTypes)
+    {
+        ArgumentNullException.ThrowIfNull(codeTypes);
+        types.Clear();
+        foreach (var codeType in codeTypes)
+            AddType(codeType);
+    }
     private readonly ConcurrentDictionary<string, CodeType> types = new(StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeType> Types
     {
