@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - C# refiner now fixes data types for indexers. [#5201](https://github.com/microsoft/kiota/issues/5201)
 - C# do not report CS0618 in the generated code. [#5229](https://github.com/microsoft/kiota/issues/5229)
 - C# do not decorate method parameter(s) with ObsoleteAttribute. [#5228](https://github.com/microsoft/kiota/issues/5228)
+- Fixed an issue where the generation hint for the workspace experience would be outdated. [#5241](https://github.com/microsoft/kiota/issues/5241)
 
 ## [1.17.0] - 2024-08-09
 
