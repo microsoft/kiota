@@ -61,9 +61,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
                     {
-                        DisplaySuccess($"Update of {clientEntry.Key} client completed");
-                        var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
-                        DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
+                        DisplaySuccess($"Update of {clientEntry.Key} plugin completed");
                     }
                     else
                     {
@@ -76,10 +74,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error adding the client: {ExceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error adding the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error adding the client: {ExceptionMessage}", ex.Message);
                 return 1;
 #endif
             }
