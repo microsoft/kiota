@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expand properties types with null type for Typescript. [#4993](https://github.com/microsoft/kiota-typescript/issues/1188)
 - Added Collection, HashMap, Map, Objects, InputStream, BigDecimal to the list of reserved names for Java generation. [#5135](https://github.com/microsoft/kiota/issues/5135)
 - C# refiner now fixes data types for indexers. [#5201](https://github.com/microsoft/kiota/issues/5201)
+- C# do not report CS0618 in the generated code. [#5229](https://github.com/microsoft/kiota/issues/5229)
 
 ## [1.17.0] - 2024-08-09
 
