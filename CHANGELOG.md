@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Collection, HashMap, Map, Objects, InputStream, BigDecimal to the list of reserved names for Java generation. [#5135](https://github.com/microsoft/kiota/issues/5135)
 - C# refiner now fixes data types for indexers. [#5201](https://github.com/microsoft/kiota/issues/5201)
 - C# do not report CS0618 in the generated code. [#5229](https://github.com/microsoft/kiota/issues/5229)
+- C# do not decorate method parameter(s) with ObsoleteAttribute. [#5228](https://github.com/microsoft/kiota/issues/5228)
 
 ## [1.17.0] - 2024-08-09
 
