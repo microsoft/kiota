@@ -1159,6 +1159,7 @@ public partial class KiotaBuilder
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
+    private const string RequestBodyOctetStreamContentType = "application/octet-stream";
     private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "301", "302", "303", "304", "307" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
@@ -1249,7 +1250,9 @@ public partial class KiotaBuilder
             else if (modelType is null)
             {
                 string returnType;
-                if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+                if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyOctetStreamContentType)))
+                    returnType = "binary";
+                else if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
                     returnType = VoidType;
                 else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                     returnType = "string";
