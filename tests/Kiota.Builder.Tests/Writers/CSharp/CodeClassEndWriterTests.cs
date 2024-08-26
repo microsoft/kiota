@@ -45,6 +45,14 @@ public sealed class CodeClassEndWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(child.EndBlock, writer);
         var result = tw.ToString();
         Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.DoesNotContain("#pragma warning restore CS0618", result);
+    }
+    [Fact]
+    public void WritesWarningRestoreCs0618()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("#pragma warning restore CS0618", result);
     }
     [Fact]
     public void ClosesNonNestedClasses()
