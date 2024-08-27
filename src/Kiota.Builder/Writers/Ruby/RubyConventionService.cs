@@ -52,14 +52,18 @@ public class RubyConventionService : CommonLanguageConventionService
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-        {
-            writer.WriteLine($"{DocCommentPrefix}");
-            writer.WriteLine($"# {description}");
-        }
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return false;
+        if (element is not CodeElement codeElement) return false;
+
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
+        writer.WriteLine($"{DocCommentPrefix}");
+        writer.WriteLine($"# {description}");
+
+        return true;
     }
 #pragma warning disable CA1822 // Method should be static
     public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)

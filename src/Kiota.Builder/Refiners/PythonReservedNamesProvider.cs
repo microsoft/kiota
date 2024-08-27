@@ -44,6 +44,7 @@ public class PythonReservedNamesProvider : IReservedNamesProvider
         "yield",
         "property",
         "BaseRequestBuilder",
+        "MultipartBody",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

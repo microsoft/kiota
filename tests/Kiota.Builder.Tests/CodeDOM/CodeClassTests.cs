@@ -193,7 +193,8 @@ public class CodeClassTests
         }).First();
         codeClass.AddInnerInterface(new CodeInterface
         {
-            Name = "subinterface"
+            Name = "subinterface",
+            OriginalClass = new CodeClass() { Name = "originalSubInterface" }
         });
         Assert.Single(codeClass.GetChildElements(true).OfType<CodeInterface>());
         Assert.Throws<ArgumentNullException>(() =>

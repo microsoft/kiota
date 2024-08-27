@@ -21,6 +21,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
                 true
             );
+            DeduplicateErrorMappings(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -96,7 +97,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);
             // Correct the core types after reserved names for types/properties are done to avoid collision of types e.g. renaming custom model called `DateOnly` to `Date`
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, correctIndexer: CorrectIndexerType);
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode);
             AddParentClassToErrorClasses(
@@ -170,7 +171,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Threading.Tasks", "Task"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-            "System.Linq", "Enumerable"),
+            ExtensionsNamespaceName, "Enumerable"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             StoreNamespaceName,  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
@@ -182,6 +183,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             SerializationNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
             "System.Runtime.Serialization", "EnumMemberAttribute"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
@@ -218,6 +221,15 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.PathQueryAndHeaderParameters
+                                                .Select(x => x.Type)
+                                                .Union(new[] { currentMethod.ReturnType })
+                                                .ToArray());
+    }
+    protected static void CorrectIndexerType(CodeIndexer currentIndexer)
+    {
+        ArgumentNullException.ThrowIfNull(currentIndexer);
+        CorrectCoreTypes(currentIndexer.Parent as CodeClass, DateTypesReplacements, currentIndexer.IndexParameter.Type);
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

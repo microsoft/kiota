@@ -44,7 +44,7 @@ public class CodeElementComparerTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, -1100),
+            }, -10100),
             new(new CodeIndexer() {
                 ReturnType = new CodeType {
                     Name = "string"
@@ -60,14 +60,14 @@ public class CodeElementComparerTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, 900),
+            }, 9900),
             new(method, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, 901),
-            new(method, codeClass, -899)
+            }, 9901),
+            new(method, codeClass, -9899)
 
         };
         foreach (var dataEntry in dataSet)
@@ -111,7 +111,7 @@ public class CodeElementComparerTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, -1100),
+            }, -10100),
             new(new CodeIndexer() {
                 ReturnType = new CodeType {
                     Name = "string"
@@ -127,14 +127,14 @@ public class CodeElementComparerTests
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, 900),
+            }, 9900),
             new(method, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {
                     Name = "string"
                 }
-            }, 901),
-            new(method, codeClass, 1101)
+            }, 9901),
+            new(method, codeClass, 10101)
 
         };
         foreach (var dataEntry in dataSet)

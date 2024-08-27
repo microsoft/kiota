@@ -18,6 +18,7 @@ public class GoRefiner : CommonLanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            DeduplicateErrorMappings(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -38,6 +39,7 @@ public class GoRefiner : CommonLanguageRefiner
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);
+            NormalizeNamespaceNames(generatedCode);
             AddInnerClasses(
                 generatedCode,
                 true,
@@ -91,12 +93,20 @@ public class GoRefiner : CommonLanguageRefiner
             FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
+                new GoNamespaceReservedNamesProvider(),
+                x => $"{x}Escaped",
+                shouldReplaceCallback: x => x is CodeNamespace
+            );
+            ReplaceReservedNames(
+                generatedCode,
                 new GoReservedNamesProvider(),
                 x => $"{x}Escaped",
-                shouldReplaceCallback: x => x is not CodeProperty currentProp ||
+                shouldReplaceCallback: x => (x is not CodeNamespace) &&
+                                            (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
+                                            (x is not CodeProperty currentProp ||
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
-                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+                                            currentProp.Access == AccessModifier.Public))); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
             ReplaceReservedExceptionPropertyNames(generatedCode, new GoExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(
@@ -443,7 +453,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
             parameter.Name = ContextParameterName;
-            parameter.Documentation.Description = ContextVarDescription;
+            parameter.Documentation.DescriptionTemplate = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
@@ -468,7 +478,7 @@ public class GoRefiner : CommonLanguageRefiner
                 Kind = CodeParameterKind.Cancellation,
                 Optional = false,
                 Documentation = {
-                    Description = ContextVarDescription,
+                    DescriptionTemplate = ContextVarDescription,
                 },
             });
         CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
@@ -523,20 +533,12 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void AddErrorAndStringsImportForEnums(CodeElement currentElement)
     {
-        if (currentElement is CodeEnum currentEnum)
+        if (currentElement is CodeEnum { Flags: true } currentEnum)
         {
             currentEnum.AddUsing(new CodeUsing
             {
-                Name = "errors",
+                Name = "strings",
             });
-
-            if (currentEnum.Flags)
-            {
-                currentEnum.AddUsing(new CodeUsing
-                {
-                    Name = "strings",
-                });
-            }
         }
         CrawlTree(currentElement, AddErrorAndStringsImportForEnums);
     }
@@ -568,7 +570,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+            SerializationNamespaceName, "Parsable"),
         new (static x => x is CodeMethod method &&
                          method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                          method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
@@ -576,16 +578,16 @@ public class GoRefiner : CommonLanguageRefiner
                                                     x.Type is CodeType pType &&
                                                     (pType.TypeDefinition is CodeClass ||
                                                      pType.TypeDefinition is CodeInterface)),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+            SerializationNamespaceName, "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) &&
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
-            "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
+            SerializationNamespaceName, "AdditionalDataHolder"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal) && unionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "strings", "EqualFold"),
         new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
-            "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
+            SerializationNamespaceName, "MergeDeserializersForIntersectionWrapper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
@@ -594,9 +596,14 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
+        new (static x => x is CodeEnum @enum && @enum.Flags,"", "math"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";
+    private const string SerializationNamespaceName = "github.com/microsoft/kiota-abstractions-go/serialization";
+    internal const string UntypedNodeName = "UntypedNodeable";
 
     private void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -669,21 +676,21 @@ public class GoRefiner : CommonLanguageRefiner
         {"TimeSpan", ("ISODuration", new CodeUsing {
                                         Name = "ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                            Name = SerializationNamespaceName,
                                             IsExternal = true,
                                         },
                                     })},
         {"DateOnly", (string.Empty, new CodeUsing {
                                 Name = "DateOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                    Name = SerializationNamespaceName,
                                     IsExternal = true,
                                 },
                             })},
         {"TimeOnly", (string.Empty, new CodeUsing {
                                 Name = "TimeOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                                    Name = SerializationNamespaceName,
                                     IsExternal = true,
                                 },
                             })},
@@ -694,6 +701,13 @@ public class GoRefiner : CommonLanguageRefiner
                             IsExternal = true,
                         },
                     })},
+        {KiotaBuilder.UntypedNodeName, (GoRefiner.UntypedNodeName, new CodeUsing {
+                                Name = GoRefiner.UntypedNodeName,
+                                Declaration = new CodeType {
+                                    Name = SerializationNamespaceName,
+                                    IsExternal = true,
+                                },
+                            })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
@@ -750,5 +764,26 @@ public class GoRefiner : CommonLanguageRefiner
                 parameter.Type.Name = currentInnerClass.Name;
         }
         CrawlTree(currentElement, RenameInnerModelsToAppended);
+    }
+
+    private void NormalizeNamespaceNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            var clientNamespace = _configuration.ClientNamespaceName;
+            var namespaceName = codeNamespace.Name;
+            if (namespaceName.StartsWith(clientNamespace, StringComparison.OrdinalIgnoreCase) && !namespaceName.Equals(clientNamespace, StringComparison.OrdinalIgnoreCase))
+            {
+                var secondPart = namespaceName[clientNamespace.Length..]; // The rest of the name after the clientNamespace
+                var withEmptyRemoved = string.Join('.', secondPart.Split('.', StringSplitOptions.RemoveEmptyEntries));
+                var normalizedString = string.IsNullOrEmpty(withEmptyRemoved) switch
+                {
+                    true => string.Empty,
+                    false => $".{withEmptyRemoved}"
+                };
+                codeNamespace.Name = $"{clientNamespace}{normalizedString.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, NormalizeNamespaceNames);
     }
 }

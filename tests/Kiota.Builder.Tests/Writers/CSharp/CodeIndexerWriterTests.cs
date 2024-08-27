@@ -43,7 +43,7 @@ public sealed class CodeIndexerWriterTests : IDisposable
                 SerializationName = "id",
                 Documentation = new()
                 {
-                    Description = "some description"
+                    DescriptionTemplate = "some description"
                 }
             }
         };
@@ -81,6 +81,8 @@ public sealed class CodeIndexerWriterTests : IDisposable
         Assert.Contains("id\", position", result);
         Assert.Contains("some description", result);
         Assert.Contains("public SomeRequestBuilder this[string position]", result);
+        Assert.Contains("return new SomeRequestBuilder(urlTplParams, RequestAdapter);", result);
+        Assert.Contains("<returns>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

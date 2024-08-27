@@ -41,6 +41,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { Bar as baz } from", result);
     }
     [Fact]
@@ -62,6 +63,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { Bar } from", result);
     }
 
@@ -72,7 +74,8 @@ public class CodeUsingWriterTests
         var someInterface = new CodeInterface
         {
             Name = "Bar",
-            Kind = CodeInterfaceKind.Model
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "Bar" }
         };
         root.AddInterface(someInterface);
         var us = new CodeUsing
@@ -86,6 +89,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -109,6 +113,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -132,6 +137,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -155,6 +161,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 
@@ -178,6 +185,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
 }

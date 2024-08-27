@@ -16,42 +16,51 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         if (codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
 
-        writer.StartBlock("import (");
-        foreach (var cUsing in codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"\"{cUsing.Name}\"");
-        writer.CloseBlock(")");
+        var usings = codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (usings.Length > 0)
+        {
+            writer.StartBlock("import (");
+            foreach (var cUsing in usings)
+                writer.WriteLine($"\"{cUsing.Name}\"");
+            writer.CloseBlock(")");
+        }
 
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecation(codeElement, writer);
         writer.WriteLines($"type {typeName} int",
                         string.Empty,
                         "const (");
         writer.IncreaseIndent();
-        var iotaSuffix = $" {typeName} = iota";
+        var isMultiValue = codeElement.Flags;
+
         var enumOptions = codeElement.Options;
+        int power = 0;
         foreach (var item in enumOptions)
         {
-            if (!string.IsNullOrEmpty(item.Documentation.Description))
-                writer.WriteLine($"// {item.Documentation.Description}");
-            writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
-            if (!string.IsNullOrEmpty(iotaSuffix))
-                iotaSuffix = string.Empty;
+            if (item.Documentation.DescriptionAvailable)
+                writer.WriteLine($"// {item.Documentation.DescriptionTemplate}");
+
+            if (isMultiValue)
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
+            else
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{(power == 0 ? $" {typeName} = iota" : string.Empty)}");
+
+            power++;
         }
         writer.DecreaseIndent();
         writer.WriteLines(")", string.Empty);
 
-        var isMultiValue = codeElement.Flags;
         WriteStringFunction(codeElement, writer, isMultiValue);
         WriteParsableEnum(codeElement, writer, isMultiValue);
-        WriteSerializeFunction(codeElement, writer, isMultiValue);
+        WriteSerializeFunction(codeElement, writer);
         WriteMultiValueFunction(codeElement, writer, isMultiValue);
     }
 
-    private void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, bool isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        var enumOptions = codeElement.Options;
+        var enumOptions = codeElement.Options.ToList();
 
         if (isMultiValue)
         {
@@ -60,9 +69,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             var literalOptions = enumOptions
                 .Select(x => $"\"{x.WireName}\"")
                 .Aggregate((x, y) => x + ", " + y);
-            writer.StartBlock($"for p := {typeName}(1); p <= {enumOptions.Last().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}; p <<= 1 {{");
-            writer.StartBlock($"if i&p == p {{");
-            writer.WriteLine($"values = append(values, []string{{{literalOptions}}}[p])");
+            writer.WriteLine($"options := []string{{{literalOptions}}}");
+            writer.StartBlock($"for p := 0; p < {enumOptions.Count}; p++ {{");
+            writer.WriteLine($"mantis := {typeName}(int(math.Pow(2, float64(p))))");
+            writer.StartBlock($"if i&mantis == mantis {{");
+            writer.WriteLine($"values = append(values, options[p])");
             writer.CloseBlock();
             writer.CloseBlock();
             writer.WriteLine("return strings.Join(values, \",\")");
@@ -79,10 +90,10 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         }
     }
 
-    private void WriteParsableEnum(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteParsableEnum(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        var enumOptions = codeElement.Options;
+        var enumOptions = codeElement.Options.ToArray();
 
         writer.StartBlock($"func Parse{typeName}(v string) (any, error) {{");
 
@@ -101,7 +112,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         }
         else
         {
-            writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+            writer.WriteLine($"result := {enumOptions[0].Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
             writer.StartBlock("switch v {");
             foreach (var item in enumOptions)
             {
@@ -111,9 +122,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             }
         }
 
-
         writer.StartBlock("default:");
-        writer.WriteLine($"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
+        writer.WriteLine($"return nil, nil");
         writer.DecreaseIndent();
         writer.CloseBlock();
         if (isMultiValue) writer.CloseBlock();
@@ -121,7 +131,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock();
     }
 
-    private void WriteSerializeFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteSerializeFunction(CodeEnum codeElement, LanguageWriter writer)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.StartBlock($"func Serialize{typeName}(values []{typeName}) []string {{");
@@ -134,7 +144,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock();
     }
 
-    private void WriteMultiValueFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteMultiValueFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.StartBlock($"func (i {typeName}) isMultiValue() bool {{");

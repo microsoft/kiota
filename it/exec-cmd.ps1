@@ -53,7 +53,7 @@ function Kill-MockServer {
     Pop-Location
 }
 
-$mockSeverITFolder = $null
+$mockSeverITFolder = "inexistent-it-folder"
 $configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
 $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
@@ -63,10 +63,10 @@ if ($null -ne $descriptionValue) {
     }
 }
 
-$mockServerTest = false
+$mockServerTest = $false
 $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
 if (Test-Path -Path $itTestPath) {
-    $mockServerTest = true
+    $mockServerTest = $true
 }
 
 # Start MockServer if needed

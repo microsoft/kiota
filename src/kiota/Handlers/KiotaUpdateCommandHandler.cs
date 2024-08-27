@@ -1,9 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
@@ -27,6 +23,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
     }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
+        WarnShouldUseKiotaConfigClientsCommands();
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
@@ -45,7 +42,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
@@ -65,21 +62,24 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 var results = await Task.WhenAll(configurations
                                                 .Select(x => GenerateClientAsync(context, x, cancellationToken)));
                 foreach (var (lockInfo, lockDirectoryPath) in locks)
+                {
                     DisplaySuccess($"Update of {lockInfo?.ClientClassName} client for {lockInfo?.Language} at {lockDirectoryPath} completed");
+                    DisplayUrlInformation(configurations.FirstOrDefault(x => lockDirectoryPath.Equals(x.OutputPath, StringComparison.OrdinalIgnoreCase))?.ApiRootUrl);
+                }
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach (var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
-                if (results.Any(x => x))
+                if (Array.Exists(results, static x => x))
                     DisplayCleanHint("update");
                 return 0;
             }
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error updating the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error updating the client: {ExceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error updating the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error updating the client: {ExceptionMessage}", ex.Message);
                 return 1;
 #endif
             }

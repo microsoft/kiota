@@ -16,7 +16,7 @@ public class CodeEnumTests
             Name = "Enum",
             Documentation = new()
             {
-                Description = "some description",
+                DescriptionTemplate = "some description",
             },
             Flags = true,
         }).First();

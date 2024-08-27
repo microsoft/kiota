@@ -11,7 +11,7 @@ public class DivergentResponseSchema : ValidationRule<OpenApiOperation>
 {
     private static readonly OpenApiSchemaComparer schemaComparer = new();
     private static readonly HashSet<string> validStatusCodes = new(OpenApiOperationExtensions.SuccessCodes, StringComparer.OrdinalIgnoreCase);
-    public DivergentResponseSchema(GenerationConfiguration configuration) : base((context, operation) =>
+    public DivergentResponseSchema(GenerationConfiguration configuration) : base(nameof(DivergentResponseSchema), (context, operation) =>
     {
         var schemas = operation.GetResponseSchemas(validStatusCodes, configuration.StructuredMimeTypes);
         if (schemas.GroupBy(x => x, schemaComparer).Count() > 1)

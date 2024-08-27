@@ -12,7 +12,7 @@ public class CodeIndexerTests
             Name = "idx",
             Documentation = new()
             {
-                Description = "some description",
+                DescriptionTemplate = "some description",
             },
             ReturnType = new CodeType(),
             IndexParameter = new() { Name = "param", Type = new CodeType(), }

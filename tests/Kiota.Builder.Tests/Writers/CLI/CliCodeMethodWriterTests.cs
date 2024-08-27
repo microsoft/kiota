@@ -134,7 +134,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             DefaultValue = "test",
             Documentation = new()
             {
-                Description = "The q option",
+                DescriptionTemplate = "The q option",
             },
             Optional = true
         });
@@ -151,7 +151,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             Type = stringType,
             Documentation = new()
             {
-                Description = "The test header",
+                DescriptionTemplate = "The test header",
             },
         });
     }
@@ -241,7 +241,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var builder = new TestClass", result);
+        Assert.Contains("var builder = new global::Test.Name.Sub.TestClass", result);
         Assert.Contains("var commands = new List<Command>();", result);
         Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
@@ -252,7 +252,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesMatchingIndexerCommandsIntoExecutableCommand()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -325,7 +325,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var testItemIdx = new TestItemRequestBuilder();", result);
+        Assert.Contains("var testItemIdx = new global::Test.Name.Sub.TestItemRequestBuilder();", result);
         Assert.Contains("var command = testItemIdx.BuildTestMethod1();", result);
         Assert.Contains("var cmds = testItemIdx.BuildTestMethod2();", result);
         Assert.DoesNotContain("execCommands.AddRange(cmds.Item1)", result);
@@ -418,12 +418,12 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var testItemIndexer = new TestIndexItemRequestBuilder();", result);
+        Assert.Contains("var testItemIndexer = new global::Test.Name.Sub.TestIndexItemRequestBuilder();", result);
         Assert.Contains("var command = testItemIndexer.BuildTestMethod1();", result);
         Assert.Contains("var cmds = testItemIndexer.BuildTestMethod2();", result);
         Assert.DoesNotContain("execCommands.AddRange(cmds.Item1);", result);
         Assert.Contains("nonExecCommands.AddRange(cmds.Item2);", result);
-        Assert.Contains("var builder = new TestNavItemRequestBuilder", result);
+        Assert.Contains("var builder = new global::Test.TestNavItemRequestBuilder", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod11());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("nonExecCommands.Add(builder.BuildTestMethod3());", result);
@@ -438,7 +438,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandThatReusesMatchingNavCommandInstance()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType { Name = "string" };
@@ -553,7 +553,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestNavItemRequestBuilder();", result);
+        Assert.Contains("var builder = new global::Test.TestNavItemRequestBuilder();", result);
         Assert.Contains("execCommands.Add(builder.BuildExecutableTestMethod());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("BuildNavTestMethod", result);
@@ -596,7 +596,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestClass1", result);
+        Assert.Contains("var builder = new global::Test.Name.Sub1.Sub2.TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);
@@ -637,7 +637,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestClass1", result);
+        Assert.Contains("var builder = new global::Test.Name.Sub1.Sub2.TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);
@@ -702,9 +702,9 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new Test.A.B.C.D.E.F.TestRequestBuilder", result);
+        Assert.Contains("var builder = new global::Test.A.B.C.D.E.F.TestRequestBuilder", result);
         // Test case insensitive match
-        Assert.Contains("var builder = new Test.A.B.C.D.E.F.TestRequestBuilder2", result);
+        Assert.Contains("var builder = new global::Test.A.B.C.D.E.F.TestRequestBuilder2", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("foreach (var cmd in nonExecCommands)", result);
         Assert.Contains("command.AddCommand(cmd);", result);
@@ -715,7 +715,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandWithRelatedLinksInDescription()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.Documentation.DocumentationLink = new Uri("https://test.com/help/description");
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
@@ -768,7 +768,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "Documentation label2",
+                DescriptionTemplate = "Documentation label2",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
         });
@@ -783,7 +783,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "Documentation label3",
+                DescriptionTemplate = "Documentation label3",
                 DocumentationLabel = "Test label",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
@@ -823,7 +823,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandForGetRequestPrimitive()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -893,7 +893,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -951,7 +951,9 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var pagingData = new PageLinkData(requestInfo, null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, token) => reqAdapter.SendNoContentAsync(info, cancellationToken: token), pagingData, all, cancellationToken);", result);
+        Assert.Contains("#nullable enable", result);
         Assert.Contains("IOutputFormatter? formatter = null;", result);
+        Assert.Contains("#nullable restore", result);
         Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(output);", result);
         Assert.Contains("response = (response != Stream.Null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
@@ -966,7 +968,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Documentation.Description = "Test description";
+        method.Documentation.DescriptionTemplate = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -1083,7 +1085,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<global::Test.Content>(global::Test.Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
@@ -1142,7 +1144,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
             Name = "contentType",
             Kind = CodeParameterKind.RequestBodyContentType,
             Type = stringType,
-            Documentation = new() { Description = "The request content type." },
+            Documentation = new() { DescriptionTemplate = "The request content type." },
             PossibleValues = new List<string> { "application/json", "text/plain" }
         };
         method.OriginalMethod.AddParameter(contentTypeParam);
@@ -1169,7 +1171,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("var contentType = invocationContext.ParseResult.GetValueForOption(contentTypeOption);", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<global::Test.Content>(global::Test.Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation(model, contentType", result);
@@ -1240,7 +1242,7 @@ public sealed class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue)?.ToList();", result);
+        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<global::Test.Content>(global::Test.Content.CreateFromDiscriminatorValue)?.ToList();", result);
         Assert.Contains("if (model is null)", result);
         Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);

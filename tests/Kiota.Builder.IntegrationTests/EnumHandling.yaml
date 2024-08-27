@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: Test
+  version: 3.0.x
+  description: Testing enum handling.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+paths:
+  "/play":
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MoveType"
+          description: A move
+      description: "Play a move"
+components:
+  schemas:
+    MoveType:
+      description: ""
+      enum:
+        - ROCK
+        - PAPER
+        - SCISSORS
+      type: string
+      example: ROCK

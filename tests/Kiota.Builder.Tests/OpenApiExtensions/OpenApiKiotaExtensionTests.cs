@@ -36,13 +36,13 @@ public class OpenApiKiotaExtensionTests
                 }
             },
         };
-        using TextWriter sWriter = new StringWriter();
-        OpenApiJsonWriter writer = new(sWriter);
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
 
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
-        Assert.Equal("{\n  \"languagesInformation\": {\n    \"CSharp\": {\n      \"maturityLevel\": \"Preview\",\n      \"dependencyInstallCommand\": \"dotnet add package\",\n      \"dependencies\": [\n        {\n          \"name\": \"Microsoft.Graph.Core\",\n          \"version\": \"1.0.0\"\n        }\n      ],\n      \"clientClassName\": \"GraphServiceClient\",\n      \"clientNamespaceName\": \"Microsoft.Graph\",\n      \"structuredMimeTypes\": [\n        \"application/json\",\n        \"application/xml\"\n      ]\n    }\n  }\n}", result);
+        Assert.Equal("{\"languagesInformation\":{\"CSharp\":{\"maturityLevel\":\"Preview\",\"dependencyInstallCommand\":\"dotnet add package\",\"dependencies\":[{\"name\":\"Microsoft.Graph.Core\",\"version\":\"1.0.0\"}],\"clientClassName\":\"GraphServiceClient\",\"clientNamespaceName\":\"Microsoft.Graph\",\"structuredMimeTypes\":[\"application/json\",\"application/xml\"]}}}", result);
     }
     [Fact]
     public void Parses()

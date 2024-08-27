@@ -23,7 +23,7 @@ public class OpenApiDeprecationExtensionExtensions
             Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
         };
         var deprecationInformation = openApiExtension.ToDeprecationInformation();
-        Assert.Equal(openApiExtension.Description, deprecationInformation.Description);
+        Assert.Equal(openApiExtension.Description, deprecationInformation.DescriptionTemplate);
         Assert.Equal(openApiExtension.Version, deprecationInformation.Version);
         Assert.Equal(openApiExtension.RemovalDate.Value.Year, deprecationInformation.RemovalDate.Value.Year);
         Assert.Equal(openApiExtension.Date.Value.Month, deprecationInformation.Date.Value.Month);
@@ -47,7 +47,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = openApiSchema.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsEmptyDeprecationInformationFromSchema()
@@ -59,7 +59,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = openApiSchema.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationFromNonDeprecatedSchema()
@@ -80,7 +80,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = openApiSchema.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationOnOperationDirect()
@@ -101,7 +101,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationOnNonDeprecatedOperation()
@@ -122,7 +122,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationOnOperationWithNullResponseContentTypeInstance()
@@ -147,7 +147,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationOnOperationWithDeprecatedInlineResponseSchema()
@@ -187,7 +187,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationOnOperationWithDeprecatedReferenceResponseSchema()
@@ -232,7 +232,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationOnOperationWithDeprecatedInlineRequestSchema()
@@ -267,7 +267,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationOnOperationWithNullRequestBodyContentTypeInstance()
@@ -287,7 +287,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationOnOperationWithDeprecatedReferenceRequestSchema()
@@ -327,7 +327,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = operation.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationInformationOnParameter()
@@ -348,7 +348,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationOnNonDeprecatedParameter()
@@ -369,7 +369,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationInformationOnParameterWithDeprecatedInlineSchema()
@@ -394,7 +394,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationOnParameterWithDeprecatedReferenceSchema()
@@ -424,7 +424,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationInformationOnParameterWithDeprecatedInlineContentSchema()
@@ -455,7 +455,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationOnParameterWithDeprecatedReferenceContentSchema()
@@ -491,7 +491,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsDeprecationInformationFromTreeNodeWhenAllOperationsDeprecated()
@@ -518,7 +518,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = treeNode.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.True(deprecationInformation.IsDeprecated);
-        Assert.Equal("description", deprecationInformation.Description);
+        Assert.Equal("description", deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationFromTreeNodeOnNoOperation()
@@ -533,7 +533,7 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = treeNode.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
     [Fact]
     public void GetsNoDeprecationInformationFromTreeNodeWhenOneOperationNonDeprecated()
@@ -563,6 +563,6 @@ public class OpenApiDeprecationExtensionExtensions
         var deprecationInformation = treeNode.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
         Assert.False(deprecationInformation.IsDeprecated);
-        Assert.Null(deprecationInformation.Description);
+        Assert.Null(deprecationInformation.DescriptionTemplate);
     }
 }

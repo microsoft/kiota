@@ -1,6 +1,7 @@
-import { connectToKiota, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
+import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
 import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import { getWorkspaceJsonDirectory } from "./util";
 
 export function generateClient(context: vscode.ExtensionContext, 
   descriptionPath: string,
@@ -18,7 +19,10 @@ export function generateClient(context: vscode.ExtensionContext,
   serializers: string[],
   deserializers: string[],
   structuredMimeTypes: string[],
-  includeAdditionalData: boolean): Promise<KiotaLogEntry[] | undefined> {
+  includeAdditionalData: boolean,
+  operation: ConsumerOperation,
+  workingDirectory: string = getWorkspaceJsonDirectory()
+): Promise<KiotaLogEntry[] | undefined> {
     return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
       const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
         "Generate"
@@ -42,7 +46,8 @@ export function generateClient(context: vscode.ExtensionContext,
           serializers: serializers,
           structuredMimeTypes: structuredMimeTypes,
           usesBackingStore: usesBackingStore,
+          operation: operation
         } as GenerationConfiguration,
       );
-    });
+    }, workingDirectory);
 };

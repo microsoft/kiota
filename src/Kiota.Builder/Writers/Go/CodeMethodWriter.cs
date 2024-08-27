@@ -4,6 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Go;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
@@ -290,10 +291,29 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
     private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer)
     {
-        if (code.Documentation.DescriptionAvailable)
-            conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+        conventions.WriteShortDescription(code, writer, $"{methodName.ToFirstCharacterUpperCase()} ");
         conventions.WriteDeprecation(code, writer);
+        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var shortReturnTypeName = conventions.GetTypeString(code.ReturnType, code, true, true, false);
+            conventions.WriteDescriptionItem($"returns a {shortReturnTypeName} when successful", writer);
+        }
+        WriteThrownExceptions(code, writer);
         conventions.WriteLinkDescription(code.Documentation, writer);
+    }
+    private void WriteThrownExceptions(CodeMethod code, LanguageWriter writer)
+    {
+        if (code.Kind is not CodeMethodKind.RequestExecutor) return;
+        foreach (var errorMapping in code.ErrorMappings)
+        {
+            var statusCode = errorMapping.Key.ToUpperInvariant() switch
+            {
+                "XXX" => "4XX or 5XX",
+                _ => errorMapping.Key,
+            };
+            var errorTypeString = conventions.GetTypeString(errorMapping.Value, code, false, false, false);
+            conventions.WriteDescriptionItem($"returns a {errorTypeString} error when the service returns a {statusCode} status code", writer);
+        }
     }
     private const string TempParamsVarName = "urlParams";
     private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -689,6 +709,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
             (CodeInterface, true) => ("res", string.Empty, false),
             (_, true) => ("res", "*", true),
+            (null, false) when property.Type.AllTypes.First().Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase) => (GetTypeAssertion("val", $"{propertyTypeImportName}"), string.Empty, true),
             _ => ("val", string.Empty, true),
         };
         if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
@@ -702,16 +723,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private static string GetTypeAssertion(string originalReference, string typeImportName, string? assignVarName = default, string? statusVarName = default) =>
         $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", " : string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
 
-    private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true)
+    private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true, bool scalar = false)
     {
         writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
             $"for i, v := range {sourceVarName} {{");
         writer.IncreaseIndent();
-        writer.StartBlock("if v != nil {");
-        var derefPrefix = dereference ? "*(" : string.Empty;
-        var derefSuffix = dereference ? ")" : string.Empty;
-        writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
-        writer.CloseBlock();
+        if (!scalar)
+        {
+            writer.StartBlock("if v != nil {");
+            var derefPrefix = dereference ? "*(" : string.Empty;
+            var derefSuffix = dereference ? ")" : string.Empty;
+            writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
+            writer.CloseBlock();
+        }
+        else
+        {
+            writer.WriteLine($"{targetVarName}[i] = v");
+        }
         writer.CloseBlock();
     }
 
@@ -854,7 +882,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "\"\"")}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
 
         if (ExcludeBackwardCompatible && requestParams.requestConfiguration is not null)
             writer.WriteLine($"{conventions.AbstractionsHash}.ConfigureRequestInformation({RequestInfoVarName}, {requestParams.requestConfiguration.Name})");
@@ -862,17 +891,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             WriteLegacyRequestConfiguration(requestParams, writer);
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\")");
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\")");
         if (requestParams.requestBody != null)
         {
             var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
             var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase) || requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, *{requestParams.requestContentType.Name.ToFirstCharacterLowerCase()})");
-                else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{codeElement.RequestBodyContentType}\")");
+                else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContentAndContentType({bodyParamReference}, \"{sanitizedRequestBodyContentType}\")");
             }
             else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
             {
@@ -882,11 +912,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
                     bodyParamReference = "cast";
                 }
-                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{sanitizedRequestBodyContentType}\", {bodyParamReference})");
                 writer.WriteBlock("if err != nil {", "}", "return nil, err");
             }
             else
-                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+            {
+                if (requestParams.requestBody.Type.IsCollection)
+                {
+                    WriteCollectionCast("interface{}", bodyParamReference, "cast", writer, string.Empty, false, true);
+                    bodyParamReference = "cast";
+                }
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{sanitizedRequestBodyContentType}\", {bodyParamReference})");
+            }
         }
 
         writer.WriteLine($"return {RequestInfoVarName}, nil");
@@ -957,7 +994,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         serializationKey = $"\"{serializationKey}\"";
         var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
         var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
-        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface);
+        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase));
         var isInterface = propType is CodeType iType && iType.TypeDefinition is CodeInterface;
         if (addBlockForErrorScope)
             if (isEnum || propType.IsCollection)

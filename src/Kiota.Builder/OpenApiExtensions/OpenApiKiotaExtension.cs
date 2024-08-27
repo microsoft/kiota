@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;

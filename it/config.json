@@ -71,7 +71,22 @@
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
-    "MockServerITFolder": "query-params"
+    "MockServerITFolder": "query-params",
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/4262"
+      }
+    ]
+  },
+  "apisguru::github.com:api.github.com": {
+    "MockServerITFolder": "gh",
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/4241"
+      }
+    ]
   },
   "apisguru::notion.com": {
     "ExcludePatterns": [
@@ -148,10 +163,6 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3029"
       },
       {
         "Language": "python",
@@ -244,10 +255,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2834"
       },
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3029"
-      },
-      {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },
@@ -300,10 +307,6 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/3030"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3029"
       }
     ]
   },
@@ -323,6 +326,12 @@
         "Language": "typescript",
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       }
+    ]
+  },
+  "apisguru::apis.guru": {
+    "Suppressions": [
+    ],
+    "IdempotencySuppressions": [
     ]
   }
 }

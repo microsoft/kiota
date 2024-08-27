@@ -6,6 +6,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build_extension:
     runs-on: ubuntu-latest
@@ -15,11 +18,12 @@ jobs:
         with:
           node-version: 18.x
       - id: last_release
-        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           owner: microsoft
           repo: kiota
           excludes: prerelease, draft
+          token: ${{ secrets.GITHUB_TOKEN }}
       - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.release }}" -filePath "./vscode/microsoft-kiota/package.json" -online
         shell: pwsh
       - name: Install dependencies

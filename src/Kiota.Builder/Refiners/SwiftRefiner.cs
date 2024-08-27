@@ -44,6 +44,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             AddDefaultImports(
                 generatedCode,
                 defaultUsingEvaluators);
+            RemoveUntypedNodePropertyValues(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreType(
                 generatedCode,
@@ -204,7 +205,7 @@ public class SwiftRefiner : CommonLanguageRefiner
                 Kind = CodeClassKind.BarrelInitializer,
                 Documentation = new()
                 {
-                    Description = "Root class for extensions",
+                    DescriptionTemplate = "Root class for extensions",
                 },
             });
         }

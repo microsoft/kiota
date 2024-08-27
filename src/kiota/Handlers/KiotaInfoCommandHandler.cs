@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
@@ -60,7 +54,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             if (!language.HasValue)
             {
                 ShowLanguagesTable();
@@ -78,7 +72,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 openapi = searchResultDescription;
             }
 
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
 

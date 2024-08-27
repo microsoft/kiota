@@ -46,7 +46,7 @@ public class BasicAPITest {
         });
         reqInf.pathParameters.put("baseurl", "http://test");
 
-        assertEquals("http://test/api/something/v1?startDateTime=START&EndDateTime=END", reqInf.getUri().toString());
+        assertEquals("http://test/api/something/v1?EndDateTime=END&startDateTime=START", reqInf.getUri().toString());
     }
 
 }

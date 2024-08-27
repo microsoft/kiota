@@ -17,6 +17,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            DeduplicateErrorMappings(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor, CodeMethodKind.RawUrlBuilder);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
@@ -233,7 +234,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             parentNamespace.Parent is CodeNamespace parentLevelNamespace &&
             parentLevelNamespace.Files.SelectMany(static x => x.Interfaces).FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface parentLevelInterface &&
             codeFile.Constants
-                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.UriTemplate or CodeConstantKind.RequestsMetadata)
+                .Where(static x => x.Kind is CodeConstantKind.NavigationMetadata or CodeConstantKind.RequestsMetadata)
                 .Select(static x => new CodeUsing
                 {
                     Name = x.Name,
@@ -467,7 +468,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                             .Name +
                                 usingElement.Declaration
                                             ?.TypeDefinition
-                                            ?.Name)
+                                            ?.Name.ToFirstCharacterUpperCase())
                                 .GetNamespaceImportSymbol()
                                 .ToFirstCharacterUpperCase();
     }
@@ -526,7 +527,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.Kind is CodePropertyKind.BackingStore,
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
         new (static x => x is CodeMethod m && HasMultipartBody(m),
-            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
+            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}"),
+        new (static x => (x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+                         || (x is CodeMethod method && (method.Parameters.Any(param =>  param.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)) || method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
+            AbstractionsPackageName, KiotaBuilder.UntypedNodeName, "createUntypedNodeFromDiscriminatorValue"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
@@ -580,7 +584,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter urlTplParams && urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Record<string, unknown>";
-                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.DescriptionTemplate = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType
                 {
                     Name = "rawUrlOrTemplateParameters",
@@ -656,6 +660,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Kind = CodeInterfaceKind.QueryParameters,
                 Documentation = codeClass.Documentation,
                 Deprecation = codeClass.Deprecation,
+                OriginalClass = codeClass
             };
             parentClass.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
@@ -671,7 +676,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, ReplaceRequestQueryParamsWithInterfaces);
     }
-    private const string TemporaryInterfaceNameSuffix = "Interface";
+
     private const string ModelSerializerPrefix = "serialize";
     private const string ModelDeserializerPrefix = "deserializeInto";
 
@@ -734,9 +739,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         method.AddParameter(new CodeParameter
         {
-            Name = ReturnFinalInterfaceName(modelInterface.Name), // remove the interface suffix
+            Name = ReturnFinalInterfaceName(modelInterface),
             DefaultValue = "{}",
-            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface },
+            Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
         });
 
@@ -747,7 +752,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = modelInterface.Parent.Name,
                 Declaration = new CodeType
                 {
-                    Name = ReturnFinalInterfaceName(modelInterface.Name),
+                    Name = ReturnFinalInterfaceName(modelInterface),
                     TypeDefinition = modelInterface
                 }
             });
@@ -778,7 +783,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
-            var finalName = ReturnFinalInterfaceName(modelInterface.Name);
+            var finalName = ReturnFinalInterfaceName(modelInterface);
             if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
             {
                 if (parentNS.FindChildByName<CodeClass>(finalName, false) is CodeClass existingClassToRemove)
@@ -798,13 +803,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
         {
-            param.Name = ReturnFinalInterfaceName(paramInterface.Name);
+            param.Name = ReturnFinalInterfaceName(paramInterface);
         }
     }
 
-    private static string ReturnFinalInterfaceName(string interfaceName)
+    private static string ReturnFinalInterfaceName(CodeInterface codeInterface)
     {
-        return interfaceName.EndsWith(TemporaryInterfaceNameSuffix, StringComparison.Ordinal) ? interfaceName[..^TemporaryInterfaceNameSuffix.Length] : interfaceName;
+        return codeInterface.OriginalClass.Name.ToFirstCharacterUpperCase();
     }
 
     private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
@@ -922,7 +927,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = interfaceElement.Name,
             TypeDefinition = interfaceElement,
         };
-        requestBuilder.RemoveUsingsByDeclarationName(interfaceElement.Name.Split(TemporaryInterfaceNameSuffix)[0]);
+        requestBuilder.RemoveUsingsByDeclarationName(ReturnFinalInterfaceName(interfaceElement));
         if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
@@ -954,12 +959,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false) is CodeInterface existing)
             return existing;
 
+        var i = 1;
+        while (namespaceOfModel.FindChildByName<CodeClass>(temporaryInterfaceName, false) != null)
+        {// We already know an Interface doesn't exist with the name. Make sure we don't collide with an existing class name in the namespace.
+            temporaryInterfaceName = $"{temporaryInterfaceName}{i++}";
+        }
+
         var insertValue = new CodeInterface
         {
             Name = temporaryInterfaceName,
             Kind = CodeInterfaceKind.Model,
             Documentation = modelClass.Documentation,
             Deprecation = modelClass.Deprecation,
+            OriginalClass = modelClass
         };
 
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
@@ -984,7 +996,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var parentInterface = CreateModelInterface(baseClass, tempInterfaceNamingCallback);
             var codeType = new CodeType
             {
-                Name = ReturnFinalInterfaceName(parentInterface.Name),
+                Name = ReturnFinalInterfaceName(parentInterface),
                 TypeDefinition = parentInterface,
             };
             modelInterface.StartBlock.AddImplements(codeType);
@@ -1100,9 +1112,25 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddEnumObject);
     }
-
     protected static void AddEnumObjectUsings(CodeElement currentElement)
     {
+        if (currentElement is CodeProperty codeProperty && codeProperty.Kind is CodePropertyKind.RequestBuilder && codeProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass)
+        {
+            foreach (var propertyMethod in codeClass.Methods)
+            {
+                if (propertyMethod.ReturnType is CodeType ct && ct.TypeDefinition is CodeEnum codeEnum)
+                {
+                    codeClass.AddUsing(new CodeUsing
+                    {
+                        Name = codeEnum.Name,
+                        Declaration = new CodeType
+                        {
+                            TypeDefinition = codeEnum.CodeEnumObject
+                        }
+                    });
+                }
+            }
+        }
         if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
         {
             foreach (var propertyEnum in codeFunction.OriginalMethodParentClass.Properties.Select(static x => x.Type).OfType<CodeType>().Select(static x => x.TypeDefinition).OfType<CodeEnum>())

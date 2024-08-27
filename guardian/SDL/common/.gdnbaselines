@@ -1,0 +1,28 @@
+{
+  "hydrated": true,
+  "properties": {
+    "helpUri": "https://eng.ms/docs/microsoft-security/security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/microsoft-guardian/general/baselines",
+    "hydrationStatus": "This file contains identifying data. It is **NOT** safe to check into your repo. To dehydrate this file, run `guardian dehydrate --help` and follow the guidance."
+  },
+  "version": "1.0.0",
+  "baselines": {
+    "default": {
+      "name": "default",
+      "createdDate": "2024-02-06 16:30:49Z",
+      "lastUpdatedDate": "2024-02-06 16:30:49Z"
+    }
+  },
+  "results": {
+    "b3736a918ff8d688843a2c76bfce1661c484e260144140c9df23f1147da102c0": {
+      "signature": "b3736a918ff8d688843a2c76bfce1661c484e260144140c9df23f1147da102c0",
+      "alternativeSignatures": [],
+      "target": "spotbugs.xml",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "spotbugs",
+      "ruleId": "gdn.unknownFormatResult",
+      "createdDate": "2024-02-06 16:30:49Z"
+    }
+  }
+}

@@ -1,7 +1,4 @@
-﻿using System;
-using System.CommandLine.Invocation;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.CommandLine.Invocation;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +12,7 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);

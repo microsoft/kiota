@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine.Invocation;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.CommandLine.Invocation;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient;
 using Microsoft.Extensions.Logging;
@@ -21,10 +16,10 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<DeviceCodeAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                return await LoginAsync(logger, cancellationToken);
+                return await LoginAsync(logger, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

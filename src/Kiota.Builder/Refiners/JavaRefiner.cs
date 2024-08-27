@@ -19,6 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCommonNames(generatedCode);
+            DeduplicateErrorMappings(generatedCode);
             AddQueryParameterExtractorMethod(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
@@ -188,7 +189,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Optional = false,
                     Documentation = new()
                     {
-                        Description = "Discriminator value from the payload",
+                        DescriptionTemplate = "Discriminator value from the payload",
                     },
                     Name = "discriminatorValue"
                 });
@@ -263,6 +264,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 AbstractionsNamespaceName, "QueryParameters"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             SerializationNamespaceName, "ParseNodeHelper"),
+        new (static x => (x is CodeMethod @method && @method.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) && @method.AccessedProperty != null && (@method.AccessedProperty.IsOfKind(CodePropertyKind.Custom) && @method.AccessedProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase) )) ,
+            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName)
     };
@@ -539,7 +542,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Kind = CodeMethodKind.QueryParametersMapper,
                 Documentation = new()
                 {
-                    Description = "Extracts the query parameters into a map for the URI template parsing.",
+                    DescriptionTemplate = "Extracts the query parameters into a map for the URI template parsing.",
                 },
             });
         }

@@ -115,6 +115,8 @@ public static class TestHelper
         {
             Name = "EnumType"
         };
+        var enumOption = new CodeEnumOption() { Name = "SomeOption" };
+        propertyEnum.AddOption(enumOption);
         parentNamespace.AddEnum(propertyEnum);
         modelClass.AddProperty(new CodeProperty
         {

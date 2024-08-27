@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
@@ -37,6 +31,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
@@ -44,9 +42,11 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         string outputPath = context.ParseResult.GetValueForOption(OutputPathOption) ?? string.Empty;
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
+        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Download.ClearCache = clearCache;
+        Configuration.Download.DisableSSLValidation = disableSSLValidation;
         Configuration.Download.CleanOutput = cleanOutput;
         Configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
 
@@ -55,7 +55,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try

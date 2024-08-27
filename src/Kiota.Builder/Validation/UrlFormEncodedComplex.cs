@@ -11,7 +11,7 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
     private static readonly StructuredMimeTypesCollection validContentTypes = new() {
         "application/x-www-form-urlencoded",
     };
-    public UrlFormEncodedComplex() : base(static (context, operation) =>
+    public UrlFormEncodedComplex() : base(nameof(UrlFormEncodedComplex), static (context, operation) =>
     {
         if (operation.GetRequestSchema(validContentTypes) is OpenApiSchema requestSchema)
             ValidateSchema(requestSchema, context, operation.OperationId, "request body");
@@ -23,9 +23,9 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
     private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, string operationId, string schemaName)
     {
         if (schema == null) return;
-        if (!schema.IsObject())
+        if (!schema.IsObjectType())
             context.CreateWarning(nameof(UrlFormEncodedComplex), $"The operation {operationId} has a {schemaName} which is not an object type. This is not supported by Kiota and serialization will fail.");
-        if (schema.Properties.Any(static x => x.Value.IsObject()))
+        if (schema.Properties.Any(static x => x.Value.IsObjectType()))
             context.CreateWarning(nameof(UrlFormEncodedComplex), $"The operation {operationId} has a {schemaName} with a complex properties and the url form encoded content type. This is not supported by Kiota and serialization of complex properties will fail.");
     }
 }

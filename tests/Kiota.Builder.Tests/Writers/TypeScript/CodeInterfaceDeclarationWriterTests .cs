@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Xunit;
 
@@ -19,9 +20,11 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
         var ns = root.AddNamespace("graphtests.models");
+        var originalClass = ns.AddClass(new CodeClass() { Name = "originalParentClass" }).First();
         parentInterface = new CodeInterface()
         {
-            Name = "parent"
+            Name = "parent",
+            OriginalClass = originalClass
         };
         ns.AddInterface(parentInterface);
     }

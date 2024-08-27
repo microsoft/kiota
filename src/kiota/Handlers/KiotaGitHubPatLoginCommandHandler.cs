@@ -1,8 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Logging;
 
@@ -20,10 +17,10 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<PatAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                return await LoginAsync(logger, pat, cancellationToken);
+                return await LoginAsync(logger, pat, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

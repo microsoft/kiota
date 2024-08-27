@@ -1,10 +1,6 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
 using System.IO.Pipes;
-using System.Threading;
-using System.Threading.Tasks;
 using kiota.Rpc;
 using Nerdbank.Streams;
 using StreamJsonRpc;

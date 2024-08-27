@@ -170,7 +170,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Kind = CodePropertyKind.QueryParameter,
                 Documentation = new()
                 {
-                    Description = "Filter by start time",
+                    DescriptionTemplate = "Filter by start time",
                 },
                 Type = new CodeType
                 {
@@ -183,7 +183,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Kind = CodePropertyKind.QueryParameter,
                 Documentation = new()
                 {
-                    Description = "Filter by end time",
+                    DescriptionTemplate = "Filter by end time",
                 },
                 Type = new CodeType
                 {
@@ -196,7 +196,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Kind = CodePropertyKind.QueryParameter,
                 Documentation = new()
                 {
-                    Description = "Filter by start date",
+                    DescriptionTemplate = "Filter by start date",
                 },
                 Type = new CodeType
                 {
@@ -209,7 +209,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Kind = CodePropertyKind.QueryParameter,
                 Documentation = new()
                 {
-                    Description = "Filter by status",
+                    DescriptionTemplate = "Filter by status",
                 },
                 Type = new CodeType
                 {
@@ -225,7 +225,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
             {
                 Name = "queryParameters",
                 Kind = CodePropertyKind.QueryParameters,
-                Documentation = new() { Description = "Request query parameters", },
+                Documentation = new() { DescriptionTemplate = "Request query parameters", },
                 Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
             }
         });

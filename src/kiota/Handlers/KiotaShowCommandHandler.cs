@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
@@ -46,6 +41,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -57,14 +56,16 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
         List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
+        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
         Configuration.Search.ClearCache = clearCache;
+        Configuration.Generation.DisableSSLValidation = disableSSLValidation;
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken);
+            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
             var descriptionProvided = (!string.IsNullOrEmpty(openapi) || !string.IsNullOrEmpty(manifest)) && string.IsNullOrEmpty(searchTerm);
             var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
@@ -80,10 +81,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 logger.LogError("no description provided");
                 return 1;
             }
-            Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ApiManifestPath = manifest;
-            Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
-            Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
+            Configuration.Generation.IncludePatterns = [.. includePatterns];
+            Configuration.Generation.ExcludePatterns = [.. excludePatterns];
             Configuration.Generation.ClearCache = clearCache;
             try
             {
