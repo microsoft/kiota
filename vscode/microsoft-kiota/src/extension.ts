@@ -135,12 +135,14 @@ export async function activate(
         }
 
         let languagesInformation = await getLanguageInformation(context);
+        const pluginName = getPluginName();
         config = await generateSteps(
           {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
             language: openApiTreeProvider.language,
             outputPath: openApiTreeProvider.outputPath,
+            pluginName
           },
           languagesInformation
         );
@@ -187,6 +189,12 @@ export async function activate(
           } else {
             await displayGenerationResults(context, openApiTreeProvider, config);
           }
+        }
+        function getPluginName(): string | undefined {
+          if (openApiTreeProvider.apiTitle) {
+            return openApiTreeProvider.apiTitle.replace(/[^a-zA-Z0-9_]+/g, '');
+          }
+          return undefined;
         }
       }
     ),
@@ -527,7 +535,7 @@ export async function activate(
         [],
         clientKey,
         settings.clearCache,
-        settings.cleanOutput,
+        false,
         settings.disableValidationRules,
         ConsumerOperation.Edit
       );

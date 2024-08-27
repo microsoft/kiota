@@ -585,26 +585,18 @@ public static partial class KiotaHost
             input.ErrorMessage = $"{unknownValue} is not a supported {parameterName}, supported values are {validOptionsList}";
         }
     }
-    private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T : struct, Enum
-    {
-        if (input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _))
-        {
-            var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
-            input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
-        }
-    }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
     private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
 }

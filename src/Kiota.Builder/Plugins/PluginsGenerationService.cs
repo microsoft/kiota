@@ -39,7 +39,6 @@ public partial class PluginsGenerationService
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionPathSuffix = "openapi.yml";
-    private const string OpenAIManifestFileName = "openai-plugins";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
         // 1. cleanup any namings to be used later on.
@@ -63,10 +62,10 @@ public partial class PluginsGenerationService
 
         foreach (var pluginType in Configuration.PluginTypes)
         {
-            var manifestFileName = pluginType == PluginType.OpenAI ? OpenAIManifestFileName : $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
+            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
             var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var fileStream = File.Create(manifestOutputPath, 4096);
+            await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 
@@ -90,8 +89,7 @@ public partial class PluginsGenerationService
                     apiManifest.Write(writer);
                     break;
                 case PluginType.OpenAI:
-                    var pluginDocumentV1 = GetV1ManifestDocument(descriptionRelativePath);
-                    pluginDocumentV1.Write(writer);
+                    // OpenAI plugins have been retired and are no longer supported. They only require the OpenAPI description now.
                     break;
                 default:
                     throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
@@ -129,29 +127,6 @@ public partial class PluginsGenerationService
         return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
     }
 
-    private PluginManifestDocument GetV1ManifestDocument(string openApiDocumentPath)
-    {
-        var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
-        var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
-        return new PluginManifestDocument
-        {
-            SchemaVersion = "v1",
-            NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
-            NameForModel = OAIDocument.Info?.Title.CleanupXMLString(),
-            DescriptionForHuman = descriptionForHuman,
-            DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
-            Auth = new V1AnonymousAuth(),
-            Api = new Api()
-            {
-                Type = ApiType.openapi,
-                URL = openApiDocumentPath
-            },
-            ContactEmail = manifestInfo.ContactEmail,
-            LogoUrl = manifestInfo.LogoUrl,
-            LegalInfoUrl = manifestInfo.LegalUrl,
-        };
-    }
-
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
@@ -162,7 +137,6 @@ public partial class PluginsGenerationService
             Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
             SchemaVersion = "v2.1",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
-            // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
             ContactEmail = manifestInfo.ContactEmail,

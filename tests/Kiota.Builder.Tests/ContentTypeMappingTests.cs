@@ -57,6 +57,7 @@ public sealed class ContentTypeMappingTests : IDisposable
     [InlineData("application/octet-stream", "204", false, "default", "void")]
     [InlineData("application/octet-stream", "200", true, "default", "binary")]
     [InlineData("application/octet-stream", "200", false, "default", "binary")]
+    [InlineData("application/octet-stream", "302", false, "default", "binary")] // on a redirect to a binary content we generate a binary return type for download
     [InlineData("text/html", "204", true, "default", "void")]
     [InlineData("text/html", "204", false, "default", "void")]
     [InlineData("text/html", "200", true, "default", "binary")]

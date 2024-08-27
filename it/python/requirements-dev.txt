@@ -18,7 +18,7 @@ flit==3.9.0
 
 flit-core==3.9.0 ; python_version >= '3.6'
 
-idna==3.7
+idna==3.8
 
 importlib-metadata==6.8.0 ; python_version >= '3.7'
 
@@ -30,7 +30,7 @@ lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.11.1
+mypy==1.11.2
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 

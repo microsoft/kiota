@@ -1168,7 +1168,9 @@ public partial class KiotaBuilder
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
-    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "301", "302", "303", "304", "307" };
+    private const string RequestBodyOctetStreamContentType = "application/octet-stream";
+    private static readonly HashSet<string> redirectStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "301", "302", "303", "307" };
+    private static readonly HashSet<string> noContentStatusCodes = new(redirectStatusCodes, StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
@@ -1257,28 +1259,27 @@ public partial class KiotaBuilder
             }
             else if (modelType is null)
             {
-                string returnType;
-                if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                    returnType = VoidType;
-                else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
-                    returnType = "string";
-                else
-                    returnType = "binary";
-                return (new CodeType { Name = returnType, IsExternal = true, }, null);
+                return (GetExecutorMethodDefaultReturnType(operation), null);
             }
             return (modelType, null);
         }
         else
         {
-            string returnType;
-            if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                returnType = VoidType;
-            else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
-                returnType = "string";
-            else
-                returnType = "binary";
-            return (new CodeType { Name = returnType, IsExternal = true, }, null);
+            return (GetExecutorMethodDefaultReturnType(operation), null);
         }
+    }
+    private static CodeType GetExecutorMethodDefaultReturnType(OpenApiOperation operation)
+    {
+        string returnType;
+        if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyOctetStreamContentType) && redirectStatusCodes.Contains(x.Key)))
+            returnType = "binary";
+        else if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+            returnType = VoidType;
+        else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+            returnType = "string";
+        else
+            returnType = "binary";
+        return new CodeType { Name = returnType, IsExternal = true, };
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {

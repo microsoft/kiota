@@ -79,6 +79,10 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
     public CodeDocumentation Documentation { get; set; } = new();
     public string DefaultValue { get; set; } = string.Empty;
     public string SerializationName { get; set; } = string.Empty;
+    public string WireName
+    {
+        get => string.IsNullOrEmpty(SerializationName) ? Name : SerializationName;
+    }
     public DeprecationInformation? Deprecation
     {
         get;

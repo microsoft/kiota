@@ -21,6 +21,9 @@ public class CSharpConventionService : CommonLanguageConventionService
     public const string NullableEnableDirective = "#nullable enable";
     public const string NullableRestoreDirective = "#nullable restore";
 
+    public const string CS0618 = "CS0618";
+    public const string CS1591 = "CS1591";
+
     public static void WriteNullableOpening(LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
@@ -37,6 +40,16 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("#endif", false);
+    }
+    public void WritePragmaDisable(LanguageWriter writer, string code)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteLine($"#pragma warning disable {code}");
+    }
+    public void WritePragmaRestore(LanguageWriter writer, string code)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteLine($"#pragma warning restore {code}");
     }
     private const string ReferenceTypePrefix = "<see cref=\"";
     private const string ReferenceTypeSuffix = "\"/>";
@@ -236,7 +249,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };
-        return $"{GetDeprecationInformation(parameter)}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
+        return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
     }
     private string GetDeprecationInformation(IDeprecableElement element)
     {

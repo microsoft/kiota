@@ -15,11 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed shorthand for refresh option in workspace experience. [#5240](https://github.com/microsoft/kiota/issues/5240)
+- Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
+- Removed OpenAI plugins generation since the service does not support them anymore.
+- Fixed an issue where TypeScript clients would be missing path parameters. [#5247](https://github.com/microsoft/kiota/issues/5247)
+- Redirect status codes documenting an application/octet-stream content type now generate a stream return type. [#5246](https://github.com/microsoft/kiota/issues/5246)
 - Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
 - Reverts modification of responses in output openApi file when generating plugins [#4945](https://github.com/microsoft/kiota/issues/4945)
 - Expand properties types with null type for Typescript. [#4993](https://github.com/microsoft/kiota-typescript/issues/1188)
 - Added Collection, HashMap, Map, Objects, InputStream, BigDecimal to the list of reserved names for Java generation. [#5135](https://github.com/microsoft/kiota/issues/5135)
 - C# refiner now fixes data types for indexers. [#5201](https://github.com/microsoft/kiota/issues/5201)
+- C# do not report CS0618 in the generated code. [#5229](https://github.com/microsoft/kiota/issues/5229)
+- C# do not decorate method parameter(s) with ObsoleteAttribute. [#5228](https://github.com/microsoft/kiota/issues/5228)
+- Fixed an issue where the generation hint for the workspace experience would be outdated. [#5241](https://github.com/microsoft/kiota/issues/5241)
 
 ## [1.17.0] - 2024-08-09
 
