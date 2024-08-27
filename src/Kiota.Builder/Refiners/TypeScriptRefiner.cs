@@ -192,10 +192,10 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
             foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters)
             {
                 if (GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType &&
-                    composedType.IsComposedOfObjectsAndPrimitives(IsComposedPrimitive))
+                    composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType))
                 {
                     var newType = (composedType.Clone() as CodeComposedTypeBase)!;
-                    var nonPrimitiveTypes = composedType.Types.Where(x => !IsComposedPrimitive(x, composedType)).ToArray();
+                    var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
                     newType.SetTypes(nonPrimitiveTypes);
                     parameter.Type = newType;
                 }
@@ -381,7 +381,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     {
         if (composedType is null || FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } function) return;
 
-        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
+        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
         {
             function.OriginalLocalMethod.ReturnType = composedType;
             // Remove the deserializer import statement if its not being used
@@ -394,7 +394,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
 
         // Add the key parameter if the composed type is a union of primitive values
-        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
+        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
             function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
 
         // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
@@ -404,7 +404,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
     private static void AddSerializationUsingsForCodeComposed(CodeComposedTypeBase composedType, CodeFunction function, CodeMethodKind kind)
     {
         // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        foreach (var codeClass in composedType.GetNonPrimitiveTypes(IsComposedPrimitive)
+        foreach (var codeClass in composedType.Types.Where(x => !IsPrimitiveType(x, composedType))
                 .Select(static x => x.TypeDefinition)
                      .OfType<CodeInterface>()
                      .Select(static x => x.OriginalClass)
@@ -439,7 +439,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
 
         // Deserializer function is not required for primitive values
-        if (composedType.IsComposedOfPrimitives(IsComposedPrimitive))
+        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
         {
             children.Remove(deserializerMethod);
             codeInterface.RemoveChildElement(deserializerMethod);

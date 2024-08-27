@@ -92,7 +92,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(parameter);
         var includeCollectionInformation = ShouldIncludeCollectionInformationForParameter(parameter);
         var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: includeCollectionInformation, inlineComposedTypeString: true);
-        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives(IsComposedPrimitive);
+        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives(IsPrimitiveType);
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
@@ -154,14 +154,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     */
     private static string GetComposedTypeTypeString(CodeComposedTypeBase composedType, CodeElement targetElement, string collectionSuffix, bool includeCollectionInformation = true)
     {
-        if (!composedType.Types.Any()) throw new InvalidOperationException($"Composed type should be comprised of at least one type");
-        var returnTypeString = string.Join(GetTypesDelimiterToken(composedType), composedType.Types.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation: includeCollectionInformation)));
+        if (!composedType.Types.Any()) 
+              throw new InvalidOperationException($"Composed type should be comprised of at least one type");
+        
+        var typesDelimiter = composedType is CodeUnionType or CodeIntersectionType ? " | " : 
+            throw new InvalidOperationException("Unknown composed type");
+        
+        var returnTypeString = string.Join(typesDelimiter, composedType.Types.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation: includeCollectionInformation)));
         return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
-    }
-
-    private static string GetTypesDelimiterToken(CodeComposedTypeBase codeComposedTypeBase)
-    {
-        return codeComposedTypeBase is CodeUnionType or CodeIntersectionType ? " | " : throw new InvalidOperationException("Unknown composed type");
     }
 
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
@@ -229,7 +229,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public static bool IsComposedPrimitive(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase));
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase));
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")

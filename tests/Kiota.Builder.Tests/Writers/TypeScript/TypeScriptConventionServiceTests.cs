@@ -38,7 +38,7 @@ public class TypeScriptConventionServiceTests
         var composedType = new CodeUnionType { Name = "test", Parent = CurrentType() };
         composedType.AddType(new CodeType { Name = "string", IsExternal = true });
         composedType.AddType(new CodeType { Name = "integer", IsExternal = true });
-        Assert.True(composedType.IsComposedOfPrimitives(TypeScriptConventionService.IsComposedPrimitive));
+        Assert.True(composedType.IsComposedOfPrimitives(TypeScriptConventionService.IsPrimitiveType));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class TypeScriptConventionServiceTests
         composedType.AddType(new CodeType { Name = "string", IsExternal = true });
         var td = new CodeClass { Name = "SomeClass" };
         composedType.AddType(new CodeType { Name = "SomeCustomObject", IsExternal = false, TypeDefinition = td });
-        Assert.False(composedType.IsComposedOfPrimitives(TypeScriptConventionService.IsComposedPrimitive));
+        Assert.False(composedType.IsComposedOfPrimitives(TypeScriptConventionService.IsPrimitiveType));
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class TypeScriptConventionServiceTests
         composedType.AddType(new CodeType { Name = "string", IsExternal = true });
 
         // Act
-        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsComposedPrimitive);
+        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsPrimitiveType);
 
         // Assert
         Assert.False(result);
@@ -75,7 +75,7 @@ public class TypeScriptConventionServiceTests
         composedType.AddType(new CodeType { Name = "SomeCustomObject", IsExternal = false, TypeDefinition = td });
 
         // Act
-        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsComposedPrimitive);
+        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsPrimitiveType);
 
         // Assert
         Assert.False(result);
@@ -91,7 +91,7 @@ public class TypeScriptConventionServiceTests
         composedType.AddType(new CodeType { Name = "SomeCustomObject", IsExternal = false, TypeDefinition = td });
 
         // Act
-        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsComposedPrimitive);
+        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsPrimitiveType);
 
         // Assert
         Assert.True(result);
@@ -104,7 +104,7 @@ public class TypeScriptConventionServiceTests
         var composedType = new CodeUnionType { Name = "test", Parent = CurrentType() };
 
         // Act
-        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsComposedPrimitive);
+        var result = composedType.IsComposedOfObjectsAndPrimitives(TypeScriptConventionService.IsPrimitiveType);
 
         // Assert
         Assert.False(result);

@@ -91,15 +91,4 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         return primitiveCount > 0 && primitiveCount < Types.Count();
     }
 
-    public IEnumerable<CodeType> GetPrimitiveTypes(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive)
-    {
-        // Return only the primitive types from the Types collection
-        return Types.Where(x => checkIfPrimitive(x, this));
-    }
-
-    public IEnumerable<CodeType> GetNonPrimitiveTypes(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive)
-    {
-        // Return only the non primitive types from the Types collection
-        return Types.Where(x => !checkIfPrimitive(x, this));
-    }
 }
