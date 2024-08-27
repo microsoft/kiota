@@ -1447,7 +1447,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         foreach (var func in functions)
             writer.Write(func);
-        
+
         var factoryFunctionStr = tw.ToString();
         Assert.Contains("@returns {Cat | Dog[] | Dog | number | string}", factoryFunctionStr);
         Assert.Contains("createPetGetResponse_dataFromDiscriminatorValue", factoryFunctionStr);
