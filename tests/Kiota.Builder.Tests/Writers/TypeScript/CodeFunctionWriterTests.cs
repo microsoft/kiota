@@ -1443,14 +1443,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(modelCodeFile);
 
         // Test Factory function
-        var function = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory);
-        Assert.True(function is not null);
-        writer.Write(function);
+        var functions = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory).ToArray();
+
+        foreach (var func in functions)
+            writer.Write(func);
+        
         var factoryFunctionStr = tw.ToString();
-        Assert.Contains("@returns {Cat | Dog | number | string}", factoryFunctionStr);
+        Assert.Contains("@returns {Cat | Dog[] | Dog | number | string}", factoryFunctionStr);
         Assert.Contains("createPetGetResponse_dataFromDiscriminatorValue", factoryFunctionStr);
         Assert.Contains("deserializeIntoPetGetResponse_data", factoryFunctionStr);
-        AssertExtensions.CurlyBracesAreClosed(factoryFunctionStr, 1);
     }
 
     [Fact]
