@@ -214,6 +214,9 @@ public partial class PluginsGenerationService
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
                 // Only one security object is allowed
+                // TODO: Fix OpenAPI.NET's default value for security to default to null. i.e. if security is not provided,
+                // the value should be null. According to the spec, not having the property is not the same as having it
+                // empty. security: [] means something in the spec.
                 var security = (operation.Security ?? document.SecurityRequirements)?.SingleOrDefault();
                 var opSecurity = security?.Keys.SingleOrDefault();
                 var auth = opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
