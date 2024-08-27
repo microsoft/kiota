@@ -117,9 +117,9 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
 }
 
 export function transformToGenerationconfig(deepLinkParams: Record<string, string|undefined>)
-    : Record<string, string | string[] | undefined> 
+    : Partial<GenerateState> 
 {
-    const generationConfig: Record<string, string | string []| undefined> = {};
+    const generationConfig: Partial<GenerateState> = {};
     if (deepLinkParams.kind === "client")
     {
         generationConfig["generationType"] = "client";

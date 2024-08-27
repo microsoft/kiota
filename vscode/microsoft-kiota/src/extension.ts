@@ -70,8 +70,12 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
-          deepLinkParams = validateDeepLinkQueryParams(queryParameters);
-          reporter.sendTelemetryEvent("DeepLink.OpenDescription", deepLinkParams); 
+          let errorsArray: string [];
+          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(queryParameters);
+          reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
+            "queryParameters": JSON.stringify(queryParameters),
+            "validationErrors": errorsArray.join(", ")
+          }); 
 
           if (deepLinkParams.descriptionUrl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionUrl!));
@@ -138,7 +142,7 @@ export async function activate(
         }
 
         let languagesInformation = await getLanguageInformation(context);
-        let availableStateInfo: any = {};
+        let availableStateInfo: Partial<GenerateState>;
         if(deepLinkParams){
           if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
             deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
