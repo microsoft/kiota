@@ -33,25 +33,17 @@ public abstract class CodeElement : ICodeElement
         foreach (var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
             element!.Parent = this;
     }
-
-    public T GetImmediateParentOfType<T>(CodeElement? item = null) =>
-        GetImmediateParentOfTypeOrDefault<T>(item,
-            e => throw new InvalidOperationException($"item {e.Name} of type {e.GetType()} does not have a parent"))!;
-
-    public T? GetImmediateParentOfTypeOrDefault<T>(CodeElement? item = null, Action<CodeElement>? onFail = null)
+    public T GetImmediateParentOfType<T>(CodeElement? item = null)
     {
         if (item == null)
-            return GetImmediateParentOfTypeOrDefault<T>(this);
+            return GetImmediateParentOfType<T>(this);
         if (item is T p)
             return p;
         if (item.Parent == null)
-        {
-            onFail?.Invoke(item);
-            return default;
-        }
+            throw new InvalidOperationException($"item {item.Name} of type {item.GetType()} does not have a parent");
         if (item.Parent is T p2)
             return p2;
-        return GetImmediateParentOfTypeOrDefault<T>(item.Parent);
+        return GetImmediateParentOfType<T>(item.Parent);
     }
     public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false)
     {

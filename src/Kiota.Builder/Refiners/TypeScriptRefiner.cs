@@ -188,18 +188,15 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (currentElement is CodeFunction currentFunction &&
             currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
         {
-
-            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters)
+            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters
+                         .Where(p => GetOriginalComposedType(p.Type) is CodeComposedTypeBase composedType &&
+                                     composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             {
-                if (GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType &&
-                    composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType))
-                {
-                    var newType = (composedType.Clone() as CodeComposedTypeBase)!;
-                    var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
-                    newType.SetTypes(nonPrimitiveTypes);
-                    parameter.Type = newType;
-                }
-
+                var composedType = (CodeComposedTypeBase)GetOriginalComposedType(parameter.Type)!;
+                var newType = (CodeComposedTypeBase)composedType.Clone();
+                var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
+                newType.SetTypes(nonPrimitiveTypes);
+                parameter.Type = newType;
             }
         }
 
@@ -279,13 +276,10 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
         if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
         var elementsToConsider = mainNamespace.Namespaces.Except([modelsNamespace]).OfType<CodeElement>().Union(mainNamespace.Classes).ToArray();
         foreach (var element in elementsToConsider)
-        {
             GenerateRequestBuilderCodeFilesForElement(element);
-        }
+
         foreach (var element in elementsToConsider)
-        {// in two separate loops to ensure all the constants are added before the usings are added
             AddDownwardsConstantsImports(element);
-        }
     }
     private static void GenerateRequestBuilderCodeFilesForElement(CodeElement currentElement)
     {

@@ -155,7 +155,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     private static string GetComposedTypeTypeString(CodeComposedTypeBase composedType, CodeElement targetElement, string collectionSuffix, bool includeCollectionInformation = true)
     {
         if (!composedType.Types.Any())
-            throw new InvalidOperationException($"Composed type should be comprised of at least one type");
+            throw new InvalidOperationException("Composed type should be comprised of at least one type");
 
         var typesDelimiter = composedType is CodeUnionType or CodeIntersectionType ? " | " :
             throw new InvalidOperationException("Unknown composed type");
@@ -166,14 +166,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
-        if (targetElement is CodeFile codeFile)
-            return GetTypeAlias(targetType, codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement));
-        if (targetElement.GetImmediateParentOfTypeOrDefault<CodeFile>() is CodeFile parentCodeFile)
-            return GetTypeAlias(targetType, parentCodeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement));
-        if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock)
-            return GetTypeAlias(targetType, parentBlock.Usings);
-
-        return GetTypeAlias(targetType, Array.Empty<CodeUsing>());
+        var block = targetElement.GetImmediateParentOfType<IBlock>();
+        var usings = block is CodeFile cf ? cf.GetChildElements(true).SelectMany(GetUsingsFromCodeElement) : block?.Usings ?? Array.Empty<CodeUsing>();
+        return GetTypeAlias(targetType, usings);
     }
 
     private static string GetTypeAlias(CodeType targetType, IEnumerable<CodeUsing> usings)
@@ -222,8 +217,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             TYPE_NUMBER or
             TYPE_LOWERCASE_STRING or
+            TYPE_STRING or
             TYPE_BYTE_ARRAY or
             TYPE_LOWERCASE_BOOLEAN or
+            TYPE_BOOLEAN or
+            TYPE_VOID or
             TYPE_LOWERCASE_VOID => true,
             _ => false,
         };
