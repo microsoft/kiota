@@ -12,6 +12,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -213,7 +214,8 @@ public partial class PluginsGenerationService
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
                 // Only one security object is allowed
-                var opSecurity = (operation.Security ?? document.SecurityRequirements)?.SingleOrDefault()?.Keys.SingleOrDefault();
+                var security = (operation.Security ?? document.SecurityRequirements)?.SingleOrDefault();
+                var opSecurity = security?.Keys.SingleOrDefault();
                 var auth = opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
                 runtimes.Add(new OpenApiRuntime
                 {
@@ -245,27 +247,26 @@ public partial class PluginsGenerationService
 
     private static Auth GetAuthFromSecurityScheme(OpenApiSecurityScheme securityScheme)
     {
-        string[] supportedTypes = ["Bearer Token", "Api Key", "OpenId Connect", "OAuth"];
-        // If you chan
+        string name = securityScheme.Reference.Id;
         return securityScheme.Type switch
         {
             SecuritySchemeType.ApiKey => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{securityScheme.Type.ToString()}_REGISTRATION_ID}}"
+                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
             },
             // Only Http bearer is supported
             SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) =>
-                new ApiKeyPluginVault { ReferenceId = $"{{{securityScheme.Name}_REGISTRATION_ID}}" },
+                new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{securityScheme.Type.ToString()}_REGISTRATION_ID}}"
+                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
             },
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
-                ReferenceId = $"{{{securityScheme.Type.ToString()}_CONFIGURATION_ID}}"
+                ReferenceId = $"{{{name}_CONFIGURATION_ID}}"
             },
-            _ => throw new UnsupportedSecuritySchemeException(supportedTypes,
-                $"Unsupported security scheme '{securityScheme.Type.ToString()}'.")
+            _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
+                $"Unsupported security scheme type '{securityScheme.Type}'.")
         };
     }
 

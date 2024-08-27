@@ -291,6 +291,6 @@ components:
         Assert.NotEmpty(resultingManifest.Document.Runtimes);
         var auth0 = resultingManifest.Document.Runtimes[0].Auth;
         Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
-        Assert.Equal("{ApiKey_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+        Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
     }
 }
