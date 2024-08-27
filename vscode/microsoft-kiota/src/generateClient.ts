@@ -1,6 +1,7 @@
-import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
-import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import * as rpc from "vscode-jsonrpc/node";
+import { KiotaGenerationLanguage } from "./enums";
+import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "./kiotaInterop";
 import { getWorkspaceJsonDirectory } from "./util";
 
 export function generateClient(context: vscode.ExtensionContext, 
