@@ -260,7 +260,7 @@ public partial class PluginsGenerationService
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(node.Value, openApiDocumentPath);
+            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(document, node.Value, openApiDocumentPath);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
         }
