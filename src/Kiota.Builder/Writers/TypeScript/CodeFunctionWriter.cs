@@ -59,13 +59,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeElement.OriginalLocalMethod)));
     }
 
-    private void WriteFactoryMethodBodyForPrimitives(CodeComposedTypeBase composedType, CodeFunction codeElement, LanguageWriter writer, CodeParameter? parseNodeParameter)
-    {
-        ArgumentNullException.ThrowIfNull(parseNodeParameter);
-        string primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, parseNodeParameter.Name.ToFirstCharacterLowerCase(), codeElement);
-        writer.WriteLine($"return {primitiveValuesUnionString};");
-    }
-
     private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)
     {
         return codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
@@ -238,36 +231,25 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         switch (composedType)
         {
-            case CodeComposedTypeBase type when type.IsComposedOfPrimitives(IsPrimitiveType):
-                WriteFactoryMethodBodyForPrimitives(type, codeElement, writer, parseNodeParameter);
+            case CodeComposedTypeBase type when type.IsComposedOfPrimitives(IsPrimitiveType):                
+                string primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, parseNodeParameter!.Name.ToFirstCharacterLowerCase(), codeElement);
+                writer.WriteLine($"return {primitiveValuesUnionString};");
                 break;
             case CodeUnionType _ when parseNodeParameter != null:
-                WriteFactoryMethodBodyForCodeUnionType(codeElement, returnType, writer, parseNodeParameter);
+                WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
+                // The default discriminator is useful when the discriminator information is not provided.
+                WriteDefaultDiscriminator(codeElement, returnType, writer);
                 break;
             case CodeIntersectionType _ when parseNodeParameter != null:
                 WriteDefaultDiscriminator(codeElement, returnType, writer);
                 break;
             default:
-                WriteNormalFactoryMethodBody(codeElement, returnType, writer);
+                if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
+                    WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
+                
+                WriteDefaultDiscriminator(codeElement, returnType, writer);
                 break;
         }
-    }
-
-    private void WriteFactoryMethodBodyForCodeUnionType(CodeFunction codeElement, string returnType, LanguageWriter writer, CodeParameter parseNodeParameter)
-    {
-        WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
-        // The default discriminator is useful when the discriminator information is not provided.
-        WriteDefaultDiscriminator(codeElement, returnType, writer);
-    }
-
-    private void WriteNormalFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
-    {
-        var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
-        {
-            WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
-        }
-        WriteDefaultDiscriminator(codeElement, returnType, writer);
     }
 
     private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer)
@@ -341,10 +323,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string FindFunctionInNameSpace(string functionName, CodeFunction currentFunction, CodeType returnType)
     {
         var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
+        
+        CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
 
-        CodeFunction? codeFunction = myNamespace.FindChildByName<CodeFunction>(functionName);
+        var codeFunction = codeFunctions
+            .FirstOrDefault(func => func.GetImmediateParentOfType<CodeNamespace>()?.Name == myNamespace.Name);
+
         if (codeFunction == null)
-            throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace?.Name}");
+            throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
 
         return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, currentFunction, false);
     }
