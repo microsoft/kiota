@@ -35,8 +35,11 @@ paths:
                     oneOf:
                       - $ref: '#/components/schemas/Cat'
                       - $ref: '#/components/schemas/Dog'
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/Dog'
                       - type: string
-                        description: Error message
+                        description: Error status
                         example: ""An error occurred while processing the request.""
                       - type: integer
                         description: Error code

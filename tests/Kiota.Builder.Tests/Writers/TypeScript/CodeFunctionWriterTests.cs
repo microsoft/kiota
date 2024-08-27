@@ -1487,13 +1487,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(function);
         var serializerFunctionStr = tw.ToString();
 
-        Assert.Contains("switch (typeof petGetResponse.data)", serializerFunctionStr);
-        Assert.Contains("case \"number\":", serializerFunctionStr);
-        Assert.Contains("writer.writeNumberValue(\"data\", petGetResponse.data);", serializerFunctionStr);
-        Assert.Contains("case \"string\":", serializerFunctionStr);
-        Assert.Contains("writer.writeStringValue(\"data\", petGetResponse.data);", serializerFunctionStr);
+
+        Assert.Contains("case typeof petGetResponse.data === \"number\":", serializerFunctionStr);
+        Assert.Contains("writer.writeNumberValue(\"data\", petGetResponse.data as number);", serializerFunctionStr);
+        Assert.Contains("case typeof petGetResponse.data === \"string\":", serializerFunctionStr);
+        Assert.Contains("writer.writeStringValue(\"data\", petGetResponse.data as string);", serializerFunctionStr);
         Assert.Contains("default:", serializerFunctionStr);
-        Assert.Contains("writer.writeObjectValue<Cat | Dog | number | string>(\"data\", petGetResponse.data, serializePetGetResponse_data);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Cat | Dog>(\"data\", petGetResponse.data as Cat | Dog | undefined | null, serializePetGetResponse_data);", serializerFunctionStr);
+        Assert.Contains("writer.writeCollectionOfObjectValues<Dog>(\"data\", petGetResponse.data as Dog[] | undefined | null, serializePetGetResponse_data);", serializerFunctionStr);
 
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
@@ -1531,7 +1532,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(function is not null);
         writer.Write(function);
         var deserializerFunctionStr = tw.ToString();
-        Assert.Contains("\"data\": n => { petGetResponse.data = n.getNumberValue() ?? n.getStringValue() ?? n.getObjectValue<Cat | Dog | number | string>(createPetGetResponse_dataFromDiscriminatorValue); }", deserializerFunctionStr);
+        Assert.Contains("\"data\": n => { petGetResponse.data = n.getObjectValue<Cat>(createCatFromDiscriminatorValue) ?? n.getCollectionOfObjectValues<Dog>(createDogFromDiscriminatorValue) ?? n.getObjectValue<Dog>(createDogFromDiscriminatorValue) ?? n.getNumberValue() ?? n.getStringValue(); }", deserializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(deserializerFunctionStr, 1);
     }
 }
