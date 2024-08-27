@@ -154,12 +154,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     */
     private static string GetComposedTypeTypeString(CodeComposedTypeBase composedType, CodeElement targetElement, string collectionSuffix, bool includeCollectionInformation = true)
     {
-        if (!composedType.Types.Any()) 
-              throw new InvalidOperationException($"Composed type should be comprised of at least one type");
-        
-        var typesDelimiter = composedType is CodeUnionType or CodeIntersectionType ? " | " : 
+        if (!composedType.Types.Any())
+            throw new InvalidOperationException($"Composed type should be comprised of at least one type");
+
+        var typesDelimiter = composedType is CodeUnionType or CodeIntersectionType ? " | " :
             throw new InvalidOperationException("Unknown composed type");
-        
+
         var returnTypeString = string.Join(typesDelimiter, composedType.Types.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation: includeCollectionInformation)));
         return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
     }

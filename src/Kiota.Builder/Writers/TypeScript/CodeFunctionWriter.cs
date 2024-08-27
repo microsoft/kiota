@@ -231,7 +231,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         switch (composedType)
         {
-            case CodeComposedTypeBase type when type.IsComposedOfPrimitives(IsPrimitiveType):                
+            case CodeComposedTypeBase type when type.IsComposedOfPrimitives(IsPrimitiveType):
                 string primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, parseNodeParameter!.Name.ToFirstCharacterLowerCase(), codeElement);
                 writer.WriteLine($"return {primitiveValuesUnionString};");
                 break;
@@ -246,7 +246,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             default:
                 if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
                     WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
-                
+
                 WriteDefaultDiscriminator(codeElement, returnType, writer);
                 break;
         }
@@ -314,25 +314,25 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return codeFunction;
     }
 
-    private string GetDeserializerFunctionName(CodeFunction currentFunction, CodeType returnType) =>
-        FindFunctionInNameSpace($"deserializeInto{returnType.Name.ToFirstCharacterUpperCase()}", currentFunction, returnType);
+    private string GetDeserializerFunctionName(CodeElement codeElement, CodeType returnType) =>
+        FindFunctionInNameSpace($"deserializeInto{returnType.Name.ToFirstCharacterUpperCase()}", codeElement, returnType);
 
-    private string GetSerializerFunctionName(CodeFunction currentFunction, CodeType returnType) =>
-        FindFunctionInNameSpace($"serialize{returnType.Name.ToFirstCharacterUpperCase()}", currentFunction, returnType);
+    private string GetSerializerFunctionName(CodeElement codeElement, CodeType returnType) =>
+        FindFunctionInNameSpace($"serialize{returnType.Name.ToFirstCharacterUpperCase()}", codeElement, returnType);
 
-    private string FindFunctionInNameSpace(string functionName, CodeFunction currentFunction, CodeType returnType)
+    private string FindFunctionInNameSpace(string functionName, CodeElement codeElement, CodeType returnType)
     {
         var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
-        
+
         CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
 
         var codeFunction = codeFunctions
-            .FirstOrDefault(func => func.GetImmediateParentOfType<CodeNamespace>()?.Name == myNamespace.Name);
+            .FirstOrDefault(func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name);
 
         if (codeFunction == null)
             throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
 
-        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, currentFunction, false);
+        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
