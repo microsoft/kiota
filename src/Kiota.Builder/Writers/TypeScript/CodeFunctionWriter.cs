@@ -562,7 +562,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WritePropertyDeserializationBlock(CodeProperty otherProp, CodeParameter param, string primaryErrorMapping, string primaryErrorMappingKey, CodeFunction codeFunction, LanguageWriter writer)
     {
-        var suffix = GetSuffix(otherProp, primaryErrorMapping, primaryErrorMappingKey);
+        var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
         var paramName = param.Name.ToFirstCharacterLowerCase();
         var propName = otherProp.Name.ToFirstCharacterLowerCase();
 
@@ -581,11 +581,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var defaultValueSuffix = GetDefaultValueSuffix(otherProp);
             writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = n.{objectSerializationMethodName}{defaultValueSuffix};{suffix} }},");
         }
-    }
-
-    private string GetSuffix(CodeProperty otherProp, string primaryErrorMapping, string primaryErrorMappingKey)
-    {
-        return otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
     }
 
     private bool IsBackingStoreProperty(CodeProperty otherProp)

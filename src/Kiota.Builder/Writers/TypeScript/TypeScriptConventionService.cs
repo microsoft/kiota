@@ -217,11 +217,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             TYPE_NUMBER or
             TYPE_LOWERCASE_STRING or
-            TYPE_STRING or
             TYPE_BYTE_ARRAY or
             TYPE_LOWERCASE_BOOLEAN or
-            TYPE_BOOLEAN or
-            TYPE_VOID or
             TYPE_LOWERCASE_VOID => true,
             _ => false,
         };
@@ -327,7 +324,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         return propertyTypeName switch
         {
-            TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
+            TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, method)})"
         };
     }
