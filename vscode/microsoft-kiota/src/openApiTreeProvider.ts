@@ -23,7 +23,7 @@ import { updateTreeViewIcons } from './util';
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
-    private apiTitle?: string;
+    public apiTitle?: string;
     private initialStateHash: string = '';
     constructor(
         private readonly context: vscode.ExtensionContext,

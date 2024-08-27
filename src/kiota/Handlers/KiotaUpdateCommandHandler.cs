@@ -76,10 +76,10 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error updating the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error updating the client: {ExceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error updating the client: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error updating the client: {ExceptionMessage}", ex.Message);
                 return 1;
 #endif
             }
