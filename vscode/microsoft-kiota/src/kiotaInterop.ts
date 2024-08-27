@@ -1,6 +1,7 @@
-import * as vscode from "vscode";
 import * as cp from 'child_process';
+import * as vscode from "vscode";
 import * as rpc from 'vscode-jsonrpc/node';
+import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { getWorkspaceJsonDirectory } from "./util";
 
@@ -87,35 +88,6 @@ export interface KiotaSearchResultItem {
   VersionLabels?: string[];
 }
 
-export enum KiotaGenerationLanguage {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CSharp = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Java = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    TypeScript = 2,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    PHP = 3,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Python = 4,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Go = 5,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Swift = 6,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Ruby = 7,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CLI = 8,
-}
-export enum KiotaPluginType {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    OpenAI = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiManifest = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiPlugin = 2,
-}
-
 export enum ConsumerOperation {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Add,
@@ -125,20 +97,6 @@ export enum ConsumerOperation {
     Remove,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Generate
-}
-export function parsePluginType(values: string[]): KiotaPluginType[] {
-    return values.map(value => {
-        switch (value.toLowerCase()) {
-            case "openai":
-                return KiotaPluginType.OpenAI;
-            case "apimanifest":
-                return KiotaPluginType.ApiManifest;
-            case "apiplugin":
-                return KiotaPluginType.ApiPlugin;
-            default:
-                throw new Error(`unknown plugin type: ${value}`);
-        }
-    });
 }
 
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
@@ -165,30 +123,7 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             throw new Error("unknown language");
     }
 }
-export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
-    switch (value) {
-        case "CSharp":
-            return KiotaGenerationLanguage.CSharp;
-        case "Java":
-            return KiotaGenerationLanguage.Java;
-        case "TypeScript":
-            return KiotaGenerationLanguage.TypeScript;
-        case "PHP":
-            return KiotaGenerationLanguage.PHP;
-        case "Python":
-            return KiotaGenerationLanguage.Python;
-        case "Go":
-            return KiotaGenerationLanguage.Go;
-        case "Swift":
-            return KiotaGenerationLanguage.Swift;
-        case "Ruby":
-            return KiotaGenerationLanguage.Ruby;
-        case "CLI":
-            return KiotaGenerationLanguage.CLI;
-        default:
-            throw new Error("unknown language");
-    }
-}
+
 export const allGenerationLanguages = [
     KiotaGenerationLanguage.CSharp,
     KiotaGenerationLanguage.Go,
