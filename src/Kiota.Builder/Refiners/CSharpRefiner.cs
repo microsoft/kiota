@@ -97,7 +97,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);
             // Correct the core types after reserved names for types/properties are done to avoid collision of types e.g. renaming custom model called `DateOnly` to `Date`
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, correctIndexer: CorrectIndexerType);
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode);
             AddParentClassToErrorClasses(
@@ -225,6 +225,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+    }
+    protected static void CorrectIndexerType(CodeIndexer currentIndexer)
+    {
+        ArgumentNullException.ThrowIfNull(currentIndexer);
+        CorrectCoreTypes(currentIndexer.Parent as CodeClass, DateTypesReplacements, currentIndexer.IndexParameter.Type);
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

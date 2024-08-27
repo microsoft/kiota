@@ -16,6 +16,6 @@ internal class AuthComparer : IEqualityComparer<Auth>
     public int GetHashCode([DisallowNull] Auth obj)
     {
         if (obj == null) return 0;
-        return obj.Type is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Type.Value.ToString()) * 3;
+        return obj.Type is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Type) * 3;
     }
 }

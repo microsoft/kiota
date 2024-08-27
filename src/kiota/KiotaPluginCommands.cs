@@ -33,6 +33,7 @@ public static class KiotaPluginCommands
             typeOption.IsRequired = true;
             typeOption.Arity = ArgumentArity.OneOrMore;
         }
+        typeOption.AddCompletions(Enum.GetNames<PluginType>());
         typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
         return typeOption;
     }
