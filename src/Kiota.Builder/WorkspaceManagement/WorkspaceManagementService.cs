@@ -40,7 +40,7 @@ public class WorkspaceManagementService
     private readonly LockManagementService lockManagementService = new();
     private readonly WorkspaceConfigurationStorageService workspaceConfigurationStorageService;
     private readonly DescriptionStorageService descriptionStorageService;
-    public async Task<bool> IsConsumerPresent(string clientName, CancellationToken cancellationToken = default)
+    public async Task<bool> IsConsumerPresentAsync(string clientName, CancellationToken cancellationToken = default)
     {
         if (!UseKiotaConfig) return false;
         var (wsConfig, _) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);

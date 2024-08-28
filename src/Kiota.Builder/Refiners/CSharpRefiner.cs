@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners;
 public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {

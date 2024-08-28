@@ -16,7 +16,7 @@ public class PhpRefiner : CommonLanguageRefiner
 
     private const string AbstractionsNamespaceName = @"Microsoft\Kiota\Abstractions";
 
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
