@@ -36,6 +36,29 @@ public static class KiotaPluginCommands
         typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
         return typeOption;
     }
+
+    internal static Option<PluginAuthType> GetPluginAuthTypeOption(bool isRequired = false)
+    {
+        var authTypeOption = new Option<PluginAuthType>("--auth-type", "The authentication type for the plugin. Should be a valid OpenAPI security scheme.");
+        authTypeOption.AddAlias("-at");
+        if (isRequired)
+        {
+            authTypeOption.IsRequired = false;
+            authTypeOption.Arity = ArgumentArity.ZeroOrOne;
+        }
+        authTypeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "auth-type", Enum.GetNames<PluginAuthType>()));
+        return authTypeOption;
+    }
+
+    internal static Option<string> GetPluginAuthRefIdOption(bool required = false)
+    {
+        var authRefIdOption = new Option<string>("--auth-ref-id", "The authentication reference id for the plugin.")
+        {
+            IsRequired = false,
+        };
+        authRefIdOption.AddAlias("--ari");
+        return authRefIdOption;
+    }
     public static Command GetAddCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -46,6 +69,8 @@ public static class KiotaPluginCommands
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
         var pluginNameOption = GetPluginNameOption();
         var pluginType = GetPluginTypeOption();
+        var authTypeOption = GetPluginAuthTypeOption();
+        var authRefIdOption = GetPluginAuthRefIdOption();
         var command = new Command("add", "Adds a new plugin to the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -55,6 +80,8 @@ public static class KiotaPluginCommands
             outputOption,
             pluginNameOption,
             pluginType,
+            authTypeOption,
+            authRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
         command.Handler = new AddHandler
@@ -62,6 +89,8 @@ public static class KiotaPluginCommands
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
             PluginTypesOption = pluginType,
+            PluginAuthTypeOption = authTypeOption,
+            PluginAuthRefIdOption = authRefIdOption,
             DescriptionOption = descriptionOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
@@ -79,6 +108,8 @@ public static class KiotaPluginCommands
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
         var pluginNameOption = GetPluginNameOption();
         var pluginTypes = GetPluginTypeOption(false);
+        var pluginAuthType = GetPluginAuthTypeOption();
+        var authRefIdOption = GetPluginAuthRefIdOption();
         var command = new Command("edit", "Edits a plugin configuration and updates the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -88,6 +119,8 @@ public static class KiotaPluginCommands
             outputOption,
             pluginNameOption,
             pluginTypes,
+            pluginAuthType,
+            authRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
         command.Handler = new EditHandler
@@ -95,6 +128,8 @@ public static class KiotaPluginCommands
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
             PluginTypesOption = pluginTypes,
+            PluginAuthTypeOption = pluginAuthType,
+            PluginAuthRefIdOption = authRefIdOption,
             DescriptionOption = descriptionOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
