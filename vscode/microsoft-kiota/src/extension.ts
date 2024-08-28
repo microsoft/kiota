@@ -27,8 +27,10 @@ import { searchDescription } from "./searchDescription";
 import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
 import { updateClients } from "./updateClients";
 import {
+  IntegrationParams,
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration, isClientType, isPluginType, parseGenerationLanguage,
+  handleMigration,
+  isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
 } from "./util";
 import { loadTreeView } from "./workspaceTreeProvider";
@@ -143,7 +145,7 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(deepLinkParams){
+        if(Object.keys(deepLinkParams).length > 0){
           if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
             deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
           } 
@@ -223,9 +225,25 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(reporter,
+    registerCommandWithTelemetry(
+      reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
-      async () => {
+      async (
+        kind?: string, type?: string, name?: string, source?: string
+      ) => {
+        // set deeplink params if exists
+        let searchParams = {kind,type,name,source } as Partial<IntegrationParams>;
+        console.log("searchParams", searchParams);
+        if (Object.keys(searchParams).length > 0) {
+          let errorsArray: string [];
+          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
+            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+              "searchParameters": JSON.stringify(searchParams),
+              "validationErrors": errorsArray.join(", ")
+            });
+        }
+
+        // proceed to enable loading of openapi description
         const yesAnswer = vscode.l10n.t("Yes, override it");
         if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
           const response = await vscode.window.showWarningMessage(
