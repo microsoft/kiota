@@ -85,10 +85,11 @@ public class GoPathSegmenter(string rootPath, string clientNamespaceName) : Comm
         {
             CodeNamespace => "go",
             _ => GetLastFileNameSegment(currentElement)
+                .Replace("_escaped", "Escaped", StringComparison.OrdinalIgnoreCase)// prevent potential double escaping.
                 .Replace("_", "_escaped_", StringComparison.OrdinalIgnoreCase)// at this point we have the guarantee that the element name is unique based on how child elements are held in Kiota.
                                                                               // The existence of the '_' character in an element name could make `ToSnakeCase` give the same file name.
                                                                               // e.g. codeScanningVariantAnalysisStatus and codeScanningVariantAnalysis_status both give code_scanning_variant_analysis
-                                                                              // This shouldn't break anything as golang does not care about filenames
+                                                                              // This shouldn't break anything as golang does not care about filenames.
                 .ToSnakeCase()
                 .EscapeSuffix(specialFileNameSuffixes).ShortenFileName(100),
         };

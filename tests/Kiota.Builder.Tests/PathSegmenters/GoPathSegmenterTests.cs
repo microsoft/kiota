@@ -52,4 +52,17 @@ public class GoPathSegmenterTests
         Assert.Equal("code_scanning_variant_analysis_escaped_status", fileName2);// the file name should be camel cased!
     }
 
+    [Theory]
+    [InlineData("adminWindows_escaped", "admin_windows_escaped")]//This technically won't be an expected escaped name in go as its refiner appends `Escaped`
+    [InlineData("adminWindows_Escaped", "admin_windows_escaped")]//This technically won't be an expected escaped name in go as its refiner appends `Escaped`
+    [InlineData("adminWindowsescaped", "admin_windowsescaped")]//This technically won't be an expected escaped name in go as its refiner appends `Escaped`
+    [InlineData("adminWindowsEscaped", "admin_windows_escaped")]//This IS an expected escaped name in go as its refiner appends `Escaped`
+    public void GoPathSegmenterGeneratesEscapedAlreadyEscapedSpecialClassName(string inputClassName, string expectedFileName)
+    {
+        var fileName = segmenter.NormalizeFileName(new CodeClass
+        {
+            Name = inputClassName
+        });
+        Assert.Equal(expectedFileName, fileName); // file name should be snake case and escaped
+    }
 }
