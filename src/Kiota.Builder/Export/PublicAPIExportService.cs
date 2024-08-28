@@ -37,14 +37,18 @@ internal class PublicApiExportService
     internal async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
         var filePath = Path.Combine(_outputDirectoryPath, DomExportFileName);
-#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-        await using var fileStream = File.Create(filePath);
-        await using var streamWriter = new StreamWriter(fileStream);
-#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-        var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
-        foreach (var entry in entries)
+        var fileStream = File.Create(filePath);
+        await using (fileStream.ConfigureAwait(false))
         {
-            await streamWriter.WriteLineAsync(entry.AsMemory(), cancellationToken).ConfigureAwait(false);
+            var streamWriter = new StreamWriter(fileStream);
+            await using (streamWriter.ConfigureAwait(false))
+            {
+                var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
+                foreach (var entry in entries)
+                {
+                    await streamWriter.WriteLineAsync(entry.AsMemory(), cancellationToken).ConfigureAwait(false);
+                }
+            }
         }
     }
     private IEnumerable<string> GetEntriesFromDom(CodeElement currentElement)
