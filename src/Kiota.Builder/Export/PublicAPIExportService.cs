@@ -127,9 +127,4 @@ internal class PublicApiExportService
             _ => throw new ArgumentOutOfRangeException(nameof(generationConfiguration), generationConfiguration.Language, null)
         };
     }
-
-    public void Dispose()
-    {
-        // TODO release managed resources here
-    }
 }
