@@ -201,17 +201,20 @@ export async function activate(
             clientClassName: config.clientClassName || config.pluginName
           };
           void context.workspaceState.update('generatedOutput', outputState as GeneratedOutputState);
-          
-          const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yaml`);
-          const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
-            await vscode.commands.executeCommand(
-              'fx-extension.createprojectfromkiota',
-              [
-                pathOfSpec,
-                pathPluginManifest,
-                true
-              ]
-            );
+
+          const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yml`);
+          const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);
+          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
+            try {
+              await vscode.commands.executeCommand(
+                'fx-extension.createprojectfromkiota',
+                [
+                  pathOfSpec,
+                  pathPluginManifest,
+                  true
+                ]
+              );
+            } catch (error) {}
           } else {
             if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
               await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
