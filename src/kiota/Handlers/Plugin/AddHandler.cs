@@ -23,6 +23,16 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+
+    public required Option<PluginAuthType> PluginAuthTypeOption
+    {
+        get; init;
+    }
+
+    public required Option<string> PluginAuthRefIdOption
+    {
+        get; init;
+    }
     public required Option<string> DescriptionOption
     {
         get; init;

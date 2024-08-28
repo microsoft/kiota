@@ -40,6 +40,18 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
+    public required Option<PluginAuthType> PluginAuthTypeOption
+    {
+        get; init;
+    }
+
+    public required Option<string> PluginAuthRefIdOption
+    {
+        get; init;
+    }
+
+
+
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
