@@ -4,6 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from "vscode";
+
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
@@ -200,9 +201,9 @@ export async function activate(
             clientClassName: config.clientClassName || config.pluginName
           };
           void context.workspaceState.update('generatedOutput', outputState as GeneratedOutputState);
-          const pathOfSpec = outputPath + `\\${outputState.clientClassName?.toLowerCase()}-openapi.yaml`;
-          const pathPluginManifest = outputPath + `\\${outputState.clientClassName?.toLowerCase()}-apiplugin.json`;
-          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
+          
+          const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yaml`);
+          const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
             await vscode.commands.executeCommand(
               'fx-extension.createprojectfromkiota',
               [
