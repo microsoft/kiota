@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Use authentication information available in the source OpenAPI document when generating a plugin manifest. [#5070](https://github.com/microsoft/kiota/issues/5070)
+
 ### Changed
 
 - Fixed shorthand for refresh option in workspace experience. [#5240](https://github.com/microsoft/kiota/issues/5240)
