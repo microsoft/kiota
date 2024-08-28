@@ -123,7 +123,7 @@ components:
 
         using var streamReader = new StreamReader(outputStream);
         var contents = (await streamReader.ReadToEndAsync()).Split(Environment.NewLine);
-        
+
         if (!Validators.TryGetValue(generationLanguage, out var validator))
         {
             Assert.Fail($"No Validator present for language {generationLanguage}");
