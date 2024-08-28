@@ -114,17 +114,21 @@ components:
 
         // serialize the dom model
         var exportService = new PublicApiExportService(generationConfig);
-        await exportService.SerializeDomAsync(codeModel);
+        using var outputStream = new MemoryStream();
+        await exportService.SerializeDomAsync(outputStream, codeModel);
 
         // validate the export exists
-        var exportPath = Path.Join(Path.GetTempPath(), "kiota-dom-export.txt");
-        Assert.True(File.Exists(exportPath));
+        outputStream.Seek(0, SeekOrigin.Begin);
+        Assert.NotEqual(0, outputStream.Length); // output is not empty
+
+        using var streamReader = new StreamReader(outputStream);
+        var contents = (await streamReader.ReadToEndAsync()).Split(Environment.NewLine);
+        
         if (!Validators.TryGetValue(generationLanguage, out var validator))
         {
             Assert.Fail($"No Validator present for language {generationLanguage}");
         }
         // run the language validator
-        var contents = File.ReadLines(exportPath).ToArray();
         validator.Invoke(contents);
     }
 

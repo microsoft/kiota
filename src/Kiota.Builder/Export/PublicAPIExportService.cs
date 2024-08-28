@@ -23,32 +23,26 @@ internal class PublicApiExportService
     internal PublicApiExportService(GenerationConfiguration generationConfiguration)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);
-        _outputDirectoryPath = generationConfiguration.OutputPath;
         _conventionService = GetLanguageConventionServiceFromConfiguration(generationConfiguration);
     }
-    private readonly string _outputDirectoryPath;
     private readonly ILanguageConventionService _conventionService;
-    private const string DomExportFileName = "kiota-dom-export.txt";
+    internal const string DomExportFileName = "kiota-dom-export.txt";
     private const string InheritsSymbol = "-->";
     private const string ImplementsSymbol = "~~>";
     private const string OptionalSymbol = "?";
     private const string ParentElementAndChildSeparator = "::";
 
-    internal async Task SerializeDomAsync(CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
+    internal async Task SerializeDomAsync(Stream fileStream, CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
-        var filePath = Path.Combine(_outputDirectoryPath, DomExportFileName);
-        var fileStream = File.Create(filePath);
-        await using (fileStream.ConfigureAwait(false))
+        var streamWriter = new StreamWriter(fileStream, leaveOpen: true);
+        await using (streamWriter.ConfigureAwait(false))
         {
-            var streamWriter = new StreamWriter(fileStream);
-            await using (streamWriter.ConfigureAwait(false))
+            var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
+            foreach (var entry in entries)
             {
-                var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
-                foreach (var entry in entries)
-                {
-                    await streamWriter.WriteLineAsync(entry.AsMemory(), cancellationToken).ConfigureAwait(false);
-                }
+                await streamWriter.WriteLineAsync(entry.AsMemory(), cancellationToken).ConfigureAwait(false);
             }
+            await streamWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
     private IEnumerable<string> GetEntriesFromDom(CodeElement currentElement)
@@ -132,5 +126,10 @@ internal class PublicApiExportService
             GenerationLanguage.CLI => new CSharpConventionService(),
             _ => throw new ArgumentOutOfRangeException(nameof(generationConfiguration), generationConfiguration.Language, null)
         };
+    }
+
+    public void Dispose()
+    {
+        // TODO release managed resources here
     }
 }
