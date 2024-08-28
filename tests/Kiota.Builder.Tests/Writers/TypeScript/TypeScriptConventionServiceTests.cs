@@ -23,7 +23,7 @@ public class TypeScriptConventionServiceTests
         Assert.Equal("Test", result);
     }
 
-    public CodeType CurrentType()
+    private static CodeType CurrentType()
     {
         CodeType currentType = new CodeType { Name = "SomeType" };
         var root = CodeNamespace.InitRootNamespace();

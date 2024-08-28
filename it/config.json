@@ -236,7 +236,7 @@
     "Suppressions": [
       {
         "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+        "Rationale": "https://github.com/microsoft/kiota/issues/5256"
       },
       {
         "Language": "go",

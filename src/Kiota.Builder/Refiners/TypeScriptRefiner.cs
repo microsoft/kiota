@@ -192,7 +192,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
                          .Where(p => GetOriginalComposedType(p.Type) is CodeComposedTypeBase composedType &&
                                      composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             {
-                var composedType = (CodeComposedTypeBase)GetOriginalComposedType(parameter.Type)!;
+                var composedType = GetOriginalComposedType(parameter.Type)!;
                 var newType = (CodeComposedTypeBase)composedType.Clone();
                 var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
                 newType.SetTypes(nonPrimitiveTypes);
