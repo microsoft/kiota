@@ -39,7 +39,7 @@ let clientOrPluginKey: string;
 let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
 let config: Partial<GenerateState>;
-
+let deepLinkParams: Record<string, string | undefined> = {};
 interface GeneratedOutputState {
   outputPath: string;
   clientClassName: string;
@@ -61,7 +61,6 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  let deepLinkParams: Record<string, string|undefined> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -70,12 +69,12 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
-          let errorsArray: string [];
+          let errorsArray: string[];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(queryParameters);
           reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
             "queryParameters": JSON.stringify(queryParameters),
             "validationErrors": errorsArray.join(", ")
-          }); 
+          });
 
           if (deepLinkParams.descriptionUrl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionUrl!));
@@ -143,13 +142,13 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(deepLinkParams){
-          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
+        if (deepLinkParams) {
+          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle) {
             deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
-          } 
+          }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
-        }else{
-          const pluginName = getPluginName();
+        } else {
+          const pluginName = getSanitizedString(openApiTreeProvider.apiTitle);
           availableStateInfo = {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
@@ -195,22 +194,30 @@ export async function activate(
         }
         if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
           // Save state before opening the new window
-          void context.workspaceState.update('generatedOutput', {
+          const outputState = {
             outputPath,
             config,
             clientClassName: config.clientClassName || config.pluginName
-          } as GeneratedOutputState);
-          if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
+          };
+          void context.workspaceState.update('generatedOutput', outputState as GeneratedOutputState);
+          const pathOfSpec = outputPath + `\\${outputState.clientClassName?.toLowerCase()}-openapi.yaml`;
+          const pathPluginManifest = outputPath + `\\${outputState.clientClassName?.toLowerCase()}-apiplugin.json`;
+          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
+            await vscode.commands.executeCommand(
+              'fx-extension.createprojectfromkiota',
+              [
+                pathOfSpec,
+                pathPluginManifest,
+                true
+              ]
+            );
           } else {
-            await displayGenerationResults(context, openApiTreeProvider, config);
+            if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+              await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
+            } else {
+              await displayGenerationResults(context, openApiTreeProvider, config);
+            }
           }
-        }
-        function getPluginName(): string | undefined {
-          if (openApiTreeProvider.apiTitle) {
-            return openApiTreeProvider.apiTitle.replace(/[^a-zA-Z0-9_]+/g, '');
-          }
-          return undefined;
         }
       }
     ),
