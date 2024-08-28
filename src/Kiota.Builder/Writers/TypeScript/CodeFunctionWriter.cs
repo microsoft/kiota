@@ -326,8 +326,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
 
-        var codeFunction = codeFunctions
-            .FirstOrDefault(func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name);
+        var codeFunction = Array.Find(codeFunctions,
+            func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name);
 
         if (codeFunction == null)
             throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
@@ -443,7 +443,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
+    private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
     {
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
