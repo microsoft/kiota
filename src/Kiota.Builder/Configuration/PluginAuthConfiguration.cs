@@ -20,19 +20,25 @@ public class PluginAuthConfiguration
     /// <summary>
     /// The Teams Toolkit compatible plugin auth type.
     /// </summary>
-    public PluginAuthType AuthType { get; set; }
+    public PluginAuthType AuthType
+    {
+        get; set;
+    }
 
     /// <summary>
     /// The Teams Toolkit plugin auth reference id
     /// </summary>
-    public string ReferenceId { get; set; }
+    public string ReferenceId
+    {
+        get; set;
+    }
 
     internal Auth ToPluginManifestAuth()
     {
         return AuthType switch
         {
-            PluginAuthType.OAuthPluginVault => new OAuthPluginVault {ReferenceId = ReferenceId},
-            PluginAuthType.ApiKeyPluginVault => new ApiKeyPluginVault { ReferenceId = ReferenceId},
+            PluginAuthType.OAuthPluginVault => new OAuthPluginVault { ReferenceId = ReferenceId },
+            PluginAuthType.ApiKeyPluginVault => new ApiKeyPluginVault { ReferenceId = ReferenceId },
             _ => throw new ArgumentOutOfRangeException(nameof(AuthType), $"Unknown plugin auth type '{AuthType}'")
         };
     }

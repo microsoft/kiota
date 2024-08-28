@@ -284,12 +284,12 @@ public partial class PluginsGenerationService
                     OpenApiAiReasoningInstructionsExtension.Name, static x => x.ReasoningInstructions),
                 GetStateFromExtension<OpenApiAiRespondingInstructionsExtension>(openApiOperation,
                     OpenApiAiRespondingInstructionsExtension.Name, static x => x.RespondingInstructions)) switch
-            {
-                (State reasoning, State responding) => new States { Reasoning = reasoning, Responding = responding },
-                (State reasoning, _) => new States { Reasoning = reasoning },
-                (_, State responding) => new States { Responding = responding },
-                _ => null
-            };
+        {
+            (State reasoning, State responding) => new States { Reasoning = reasoning, Responding = responding },
+            (State reasoning, _) => new States { Reasoning = reasoning },
+            (_, State responding) => new States { Responding = responding },
+            _ => null
+        };
     }
 
     private static State? GetStateFromExtension<T>(OpenApiOperation openApiOperation, string extensionName,
