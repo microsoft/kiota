@@ -32,9 +32,9 @@ internal class PublicApiExportService
     private const string OptionalSymbol = "?";
     private const string ParentElementAndChildSeparator = "::";
 
-    internal async Task SerializeDomAsync(Stream fileStream, CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
+    internal async Task SerializeDomAsync(Stream outputStream, CodeNamespace rootNamespace, CancellationToken cancellationToken = default)
     {
-        var streamWriter = new StreamWriter(fileStream, leaveOpen: true);
+        var streamWriter = new StreamWriter(outputStream, leaveOpen: true);
         await using (streamWriter.ConfigureAwait(false))
         {
             var entries = GetEntriesFromDom(rootNamespace).Order(StringComparer.OrdinalIgnoreCase).ToArray();
