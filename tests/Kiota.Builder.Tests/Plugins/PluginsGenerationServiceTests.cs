@@ -263,15 +263,15 @@ components:
             .Extensions); // 1 supported extension still present in operation
     }
 
-    public static TheoryData<string, string, string, Action<DocumentValidationResults<PluginManifestDocument>>>
+    public static TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         SecurityInformation0()
     {
-        return new TheoryData<string, string, string, Action<DocumentValidationResults<PluginManifestDocument>>>
+        return new TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         {
             // security scheme in operation object
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
-                string.Empty, "security: [apiKey0: []]", resultingManifest =>
+                string.Empty, "security: [apiKey0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
                     Assert.Empty(resultingManifest.Problems);
@@ -282,26 +282,38 @@ components:
                 }
             },
             // security scheme in root object
+            // TODO: Revisit when https://github.com/microsoft/OpenAPI.NET/issues/1797 is fixed
+            // {
+            //     "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
+            //     "security: [apiKey0: []]", string.Empty, null, resultingManifest =>
+            //     {
+            //         Assert.NotNull(resultingManifest.Document);
+            //         Assert.Empty(resultingManifest.Problems);
+            //         Assert.NotEmpty(resultingManifest.Document.Runtimes);
+            //         var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+            //         Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
+            //         Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+            //     }
+            // },
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
-                "security: [apiKey0: []]", string.Empty, resultingManifest =>
+                string.Empty, "security: [apiKey0: []]", new PluginAuthConfiguration("different_ref_id") {AuthType = PluginAuthType.OAuthPluginVault}, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
                     Assert.Empty(resultingManifest.Problems);
                     Assert.NotEmpty(resultingManifest.Document.Runtimes);
                     var auth0 = resultingManifest.Document.Runtimes[0].Auth;
-                    Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
-                    Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                    Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
+                    Assert.Equal("different_ref_id", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
-            
         };
     }
 
     [Theory]
     [MemberData(nameof(SecurityInformation0))]
     public async Task GeneratesManifestWithAuthAsync(string securitySchemesComponent, string rootSecurity,
-        string operationSecurity, Action<DocumentValidationResults<PluginManifestDocument>> assertions)
+        string operationSecurity, PluginAuthConfiguration pluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>> assertions)
     {
         var apiDescription = $"""
                               openapi: 3.0.0
@@ -332,6 +344,7 @@ components:
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+            PluginAuthInformation = pluginAuthConfiguration,
         };
         var (openApiDocumentStream, _) =
             await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);

@@ -137,7 +137,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, TreeNode, openApiDocumentPath);
+        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
@@ -204,25 +204,20 @@ public partial class PluginsGenerationService
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
 
-    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiDocument document, OpenApiUrlTreeNode currentNode,
+    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
+        var configAuth = authInformation?.ToPluginManifestAuth();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
-                // Only one security object is allowed
-                // TODO: Fix OpenAPI.NET's default value for security to default to null. i.e. if security is not provided,
-                // the value should be null. According to the spec, not having the property is not the same as having it
-                // empty. security: [] means something in the spec.
-                var security = (operation.Security ?? document.SecurityRequirements)?.SingleOrDefault();
-                var opSecurity = security?.Keys.SingleOrDefault();
-                var auth = opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
                 runtimes.Add(new OpenApiRuntime
                 {
-                    Auth = auth,
+                    // Configuration overrides document information
+                    Auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements),
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath, },
                     RunForFunctions = [operation.OperationId]
                 });
@@ -235,12 +230,21 @@ public partial class PluginsGenerationService
                             : operation.Description.CleanupXMLString(),
                     States = GetStatesFromOperation(operation),
                 });
+                continue;
+
+                static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
+                {
+                    // Only one security object is allowed
+                    var security = securityRequirements.SingleOrDefault();
+                    var opSecurity = security?.Keys.SingleOrDefault();
+                    return opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
+                }
             }
         }
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(document, node.Value, openApiDocumentPath);
+            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(document, authInformation, node.Value, openApiDocumentPath);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
         }
