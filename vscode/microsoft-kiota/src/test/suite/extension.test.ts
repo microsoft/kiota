@@ -12,17 +12,4 @@ suite('Extension Test Suite', () => {
 		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
 		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
 	});
-
-    test('Extension Test Suite', () => {
-        vscode.commands.executeCommand(
-            'kiota.openApiExplorer.searchOrOpenApiDescription',
-            [
-                'https%3A%2F%2Fraw.githubusercontent.com%2Fgithub%2Frest-api-description%2Fmain%2Fdescriptions%2Fghes-3.0%2Fghes-3.0.json',
-                "Plugin",
-                "ApiPlugin",
-                "GitHubClientPlugin",
-                "ttk"
-            ]   
-        ).then((result) => {});
-    });
 });

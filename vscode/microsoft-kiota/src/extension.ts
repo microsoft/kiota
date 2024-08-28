@@ -229,11 +229,9 @@ export async function activate(
       reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
       async (
-        kind?: string, type?: string, name?: string, source?: string
+        searchParams: Partial<IntegrationParams> = {}
       ) => {
         // set deeplink params if exists
-        let searchParams = {kind,type,name,source } as Partial<IntegrationParams>;
-        console.log("searchParams", searchParams);
         if (Object.keys(searchParams).length > 0) {
           let errorsArray: string [];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
