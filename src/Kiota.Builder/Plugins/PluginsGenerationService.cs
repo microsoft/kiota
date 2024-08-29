@@ -248,7 +248,7 @@ public partial class PluginsGenerationService
         // Only one security object is allowed
         var security = securityRequirements.SingleOrDefault();
         var opSecurity = security?.Keys.SingleOrDefault();
-        return opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
+        return (opSecurity is null || opSecurity.UnresolvedReference) ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
     }
 
     private static Auth GetAuthFromSecurityScheme(OpenApiSecurityScheme securityScheme)
