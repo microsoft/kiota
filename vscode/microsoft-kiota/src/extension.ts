@@ -63,7 +63,7 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  let deepLinkParams: Record<string, string|undefined> = {};
+  let deepLinkParams: Partial<IntegrationParams> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -79,8 +79,8 @@ export async function activate(
             "validationErrors": errorsArray.join(", ")
           }); 
 
-          if (deepLinkParams.descriptionUrl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionUrl!));
+          if (deepLinkParams.descriptionurl) {
+            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
             return;
           }
         }

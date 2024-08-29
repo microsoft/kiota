@@ -172,11 +172,11 @@ export interface IntegrationParams {
 };
 
 export function validateDeepLinkQueryParams(queryParameters: Partial<IntegrationParams>):
- [Record<string, string|undefined>, string[]]
+ [Partial<IntegrationParams>, string[]]
 {
   let errormsg: string [] = [];
-  let validQueryParams: Record<string, string|undefined> = {};
-  const descriptionUrl = queryParameters["descriptionurl"];
+  let validQueryParams: Partial<IntegrationParams> = {};
+  const descriptionurl = queryParameters["descriptionurl"];
   const name = getSanitizedString(queryParameters["name"]);
   const source = getSanitizedString(queryParameters["source"]);
   let lowercasedKind: string = queryParameters["kind"]?.toLowerCase() ?? "";
@@ -224,7 +224,7 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   }
 
   validQueryParams = {
-    descriptionUrl: descriptionUrl,
+    descriptionurl: descriptionurl,
     name: name,
     kind: validKind,
     type: providedType,
