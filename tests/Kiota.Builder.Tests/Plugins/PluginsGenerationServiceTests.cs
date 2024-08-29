@@ -231,7 +231,7 @@ components:
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
-    
+
     public static TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         SecurityInformationSuccess()
     {
@@ -279,7 +279,7 @@ components:
             },
             // auth provided in config applies when no openapi file auth
             {
-                string.Empty,
+                "{}",
                 string.Empty, string.Empty,
                 new PluginAuthConfiguration("different_ref_id") {AuthType = PluginAuthType.OAuthPluginVault},
                 resultingManifest =>
@@ -305,7 +305,7 @@ components:
                 }
             },
             {
-                "{securitySchemes: {openIdConnect0: {type: openIdConect, openIdConnectUrl: 'http://auth.com'}}}",
+                "{securitySchemes: {openIdConnect0: {type: openIdConnect, openIdConnectUrl: 'http://auth.com'}}}",
                 string.Empty, "security: [openIdConnect0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
