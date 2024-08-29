@@ -17,8 +17,8 @@ namespace Kiota.Builder.Writers
             get;
         }
 
-        public HttpSnippetWriter(TextWriter writer) 
-        { 
+        public HttpSnippetWriter(TextWriter writer)
+        {
             Writer = writer;
         }
 
