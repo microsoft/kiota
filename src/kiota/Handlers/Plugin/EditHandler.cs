@@ -104,7 +104,10 @@ internal class EditHandler : BaseKiotaCommandHandler
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
+                {
                     DisplaySuccess("Generation completed successfully");
+                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl, true);
+                }
                 else if (skipGeneration)
                 {
                     DisplaySuccess("Generation skipped as --skip-generation was passed");

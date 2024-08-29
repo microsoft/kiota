@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace kiota;
 public static partial class KiotaHost
 {
-    internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable("KIOTA_CONFIG_PREVIEW"), out var isPreviewEnabled) && isPreviewEnabled);
+    internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";
+    internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable(KiotaPreviewEnvironmentVariable), out var isPreviewEnabled) && isPreviewEnabled);
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();
@@ -152,6 +153,7 @@ public static partial class KiotaHost
         var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         maxDepthOption.AddAlias("--m-d");
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultGenerationConfiguration.DisableSSLValidation);
         var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
             logLevelOption,
@@ -162,6 +164,7 @@ public static partial class KiotaHost
             includePatterns,
             excludePatterns,
             clearCacheOption,
+            disableSSLValidationOption,
         };
         displayCommand.Handler = new KiotaShowCommandHandler
         {
@@ -174,6 +177,7 @@ public static partial class KiotaHost
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
             ClearCacheOption = clearCacheOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return displayCommand;
     }
@@ -212,6 +216,8 @@ public static partial class KiotaHost
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+
         var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
             keyArgument,
             logLevelOption,
@@ -219,6 +225,7 @@ public static partial class KiotaHost
             versionOption,
             cleanOutputOption,
             outputOption,
+            disableSSLValidationOption,
         };
         searchCommand.Handler = new KiotaDownloadCommandHandler
         {
@@ -228,6 +235,7 @@ public static partial class KiotaHost
             VersionOption = versionOption,
             CleanOutputOption = cleanOutputOption,
             OutputPathOption = outputOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return searchCommand;
     }
@@ -443,6 +451,8 @@ public static partial class KiotaHost
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
+        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             manifestOption,
@@ -462,6 +472,7 @@ public static partial class KiotaHost
             excludePatterns,
             dvrOption,
             clearCacheOption,
+            disableSSLValidationOption,
         };
         command.Handler = new KiotaGenerateCommandHandler
         {
@@ -483,6 +494,7 @@ public static partial class KiotaHost
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
+            DisableSSLValidationOption = disableSSLValidationOption,
         };
         return command;
     }
@@ -529,7 +541,12 @@ public static partial class KiotaHost
     }
     internal static Option<LogLevel> GetLogLevelOption()
     {
-        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+#if DEBUG
+        static LogLevel DefaultLogLevel() => LogLevel.Debug;
+#else
+        static LogLevel DefaultLogLevel() => LogLevel.Warning;
+#endif
+        var logLevelOption = new Option<LogLevel>("--log-level", DefaultLogLevel, "The log level to use when logging messages to the main output.");
         logLevelOption.AddAlias("--ll");
         AddEnumValidator(logLevelOption, "log level");
         return logLevelOption;
@@ -540,6 +557,14 @@ public static partial class KiotaHost
         clearCacheOption.AddAlias("--cc");
         return clearCacheOption;
     }
+
+    private static Option<bool> GetDisableSSLValidationOption(bool defaultValue)
+    {
+        var disableSSLValidationOption = new Option<bool>("--disable-ssl-validation", () => defaultValue, "Disables SSL certificate validation.");
+        disableSSLValidationOption.AddAlias("--dsv");
+        return disableSSLValidationOption;
+    }
+
     private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
     {
         option.AddValidator(input =>
@@ -576,26 +601,18 @@ public static partial class KiotaHost
             input.ErrorMessage = $"{unknownValue} is not a supported {parameterName}, supported values are {validOptionsList}";
         }
     }
-    private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T : struct, Enum
-    {
-        if (input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _))
-        {
-            var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
-            input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
-        }
-    }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
     private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
 }

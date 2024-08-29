@@ -51,7 +51,15 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("public class", result);
+        Assert.Contains("public partial class", result);
+    }
+
+    [Fact]
+    public void WritesWarningDisableCs0618()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("#pragma warning disable CS0618", result);
     }
 
     [Fact]
@@ -106,5 +114,13 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("using", result);
         Assert.Contains("Project.Graph", result);
         Assert.Contains("System.Util", result);
+    }
+
+    [Fact]
+    public void WritesGeneratedCodeAttribute()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
     }
 }

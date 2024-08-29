@@ -7,8 +7,16 @@ static class Program
     {
         var rootCommand = KiotaHost.GetRootCommand();
         var result = await rootCommand.InvokeAsync(args);
-        foreach (var subCommand in rootCommand.Subcommands.Select(static x => x.Handler).OfType<IDisposable>())
-            subCommand.Dispose();
+        DisposeSubCommands(rootCommand);
         return result;
+    }
+    private static void DisposeSubCommands(this Command command)
+    {
+        if (command.Handler is IDisposable disposableHandler)
+            disposableHandler.Dispose();
+        foreach (var subCommand in command.Subcommands)
+        {
+            DisposeSubCommands(subCommand);
+        }
     }
 }

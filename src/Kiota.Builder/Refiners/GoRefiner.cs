@@ -39,6 +39,7 @@ public class GoRefiner : CommonLanguageRefiner
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);
+            NormalizeNamespaceNames(generatedCode);
             AddInnerClasses(
                 generatedCode,
                 true,
@@ -92,9 +93,16 @@ public class GoRefiner : CommonLanguageRefiner
             FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
+                new GoNamespaceReservedNamesProvider(),
+                x => $"{x}Escaped",
+                shouldReplaceCallback: x => x is CodeNamespace
+            );
+            ReplaceReservedNames(
+                generatedCode,
                 new GoReservedNamesProvider(),
                 x => $"{x}Escaped",
-                shouldReplaceCallback: x => (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
+                shouldReplaceCallback: x => (x is not CodeNamespace) &&
+                                            (x is not CodeEnumOption && x is not CodeEnum) && // enums and enum options start with uppercase
                                             (x is not CodeProperty currentProp ||
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
@@ -525,20 +533,12 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void AddErrorAndStringsImportForEnums(CodeElement currentElement)
     {
-        if (currentElement is CodeEnum currentEnum)
+        if (currentElement is CodeEnum { Flags: true } currentEnum)
         {
             currentEnum.AddUsing(new CodeUsing
             {
-                Name = "errors",
+                Name = "strings",
             });
-
-            if (currentEnum.Flags)
-            {
-                currentEnum.AddUsing(new CodeUsing
-                {
-                    Name = "strings",
-                });
-            }
         }
         CrawlTree(currentElement, AddErrorAndStringsImportForEnums);
     }
@@ -764,5 +764,26 @@ public class GoRefiner : CommonLanguageRefiner
                 parameter.Type.Name = currentInnerClass.Name;
         }
         CrawlTree(currentElement, RenameInnerModelsToAppended);
+    }
+
+    private void NormalizeNamespaceNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            var clientNamespace = _configuration.ClientNamespaceName;
+            var namespaceName = codeNamespace.Name;
+            if (namespaceName.StartsWith(clientNamespace, StringComparison.OrdinalIgnoreCase) && !namespaceName.Equals(clientNamespace, StringComparison.OrdinalIgnoreCase))
+            {
+                var secondPart = namespaceName[clientNamespace.Length..]; // The rest of the name after the clientNamespace
+                var withEmptyRemoved = string.Join('.', secondPart.Split('.', StringSplitOptions.RemoveEmptyEntries));
+                var normalizedString = string.IsNullOrEmpty(withEmptyRemoved) switch
+                {
+                    true => string.Empty,
+                    false => $".{withEmptyRemoved}"
+                };
+                codeNamespace.Name = $"{clientNamespace}{normalizedString.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, NormalizeNamespaceNames);
     }
 }

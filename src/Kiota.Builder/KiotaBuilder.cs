@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -192,6 +193,12 @@ public partial class KiotaBuilder
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
 
+            // OperationId cleanup in the event that we are generating plugins
+            if (config.IsPluginConfiguration)
+            {
+                CleanupOperationIdForPlugins(openApiDocument);
+            }
+
             // Create Uri Space of API
             sw.Start();
             openApiTree = CreateUriSpace(openApiDocument);
@@ -231,13 +238,11 @@ public partial class KiotaBuilder
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
-            if (config.PluginTypes.Contains(PluginType.OpenAI))
-                throw new NotImplementedException("The OpenAI plugin type is not supported for generation");
             if (openApiDocument is null || openApiTree is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
             sw.Start();
-            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config);
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
             await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
@@ -326,9 +331,9 @@ public partial class KiotaBuilder
     }
     private readonly WorkspaceManagementService workspaceManagementService;
     private static readonly GlobComparer globComparer = new();
-    [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])?", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex MultiIndexSameLevelCleanupRegex();
-    private static string ReplaceAllIndexesWithWildcard(string path, uint depth = 10) => depth == 0 ? path : ReplaceAllIndexesWithWildcard(MultiIndexSameLevelCleanupRegex().Replace(path, "$1{*}$2"), depth - 1); // the bound needs to be greedy to avoid replacing anything else than single path parameters
+    internal static string ReplaceAllIndexesWithWildcard(string path, uint depth = 10) => depth == 0 ? path : ReplaceAllIndexesWithWildcard(MultiIndexSameLevelCleanupRegex().Replace(path, "$1{*}$2"), depth - 1); // the bound needs to be greedy to avoid replacing anything else than single path parameters
     private static Dictionary<Glob, HashSet<OperationType>> GetFilterPatternsFromConfiguration(HashSet<string> configPatterns)
     {
         return configPatterns.Select(static x =>
@@ -346,6 +351,34 @@ public partial class KiotaBuilder
                                                             .Where(static y => y != null && y.HasValue)
                                                             .Select(static y => y!.Value)),
                     globComparer);
+    }
+
+    [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex PluginOperationIdCleanupRegex();
+    internal static void CleanupOperationIdForPlugins(OpenApiDocument document)
+    {
+        if (document.Paths is null) return;
+        foreach (var (pathItem, operation) in document.Paths.SelectMany(static path => path.Value.Operations.Select(value => new Tuple<string, KeyValuePair<OperationType, OpenApiOperation>>(path.Key, value))))
+        {
+            if (string.IsNullOrEmpty(operation.Value.OperationId))
+            {
+                var stringBuilder = new StringBuilder();
+                foreach (var segment in pathItem.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (segment.IsPathSegmentWithSingleSimpleParameter())
+                        stringBuilder.Append("item");
+                    else if (!string.IsNullOrEmpty(segment.Trim()))
+                        stringBuilder.Append(segment.ToLowerInvariant());
+                    stringBuilder.Append('_');
+                }
+                stringBuilder.Append(operation.Key.ToString().ToLowerInvariant());
+                operation.Value.OperationId = stringBuilder.ToString();
+            }
+            else
+            {
+                operation.Value.OperationId = PluginOperationIdCleanupRegex().Replace(operation.Value.OperationId, "_");//replace non-alphanumeric characters with _
+            }
+        }
     }
     internal void FilterPathsByPatterns(OpenApiDocument doc)
     {
@@ -376,8 +409,14 @@ public partial class KiotaBuilder
             foreach (var path in doc.Paths.Where(x => !nonOperationIncludePatterns.Any(y => y.IsMatch(x.Key))))
             {
                 var pathString = path.Key;
-                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Count != 0 && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
-                                        operationExcludePatterns.Count != 0 && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Count != 0 && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                .ToList()
+                .ForEach(x => path.Value.Operations.Remove(x));
+            }
+            foreach (var path in doc.Paths)
+            {
+                var pathString = path.Key;
+                path.Value.Operations.Keys.Where(x => operationExcludePatterns.Count != 0 && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
                 .ToList()
                 .ForEach(x => path.Value.Operations.Remove(x));
             }
@@ -391,7 +430,13 @@ public partial class KiotaBuilder
     internal void SetApiRootUrl()
     {
         if (openApiDocument is not null && openApiDocument.GetAPIRootUrl(config.OpenAPIFilePath) is string candidateUrl)
+        {
             config.ApiRootUrl = candidateUrl;
+            if (!config.IsPluginConfiguration)
+            {
+                logger.LogInformation("Client root URL set to {ApiRootUrl}", candidateUrl);
+            }
+        }
         else
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
     }
@@ -1114,7 +1159,9 @@ public partial class KiotaBuilder
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
-    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "301", "302", "303", "304", "307" };
+    private const string RequestBodyOctetStreamContentType = "application/octet-stream";
+    private static readonly HashSet<string> redirectStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "301", "302", "303", "307" };
+    private static readonly HashSet<string> noContentStatusCodes = new(redirectStatusCodes, StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
@@ -1203,28 +1250,27 @@ public partial class KiotaBuilder
             }
             else if (modelType is null)
             {
-                string returnType;
-                if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                    returnType = VoidType;
-                else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
-                    returnType = "string";
-                else
-                    returnType = "binary";
-                return (new CodeType { Name = returnType, IsExternal = true, }, null);
+                return (GetExecutorMethodDefaultReturnType(operation), null);
             }
             return (modelType, null);
         }
         else
         {
-            string returnType;
-            if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                returnType = VoidType;
-            else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
-                returnType = "string";
-            else
-                returnType = "binary";
-            return (new CodeType { Name = returnType, IsExternal = true, }, null);
+            return (GetExecutorMethodDefaultReturnType(operation), null);
         }
+    }
+    private static CodeType GetExecutorMethodDefaultReturnType(OpenApiOperation operation)
+    {
+        string returnType;
+        if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyOctetStreamContentType) && redirectStatusCodes.Contains(x.Key)))
+            returnType = "binary";
+        else if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+            returnType = VoidType;
+        else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+            returnType = "string";
+        else
+            returnType = "binary";
+        return new CodeType { Name = returnType, IsExternal = true, };
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
@@ -1431,26 +1477,37 @@ public partial class KiotaBuilder
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
             CodeTypeBase requestBodyType;
-            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes))
+            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes)
+                && operation.RequestBody.Content.IsMultipartTopMimeType(config.StructuredMimeTypes))
             {
-                requestBodyType = new CodeType
-                {
-                    Name = "MultipartBody",
-                    IsExternal = true,
-                };
                 var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
-                foreach (var encodingEntry in mediaType.Encoding
-                                                        .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
-                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType)))
+                if (mediaType.Encoding.Any())
                 {
-                    if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
-                        propertyType.TypeDefinition is not null)
-                        multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
+                    foreach (var encodingEntry in mediaType.Encoding
+                                 .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
+                                             config.StructuredMimeTypes.Contains(x.Value.ContentType)))
+                    {
+                        if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key],
+                                operation, method, $"{operationType}RequestBody",
+                                isRequestBody: true) is CodeType propertyType &&
+                            propertyType.TypeDefinition is not null)
+                            multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    }
+                }
+                else
+                {
+                    requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
+                                          $"{operationType}RequestBody", isRequestBody: true) ??
+                                      throw new InvalidSchemaException();
                 }
             }
             else
-                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
-                    throw new InvalidSchemaException();
+            {
+                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
+                                      $"{operationType}RequestBody", isRequestBody: true) ??
+                                  throw new InvalidSchemaException();
+            }
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1508,6 +1565,7 @@ public partial class KiotaBuilder
                     PossibleValues = contentTypes.ToList()
                 });
         }
+
         method.AddParameter(new CodeParameter
         {
             Name = "requestConfiguration",
@@ -1536,49 +1594,92 @@ public partial class KiotaBuilder
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
         var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
-        var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, schema, className, codeNamespace);
+        var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
         return new CodeType
         {
             TypeDefinition = codeDeclaration,
         };
     }
-    private CodeType CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
+    private CodeType CreateInheritedModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
-        var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf);
-        CodeElement? codeDeclaration = null;
-        var className = string.Empty;
+        return new CodeType
+        {
+            TypeDefinition = CreateInheritedModelDeclaration(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator),
+        };
+    }
+    private CodeClass CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
+    {
+        var flattenedAllOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).ToArray();
+        var referenceId = schema.Reference?.Id;
+        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);
-        foreach (var currentSchema in allOfs)
+        if (rootNamespace is null)
+            throw new InvalidOperationException("Root namespace is not set");
+        var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindOrAddNamespace(shortestNamespaceName);
+        var inlineSchemas = Array.FindAll(flattenedAllOfs, static x => !x.IsReferencedSchema());
+        var referencedSchemas = Array.FindAll(flattenedAllOfs, static x => x.IsReferencedSchema());
+        var rootSchemaHasProperties = schema.HasAnyProperty();
+        var className = (schema.GetSchemaName(schema.IsSemanticallyMeaningful()) is string cName && !string.IsNullOrEmpty(cName) ?
+                cName :
+                (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
+                    typeNameForInlineSchema :
+                    currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)))
+            .CleanupSymbolName();
+        var codeDeclaration = (rootSchemaHasProperties, inlineSchemas, referencedSchemas, isViaDiscriminator) switch
         {
-            var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
-            var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
-            var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
-            className = (currentSchema.GetSchemaName() is string cName && !string.IsNullOrEmpty(cName) ?
-                            cName :
-                            currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody))
-                        .CleanupSymbolName();
-            if (shortestNamespace != null)
-                codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
-        }
-        if (codeDeclaration is CodeClass currentClass &&
-            !currentClass.Documentation.DescriptionAvailable &&
-            string.IsNullOrEmpty(schema.AllOf.LastOrDefault()?.Description) &&
-            !string.IsNullOrEmpty(schema.Description))
-            currentClass.Documentation.DescriptionTemplate = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
-
-        return new CodeType
-        {
-            TypeDefinition = codeDeclaration,
+            // greatest parent type
+            (true, { Length: 0 }, { Length: 0 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
+            // inline schema + referenced schema
+            (false, { Length: > 0 }, { Length: 1 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x.Reference is null)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // properties + referenced schema
+            (true, { Length: 0 }, { Length: 1 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // properties + inline schema
+            (true, { Length: 1 }, { Length: 0 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // empty schema + referenced schema
+            (false, { Length: 0 }, { Length: 1 }, false) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, referencedSchemas[0], className, shortestNamespace),
+            // empty schema + inline schema
+            (false, { Length: 1 }, { Length: 0 }, false) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, inlineSchemas[0], className, shortestNamespace),
+            // empty schema + referenced schema and referenced by oneOf discriminator
+            (false, { Length: 0 }, { Length: 1 }, true) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // empty schema + inline schema and referenced by oneOf discriminator
+            (false, { Length: 1 }, { Length: 0 }, true) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // too much information but we can make a choice -> maps to properties + inline schema
+            (true, { Length: 1 }, { Length: 1 }, _) when inlineSchemas[0].HasAnyProperty() && !referencedSchemas[0].HasAnyProperty() =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
+            // too much information but we can make a choice -> maps to properties + referenced schema
+            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasAnyProperty() && !inlineSchemas[0].HasAnyProperty() =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // too much information but we can merge root + inline schema
+            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasAnyProperty() && inlineSchemas[0].HasAnyProperty() && schema.MergeAllOfSchemaEntries([.. referencedSchemas]) is { } mergedSchema =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, mergedSchema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+            // none of the allOf entries have properties, it's a grandparent schema
+            (true, { Length: 1 }, { Length: 1 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
+            // too many entries, we mush everything together
+            (_, { Length: > 1 }, { Length: > 1 }, _) or (_, { Length: 0 or 1 }, { Length: > 1 }, _) or (_, { Length: > 1 }, { Length: 0 or 1 }, _) =>
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries()!, className, shortestNamespace),
+            // meaningless scenario
+            (false, { Length: 0 }, { Length: 0 }, _) =>
+                throw new InvalidOperationException($"The type does not contain any information Path: {currentNode.Path}, Reference Id: {referenceId}"),
         };
-    }
-    private static string? GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema)
-    {
-        var title = schema.Title;
-        if (!string.IsNullOrEmpty(schema.Reference?.Id)) return schema.Reference.Id;
-        if (string.IsNullOrEmpty(title)) return string.Empty;
-        if (parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
-        if (parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
-        return parentSchema.GetSchemaReferenceIds().FirstOrDefault(refId => refId.EndsWith(title, StringComparison.OrdinalIgnoreCase));
+        if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
+        if (!currentClass.Documentation.DescriptionAvailable &&
+            new string[] { schema.Description }
+                        .Union(schema.AllOf
+                                    .Where(static x => x.Reference is null)
+                                    .Select(static x => x.Description))
+                        .FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string description)
+            currentClass.Documentation.DescriptionTemplate = description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
+
+        return currentClass;
     }
     private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
@@ -1587,7 +1688,7 @@ public partial class KiotaBuilder
         if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
-                                                        !x.Properties.Any() &&
+                                                        !x.HasAnyProperty() &&
                                                         !x.IsExclusiveUnion() &&
                                                         !x.IsInclusiveUnion() &&
                                                         !x.IsInherited() &&
@@ -1602,7 +1703,7 @@ public partial class KiotaBuilder
                 var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
                 return new CodeType
                 {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, targetSchema, className, shortestNamespace),
+                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
                     CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
                 };// so we don't create unnecessary union types when anyOf was used only for nullable.
             }
@@ -1622,7 +1723,7 @@ public partial class KiotaBuilder
         if (!string.IsNullOrEmpty(schema.Reference?.Id))
             unionType.TargetNamespace = codeNamespace.GetRootNamespace().FindOrAddNamespace(GetModelsNamespaceNameFromReferenceId(schema.Reference.Id));
         unionType.DiscriminatorInformation.DiscriminatorPropertyName = schema.GetDiscriminatorPropertyName();
-        GetDiscriminatorMappings(currentNode, schema, codeNamespace, null)
+        GetDiscriminatorMappings(currentNode, schema, codeNamespace, null, operation)
             ?.ToList()
             .ForEach(x => unionType.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
         var membersWithNoName = 0;
@@ -1641,7 +1742,7 @@ public partial class KiotaBuilder
                     className = $"{unionType.Name}Member{++membersWithNoName}";
             var declarationType = new CodeType
             {
-                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace),
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
                 CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };
             if (!unionType.ContainsType(declarationType))
@@ -1649,7 +1750,7 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
-    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
+    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
@@ -1666,7 +1767,8 @@ public partial class KiotaBuilder
 
         if (schema.IsInherited())
         {
-            return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
+            // Pass isViaDiscriminator so that we can handle the special case where this model was referenced by a discriminator and we always want to generate a base class.
+            return CreateInheritedModelDeclarationAndType(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator);
         }
 
         if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is OpenApiSchema mergedSchema)
@@ -1681,13 +1783,14 @@ public partial class KiotaBuilder
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
-        if (schema.IsObject() || schema.Properties.Any() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type))
+        if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type))
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
             return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody);
         }
 
-        if (schema.IsArray())
+        if (schema.IsArray() &&
+            !schema.Items.IsArray()) // Only handle collections of primitives and complex types. Otherwise, multi-dimensional arrays would be recursively unwrapped undesirably to lead to incorrect serialization types. 
         {
             // collections at root
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, typeNameForInlineSchema, isRequestBody);
@@ -1729,14 +1832,20 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
-    private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
+    private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
             if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 
-            return AddModelClass(currentNode, schema, declarationName, currentNamespace, inheritsFrom);
+            if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is { } mergedSchema &&
+                AddModelDeclarationIfDoesntExist(currentNode, currentOperation, mergedSchema, declarationName, currentNamespace, inheritsFrom) is CodeClass createdClass)
+            {
+                // multiple allOf entries that do not translate to inheritance
+                return createdClass;
+            }
+            return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom);
         }
         return existingDeclaration;
     }
@@ -1812,12 +1921,13 @@ public partial class KiotaBuilder
         }
         return currentNamespace;
     }
-    private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
+    private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, OpenApiOperation? currentOperation, CodeClass? inheritsFrom = null)
     {
-        if (inheritsFrom == null && schema.AllOf.FirstOrDefault(static x => x.Reference != null) is OpenApiSchema parentSchema)
+        if (inheritsFrom == null && schema.AllOf.Where(static x => x.Reference != null).ToArray() is { Length: 1 } referencedSchemas)
         {// any non-reference would be the current class in some description styles
+            var parentSchema = referencedSchemas[0];
             var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
-            inheritsFrom = (CodeClass)AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace);
+            inheritsFrom = (CodeClass)AddModelDeclarationIfDoesntExist(currentNode, currentOperation, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace);
         }
         var newClassStub = new CodeClass
         {
@@ -1862,19 +1972,23 @@ public partial class KiotaBuilder
             }
         }
 
-        var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
-                        .Where(x => x.Value is CodeType type &&
-                                    type.TypeDefinition != null &&
-                                    type.TypeDefinition is CodeClass definition &&
+        // Recurse into the discriminator & generate its referenced types
+        var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass, currentOperation)
+                        .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
                                     definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
         AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
         return newClass;
     }
-    private IEnumerable<KeyValuePair<string, CodeType>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass)
+    private IEnumerable<KeyValuePair<string, CodeType>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiOperation? currentOperation)
     {
+        // Generate types that this discriminator references
         return schema.GetDiscriminatorMappings(inheritanceIndex)
-                .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
+                .Union(baseClass is not null && modelsNamespace is not null &&
+                        (openApiDocument?.Components?.Schemas?.TryGetValue(baseClass.GetComponentSchemaName(modelsNamespace), out var componentSchema) ?? false) ?
+                        componentSchema.GetDiscriminatorMappings(inheritanceIndex) :
+                         [])
+                .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, currentOperation)))
                 .Where(static x => x.Value != null)
                 .Select(static x => KeyValuePair.Create(x.Key, x.Value!));
     }
@@ -2048,7 +2162,7 @@ public partial class KiotaBuilder
         newClass.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
         newClass.AddMethod(factoryMethod);
     }
-    private CodeType? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiSchema currentSchema)
+    private CodeType? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiOperation? currentOperation)
     {
         var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
         if (openApiDocument == null || !openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema))
@@ -2056,51 +2170,42 @@ public partial class KiotaBuilder
             logger.LogWarning("Discriminator {ComponentKey} not found in the OpenAPI document.", componentKey);
             return null;
         }
-        var className = currentNode.GetClassName(config.StructuredMimeTypes, schema: discriminatorSchema).CleanupSymbolName();
-        var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference?.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase) ?? false);
-        var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, GetShortestNamespace(currentNamespace, discriminatorSchema), shouldInherit ? baseClass : null);
-        return new CodeType
+        // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator. 
+        if (CreateModelDeclarations(currentNode, discriminatorSchema, currentOperation, GetShortestNamespace(currentNamespace, discriminatorSchema), string.Empty, null, string.Empty, false, true) is not CodeType result)
         {
-            TypeDefinition = codeClass,
-        };
+            logger.LogWarning("Discriminator {ComponentKey} is not a valid model and points to a union type.", componentKey);
+            return null;
+        }
+        if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
+        {
+            if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case. 
+                logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
+            return null;
+        }
+        return result;
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (CollectAllProperties(schema) is var properties && properties.Count != 0)
-        {
-            var propertiesToAdd = properties
-                    .Select(x =>
+        var propertiesToAdd = schema.Properties
+                .Select(x =>
+                {
+                    var propertySchema = x.Value;
+                    var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                    if (definition == null)
                     {
-                        var propertySchema = x.Value;
-                        var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
-                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                        if (definition == null)
-                        {
-                            logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
-                            return null;
-                        }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                    })
-                    .OfType<CodeProperty>()
-                    .ToArray();
-            if (propertiesToAdd.Length != 0)
-                model.AddProperty(propertiesToAdd);
-        }
-    }
-    private Dictionary<string, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
-    {
-        Dictionary<string, OpenApiSchema> result = schema.Properties?.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
-        if (schema.AllOf?.Any() ?? false)
-        {
-            foreach (var supProperty in schema.AllOf.Where(static x => x.IsObject() && !x.IsReferencedSchema() && x.Properties is not null).SelectMany(static x => x.Properties))
-            {
-                result.Add(supProperty.Key, supProperty.Value);
-            }
-        }
-        return result;
+                        logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                        return null;
+                    }
+                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                })
+                .OfType<CodeProperty>()
+                .ToArray();
+        if (propertiesToAdd.Length != 0)
+            model.AddProperty(propertiesToAdd);
     }
     private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
@@ -2330,13 +2435,17 @@ public partial class KiotaBuilder
             Name = "string",
         };
     }
-    private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
-        new()
+    private static CodeType GetQueryParameterType(OpenApiSchema schema)
+    {
+        var paramType = GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
             Name = schema.Items?.Type ?? schema.Type,
-            CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default,
         };
+
+        paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        return paramType;
+    }
 
     private void CleanUpInternalState()
     {

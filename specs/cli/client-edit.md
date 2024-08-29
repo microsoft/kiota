@@ -105,7 +105,7 @@ _The resulting `apimanifest.json` file will look like this:_
     └─workspace.json 
     └─documents
        └─GraphClient
-         └─GraphClient.yaml
+         └─openapi.yaml
  └─generated
     └─graph
        └─csharp

@@ -1,56 +1,82 @@
-﻿using System.CommandLine;
+﻿using System;
+using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.IO;
+using System.IO;
 using System.Threading.Tasks;
-
 using kiota;
-
+using Moq;
 using Xunit;
 
 namespace Kiota.Tests;
-public class KiotaHostTests
+public sealed class KiotaHostTests : IDisposable
 {
+    private readonly IConsole _console;
+    private readonly List<IDisposable> _disposables = [];
+    public KiotaHostTests()
+    {
+        var consoleMock = new Mock<IConsole>();
+        var mockStandardStreamWriter = new Mock<IStandardStreamWriter>();
+        var mockWriter = new StringWriter();
+        _disposables.Add(mockWriter);
+        mockStandardStreamWriter.Setup(w => w.Write(It.IsAny<string>())).Callback<string>(mockWriter.Write);
+        consoleMock.Setup(c => c.Out).Returns(mockStandardStreamWriter.Object);
+        consoleMock.Setup(c => c.Error).Returns(mockStandardStreamWriter.Object);
+        consoleMock.Setup(c => c.IsInputRedirected).Returns(true);
+        consoleMock.Setup(c => c.IsOutputRedirected).Returns(true);
+        consoleMock.Setup(c => c.IsErrorRedirected).Returns(true);
+        _console = consoleMock.Object;
+    }
     [Fact]
     public async Task ThrowsOnInvalidOutputPathAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-o", "A:\\doesnotexist" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-o", "A:\\doesnotexist"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidInputPathAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-d", "A:\\doesnotexist" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-d", "A:\\doesnotexist"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidInputUrlAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-d", "https://nonexistentdomain56a535ba-bda6-405e-b5e2-ef5f11bf1003.net/doesnotexist" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-d", "https://nonexistentdomain56a535ba-bda6-405e-b5e2-ef5f11bf1003.net/doesnotexist"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidLanguageAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-l", "Pascal" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-l", "Pascal"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidLogLevelAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "--ll", "Dangerous" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "--ll", "Dangerous"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidClassNameAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-c", ".Graph" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", ".Graph"], _console));
     }
     [Fact]
     public async Task AcceptsDeserializersAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "--ds", "Kiota.Tests.TestData.TestDeserializer" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "--ds", "Kiota.Tests.TestData.TestDeserializer"], _console));
     }
     [Fact]
     public async Task AcceptsSerializersAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-s", "Kiota.Tests.TestData.TestSerializer" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-s", "Kiota.Tests.TestData.TestSerializer"], _console));
     }
     [Fact]
     public async Task ThrowsOnInvalidSearchTermAsync()
     {
-        await KiotaHost.GetRootCommand().InvokeAsync(new[] { "search" });
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["search"], _console));
+    }
+
+    public void Dispose()
+    {
+        foreach (var disposable in _disposables)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

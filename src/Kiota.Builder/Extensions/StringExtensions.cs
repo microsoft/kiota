@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
@@ -50,8 +51,8 @@ public static partial class StringExtensions
     /// <summary>
     /// Shortens a file name to the maximum allowed length on the file system using a hash to avoid collisions
     /// </summary>
-    /// <param name="fileName">The file name to shorten</param>
-    /// <param name="maxFileNameLength">The maximum length of the file name. Default 251 = 255 - .ext</param>
+    /// <param name="name">The file name to shorten</param>
+    /// <param name="length">The maximum length of the file name. Default 251 = 255 - .ext</param>
     public static string ShortenFileName(this string name, int length = 251) =>
 #pragma warning disable CA1308
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
@@ -290,4 +291,18 @@ public static partial class StringExtensions
     /// <returns></returns>
     public static bool EqualsIgnoreCase(this string? a, string? b)
         => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    public static string TrimSuffix(this string s, string suffix, StringComparison stringComparison = StringComparison.Ordinal) =>
+        !string.IsNullOrEmpty(s) && !string.IsNullOrEmpty(suffix) && s.EndsWith(suffix, stringComparison) ? s[..^suffix.Length] : s;
+    public static string GetFileExtension(this string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        return Path.GetExtension(path).TrimStart('.');
+    }
+    public static string NormalizePathSeparators(this string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        if (Path.DirectorySeparatorChar != '/') return path.Replace(Path.DirectorySeparatorChar, '/');
+        return path;
+    }
 }

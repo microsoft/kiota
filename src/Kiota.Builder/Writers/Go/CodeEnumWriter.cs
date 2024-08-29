@@ -16,10 +16,14 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         if (codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
 
-        writer.StartBlock("import (");
-        foreach (var cUsing in codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"\"{cUsing.Name}\"");
-        writer.CloseBlock(")");
+        var usings = codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (usings.Length > 0)
+        {
+            writer.StartBlock("import (");
+            foreach (var cUsing in usings)
+                writer.WriteLine($"\"{cUsing.Name}\"");
+            writer.CloseBlock(")");
+        }
 
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription(codeElement, writer);
@@ -49,11 +53,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
 
         WriteStringFunction(codeElement, writer, isMultiValue);
         WriteParsableEnum(codeElement, writer, isMultiValue);
-        WriteSerializeFunction(codeElement, writer, isMultiValue);
+        WriteSerializeFunction(codeElement, writer);
         WriteMultiValueFunction(codeElement, writer, isMultiValue);
     }
 
-    private void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, bool isMultiValue)
+    private static void WriteStringFunction(CodeEnum codeElement, LanguageWriter writer, bool isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         var enumOptions = codeElement.Options.ToList();
@@ -86,10 +90,10 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         }
     }
 
-    private void WriteParsableEnum(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteParsableEnum(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-        var enumOptions = codeElement.Options;
+        var enumOptions = codeElement.Options.ToArray();
 
         writer.StartBlock($"func Parse{typeName}(v string) (any, error) {{");
 
@@ -108,7 +112,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         }
         else
         {
-            writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+            writer.WriteLine($"result := {enumOptions[0].Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
             writer.StartBlock("switch v {");
             foreach (var item in enumOptions)
             {
@@ -118,9 +122,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             }
         }
 
-
         writer.StartBlock("default:");
-        writer.WriteLine($"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
+        writer.WriteLine($"return nil, nil");
         writer.DecreaseIndent();
         writer.CloseBlock();
         if (isMultiValue) writer.CloseBlock();
@@ -128,7 +131,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock();
     }
 
-    private void WriteSerializeFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteSerializeFunction(CodeEnum codeElement, LanguageWriter writer)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.StartBlock($"func Serialize{typeName}(values []{typeName}) []string {{");
@@ -141,7 +144,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.CloseBlock();
     }
 
-    private void WriteMultiValueFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
+    private static void WriteMultiValueFunction(CodeEnum codeElement, LanguageWriter writer, Boolean isMultiValue)
     {
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.StartBlock($"func (i {typeName}) isMultiValue() bool {{");

@@ -37,5 +37,6 @@
     "**/generate",
     "**/repos/**/topics"
   ],
-  "disabledValidationRules": []
+  "disabledValidationRules": [],
+  "disableSSLValidation": false
 }

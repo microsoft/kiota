@@ -47,6 +47,15 @@ public static class OpenApiOperationExtensions
         return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is OpenApiSchema schema &&
         source.GetValidSchemas(multipartMimeTypes).FirstOrDefault() == schema;
     }
+    internal static bool IsMultipartTopMimeType(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(structuredMimeTypes);
+        if (structuredMimeTypes.Count == 0) return false;
+        if (!source.ContainsKey(multipartMimeTypes.First())) return false;
+        if (source.Count == 1) return true;
+        return structuredMimeTypes.First() == multipartMimeTypes.First();
+    }
     internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(source);

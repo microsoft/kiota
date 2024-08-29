@@ -471,11 +471,37 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("<exception cref=", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"401\", Error401.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"5XX\", Error5XX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("{ \"401\", Error401.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendAsync", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
+        Assert.Contains(AsyncKeyword, result);
+        Assert.Contains("await", result);
+        Assert.Contains("cancellationToken", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void WritesRequestExecutorBodyWithUntypedReturnValue()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { TypeDefinition = null, Name = KiotaBuilder.UntypedNodeName };
+        var errorXXX = root.AddClass(new CodeClass
+        {
+            Name = "ErrorXXX",
+        }).First();
+        method.AddErrorMapping("XXX", new CodeType { Name = "ErrorXXX", TypeDefinition = errorXXX });
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo", result);
+        Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("<exception cref=", result);
+        Assert.Contains("{ \"XXX\", ErrorXXX.CreateFromDiscriminatorValue },", result);
+        Assert.Contains("SendAsync", result);
+        Assert.Contains("UntypedNode.CreateFromDiscriminatorValue", result);
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
@@ -514,9 +540,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
-        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{ \"4XX\", Error4XX.CreateFromDiscriminatorValue },", result);
         Assert.Contains("SendCollectionAsync", result);
-        Assert.Contains("return collectionResult?.ToList()", result);
+        Assert.Contains("return collectionResult?.AsList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
@@ -566,7 +592,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
-        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
+        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
@@ -605,7 +631,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("if(parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
-        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
+        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("return result", result);
@@ -711,8 +737,8 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.Contains("return mappingValue switch", result);
-        Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
-        Assert.Contains("_ => new ConflictingModelBaseClass()", result);
+        Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new global::namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
+        Assert.Contains("_ => new global::models.ConflictingModelBaseClass()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1137,8 +1163,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("{\"DummyUCaseProp", result);
-        Assert.Contains("{\"dummyProp", result);
+        Assert.Contains("{ \"DummyUCaseProp", result);
+        Assert.Contains("{ \"dummyProp", result);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
@@ -1424,6 +1450,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return new", result);
     }
     [Fact]
+    public void DoesNotWriteDeprecatedBodyParameterRequestBuilder()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParam",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Deprecation = new DeprecationInformation("parameter")
+        });
+        method.Deprecation = new DeprecationInformation("method");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[Obsolete(\"method\")]", result);
+        Assert.DoesNotContain("[Obsolete(\"parameter\")]", result);
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
@@ -1442,12 +1489,26 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "string"
             },
         });
+        var defaultValueNull = "\"null\"";
+        var nullPropName = "propWithDefaultNullValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = nullPropName,
+            DefaultValue = defaultValueNull,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int",
+                IsNullable = true
+            }
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<summary>", result);
         Assert.Contains("<see cref=", result);
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
+        Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
     }
     [Fact]
     public void WritesWithUrl()
@@ -1492,7 +1553,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::{modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesConstructorAndIncludesSanitizedEnumValue()
@@ -1517,7 +1578,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("PictureSize.Slash", result);//ensure symbol is cleaned up
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::{modelsNamespace.Name}.{codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void WritesConstructorAndDisambiguatesEnumType()
@@ -1541,8 +1602,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains("models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
-        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+        Assert.Contains("global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

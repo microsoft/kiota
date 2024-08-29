@@ -219,7 +219,7 @@ paths:
         Assert.False(File.Exists(Path.Combine(tempPath, LockManagementService.LockFileName)));
         Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ConfigurationFileName)));
         Assert.True(File.Exists(Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName)));
-        Assert.True(File.Exists(Path.Combine(tempPath, DescriptionStorageService.DescriptionsSubDirectoryRelativePath, "clientName", "description.yml")));
+        Assert.True(File.Exists(Path.Combine(tempPath, DescriptionStorageService.DescriptionsSubDirectoryRelativePath, "clientName", "openapi.yml")));
     }
     [InlineData(true, true)]
     [InlineData(true, false)]
@@ -231,7 +231,7 @@ paths:
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
         var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
-        var descriptionPath = Path.Combine(tempPath, $"{DescriptionStorageService.DescriptionsSubDirectoryRelativePath}/clientName/description.yml");
+        var descriptionPath = Path.Combine(tempPath, $"{DescriptionStorageService.DescriptionsSubDirectoryRelativePath}/clientName/openapi.yml");
         var outputPath = Path.Combine(tempPath, "client");
         Directory.CreateDirectory(outputPath);
         Directory.CreateDirectory(Path.GetDirectoryName(descriptionPath));

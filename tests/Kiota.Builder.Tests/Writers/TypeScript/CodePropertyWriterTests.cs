@@ -25,7 +25,8 @@ public sealed class CodePropertyWriterTests : IDisposable
         var root = CodeNamespace.InitRootNamespace();
         parentInterface = root.AddInterface(new CodeInterface
         {
-            Name = "parentClass"
+            Name = "parentClass",
+            OriginalClass = new CodeClass() { Name = "parentClass" }
         }).First();
         property = new CodeProperty
         {
@@ -68,12 +69,12 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.DoesNotContain("?", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public void WritesCustomProperty()
+    public void WritesCustomPropertyWithDefaultedNullType()
     {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"{PropertyName}?: {TypeName}", result);
+        Assert.Contains($"{PropertyName}?: {TypeName} | null", result);
         Assert.DoesNotContain("| undefined", result); // redundant with ?
     }
     [Fact]

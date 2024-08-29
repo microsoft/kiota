@@ -1125,7 +1125,19 @@ public sealed class CodeMethodWriterTests : IDisposable
             Type = new CodeType { Name = "countryCode", TypeDefinition = countryCode }
         };
         parentClass.AddProperty(propWithDefaultValue, enumProp);
-
+        var defaultValueNull = "\"null\"";
+        var nullPropName = "propWithDefaultNullValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = nullPropName,
+            DefaultValue = defaultValueNull,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int",
+                IsNullable = true
+            }
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
         var result = stringWriter.ToString();
@@ -1133,6 +1145,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("public function __construct", result);
         Assert.Contains("$this->setType('#microsoft.graph.entity')", result);
         Assert.Contains("$this->setCountryCode(new CountryCode('+254'));", result);
+        Assert.Contains("$this->setPropWithDefaultNullValue(null)", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
@@ -2507,5 +2520,25 @@ public sealed class CodeMethodWriterTests : IDisposable
         languageWriter.Write(method);
         var result = stringWriter.ToString();
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
+    }
+    [Fact]
+    public async Task WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.OfKind(CodeParameterKind.RequestBody)!.Type = new CodeType
+        {
+            Name = "MultipartBody",
+            IsExternal = true
+        };
+        method.RequestBodyContentType = "multipart/form-data";
+        await _refiner.Refine(root, new CancellationToken(false));
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains("MultiPartBody $body", result);
+        Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"multipart/form-data\", $body);", result);
     }
 }

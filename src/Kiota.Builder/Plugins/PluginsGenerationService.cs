@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -16,28 +18,34 @@ using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.Plugins;
-public class PluginsGenerationService
+public partial class PluginsGenerationService
 {
     private readonly OpenApiDocument OAIDocument;
     private readonly OpenApiUrlTreeNode TreeNode;
     private readonly GenerationConfiguration Configuration;
+    private readonly string WorkingDirectory;
 
-    public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration)
+    public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration, string workingDirectory)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
         ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentException.ThrowIfNullOrEmpty(workingDirectory);
         OAIDocument = document;
         TreeNode = openApiUrlTreeNode;
         Configuration = configuration;
+        WorkingDirectory = workingDirectory;
     }
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
     private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionRelativePath = "./openapi.yml";
+    private const string DescriptionPathSuffix = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        // write the decription
-        var descriptionFullPath = Path.Combine(Configuration.OutputPath, DescriptionRelativePath);
+        // 1. cleanup any namings to be used later on.
+        Configuration.ClientClassName = PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty); //drop any special characters
+        // 2. write the OpenApi description
+        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
+        var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
@@ -46,70 +54,96 @@ public class PluginsGenerationService
         await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
-        OAIDocument.SerializeAsV3(descriptionWriter);
+        var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
-        // write the plugins
+        // 3. write the plugins
+
         foreach (var pluginType in Configuration.PluginTypes)
         {
-            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{ManifestFileNameSuffix}");
+            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
+            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var fileStream = File.Create(manifestOutputPath, 4096);
+            await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 
             switch (pluginType)
             {
-                case PluginType.Microsoft:
-                    var pluginDocument = GetManifestDocument(DescriptionRelativePath);
+                case PluginType.APIPlugin:
+                    var pluginDocument = GetManifestDocument(descriptionRelativePath);
                     pluginDocument.Write(writer);
                     break;
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
-                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(OAIDocument.HashCode ?? string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? []));
+                    // pass empty config hash so that its not included in this manifest.
+                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory));
+                    var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
+                        ? DefaultContactName
+                        : OAIDocument.Info.Contact.Name;
+                    var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
+                        ? DefaultContactEmail
+                        : OAIDocument.Info.Contact.Email;
+                    apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
                     apiManifest.Write(writer);
                     break;
-                case PluginType.OpenAI://TODO add support for OpenAI plugin type generation
-                                       // intentional drop to the default case
+                case PluginType.OpenAI:
+                    // OpenAI plugins have been retired and are no longer supported. They only require the OpenAPI description now.
+                    break;
                 default:
                     throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
             }
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
     }
+
+    [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
+    private static partial Regex PluginNameCleanupRegex();
+
+    private OpenApiDocument GetDocumentWithTrimmedComponentsAndResponses(OpenApiDocument doc)
+    {
+        // ensure the info and components are not null
+        doc.Info ??= new OpenApiInfo();
+        doc.Components ??= new OpenApiComponents();
+
+        if (string.IsNullOrEmpty(doc.Info?.Version)) // filtering fails if there's no version.
+            doc.Info!.Version = "1.0";
+
+        //empty out all the responses with a single empty 2XX and cleanup the extensions
+        var openApiWalker = new OpenApiWalker(new OpenApiPluginWalker());
+        openApiWalker.Walk(doc);
+
+        // remove unused components using the OpenApi.Net library
+        var requestUrls = new Dictionary<string, List<string>>();
+        var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
+        foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
+        {
+            var key = string.IsNullOrEmpty(basePath) ? path.Key : $"{basePath}/{path.Key.TrimStart(KiotaBuilder.ForwardSlash)}";
+            requestUrls[key] = path.Value.Operations.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
+        }
+
+        var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
+        return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
+    }
+
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
-        var descriptionForModel = descriptionForHuman;
-        string? legalUrl = null;
-        string? logoUrl = null;
-        string? privacyUrl = null;
-        if (OAIDocument.Info is not null)
-        {
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
-                descriptionExtension is OpenApiDescriptionForModelExtension extension &&
-                !string.IsNullOrEmpty(extension.Description))
-                descriptionForModel = extension.Description.CleanupXMLString();
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
-                legalUrl = legal.Legal;
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
-                logoUrl = logo.Url;
-            if (OAIDocument.Info.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
-                privacyUrl = privacy.Privacy;
-        }
+        var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
         {
-            SchemaVersion = "v2",
+            Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
+            SchemaVersion = "v2.1",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
-            // TODO name for model ???
             DescriptionForHuman = descriptionForHuman,
-            DescriptionForModel = descriptionForModel,
-            ContactEmail = OAIDocument.Info?.Contact?.Email,
+            DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
+            ContactEmail = manifestInfo.ContactEmail,
             Namespace = Configuration.ClientClassName,
-            LogoUrl = logoUrl,
-            LegalInfoUrl = legalUrl,
-            PrivacyPolicyUrl = privacyUrl,
+            LogoUrl = manifestInfo.LogoUrl,
+            LegalInfoUrl = manifestInfo.LegalUrl,
+            PrivacyPolicyUrl = manifestInfo.PrivacyUrl,
             Runtimes = [.. runtimes
                             .GroupBy(static x => x, _openAPIRuntimeComparer)
                             .Select(static x =>
@@ -122,7 +156,40 @@ public class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
         };
     }
-    private (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
+
+    private static OpenApiManifestInfo ExtractInfoFromDocument(OpenApiInfo? openApiInfo)
+    {
+        var manifestInfo = new OpenApiManifestInfo();
+
+        if (openApiInfo is null)
+            return manifestInfo;
+
+        string? descriptionForModel = null;
+        string? legalUrl = null;
+        string? logoUrl = null;
+        string? privacyUrl = null;
+        string contactEmail = string.IsNullOrEmpty(openApiInfo.Contact?.Email)
+            ? DefaultContactEmail
+            : openApiInfo.Contact.Email;
+
+        if (openApiInfo.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
+            descriptionExtension is OpenApiDescriptionForModelExtension extension &&
+            !string.IsNullOrEmpty(extension.Description))
+            descriptionForModel = extension.Description.CleanupXMLString();
+        if (openApiInfo.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
+            legalUrl = legal.Legal;
+        if (openApiInfo.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
+            logoUrl = logo.Url;
+        if (openApiInfo.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
+            privacyUrl = privacy.Privacy;
+
+        return new OpenApiManifestInfo(descriptionForModel, legalUrl, logoUrl, privacyUrl, contactEmail);
+
+    }
+    private const string DefaultContactName = "publisher-name";
+    private const string DefaultContactEmail = "publisher-email@example.com";
+    private sealed record OpenApiManifestInfo(string? DescriptionForModel = null, string? LegalUrl = null, string? LogoUrl = null, string? PrivacyUrl = null, string ContactEmail = DefaultContactEmail);
+    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiUrlTreeNode currentNode, string openApiDocumentPath)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
@@ -135,16 +202,10 @@ public class PluginsGenerationService
                     Auth = new AnonymousAuth(),
                     Spec = new OpenApiRuntimeSpec()
                     {
-                        Url = openApiDocumentPath
+                        Url = openApiDocumentPath,
                     },
                     RunForFunctions = [operation.OperationId]
                 });
-                var oasParameters = operation.Parameters
-                                        .Union(pathItem.Parameters.Where(static x => x.In is ParameterLocation.Path))
-                                        .Where(static x => x.Schema?.Type is not null && scalarTypes.Contains(x.Schema.Type))
-                                        .ToArray();
-                //TODO add request body
-
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
@@ -152,22 +213,6 @@ public class PluginsGenerationService
                         operation.Summary.CleanupXMLString() is string summary && !string.IsNullOrEmpty(summary)
                             ? summary
                             : operation.Description.CleanupXMLString(),
-                    Parameters = oasParameters.Length == 0
-                        ? null
-                        : new Parameters
-                        {
-                            Type = "object",
-                            Properties = new Properties(oasParameters.ToDictionary(
-                                static x => x.Name,
-                                static x => new FunctionParameter()
-                                {
-                                    Type = x.Schema.Type ?? string.Empty,
-                                    Description = x.Description.CleanupXMLString(),
-                                    Default = x.Schema.Default?.ToString() ?? string.Empty,
-                                    //TODO enums
-                                })),
-                            Required = oasParameters.Where(static x => x.Required).Select(static x => x.Name).ToList()
-                        },
                     States = GetStatesFromOperation(operation),
                 });
             }
@@ -214,6 +259,4 @@ public class PluginsGenerationService
         }
         return null;
     }
-    private static readonly HashSet<string> scalarTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "number", "integer", "boolean" };
-    //TODO validate this is right, in OAS integer are under type number for the json schema, but integer is ok for query parameters
 }

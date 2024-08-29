@@ -150,10 +150,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
+            // avoid setting null as a string.
+            if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = NullValueString;
+            }
             writer.WriteLine($"$this->{setterName}({defaultValue});");
         }
     }
 
+    private const string NullValueString = "null";
     private void WriteRequestBuilderConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
@@ -578,7 +585,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
+                if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultiPartBody", StringComparison.OrdinalIgnoreCase)))
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
                 else
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{sanitizedRequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
@@ -848,7 +855,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             writer.WriteLine($"{ResultVarName} = new {parentClass.Name.ToFirstCharacterUpperCase()}();");
-        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation is { ShouldWriteParseNodeCheck: true, ShouldWriteDiscriminatorForIntersectionType: false, HasBasicDiscriminatorInformation: true };
 
         if (writeDiscriminatorValueRead &&
             codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParameter)
@@ -861,7 +868,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteFactoryMethodBodyForInheritedModel(parentClass.DiscriminatorInformation.DiscriminatorMappings, writer, codeElement);
-        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
+        else if (parentClass.DiscriminatorInformation is { ShouldWriteDiscriminatorForUnionType: true, HasBasicDiscriminatorInformation: true })
             WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, writer);
