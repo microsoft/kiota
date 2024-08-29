@@ -56,6 +56,8 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType>? pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption);
+        PluginAuthType pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
