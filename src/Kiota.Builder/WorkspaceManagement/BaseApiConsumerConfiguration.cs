@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
@@ -18,8 +19,8 @@ public abstract class BaseApiConsumerConfiguration
     {
         ArgumentNullException.ThrowIfNull(config);
         DescriptionLocation = config.OpenAPIFilePath;
-        IncludePatterns = new HashSet<string>(config.IncludePatterns);
-        ExcludePatterns = new HashSet<string>(config.ExcludePatterns);
+        IncludePatterns = new HashSet<string>(config.IncludePatterns, StringComparer.OrdinalIgnoreCase);
+        ExcludePatterns = new HashSet<string>(config.ExcludePatterns, StringComparer.OrdinalIgnoreCase);
         OutputPath = config.OutputPath;
     }
     /// <summary>
@@ -38,10 +39,15 @@ public abstract class BaseApiConsumerConfiguration
     /// The output path for the generated code, related to the configuration file.
     /// </summary>
     public string OutputPath { get; set; } = string.Empty;
-    public void NormalizePaths(string targetDirectory)
+    public void NormalizeOutputPath(string targetDirectory)
     {
         if (Path.IsPathRooted(OutputPath))
-            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath);
+            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath).NormalizePathSeparators();
+    }
+    public void NormalizeDescriptionLocation(string targetDirectory)
+    {
+        if (Path.IsPathRooted(DescriptionLocation) && Path.GetFullPath(DescriptionLocation).StartsWith(Path.GetFullPath(targetDirectory), StringComparison.Ordinal) && !DescriptionLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            DescriptionLocation = "./" + Path.GetRelativePath(targetDirectory, DescriptionLocation).NormalizePathSeparators();
     }
     protected void CloneBase(BaseApiConsumerConfiguration target)
     {
@@ -55,8 +61,8 @@ public abstract class BaseApiConsumerConfiguration
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(clientName);
-        config.IncludePatterns = IncludePatterns;
-        config.ExcludePatterns = ExcludePatterns;
+        config.IncludePatterns = IncludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.ExcludePatterns = ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.OpenAPIFilePath = DescriptionLocation;
         config.OutputPath = OutputPath;
         config.ClientClassName = clientName;

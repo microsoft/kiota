@@ -3,6 +3,7 @@ ARG version_suffix
 WORKDIR /app
 
 COPY ./src ./kiota/src
+COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; \
@@ -16,7 +17,7 @@ WORKDIR /app
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net8.0 ./
 
 VOLUME /app/output
-VOLUME /app/openapi.yml
+VOLUME /app/openapi.yaml
 VOLUME /app/apimanifest.json
 ENV KIOTA_CONTAINER=true DOTNET_TieredPGO=1 DOTNET_TC_QuickJitForLoops=1
 ENTRYPOINT ["dotnet", "kiota.dll"]

@@ -151,6 +151,7 @@ public class GenerationConfiguration : ICloneable
             Operation = Operation,
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
+            DisableSSLValidation = DisableSSLValidation,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -173,20 +174,38 @@ public class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
     }
     public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
-    public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations)
+    public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations, string targetDirectory)
     {
         var dependency = new ApiDependency()
         {
-            ApiDescriptionUrl = OpenAPIFilePath,
+            ApiDescriptionUrl = NormalizeDescriptionLocation(targetDirectory),
             ApiDeploymentBaseUrl = ApiRootUrl?.EndsWith('/') ?? false ? ApiRootUrl : $"{ApiRootUrl}/",
-            Extensions = new() {
-                { KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash)}
-            },
+            Extensions = new(),
             Requests = templatesWithOperations.SelectMany(static x => x.Value.Select(y => new RequestInfo { Method = y.ToUpperInvariant(), UriTemplate = x.Key.DeSanitizeUrlTemplateParameter() })).ToList(),
         };
+
+        if (!string.IsNullOrEmpty(configurationHash))
+        {
+            dependency.Extensions.Add(KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash));// only include non empty value.
+        }
         return dependency;
     }
+    private string NormalizeDescriptionLocation(string targetDirectory)
+    {
+        if (!string.IsNullOrEmpty(OpenAPIFilePath) &&
+            !string.IsNullOrEmpty(targetDirectory) &&
+            !OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
+            Path.IsPathRooted(OpenAPIFilePath) &&
+            Path.GetFullPath(OpenAPIFilePath).StartsWith(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
+            return "./" + Path.GetRelativePath(targetDirectory, OpenAPIFilePath).NormalizePathSeparators();
+        return OpenAPIFilePath;
+    }
     public bool IsPluginConfiguration => PluginTypes.Count != 0;
+
+    public bool DisableSSLValidation
+    {
+        get; set;
+    }
 }
 #pragma warning restore CA1056
 #pragma warning restore CA2227

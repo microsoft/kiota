@@ -41,7 +41,7 @@ info:
         await File.WriteAllTextAsync(documentPath, documentContent);
         var mockLogger = new Mock<ILogger<OpenApiDescriptionForModelExtension>>();
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
-        var generationConfig = new GenerationConfiguration { OutputPath = TempDirectory };
+        var generationConfig = new GenerationConfiguration { OutputPath = TempDirectory, PluginTypes = [PluginType.APIPlugin] };
         var (openApiDocumentStream, _) = await documentDownloadService.LoadStreamAsync(documentPath, generationConfig);
         var document = await documentDownloadService.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfig);
         Assert.NotNull(document);

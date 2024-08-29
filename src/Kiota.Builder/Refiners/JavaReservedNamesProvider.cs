@@ -38,6 +38,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "int",
         "interface",
         "long",
+        "map",
         "native",
         "new",
         "notify",
@@ -68,6 +69,11 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "while",
         "BaseRequestBuilder",
         "MultipartBody",
+        "HashMap",
+        "Collection",
+        "Objects",
+        "InputStream",
+        "BigDecimal",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

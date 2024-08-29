@@ -2,12 +2,8 @@
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
-public class TypescriptRelativeImportManager : RelativeImportManager
-
+public class TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : RelativeImportManager(namespacePrefix, namespaceSeparator)
 {
-    public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix, namespaceSeparator)
-    {
-    }
     /// <summary>
     /// Returns the relative import path for the given using and import context namespace.
     /// </summary>
@@ -26,9 +22,14 @@ public class TypescriptRelativeImportManager : RelativeImportManager
         } : (codeUsing.Name, null);
 
         if (typeDef == null)
-            return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
+            return (importSymbol, codeUsing.Alias, $"./{IndexFileName}"); // it's relative to the folder, with no declaration (default failsafe)
         var importNamespace = typeDef.GetImmediateParentOfType<CodeNamespace>();
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace, importNamespace);
+        if (importPath.EndsWith('/'))
+            importPath += IndexFileName;
+        else
+            importPath += ".js";
         return (importSymbol, codeUsing.Alias, importPath);
     }
+    private const string IndexFileName = "index.js";
 }

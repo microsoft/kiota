@@ -48,7 +48,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
     /// <summary>
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
-    public HashSet<string> DisabledValidationRules { get; set; } = new();
+    public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiClientConfiguration"/> class.
     /// </summary>
@@ -69,7 +69,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;
         IncludeAdditionalData = config.IncludeAdditionalData;
         StructuredMimeTypes = config.StructuredMimeTypes.ToList();
-        DisabledValidationRules = config.DisabledValidationRules;
+        DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
     /// <summary>
     /// Updates the passed configuration with the values from the config file.
@@ -88,7 +88,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.StructuredMimeTypes = new(StructuredMimeTypes);
-        config.DisabledValidationRules = DisabledValidationRules;
+        config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         UpdateGenerationConfigurationFromBase(config, clientName, requests);
     }
 

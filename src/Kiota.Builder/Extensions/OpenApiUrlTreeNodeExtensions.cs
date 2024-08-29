@@ -163,7 +163,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
         currentNode?.DeduplicatedSegment().IsPathSegmentWithSingleSimpleParameter() ?? false;
-    private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
+    internal static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
     {
         if (string.IsNullOrEmpty(currentSegment)) return false;
         var segmentWithoutExtension = stripExtensionForIndexersRegex().Replace(currentSegment, string.Empty);
@@ -320,7 +320,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             node.Children.Remove(indexNode.Key);
             var oldSegmentName = indexNode.Value.Segment.Trim('{', '}').CleanupSymbolName();
             var segmentIndex = indexNode.Value.Path.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList().IndexOf(indexNode.Value.Segment);
-            var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName}-id}}";
+            var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName.TrimSuffix("id", StringComparison.OrdinalIgnoreCase)}-id}}";
             indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
             indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
             node.Children.Add(newSegmentParameterName, indexNode.Value);

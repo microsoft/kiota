@@ -1,0 +1,17 @@
+{
+    "schema_version": "v1",
+    "name_for_human": "GitHub v3 REST API",
+    "name_for_model": "GitHub v3 REST API",
+    "description_for_human": "GitHub's v3 REST API",
+    "description_for_model": "Help the user with managing a GitHub repositories. You can view, update and remove repositories.",
+    "auth": {
+        "type": "none"
+    },
+    "api": {
+        "type": "openapi",
+        "url": "github-openapi.json"
+    },
+    "logo_url": "https://example.com/logo.png",
+    "contact_email": "githubsupport@example.com",
+    "legal_info_url": "http://www.example.com/view-plugin-information"
+}

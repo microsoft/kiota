@@ -4,11 +4,11 @@ Kiota generates client code for an API. With the advancement of the AI, API clie
 
 Today's AI models can easily generate messages and images for users. While this is helpful when building a simple chat app, it is not enough to build fully automated AI agents that can automate business processe and needs specific to one's company and empower users to achieve more. To do so, users need to combine AI models with other sources, such as APIs.
 
-OpenAI has defined [OpenAI plugins](https://platform.openai.com/docs/plugins/introduction), one way to enable GPT to interact with APIs, allowing it to perform several actions. To build a plugin, it's necessary to create a [plugin manifest file](https://platform.openai.com/docs/plugins/getting-started/plugin-manifest) that defines relevant metadata information that allows GPT to call an API.
+OpenAI has defined [OpenAI plugins](https://platform.openai.com/docs/plugins/introduction), which used to be the way to enable GPT to interact with APIs. OpenAI plugins are now deprecated, and OpenAI has moved to [`actions in GPTs`](https://platform.openai.com/docs/actions/introduction).
 
-In addition to OpenAI plugin manifest, [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) is another way to declare dependencies of APIs and their characteristics. API Manifest addresses a limitation present in both the OpenAI plugin manifest and OpenAPI document, it can references one or more OpenAPI documents as dependencies.
+In addition to OpenAI plugin manifest and actions in GPTs, [API Manifest](https://www.ietf.org/archive/id/draft-miller-api-manifest-01.html) is another way to declare dependencies of APIs and their characteristics. API Manifest addresses a limitation present in both OpenAI plugin manifest and OpenAPI document, it can references one or more OpenAPI documents as dependencies.
 For developers using [Semantic Kernel](
-https://learn.microsoft.com/en-us/semantic-kernel/overview/) as their AI orchestractor, [API Manifest is supported as a input format](https://github.com/microsoft/semantic-kernel/pull/4961), in preview state, for plugin generation.
+https://learn.microsoft.com/en-us/semantic-kernel/overview/) as their AI orchestractor, [API Manifest is also supported as a input format](https://github.com/microsoft/semantic-kernel/pull/4961), in preview state, for plugin generation.
 
 
 ## Current Challenges
@@ -18,7 +18,7 @@ https://learn.microsoft.com/en-us/semantic-kernel/overview/) as their AI orchest
 
 ## Goals
 
-- Enable developers to customize Copilot to be more helpful in their daily lives, at specific tasks, at work, at home by providing tools to output OpenAI plugin manifests. 
+- Enable developers to customize Copilot to be more helpful in their daily lives, at specific tasks, at work, at home by providing tools to output API plugins. 
 - Enable developers to generate API Manifest that can be converted into Semantic Kernel API Manifest Plugins. 
 
 ## Proposal

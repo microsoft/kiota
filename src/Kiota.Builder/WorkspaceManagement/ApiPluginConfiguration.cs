@@ -23,7 +23,7 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
     public ApiPluginConfiguration(GenerationConfiguration config) : base(config)
     {
         ArgumentNullException.ThrowIfNull(config);
-        Types = config.PluginTypes.Select(x => x.ToString()).ToHashSet();
+        Types = config.PluginTypes.Select(x => x.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
     public HashSet<string> Types { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public object Clone()
@@ -45,7 +45,7 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(pluginName);
-        config.PluginTypes = Types.Select(x => Enum.TryParse<PluginType>(x, out var result) ? result : (PluginType?)null).OfType<PluginType>().ToHashSet();
+        config.PluginTypes = Types.Select(x => Enum.TryParse<PluginType>(x, true, out var result) ? result : (PluginType?)null).OfType<PluginType>().ToHashSet();
         UpdateGenerationConfigurationFromBase(config, pluginName, requests);
     }
 }

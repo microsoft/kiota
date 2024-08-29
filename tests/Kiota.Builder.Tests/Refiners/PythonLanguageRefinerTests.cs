@@ -421,14 +421,14 @@ public class PythonLanguageRefinerTests
             },
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
-        Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => AdditionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
-        Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.DoesNotContain(model.Properties, x => HttpCoreDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, x => FactoryDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, x => DateTimeOffsetDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, x => AdditionalDataDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, x => PathParametersDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, x => PathParametersDefaultValue.Equals(x.DefaultValue));
+        Assert.DoesNotContain(model.Methods, x => DeserializeDefaultName.Equals(x.ReturnType.Name));
+        Assert.DoesNotContain(model.Methods.SelectMany(x => x.Parameters), x => serializerDefaultName.Equals(x.Type.Name));
         Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeTypeBase));
     }
     [Fact]

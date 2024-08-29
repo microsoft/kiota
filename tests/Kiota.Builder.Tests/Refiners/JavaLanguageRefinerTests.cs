@@ -579,13 +579,13 @@ public class JavaLanguageRefinerTests
             }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.StartBlock.Implements.Where(static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Properties, static x => additionalDataDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.Methods, static x => deserializeDefaultName.Equals(x.ReturnType.Name));
+        Assert.DoesNotContain(model.Methods.SelectMany(static x => x.Parameters), static x => serializerDefaultName.Equals(x.Type.Name));
+        Assert.DoesNotContain(model.StartBlock.Implements, static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Contains(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
@@ -703,8 +703,10 @@ public class JavaLanguageRefinerTests
         Assert.Equal("String", model.Methods.First(static x => x.IsOverload).Parameters.First().Type.Name);
     }
 
-    [Fact]
-    public async Task AddsUsingForUntypedNode()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AddsUsingForUntypedNode(bool usesBackingStore)
     {
         var model = root.AddClass(new CodeClass
         {
@@ -720,11 +722,11 @@ public class JavaLanguageRefinerTests
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java, UsesBackingStore = usesBackingStore }, root);
         Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        Assert.Single(nodeUsing);
+        Assert.Equal(2, nodeUsing.Length); // one for the getter and another for setter. Writer will unionise
         Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
     }
     #endregion

@@ -31,7 +31,16 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         Logger = logger,
         FileName = "pat-api.github.com"
     };
-    internal static readonly HttpClient httpClient = new();
+
+    private HttpClient? _httpClient;
+    protected HttpClient httpClient
+    {
+        get
+        {
+            _httpClient ??= GetHttpClient();
+            return _httpClient;
+        }
+    }
     public required Option<LogLevel> LogLevelOption
     {
         get; init;
@@ -52,6 +61,21 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         configObject.BindConfiguration(configuration);
         return configObject;
     });
+
+    protected HttpClient GetHttpClient()
+    {
+        var httpClientHandler = new HttpClientHandler();
+        if (Configuration.Generation.DisableSSLValidation)
+            httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
+        var httpClient = new HttpClient(httpClientHandler);
+
+        disposables.Add(httpClientHandler);
+        disposables.Add(httpClient);
+
+        return httpClient;
+    }
+
     private const string GitHubScope = "repo";
     private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) =>
     {
@@ -97,6 +121,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     }
     protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
     {
+        if (Configuration.Update.Disabled)
+        {
+            return;
+        }
+
         var updateService = new UpdateService(httpClient, logger, Configuration.Update);
         var result = await updateService.GetUpdateMessageAsync(Kiota.Generated.KiotaVersion.Current(), cancellationToken).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(result))
@@ -107,9 +136,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")
     {
         LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);
-#if DEBUG
-        logLevel = logLevel > LogLevel.Debug ? LogLevel.Debug : logLevel;
-#endif
         var loggerFactory = LoggerFactory.Create(builder =>
         {
             var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
@@ -261,13 +287,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: multiple matches found, use the key as the search term to display the details of a specific description.", example);
         }
     }
+    private static string GenerateCommand => KiotaHost.IsConfigPreviewEnabled.Value ? "client add" : "generate";
     protected void DisplayGenerateHint(string path, string manifest, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths)
     {
         var includedPathsSuffix = (includedPaths.Any() ? " -i " : string.Empty) + string.Join(" -i ", includedPaths.Select(static x => $"\"{x}\""));
         var excludedPathsSuffix = (excludedPaths.Any() ? " -e " : string.Empty) + string.Join(" -e ", excludedPaths.Select(static x => $"\"{x}\""));
         var sourceArg = GetSourceArg(path, manifest);
-        var example = $"Example: kiota generate -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
-        DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
+        var example = $"Example: kiota {GenerateCommand} -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
+        DisplayHint($"Hint: use kiota {GenerateCommand} to generate a client for the OpenAPI description.", example);
     }
     protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest, string commandName = "generate")
     {
@@ -281,6 +308,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     private static string GetSourceArg(string path, string manifest)
     {
         return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-a \"{manifest}\"";
+    }
+    protected void DisplayUrlInformation(string? apiRootUrl, bool isPlugin = false)
+    {
+        if (!string.IsNullOrEmpty(apiRootUrl) && !isPlugin)
+            DisplayInfo($"Client base url set to {apiRootUrl}");
     }
     protected void DisplayGenerateCommandHint()
     {

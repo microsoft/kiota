@@ -21,6 +21,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         if (obj == null) return 0;
         return
+            obj.DisableSSLValidation.GetHashCode() * 59 +
             _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 53 +
             obj.KiotaVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 47 +
             obj.LockFileVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 43 +

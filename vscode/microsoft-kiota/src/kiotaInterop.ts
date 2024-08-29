@@ -1,13 +1,20 @@
-import * as vscode from "vscode";
 import * as cp from 'child_process';
+import * as vscode from "vscode";
 import * as rpc from 'vscode-jsonrpc/node';
+import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
+import { getWorkspaceJsonDirectory } from "./util";
 
-export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
+export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory:string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
   const kiotaPath = getKiotaPath(context);
   await ensureKiotaIsPresent(context);
   const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined
+    cwd: workingDirectory,
+    env: {
+        ...process.env,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        KIOTA_CONFIG_PREVIEW: "true",
+    }
   });
   let connection = rpc.createMessageConnection(
     new rpc.StreamMessageReader(childProcess.stdout),
@@ -36,6 +43,7 @@ export interface KiotaOpenApiNode {
     selected?: boolean,
     isOperation?: boolean;
     documentationUrl?: string;
+    clientNameOrPluginName?: string;
 }
 interface CacheClearableConfiguration {
     clearCache: boolean;
@@ -80,26 +88,17 @@ export interface KiotaSearchResultItem {
   VersionLabels?: string[];
 }
 
-export enum KiotaGenerationLanguage {
+export enum ConsumerOperation {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    CSharp = 0,
+    Add,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Java = 1,
+    Edit,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    TypeScript = 2,
+    Remove,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    PHP = 3,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Python = 4,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Go = 5,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Swift = 6,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Ruby = 7,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CLI = 8,
+    Generate
 }
+
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
     switch (language) {
         case KiotaGenerationLanguage.CSharp:
@@ -124,30 +123,7 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             throw new Error("unknown language");
     }
 }
-export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
-    switch (value) {
-        case "CSharp":
-            return KiotaGenerationLanguage.CSharp;
-        case "Java":
-            return KiotaGenerationLanguage.Java;
-        case "TypeScript":
-            return KiotaGenerationLanguage.TypeScript;
-        case "PHP":
-            return KiotaGenerationLanguage.PHP;
-        case "Python":
-            return KiotaGenerationLanguage.Python;
-        case "Go":
-            return KiotaGenerationLanguage.Go;
-        case "Swift":
-            return KiotaGenerationLanguage.Swift;
-        case "Ruby":
-            return KiotaGenerationLanguage.Ruby;
-        case "CLI":
-            return KiotaGenerationLanguage.CLI;
-        default:
-            throw new Error("unknown language");
-    }
-}
+
 export const allGenerationLanguages = [
     KiotaGenerationLanguage.CSharp,
     KiotaGenerationLanguage.Go,
@@ -217,23 +193,10 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
-export interface LockFile {
-    clientClassName: string;
-    clientNamespaceName: string;
-    descriptionHash: string;
-    descriptionLocation: string;
-    deserializers: string[];
-    disabledValidationRules: string[];
-    excludeBackwardCompatible: boolean;
-    excludePatterns: string[];
-    includeAdditionalData: boolean;
-    includePatterns: string[];
-    kiotaVersion: string;
-    language: string;
-    lockFileVersion: string;
-    serializers: string[];
-    structuredMimeTypes: string[];
-    usesBackingStore: boolean;
+export interface ConfigurationFile {
+    version: string;
+    clients: Record<string, ClientObjectProperties>;
+    plugins: Record<string, PluginObjectProperties>;
 }
 
 export interface GenerationConfiguration {
@@ -253,4 +216,29 @@ export interface GenerationConfiguration {
     serializers: string[];
     structuredMimeTypes: string[];
     usesBackingStore: boolean;
+    pluginTypes: KiotaPluginType[];
+    operation: ConsumerOperation;
 }
+
+interface WorkspaceObjectProperties {
+    descriptionLocation: string;
+    includePatterns: string[];
+    excludePatterns: string[];
+    outputPath: string;
+}
+
+export interface ClientObjectProperties extends WorkspaceObjectProperties {
+    language: string;
+    structuredMimeTypes: string[];
+    clientNamespaceName: string;
+    usesBackingStore: boolean;
+    includeAdditionalData: boolean;
+    excludeBackwardCompatible: boolean;
+    disabledValidationRules: string[];
+}
+
+export interface PluginObjectProperties extends WorkspaceObjectProperties {
+    types: string[];
+}
+
+export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;

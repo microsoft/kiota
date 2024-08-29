@@ -10,41 +10,37 @@ public static class OpenApiSchemaExtensions
 {
     private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = x =>
     (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-    public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema)
+    public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema, bool directOnly = false)
     {
         if (schema == null)
-            return Enumerable.Empty<string>();
-        if (schema.Items != null)
+            return [];
+        if (!directOnly && schema.Items != null)
             return schema.Items.GetSchemaNames();
         if (!string.IsNullOrEmpty(schema.Reference?.Id))
-            return new[] { schema.Reference.Id.Split('/')[^1].Split('.')[^1] };
-        if (schema.AnyOf.Any())
+            return [schema.Reference.Id.Split('/')[^1].Split('.')[^1]];
+        if (!directOnly && schema.AnyOf.Any())
             return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
-        if (schema.AllOf.Any())
+        if (!directOnly && schema.AllOf.Any())
             return schema.AllOf.FlattenIfRequired(classNamesFlattener);
-        if (schema.OneOf.Any())
+        if (!directOnly && schema.OneOf.Any())
             return schema.OneOf.FlattenIfRequired(classNamesFlattener);
-        if (!string.IsNullOrEmpty(schema.Title))
-            return new[] { schema.Title };
-        if (!string.IsNullOrEmpty(schema.Xml?.Name))
-            return new[] { schema.Xml.Name };
-        return Enumerable.Empty<string>();
+        return [];
     }
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        if (schemas is null) return Enumerable.Empty<OpenApiSchema>();
-        return schemas.Count == 1 ?
+        if (schemas is null) return [];
+        return schemas.Count == 1 && !schemas[0].HasAnyProperty() && string.IsNullOrEmpty(schemas[0].Reference?.Id) ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        return schemas.FlattenSchemaIfRequired(subsequentGetter).Where(static x => !string.IsNullOrEmpty(x.Title)).Select(static x => x.Title);
+        return schemas.FlattenSchemaIfRequired(subsequentGetter).SelectMany(static x => x.GetSchemaNames());
     }
 
-    public static string GetSchemaName(this OpenApiSchema schema)
+    public static string GetSchemaName(this OpenApiSchema schema, bool directOnly = false)
     {
-        return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
+        return schema.GetSchemaNames(directOnly).LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
     }
 
     public static bool IsReferencedSchema(this OpenApiSchema schema)
@@ -61,12 +57,16 @@ public static class OpenApiSchemaExtensions
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
-            FlattenEmptyEntries(new OpenApiSchema[] { schema.Items }, static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
+            FlattenEmptyEntries([schema.Items], static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
     }
 
-    public static bool IsObject(this OpenApiSchema? schema)
+    public static bool IsObjectType(this OpenApiSchema? schema)
     {
         return "object".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase);
+    }
+    public static bool HasAnyProperty(this OpenApiSchema? schema)
+    {
+        return schema?.Properties is { Count: > 0 };
     }
     public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
@@ -77,25 +77,50 @@ public static class OpenApiSchemaExtensions
     public static bool IsInherited(this OpenApiSchema? schema)
     {
         if (schema is null) return false;
-        var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful()).ToArray();
-        return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
+        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true)).ToArray();
+        var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true);
+        return meaningfulMemberSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
+            (meaningfulMemberSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
+            isRootSchemaMeaningful);
     }
 
-    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)
+    internal static OpenApiSchema? MergeAllOfSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, Func<OpenApiSchema, bool>? filter = default)
+    {
+        return schema.MergeIntersectionSchemaEntries(schemasToExclude, true, filter);
+    }
+
+    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<OpenApiSchema, bool>? filter = default)
     {
         if (schema is null) return null;
-        if (!schema.IsIntersection()) return schema;
+        if (!schema.IsIntersection() && !overrideIntersection) return schema;
         var result = new OpenApiSchema(schema);
         result.AllOf.Clear();
-        var meaningfulSchemas = schema.AllOf.Where(static x => x.IsSemanticallyMeaningful()).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
-        meaningfulSchemas.SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.TryAdd(x.Key, x.Value));
+        var meaningfulSchemas = schema.AllOf
+                                    .Where(x => (x.IsSemanticallyMeaningful() || x.AllOf.Any()) && (filter == null || filter(x)))
+                                    .Select(x => MergeIntersectionSchemaEntries(x, schemasToExclude, overrideIntersection, filter))
+                                    .Where(x => x is not null && (schemasToExclude is null || !schemasToExclude.Contains(x)))
+                                    .OfType<OpenApiSchema>()
+                                    .ToArray();
+        var entriesToMerge = meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).ToArray();
+        if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator)
+            if (result.Discriminator is null)
+                result.Discriminator = discriminator;
+            else if (string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
+                result.Discriminator.PropertyName = discriminator.PropertyName;
+            else if (discriminator.Mapping?.Any() ?? false)
+                result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
+
+        foreach (var propertyToMerge in entriesToMerge.SelectMany(static x => x.Properties))
+        {
+            result.Properties.TryAdd(propertyToMerge.Key, propertyToMerge.Value);
+        }
         return result;
     }
 
     public static bool IsIntersection(this OpenApiSchema? schema)
     {
-        var meaningfulSchemas = schema?.AllOf?.Where(static x => x.IsSemanticallyMeaningful());
-        return meaningfulSchemas?.Count() > 3 || meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
+        var meaningfulSchemas = schema?.AllOf?.Where(static x => x.IsSemanticallyMeaningful()).ToArray();
+        return meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
     }
 
     public static bool IsExclusiveUnion(this OpenApiSchema? schema)
@@ -133,13 +158,13 @@ public static class OpenApiSchemaExtensions
         return schema.AnyOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
                 schema.OneOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
     }
-    public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false)
+    public static bool IsSemanticallyMeaningful(this OpenApiSchema schema, bool ignoreNullableObjects = false, bool ignoreEnums = false, bool ignoreArrays = false, bool ignoreType = false)
     {
         if (schema is null) return false;
-        return schema.Properties.Any() ||
-                schema.Enum is { Count: > 0 } ||
-                schema.Items != null ||
-                (!string.IsNullOrEmpty(schema.Type) &&
+        return schema.HasAnyProperty() ||
+                (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
+                (!ignoreArrays && schema.Items != null) ||
+                (!ignoreType && !string.IsNullOrEmpty(schema.Type) &&
                     ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
@@ -171,11 +196,11 @@ public static class OpenApiSchemaExtensions
             return result.Distinct();
         }
 
-        return Enumerable.Empty<string>();
+        return [];
     }
     private static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
     {
-        if (schemas == null) return Enumerable.Empty<OpenApiSchema>();
+        if (schemas == null) return [];
         ArgumentNullException.ThrowIfNull(subsequentGetter);
 
         if ((maxDepth ?? 1) <= 0)
@@ -186,7 +211,7 @@ public static class OpenApiSchemaExtensions
         foreach (var item in result)
         {
             var subsequentItems = subsequentGetter(item);
-            if (string.IsNullOrEmpty(item.Title) && subsequentItems.Any())
+            if (subsequentItems.Any())
                 permutations.Add(item, subsequentItems.FlattenEmptyEntries(subsequentGetter, maxDepth.HasValue ? --maxDepth : default));
         }
         if (permutations.Count > 0)
@@ -217,8 +242,8 @@ public static class OpenApiSchemaExtensions
             return oneOfDiscriminatorPropertyName;
         if (schema.AnyOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
             return anyOfDiscriminatorPropertyName;
-        if (schema.AllOf.Any())
-            return GetDiscriminatorPropertyName(schema.AllOf[^1]);
+        if (schema.AllOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string allOfDiscriminatorPropertyName)
+            return allOfDiscriminatorPropertyName;
 
         return string.Empty;
     }
@@ -252,7 +277,7 @@ public static class OpenApiSchemaExtensions
         ArgumentNullException.ThrowIfNull(inheritanceIndex);
         if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
             return dependents.Keys.Union(dependents.Keys.SelectMany(x => GetAllInheritanceSchemaReferences(x, inheritanceIndex))).Distinct(StringComparer.OrdinalIgnoreCase);
-        return Enumerable.Empty<string>();
+        return [];
     }
 }
 
