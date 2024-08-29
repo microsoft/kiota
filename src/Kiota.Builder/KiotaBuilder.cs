@@ -19,6 +19,7 @@ using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
+using Kiota.Builder.Export;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
@@ -267,6 +268,18 @@ public partial class KiotaBuilder
             sw.Start();
             await ApplyLanguageRefinementAsync(config, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+            if (config.ExportPublicApi)
+            {
+                // Generate public API export
+                sw.Start();
+                var fileStream = File.Create(Path.Combine(config.OutputPath, PublicApiExportService.DomExportFileName));
+                await using (fileStream.ConfigureAwait(false))
+                {
+                    await new PublicApiExportService(config).SerializeDomAsync(fileStream, generatedCode, cancellationToken).ConfigureAwait(false);
+                }
+                StopLogAndReset(sw, $"step {++stepId} - generated public API export - took");
+            }
 
             // Write language source
             sw.Start();
