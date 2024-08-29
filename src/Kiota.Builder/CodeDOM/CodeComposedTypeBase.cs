@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.CodeDOM;
 /// <summary>
@@ -24,6 +25,13 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     {
         ArgumentNullException.ThrowIfNull(codeType);
         return types.ContainsKey(NormalizeKey(codeType));
+    }
+    public void SetTypes(params CodeType[] codeTypes)
+    {
+        ArgumentNullException.ThrowIfNull(codeTypes);
+        types.Clear();
+        foreach (var codeType in codeTypes)
+            AddType(codeType);
     }
     private readonly ConcurrentDictionary<string, CodeType> types = new(StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeType> Types
@@ -66,9 +74,18 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     {
         get; set;
     }
+
     public DeprecationInformation? Deprecation
     {
         get;
         set;
     }
+
+    public bool IsComposedOfPrimitives(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive) => Types.All(x => checkIfPrimitive(x, this));
+    public bool IsComposedOfObjectsAndPrimitives(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive)
+    {
+        // Count the number of primitives in Types
+        return Types.Any(x => checkIfPrimitive(x, this)) && Types.Any(x => !checkIfPrimitive(x, this));
+    }
+
 }

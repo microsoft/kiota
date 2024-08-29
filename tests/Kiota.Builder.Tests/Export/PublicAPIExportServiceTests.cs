@@ -200,7 +200,7 @@ components:
         Assert.Contains("exportNamespace.models.microsoft.graph.User~~>AdditionalDataHolder; Parsable", exportContents);// captures implemented interfaces
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|id:string", exportContents);// captures property location,type and access inheritance. No getter/setter in TS
         // NOTE: No constructors in TS
-        Assert.Contains("exportNamespace.me.meRequestBuilder::|public|ToGetRequestInformation(requestConfiguration?:RequestConfiguration<object>):RequestInformation", exportContents);// captures methods, their parameters(name and types), return and access
+        Assert.Contains("exportNamespace.me.meRequestBuilder::|public|toGetRequestInformation(requestConfiguration?:RequestConfiguration<object>):RequestInformation", exportContents);// captures methods, their parameters(name and types), return and access
         Assert.Contains("exportNamespace.models.microsoft.graph::createUserFromDiscriminatorValue(parseNode:ParseNode):User", exportContents);// captures code functions
         Assert.Contains("exportNamespace.models.microsoft.graph::deserializeIntoUser(User:User={}):Record<string, (node: ParseNode) => void>", exportContents);// captures code functions and default params
         Assert.Contains("exportNamespace.models.microsoft.graph.importance::0000-low", exportContents);// captures enum members
