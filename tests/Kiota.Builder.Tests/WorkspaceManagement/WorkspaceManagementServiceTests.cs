@@ -27,12 +27,12 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [InlineData(true)]
     [InlineData(false)]
     [Theory]
-    public async Task IsClientPresentReturnsFalseOnNoClient(bool usesConfig)
+    public async Task IsClientPresentReturnsFalseOnNoClientAsync(bool usesConfig)
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
         var service = new WorkspaceManagementService(mockLogger, httpClient, usesConfig, tempPath);
-        var result = await service.IsConsumerPresent("clientName");
+        var result = await service.IsConsumerPresentAsync("clientName");
         Assert.False(result);
     }
     [InlineData(true, true)]
@@ -40,7 +40,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [InlineData(false, true)]
     [InlineData(false, false)]
     [Theory]
-    public async Task ShouldGenerateReturnsTrue(bool usesConfig, bool cleanOutput)
+    public async Task ShouldGenerateReturnsTrueAsync(bool usesConfig, bool cleanOutput)
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -58,7 +58,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
     [InlineData(true)]
     [InlineData(false)]
     [Theory]
-    public async Task ShouldGenerateReturnsFalse(bool usesConfig)
+    public async Task ShouldGenerateReturnsFalseAsync(bool usesConfig)
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -82,7 +82,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         Assert.False(result);
     }
     [Fact]
-    public async Task RemovesAClient()
+    public async Task RemovesAClientAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -103,11 +103,11 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             },
             Stream.Null);
         await service.RemoveClientAsync("clientName");
-        var result = await service.IsConsumerPresent("clientName");
+        var result = await service.IsConsumerPresentAsync("clientName");
         Assert.False(result);
     }
     [Fact]
-    public async Task RemovesAPlugin()
+    public async Task RemovesAPluginAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -129,11 +129,11 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
             },
             Stream.Null);
         await service.RemovePluginAsync("clientName");
-        var result = await service.IsConsumerPresent("clientName");
+        var result = await service.IsConsumerPresentAsync("clientName");
         Assert.False(result);
     }
     [Fact]
-    public async Task FailsOnMigrateWithoutKiotaConfigMode()
+    public async Task FailsOnMigrateWithoutKiotaConfigModeAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -141,7 +141,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.MigrateFromLockFileAsync(string.Empty, tempPath));
     }
     [Fact]
-    public async Task FailsWhenTargetLockDirectoryIsNotSubDirectory()
+    public async Task FailsWhenTargetLockDirectoryIsNotSubDirectoryAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -149,7 +149,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.MigrateFromLockFileAsync(string.Empty, Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())));
     }
     [Fact]
-    public async Task FailsWhenNoLockFilesAreFound()
+    public async Task FailsWhenNoLockFilesAreFoundAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -157,7 +157,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.MigrateFromLockFileAsync(string.Empty, tempPath));
     }
     [Fact]
-    public async Task FailsOnMultipleLockFilesAndClientName()
+    public async Task FailsOnMultipleLockFilesAndClientNameAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -169,7 +169,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.MigrateFromLockFileAsync("bar", tempPath));
     }
     [Fact]
-    public async Task MigratesAClient()
+    public async Task MigratesAClientAsync()
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);
@@ -226,7 +226,7 @@ paths:
     [InlineData(false, true)]
     [InlineData(false, false)]
     [Theory]
-    public async Task GetsADescription(bool usesConfig, bool cleanOutput)
+    public async Task GetsADescriptionAsync(bool usesConfig, bool cleanOutput)
     {
         var mockLogger = Mock.Of<ILogger>();
         Directory.CreateDirectory(tempPath);

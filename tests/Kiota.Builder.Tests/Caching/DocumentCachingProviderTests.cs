@@ -14,7 +14,7 @@ namespace Kiota.Builder.Caching.Tests;
 public class DocumentCachingProviderTests
 {
     [Fact]
-    public async Task DefensiveProgramming()
+    public async Task DefensiveProgrammingAsync()
     {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
@@ -67,7 +67,7 @@ public class DocumentCachingProviderTests
         return new HttpClient(handlerMock.Object);
     });
     [Fact]
-    public async Task GetsCached()
+    public async Task GetsCachedAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -77,7 +77,7 @@ public class DocumentCachingProviderTests
         Assert.Equal(ResponsePayload.Length, result.Length);
     }
     [Fact]
-    public async Task GetsWhenCacheIsOutdated()
+    public async Task GetsWhenCacheIsOutdatedAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -89,7 +89,7 @@ public class DocumentCachingProviderTests
         Assert.Equal(ResponsePayload.Length, result2.Length);
     }
     [Fact]
-    public async Task GetsWhenCacheIsCleared()
+    public async Task GetsWhenCacheIsClearedAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;

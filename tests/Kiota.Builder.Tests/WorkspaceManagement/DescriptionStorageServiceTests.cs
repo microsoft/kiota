@@ -10,7 +10,7 @@ public sealed class DescriptionStorageServiceTests
 {
     private readonly string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     [Fact]
-    public async Task StoresADescription()
+    public async Task StoresADescriptionAsync()
     {
         var service = new DescriptionStorageService(tempPath);
         using var stream = new MemoryStream();
@@ -20,7 +20,7 @@ public sealed class DescriptionStorageServiceTests
         Assert.NotNull(result);
     }
     [Fact]
-    public async Task DeletesAStoredDescription()
+    public async Task DeletesAStoredDescriptionAsync()
     {
         var service = new DescriptionStorageService(tempPath);
         using var stream = new MemoryStream();
@@ -31,14 +31,14 @@ public sealed class DescriptionStorageServiceTests
         Assert.Null(result);
     }
     [Fact]
-    public async Task ReturnsNothingIfNoDescriptionIsPresent()
+    public async Task ReturnsNothingIfNoDescriptionIsPresentAsync()
     {
         var service = new DescriptionStorageService(tempPath);
         var result = await service.GetDescriptionAsync("clientNameB");
         Assert.Null(result);
     }
     [Fact]
-    public async Task Defensive()
+    public async Task DefensiveAsync()
     {
         Assert.Throws<ArgumentException>(() => new DescriptionStorageService(string.Empty));
         var service = new DescriptionStorageService(tempPath);

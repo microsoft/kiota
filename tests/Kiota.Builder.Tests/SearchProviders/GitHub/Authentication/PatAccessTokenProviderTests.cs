@@ -9,7 +9,7 @@ namespace Kiota.Builder.Tests.SearchProviders.GitHub.Authentication;
 public class PatAccessTokenProviderTests
 {
     [Fact]
-    public async Task GetsToken()
+    public async Task GetsTokenAsync()
     {
         var storageMock = new Mock<ITokenStorageService>();
         storageMock.Setup(x => x.GetTokenAsync(It.IsAny<CancellationToken>()))

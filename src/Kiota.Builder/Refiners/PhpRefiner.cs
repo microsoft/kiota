@@ -16,7 +16,7 @@ public class PhpRefiner : CommonLanguageRefiner
 
     private const string AbstractionsNamespaceName = @"Microsoft\Kiota\Abstractions";
 
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
@@ -433,6 +433,7 @@ public class PhpRefiner : CommonLanguageRefiner
             var queryParameterProperty = codeClass.GetPropertyOfKind(CodePropertyKind.QueryParameters);
             if (queryParameterProperty != null)
             {
+                var returnTypeCodeType = queryParameterProperty.Type as CodeType;
                 var queryParamFactoryMethod = new CodeMethod
                 {
                     Name = "createQueryParameters",
@@ -445,7 +446,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     {
                         DescriptionTemplate = "Instantiates a new {TypeName}."
                     },
-                    ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
+                    ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = returnTypeCodeType?.TypeDefinition ?? queryParameterProperty.Type, IsNullable = false }
                 };
                 if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
                 {
