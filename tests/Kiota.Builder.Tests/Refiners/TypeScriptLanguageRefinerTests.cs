@@ -856,7 +856,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
     }
     [Fact]
-    public async Task ParsesAndRefinesUnionOfPrimitiveValues()
+    public async Task ParsesAndRefinesUnionOfPrimitiveValuesAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
@@ -876,7 +876,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.NotNull(constructor);
         Assert.Empty(constructor.SerializerModules);
         Assert.Empty(constructor.DeserializerModules);
-        await ILanguageRefiner.Refine(generationConfiguration, rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
         Assert.NotNull(rootNS);
         var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
         Assert.NotNull(modelsNS);

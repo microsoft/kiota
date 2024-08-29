@@ -140,7 +140,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             ? alias
             : TranslateTypescriptType(currentType);
 
-        var genericParameters = currentType.GenericTypeParameterValues.Count != 0
+        var genericParameters = currentType.GenericTypeParameterValues.Any()
             ? $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypescriptTypeString(x, targetElement, includeCollectionInformation)))}>"
             : string.Empty;
 
