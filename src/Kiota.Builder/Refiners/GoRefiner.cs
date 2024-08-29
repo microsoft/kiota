@@ -12,7 +12,7 @@ namespace Kiota.Builder.Refiners;
 public class GoRefiner : CommonLanguageRefiner
 {
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         _configuration.NamespaceNameSeparator = "/";
         return Task.Run(() =>

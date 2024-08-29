@@ -12,7 +12,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
@@ -79,16 +79,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true,
                 true
             );
-            AddGetterAndSetterMethods(generatedCode,
-                [
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                ],
-                static (_, s) => s.ToCamelCase(UnderscoreArray),
-                false,
-                false,
-                string.Empty,
-                string.Empty);
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
@@ -1154,9 +1144,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          * Add properties to interfaces
          * Replace model classes by interfaces for property types 
          */
-        var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
-        var serializer = serializationFunctions.Item1;
-        var deserializer = serializationFunctions.Item2;
+        var (serializer, deserializer) = GetSerializationFunctionsForNamespace(modelClass);
 
         foreach (var mProp in properties)
         {

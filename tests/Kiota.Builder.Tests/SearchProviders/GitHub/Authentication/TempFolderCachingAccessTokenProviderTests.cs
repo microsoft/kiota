@@ -14,7 +14,7 @@ namespace Kiota.Builder.Tests.SearchProviders.GitHub.Authentication;
 public class TempFolderCachingAccessTokenProviderTests
 {
     [Fact]
-    public async Task CachesToken()
+    public async Task CachesTokenAsync()
     {
         var concreteProvider = new Mock<IAccessTokenProvider>();
         concreteProvider.Setup(x => x.GetAuthorizationTokenAsync(It.IsAny<Uri>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<CancellationToken>()))

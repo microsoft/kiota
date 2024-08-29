@@ -14,7 +14,7 @@ public sealed class KiotaSearcherTests : IDisposable
 {
     private readonly HttpClient httpClient = new();
     [Fact]
-    public async Task DefensivePrograming()
+    public async Task DefensiveProgramingAsync()
     {
         Assert.Throws<ArgumentNullException>(() => new KiotaSearcher(null, new SearchConfiguration(), httpClient, null, null));
         Assert.Throws<ArgumentNullException>(() => new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, null, httpClient, null, null));
@@ -31,7 +31,7 @@ public sealed class KiotaSearcherTests : IDisposable
         }
     };
     [Fact]
-    public async Task GetsMicrosoftGraphBothVersions()
+    public async Task GetsMicrosoftGraphBothVersionsAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
@@ -39,7 +39,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Equal(2, results.Count);
     }
     [Fact]
-    public async Task GetsMicrosoftGraph()
+    public async Task GetsMicrosoftGraphAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
@@ -48,7 +48,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
     [Fact]
-    public async Task GetsMicrosoftGraphBeta()
+    public async Task GetsMicrosoftGraphBetaAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
@@ -57,14 +57,14 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
     [Fact]
-    public async Task DoesntFailOnEmptyTerm()
+    public async Task DoesntFailOnEmptyTermAsync()
     {
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfigurationFactory, httpClient, null, null);
         var results = await searcher.SearchAsync(string.Empty, string.Empty, new CancellationToken());
         Assert.Empty(results);
     }
     [Fact]
-    public async Task GetsGithubFromApisGuru()
+    public async Task GetsGithubFromApisGuruAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
@@ -72,7 +72,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.NotEmpty(results);
     }
     [Fact]
-    public async Task GetsGithubFromApisGuruWithExactMatch()
+    public async Task GetsGithubFromApisGuruWithExactMatchAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
