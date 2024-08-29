@@ -28,8 +28,10 @@ import { searchDescription } from "./searchDescription";
 import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
 import { updateClients } from "./updateClients";
 import {
+  IntegrationParams,
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration, isClientType, isPluginType, parseGenerationLanguage,
+  handleMigration,
+  isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
 } from "./util";
 import { loadTreeView } from "./workspaceTreeProvider";
@@ -53,7 +55,6 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  let deepLinkParams: Record<string, string | undefined> = {};
   const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
@@ -62,6 +63,7 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
+  let deepLinkParams: Partial<IntegrationParams> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -77,8 +79,8 @@ export async function activate(
             "validationErrors": errorsArray.join(", ")
           });
 
-          if (deepLinkParams.descriptionUrl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionUrl!));
+          if (deepLinkParams.descriptionurl) {
+            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
             return;
           }
         }
@@ -143,8 +145,8 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if (deepLinkParams) {
-          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle) {
+        if(Object.keys(deepLinkParams).length > 0){
+          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
             deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
           }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
@@ -238,9 +240,23 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(reporter,
+    registerCommandWithTelemetry(
+      reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
-      async () => {
+      async (
+        searchParams: Partial<IntegrationParams> = {}
+      ) => {
+        // set deeplink params if exists
+        if (Object.keys(searchParams).length > 0) {
+          let errorsArray: string [];
+          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
+            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+              "searchParameters": JSON.stringify(searchParams),
+              "validationErrors": errorsArray.join(", ")
+            });
+        }
+
+        // proceed to enable loading of openapi description
         const yesAnswer = vscode.l10n.t("Yes, override it");
         if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
           const response = await vscode.window.showWarningMessage(
