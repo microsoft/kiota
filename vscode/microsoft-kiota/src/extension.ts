@@ -214,7 +214,11 @@ export async function activate(
                   true
                 ]
               );
-            } catch (error) {}
+            } catch (error) {
+              reporter.sendTelemetryEvent("DeepLinked fx-extension.createprojectfromkiota", {
+                "error": JSON.stringify(error)
+              });
+            }
           } else {
             if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
               await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
