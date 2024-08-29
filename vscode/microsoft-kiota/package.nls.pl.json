@@ -4,7 +4,7 @@
   "kiota.openApiExplorer.name": "Przeglądarka OpenAPI Kiota",
   "kiota.openApiExplorer.contextualTitle": "Przeglądarka OpenAPI",
   "kiota-dependencies-info.panel.title": "Informacje o zależnościach Kiota",
-  "kiota-openapi-explorer.activitybar.title": "Przeglądarka OpenAPI Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Kiota",
   "kiota.selectLock.title": "Wybierz plik lock dla widoku eksploratora API",
   "kiota.updateClients.title": "Zaktualizuj klientów API w bieżącej przestrzeni roboczej",
   "kiota.openApiExplorer.generateClient.title": "Generuj klienta API",
@@ -15,12 +15,9 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Usuń wszystkie",
   "kiota.openApiExplorer.closeDescription.title": "Zamknij opis API",
   "kiota.openApiExplorer.openDescription.title": "Otwórz opis API",
-  "kiota.openApiExplorer.welcome": "Nie wybrano opisu API.\n[Wyszukaj](command:kiota.searchApiDescription)\n[Otwórz opis API](command:kiota.openApiExplorer.openDescription)\n[Otwórz manifest](command:kiota.openApiExplorer.openManifestPath)\n[Wklej manifest](command:kiota.openApiExplorer.pasteManifest)\n[Wybierz plik lock](command:kiota.searchLock)",
   "kiota.searchLock.title": "Wyszukaj plik lock",
   "kiota.openApiExplorer.filterDescription.title": "Filtruj opis API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Otwórz stronę dokumentacji",
-  "kiota.openApiExplorer.openManifestPath.title": "Otwórz manifest API",
-  "kiota.openApiExplorer.pasteManifest.title": "Wklej manifest API",
   "kiota.generate.backingStore.description": "Włącza kopię zapasową dla modeli",
   "kiota.generate.excludeBackwardCompatible.description": "Wyklucza zgodne wstecz i przestarzałe zasoby z wyniku generacji. Należy używać w przypadku nowych klientów",
   "kiota.cleanOutput.description": "Usuwa wszystkie pliki z katalogu wyjściowego przed wygenerowaniem plików kodu",
@@ -29,5 +26,10 @@
   "kiota.generate.serializer.description": "Pełne nazwy klas dla serializatorów",
   "kiota.generate.deserializer.description": "Pełne nazwy klas dla deserializatorów",
   "kiota.generate.structuredMimeTypes.description": "Typy MIME i preferencje do użycia dla generacji modeli danych strukturalnych. Zgodnie z notacją nagłówka Accept RFC9110.",
-  "kiota.generate.includeAdditionalData.description": "Doda właściwości 'AdditionalData' do modeli"
+  "kiota.generate.includeAdditionalData.description": "Doda właściwości 'AdditionalData' do modeli",
+  "kiota.workspace.name": "Moja przestrzeń robocza",
+  "kiota.openApiExplorer.regenerateButton.title": "Ponownie wygeneruj",
+  "kiota.openApiExplorer.editPaths.title": "Edytuj ścieżki",
+  "kiota.openApiExplorer.refresh.title": "Odśwież",
+  "kiota.migrateClients.title": "Migruj klientów API"
 }

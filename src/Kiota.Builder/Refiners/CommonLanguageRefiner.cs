@@ -16,7 +16,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(configuration);
         _configuration = configuration;
     }
-    public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
+    public abstract Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
@@ -787,7 +787,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         foreach (var childElement in currentElement.GetChildElements(innerOnly))
             function.Invoke(childElement);
     }
-    protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod>? correctMethodType, Action<CodeProperty>? correctPropertyType, Action<ProprietableBlockDeclaration>? correctImplements = default)
+    protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod>? correctMethodType, Action<CodeProperty>? correctPropertyType, Action<ProprietableBlockDeclaration>? correctImplements = default, Action<CodeIndexer>? correctIndexer = default)
     {
         switch (currentElement)
         {
@@ -800,8 +800,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             case ProprietableBlockDeclaration block:
                 correctImplements?.Invoke(block);
                 break;
+            case CodeIndexer indexer:
+                correctIndexer?.Invoke(indexer);
+                break;
         }
-        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements), false);
+        CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements, correctIndexer), false);
     }
     protected static void MakeModelPropertiesNullable(CodeElement currentElement)
     {
@@ -1408,7 +1411,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 };
                 if (addCurrentTypeAsGenericTypeParameter)
                 {
-                    currentClass.StartBlock.Inherits.GenericTypeParameterValues.Add(new CodeType
+                    currentClass.StartBlock.Inherits.AddGenericTypeParameterValue(new CodeType
                     {
                         TypeDefinition = currentClass,
                     });
@@ -1499,7 +1502,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
     {
         var newType = (CodeType)configurationParameterType.Clone();
-        newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+        newType.AddGenericTypeParameterValue(genericTypeParamValue);
         return newType;
     }
 
