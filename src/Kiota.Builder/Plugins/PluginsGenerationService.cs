@@ -230,15 +230,6 @@ public partial class PluginsGenerationService
                             : operation.Description.CleanupXMLString(),
                     States = GetStatesFromOperation(operation),
                 });
-                continue;
-
-                static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
-                {
-                    // Only one security object is allowed
-                    var security = securityRequirements.SingleOrDefault();
-                    var opSecurity = security?.Keys.SingleOrDefault();
-                    return opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
-                }
             }
         }
 
@@ -250,6 +241,14 @@ public partial class PluginsGenerationService
         }
 
         return (runtimes.ToArray(), functions.ToArray());
+    }
+
+    private static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
+    {
+        // Only one security object is allowed
+        var security = securityRequirements.SingleOrDefault();
+        var opSecurity = security?.Keys.SingleOrDefault();
+        return opSecurity is null ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
     }
 
     private static Auth GetAuthFromSecurityScheme(OpenApiSecurityScheme securityScheme)

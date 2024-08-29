@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -264,7 +263,7 @@ components:
     }
 
     public static TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
-        SecurityInformation0()
+        SecurityInformationSuccess()
     {
         return new TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         {
@@ -295,6 +294,7 @@ components:
             //         Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
             //     }
             // },
+            // auth provided in config overrides openapi file auth
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
                 string.Empty, "security: [apiKey0: []]", new PluginAuthConfiguration("different_ref_id") {AuthType = PluginAuthType.OAuthPluginVault}, resultingManifest =>
@@ -307,11 +307,62 @@ components:
                     Assert.Equal("different_ref_id", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
+            // auth provided in config applies when no openapi file auth
+            {
+                string.Empty,
+                string.Empty, string.Empty,
+                new PluginAuthConfiguration("different_ref_id") {AuthType = PluginAuthType.OAuthPluginVault},
+                resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
+                    Assert.Equal("different_ref_id", ((OAuthPluginVault)auth0!).ReferenceId);
+                }
+            },
+            {
+                "{securitySchemes: {httpBearer0: {type: http, scheme: bearer}}}",
+                string.Empty, "security: [httpBearer0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
+                    Assert.Equal("{httpBearer0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                }
+            },
+            {
+                "{securitySchemes: {openIdConnect0: {type: openIdConect, openIdConnectUrl: 'http://auth.com'}}}",
+                string.Empty, "security: [openIdConnect0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
+                    Assert.Equal("{openIdConnect0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                }
+            },
+            {
+                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {}}}}",
+                string.Empty, "security: [oauth2_0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
+                    Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
+                }
+            },
         };
     }
 
     [Theory]
-    [MemberData(nameof(SecurityInformation0))]
+    [MemberData(nameof(SecurityInformationSuccess))]
     public async Task GeneratesManifestWithAuthAsync(string securitySchemesComponent, string rootSecurity,
         string operationSecurity, PluginAuthConfiguration pluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>> assertions)
     {
@@ -367,5 +418,106 @@ components:
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
 
         assertions(resultingManifest);
+        // Cleanup
+        try
+        {
+            Directory.Delete(outputDirectory);
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+    public static TheoryData<string, string, string, PluginAuthConfiguration, Func<Func<Task>, Task>>
+        SecurityInformationFail()
+    {
+        return new TheoryData<string, string, string, PluginAuthConfiguration, Func<Func<Task>, Task>>
+        {
+            // multiple security schemes in operation object
+            {
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header}, apiKey1: {type: apiKey, name: x-api-key1, in: header}}}",
+                string.Empty, "security: [apiKey0: [], apiKey1: []]", null, async (action) =>
+                {
+                    await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                    {
+                        await action();
+                    });
+                }
+            },
+            // Unsupported security scheme (http basic)
+            {
+                "{securitySchemes: {httpBasic0: {type: http, scheme: basic}}}",
+                string.Empty, "security: [httpBasic0: []]", null, async (action) =>
+                {
+                    await Assert.ThrowsAsync<UnsupportedSecuritySchemeException>(async () =>
+                    {
+                        await action();
+                    });
+                }
+            },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(SecurityInformationFail))]
+    public async Task FailsToGeneratesManifestWithInvalidAuthAsync(string securitySchemesComponent, string rootSecurity,
+        string operationSecurity, PluginAuthConfiguration pluginAuthConfiguration, Func<Func<Task>, Task> assertions)
+    {
+        var apiDescription = $"""
+                              openapi: 3.0.0
+                              info:
+                                title: test
+                                version: "1.0"
+                              paths:
+                                /test:
+                                  get:
+                                    description: description for test path
+                                    responses:
+                                      '200':
+                                        description: test
+                                    {operationSecurity}
+                              {rootSecurity}
+                              components: {securitySchemesComponent}
+                              """;
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+            PluginAuthInformation = pluginAuthConfiguration,
+        };
+        var (openApiDocumentStream, _) =
+            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument =
+            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
+        Assert.NotNull(openApiDocument);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService =
+            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+
+        await assertions(async () =>
+        {
+            await pluginsGenerationService.GenerateManifestAsync();
+        });
+        // cleanup
+        try
+        {
+            Directory.Delete(outputDirectory);
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 }
