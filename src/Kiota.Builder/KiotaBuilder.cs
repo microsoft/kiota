@@ -67,7 +67,7 @@ public partial class KiotaBuilder
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
-    private async Task CleanOutputDirectory(CancellationToken cancellationToken)
+    private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
@@ -85,7 +85,7 @@ public partial class KiotaBuilder
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
+        var (_, openApiTree, _) = await GetTreeNodeInternalAsync(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
     public OpenApiDocument? OpenApiDocument => openApiDocument;
@@ -141,7 +141,7 @@ public partial class KiotaBuilder
             return null;
         }
     }
-    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
+    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
@@ -159,7 +159,7 @@ public partial class KiotaBuilder
         }
         sw.Start();
 #pragma warning disable CA2007
-        await using var input = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);
+        await using var input = await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
         if (input.Length == 0)
             return (0, null, false);
@@ -218,7 +218,7 @@ public partial class KiotaBuilder
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
+        await GetTreeNodeInternalAsync(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
 
         return GetLanguagesInformationInternal();
     }
@@ -266,7 +266,7 @@ public partial class KiotaBuilder
 
             // RefineByLanguage
             sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+            await ApplyLanguageRefinementAsync(config, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
 
             if (config.ExportPublicApi)
@@ -294,12 +294,12 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
-        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresentAsync(config.ClientClassName, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
 
         try
         {
-            await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
+            await CleanOutputDirectoryAsync(cancellationToken).ConfigureAwait(false);
             // doing this verification at the beginning to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         }
@@ -309,7 +309,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (shouldGenerate)
             {
@@ -338,7 +338,7 @@ public partial class KiotaBuilder
     {
         // Write lock file
         sw.Start();
-        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStream(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
+        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
         await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
@@ -460,7 +460,7 @@ public partial class KiotaBuilder
         sw.Reset();
     }
     private bool isDescriptionFromWorkspaceCopy;
-    private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
+    private async Task<Stream> LoadStreamAsync(string inputPath, CancellationToken cancellationToken)
     {
         var (input, isCopy) = await openApiDocumentDownloadService.LoadStreamAsync(inputPath, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
         isDescriptionFromWorkspaceCopy = isCopy;
@@ -560,12 +560,12 @@ public partial class KiotaBuilder
     /// <param name="config"></param>
     /// <param name="generatedCode"></param>
     /// <param name="token"></param>
-    public async Task ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
+    public async Task ApplyLanguageRefinementAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await ILanguageRefiner.Refine(config, generatedCode, token).ConfigureAwait(false);
+        await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
 
         stopwatch.Stop();
         logger.LogDebug("{Timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);

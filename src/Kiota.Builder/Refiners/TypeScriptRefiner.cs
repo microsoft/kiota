@@ -12,7 +12,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {

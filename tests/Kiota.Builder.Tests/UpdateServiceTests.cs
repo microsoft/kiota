@@ -915,7 +915,7 @@ public class UpdateServiceTests
         return new HttpClient(handlerMock.Object);
     });
     [Fact]
-    public async Task DoesntEmitMessageOnAlreadyUpToDate()
+    public async Task DoesntEmitMessageOnAlreadyUpToDateAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -926,7 +926,7 @@ public class UpdateServiceTests
         Assert.Empty(result);
     }
     [Fact]
-    public async Task EmitsASingleMessageWhenOutdated()
+    public async Task EmitsASingleMessageWhenOutdatedAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -939,7 +939,7 @@ public class UpdateServiceTests
         Assert.Empty(result);
     }
     [Fact]
-    public async Task ReturnsNoMessageOnEmptyVersion()
+    public async Task ReturnsNoMessageOnEmptyVersionAsync()
     {
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -950,7 +950,7 @@ public class UpdateServiceTests
         Assert.Empty(result);
     }
     [Fact]
-    public async Task ReturnsNoMessageOnNoReleaseInformation()
+    public async Task ReturnsNoMessageOnNoReleaseInformationAsync()
     {
         var client = HttpClientInstanceNoData.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
@@ -961,7 +961,7 @@ public class UpdateServiceTests
         Assert.Empty(result);
     }
     [Fact]
-    public async Task ReturnsNoMessageOnFailedRequest()
+    public async Task ReturnsNoMessageOnFailedRequestAsync()
     {
         var client = HttpClientInstanceFailed.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
