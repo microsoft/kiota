@@ -4,6 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from "vscode";
+
 import { CodeLensProvider } from "./codelensProvider";
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
@@ -27,8 +28,10 @@ import { searchDescription } from "./searchDescription";
 import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
 import { updateClients } from "./updateClients";
 import {
+  IntegrationParams,
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration, isClientType, isPluginType, parseGenerationLanguage,
+  handleMigration,
+  isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
 } from "./util";
 import { loadTreeView } from "./workspaceTreeProvider";
@@ -39,7 +42,6 @@ let clientOrPluginKey: string;
 let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
 let config: Partial<GenerateState>;
-
 interface GeneratedOutputState {
   outputPath: string;
   clientClassName: string;
@@ -61,7 +63,7 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  let deepLinkParams: Record<string, string|undefined> = {};
+  let deepLinkParams: Partial<IntegrationParams> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -70,15 +72,15 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
-          let errorsArray: string [];
+          let errorsArray: string[];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(queryParameters);
           reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
             "queryParameters": JSON.stringify(queryParameters),
             "validationErrors": errorsArray.join(", ")
-          }); 
+          });
 
-          if (deepLinkParams.descriptionUrl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionUrl!));
+          if (deepLinkParams.descriptionurl) {
+            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
             return;
           }
         }
@@ -143,13 +145,13 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(deepLinkParams){
+        if(Object.keys(deepLinkParams).length > 0){
           if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
             deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
-          } 
+          }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
-        }else{
-          const pluginName = getPluginName();
+        } else {
+          const pluginName = getSanitizedString(openApiTreeProvider.apiTitle);
           availableStateInfo = {
             clientClassName: openApiTreeProvider.clientClassName,
             clientNamespaceName: openApiTreeProvider.clientNamespaceName,
@@ -195,22 +197,37 @@ export async function activate(
         }
         if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
           // Save state before opening the new window
-          void context.workspaceState.update('generatedOutput', {
+          const outputState = {
             outputPath,
             config,
             clientClassName: config.clientClassName || config.pluginName
-          } as GeneratedOutputState);
-          if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
+          };
+          void context.workspaceState.update('generatedOutput', outputState as GeneratedOutputState);
+
+          const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yml`);
+          const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);
+          if (deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
+            try {
+              await vscode.commands.executeCommand(
+                'fx-extension.createprojectfromkiota',
+                [
+                  pathOfSpec,
+                  pathPluginManifest,
+                  true
+                ]
+              );
+            } catch (error) {
+              reporter.sendTelemetryEvent("DeepLinked fx-extension.createprojectfromkiota", {
+                "error": JSON.stringify(error)
+              });
+            }
           } else {
-            await displayGenerationResults(context, openApiTreeProvider, config);
+            if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+              await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
+            } else {
+              await displayGenerationResults(context, openApiTreeProvider, config);
+            }
           }
-        }
-        function getPluginName(): string | undefined {
-          if (openApiTreeProvider.apiTitle) {
-            return openApiTreeProvider.apiTitle.replace(/[^a-zA-Z0-9_]+/g, '');
-          }
-          return undefined;
         }
       }
     ),
@@ -223,9 +240,23 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(reporter,
+    registerCommandWithTelemetry(
+      reporter,
       `${treeViewId}.searchOrOpenApiDescription`,
-      async () => {
+      async (
+        searchParams: Partial<IntegrationParams> = {}
+      ) => {
+        // set deeplink params if exists
+        if (Object.keys(searchParams).length > 0) {
+          let errorsArray: string [];
+          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
+            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+              "searchParameters": JSON.stringify(searchParams),
+              "validationErrors": errorsArray.join(", ")
+            });
+        }
+
+        // proceed to enable loading of openapi description
         const yesAnswer = vscode.l10n.t("Yes, override it");
         if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
           const response = await vscode.window.showWarningMessage(
