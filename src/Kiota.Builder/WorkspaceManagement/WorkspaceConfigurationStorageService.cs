@@ -103,10 +103,10 @@ public class WorkspaceConfigurationStorageService
     }
     public async Task BackupConfigAsync(CancellationToken cancellationToken = default)
     {
-        await BackupFile(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
-        await BackupFile(ManifestFileName, cancellationToken).ConfigureAwait(false);
+        await BackupFileAsync(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await BackupFileAsync(ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private async Task BackupFile(string fileName, CancellationToken cancellationToken = default)
+    private async Task BackupFileAsync(string fileName, CancellationToken cancellationToken = default)
     {
         var sourceFilePath = Path.Combine(TargetDirectory, fileName);
         if (File.Exists(sourceFilePath))
@@ -124,10 +124,10 @@ public class WorkspaceConfigurationStorageService
     }
     public async Task RestoreConfigAsync(CancellationToken cancellationToken = default)
     {
-        await RestoreFile(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
-        await RestoreFile(ManifestFileName, cancellationToken).ConfigureAwait(false);
+        await RestoreFileAsync(ConfigurationFileName, cancellationToken).ConfigureAwait(false);
+        await RestoreFileAsync(ManifestFileName, cancellationToken).ConfigureAwait(false);
     }
-    private async Task RestoreFile(string fileName, CancellationToken cancellationToken = default)
+    private async Task RestoreFileAsync(string fileName, CancellationToken cancellationToken = default)
     {
         var sourceFilePath = Path.Combine(TargetDirectory, fileName);
         var targetDirectory = Path.GetDirectoryName(sourceFilePath);
