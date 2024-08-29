@@ -85,7 +85,7 @@ public class PagingInformation : ICloneable
     }
 }
 
-public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDeprecableElement
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDeprecableElement, IAccessibleElement
 {
     public static readonly CodeParameterKind ParameterKindForConvertedIndexers = CodeParameterKind.Custom;
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable, bool typeSpecificOverload = false)
