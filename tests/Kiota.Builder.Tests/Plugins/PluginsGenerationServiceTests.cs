@@ -37,7 +37,7 @@ public sealed class PluginsGenerationServiceTests : IDisposable
     [InlineData("client", "client")]
     [InlineData("Budget Tracker", "BudgetTracker")]//drop the space
     [InlineData("My-Super complex() %@#$& Name", "MySupercomplexName")]//drop the space and special characters
-    public async Task GeneratesManifest(string inputPluginName, string expectedPluginName)
+    public async Task GeneratesManifestAsync(string inputPluginName, string expectedPluginName)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
 info:
