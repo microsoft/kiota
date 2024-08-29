@@ -51,8 +51,8 @@ public static partial class StringExtensions
     /// <summary>
     /// Shortens a file name to the maximum allowed length on the file system using a hash to avoid collisions
     /// </summary>
-    /// <param name="fileName">The file name to shorten</param>
-    /// <param name="maxFileNameLength">The maximum length of the file name. Default 251 = 255 - .ext</param>
+    /// <param name="name">The file name to shorten</param>
+    /// <param name="length">The maximum length of the file name. Default 251 = 255 - .ext</param>
     public static string ShortenFileName(this string name, int length = 251) =>
 #pragma warning disable CA1308
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;

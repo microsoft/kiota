@@ -12,7 +12,7 @@ public class PhpLanguageRefinerTests
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
     [Fact]
-    public async Task ReplacesRequestBuilderPropertiesByMethods()
+    public async Task ReplacesRequestBuilderPropertiesByMethodsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -29,7 +29,7 @@ public class PhpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal("breaks", requestBuilder.Name);
         Assert.Equal("userRequestBuilder", model.Name);
     }
@@ -37,7 +37,7 @@ public class PhpLanguageRefinerTests
     [Theory]
     [InlineData("break")]
     [InlineData("case")]
-    public async Task EnumWithReservedName_IsNotRenamed(string input)
+    public async Task EnumWithReservedName_IsNotRenamedAsync(string input)
     {
         var model = root.AddEnum(new CodeEnum
         {
@@ -45,13 +45,13 @@ public class PhpLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = input, SerializationName = input };
         model.AddOption(option);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
 
         Assert.Equal(input, model.Options.First().Name);
     }
 
     [Fact]
-    public async Task PrefixReservedWordPropertyNamesWith()
+    public async Task PrefixReservedWordPropertyNamesWithAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -69,12 +69,12 @@ public class PhpLanguageRefinerTests
             }
         }).First();
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal("EscapedContinue", property.Name);
     }
 
     [Fact]
-    public async Task ReplacesBinaryWithNativeType()
+    public async Task ReplacesBinaryWithNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -89,12 +89,12 @@ public class PhpLanguageRefinerTests
                 Name = "binary"
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal("StreamInterface", method.ReturnType.Name);
     }
 
     [Fact]
-    public async Task AddsDefaultImports()
+    public async Task AddsDefaultImportsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -106,12 +106,12 @@ public class PhpLanguageRefinerTests
             Name = "rb",
             Kind = CodeClassKind.RequestBuilder,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
     }
 
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses()
+    public async Task AddsExceptionInheritanceOnErrorClassesAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -147,7 +147,7 @@ public class PhpLanguageRefinerTests
             },
             Kind = CodeMethodKind.ErrorMessageOverride
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
 
         var declaration = model.StartBlock;
 
@@ -159,7 +159,7 @@ public class PhpLanguageRefinerTests
     }
 
     [Fact]
-    public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
+    public async Task ChangesBackingStoreParameterTypeInApiClientConstructorAsync()
     {
         var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
         var constructor = new CodeMethod
@@ -184,13 +184,13 @@ public class PhpLanguageRefinerTests
         apiClientClass.AddMethod(constructor);
 
         root.AddClass(apiClientClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
         Assert.Equal("null", backingStoreParameter.DefaultValue);
     }
 
     [Fact]
-    public async Task ImportsClassForDiscriminatorReturns()
+    public async Task ImportsClassForDiscriminatorReturnsAsync()
     {
         var modelClass = new CodeClass
         {
@@ -242,12 +242,12 @@ public class PhpLanguageRefinerTests
         };
         Assert.Empty(modelClass.Usings);
         subNamespace.AddClass(securityClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal(2, modelClass.Usings.Count());
     }
 
     [Fact]
-    public async Task RenamesComposedTypeWrapperWhenSimilarClassExistsInNamespace()
+    public async Task RenamesComposedTypeWrapperWhenSimilarClassExistsInNamespaceAsync()
     {
         var model = new CodeClass
         {
@@ -268,12 +268,12 @@ public class PhpLanguageRefinerTests
             Name = "property",
             Type = composedType
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
     }
 
     [Fact]
-    public async Task DoesNotCreateDuplicateComposedTypeWrapperIfOneAlreadyExists()
+    public async Task DoesNotCreateDuplicateComposedTypeWrapperIfOneAlreadyExistsAsync()
     {
         var composedType = new CodeUnionType { Name = "Union" };
         composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" });
@@ -294,7 +294,7 @@ public class PhpLanguageRefinerTests
         });
         root.AddClass(parent);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.True(root.FindChildByName<CodeClass>("Union", false) is CodeClass unionTypeWrapper && unionTypeWrapper.OriginalComposedType != null);
         Assert.True(root.FindChildByName<CodeClass>("UnionWrapper", false) is null);
     }
