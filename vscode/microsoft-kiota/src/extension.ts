@@ -40,7 +40,6 @@ let clientOrPluginKey: string;
 let clientOrPluginObject: ClientOrPluginProperties;
 let workspaceGenerationType: string;
 let config: Partial<GenerateState>;
-let deepLinkParams: Record<string, string | undefined> = {};
 interface GeneratedOutputState {
   outputPath: string;
   clientClassName: string;
@@ -54,6 +53,7 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
+  let deepLinkParams: Record<string, string | undefined> = {};
   const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
@@ -204,7 +204,7 @@ export async function activate(
 
           const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yml`);
           const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);
-          if (deepLinkParams.source && deepLinkParams.source === 'ttk') {
+          if (deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
             try {
               await vscode.commands.executeCommand(
                 'fx-extension.createprojectfromkiota',
