@@ -56,7 +56,7 @@ namespace Kiota.Builder
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         }
 
-        private string? ExtractServerUrl(OpenApiDocument document)
+        private static string? ExtractServerUrl(OpenApiDocument document)
         {
             return document.Servers?.FirstOrDefault()?.Url;
         }
