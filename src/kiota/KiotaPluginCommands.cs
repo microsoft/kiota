@@ -83,10 +83,10 @@ public static class KiotaPluginCommands
             pluginAuthRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
-        // command.AddValidator(commandResult =>
-        //     {
-        //         KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
-        //     });
+        command.AddValidator(commandResult =>
+            {
+                KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+            });
         command.Handler = new AddHandler
         {
             ClassOption = pluginNameOption,
@@ -126,10 +126,10 @@ public static class KiotaPluginCommands
             pluginAuthRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
-        // command.AddValidator(commandResult =>
-        //     {
-        //         KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, authRefIdOption);
-        //     });
+        command.AddValidator(commandResult =>
+            {
+                KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+            });
         command.Handler = new EditHandler
         {
             ClassOption = pluginNameOption,
