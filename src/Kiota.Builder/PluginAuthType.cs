@@ -1,10 +1,9 @@
-namespace Kiota.Builder
+namespace Kiota.Builder;
+
+public enum PluginAuthType
 {
-    public enum PluginAuthType
-    {
-        apiKey,
-        http,
-        oauth2,
-        openIdConnect,
-    }
+    apiKey,
+    http,
+    oauth2,
+    openIdConnect,
 }
