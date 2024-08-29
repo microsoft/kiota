@@ -42,7 +42,7 @@ public class CodeTypeTests
             Name = "class1"
         };
         var clone = type.Clone() as CodeType;
-        clone.GenericTypeParameterValues.Add(new CodeType { Name = "genparam1" });
+        clone.AddGenericTypeParameterValue(new CodeType { Name = "genparam1" });
 
         Assert.Single(clone.AllTypes);
         Assert.Empty(type.GenericTypeParameterValues);

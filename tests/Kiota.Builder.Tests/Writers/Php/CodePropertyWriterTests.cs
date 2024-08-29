@@ -85,7 +85,7 @@ public class CodePropertyWriterTests
     }
 
     [Fact]
-    public async Task WriteCollectionKindProperty()
+    public async Task WriteCollectionKindPropertyAsync()
     {
         var property = new CodeProperty
         {
@@ -100,7 +100,7 @@ public class CodePropertyWriterTests
         };
         parentClass.Kind = CodeClassKind.Model;
         parentClass.AddProperty(property);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("private ?array $additionalData = null;", result);
@@ -225,7 +225,7 @@ public class CodePropertyWriterTests
     }
 
     [Fact]
-    public async Task WriteRequestOption()
+    public async Task WriteRequestOptionAsync()
     {
         var options = new CodeProperty
         {
@@ -239,7 +239,7 @@ public class CodePropertyWriterTests
             }
         };
         parentClass.AddProperty(options);
-        await phpRefiner.Refine(root, new CancellationToken());
+        await phpRefiner.RefineAsync(root, new CancellationToken());
         propertyWriter.WriteCodeElement(options, languageWriter);
         var result = stringWriter.ToString();
 
