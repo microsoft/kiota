@@ -11,6 +11,8 @@ public class PluginAuthConfiguration
     /// <summary>
     /// Auth information used in generated plugin manifest
     /// </summary>
+    /// <param name="referenceId">The auth reference id</param>
+    /// <exception cref="ArgumentException">If the reference id is null or contains only whitespaces.</exception>
     public PluginAuthConfiguration(string referenceId)
     {
         if (string.IsNullOrWhiteSpace(referenceId)) throw new ArgumentException("Plugin authentication's referenceId is required.", nameof(referenceId));
