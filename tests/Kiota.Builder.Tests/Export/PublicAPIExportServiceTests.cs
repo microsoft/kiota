@@ -15,9 +15,9 @@ namespace Kiota.Builder.Tests.Export;
 public class PublicApiExportServiceTests
 {
     private readonly HttpClient _httpClient = new();
-    private static Task<Stream> GetTestDocumentStream()
+    private static Task<Stream> GetTestDocumentStreamAsync()
     {
-        return KiotaBuilderTests.GetDocumentStream(@"openapi: 3.0.0
+        return KiotaBuilderTests.GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
   version: 1.0.0
@@ -90,10 +90,10 @@ components:
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.PHP)]
-    public async Task GeneratesExportsAndFileHasExpectedAssertions(GenerationLanguage generationLanguage)
+    public async Task GeneratesExportsAndFileHasExpectedAssertionsAsync(GenerationLanguage generationLanguage)
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await using var testDocumentStream = await GetTestDocumentStream();
+        await using var testDocumentStream = await GetTestDocumentStreamAsync();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var generationConfig = new GenerationConfiguration
         {
@@ -110,7 +110,7 @@ components:
 
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinement(generationConfig, codeModel, default);
+        await builder.ApplyLanguageRefinementAsync(generationConfig, codeModel, default);
 
         // serialize the dom model
         var exportService = new PublicApiExportService(generationConfig);
