@@ -113,7 +113,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task ImportRequiredClassesWhenContainsRequestExecutor()
+    public async Task ImportRequiredClassesWhenContainsRequestExecutorAsync()
     {
         var declaration = parentClass;
         declaration?.AddMethod(new CodeMethod
@@ -130,7 +130,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         });
         var dec = declaration?.StartBlock;
         var namespaces = declaration?.Parent as CodeNamespace;
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, namespaces);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, namespaces);
         codeElementWriter.WriteCodeElement(dec, writer);
         var result = tw.ToString();
 
@@ -156,7 +156,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task AddsImportsToRequestConfigClasses()
+    public async Task AddsImportsToRequestConfigClassesAsync()
     {
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
         var modelsNamespace = root.AddNamespace("Models");
@@ -229,7 +229,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
 

@@ -9,11 +9,12 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
-public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration), ILanguageRefiner
+public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
 
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
@@ -90,16 +91,6 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
                 true,
                 true
             );
-            AddGetterAndSetterMethods(generatedCode,
-                [
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                ],
-                static (_, s) => s.ToCamelCase(UnderscoreArray),
-                false,
-                false,
-                string.Empty,
-                string.Empty);
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
@@ -1375,9 +1366,7 @@ public class TypeScriptRefiner(GenerationConfiguration configuration) : CommonLa
          * Add properties to interfaces
          * Replace model classes by interfaces for property types 
          */
-        var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
-        var serializer = serializationFunctions.Item1;
-        var deserializer = serializationFunctions.Item2;
+        var (serializer, deserializer) = GetSerializationFunctionsForNamespace(modelClass);
 
         foreach (var mProp in properties)
         {

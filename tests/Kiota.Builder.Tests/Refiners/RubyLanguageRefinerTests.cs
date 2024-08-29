@@ -26,7 +26,7 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
-    public async Task DoesNotKeepCancellationParametersInRequestExecutors()
+    public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -54,12 +54,12 @@ public class RubyLanguageRefinerTests
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
     [Fact]
-    public async Task AddsDefaultImports()
+    public async Task AddsDefaultImportsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -80,7 +80,7 @@ public class RubyLanguageRefinerTests
                 Name = "string"
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
 
@@ -88,7 +88,7 @@ public class RubyLanguageRefinerTests
     #endregion
     #region RubyLanguageRefinerTests
     [Fact]
-    public async Task CorrectsCoreTypes()
+    public async Task CorrectsCoreTypesAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -106,34 +106,34 @@ public class RubyLanguageRefinerTests
             Kind = CodePropertyKind.PathParameters,
             DefaultValue = "wrongDefaultValue"
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.Equal("Hash.new", property.DefaultValue);
     }
     [Fact]
-    public async Task EscapesReservedKeywords()
+    public async Task EscapesReservedKeywordsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
-    public async Task ConvertEnumsToPascalCase()
+    public async Task ConvertEnumsToPascalCaseAsync()
     {
         var model = root.AddEnum(new CodeEnum
         {
             Name = "foo_bar"
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.NotEqual("foo_bar", model.Name);
         Assert.Contains("FooBar", model.Name);
     }
     [Fact]
-    public async Task ReplacesDateTimeOffsetByNativeType()
+    public async Task ReplacesDateTimeOffsetByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -148,12 +148,12 @@ public class RubyLanguageRefinerTests
                 Name = "DateTimeOffset"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDateOnlyByNativeType()
+    public async Task ReplacesDateOnlyByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -168,12 +168,12 @@ public class RubyLanguageRefinerTests
                 Name = "DateOnly"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Date", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesTimeOnlyByNativeType()
+    public async Task ReplacesTimeOnlyByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -188,12 +188,12 @@ public class RubyLanguageRefinerTests
                 Name = "TimeOnly"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDurationByNativeType()
+    public async Task ReplacesDurationByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -208,12 +208,12 @@ public class RubyLanguageRefinerTests
                 Name = "TimeSpan"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("MicrosoftKiotaAbstractions::ISODuration", method.ReturnType.Name);
     }
     [Fact]
-    public async Task AddNamespaceModuleImports()
+    public async Task AddNamespaceModuleImportsAsync()
     {
         var declaration = parentClass.StartBlock;
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
@@ -231,12 +231,12 @@ public class RubyLanguageRefinerTests
                 TypeDefinition = messageClassDef,
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.Single(declaration.Usings.Where(static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
         Assert.Single(declaration.Usings.Where(static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
-    public async Task ShortensLongNamespaceNames()
+    public async Task ShortensLongNamespaceNamesAsync()
     {
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.microsoftGraphDoesUserHaveAccessUserIdUserIdTenantIdTenantIdUserPrincipalNameUserPrincipalName");
         var messageClassDef = new CodeClass
@@ -244,13 +244,13 @@ public class RubyLanguageRefinerTests
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.Null(root.FindNamespaceByName($"{graphNS.Name}.microsoftGraphDoesUserHaveAccessUserIdUserIdTenantIdTenantIdUserPrincipalNameUserPrincipalName"));
         Assert.NotNull(root.FindNamespaceByName($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0"));
         Assert.Equal($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0", subNS.Name);
     }
     [Fact]
-    public async Task AddsQueryParameterMapperMethod()
+    public async Task AddsQueryParameterMapperMethodAsync()
     {
         var model = graphNS.AddClass(new CodeClass
         {
@@ -270,11 +270,11 @@ public class RubyLanguageRefinerTests
 
         Assert.Empty(model.Methods);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
-    public async Task AddsQueryParameterMapperMethodAfterMangling()
+    public async Task AddsQueryParameterMapperMethodAfterManglingAsync()
     {
         var model = graphNS.AddClass(new CodeClass
         {
@@ -294,13 +294,13 @@ public class RubyLanguageRefinerTests
 
         Assert.Empty(model.Methods);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
         Assert.Single(model.Properties.Where(x => x.Name.Equals("if_exists")));
         Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
-    public async Task FlattensModelsNamespace()
+    public async Task FlattensModelsNamespaceAsync()
     {
         var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
         var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
@@ -318,7 +318,7 @@ public class RubyLanguageRefinerTests
         Assert.Single(subModelsNS.Classes);
         Assert.Empty(modelsNS.Enums);
         Assert.Single(subModelsNS.Enums);
-        await ILanguageRefiner.Refine(config, root);
+        await ILanguageRefiner.RefineAsync(config, root);
         Assert.Single(modelsNS.Classes);
         Assert.Empty(subModelsNS.Classes);
         Assert.Single(modelsNS.Enums);

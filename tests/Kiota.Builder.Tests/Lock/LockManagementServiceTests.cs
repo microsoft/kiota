@@ -9,7 +9,7 @@ namespace Kiota.Builder.Tests.Lock;
 public class LockManagementServiceTests
 {
     [Fact]
-    public async Task DefensiveProgramming()
+    public async Task DefensiveProgrammingAsync()
     {
         var lockManagementService = new LockManagementService();
         Assert.Throws<ArgumentNullException>(() => lockManagementService.GetDirectoriesContainingLockFile(null));
@@ -19,7 +19,7 @@ public class LockManagementServiceTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync("path", null));
     }
     [Fact]
-    public async Task Identity()
+    public async Task IdentityAsync()
     {
         var lockManagementService = new LockManagementService();
         var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");
@@ -36,7 +36,7 @@ public class LockManagementServiceTests
         Assert.Equal(lockFile, result, new KiotaLockComparer());
     }
     [Fact]
-    public async Task UsesRelativePaths()
+    public async Task UsesRelativePathsAsync()
     {
         var tmpPath = Path.Combine(Path.GetTempPath(), "tests", "kiota");
         var lockManagementService = new LockManagementService();
@@ -53,7 +53,7 @@ public class LockManagementServiceTests
         Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
-    public async Task DeletesALock()
+    public async Task DeletesALockAsync()
     {
         var lockManagementService = new LockManagementService();
         var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");

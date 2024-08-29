@@ -2018,7 +2018,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("allQueryParams.put(\"propWithDefaultValue\", propWithDefaultValue);", result);
     }
     [Fact]
-    public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves()
+    public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselvesAsync()
     {
         setup();
         var model = root.AddClass(new CodeClass
@@ -2033,7 +2033,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Access = AccessModifier.Public,
             Kind = CodePropertyKind.Custom,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
