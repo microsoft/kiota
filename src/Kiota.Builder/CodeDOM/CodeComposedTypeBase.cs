@@ -85,10 +85,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     public bool IsComposedOfObjectsAndPrimitives(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive)
     {
         // Count the number of primitives in Types
-        int primitiveCount = Types.Count(x => checkIfPrimitive(x, this));
-
-        // If the number of primitives is less than the total count, it means the rest are objects
-        return primitiveCount > 0 && primitiveCount < Types.Count();
+        return Types.Any(x => checkIfPrimitive(x, this)) && Type.Any(x => !checkIfPrimitive(x, this));
     }
 
 }
