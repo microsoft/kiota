@@ -273,4 +273,35 @@ internal partial class Server : IServer
             return path.Replace('/', '\\');
         return path.Replace('\\', '/');
     }
+
+    public async Task<List<LogEntry>> GenerateHttpSnippetAsync(string openAPIFilePath, string outputPath, string[] includePatterns, string[] excludePatterns, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] structuredMimeTypes, CancellationToken cancellationToken)
+    {
+        var globalLogger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = Configuration.Generation;
+        configuration.OpenAPIFilePath = GetAbsolutePath(openAPIFilePath);
+        configuration.OutputPath = GetAbsolutePath(outputPath);
+        configuration.CleanOutput = cleanOutput;
+        configuration.ClearCache = clearCache;
+        configuration.Operation = ConsumerOperation.Add; //TODO should be updated to edit in the edit scenario
+        if (disabledValidationRules is { Length: > 0 })
+            configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (includePatterns is { Length: > 0 })
+            configuration.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (excludePatterns is { Length: > 0 })
+            configuration.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
+        configuration.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.OutputPath));
+        try
+        {
+            using var fileLogger = new FileLogLogger<KiotaBuilder>(configuration.OutputPath, LogLevel.Warning);
+            var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
+            await new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value).GenerateHttpSnippetAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            globalLogger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
+        }
+        return globalLogger.LogEntries;
+    }
+
 }

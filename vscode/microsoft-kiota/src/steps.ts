@@ -1,6 +1,7 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { kiotaLockFile } from './extension';
+import * as vscode from 'vscode';
 
 
 export async function openSteps() {
@@ -244,6 +245,33 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     return state;
 }
 
+
+export async function generateHttpSnippetsSteps(existingConfiguration: Partial<GenerateHttpSnippetState>) {
+    const state = {...existingConfiguration} as Partial<GenerateState>;
+    const title = l10n.t('Generate HTTP snippet');
+    let step = 1;
+    let totalSteps = 1;
+
+    async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateHttpSnippetState>) {
+        const options: vscode.OpenDialogOptions = {
+            canSelectMany: false,
+            openLabel: 'Select',
+            canSelectFiles: false,
+            canSelectFolders: true,
+        };
+
+        const folderUri = await vscode.window.showOpenDialog(options);
+        if (folderUri && folderUri[0]) {
+            state.outputPath = folderUri[0].fsPath;
+        } else {
+            throw new Error('No folder selected');
+        }
+    }
+
+    await MultiStepInput.run(input => inputOutputPath(input, state), () => step -= 2);
+    return state;
+}
+
 function shouldResume() {
     // Could show a notification with the option to resume.
     return new Promise<boolean>((resolve, reject) => {
@@ -287,6 +315,9 @@ interface GenerateState extends BaseStepsState {
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;
+    outputPath: QuickPickItem | string;
+}
+interface GenerateHttpSnippetState extends BaseStepsState {
     outputPath: QuickPickItem | string;
 }
 class InputFlowAction {

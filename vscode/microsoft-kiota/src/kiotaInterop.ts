@@ -254,3 +254,5 @@ export interface GenerationConfiguration {
     structuredMimeTypes: string[];
     usesBackingStore: boolean;
 }
+
+export type HttpGenerationConfiguration = Omit<GenerationConfiguration, 'clientClassName' | 'usesBackingStore' | 'clientNamespaceName' | 'serializers' | 'deserializers' | 'language' | 'includeAdditionalData'>;

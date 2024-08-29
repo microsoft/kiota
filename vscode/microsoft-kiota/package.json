@@ -292,6 +292,11 @@
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
           "when": "view == kiota.openApiExplorer",
           "group": "inline@5"
+        },
+        {
+          "command": "kiota.openApiExplorer.generateHttpSnippet",
+          "when": "view == kiota.openApiExplorer",
+          "group": "inline@6"
         }
       ],
       "commandPalette": [
@@ -408,6 +413,12 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.openDescription.title%",
         "icon": "$(go-to-file)"
+      },
+      {
+        "command": "kiota.openApiExplorer.generateHttpSnippet",
+        "category": "Kiota",
+        "title": "Generate http snippets",
+        "icon": "$(debug-alt)"
       }
     ]
   },
