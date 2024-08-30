@@ -87,7 +87,7 @@ public static class KiotaPluginCommands
         };
         command.AddValidator(commandResult =>
             {
-                KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+                KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
             });
         command.Handler = new AddHandler
         {
@@ -130,7 +130,7 @@ public static class KiotaPluginCommands
         };
         command.AddValidator(commandResult =>
             {
-                KiotaHost.ValidateBothOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+                KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
             });
         command.Handler = new EditHandler
         {
