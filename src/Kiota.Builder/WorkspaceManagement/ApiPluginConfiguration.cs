@@ -41,7 +41,7 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
         get;
         set;
     }
-    
+
     public object Clone()
     {
         var result = new ApiPluginConfiguration()
