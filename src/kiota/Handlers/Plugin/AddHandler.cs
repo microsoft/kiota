@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace kiota.Handlers.Plugin;
 
@@ -24,7 +25,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-    public required Option<PluginSecurityScheme> PluginAuthTypeOption
+    public required Option<SecuritySchemeType> PluginAuthTypeOption
     {
         get; init;
     }
@@ -53,7 +54,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType> pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption) ?? [];
-        PluginSecurityScheme? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        SecuritySchemeType? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
         string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
@@ -73,12 +74,12 @@ internal class AddHandler : BaseKiotaCommandHandler
             var pluginAuthConfig = new PluginAuthConfiguration(pluginAuthRefId);
             switch (pluginAuthType)
             {
-                case PluginSecurityScheme.ApiKey:
-                case PluginSecurityScheme.Http:
-                case PluginSecurityScheme.OpenIdConnect:
+                case SecuritySchemeType.ApiKey:
+                case SecuritySchemeType.Http:
+                case SecuritySchemeType.OpenIdConnect:
                     pluginAuthConfig.AuthType = PluginAuthType.ApiKeyPluginVault;
                     break;
-                case PluginSecurityScheme.Oauth2:
+                case SecuritySchemeType.OAuth2:
                     pluginAuthConfig.AuthType = PluginAuthType.OAuthPluginVault;
                     break;
                 default:

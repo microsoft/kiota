@@ -2,6 +2,7 @@
 using kiota.Handlers.Plugin;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Microsoft.OpenApi.Models;
 
 namespace kiota;
 public static class KiotaPluginCommands
@@ -38,15 +39,15 @@ public static class KiotaPluginCommands
         return typeOption;
     }
 
-    internal static Option<PluginSecurityScheme> GetPluginAuthenticationTypeOption(bool isRequired = false)
+    internal static Option<SecuritySchemeType> GetPluginAuthenticationTypeOption(bool isRequired = false)
     {
-        var authTypeOption = new Option<PluginSecurityScheme>("--authentication-type", "The authentication type for the plugin. Should be a valid OpenAPI security scheme.");
+        var authTypeOption = new Option<SecuritySchemeType>("--authentication-type", "The authentication type for the plugin. Should be a valid OpenAPI security scheme.");
         authTypeOption.AddAlias("--at");
         {
             authTypeOption.IsRequired = isRequired;
             authTypeOption.Arity = ArgumentArity.ZeroOrOne;
         }
-        authTypeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "authentication-type", Enum.GetNames<PluginSecurityScheme>()));
+        authTypeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "authentication-type", Enum.GetNames<SecuritySchemeType>()));
         return authTypeOption;
     }
 
