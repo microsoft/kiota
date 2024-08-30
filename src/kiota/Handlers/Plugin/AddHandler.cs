@@ -24,7 +24,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-    public required Option<PluginAuthType> PluginAuthTypeOption
+    public required Option<PluginSecurityScheme> PluginAuthTypeOption
     {
         get; init;
     }
@@ -53,7 +53,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType> pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption) ?? [];
-        PluginAuthType pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        PluginSecurityScheme? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
         string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
@@ -68,6 +68,24 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.Operation = ConsumerOperation.Add;
         if (pluginTypes.Count != 0)
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+        if (pluginAuthType.HasValue && !string.IsNullOrEmpty(pluginAuthRefId))
+        {
+            var pluginAuthConfig = new PluginAuthConfiguration(pluginAuthRefId);
+            switch (pluginAuthType)
+            {
+                case PluginSecurityScheme.ApiKey:
+                case PluginSecurityScheme.Http:
+                case PluginSecurityScheme.OpenIdConnect:
+                    pluginAuthConfig.AuthType = PluginAuthType.ApiKeyPluginVault;
+                    break;
+                case PluginSecurityScheme.Oauth2:
+                    pluginAuthConfig.AuthType = PluginAuthType.OAuthPluginVault;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(pluginAuthType), $"Unknown plugin auth type '{pluginAuthType}'");
+            }
+            Configuration.Generation.PluginAuthInformation = pluginAuthConfig;
+        }
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)

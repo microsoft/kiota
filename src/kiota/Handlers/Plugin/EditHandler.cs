@@ -40,7 +40,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-    public required Option<PluginAuthType> PluginAuthTypeOption
+    public required Option<PluginSecurityScheme> PluginAuthTypeOption
     {
         get; init;
     }
@@ -56,7 +56,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType>? pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption);
-        PluginAuthType pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        PluginSecurityScheme? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
         string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
@@ -67,7 +67,24 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
-
+        if (pluginAuthType.HasValue && !string.IsNullOrEmpty(pluginAuthRefId))
+        {
+            var pluginAuthConfig = new PluginAuthConfiguration(pluginAuthRefId);
+            switch (pluginAuthType)
+            {
+                case PluginSecurityScheme.ApiKey:
+                case PluginSecurityScheme.Http:
+                case PluginSecurityScheme.OpenIdConnect:
+                    pluginAuthConfig.AuthType = PluginAuthType.ApiKeyPluginVault;
+                    break;
+                case PluginSecurityScheme.Oauth2:
+                    pluginAuthConfig.AuthType = PluginAuthType.OAuthPluginVault;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(pluginAuthType), $"Unknown plugin auth type '{pluginAuthType}'");
+            }
+            Configuration.Generation.PluginAuthInformation = pluginAuthConfig;
+        }
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
