@@ -8,13 +8,18 @@ public class RequestInfoComparer : IEqualityComparer<RequestInfo>
 {
     public bool Equals(RequestInfo? x, RequestInfo? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return x?.Equals(y) == true;
+        const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
+        return x.Method?.Equals(y.Method, comparison) == true && x.UriTemplate?.Equals(y.UriTemplate, comparison) == true;
     }
 
     public int GetHashCode([DisallowNull] RequestInfo obj)
     {
-        if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.Method) ? 0 : obj.Method.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 7 +
-            (string.IsNullOrEmpty(obj.UriTemplate) ? 0 : obj.UriTemplate.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 3;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        var comparer = StringComparer.OrdinalIgnoreCase;
+        hash.Add(obj.Method, comparer);
+        hash.Add(obj.UriTemplate, comparer);
+        return hash.ToHashCode();
     }
 }

@@ -11,15 +11,24 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
     /// <inheritdoc/>
     public virtual bool Equals(T? x, T? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return x?.Equals(y) == true;
+        const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
+        var comparer = StringComparer.OrdinalIgnoreCase;
+        return x.DescriptionLocation.Equals(y.DescriptionLocation, comparison)
+               && x.OutputPath.Equals(y.OutputPath, comparison)
+               && x.IncludePatterns.SequenceEqual(y.IncludePatterns, comparer)
+               && x.ExcludePatterns.SequenceEqual(y.ExcludePatterns, comparer);
     }
 
     public virtual int GetHashCode([DisallowNull] T obj)
     {
-        if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 7 +
-            (string.IsNullOrEmpty(obj.OutputPath) ? 0 : obj.OutputPath.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 5 +
-            _stringIEnumerableDeepComparer.GetHashCode(obj.IncludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 3 +
-            _stringIEnumerableDeepComparer.GetHashCode(obj.ExcludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 2;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        var comparer = StringComparer.OrdinalIgnoreCase;
+        hash.Add(obj.DescriptionLocation, comparer);
+        hash.Add(obj.OutputPath, comparer);
+        hash.Add(obj.IncludePatterns, _stringIEnumerableDeepComparer);
+        hash.Add(obj.ExcludePatterns, _stringIEnumerableDeepComparer);
+        return hash.ToHashCode();
     }
 }

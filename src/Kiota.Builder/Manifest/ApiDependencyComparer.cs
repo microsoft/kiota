@@ -20,16 +20,45 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     /// <inheritdoc/>
     public bool Equals(ApiDependency? x, ApiDependency? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return x?.Equals(y) == true;
+        string xExtensions = string.Empty, yExtensions = string.Empty;
+        if (x.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
+            true && n0 is JsonValue valueX && valueX.GetValueKind() is JsonValueKind.String)
+        {
+            xExtensions = valueX.GetValue<string>();
+        }
+        if (y.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n1) ==
+            true && n1 is JsonValue valueY && valueY.GetValueKind() is JsonValueKind.String)
+        {
+            yExtensions = valueY.GetValue<string>();
+        }
+        const StringComparison sc = StringComparison.OrdinalIgnoreCase;
+        // Assume requests are equal if we aren't comparing them.
+        var requestsEqual = !CompareRequests || x.Requests.SequenceEqual(y.Requests, requestInfoComparer);
+        return x.ApiDescriptionUrl?.Equals(y.ApiDescriptionUrl, sc) == true
+               && x.ApiDescriptionVersion?.Equals(y.ApiDescriptionVersion, sc) == true
+               && xExtensions?.Equals(yExtensions, sc) == true
+               && requestsEqual;
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] ApiDependency obj)
     {
-        if (obj == null) return 0;
-        return
-            (string.IsNullOrEmpty(obj.ApiDescriptionUrl) ? 0 : obj.ApiDescriptionUrl.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
-            (string.IsNullOrEmpty(obj.ApiDescriptionVersion) ? 0 : obj.ApiDescriptionVersion.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
-            (obj.Extensions is not null && obj.Extensions.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var jsonNode) && jsonNode is JsonValue jsonValue && jsonValue.GetValueKind() is JsonValueKind.String ? jsonValue.GetValue<string>().GetHashCode(StringComparison.OrdinalIgnoreCase) : 0) * 19 +
-            (CompareRequests ? obj.Requests.Select(requestInfoComparer.GetHashCode).Sum() : 0) * 17;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        var sc = StringComparer.OrdinalIgnoreCase;
+        hash.Add(obj.ApiDescriptionUrl, sc);
+        if (obj.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
+            true && n0 is JsonValue valueX)
+        {
+            hash.Add(valueX.GetValue<string>(), sc);
+        }
+
+        if (!CompareRequests) return hash.ToHashCode();
+
+        foreach (var request in obj.Requests)
+        {
+            hash.Add(request, requestInfoComparer);
+        }
+        return hash.ToHashCode();
     }
 }

@@ -9,11 +9,17 @@ internal class GlobComparer : IEqualityComparer<Glob>
 {
     public bool Equals(Glob? x, Glob? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is not null && y is not null)
+        {
+            return x.ToString().Equals(y.ToString(), StringComparison.OrdinalIgnoreCase);
+        }
+        return x?.Equals(y) == true;
     }
 
     public int GetHashCode([DisallowNull] Glob obj)
     {
-        return obj.ToString().GetHashCode(StringComparison.OrdinalIgnoreCase);
+        var hash = new HashCode();
+        hash.Add(obj.ToString(), StringComparer.OrdinalIgnoreCase);
+        return hash.ToHashCode();
     }
 }

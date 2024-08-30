@@ -9,16 +9,20 @@ internal class OpenApiSchemaReferenceComparer : IEqualityComparer<OpenApiSchema>
 {
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
-        return (x, y) switch
-        {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            _ => GetHashCode(x) == GetHashCode(y),
-        };
+        return x?.Reference.Id.Equals(y?.Reference.Id, StringComparison.OrdinalIgnoreCase) == true;
     }
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
     {
-        return obj.Reference is not null && !string.IsNullOrEmpty(obj.Reference.Id) ? obj.Reference.Id.GetHashCode(StringComparison.OrdinalIgnoreCase) : obj.GetHashCode();
+        var hash = new HashCode();
+        if (!string.IsNullOrEmpty(obj.Reference.Id))
+        {
+            hash.Add(obj.Reference.Id, StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            hash.Add(obj);
+        }
+
+        return hash.ToHashCode();
     }
 }
