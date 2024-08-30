@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
@@ -24,12 +25,29 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
     {
         ArgumentNullException.ThrowIfNull(config);
         Types = config.PluginTypes.Select(x => x.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        AuthType = config.PluginAuthInformation?.AuthType.ToString();
+        AuthReferenceId = config.PluginAuthInformation?.ReferenceId;
     }
     public HashSet<string> Types { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? AuthType
+    {
+        get;
+        set;
+    }
+
+    public string? AuthReferenceId
+    {
+        get;
+        set;
+    }
+    
     public object Clone()
     {
         var result = new ApiPluginConfiguration()
         {
+            AuthType = AuthType,
+            AuthReferenceId = AuthReferenceId,
             Types = new HashSet<string>(Types, StringComparer.OrdinalIgnoreCase)
         };
         CloneBase(result);
@@ -46,6 +64,13 @@ public class ApiPluginConfiguration : BaseApiConsumerConfiguration, ICloneable
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrEmpty(pluginName);
         config.PluginTypes = Types.Select(x => Enum.TryParse<PluginType>(x, true, out var result) ? result : (PluginType?)null).OfType<PluginType>().ToHashSet();
+        if (AuthReferenceId is not null && Enum.TryParse<PluginAuthType>(AuthType, out var authType))
+        {
+            config.PluginAuthInformation = new PluginAuthConfiguration(AuthReferenceId)
+            {
+                AuthType = authType,
+            };
+        }
         UpdateGenerationConfigurationFromBase(config, pluginName, requests);
     }
 }

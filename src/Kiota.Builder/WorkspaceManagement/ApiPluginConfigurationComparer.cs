@@ -16,6 +16,9 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
         if (obj == null) return 0;
         return
             _stringIEnumerableDeepComparer.GetHashCode(obj.Types?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 11 +
+            string.GetHashCode(obj.AuthType, StringComparison.OrdinalIgnoreCase) +
+            0xff.GetHashCode() + // Separate the 2 strings. avoids "autha", "uthref" vs "auth", "authref" having the same hash
+            string.GetHashCode(obj.AuthReferenceId, StringComparison.OrdinalIgnoreCase) +
             base.GetHashCode(obj);
     }
 }
