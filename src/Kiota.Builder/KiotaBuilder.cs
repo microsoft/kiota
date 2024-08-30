@@ -1709,7 +1709,7 @@ public partial class KiotaBuilder
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false)) &&
             schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
-        {
+        {// once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             return new CodeType
