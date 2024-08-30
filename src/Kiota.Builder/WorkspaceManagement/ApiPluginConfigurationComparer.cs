@@ -24,8 +24,7 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
         hash.Add(obj.AuthType, StringComparer.OrdinalIgnoreCase);
         hash.Add(obj.AuthReferenceId, StringComparer.OrdinalIgnoreCase);
         hash.Add(obj.Types, _stringIEnumerableDeepComparer);
-        return
-            hash.ToHashCode() * 11 +
-            base.GetHashCode(obj);
+        hash.Add(base.GetHashCode(obj));
+        return hash.ToHashCode();
     }
 }

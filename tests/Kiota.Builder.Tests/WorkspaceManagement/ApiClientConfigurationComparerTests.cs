@@ -34,6 +34,7 @@ public sealed class ApiClientConfigurationComparerTests
         hash2.Add(string.Empty, stringComparer);
         hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
         hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
-        Assert.Equal(hash.ToHashCode() * 11 + hash2.ToHashCode(), _comparer.GetHashCode(new() { UsesBackingStore = true }));
+        hash.Add(hash2.ToHashCode());
+        Assert.Equal(hash.ToHashCode(), _comparer.GetHashCode(new() { UsesBackingStore = true }));
     }
 }

@@ -38,7 +38,7 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);
         hash.Add(obj.StructuredMimeTypes, _stringIEnumerableDeepComparer);
-        return
-            hash.ToHashCode() * 11 + base.GetHashCode(obj);
+        hash.Add(base.GetHashCode(obj));
+        return hash.ToHashCode();
     }
 }
