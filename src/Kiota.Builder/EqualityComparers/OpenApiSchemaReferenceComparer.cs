@@ -9,12 +9,13 @@ internal class OpenApiSchemaReferenceComparer : IEqualityComparer<OpenApiSchema>
 {
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
-        return x?.Reference.Id.Equals(y?.Reference.Id, StringComparison.OrdinalIgnoreCase) == true;
+        if (string.IsNullOrEmpty(x?.Reference?.Id) || string.IsNullOrEmpty(y?.Reference?.Id)) return object.Equals(x, y);
+        return string.Equals(x?.Reference?.Id, y?.Reference?.Id, StringComparison.OrdinalIgnoreCase);
     }
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
     {
         var hash = new HashCode();
-        if (!string.IsNullOrEmpty(obj.Reference.Id))
+        if (!string.IsNullOrEmpty(obj.Reference?.Id))
         {
             hash.Add(obj.Reference.Id, StringComparer.OrdinalIgnoreCase);
         }

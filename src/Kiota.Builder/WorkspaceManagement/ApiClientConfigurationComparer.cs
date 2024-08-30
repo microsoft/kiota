@@ -13,7 +13,7 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
 
     public override bool Equals(ApiClientConfiguration? x, ApiClientConfiguration? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         if (x.ExcludeBackwardCompatible != y.ExcludeBackwardCompatible) return false;
         if (x.UsesBackingStore != y.UsesBackingStore) return false;
         if (x.IncludeAdditionalData != y.IncludeAdditionalData) return false;

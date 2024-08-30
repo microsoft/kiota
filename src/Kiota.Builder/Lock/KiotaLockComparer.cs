@@ -14,25 +14,25 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     /// <inheritdoc/>
     public bool Equals(KiotaLock? x, KiotaLock? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         // Manual comparison to avoid false positives on hash collisions.
-        return x.DisableSSLValidation.Equals(y.DisableSSLValidation) &&
-               _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules) &&
-               x.KiotaVersion.Equals(y.KiotaVersion, StringComparison.OrdinalIgnoreCase) &&
-               x.LockFileVersion.Equals(y.LockFileVersion, StringComparison.OrdinalIgnoreCase) &&
-               x.DescriptionLocation.Equals(y.DescriptionLocation, StringComparison.OrdinalIgnoreCase) &&
-               x.DescriptionHash.Equals(y.DescriptionHash, StringComparison.OrdinalIgnoreCase) &&
-               x.ClientClassName.Equals(y.ClientClassName, StringComparison.OrdinalIgnoreCase) &&
-               x.ClientNamespaceName.Equals(y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase) &&
-               x.Language.Equals(y.Language, StringComparison.OrdinalIgnoreCase) &&
-               x.ExcludeBackwardCompatible.Equals(y.ExcludeBackwardCompatible) &&
-               x.UsesBackingStore.Equals(y.UsesBackingStore) &&
-               x.IncludeAdditionalData.Equals(y.IncludeAdditionalData) &&
-               _stringIEnumerableDeepComparer.Equals(x.Serializers, y.Serializers) &&
-               _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers) &&
-               _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes) &&
-               _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns) &&
-               _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns);
+        return x.DisableSSLValidation.Equals(y.DisableSSLValidation)
+               && x.ExcludeBackwardCompatible.Equals(y.ExcludeBackwardCompatible)
+               && x.UsesBackingStore.Equals(y.UsesBackingStore)
+               && x.IncludeAdditionalData.Equals(y.IncludeAdditionalData)
+               && x.KiotaVersion.Equals(y.KiotaVersion, StringComparison.OrdinalIgnoreCase)
+               && x.LockFileVersion.Equals(y.LockFileVersion, StringComparison.OrdinalIgnoreCase)
+               && x.DescriptionLocation.Equals(y.DescriptionLocation, StringComparison.OrdinalIgnoreCase)
+               && x.DescriptionHash.Equals(y.DescriptionHash, StringComparison.OrdinalIgnoreCase)
+               && x.ClientClassName.Equals(y.ClientClassName, StringComparison.OrdinalIgnoreCase)
+               && x.ClientNamespaceName.Equals(y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)
+               && x.Language.Equals(y.Language, StringComparison.OrdinalIgnoreCase)
+               && _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
+               && _stringIEnumerableDeepComparer.Equals(x.Serializers, y.Serializers)
+               && _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers)
+               && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes)
+               && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns)
+               && _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] KiotaLock obj)

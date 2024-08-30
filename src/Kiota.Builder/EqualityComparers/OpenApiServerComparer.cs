@@ -17,7 +17,7 @@ internal sealed class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
     }
     public bool Equals(OpenApiServer? x, OpenApiServer? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
 
         var x0 = TrimProtocol(x.Url);
         var y0 = TrimProtocol(y.Url);

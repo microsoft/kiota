@@ -25,7 +25,7 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
     /// <inheritdoc/>
     public bool Equals(IEnumerable<string>? x, IEnumerable<string>? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
 
         var x0 = _ordered ? x.Order() : x;
         var y0 = _ordered ? y.Order() : y;

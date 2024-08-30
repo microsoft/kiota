@@ -11,7 +11,7 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
     /// <inheritdoc/>
     public virtual bool Equals(T? x, T? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
         var comparer = StringComparer.OrdinalIgnoreCase;
         return x.DescriptionLocation.Equals(y.DescriptionLocation, comparison)

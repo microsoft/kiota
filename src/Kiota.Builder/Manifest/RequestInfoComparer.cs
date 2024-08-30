@@ -8,9 +8,9 @@ public class RequestInfoComparer : IEqualityComparer<RequestInfo>
 {
     public bool Equals(RequestInfo? x, RequestInfo? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
-        return x.Method?.Equals(y.Method, comparison) == true && x.UriTemplate?.Equals(y.UriTemplate, comparison) == true;
+        return string.Equals(x.Method, y.Method, comparison) && string.Equals(x.UriTemplate, y.UriTemplate, comparison);
     }
 
     public int GetHashCode([DisallowNull] RequestInfo obj)

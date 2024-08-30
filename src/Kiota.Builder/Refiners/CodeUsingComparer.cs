@@ -14,7 +14,7 @@ public class CodeUsingComparer : IEqualityComparer<CodeUsing>
     }
     public bool Equals(CodeUsing? x, CodeUsing? y)
     {
-        return (!_compareOnDeclaration || x?.Declaration == y?.Declaration) && (x?.Name?.Equals(y?.Name, StringComparison.Ordinal) ?? false);
+        return (!_compareOnDeclaration || x?.Declaration == y?.Declaration) && string.Equals(x?.Name, y?.Name, StringComparison.Ordinal);
     }
 
     public int GetHashCode([DisallowNull] CodeUsing obj)

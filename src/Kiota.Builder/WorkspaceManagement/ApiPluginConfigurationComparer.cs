@@ -12,7 +12,7 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
     private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
     public override bool Equals(ApiPluginConfiguration? x, ApiPluginConfiguration? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         return x.Types.SequenceEqual(y.Types, StringComparer.OrdinalIgnoreCase) && base.Equals(x, y);
     }
 

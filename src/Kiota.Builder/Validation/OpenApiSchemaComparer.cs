@@ -16,7 +16,6 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
         return EqualsInternal(x, y);
     }
     /// <inheritdoc/>
@@ -29,7 +28,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 
     private bool EqualsInternal(OpenApiSchema? x, OpenApiSchema? y)
     {
-        if (x is null || y is null) return false;
+        if (x is null || y is null) return object.Equals(x, y);
         if (x.Deprecated != y.Deprecated) return false;
         if (x.Nullable != y.Nullable) return false;
         if (x.AdditionalPropertiesAllowed != y.AdditionalPropertiesAllowed) return false;
@@ -49,6 +48,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 
     private static void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
     {
+        if (obj is null) return;
         if (!visitedSchemas.Add(obj)) return;
         hash.Add(obj.Deprecated);
         hash.Add(obj.Nullable);
@@ -132,7 +132,7 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     /// <inheritdoc/>
     public bool Equals(OpenApiDiscriminator? x, OpenApiDiscriminator? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && x.Mapping.SequenceEqual(y.Mapping, mappingComparer);
     }
     /// <inheritdoc/>
@@ -140,7 +140,7 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
-        if (obj.PropertyName is not null) hash.Add(obj.PropertyName);
+        hash.Add(obj.PropertyName);
         foreach (var mapping in obj.Mapping)
         {
             hash.Add(mapping, mappingComparer);
@@ -153,9 +153,9 @@ internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
     /// <inheritdoc/>
     public bool Equals(IOpenApiAny? x, IOpenApiAny? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         // TODO: Can we use the OpenAPI.NET implementation of Equals?
-        return x.AnyType == y.AnyType && x.ToString()?.Equals(y.ToString(), StringComparison.OrdinalIgnoreCase) == true;
+        return x.AnyType == y.AnyType && string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] IOpenApiAny obj)

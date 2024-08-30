@@ -5,12 +5,12 @@ using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.Plugins;
 
-internal class AuthComparer : IEqualityComparer<Auth>
+internal class AuthComparer : IEqualityComparer<Auth?>
 {
     /// <inheritdoc/>
     public bool Equals(Auth? x, Auth? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
+        if (x is null || y is null) return object.Equals(x, y);
         // TODO: Should we compare the reference id as well?
         return x.Type == y.Type;
     }

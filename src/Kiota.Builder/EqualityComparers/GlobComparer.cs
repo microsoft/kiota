@@ -9,8 +9,8 @@ internal class GlobComparer : IEqualityComparer<Glob>
 {
     public bool Equals(Glob? x, Glob? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
-        return x.ToString().Equals(y.ToString(), StringComparison.OrdinalIgnoreCase);
+        if (x is null || y is null) return object.Equals(x, y);
+        return string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     public int GetHashCode([DisallowNull] Glob obj)

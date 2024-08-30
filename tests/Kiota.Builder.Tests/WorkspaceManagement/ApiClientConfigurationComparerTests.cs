@@ -1,4 +1,7 @@
-﻿using Kiota.Builder.WorkspaceManagement;
+﻿using System;
+using System.Collections.Generic;
+using Kiota.Builder.Lock;
+using Kiota.Builder.WorkspaceManagement;
 using Xunit;
 
 namespace Kiota.Builder.Tests.WorkspaceManagement;
@@ -8,7 +11,7 @@ public sealed class ApiClientConfigurationComparerTests
     [Fact]
     public void Defensive()
     {
-        Assert.Equal(0, _comparer.GetHashCode(null));
+        Assert.Equal(new HashCode().ToHashCode(), _comparer.GetHashCode(null));
         Assert.True(_comparer.Equals(null, null));
         Assert.False(_comparer.Equals(new(), null));
         Assert.False(_comparer.Equals(null, new()));
@@ -16,6 +19,21 @@ public sealed class ApiClientConfigurationComparerTests
     [Fact]
     public void GetsHashCode()
     {
-        Assert.Equal(17, _comparer.GetHashCode(new() { UsesBackingStore = true }));
+        var iEnumComparer = new StringIEnumerableDeepComparer();
+        var hash = new HashCode();
+        hash.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
+        var stringComparer = StringComparer.OrdinalIgnoreCase;
+        hash.Add(string.Empty, stringComparer);
+        hash.Add(string.Empty, stringComparer);
+        hash.Add(false);
+        hash.Add(true);
+        hash.Add(false);
+        hash.Add(new List<string>(), iEnumComparer);
+        var hash2 = new HashCode();
+        hash2.Add(string.Empty, stringComparer);
+        hash2.Add(string.Empty, stringComparer);
+        hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
+        hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
+        Assert.Equal(hash.ToHashCode() * 11 + hash2.ToHashCode(), _comparer.GetHashCode(new() { UsesBackingStore = true }));
     }
 }

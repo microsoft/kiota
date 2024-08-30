@@ -20,8 +20,13 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     /// <inheritdoc/>
     public bool Equals(ApiDependency? x, ApiDependency? y)
     {
-        if (x is null || y is null) return x?.Equals(y) == true;
-        string xExtensions = string.Empty, yExtensions = string.Empty;
+        if (x is null || y is null) return object.Equals(x, y);
+
+        const StringComparison sc = StringComparison.OrdinalIgnoreCase;
+        if (!string.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl, sc)) return false;
+        if (!string.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion, sc)) return false;
+
+        string? xExtensions = null, yExtensions = null;
         if (x.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
             true && n0 is JsonValue valueX && valueX.GetValueKind() is JsonValueKind.String)
         {
@@ -32,12 +37,9 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
         {
             yExtensions = valueY.GetValue<string>();
         }
-        const StringComparison sc = StringComparison.OrdinalIgnoreCase;
         // Assume requests are equal if we aren't comparing them.
         var requestsEqual = !CompareRequests || x.Requests.SequenceEqual(y.Requests, requestInfoComparer);
-        return x.ApiDescriptionUrl?.Equals(y.ApiDescriptionUrl, sc) == true
-               && x.ApiDescriptionVersion?.Equals(y.ApiDescriptionVersion, sc) == true
-               && xExtensions?.Equals(yExtensions, sc) == true
+        return string.Equals(xExtensions, yExtensions, sc)
                && requestsEqual;
     }
     /// <inheritdoc/>
