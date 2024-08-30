@@ -10,7 +10,7 @@ public class PluginAuthConfigurationTests
     [Fact]
     public void ThrowsExceptionIfReferenceIdIsNullOrEmpty()
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentNullException>(() =>
         {
             _ = new PluginAuthConfiguration(null);
         });
