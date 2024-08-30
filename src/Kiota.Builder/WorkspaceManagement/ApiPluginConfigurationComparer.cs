@@ -22,7 +22,6 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
         hash.Add(obj.AuthType, StringComparer.OrdinalIgnoreCase);
-        hash.Add(',');
         hash.Add(obj.AuthReferenceId, StringComparer.OrdinalIgnoreCase);
         hash.Add(obj.Types, _stringIEnumerableDeepComparer);
         return

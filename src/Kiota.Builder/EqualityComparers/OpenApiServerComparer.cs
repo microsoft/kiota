@@ -28,6 +28,7 @@ internal sealed class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
         var hash = new HashCode();
         if (string.IsNullOrEmpty(obj?.Url)) return hash.ToHashCode();
         var url = TrimProtocol(obj.Url);
+        // hash can't compute ReadOnlySpan<char>
         foreach (var c in url)
         {
             hash.Add(Char.ToLowerInvariant(c));

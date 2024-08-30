@@ -10,12 +10,16 @@ internal class AuthComparer : IEqualityComparer<Auth>
     /// <inheritdoc/>
     public bool Equals(Auth? x, Auth? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return x?.Equals(y) == true;
+        // TODO: Should we compare the reference id as well?
+        return x.Type == y.Type;
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] Auth obj)
     {
-        if (obj == null) return 0;
-        return obj.Type is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Type) * 3;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.Type, StringComparer.OrdinalIgnoreCase);
+        return hash.ToHashCode();
     }
 }

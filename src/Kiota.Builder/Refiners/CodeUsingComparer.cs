@@ -19,7 +19,9 @@ public class CodeUsingComparer : IEqualityComparer<CodeUsing>
 
     public int GetHashCode([DisallowNull] CodeUsing obj)
     {
-        return (_compareOnDeclaration ? (obj?.Declaration == null ? 0 : obj.Declaration.GetHashCode()) * 7 : 0) +
-                    (string.IsNullOrEmpty(obj?.Name) ? 0 : obj.Name.GetHashCode(StringComparison.Ordinal));
+        var hash = new HashCode();
+        if (_compareOnDeclaration) hash.Add(obj?.Declaration);
+        hash.Add(obj?.Name, StringComparer.Ordinal);
+        return hash.ToHashCode();
     }
 }

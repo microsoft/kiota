@@ -25,23 +25,27 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
     /// <inheritdoc/>
     public bool Equals(IEnumerable<string>? x, IEnumerable<string>? y)
     {
-        if (x is not null && y is not null)
-        {
-            var x0 = _ordered ? x.Order() : x;
-            var y0 = _ordered ? y.Order() : y;
-            return x0.Order().SequenceEqual(y0, _stringComparer);
-        }
-        return x?.Equals(y) == true;
+        if (x is null || y is null) return x?.Equals(y) == true;
+
+        var x0 = _ordered ? x.Order() : x;
+        var y0 = _ordered ? y.Order() : y;
+        return x0.SequenceEqual(y0, _stringComparer);
     }
     /// <inheritdoc/>
     public int GetHashCode(IEnumerable<string> obj)
     {
         var hash = new HashCode();
-        if (obj == null) return hash.ToHashCode();
-        foreach (var item in obj)
+        if (obj is null) return hash.ToHashCode();
+        var items = _ordered switch
         {
+            true => obj.Order(),
+            false => obj
+        };
+        foreach (var item in items)
+        {
+            // hash code calculation is resistant to prefix collissions
+            // i.e. "ab" + "cd" will not be the same as "abc" + "d"
             hash.Add(item, _stringComparer);
-            hash.Add(',');
         };
         return hash.ToHashCode();
     }

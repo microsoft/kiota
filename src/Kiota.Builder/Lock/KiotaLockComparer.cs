@@ -39,15 +39,16 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
+        var stringComparer = StringComparer.OrdinalIgnoreCase;
         hash.Add(obj.DisableSSLValidation);
         hash.Add(obj.DisabledValidationRules, _stringIEnumerableDeepComparer);
-        hash.Add(obj.KiotaVersion, StringComparer.Ordinal);
-        hash.Add(obj.LockFileVersion, StringComparer.Ordinal);
-        if (string.IsNullOrEmpty(obj.DescriptionLocation)) hash.Add(obj.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrEmpty(obj.DescriptionHash)) hash.Add(obj.DescriptionHash, StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrEmpty(obj.ClientClassName)) hash.Add(obj.ClientClassName, StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrEmpty(obj.ClientNamespaceName)) hash.Add(obj.ClientNamespaceName, StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrEmpty(obj.Language)) hash.Add(obj.Language, StringComparer.OrdinalIgnoreCase);
+        hash.Add(obj.KiotaVersion, stringComparer);
+        hash.Add(obj.LockFileVersion, stringComparer);
+        hash.Add(obj.DescriptionLocation, stringComparer);
+        hash.Add(obj.DescriptionHash, stringComparer);
+        hash.Add(obj.ClientClassName, stringComparer);
+        hash.Add(obj.ClientNamespaceName, stringComparer);
+        hash.Add(obj.Language, stringComparer);
         hash.Add(obj.ExcludeBackwardCompatible);
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);
