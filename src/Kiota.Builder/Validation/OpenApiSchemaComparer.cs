@@ -36,7 +36,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
         if (!string.Equals(x.Format, y.Format, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.Equals(x.Title, y.Title, StringComparison.Ordinal)) return false;
-        if (!openApiAnyComparer.Equals(x.Default,y.Default)) return false;
+        if (!openApiAnyComparer.Equals(x.Default, y.Default)) return false;
         if (!EqualsInternal(x.AdditionalProperties, y.AdditionalProperties)) return false;
         if (!EqualsInternal(x.Items, y.Items)) return false;
         if (!Enumerable.SequenceEqual(x.Properties, y.Properties, schemaMapComparer)) return false;

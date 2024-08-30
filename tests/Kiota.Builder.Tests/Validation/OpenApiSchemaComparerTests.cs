@@ -6,7 +6,6 @@ namespace Kiota.Builder.Tests.Validation;
 
 public class OpenApiSchemaComparerTests
 {
-    
     private readonly OpenApiSchemaComparer _comparer = new();
     [Fact]
     public void Defensive()

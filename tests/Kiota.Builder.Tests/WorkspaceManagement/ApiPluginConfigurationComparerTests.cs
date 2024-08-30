@@ -20,7 +20,7 @@ public class ApiPluginConfigurationComparerTests
     public void TestEquals()
     {
         Assert.True(_comparer.Equals(new(), new()));
-        Assert.True(_comparer.Equals(new() {Types = ["a", "b", "c"]}, new() {Types = ["a", "b", "c"]}));
+        Assert.True(_comparer.Equals(new() { Types = ["a", "b", "c"] }, new() { Types = ["a", "b", "c"] }));
     }
     [Fact]
     public void GetsHashCode()

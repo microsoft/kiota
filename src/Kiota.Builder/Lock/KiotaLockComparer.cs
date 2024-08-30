@@ -19,7 +19,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         return x.DisableSSLValidation == y.DisableSSLValidation
                && x.ExcludeBackwardCompatible == y.ExcludeBackwardCompatible
                && x.UsesBackingStore == y.UsesBackingStore
-               && x.IncludeAdditionalData==y.IncludeAdditionalData
+               && x.IncludeAdditionalData == y.IncludeAdditionalData
                && string.Equals(x.KiotaVersion, y.KiotaVersion, StringComparison.OrdinalIgnoreCase)
                && string.Equals(x.LockFileVersion, y.LockFileVersion, StringComparison.OrdinalIgnoreCase)
                && string.Equals(x.DescriptionLocation, y.DescriptionLocation, StringComparison.OrdinalIgnoreCase)
