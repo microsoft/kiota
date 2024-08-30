@@ -582,8 +582,8 @@ public static partial class KiotaHost
         var option1Result = commandResult.Children.FirstOrDefault(c => c.Symbol == option1) as OptionResult;
         var option2Result = commandResult.Children.FirstOrDefault(c => c.Symbol == option2) as OptionResult;
 
-        bool option1HasValue = option1Result?.Tokens.Any() ?? false;
-        bool option2HasValue = option2Result?.Tokens.Any() ?? false;
+        var option1HasValue = option1Result.Tokens.Any();
+        var option2HasValue = option2Result.Tokens.Any();
 
         if (option1HasValue != option2HasValue) // If one is set but not the other
         {
