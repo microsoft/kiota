@@ -1698,7 +1698,7 @@ public partial class KiotaBuilder
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
+        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
                                                         !x.HasAnyProperty() &&
@@ -1707,19 +1707,16 @@ public partial class KiotaBuilder
                                                         !x.IsInherited() &&
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
-                                                        !x.IsReferencedSchema()) ?? false))
-        { // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
-            var targetSchema = schema.AnyOf?.First(static x => !string.IsNullOrEmpty(x.GetSchemaName()));
-            if (targetSchema is not null)
+                                                        !x.IsReferencedSchema()) ?? false)) &&
+            schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+        {
+            var className = targetSchema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            return new CodeType
             {
-                var className = targetSchema.GetSchemaName().CleanupSymbolName();
-                var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
-                return new CodeType
-                {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
-                    CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
-                };// so we don't create unnecessary union types when anyOf was used only for nullable.
-            }
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
+                CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
+            };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
         var (unionType, schemas) = (schema.IsExclusiveUnion(), schema.IsInclusiveUnion()) switch
         {
