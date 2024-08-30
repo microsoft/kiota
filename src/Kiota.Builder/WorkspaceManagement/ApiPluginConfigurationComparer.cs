@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Kiota.Builder.Lock;
@@ -13,11 +14,20 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
     /// <inheritdoc/>
     public override int GetHashCode([DisallowNull] ApiPluginConfiguration obj)
     {
-        if (obj == null) return 0;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        if (obj.AuthType is { } authType)
+        {
+            hash.Add(authType, StringComparer.OrdinalIgnoreCase);
+        }
+        hash.Add(0);
+        if (obj.AuthReferenceId is { } referenceId)
+        {
+            hash.Add(referenceId, StringComparer.OrdinalIgnoreCase);
+        }
         return
             _stringIEnumerableDeepComparer.GetHashCode(obj.Types?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 11 +
-            string.GetHashCode(obj.AuthType, StringComparison.OrdinalIgnoreCase) * 23 +
-            string.GetHashCode(obj.AuthReferenceId, StringComparison.OrdinalIgnoreCase) * 29 +
+            hash.ToHashCode() +
             base.GetHashCode(obj);
     }
 }
