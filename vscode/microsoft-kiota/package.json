@@ -459,7 +459,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.6.4",
+    "@stylistic/eslint-plugin-ts": "^2.7.1",
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.7",
     "@types/node": "22.x",
@@ -478,7 +478,7 @@
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.7",
     "@vscode/l10n": "^0.0.18",
-    "adm-zip": "^0.5.15",
+    "adm-zip": "^0.5.16",
     "is-online": "^11.0.0",
     "original-fs": "^1.2.0",
     "vscode-jsonrpc": "^8.2.1"

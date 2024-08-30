@@ -162,15 +162,24 @@ export function allGenerationLanguagesToString(): string[] {
   return allSupportedLanguages;
 }
 
-export function validateDeepLinkQueryParams(queryParameters: Record<string, string>):
- [Record<string, string|undefined>, string[]]
+export interface IntegrationParams {
+  descriptionurl: string;
+  name: string;
+  kind: string;
+  type: string;
+  language: string;
+  source: string;
+};
+
+export function validateDeepLinkQueryParams(queryParameters: Partial<IntegrationParams>):
+ [Partial<IntegrationParams>, string[]]
 {
   let errormsg: string [] = [];
-  let validQueryParams: Record<string, string|undefined> = {};
-  const descriptionUrl = queryParameters["descriptionurl"];
+  let validQueryParams: Partial<IntegrationParams> = {};
+  const descriptionurl = queryParameters["descriptionurl"];
   const name = getSanitizedString(queryParameters["name"]);
   const source = getSanitizedString(queryParameters["source"]);
-  let lowercasedKind: string = queryParameters["kind"]?.toLowerCase();
+  let lowercasedKind: string = queryParameters["kind"]?.toLowerCase() ?? "";
   let validKind: string | undefined = ["plugin", "client"].indexOf(lowercasedKind) > -1 ? lowercasedKind : undefined ;
   if (!validKind){
     errormsg.push(
@@ -215,7 +224,7 @@ export function validateDeepLinkQueryParams(queryParameters: Record<string, stri
   }
 
   validQueryParams = {
-    descriptionUrl: descriptionUrl,
+    descriptionurl: descriptionurl,
     name: name,
     kind: validKind,
     type: providedType,

@@ -463,6 +463,8 @@ extends:
                       replaceExistingArchive: true
                   - task: EsrpCodeSigning@5
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+                    timeoutInMinutes: 15
+                    retryCountOnTaskFailure: 4
                     inputs:
                       ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
                       AppRegistrationClientId: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
@@ -493,6 +495,8 @@ extends:
                         **/*.zip
                   - task: EsrpCodeSigning@5
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+                    timeoutInMinutes: 15
+                    retryCountOnTaskFailure: 4
                     inputs:
                       ConnectedServiceName: 'Federated DevX ESRP Managed Identity Connection'
                       AppRegistrationClientId: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
