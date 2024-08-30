@@ -154,10 +154,10 @@ extends:
                   version: 8.x
 
               # Install the nuget tool.
-              - task: NuGetToolInstaller@0
-                displayName: "Use NuGet >=6.1.0"
+              - task: NuGetToolInstaller@1
+                displayName: "Use NuGet >=6.11.0"
                 inputs:
-                  versionSpec: ">=6.1.0"
+                  versionSpec: ">=6.11.0"
                   checkLatest: true
 
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }} -excludeHeadingDash
