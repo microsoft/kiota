@@ -19,6 +19,8 @@ internal class OpenAPIRuntimeComparer : IEqualityComparer<OpenApiRuntime>
     /// <inheritdoc/>
     public bool Equals(OpenApiRuntime? x, OpenApiRuntime? y)
     {
+        // Unit tests check for this
+        if (x is null && y is null) return true;
         if (x is null || y is null) return x?.Equals(y) == true;
         bool functionsEqual = !EvaluateFunctions || _stringIEnumerableDeepComparer.Equals(x.RunForFunctions, y.RunForFunctions);
         return functionsEqual && _openApiRuntimeSpecComparer.Equals(x.Spec, y.Spec) && _authComparer.Equals(x.Auth, y.Auth);
