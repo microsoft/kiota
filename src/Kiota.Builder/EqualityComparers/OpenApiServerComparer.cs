@@ -21,7 +21,7 @@ internal sealed class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
 
         var x0 = TrimProtocol(x.Url);
         var y0 = TrimProtocol(y.Url);
-        return x0.Equals(y0, StringComparison.OrdinalIgnoreCase);
+        return MemoryExtensions.Equals(x0, y0, StringComparison.OrdinalIgnoreCase);
     }
     public int GetHashCode([DisallowNull] OpenApiServer obj)
     {

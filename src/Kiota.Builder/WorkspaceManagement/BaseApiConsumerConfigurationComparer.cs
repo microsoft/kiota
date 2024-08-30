@@ -14,8 +14,8 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
         if (x is null || y is null) return object.Equals(x, y);
         const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
         var comparer = StringComparer.OrdinalIgnoreCase;
-        return x.DescriptionLocation.Equals(y.DescriptionLocation, comparison)
-               && x.OutputPath.Equals(y.OutputPath, comparison)
+        return string.Equals(x.DescriptionLocation, y.DescriptionLocation, comparison)
+               && string.Equals(x.OutputPath, y.OutputPath, comparison)
                && x.IncludePatterns.SequenceEqual(y.IncludePatterns, comparer)
                && x.ExcludePatterns.SequenceEqual(y.ExcludePatterns, comparer);
     }

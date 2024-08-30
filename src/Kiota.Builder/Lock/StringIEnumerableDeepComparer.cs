@@ -10,7 +10,7 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
 {
     private readonly StringComparer _stringComparer;
     private readonly bool _ordered;
-
+    
     /// <summary>
     /// Creates a new instance of <see cref="StringIEnumerableDeepComparer"/>. This class performs equality comparison
     /// on elements of the <see cref="IEnumerable{T}"/> of <see cref="string"/>
@@ -29,7 +29,7 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
 
         var x0 = _ordered ? x.Order() : x;
         var y0 = _ordered ? y.Order() : y;
-        return x0.SequenceEqual(y0, _stringComparer);
+        return Enumerable.SequenceEqual(x0, y0, _stringComparer);
     }
     /// <inheritdoc/>
     public int GetHashCode(IEnumerable<string> obj)

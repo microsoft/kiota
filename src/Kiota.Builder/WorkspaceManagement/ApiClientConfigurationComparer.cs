@@ -17,8 +17,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         if (x.ExcludeBackwardCompatible != y.ExcludeBackwardCompatible) return false;
         if (x.UsesBackingStore != y.UsesBackingStore) return false;
         if (x.IncludeAdditionalData != y.IncludeAdditionalData) return false;
-        if (!x.ClientNamespaceName.Equals(y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!x.Language.Equals(y.Language, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(x.ClientNamespaceName, y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(x.Language, y.Language, StringComparison.OrdinalIgnoreCase)) return false;
 
         // slow deep comparison
         return _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)

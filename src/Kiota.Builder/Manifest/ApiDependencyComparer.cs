@@ -21,10 +21,10 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     public bool Equals(ApiDependency? x, ApiDependency? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-
+        
         const StringComparison sc = StringComparison.OrdinalIgnoreCase;
         if (!string.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl, sc)) return false;
-        if (!string.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion, sc)) return false;
+        if(!string.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion, sc)) return false;
 
         string? xExtensions = null, yExtensions = null;
         if (x.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
@@ -53,6 +53,10 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
             true && n0 is JsonValue valueX)
         {
             hash.Add(valueX.GetValue<string>(), sc);
+        }
+        else
+        {
+            hash.Add(string.Empty);
         }
 
         if (!CompareRequests) return hash.ToHashCode();

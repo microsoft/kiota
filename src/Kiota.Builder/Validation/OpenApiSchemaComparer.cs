@@ -33,16 +33,16 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
         if (x.Nullable != y.Nullable) return false;
         if (x.AdditionalPropertiesAllowed != y.AdditionalPropertiesAllowed) return false;
         if (!discriminatorComparer.Equals(x.Discriminator, y.Discriminator)) return false;
-        if (!x.Format.Equals(y.Format, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!x.Type.Equals(y.Type, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!x.Title.Equals(y.Title, StringComparison.Ordinal)) return false;
-        if (!openApiAnyComparer.Equals(x.Default, y.Default)) return false;
+        if (!string.Equals(x.Format, y.Format, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(x.Title, y.Title, StringComparison.Ordinal)) return false;
+        if (!openApiAnyComparer.Equals(x.Default,y.Default)) return false;
         if (!EqualsInternal(x.AdditionalProperties, y.AdditionalProperties)) return false;
-        if (!x.Properties.SequenceEqual(y.Properties, schemaMapComparer)) return false;
         if (!EqualsInternal(x.Items, y.Items)) return false;
-        if (!x.AnyOf.SequenceEqual(y.AnyOf, this)) return false;
-        if (!x.AllOf.SequenceEqual(y.AllOf, this)) return false;
-        if (!x.OneOf.SequenceEqual(y.OneOf, this)) return false;
+        if (!Enumerable.SequenceEqual(x.Properties, y.Properties, schemaMapComparer)) return false;
+        if (!Enumerable.SequenceEqual(x.AnyOf, y.AnyOf, this)) return false;
+        if (!Enumerable.SequenceEqual(x.AllOf, y.AllOf, this)) return false;
+        if (!Enumerable.SequenceEqual(x.OneOf, y.OneOf, this)) return false;
         return true;
     }
 

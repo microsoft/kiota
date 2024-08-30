@@ -16,17 +16,17 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         if (x is null || y is null) return object.Equals(x, y);
         // Manual comparison to avoid false positives on hash collisions.
-        return x.DisableSSLValidation.Equals(y.DisableSSLValidation)
-               && x.ExcludeBackwardCompatible.Equals(y.ExcludeBackwardCompatible)
-               && x.UsesBackingStore.Equals(y.UsesBackingStore)
-               && x.IncludeAdditionalData.Equals(y.IncludeAdditionalData)
-               && x.KiotaVersion.Equals(y.KiotaVersion, StringComparison.OrdinalIgnoreCase)
-               && x.LockFileVersion.Equals(y.LockFileVersion, StringComparison.OrdinalIgnoreCase)
-               && x.DescriptionLocation.Equals(y.DescriptionLocation, StringComparison.OrdinalIgnoreCase)
-               && x.DescriptionHash.Equals(y.DescriptionHash, StringComparison.OrdinalIgnoreCase)
-               && x.ClientClassName.Equals(y.ClientClassName, StringComparison.OrdinalIgnoreCase)
-               && x.ClientNamespaceName.Equals(y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)
-               && x.Language.Equals(y.Language, StringComparison.OrdinalIgnoreCase)
+        return x.DisableSSLValidation == y.DisableSSLValidation
+               && x.ExcludeBackwardCompatible == y.ExcludeBackwardCompatible
+               && x.UsesBackingStore == y.UsesBackingStore
+               && x.IncludeAdditionalData==y.IncludeAdditionalData
+               && string.Equals(x.KiotaVersion, y.KiotaVersion, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.LockFileVersion, y.LockFileVersion, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.DescriptionLocation, y.DescriptionLocation, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.DescriptionHash, y.DescriptionHash, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.ClientClassName, y.ClientClassName, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.ClientNamespaceName, y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.Language, y.Language, StringComparison.OrdinalIgnoreCase)
                && _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
                && _stringIEnumerableDeepComparer.Equals(x.Serializers, y.Serializers)
                && _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers)
