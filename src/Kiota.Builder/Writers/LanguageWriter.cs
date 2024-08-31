@@ -179,18 +179,18 @@ public abstract class LanguageWriter
             Writers[typeof(T)] = writer;
     }
     private readonly Dictionary<Type, object> Writers = []; // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
-    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false, bool excludeBackwardCompatible = false)
+    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, string? clientClassAccessModifier = null, bool usesBackingStore = false, bool excludeBackwardCompatible = false)
     {
         return language switch
         {
-            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, clientClassAccessModifier),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
-            GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName, clientClassAccessModifier),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
         };

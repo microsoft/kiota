@@ -431,6 +431,10 @@ public static partial class KiotaHost
         classOption.AddAlias("-c");
         classOption.ArgumentHelpName = "name";
         AddStringRegexValidator(classOption, classNameRegex(), "class name");
+        
+        var classAccessModifierOption = new Option<string>("--class-access-modifier", "The class access modifier to use for the client classes.");
+        classAccessModifierOption.AddAlias("-cam");
+        classAccessModifierOption.ArgumentHelpName = "class accessibility";
 
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
@@ -474,6 +478,7 @@ public static partial class KiotaHost
             outputOption,
             languageOption,
             classOption,
+            classAccessModifierOption,
             namespaceOption,
             logLevelOption,
             backingStoreOption,
@@ -496,6 +501,7 @@ public static partial class KiotaHost
             OutputOption = outputOption,
             LanguageOption = languageOption,
             ClassOption = classOption,
+            ClassAccessModifierOption = classAccessModifierOption,
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,

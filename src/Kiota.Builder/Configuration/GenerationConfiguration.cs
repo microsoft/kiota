@@ -38,6 +38,7 @@ public class GenerationConfiguration : ICloneable
     public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
+    public string? ClientClassAccessModifier { get; set; }
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
     public bool ExportPublicApi

@@ -31,6 +31,10 @@ public class KiotaLock
     /// </summary>
     public string ClientClassName { get; set; } = string.Empty;
     /// <summary>
+    /// The class access modifier to use for the client classes.
+    /// </summary>
+    public string? ClientClassAccessModifier { get; set; }
+    /// <summary>
     /// The main namespace for this client.
     /// </summary>
     public string ClientNamespaceName { get; set; } = string.Empty;
@@ -102,6 +106,7 @@ public class KiotaLock
     {
         ArgumentNullException.ThrowIfNull(config);
         config.ClientClassName = ClientClassName;
+        config.ClientClassAccessModifier = ClientClassAccessModifier;
         config.ClientNamespaceName = ClientNamespaceName;
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
             config.Language = parsedLanguage;
@@ -132,6 +137,7 @@ public class KiotaLock
         ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
         ClientClassName = config.ClientClassName;
+        ClientClassAccessModifier = config.ClientClassAccessModifier;
         ClientNamespaceName = config.ClientNamespaceName;
         UsesBackingStore = config.UsesBackingStore;
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;

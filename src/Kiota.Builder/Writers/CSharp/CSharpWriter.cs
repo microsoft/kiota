@@ -3,11 +3,11 @@
 namespace Kiota.Builder.Writers.CSharp;
 public class CSharpWriter : LanguageWriter
 {
-    public CSharpWriter(string rootPath, string clientNamespaceName)
+    public CSharpWriter(string rootPath, string clientNamespaceName, string? clientClassAccessModifier)
     {
         PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new CSharpConventionService();
-        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientClassAccessModifier));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));

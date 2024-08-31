@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the ability to export the CodeDom to a file showing the public APIs to be generated in a given language [#4627](https://github.com/microsoft/kiota/issues/4627)
 - Added composed type serialization in Typescript [2462](https://github.com/microsoft/kiota/issues/2462)
 - Use authentication information available in the source OpenAPI document when generating a plugin manifest. [#5070](https://github.com/microsoft/kiota/issues/5070)
+- Control generated class access modifier for C# via `--class-access-modifier` flag. [#4788](https://github.com/microsoft/kiota/issues/4788)
 
 ### Changed
 

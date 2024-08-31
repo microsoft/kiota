@@ -27,6 +27,10 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<string> ClassAccessModifierOption
+    {
+        get; init;
+    }
     public required Option<string> NamespaceOption
     {
         get; init;
@@ -72,6 +76,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
+        string? classAccessModifier = context.ParseResult.GetValueForOption(ClassAccessModifierOption);
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
         List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption) ?? [];
         List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption) ?? [];
@@ -86,6 +91,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(manifest, (c, s) => c.ApiManifestPath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
+        Configuration.Generation.ClientClassAccessModifier = classAccessModifier;
         Configuration.Generation.UsesBackingStore = backingStore;
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
