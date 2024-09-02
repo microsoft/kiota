@@ -68,24 +68,7 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
-        if (pluginAuthType.HasValue && !string.IsNullOrEmpty(pluginAuthRefId))
-        {
-            var pluginAuthConfig = new PluginAuthConfiguration(pluginAuthRefId);
-            switch (pluginAuthType)
-            {
-                case SecuritySchemeType.ApiKey:
-                case SecuritySchemeType.Http:
-                case SecuritySchemeType.OpenIdConnect:
-                    pluginAuthConfig.AuthType = PluginAuthType.ApiKeyPluginVault;
-                    break;
-                case SecuritySchemeType.OAuth2:
-                    pluginAuthConfig.AuthType = PluginAuthType.OAuthPluginVault;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(pluginAuthType), $"Unknown plugin auth type '{pluginAuthType}'");
-            }
-            Configuration.Generation.PluginAuthInformation = pluginAuthConfig;
-        }
+        Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
