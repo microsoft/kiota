@@ -4,6 +4,7 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { createTemporaryFolder } from './utilities/temporary-folder';
+import { isPathInWorkspace } from './utilities/workspace';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -156,7 +157,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string') {
+    if (typeof state.outputPath === 'string' && !isPathInWorkspace(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
@@ -399,7 +400,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
+        while (!state.outputPath) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
                 step: 2,
