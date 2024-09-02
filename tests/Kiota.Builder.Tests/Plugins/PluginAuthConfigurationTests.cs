@@ -1,6 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
+using Microsoft.OpenApi.Models;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;
@@ -43,5 +44,47 @@ public class PluginAuthConfigurationTests
         Assert.NotEmpty(a.SupportedTypes);
         var b = new UnsupportedSecuritySchemeException(["t0"], "msg", new Exception());
         Assert.NotEmpty(b.SupportedTypes);
+    }
+
+    [Fact]
+    public void FromParametersThrowsExceptionIfReferenceIdIsNullOrEmpty()
+    {
+        Assert.Throws<ArgumentException>(() =>
+        {
+            _ = PluginAuthConfiguration.FromParameters(SecuritySchemeType.ApiKey, string.Empty);
+        });
+        Assert.Throws<ArgumentException>(() =>
+        {
+            _ = PluginAuthConfiguration.FromParameters(SecuritySchemeType.ApiKey, null);
+        });
+    }
+
+    [Fact]
+    public void FromParametersThrowsExceptionIfSecuritySchemeTypeIsUnknown()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            _ = PluginAuthConfiguration.FromParameters((SecuritySchemeType)10, "reference");
+        });
+    }
+
+    [Fact]
+    public void FromParametersReturnsCorrectPluginAuthConfiguration()
+    {
+        var pluginAuthConfig = PluginAuthConfiguration.FromParameters(SecuritySchemeType.ApiKey, "reference");
+        Assert.Equal(PluginAuthType.ApiKeyPluginVault, pluginAuthConfig.AuthType);
+        Assert.Equal("reference", pluginAuthConfig.ReferenceId);
+
+        pluginAuthConfig = PluginAuthConfiguration.FromParameters(SecuritySchemeType.Http, "reference");
+        Assert.Equal(PluginAuthType.ApiKeyPluginVault, pluginAuthConfig.AuthType);
+        Assert.Equal("reference", pluginAuthConfig.ReferenceId);
+
+        pluginAuthConfig = PluginAuthConfiguration.FromParameters(SecuritySchemeType.OpenIdConnect, "reference");
+        Assert.Equal(PluginAuthType.ApiKeyPluginVault, pluginAuthConfig.AuthType);
+        Assert.Equal("reference", pluginAuthConfig.ReferenceId);
+
+        pluginAuthConfig = PluginAuthConfiguration.FromParameters(SecuritySchemeType.OAuth2, "reference");
+        Assert.Equal(PluginAuthType.OAuthPluginVault, pluginAuthConfig.AuthType);
+        Assert.Equal("reference", pluginAuthConfig.ReferenceId);
     }
 }
