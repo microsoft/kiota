@@ -146,8 +146,8 @@ export async function activate(
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
         if(Object.keys(deepLinkParams).length > 0){
-          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
-            deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
+          if (!deepLinkParams.name && openApiTreeProvider.apiTitle ){
+            deepLinkParams.name = getSanitizedString(openApiTreeProvider.apiTitle);
           }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
         } else {
