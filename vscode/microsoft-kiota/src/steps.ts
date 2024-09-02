@@ -116,36 +116,32 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-export function transformToGenerationconfig(deepLinkParams: Record<string, string|undefined>)
-    : Partial<GenerateState> 
-{
+export function transformToGenerationconfig(deepLinkParams: Record<string, string | undefined>)
+    : Partial<GenerateState> {
     const generationConfig: Partial<GenerateState> = {};
-    if (deepLinkParams.kind === "client")
-    {
-        generationConfig["generationType"] = "client";
-        generationConfig["clientClassName"] = deepLinkParams.name;
-        generationConfig["language"] = deepLinkParams.language;
+    if (deepLinkParams.kind === "client") {
+        generationConfig.generationType = "client";
+        generationConfig.clientClassName = deepLinkParams.name;
+        generationConfig.language = deepLinkParams.language;
     }
-    else if (deepLinkParams.kind === "plugin")
-    {
-        generationConfig["pluginName"] = deepLinkParams.name;
-        switch(deepLinkParams.type){
+    else if (deepLinkParams.kind === "plugin") {
+        generationConfig.pluginName = deepLinkParams.name;
+        switch (deepLinkParams.type) {
             case "apiplugin":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ["ApiPlugin"];
+                generationConfig.generationType = "plugin";
+                generationConfig.pluginTypes = ["ApiPlugin"];
                 break;
             case "openai":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ['OpenAI'];
+                generationConfig.generationType = "plugin";
+                generationConfig.pluginTypes = ['OpenAI'];
                 break;
             case "apimanifest":
-                generationConfig["generationType"] = "apimanifest";
+                generationConfig.generationType = "apimanifest";
                 break;
-            }
+        }
     }
     return generationConfig;
 }
-
 
 export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
@@ -184,8 +180,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             ];
         }
     }
-    function getNextStepForGenerationType(generationType: string|QuickPickItem) {
-        switch(generationType) {
+    function getNextStepForGenerationType(generationType: string | QuickPickItem) {
+        switch (generationType) {
             case 'client':
                 return inputClientClassName;
             case 'plugin':
@@ -197,30 +193,30 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.generationType){
+        if (!state.generationType) {
             const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
                 step: 1,
                 totalSteps: 1,
                 placeholder: l10n.t('Select an option'),
-                items: items.map(x => ({label: x})),
+                items: items.map(x => ({ label: x })),
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            if(option.label === l10n.t('Generate an API client')) {
+            if (option.label === l10n.t('Generate an API client')) {
                 state.generationType = "client";
             }
-            else if(option.label === l10n.t('Generate a plugin')) { 
+            else if (option.label === l10n.t('Generate a plugin')) {
                 state.generationType = "plugin";
             }
-            else if(option.label === l10n.t('Generate an API manifest')) {
+            else if (option.label === l10n.t('Generate an API manifest')) {
                 state.generationType = "apimanifest";
             }
         }
         let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
         return (input: MultiStepInput) => nextStep(input, state);
-	}
+    }
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!state.clientClassName) {
             state.clientClassName = await input.showInputBox({
@@ -312,7 +308,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName){
+        if (!state.pluginName) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
                 step: step++,
@@ -325,11 +321,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             });
         }
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputPluginType(input, state);      
-    }    
+        return (input: MultiStepInput) => inputPluginType(input, state);
+    }
     async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!state.pluginTypes) {
-            const items = ['API Plugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
+            const items = ['API Plugin', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a plugin type'),
                 step: step++,
@@ -382,7 +378,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
 
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName){
+        if (!state.pluginName) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
                 step: step++,
