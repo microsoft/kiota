@@ -3,8 +3,7 @@ import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
-import { createTemporaryFolder } from './utilities/temporary-folder';
-import { isPathInWorkspace } from './utilities/workspace';
+import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -157,7 +156,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string' && isPathInWorkspace(state.outputPath)) {
+    if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
