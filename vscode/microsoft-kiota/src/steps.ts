@@ -157,7 +157,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string' && !isPathInWorkspace(state.outputPath)) {
+    if (typeof state.outputPath === 'string' && isPathInWorkspace(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
@@ -346,7 +346,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
+        while (!state.outputPath) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
                 step: 3,
@@ -400,7 +400,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputManifestOutputPath(input, state);
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (!state.outputPath) {
+        while (true) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
                 step: 2,
