@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
+import { createTemporaryFolder } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -139,6 +140,10 @@ export function transformToGenerationconfig(deepLinkParams: Record<string, strin
                 generationConfig.generationType = "apimanifest";
                 break;
         }
+        generationConfig.outputPath =
+            (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
+                ? createTemporaryFolder()
+                : undefined;
     }
     return generationConfig;
 }
