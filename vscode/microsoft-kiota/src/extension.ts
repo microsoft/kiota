@@ -212,8 +212,7 @@ export async function activate(
                 'fx-extension.createprojectfromkiota',
                 [
                   pathOfSpec,
-                  pathPluginManifest,
-                  true
+                  pathPluginManifest
                 ]
               );
             } catch (error) {
