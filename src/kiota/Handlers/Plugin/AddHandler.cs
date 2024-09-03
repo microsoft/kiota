@@ -69,7 +69,8 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.Operation = ConsumerOperation.Add;
         if (pluginTypes.Count != 0)
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
-        Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
+        if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
+            Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)
