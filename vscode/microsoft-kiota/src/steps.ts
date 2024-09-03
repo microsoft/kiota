@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory, IntegrationParams } from './util';
+import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -120,25 +121,29 @@ export function transformToGenerationconfig(deepLinkParams: Record<string, strin
     : Partial<GenerateState> {
     const generationConfig: Partial<GenerateState> = {};
     if (deepLinkParams.kind === "client") {
-        generationConfig["generationType"] = "client";
-        generationConfig["clientClassName"] = deepLinkParams.name;
-        generationConfig["language"] = deepLinkParams.language;
+        generationConfig.generationType = "client";
+        generationConfig.clientClassName = deepLinkParams.name;
+        generationConfig.language = deepLinkParams.language;
     }
     else if (deepLinkParams.kind === "plugin") {
-        generationConfig["pluginName"] = deepLinkParams.name;
+        generationConfig.pluginName = deepLinkParams.name;
         switch (deepLinkParams.type) {
             case "apiplugin":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ["ApiPlugin"];
+                generationConfig.generationType = "plugin";
+                generationConfig.pluginTypes = ["ApiPlugin"];
                 break;
             case "openai":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ['OpenAI'];
+                generationConfig.generationType = "plugin";
+                generationConfig.pluginTypes = ['OpenAI'];
                 break;
             case "apimanifest":
-                generationConfig["generationType"] = "apimanifest";
+                generationConfig.generationType = "apimanifest";
                 break;
         }
+        generationConfig.outputPath =
+            (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
+                ? createTemporaryFolder()
+                : undefined;
     }
     return generationConfig;
 }
@@ -152,7 +157,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string') {
+    if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
@@ -342,7 +347,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
+        while (!state.outputPath) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
                 step: 3,
@@ -380,7 +385,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
 
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName) {
+        if (!state.pluginName)  {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
                 step: step++,
