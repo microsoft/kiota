@@ -1512,10 +1512,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (asProperty)
             {
-                if (currentClass.Properties.FirstOrDefault(property => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } sameNameProperty)
+                var serializationName = string.Empty;
+                if (currentClass.FindChildByName<CodeProperty>(name, false) is { } sameNameProperty)
                 {
                     if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
+                    {
                         currentClass.RemoveChildElementByName(name); // type matches so just remove it for replacement
+                        serializationName = sameNameProperty.WireName;
+                    }
                     else
                         currentClass.RenameChildElement(name, $"{name}Escaped"); // type mismatch so just rename it
                 }
@@ -1526,6 +1530,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Access = AccessModifier.Public,
                     Kind = CodePropertyKind.ErrorMessageOverride,
                     Type = type(),
+                    SerializationName = serializationName,
                     Documentation = new()
                     {
                         DescriptionTemplate = "The primary error message.",
