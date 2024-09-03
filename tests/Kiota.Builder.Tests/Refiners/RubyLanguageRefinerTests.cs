@@ -324,5 +324,23 @@ public class RubyLanguageRefinerTests
         Assert.Single(modelsNS.Enums);
         Assert.Empty(subModelsNS.Enums);
     }
+    [Fact]
+    public async Task DoesNotCorrectNamesWhenCollisionOccursAsync()
+    {
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        modelsNS.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+        });
+        modelsNS.AddEnum(new CodeEnum
+        {
+            Name = "some_model",
+        });
+        await ILanguageRefiner.RefineAsync(config, root);
+        Assert.Single(modelsNS.Classes.Where(x => x.Name.Equals("SomeModel")));
+        Assert.Single(modelsNS.Enums.Where(x => x.Name.Equals("some_model")));
+    }
     #endregion
 }
