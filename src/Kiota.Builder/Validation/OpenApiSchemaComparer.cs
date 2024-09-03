@@ -33,28 +33,27 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
     {
         var hash = new HashCode();
-        GetHashCodeInternal(obj, new(), ref hash);
+        GetHashCodeInternal(obj, [], ref hash);
         return hash.ToHashCode();
     }
 
     private bool EqualsInternal(OpenApiSchema? x, OpenApiSchema? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-        if (x.Deprecated != y.Deprecated) return false;
-        if (x.Nullable != y.Nullable) return false;
-        if (x.AdditionalPropertiesAllowed != y.AdditionalPropertiesAllowed) return false;
-        if (!discriminatorComparer.Equals(x.Discriminator, y.Discriminator)) return false;
-        if (!string.Equals(x.Format, y.Format, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.Equals(x.Title, y.Title, StringComparison.Ordinal)) return false;
-        if (!openApiAnyComparer.Equals(x.Default, y.Default)) return false;
-        if (!EqualsInternal(x.AdditionalProperties, y.AdditionalProperties)) return false;
-        if (!EqualsInternal(x.Items, y.Items)) return false;
-        if (!Enumerable.SequenceEqual(x.Properties, y.Properties, schemaMapComparer)) return false;
-        if (!Enumerable.SequenceEqual(x.AnyOf, y.AnyOf, this)) return false;
-        if (!Enumerable.SequenceEqual(x.AllOf, y.AllOf, this)) return false;
-        if (!Enumerable.SequenceEqual(x.OneOf, y.OneOf, this)) return false;
-        return true;
+        return x.Deprecated == y.Deprecated
+               && x.Nullable == y.Nullable
+               && x.AdditionalPropertiesAllowed == y.AdditionalPropertiesAllowed
+               && discriminatorComparer.Equals(x.Discriminator, y.Discriminator)
+               && string.Equals(x.Format, y.Format, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(x.Title, y.Title, StringComparison.Ordinal)
+               && openApiAnyComparer.Equals(x.Default, y.Default)
+               && EqualsInternal(x.AdditionalProperties, y.AdditionalProperties)
+               && EqualsInternal(x.Items, y.Items)
+               && Enumerable.SequenceEqual(x.Properties, y.Properties, schemaMapComparer)
+               && Enumerable.SequenceEqual(x.AnyOf, y.AnyOf, this)
+               && Enumerable.SequenceEqual(x.AllOf, y.AllOf, this)
+               && Enumerable.SequenceEqual(x.OneOf, y.OneOf, this);
     }
 
     private void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
