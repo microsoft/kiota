@@ -3,10 +3,10 @@
 namespace Kiota.Builder.Writers.Cli;
 class CliWriter : CSharpWriter
 {
-    public CliWriter(string rootPath, string clientNamespaceName, string? clientClassAccessModifier) : base(rootPath, clientNamespaceName, clientClassAccessModifier)
+    public CliWriter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName)
     {
         var conventionService = new CSharpConventionService();
-        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientClassAccessModifier));
+        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
@@ -357,6 +358,13 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<AccessModifier> GetTypeAccessModifierOption()
+    {
+        var accessOption = new Option<AccessModifier>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
+    }
     internal static Option<GenerationLanguage?> GetOptionalLanguageOption()
     {
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the generated code files.");
@@ -431,10 +439,8 @@ public static partial class KiotaHost
         classOption.AddAlias("-c");
         classOption.ArgumentHelpName = "name";
         AddStringRegexValidator(classOption, classNameRegex(), "class name");
-        
-        var classAccessModifierOption = new Option<string>("--class-access-modifier", "The class access modifier to use for the client classes.");
-        classAccessModifierOption.AddAlias("-cam");
-        classAccessModifierOption.ArgumentHelpName = "class accessibility";
+
+        var typeAccessModifierOption = GetTypeAccessModifierOption();
 
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
@@ -478,7 +484,7 @@ public static partial class KiotaHost
             outputOption,
             languageOption,
             classOption,
-            classAccessModifierOption,
+            typeAccessModifierOption,
             namespaceOption,
             logLevelOption,
             backingStoreOption,
@@ -501,7 +507,7 @@ public static partial class KiotaHost
             OutputOption = outputOption,
             LanguageOption = languageOption,
             ClassOption = classOption,
-            ClassAccessModifierOption = classAccessModifierOption,
+            TypeAccessModifierOption = typeAccessModifierOption,
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Lock;
@@ -31,9 +32,9 @@ public class KiotaLock
     /// </summary>
     public string ClientClassName { get; set; } = string.Empty;
     /// <summary>
-    /// The class access modifier to use for the client classes.
+    /// The type access modifier to use for the client types.
     /// </summary>
-    public string? ClientClassAccessModifier { get; set; }
+    public string TypeAccessModifier { get; set; } = string.Empty;
     /// <summary>
     /// The main namespace for this client.
     /// </summary>
@@ -106,10 +107,11 @@ public class KiotaLock
     {
         ArgumentNullException.ThrowIfNull(config);
         config.ClientClassName = ClientClassName;
-        config.ClientClassAccessModifier = ClientClassAccessModifier;
-        config.ClientNamespaceName = ClientNamespaceName;
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
             config.Language = parsedLanguage;
+        config.ClientNamespaceName = ClientNamespaceName;
+        if (Enum.TryParse<AccessModifier>(TypeAccessModifier, out var parsedAccessModifier))
+            config.TypeAccessModifier = parsedAccessModifier;
         config.UsesBackingStore = UsesBackingStore;
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
@@ -137,7 +139,7 @@ public class KiotaLock
         ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
         ClientClassName = config.ClientClassName;
-        ClientClassAccessModifier = config.ClientClassAccessModifier;
+        TypeAccessModifier = config.TypeAccessModifier.ToString();
         ClientNamespaceName = config.ClientNamespaceName;
         UsesBackingStore = config.UsesBackingStore;
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;

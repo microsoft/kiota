@@ -110,6 +110,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 "IParseNode"
             );
+            SetTypeAccessModifiers(generatedCode);
         }, cancellationToken);
     }
     protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
@@ -260,4 +261,19 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 })
         },
     };
+
+    private void SetTypeAccessModifiers(CodeElement currentElement)
+    {
+        switch (currentElement)
+        {
+            case CodeClass currentClass:
+                currentClass.Access = _configuration.TypeAccessModifier;
+                break;
+            case CodeEnum currentEnum:
+                currentEnum.Access = _configuration.TypeAccessModifier;
+                break;
+        }
+
+        CrawlTree(currentElement, SetTypeAccessModifiers);
+    }
 }

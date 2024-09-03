@@ -8,6 +8,7 @@ namespace Kiota.Builder.CodeDOM;
 public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition, IDeprecableElement
 {
 #pragma warning restore CA2227
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool Flags
     {
         get; set;

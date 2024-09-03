@@ -20,7 +20,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
 
     public CodeClassDeclarationWriterTests()
     {
-        codeElementWriter = new CodeClassDeclarationWriter(new CSharpConventionService(), null);
+        codeElementWriter = new CodeClassDeclarationWriter(new CSharpConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
@@ -52,19 +52,6 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("public partial class", result);
-    }
-    
-    [Theory]
-    [InlineData(null, "public")]
-    [InlineData("", "public")]
-    [InlineData("  ", "public")]
-    [InlineData("internal", "internal")]
-    public void WritesClassAccessModifier(string accessModifierSetting, string expectedAccessModifier)
-    {
-        var codeElementWriterWithAccessModifier = new CodeClassDeclarationWriter(new CSharpConventionService(), accessModifierSetting);
-        codeElementWriterWithAccessModifier.WriteCodeElement(parentClass.StartBlock, writer);
-        var result = tw.ToString();
-        Assert.Contains($"{expectedAccessModifier} partial class", result);
     }
 
     [Fact]
@@ -135,5 +122,16 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
+    }
+    
+    [Theory]
+    [InlineData(AccessModifier.Public)]
+    [InlineData(AccessModifier.Internal)]
+    public void WritesAccessModifier(AccessModifier accessModifier)
+    {
+        parentClass.Access = accessModifier;
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains($"{accessModifier.ToString().ToLower()} partial class", result);
     }
 }

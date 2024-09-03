@@ -33,6 +33,9 @@ public enum CodeClassKind
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
 {
     private readonly ConcurrentDictionary<string, CodeProperty> PropertiesByWireName = new(StringComparer.OrdinalIgnoreCase);
+    
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
+
     public bool IsErrorDefinition
     {
         get; set;
