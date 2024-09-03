@@ -6,7 +6,7 @@ namespace Kiota.Builder.Lock;
 /// <summary>
 /// A comparer that compares two <see cref="IEnumerable{T}"/> of <see cref="string"/> by their content.
 /// </summary>
-internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<string>>
+public class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<string>>
 {
     private readonly StringComparer _stringComparer;
     private readonly bool _ordered;

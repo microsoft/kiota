@@ -13,9 +13,20 @@ internal class OpenAPIRuntimeComparer : IEqualityComparer<OpenApiRuntime>
     {
         get; init;
     }
-    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
-    private static readonly AuthComparer _authComparer = new();
-    private static readonly OpenApiRuntimeSpecComparer _openApiRuntimeSpecComparer = new();
+    private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
+    private readonly AuthComparer _authComparer;
+    private readonly OpenApiRuntimeSpecComparer _openApiRuntimeSpecComparer;
+
+    public OpenAPIRuntimeComparer(
+        AuthComparer? authComparer = null,
+        OpenApiRuntimeSpecComparer? openApiRuntimeSpecComparer = null,
+        StringIEnumerableDeepComparer? stringIEnumerableDeepComparer = null)
+    {
+        _authComparer = authComparer ?? new AuthComparer();
+        _openApiRuntimeSpecComparer = openApiRuntimeSpecComparer ?? new OpenApiRuntimeSpecComparer();
+        _stringIEnumerableDeepComparer = stringIEnumerableDeepComparer ?? new StringIEnumerableDeepComparer();
+    }
+
     /// <inheritdoc/>
     public bool Equals(OpenApiRuntime? x, OpenApiRuntime? y)
     {

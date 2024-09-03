@@ -10,9 +10,20 @@ namespace Kiota.Builder.Validation;
 
 internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 {
-    private static readonly OpenApiDiscriminatorComparer discriminatorComparer = new();
-    private static readonly OpenApiAnyComparer openApiAnyComparer = new();
-    private static readonly KeyValueComparer<string, OpenApiSchema> schemaMapComparer = new(StringComparer.Ordinal, new OpenApiSchemaComparer());
+    private readonly OpenApiDiscriminatorComparer discriminatorComparer;
+    private readonly OpenApiAnyComparer openApiAnyComparer;
+    private readonly KeyValueComparer<string, OpenApiSchema> schemaMapComparer;
+
+    public OpenApiSchemaComparer(
+        OpenApiDiscriminatorComparer? discriminatorComparer = null,
+        OpenApiAnyComparer? openApiAnyComparer = null,
+        KeyValueComparer<string, OpenApiSchema>? schemaMapComparer = null)
+    {
+        this.discriminatorComparer = discriminatorComparer ?? new OpenApiDiscriminatorComparer();
+        this.openApiAnyComparer = openApiAnyComparer ?? new OpenApiAnyComparer();
+        this.schemaMapComparer = schemaMapComparer ?? new KeyValueComparer<string, OpenApiSchema>(StringComparer.Ordinal, this);
+    }
+
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
@@ -46,7 +57,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
         return true;
     }
 
-    private static void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
+    private void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
     {
         if (obj is null) return;
         if (!visitedSchemas.Add(obj)) return;

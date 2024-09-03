@@ -9,7 +9,16 @@ namespace Kiota.Builder.WorkspaceManagement;
 /// </summary>
 public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationComparer<ApiClientConfiguration>
 {
-    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
+    private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
+    private readonly StringComparer _stringComparer;
+
+    public ApiClientConfigurationComparer(StringIEnumerableDeepComparer? stringIEnumerableDeepComparer = null,
+        StringComparer? stringComparer = null)
+    {
+        _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+        _stringIEnumerableDeepComparer =
+            stringIEnumerableDeepComparer ?? new StringIEnumerableDeepComparer(_stringComparer);
+    }
 
     public override bool Equals(ApiClientConfiguration? x, ApiClientConfiguration? y)
     {
@@ -17,8 +26,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         if (x.ExcludeBackwardCompatible != y.ExcludeBackwardCompatible) return false;
         if (x.UsesBackingStore != y.UsesBackingStore) return false;
         if (x.IncludeAdditionalData != y.IncludeAdditionalData) return false;
-        if (!string.Equals(x.ClientNamespaceName, y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.Equals(x.Language, y.Language, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!_stringComparer.Equals(x.ClientNamespaceName, y.ClientNamespaceName)) return false;
+        if (!_stringComparer.Equals(x.Language, y.Language)) return false;
 
         // slow deep comparison
         return _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
@@ -31,9 +40,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
         hash.Add(obj.DisabledValidationRules, _stringIEnumerableDeepComparer); // _stringIEnumerableDeepComparer orders
-        var stringComparer = StringComparer.OrdinalIgnoreCase;
-        hash.Add(obj.ClientNamespaceName, stringComparer);
-        hash.Add(obj.Language, stringComparer);
+        hash.Add(obj.ClientNamespaceName, _stringComparer);
+        hash.Add(obj.Language, _stringComparer);
         hash.Add(obj.ExcludeBackwardCompatible);
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);
