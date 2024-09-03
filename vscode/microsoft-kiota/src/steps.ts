@@ -150,7 +150,7 @@ export function transformToGenerationconfig(deepLinkParams: Record<string, strin
 }
 
 
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, deepLinkParams?: Partial<IntegrationParams>) {
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -315,7 +315,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        const isDeepLinkPluginNameProvided = deepLinkParams && isDeeplinkEnabled(deepLinkParams) && state.pluginName;
+        const isDeepLinkPluginNameProvided = isDeeplinkEnabled && state.pluginName;
         if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,

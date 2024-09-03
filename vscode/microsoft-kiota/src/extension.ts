@@ -164,7 +164,7 @@ export async function activate(
         config = await generateSteps(
           availableStateInfo,
           languagesInformation,
-          deepLinkParams
+          isDeeplinkEnabled(deepLinkParams)
         );
         const generationType = parseGenerationType(config.generationType);
         const outputPath = typeof config.outputPath === "string"
