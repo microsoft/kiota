@@ -4,6 +4,7 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory, IntegrationParams } from './util';
 import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
+import { isDeeplinkEnabled } from './utilities/deep-linking';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -314,7 +315,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        const isDeepLinkPluginNameProvided = deepLinkParams?.source && deepLinkParams.source.toLowerCase() === 'ttk' && deepLinkParams.name && state.pluginName;
+        const isDeepLinkPluginNameProvided = deepLinkParams && isDeeplinkEnabled(deepLinkParams) && state.pluginName;
         if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
