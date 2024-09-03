@@ -29,7 +29,7 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
 
         var x0 = _ordered ? x.Order() : x;
         var y0 = _ordered ? y.Order() : y;
-        return Enumerable.SequenceEqual(x0, y0, _stringComparer);
+        return x0.SequenceEqual(y0, _stringComparer);
     }
     /// <inheritdoc/>
     public int GetHashCode(IEnumerable<string> obj)

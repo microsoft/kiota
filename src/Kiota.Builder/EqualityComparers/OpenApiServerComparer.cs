@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.EqualityComparers;
@@ -17,22 +15,23 @@ internal sealed class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
     }
     public bool Equals(OpenApiServer? x, OpenApiServer? y)
     {
-        if (x is null || y is null) return object.Equals(x, y);
+        if (x?.Url is null || y?.Url is null) return object.Equals(x, y);
 
         var x0 = TrimProtocol(x.Url);
         var y0 = TrimProtocol(y.Url);
-        return MemoryExtensions.Equals(x0, y0, StringComparison.OrdinalIgnoreCase);
+        return x0.Equals(y0, StringComparison.OrdinalIgnoreCase);
     }
     public int GetHashCode([DisallowNull] OpenApiServer obj)
     {
         var hash = new HashCode();
         if (string.IsNullOrEmpty(obj?.Url)) return hash.ToHashCode();
         var url = TrimProtocol(obj.Url);
-        // hash can't compute ReadOnlySpan<char>
+        // hash can't compute ReadOnlySpan<char>. ReadOnlySpan also doesn't have a working GetHashCode method.
         foreach (var c in url)
         {
             hash.Add(Char.ToLowerInvariant(c));
         }
+
         return hash.ToHashCode();
     }
 }
