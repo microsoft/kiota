@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -132,7 +133,15 @@ public partial class PluginsGenerationService
             foreach (var apiSchema in schema.AllOf)
             {
                 if (apiSchema.Title is not null) newSchema.Title = apiSchema.Title;
-                if (apiSchema.Type is not null) newSchema.Type = apiSchema.Type;
+                if (!string.IsNullOrEmpty(apiSchema.Type))
+                {
+                    if (newSchema.Type != apiSchema.Type)
+                    {
+                        throw new InvalidOperationException(
+                            $"The schemas in allOf cannot have different types: '{newSchema.Type}' and '{apiSchema.Type}'.");
+                    }
+                    newSchema.Type = apiSchema.Type;
+                }
                 if (apiSchema.Format is not null) newSchema.Format = apiSchema.Format;
                 if (!string.IsNullOrEmpty(apiSchema.Description)) newSchema.Description = apiSchema.Description;
                 if (apiSchema.Maximum is not null) newSchema.Maximum = apiSchema.Maximum;
