@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.OpenApi.Models;
 
@@ -7,10 +8,24 @@ namespace Kiota.Builder.EqualityComparers;
 
 internal sealed class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
 {
+    private static ReadOnlySpan<char> TrimStartInsensitive(ReadOnlySpan<char> span, ReadOnlySpan<char> toTrim)
+    {
+        if (span.Length < toTrim.Length) return span;
+        var matched = true;
+        for (int i = 0; i < toTrim.Length; i++)
+        {
+            if (Char.ToLowerInvariant(span[i]) == Char.ToLowerInvariant(toTrim[i])) continue;
+
+            matched = false;
+            break;
+        }
+
+        return matched ? span[toTrim.Length..] : span;
+    }
     private static ReadOnlySpan<char> TrimProtocol(ReadOnlySpan<char> output)
     {
-        output = output.TrimStart("http://");
-        output = output.TrimStart("https://");
+        output = TrimStartInsensitive(output, "http://");
+        output = TrimStartInsensitive(output, "https://");
         return output;
     }
     public bool Equals(OpenApiServer? x, OpenApiServer? y)
