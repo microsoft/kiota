@@ -11,40 +11,83 @@ using static Kiota.Builder.CodeDOM.CodeTypeBase;
 namespace Kiota.Builder.Writers.Dart;
 public class DartConventionService : CommonLanguageConventionService
 {
+    internal static string AutoGenerationHeader => "// auto generated";
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "byte" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
-    public override string ParseNodeInterfaceName => "IParseNode";
+    public override string ParseNodeInterfaceName => "ParseNode";
 
-    public override void WriteShortDescription(string description, LanguageWriter writer)
+    private const string ReferenceTypePrefix = "[";
+    private const string ReferenceTypeSuffix = "]";
+
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentPrefix}{description.CleanupXMLString()}");
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Documentation.DescriptionAvailable) return false;
+        if (element is not CodeElement codeElement) return false;
+
+        writer.WriteLine($"{DocCommentPrefix} {element.Documentation.GetDescription}");
+
+        return true;
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer)
+
+    public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        ArgumentNullException.ThrowIfNull(documentation);
+        if (element is not IDocumentedElement documentedElement || documentedElement.Documentation is not CodeDocumentation documentation) return;
+        if (additionalRemarks == default)
+            additionalRemarks = [];
+        var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
+        {
+            writer.WriteLine(DocCommentPrefix);
+            if (documentation.DescriptionAvailable)
+            {
+                var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix);
+                writer.WriteLine($"{DocCommentPrefix}{description}");
+            }
+            foreach (var additionalRemark in remarks)
+                writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+            if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)
+                foreach (var additionalComment in GetDeprecationInformationForDocumentationComment(deprecableElement))
+                    writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
-        if (documentation is { DescriptionAvailable: false, ExternalDocumentationAvailable: false })
-            return;
-
-        if (documentation.DescriptionAvailable)
-            writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
-        if (documentation.ExternalDocumentationAvailable)
-            writer.WriteLine($"{DocCommentPrefix}[{documentation.DocumentationLabel}]({documentation.DocumentationLink})");
+            if (documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
+        }
     }
+
+    internal string GetTypeReferenceForDocComment(CodeTypeBase code, CodeElement targetElement)
+    {
+        if (code is CodeType codeType && codeType.TypeDefinition is CodeMethod method)
+            return $"{GetTypeString(new CodeType { TypeDefinition = method.Parent, IsExternal = false }, targetElement)}#{GetTypeString(code, targetElement)}";
+        return $"{GetTypeString(code, targetElement)}";
+    }
+
+    private string[] GetDeprecationInformationForDocumentationComment(IDeprecableElement element)
+    {
+        if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return Array.Empty<string>();
+
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        return [
+            $"@deprecated",
+            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}"
+        ];
+    }
+
     public override string GetAccessModifier(AccessModifier access)
     {
         // Dart does not support access modifiers
         return "";
     }
     
-#pragma warning disable CA1822 // Method should be static
+    #pragma warning disable CA1822 // Method should be static
     public string GetAccessModifierPrefix(AccessModifier access)
     {
         return access switch
@@ -56,11 +99,7 @@ public class DartConventionService : CommonLanguageConventionService
 
     public string GetAccessModifierAttribute(AccessModifier access)
     {
-        return access switch
-        {
-            AccessModifier.Protected => "@protected",
-            _ => string.Empty,
-        };
+        return string.Empty;
     }
 
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
@@ -275,7 +314,7 @@ public class DartConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"@obsolete(\"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}\")";
+        return $"@obsolete(\"{element.Deprecation.GetDescription}{versionComment}{dateComment}{removalComment}\")";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {
@@ -283,4 +322,5 @@ public class DartConventionService : CommonLanguageConventionService
         if (!string.IsNullOrEmpty(deprecationMessage))
             writer.WriteLine(deprecationMessage);
     }
+
 }

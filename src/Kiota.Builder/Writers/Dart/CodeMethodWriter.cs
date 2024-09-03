@@ -219,8 +219,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var backingStoreParameter = method.Parameters.OfKind(CodeParameterKind.BackingStore);
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
-        WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+        WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
+        WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
@@ -541,11 +541,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        conventions.WriteLongDescription(code.Documentation, writer);
+        conventions.WriteLongDescription(code, writer);
         foreach (var paramWithDescription in code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
+        writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Name}</param>");
         conventions.WriteDeprecationAttribute(code, writer);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();

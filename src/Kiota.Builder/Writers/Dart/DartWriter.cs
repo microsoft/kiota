@@ -14,6 +14,6 @@ public class DartWriter : LanguageWriter
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
-
+        
     }
 }

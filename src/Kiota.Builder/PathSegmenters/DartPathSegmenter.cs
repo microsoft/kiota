@@ -1,12 +1,11 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
 
-public class DartPathSegmenter : CommonPathSegmenter
+public class DartPathSegmenter(string rootPath, string clientNamespaceName) : CommonPathSegmenter(rootPath, clientNamespaceName)
 {
-    public DartPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
-
     public override string FileSuffix => ".dart";
 
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToCamelCase();
