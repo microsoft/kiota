@@ -145,8 +145,8 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(Object.keys(deepLinkParams).length > 0){
-          if (!deepLinkParams.name && openApiTreeProvider.apiTitle ){
+        if (Object.keys(deepLinkParams).length > 0) {
+          if (!deepLinkParams.name && openApiTreeProvider.apiTitle) {
             deepLinkParams.name = getSanitizedString(openApiTreeProvider.apiTitle);
           }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
@@ -247,12 +247,12 @@ export async function activate(
       ) => {
         // set deeplink params if exists
         if (Object.keys(searchParams).length > 0) {
-          let errorsArray: string [];
+          let errorsArray: string[];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
-              "searchParameters": JSON.stringify(searchParams),
-              "validationErrors": errorsArray.join(", ")
-            });
+          reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+            "searchParameters": JSON.stringify(searchParams),
+            "validationErrors": errorsArray.join(", ")
+          });
         }
 
         // proceed to enable loading of openapi description
