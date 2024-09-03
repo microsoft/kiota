@@ -2,8 +2,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory, IntegrationParams } from './util';
 import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
+import { isDeeplinkEnabled } from './utilities/deep-linking';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -148,7 +149,8 @@ export function transformToGenerationconfig(deepLinkParams: Record<string, strin
     return generationConfig;
 }
 
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
+
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -313,7 +315,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName) {
+        const isDeepLinkPluginNameProvided = isDeeplinkEnabled && state.pluginName;
+        if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
                 step: step++,
@@ -383,7 +386,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
 
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName) {
+        if (!state.pluginName)  {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
                 step: step++,
