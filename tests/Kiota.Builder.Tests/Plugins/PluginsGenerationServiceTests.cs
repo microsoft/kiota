@@ -511,4 +511,84 @@ components:
             // ignored
         }
     }
+
+    #region AllOfValidation
+
+    [Fact]
+    public async Task MergesAllOfRequestBodyAsync()
+    {
+        var apiDescription = """
+        openapi: 3.0.0
+        info:
+          title: test
+          version: "1.0"
+        paths:
+          /test:
+            post:
+              description: description for test path
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema: 
+                      allOf:
+                      - type: string
+                      - maxLength: 5
+              responses:
+                '200':
+                  description: "success"
+        """;
+        // creates a new schema with both type:string & maxLength:5
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        try
+        {
+            // Validate the sliced openapi
+            var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
+            var r = new OpenApiStringReader();
+            var slicedDocument = r.Read(slicedApiContent, out var diagnostic);
+            Assert.NotNull(slicedDocument);
+            Assert.NotEmpty(slicedDocument.Paths);
+            var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                .Content["application/json"].Schema;
+            Assert.Equal("string", schema.Type);
+            Assert.Equal(5, schema.MaxLength);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(outputDirectory);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+    }
+
+    #endregion
 }

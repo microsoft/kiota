@@ -60,6 +60,7 @@ public partial class PluginsGenerationService
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        trimmedPluginDocument = InlineRequestBodyAllOf(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
@@ -101,6 +102,103 @@ public partial class PluginsGenerationService
             }
 
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
+    {
+        foreach (var path in openApiDocument.Paths)
+        {
+            foreach (var operation in path.Value.Operations)
+            {
+                foreach (var contentItem in operation.Value.RequestBody.Content)
+                {
+                    var schema = contentItem.Value.Schema;
+                    // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
+                    contentItem.Value.Schema = MergeAllOfInSchema(schema);
+                }
+            }
+        }
+
+        return openApiDocument;
+
+        static OpenApiSchema? MergeAllOfInSchema(OpenApiSchema? schema)
+        {
+            if (schema?.AllOf is null || schema.AllOf.Count == 0) return schema;
+            var newSchema = new OpenApiSchema();
+            foreach (var apiSchema in schema.AllOf)
+            {
+                if (apiSchema.Title is not null) newSchema.Title = apiSchema.Title;
+                if (apiSchema.Type is not null) newSchema.Type = apiSchema.Type;
+                if (apiSchema.Format is not null) newSchema.Format = apiSchema.Format;
+                if (!string.IsNullOrEmpty(apiSchema.Description)) newSchema.Description = apiSchema.Description;
+                if (apiSchema.Maximum is not null) newSchema.Maximum = apiSchema.Maximum;
+                if (apiSchema.ExclusiveMaximum is not null) newSchema.ExclusiveMaximum = apiSchema.ExclusiveMaximum;
+                if (apiSchema.Minimum is not null) newSchema.Minimum = apiSchema.Minimum;
+                if (apiSchema.ExclusiveMinimum is not null) newSchema.ExclusiveMinimum = apiSchema.ExclusiveMinimum;
+                if (apiSchema.MaxLength is not null) newSchema.MaxLength = apiSchema.MaxLength;
+                if (apiSchema.MinLength is not null) newSchema.MinLength = apiSchema.MinLength;
+                if (!string.IsNullOrEmpty(apiSchema.Pattern)) newSchema.Pattern = apiSchema.Pattern;
+                if (apiSchema.MultipleOf is not null) newSchema.MultipleOf = apiSchema.MultipleOf;
+                if (apiSchema.Default is not null) newSchema.Default = apiSchema.Default;
+                if (apiSchema.ReadOnly) newSchema.ReadOnly = apiSchema.ReadOnly;
+                if (apiSchema.WriteOnly) newSchema.WriteOnly = apiSchema.WriteOnly;
+                //if (apiSchema.AllOf is not null) newSchema.AllOf = apiSchema.AllOf;
+                //if (apiSchema.OneOf is not null) newSchema.OneOf = apiSchema.OneOf;
+                //if (apiSchema.AnyOf is not null) newSchema.AnyOf = apiSchema.AnyOf;
+                if (apiSchema.Not is not null) newSchema.Not = apiSchema.Not;
+                if (apiSchema.Required is { Count: > 0 })
+                {
+                    foreach (var r in apiSchema.Required.Where(static r=> !string.IsNullOrEmpty(r)))
+                    {
+                        newSchema.Required.Add(r);
+                    }
+                }
+                if (apiSchema.Items is not null) newSchema.Items = apiSchema.Items;
+                if (apiSchema.MaxItems is not null) newSchema.MaxItems = apiSchema.MaxItems;
+                if (apiSchema.MinItems is not null) newSchema.MinItems = apiSchema.MinItems;
+                if (apiSchema.UniqueItems is not null) newSchema.UniqueItems = apiSchema.UniqueItems;
+                if (apiSchema.Properties is not null)
+                {
+                    foreach (var property in apiSchema.Properties)
+                    {
+                        newSchema.Properties.Add(property.Key, property.Value);
+                    }
+                }
+                if (apiSchema.MaxProperties is not null) newSchema.MaxProperties = apiSchema.MaxProperties;
+                if (apiSchema.MinProperties is not null) newSchema.MinProperties = apiSchema.MinProperties;
+                if (apiSchema.AdditionalPropertiesAllowed) newSchema.AdditionalPropertiesAllowed = true;
+                if (apiSchema.AdditionalProperties is not null) newSchema.AdditionalProperties = apiSchema.AdditionalProperties;
+                if (apiSchema.Discriminator is not null) newSchema.Discriminator = apiSchema.Discriminator;
+                if (apiSchema.Example is not null) newSchema.Example = apiSchema.Example;
+                if (apiSchema.Enum is not null)
+                {
+                    foreach (var enumValue in apiSchema.Enum)
+                    {
+                        newSchema.Enum.Add(enumValue);
+                    }
+                }
+                if (apiSchema.Nullable) newSchema.Nullable = apiSchema.Nullable;
+                if (apiSchema.ExternalDocs is not null) newSchema.ExternalDocs = apiSchema.ExternalDocs;
+                if (apiSchema.Deprecated) newSchema.Deprecated = apiSchema.Deprecated;
+                if (apiSchema.Xml is not null) newSchema.Xml = apiSchema.Xml;
+                if (apiSchema.Extensions is not null)
+                {
+                    foreach (var extension in apiSchema.Extensions)
+                    {
+                        newSchema.Extensions.Add(extension.Key, extension.Value);
+                    }
+                }
+                if (apiSchema.Reference is not null) newSchema.Reference = apiSchema.Reference;
+                if (apiSchema.Annotations is not null)
+                {
+                    foreach (var annotation in apiSchema.Annotations)
+                    {
+                        newSchema.Annotations.Add(annotation.Key, annotation.Value);
+                    }
+                }
+            }
+            return newSchema;
         }
     }
 
