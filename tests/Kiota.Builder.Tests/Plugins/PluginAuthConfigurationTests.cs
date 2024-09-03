@@ -47,15 +47,11 @@ public class PluginAuthConfigurationTests
     }
 
     [Fact]
-    public void FromParametersThrowsExceptionIfReferenceIdIsNullOrEmpty()
+    public void FromParametersThrowArgumentNullExceptionIfSecuritySchemeTypeHasNoValue()
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<ArgumentNullException>(() =>
         {
-            _ = PluginAuthConfiguration.FromParameters(SecuritySchemeType.ApiKey, string.Empty);
-        });
-        Assert.Throws<ArgumentException>(() =>
-        {
-            _ = PluginAuthConfiguration.FromParameters(SecuritySchemeType.ApiKey, null);
+            _ = PluginAuthConfiguration.FromParameters(null, "reference");
         });
     }
 

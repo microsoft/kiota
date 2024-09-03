@@ -57,9 +57,9 @@ public class PluginAuthConfiguration
     /// <exception cref="ArgumentOutOfRangeException">If the SecuritySchemeType is unknown.</exception>
     public static PluginAuthConfiguration FromParameters(SecuritySchemeType? pluginAuthType, string pluginAuthRefId)
     {
-        if (!pluginAuthType.HasValue || string.IsNullOrEmpty(pluginAuthRefId))
+        if (!pluginAuthType.HasValue)
         {
-            throw new ArgumentException("Invalid plugin auth type or reference ID.");
+            throw new ArgumentNullException(nameof(pluginAuthType), "Missing plugin auth type");
         }
 
         var pluginAuthConfig = new PluginAuthConfiguration(pluginAuthRefId);
