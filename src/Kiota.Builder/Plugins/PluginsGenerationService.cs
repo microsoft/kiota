@@ -149,7 +149,7 @@ public partial class PluginsGenerationService
                 if (apiSchema.Not is not null) newSchema.Not = apiSchema.Not;
                 if (apiSchema.Required is { Count: > 0 })
                 {
-                    foreach (var r in apiSchema.Required.Where(static r=> !string.IsNullOrEmpty(r)))
+                    foreach (var r in apiSchema.Required.Where(static r => !string.IsNullOrEmpty(r)))
                     {
                         newSchema.Required.Add(r);
                     }

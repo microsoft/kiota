@@ -514,10 +514,59 @@ components:
 
     #region AllOfValidation
 
-    [Fact]
-    public async Task MergesAllOfRequestBodyAsync()
+    public static TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
+        AllOfSchemaTestInput()
     {
-        var apiDescription = """
+        return new TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
+        {
+            // simple disjoint
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    allOf: [
+                                        {type: string},
+                                        {maxLength: 5}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("string", schema.Type);
+                    Assert.Equal(5, schema.MaxLength);
+                }
+            },
+            // objects
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    allOf: [
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}},
+                                        {type: object, properties: {c: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(3, schema.Properties.Count);
+                }
+            },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(AllOfSchemaTestInput))]
+    public async Task MergesAllOfRequestBodyAsync(string content, Action<OpenApiDocument, OpenApiDiagnostic> assertions)
+    {
+        var apiDescription = $"""
         openapi: 3.0.0
         info:
           title: test
@@ -528,12 +577,7 @@ components:
               description: description for test path
               requestBody:
                 required: true
-                content:
-                  application/json:
-                    schema: 
-                      allOf:
-                      - type: string
-                      - maxLength: 5
+                {content}
               responses:
                 '200':
                   description: "success"
@@ -570,12 +614,7 @@ components:
             var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
             var r = new OpenApiStringReader();
             var slicedDocument = r.Read(slicedApiContent, out var diagnostic);
-            Assert.NotNull(slicedDocument);
-            Assert.NotEmpty(slicedDocument.Paths);
-            var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
-                .Content["application/json"].Schema;
-            Assert.Equal("string", schema.Type);
-            Assert.Equal(5, schema.MaxLength);
+            assertions(slicedDocument, diagnostic);
         }
         finally
         {
