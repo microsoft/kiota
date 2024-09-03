@@ -11,12 +11,16 @@ namespace Kiota.Builder.Manifest;
 
 public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
 {
-    public ApiDependencyComparer(bool compareRequests = false)
+    private readonly StringComparer _stringComparer;
+    private readonly RequestInfoComparer _requestInfoComparer;
+    private readonly bool _compareRequests;
+
+    public ApiDependencyComparer(StringComparer? stringComparer = null, bool compareRequests = false)
     {
-        CompareRequests = compareRequests;
+        _compareRequests = compareRequests;
+        _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+        _requestInfoComparer = new RequestInfoComparer(_stringComparer);
     }
-    private static readonly RequestInfoComparer requestInfoComparer = new();
-    private readonly bool CompareRequests;
 
     private static string? GetDependencyExtensionsValue(ApiDependency dependency)
     {
@@ -34,14 +38,13 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     {
         if (x is null || y is null) return object.Equals(x, y);
 
-        const StringComparison sc = StringComparison.OrdinalIgnoreCase;
-        if (!string.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl, sc)) return false;
-        if (!string.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion, sc)) return false;
+        if (!_stringComparer.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl)) return false;
+        if (!_stringComparer.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion)) return false;
 
         string? xExtensions = GetDependencyExtensionsValue(x), yExtensions = GetDependencyExtensionsValue(y);
         // Assume requests are equal if we aren't comparing them.
-        var requestsEqual = !CompareRequests || x.Requests.SequenceEqual(y.Requests, requestInfoComparer);
-        return string.Equals(xExtensions, yExtensions, sc)
+        var requestsEqual = !_compareRequests || x.Requests.SequenceEqual(y.Requests, _requestInfoComparer);
+        return _stringComparer.Equals(xExtensions, yExtensions)
                && requestsEqual;
     }
     /// <inheritdoc/>
@@ -49,14 +52,13 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
-        var sc = StringComparer.OrdinalIgnoreCase;
-        hash.Add(obj.ApiDescriptionUrl, sc);
-        hash.Add(GetDependencyExtensionsValue(obj) ?? string.Empty, sc);
-        if (!CompareRequests) return hash.ToHashCode();
+        hash.Add(obj.ApiDescriptionUrl, _stringComparer);
+        hash.Add(GetDependencyExtensionsValue(obj) ?? string.Empty, _stringComparer);
+        if (!_compareRequests) return hash.ToHashCode();
 
         foreach (var request in obj.Requests)
         {
-            hash.Add(request, requestInfoComparer);
+            hash.Add(request, _requestInfoComparer);
         }
         return hash.ToHashCode();
     }

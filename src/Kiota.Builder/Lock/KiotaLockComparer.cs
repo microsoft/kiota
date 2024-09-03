@@ -10,7 +10,15 @@ namespace Kiota.Builder.Lock;
 /// </summary>
 public class KiotaLockComparer : IEqualityComparer<KiotaLock>
 {
-    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
+    private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
+    private readonly StringComparer _stringComparer;
+
+    public KiotaLockComparer(StringComparer? stringComparer = null)
+    {
+        _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+        _stringIEnumerableDeepComparer = new StringIEnumerableDeepComparer(_stringComparer);
+    }
+
     /// <inheritdoc/>
     public bool Equals(KiotaLock? x, KiotaLock? y)
     {
@@ -20,13 +28,13 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
                && x.ExcludeBackwardCompatible == y.ExcludeBackwardCompatible
                && x.UsesBackingStore == y.UsesBackingStore
                && x.IncludeAdditionalData == y.IncludeAdditionalData
-               && string.Equals(x.KiotaVersion, y.KiotaVersion, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.LockFileVersion, y.LockFileVersion, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.DescriptionLocation, y.DescriptionLocation, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.DescriptionHash, y.DescriptionHash, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.ClientClassName, y.ClientClassName, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.ClientNamespaceName, y.ClientNamespaceName, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.Language, y.Language, StringComparison.OrdinalIgnoreCase)
+               && _stringComparer.Equals(x.KiotaVersion, y.KiotaVersion)
+               && _stringComparer.Equals(x.LockFileVersion, y.LockFileVersion)
+               && _stringComparer.Equals(x.DescriptionLocation, y.DescriptionLocation)
+               && _stringComparer.Equals(x.DescriptionHash, y.DescriptionHash)
+               && _stringComparer.Equals(x.ClientClassName, y.ClientClassName)
+               && _stringComparer.Equals(x.ClientNamespaceName, y.ClientNamespaceName)
+               && _stringComparer.Equals(x.Language, y.Language)
                && _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
                && _stringIEnumerableDeepComparer.Equals(x.Serializers, y.Serializers)
                && _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers)
@@ -39,16 +47,15 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
-        var stringComparer = StringComparer.OrdinalIgnoreCase;
         hash.Add(obj.DisableSSLValidation);
         hash.Add(obj.DisabledValidationRules, _stringIEnumerableDeepComparer);
-        hash.Add(obj.KiotaVersion, stringComparer);
-        hash.Add(obj.LockFileVersion, stringComparer);
-        hash.Add(obj.DescriptionLocation, stringComparer);
-        hash.Add(obj.DescriptionHash, stringComparer);
-        hash.Add(obj.ClientClassName, stringComparer);
-        hash.Add(obj.ClientNamespaceName, stringComparer);
-        hash.Add(obj.Language, stringComparer);
+        hash.Add(obj.KiotaVersion, _stringComparer);
+        hash.Add(obj.LockFileVersion, _stringComparer);
+        hash.Add(obj.DescriptionLocation, _stringComparer);
+        hash.Add(obj.DescriptionHash, _stringComparer);
+        hash.Add(obj.ClientClassName, _stringComparer);
+        hash.Add(obj.ClientNamespaceName, _stringComparer);
+        hash.Add(obj.Language, _stringComparer);
         hash.Add(obj.ExcludeBackwardCompatible);
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);

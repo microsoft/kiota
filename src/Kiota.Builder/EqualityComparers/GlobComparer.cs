@@ -5,16 +5,18 @@ using DotNet.Globbing;
 
 namespace Kiota.Builder.EqualityComparers;
 
-internal class GlobComparer : IEqualityComparer<Glob>
+internal class GlobComparer(StringComparer? stringComparer = null) : IEqualityComparer<Glob>
 {
+    private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+
     public bool Equals(Glob? x, Glob? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-        return string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
+        return _stringComparer.Equals(x.ToString(), y.ToString());
     }
 
     public int GetHashCode([DisallowNull] Glob obj)
     {
-        return obj.ToString().GetHashCode(StringComparison.OrdinalIgnoreCase);
+        return _stringComparer.GetHashCode(obj.ToString());
     }
 }
