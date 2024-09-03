@@ -156,7 +156,7 @@ public class WorkspaceManagementService
     {
         if (!UseKiotaConfig || cleanOutput)
             return null;
-        return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
+        return await descriptionStorageService.GetDescriptionAsync(clientName, Path.GetExtension(inputPath), cancellationToken).ConfigureAwait(false);
     }
     public Task RemoveClientAsync(string clientName, bool cleanOutput = false, CancellationToken cancellationToken = default)
     {
