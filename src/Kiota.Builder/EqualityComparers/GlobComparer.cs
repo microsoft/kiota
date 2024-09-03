@@ -15,8 +15,6 @@ internal class GlobComparer : IEqualityComparer<Glob>
 
     public int GetHashCode([DisallowNull] Glob obj)
     {
-        var hash = new HashCode();
-        hash.Add(obj.ToString(), StringComparer.OrdinalIgnoreCase);
-        return hash.ToHashCode();
+        return obj.ToString().GetHashCode(StringComparison.OrdinalIgnoreCase);
     }
 }
