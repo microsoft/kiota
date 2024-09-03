@@ -10,7 +10,7 @@ internal class OpenApiSchemaReferenceComparer : IEqualityComparer<OpenApiSchema>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
         if (string.IsNullOrEmpty(x?.Reference?.Id) || string.IsNullOrEmpty(y?.Reference?.Id)) return object.Equals(x, y);
-        return string.Equals(x?.Reference?.Id, y?.Reference?.Id, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(x.Reference.Id, y.Reference.Id, StringComparison.OrdinalIgnoreCase);
     }
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
     {

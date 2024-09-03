@@ -27,8 +27,8 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
     {
         if (x is null || y is null) return object.Equals(x, y);
 
-        var x0 = _ordered ? x.Order() : x;
-        var y0 = _ordered ? y.Order() : y;
+        var x0 = _ordered ? x.Order(_stringComparer) : x;
+        var y0 = _ordered ? y.Order(_stringComparer) : y;
         return x0.SequenceEqual(y0, _stringComparer);
     }
     /// <inheritdoc/>
@@ -36,14 +36,10 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
     {
         var hash = new HashCode();
         if (obj is null) return hash.ToHashCode();
-        var items = _ordered switch
-        {
-            true => obj.Order(),
-            false => obj
-        };
+        var items = _ordered ? obj.Order(_stringComparer) : obj;
         foreach (var item in items)
         {
-            // hash code calculation is resistant to prefix collissions
+            // hash code calculation is resistant to prefix collisions
             // i.e. "ab" + "cd" will not be the same as "abc" + "d"
             hash.Add(item, _stringComparer);
         };
