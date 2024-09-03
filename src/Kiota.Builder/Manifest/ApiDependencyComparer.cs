@@ -17,6 +17,18 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
     }
     private static readonly RequestInfoComparer requestInfoComparer = new();
     private readonly bool CompareRequests;
+
+    private static string? GetDependencyExtensionsValue(ApiDependency dependency)
+    {
+        if (dependency.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
+            true && n0 is JsonValue valueX && valueX.GetValueKind() is JsonValueKind.String)
+        {
+            return valueX.GetValue<string>();
+        }
+
+        return null;
+    }
+
     /// <inheritdoc/>
     public bool Equals(ApiDependency? x, ApiDependency? y)
     {
@@ -26,17 +38,7 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
         if (!string.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl, sc)) return false;
         if (!string.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion, sc)) return false;
 
-        string? xExtensions = null, yExtensions = null;
-        if (x.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
-            true && n0 is JsonValue valueX && valueX.GetValueKind() is JsonValueKind.String)
-        {
-            xExtensions = valueX.GetValue<string>();
-        }
-        if (y.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n1) ==
-            true && n1 is JsonValue valueY && valueY.GetValueKind() is JsonValueKind.String)
-        {
-            yExtensions = valueY.GetValue<string>();
-        }
+        string? xExtensions = GetDependencyExtensionsValue(x), yExtensions = GetDependencyExtensionsValue(y);
         // Assume requests are equal if we aren't comparing them.
         var requestsEqual = !CompareRequests || x.Requests.SequenceEqual(y.Requests, requestInfoComparer);
         return string.Equals(xExtensions, yExtensions, sc)
@@ -49,16 +51,7 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
         if (obj == null) return hash.ToHashCode();
         var sc = StringComparer.OrdinalIgnoreCase;
         hash.Add(obj.ApiDescriptionUrl, sc);
-        if (obj.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
-            true && n0 is JsonValue valueX)
-        {
-            hash.Add(valueX.GetValue<string>(), sc);
-        }
-        else
-        {
-            hash.Add(string.Empty);
-        }
-
+        hash.Add(GetDependencyExtensionsValue(obj) ?? string.Empty, sc);
         if (!CompareRequests) return hash.ToHashCode();
 
         foreach (var request in obj.Requests)
