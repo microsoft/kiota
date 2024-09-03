@@ -107,10 +107,13 @@ public partial class PluginsGenerationService
 
     private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
     {
+        if (openApiDocument.Paths is null) return openApiDocument;
         foreach (var path in openApiDocument.Paths)
         {
+            if (path.Value?.Operations is null) continue;
             foreach (var operation in path.Value.Operations)
             {
+                if (operation.Value?.RequestBody?.Content is null) continue;
                 foreach (var contentItem in operation.Value.RequestBody.Content)
                 {
                     var schema = contentItem.Value.Schema;
