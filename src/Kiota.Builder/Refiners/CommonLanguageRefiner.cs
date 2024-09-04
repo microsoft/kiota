@@ -298,7 +298,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             null,
             x => (((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition) // rename properties or method of error classes matching the reserved names.
                                                 || (x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model) && codeClass.IsErrorDefinition
-                                                    && codeClass.Properties.FirstOrDefault(classProp => provider.ReservedNames.Contains(classProp.Name)) is { } matchingProperty && matchingProperty.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase)) // rename the a class if it has a matching property and the class has the same name as the property.
+                                                    && codeClass.Properties.FirstOrDefault(classProp => provider.ReservedNames.Contains(classProp.Name)) is { } matchingProperty && matchingProperty.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase)) // rename the class if it has a matching property and the class has the same name as the property.
         );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
@@ -1514,16 +1514,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (asProperty)
             {
-                var serializationName = string.Empty;
                 if (currentClass.FindChildByName<CodeProperty>(name, false) is { } sameNameProperty)
                 {
                     if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
                     {
-                        currentClass.RemoveChildElementByName(name); // type matches so just remove it for replacement
-                        serializationName = sameNameProperty.WireName;
+                        // As the type may not be settable by the serialization logic
+                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly. 
+                        sameNameProperty.IsPrimaryErrorMessage = true;
                     }
-                    else
-                        currentClass.RenameChildElement(name, $"{name}Escaped"); // type mismatch so just rename it
+                    currentClass.RenameChildElement(name, $"{name}Escaped"); // rename to prevent collisions and keep the original
                 }
 
                 currentClass.AddProperty(new CodeProperty
@@ -1532,7 +1531,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Access = AccessModifier.Public,
                     Kind = CodePropertyKind.ErrorMessageOverride,
                     Type = type(),
-                    SerializationName = serializationName,
                     Documentation = new()
                     {
                         DescriptionTemplate = "The primary error message.",

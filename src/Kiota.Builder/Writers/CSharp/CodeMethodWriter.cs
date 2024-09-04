@@ -334,7 +334,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"return {DefaultDeserializerValue}{parentSerializationInfo}");
         writer.StartBlock();
         foreach (var otherProp in parentClass
-                                        .GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride)
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
@@ -463,7 +463,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (shouldHide)
             writer.WriteLine("base.Serialize(writer);");
         foreach (var otherProp in parentClass
-                                        .GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride)
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                         .OrderBy(static x => x.Name))
         {
