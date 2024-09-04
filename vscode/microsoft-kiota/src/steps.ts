@@ -576,8 +576,8 @@ class MultiStepInput {
                 step = await step(this);
             } catch (err) {
                 if (err === InputFlowAction.back) {
-                    if (onNavBack) {
-                        onNavBack();
+                    if (onNavBack) { 
+                        onNavBack();  //Currently, step -= 2 passed as onNavBack because of using postfix increment in steps in the input functions
                     }
                     this.steps.pop();
                     step = this.steps.pop();
