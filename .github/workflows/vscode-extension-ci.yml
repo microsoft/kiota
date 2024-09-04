@@ -26,6 +26,12 @@ jobs:
     - name: Install dependencies
       run: npm i -g typescript @vscode/vsce
 
+    - name: Install Visual Studio Code
+      run: |
+        Invoke-WebRequest -Uri "https://update.code.visualstudio.com/latest/win32-x64/stable" -OutFile "VSCodeSetup.exe"
+        Start-Process -FilePath "VSCodeSetup.exe" -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+        $env:PATH += ";C:\Program Files\Microsoft VS Code\bin"
+
     - name: Run PowerShell script
       run: |
         pwsh -File ./scripts/execute-vscode-sideload.ps1
