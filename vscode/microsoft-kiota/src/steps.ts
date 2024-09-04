@@ -2,9 +2,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import { findAppPackageDirectory, getWorkspaceJsonDirectory, IntegrationParams } from './util';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
-import { isDeeplinkEnabled } from './utilities/deep-linking';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
