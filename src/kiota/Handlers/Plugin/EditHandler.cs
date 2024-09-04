@@ -101,7 +101,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
                     Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
-
+                Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
+                Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
