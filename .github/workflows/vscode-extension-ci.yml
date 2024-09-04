@@ -1,7 +1,7 @@
 name: "VSCode Extension - CI"
 
 on:
-  pull_request:
+  push:
     branches:
       - task/extension/branch-preview
 
