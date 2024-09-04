@@ -1522,6 +1522,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly. 
                         sameNameProperty.IsPrimaryErrorMessage = true;
                     }
+                    if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
+                        sameNameProperty.SerializationName = sameNameProperty.Name;
                     currentClass.RenameChildElement(name, $"{name}Escaped"); // rename to prevent collisions and keep the original
                 }
 
