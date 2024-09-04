@@ -23,9 +23,6 @@ jobs:
       with:
         dotnet-version: 8.x
 
-    - name: Install PowerShell
-      uses: actions/setup-powershell@v1
-
     - name: Run PowerShell script
       run: |
         pwsh -File ./scripts/execute-vscode-sideload.ps1
