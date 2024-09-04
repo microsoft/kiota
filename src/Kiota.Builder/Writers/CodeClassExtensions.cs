@@ -11,7 +11,7 @@ public static class CodeClassExtensions
     public static IEnumerable<CodeProperty> GetPropertiesOfKind(this CodeClass parentClass, params CodePropertyKind[] kinds)
     {
         if (parentClass == null)
-            return Enumerable.Empty<CodeProperty>();
+            return [];
         if (kinds == null || kinds.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(kinds));
         return parentClass.Properties
@@ -25,7 +25,7 @@ public static class CodeClassExtensions
     public static IEnumerable<CodeMethod> GetMethodsOffKind(this CodeClass parentClass, params CodeMethodKind[] kinds)
     {
         if (parentClass == null)
-            return Enumerable.Empty<CodeMethod>();
+            return [];
         if (kinds == null || kinds.Length == 0)
             throw new ArgumentOutOfRangeException(nameof(kinds));
         return parentClass.Methods
