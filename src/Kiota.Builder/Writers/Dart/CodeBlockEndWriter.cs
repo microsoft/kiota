@@ -9,9 +9,5 @@ public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, DartConventionServ
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.CloseBlock();
-        if (codeElement?.Parent is CodeClass codeClass && codeClass.Parent is CodeNamespace)
-        {
-            writer.CloseBlock();
-        }
     }
 }
