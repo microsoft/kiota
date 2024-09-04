@@ -30,9 +30,9 @@ jobs:
       run: |
         pwsh -File ./scripts/execute-vscode-sideload.ps1
 
-    - name: Create Codespace
-      uses: codespaces/create-codespace@v1
-      with:
-        repository: ${{ github.repository }}
-        ref: ${{ github.head_ref }}
-        devcontainer_path: .devcontainer/devcontainer.json
+    # - name: Create Codespace
+    #   uses: codespaces/create-codespace@v1
+    #   with:
+    #     repository: ${{ github.repository }}
+    #     ref: ${{ github.head_ref }}
+    #     devcontainer_path: .devcontainer/devcontainer.json
