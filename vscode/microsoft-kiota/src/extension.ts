@@ -34,6 +34,7 @@ import {
   isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
 } from "./util";
+import { isDeeplinkEnabled } from './utilities/deep-linking';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -145,9 +146,9 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(Object.keys(deepLinkParams).length > 0){
-          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
-            deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
+        if (isDeeplinkEnabled(deepLinkParams)) {
+          if (!deepLinkParams.name && openApiTreeProvider.apiTitle) {
+            deepLinkParams.name = getSanitizedString(openApiTreeProvider.apiTitle);
           }
           availableStateInfo = transformToGenerationconfig(deepLinkParams);
         } else {
@@ -162,7 +163,8 @@ export async function activate(
         }
         config = await generateSteps(
           availableStateInfo,
-          languagesInformation
+          languagesInformation,
+          isDeeplinkEnabled(deepLinkParams)
         );
         const generationType = parseGenerationType(config.generationType);
         const outputPath = typeof config.outputPath === "string"
@@ -212,8 +214,7 @@ export async function activate(
                 'fx-extension.createprojectfromkiota',
                 [
                   pathOfSpec,
-                  pathPluginManifest,
-                  true
+                  pathPluginManifest
                 ]
               );
             } catch (error) {
@@ -248,12 +249,12 @@ export async function activate(
       ) => {
         // set deeplink params if exists
         if (Object.keys(searchParams).length > 0) {
-          let errorsArray: string [];
+          let errorsArray: string[];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
-              "searchParameters": JSON.stringify(searchParams),
-              "validationErrors": errorsArray.join(", ")
-            });
+          reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+            "searchParameters": JSON.stringify(searchParams),
+            "validationErrors": errorsArray.join(", ")
+          });
         }
 
         // proceed to enable loading of openapi description

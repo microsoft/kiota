@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace kiota.Handlers.Plugin;
 
@@ -20,6 +21,16 @@ internal class AddHandler : BaseKiotaCommandHandler
         get; init;
     }
     public required Option<List<PluginType>> PluginTypesOption
+    {
+        get; init;
+    }
+
+    public required Option<SecuritySchemeType> PluginAuthTypeOption
+    {
+        get; init;
+    }
+
+    public required Option<string> PluginAuthRefIdOption
     {
         get; init;
     }
@@ -43,6 +54,8 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType> pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption) ?? [];
+        SecuritySchemeType? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
@@ -56,6 +69,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.Operation = ConsumerOperation.Add;
         if (pluginTypes.Count != 0)
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+        Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
         if (includePatterns.Count != 0)
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)

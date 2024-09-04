@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed OpenAI plugins generation since the service does not support them anymore.
 - Fixed a bug where a nullable union type would lead to an exception at generation. [#5276](https://github.com/microsoft/kiota/issues/5276)
 - Fixed an issue where TypeScript clients would be missing path parameters. [#5247](https://github.com/microsoft/kiota/issues/5247)
+- Fixed a bug where names normalization could lead to collisions in Ruby and other languages. [#5310](https://github.com/microsoft/kiota/issues/5310)
 - Redirect status codes documenting an application/octet-stream content type now generate a stream return type. [#5246](https://github.com/microsoft/kiota/issues/5246)
 - Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
 - Reverts modification of responses in output openApi file when generating plugins [#4945](https://github.com/microsoft/kiota/issues/4945)
@@ -129,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Suppress CS1591 when generating CSharp code and documentation is not available
 - Added file name suffix escaping in Go to avoid generating files with reserved suffixes. [#4407](https://github.com/microsoft/kiota/issues/4407)
 - Added `KIOTA_OFFLINE_ENABLED` environment variable to disable checking for updates before each command. [#4556](https://github.com/microsoft/kiota/issues/4556)
+- Added support for plugin auth options in the CLI. [#5072](https://github.com/microsoft/kiota/issues/5072)
 
 ### Changed
 
