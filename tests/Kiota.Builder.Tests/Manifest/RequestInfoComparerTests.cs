@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Manifest;
+﻿using System;
+using Kiota.Builder.Manifest;
 using Microsoft.OpenApi.ApiManifest;
 using Xunit;
 
@@ -10,7 +11,7 @@ public sealed class RequestInfoComparerTests
     [Fact]
     public void Defensive()
     {
-        Assert.Equal(0, _comparer.GetHashCode(null));
+        Assert.Equal(new HashCode().ToHashCode(), _comparer.GetHashCode(null));
         Assert.True(_comparer.Equals(null, null));
         Assert.False(_comparer.Equals(new(), null));
         Assert.False(_comparer.Equals(null, new()));
@@ -18,7 +19,10 @@ public sealed class RequestInfoComparerTests
     [Fact]
     public void GetsHashCode()
     {
-        Assert.Equal(0, _comparer.GetHashCode(new()));
+        var hc = new HashCode();
+        hc.Add<string>(null);
+        hc.Add<string>(null);
+        Assert.Equal(hc.ToHashCode(), _comparer.GetHashCode(new()));
     }
     [Fact]
     public void Compares()
