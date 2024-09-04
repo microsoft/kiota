@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed shorthand for refresh option in workspace experience. [#5240](https://github.com/microsoft/kiota/issues/5240)
 - Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
 - Removed OpenAI plugins generation since the service does not support them anymore.
+- Fixed a bug where the error message would not be deserialized if the property name matched a reserved property. [#5311](https://github.com/microsoft/kiota/issues/5311)
 - Fixed an issue where TypeScript clients would be missing path parameters. [#5247](https://github.com/microsoft/kiota/issues/5247)
+- Fixed a bug where names normalization could lead to collisions in Ruby and other languages. [#5310](https://github.com/microsoft/kiota/issues/5310)
 - Redirect status codes documenting an application/octet-stream content type now generate a stream return type. [#5246](https://github.com/microsoft/kiota/issues/5246)
 - Fixed an issue where models would be missing when they had no properties and a single allOf entry. [#5014](https://github.com/microsoft/kiota/issues/5014)
 - Reverts modification of responses in output openApi file when generating plugins [#4945](https://github.com/microsoft/kiota/issues/4945)
