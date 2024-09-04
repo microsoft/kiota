@@ -22,8 +22,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         {
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
         }
-
-        WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
+        else
+        {
+            WritePropertyInternal(codeElement, writer, propertyType);
+        }
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
