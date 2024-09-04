@@ -30,7 +30,7 @@ public class DartConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix);
         writer.WriteLine($"{DocCommentPrefix} {description}");
 
         return true;
