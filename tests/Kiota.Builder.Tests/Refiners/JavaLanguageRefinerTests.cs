@@ -729,5 +729,37 @@ public class JavaLanguageRefinerTests
         Assert.Equal(2, nodeUsing.Length); // one for the getter and another for setter. Writer will unionise
         Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
     }
+    [Fact]
+    public async Task AddsUsingForUntypedNodeInMethodParameterAsync()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var method = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.RequestExecutor
+        };
+        method.AddParameter(new CodeParameter()
+        {
+            Name = "jsonData",
+            Type = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+            Kind = CodeParameterKind.RequestBody
+        });
+        requestBuilderClass.AddMethod(method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, method.Parameters.First().Type.Name);// type is renamed
+        Assert.NotEmpty(requestBuilderClass.StartBlock.Usings);
+        var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
+        Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
+    }
     #endregion
 }
