@@ -26,9 +26,3 @@ jobs:
     - name: Install dependencies
       run: npm i -g typescript @vscode/vsce
 
-    - name: Create Codespace
-      uses: codespaces/create-codespace@v1
-      with:
-        repository: ${{ github.repository }}
-        ref: ${{ github.head_ref }}
-        devcontainer_path: .devcontainer/devcontainer.json
