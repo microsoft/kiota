@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
@@ -22,6 +22,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.x
+
+    - name: Install dependencies
+      run: npm i -g typescript @vscode/vsce
 
     - name: Run PowerShell script
       run: |
