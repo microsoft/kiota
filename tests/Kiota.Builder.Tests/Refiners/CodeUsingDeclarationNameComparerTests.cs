@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
@@ -16,8 +17,12 @@ public class CodeUsingDeclarationNameComparerTests
         Assert.False(comparer.Equals(new(), null));
         Assert.False(comparer.Equals(null, new()));
         Assert.True(comparer.Equals(new(), new()));
-        Assert.Equal(0, comparer.GetHashCode(null));
-        Assert.Equal(0, comparer.GetHashCode(new()));
+        var hash = new HashCode();
+        Assert.Equal(hash.ToHashCode(), comparer.GetHashCode(null));
+        hash = new HashCode();
+        hash.Add(string.Empty);
+        hash.Add<string>(null);
+        Assert.Equal(hash.ToHashCode(), comparer.GetHashCode(new()));
     }
     [Fact]
     public void SameImportsReturnSameHashCode()
