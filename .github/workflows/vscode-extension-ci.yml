@@ -1,0 +1,38 @@
+name: "VSCode Extension - CI"
+
+on:
+  pull_request:
+    branches:
+      - task/extension/branch-preview
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+
+    - name: Install PowerShell
+      uses: actions/setup-powershell@v1
+
+    - name: Run PowerShell script
+      run: |
+        pwsh -File ./scripts/execute-vscode-sideload.ps1
+
+    - name: Create Codespace
+      uses: codespaces/create-codespace@v1
+      with:
+        repository: ${{ github.repository }}
+        ref: ${{ github.head_ref }}
+        devcontainer_path: .devcontainer/devcontainer.json
