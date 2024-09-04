@@ -2,6 +2,7 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
@@ -21,7 +22,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(static x => x.Declaration?.IsExternal ?? false ?
                                     $"import 'package:{x.Declaration.Name}.dart';" :
-                                    $"import 'package:{x.Name}.dart';")
+                                    $"import {x.Declaration!.Name}.dart")
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()

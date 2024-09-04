@@ -55,15 +55,17 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
-                    Name = $"BaseRequestBuilder<{defaultConfiguration.ClientClassName}>",
+                    Name = "BaseRequestBuilder",
                     Declaration = new CodeType
                     {
                         Name = AbstractionsNamespaceName,
-                        IsExternal = true
+                        IsExternal = true,
                     }
-                });
+                }, addCurrentTypeAsGenericTypeParameter: true);
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             ReplaceDefaultSerializationModules(
@@ -80,15 +82,15 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    $"{SerializationNamespaceName}/{SerializationNamespaceName}.JsonParseNodeFactory",
-                    $"{SerializationNamespaceName}/{SerializationNamespaceName}.FormParseNodeFactory",
-                    $"{SerializationNamespaceName}/{SerializationNamespaceName}.TextParseNodeFactory"
+                    $"{SerializationNamespaceName}_json/{SerializationNamespaceName}_json.JsonParseNodeFactory",
+                    $"{SerializationNamespaceName}_form/{SerializationNamespaceName}_form.FormParseNodeFactory",
+                    $"{SerializationNamespaceName}_text/{SerializationNamespaceName}_text.TextParseNodeFactory"
                 }
             );
             AddSerializationModulesImport(generatedCode,
                 [$"{AbstractionsNamespaceName}.ApiClientBuilder",
-                 $"{SerializationNamespaceName}/{SerializationNamespaceName}.SerializationWriterFactoryRegistry"],
-                [$"{SerializationNamespaceName}/{SerializationNamespaceName}.ParseNodeFactoryRegistry"]);
+                 $"{AbstractionsNamespaceName}.SerializationWriterFactoryRegistry"],
+                [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
