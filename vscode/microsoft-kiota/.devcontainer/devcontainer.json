@@ -1,0 +1,5 @@
+{
+  "name": "VSCode Extension Dev Container",
+  "image": "mcr.microsoft.com/vscode/devcontainers/typescript-node:0-14",
+  "postCreateCommand": "cd vscode/microsoft-kiota && npm install && npx @vscode/vsce package && code --install-extension ./kiota-$(jq -r .version package.json).vsix"
+}
