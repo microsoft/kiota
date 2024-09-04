@@ -119,7 +119,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (current is CodeClass currentClass && classNames &&
             refineName(currentClass.Name) is string refinedClassName &&
             !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal) &&
-            currentClass.Parent is IBlock parentBlock)
+            currentClass.Parent is IBlock parentBlock &&
+            parentBlock.FindChildByName<CodeElement>(refinedClassName) is null) // ensure the refinement won't generate a duplicate
         {
             parentBlock.RenameChildElement(currentClass.Name, refinedClassName);
         }
@@ -127,7 +128,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             enumNames &&
             refineName(currentEnum.Name) is string refinedEnumName &&
             !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal) &&
-            currentEnum.Parent is IBlock parentBlock2)
+            currentEnum.Parent is IBlock parentBlock2 &&
+            parentBlock2.FindChildByName<CodeElement>(refinedEnumName) is null) // ensure the refinement won't generate a duplicate
         {
             parentBlock2.RenameChildElement(currentEnum.Name, refinedEnumName);
         }
