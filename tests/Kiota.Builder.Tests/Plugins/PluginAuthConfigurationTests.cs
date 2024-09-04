@@ -47,6 +47,15 @@ public class PluginAuthConfigurationTests
     }
 
     [Fact]
+    public void FromParametersThrowArgumentNullExceptionIfSecuritySchemeTypeHasNoValue()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            _ = PluginAuthConfiguration.FromParameters(null, "reference");
+        });
+    }
+
+    [Fact]
     public void FromParametersThrowsExceptionIfSecuritySchemeTypeIsUnknown()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
