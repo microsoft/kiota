@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed shorthand for refresh option in workspace experience. [#5240](https://github.com/microsoft/kiota/issues/5240)
+- Fixed a bug where untyped node imports would be missing CSharp/Go/TypeScript/Java. [#5326](https://github.com/microsoft/kiota/issues/5326)
 - Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
 - Removed OpenAI plugins generation since the service does not support them anymore.
 - Fixed a bug where the error message would not be deserialized if the property name matched a reserved property. [#5311](https://github.com/microsoft/kiota/issues/5311)

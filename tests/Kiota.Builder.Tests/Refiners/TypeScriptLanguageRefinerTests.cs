@@ -1014,7 +1014,8 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
             {
                 Name = KiotaBuilder.UntypedNodeName,
                 IsExternal = true
-            }
+            },
+            Kind = CodeParameterKind.RequestBody
         });
         requestBuilderClass.AddMethod(method);
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
