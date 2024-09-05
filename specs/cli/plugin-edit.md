@@ -2,7 +2,7 @@
 
 ## Description
 
-`kiota plugin update` allows a developer to edit an existing plugin in the `workspace.json` file. If either the `workspace.json` file or if the `--plugin-name` plugin can't be found within the `workspace.json` file, the command should error out and let the developer know.
+`kiota plugin edit` allows a developer to edit an existing plugin in the `workspace.json` file. If either the `workspace.json` file or if the `--plugin-name` plugin can't be found within the `workspace.json` file, the command should error out and let the developer know.
 
 When executing, the plugin entry defined by the `--plugin-name` parameter will be modified. All parameters should be supported and the only required one is `--plugin-name`. All others are optional as they would only modify the configuration of the plugin. If the OpenAPI document location changed or any properties of the plugin entry in `workspace.json`, a new hash composed of the Kiota version, the OpenAPI document location and the properties of the manifest will be generated and and would trigger an update to the [API Manifest][def] located in the root folder (the).
 > [!NOTE]
