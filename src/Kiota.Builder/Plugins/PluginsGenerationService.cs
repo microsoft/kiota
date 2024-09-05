@@ -320,9 +320,9 @@ public partial class PluginsGenerationService
     {
         var conversionStarters = functions.Select(static x => x.Description)
                                                               .Where(static x => !string.IsNullOrEmpty(x))
-                                                              .Select(new ConversationStarter
+                                                              .Select(static x => new ConversationStarter
                                                                         {
-                                                                            Text = description.Length < 50 ? description : description[..50],
+                                                                            Text = x.Length < 50 ? x : x[..50],
                                                                         })
                                                               .ToArray();
 
