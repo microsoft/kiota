@@ -17,38 +17,32 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         if (!codeElement.Options.Any())
             return;
 
-        var codeNamespace = codeElement.Parent as CodeNamespace;
-        if (codeNamespace != null)
-        {
-            writer.WriteLine(AutoGenerationHeader);
-            foreach (var x in codeElement.Usings
-                    .Where(static x => x.Declaration?.IsExternal ?? true)
-                    .Select(static x => $"using {(x.Declaration?.Name ?? x.Name).NormalizeNameSpaceName(".")};")
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(static x => x, StringComparer.Ordinal))
-                writer.WriteLine(x);
-            writer.StartBlock($"namespace {codeNamespace.Name} {{");
-        }
         conventions.WriteShortDescription(codeElement, writer);
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
+        writer.StartBlock($"enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
         var idx = 0;
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
-
-            if (option.IsNameEscaped)
+            if (IsAllCapital(option.Name))
             {
-                writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName}\")]");
+                writer.WriteLine($"{option.Name}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
             }
-            writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            else
+            {
+                writer.WriteLine($"{option.Name.ToFirstCharacterLowerCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            }
             idx++;
         }
-        if (codeNamespace != null)
-            writer.CloseBlock();
     }
+
+    private bool IsAllCapital(String text)
+    {
+        return text.All(c => char.IsUpper(c));
+    }
+
     private static readonly Func<int, string> GetEnumFlag = static idx =>
         (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
 }
