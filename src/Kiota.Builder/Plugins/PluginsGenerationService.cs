@@ -326,6 +326,6 @@ public partial class PluginsGenerationService
                                                                         })
                                                               .ToArray();
 
-        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
+        return conversionStarters.Length > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }
