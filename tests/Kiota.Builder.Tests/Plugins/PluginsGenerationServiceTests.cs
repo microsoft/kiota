@@ -49,6 +49,7 @@ servers:
 paths:
   /test:
     get:
+      summary: summary for test path
       description: description for test path
       responses:
         '200':
@@ -106,6 +107,7 @@ paths:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
     }
@@ -196,6 +198,7 @@ components:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
         var openApiReader = new OpenApiStreamReader();
