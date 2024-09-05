@@ -324,8 +324,8 @@ public partial class PluginsGenerationService
                                                                         {
                                                                             Text = x.Length < 50 ? x : x[..50],
                                                                         })
-                                                              .ToArray();
+                                                              .ToList();
 
-        return conversionStarters.Length > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
+        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }
