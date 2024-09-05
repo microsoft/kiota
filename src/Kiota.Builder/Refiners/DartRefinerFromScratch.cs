@@ -102,7 +102,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
     /// <summary> 
     /// Corrects common names so they can be used with Dart.
     /// This normally comes down to changing the first character to lower case.
-    /// <example><code>GetFieldDeserializers</code> is corrected to <code>GetFieldDeserializers</code>
+    /// <example><code>GetFieldDeserializers</code> is corrected to <code>getFieldDeserializers</code>
     /// </summary>
     private static void CorrectCommonNames(CodeElement currentElement)
     {

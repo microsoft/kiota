@@ -22,7 +22,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(static x => x.Declaration?.IsExternal ?? false ?
                                     $"import 'package:{x.Declaration.Name}.dart';" :
-                                    $"import {x.Declaration!.Name}.dart")
+                                    $"import './{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';")
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
