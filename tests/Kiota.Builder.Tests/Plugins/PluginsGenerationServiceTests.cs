@@ -600,6 +600,22 @@ components:
                     Assert.Single(schema.Properties);
                 }
             },
+            // normal schema
+            {
+                """
+                content:
+                            application/json:
+                                schema: {type: object, properties: {c: {type: number}}}
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Single(schema.Properties);
+                }
+            },
         };
     }
 
