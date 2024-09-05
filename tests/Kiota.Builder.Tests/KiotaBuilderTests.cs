@@ -2840,6 +2840,89 @@ paths:
         Assert.True(executorMethod.ReturnType is CodeType); // not union
         Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
     }
+    [Fact]
+    public void SupportsNullableAnyOf()
+    {
+        var anyOfSchema = new OpenApiSchema
+        {
+            Type = "object",
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        AnyOf = [
+                            new OpenApiSchema {
+                                Type = "string",
+                                Nullable = true
+                            },
+                            new OpenApiSchema {
+                                Type = "number",
+                                Format = "int64",
+                                Nullable = true,
+                            }
+                        ]
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "anyOfNullable",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = anyOfSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "anyOfNullable", anyOfSchema
+                    }
+                },
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var anyOfClass = codeModel.FindChildByName<CodeClass>("anyOfNullable");
+        Assert.NotNull(anyOfClass);
+        var dateProperty = anyOfClass.FindChildByName<CodeProperty>("date", false);
+        Assert.NotNull(dateProperty);
+        if (dateProperty.Type is not CodeIntersectionType unionType)
+            Assert.Fail("Date property type is not a union type");
+        else
+        {
+            Assert.Equal(2, unionType.Types.Count());
+            Assert.Contains(unionType.Types, x => x.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(unionType.Types, x => x.Name.Equals("int64", StringComparison.OrdinalIgnoreCase));
+        }
+    }
 
     [Fact]
     public void AddsDiscriminatorMappings()
