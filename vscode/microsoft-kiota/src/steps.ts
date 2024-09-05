@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
+
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
@@ -389,7 +390,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!isDeepLinkPluginNameProvided)  {
+        if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
                 step: step++,
@@ -576,7 +577,7 @@ class MultiStepInput {
                 step = await step(this);
             } catch (err) {
                 if (err === InputFlowAction.back) {
-                    if (onNavBack) { 
+                    if (onNavBack) {
                         onNavBack();  //Currently, step -= 2 passed as onNavBack because of using postfix increment in steps in the input functions
                     }
                     this.steps.pop();
