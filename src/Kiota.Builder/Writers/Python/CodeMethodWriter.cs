@@ -344,7 +344,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                         foreach (var parameter in pathParameters)
                         {
                             var (name, identName) = parameter;
-                            writer.WriteLine($"{pathParametersParameter.Name}['{name}'] = str({identName})");
+                            writer.WriteLine($"{pathParametersParameter.Name}['{name}'] = {identName}");
                         }
                         writer.DecreaseIndent();
                     }
