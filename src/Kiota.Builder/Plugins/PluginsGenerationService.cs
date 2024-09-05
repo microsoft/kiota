@@ -119,16 +119,36 @@ public partial class PluginsGenerationService
                 {
                     var schema = contentItem.Value.Schema;
                     // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
-                    contentItem.Value.Schema = MergeAllOfInSchema(schema);
+                    schema = MergeAllOfInSchema(schema);
+                    schema = SelectFirstAnyOfOrOneOf(schema);
+                    contentItem.Value.Schema = schema;
                 }
             }
         }
 
         return openApiDocument;
 
+        static OpenApiSchema? SelectFirstAnyOfOrOneOf(OpenApiSchema? schema)
+        {
+            if (schema?.AnyOf is not { Count: > 0 } && schema?.OneOf is not { Count: > 0 }) return schema;
+            OpenApiSchema newSchema;
+            if (schema.AnyOf is { Count: > 0 })
+            {
+                newSchema = schema.AnyOf[0];
+            }
+            else if (schema.OneOf is { Count: > 0 })
+            {
+                newSchema = schema.OneOf[0];
+            }
+            else
+            {
+                newSchema = schema;
+            }
+            return newSchema;
+        }
         static OpenApiSchema? MergeAllOfInSchema(OpenApiSchema? schema)
         {
-            if (schema?.AllOf is null || schema.AllOf.Count == 0) return schema;
+            if (schema?.AllOf is not { Count: > 0 }) return schema;
             var newSchema = new OpenApiSchema();
             foreach (var apiSchema in schema.AllOf)
             {

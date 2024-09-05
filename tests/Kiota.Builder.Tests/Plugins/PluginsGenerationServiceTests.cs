@@ -512,13 +512,14 @@ components:
         }
     }
 
-    #region AllOfValidation
+    #region Validation
 
     public static TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
-        AllOfSchemaTestInput()
+        ValidationSchemaTestInput()
     {
         return new TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
         {
+            // AllOf
             // simple disjoint
             {
                 """
@@ -559,11 +560,51 @@ components:
                     Assert.Equal(3, schema.Properties.Count);
                 }
             },
+            // AnyOf
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    anyOf: [
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}},
+                                        {type: object, properties: {c: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(2, schema.Properties.Count);
+                }
+            },
+            // OneOf
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    oneOf: [
+                                        {type: object, properties: {c: {type: number}}},
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Single(schema.Properties);
+                }
+            },
         };
     }
 
     [Theory]
-    [MemberData(nameof(AllOfSchemaTestInput))]
+    [MemberData(nameof(ValidationSchemaTestInput))]
     public async Task MergesAllOfRequestBodyAsync(string content, Action<OpenApiDocument, OpenApiDiagnostic> assertions)
     {
         var apiDescription = $"""
