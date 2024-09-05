@@ -138,6 +138,7 @@ public partial class PluginsGenerationService
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
+        var capabilities = GetPluginCapabilitiesFromFunctions(functions);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         return new PluginManifestDocument
@@ -161,7 +162,8 @@ public partial class PluginsGenerationService
                                 return result;
                             })
                             .OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
-            Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
+            Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
+            Capabilities = capabilities,
         };
     }
 
@@ -306,5 +308,28 @@ public partial class PluginsGenerationService
         }
 
         return null;
+    }
+
+    private static Capabilities GetPluginCapabilitiesFromFunctions(IList<Function> functions)
+    {
+        var conversionStarters = new List<ConversationStarter>();
+        foreach (var function in functions)
+        {
+            if (!string.IsNullOrEmpty(function.Description))
+            {
+                conversionStarters.Add(new ConversationStarter
+                {
+                    Text = function.Description,
+                });
+            }
+        }
+
+        var capabilities = new Capabilities();
+
+        if (conversionStarters.Count > 0)
+        {
+            capabilities.ConversationStarters = conversionStarters;
+        }
+        return capabilities;
     }
 }
