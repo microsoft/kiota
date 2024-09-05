@@ -155,9 +155,6 @@ public partial class PluginsGenerationService
                 if (apiSchema.Default is not null) newSchema.Default = apiSchema.Default;
                 if (apiSchema.ReadOnly) newSchema.ReadOnly = apiSchema.ReadOnly;
                 if (apiSchema.WriteOnly) newSchema.WriteOnly = apiSchema.WriteOnly;
-                //if (apiSchema.AllOf is not null) newSchema.AllOf = apiSchema.AllOf;
-                //if (apiSchema.OneOf is not null) newSchema.OneOf = apiSchema.OneOf;
-                //if (apiSchema.AnyOf is not null) newSchema.AnyOf = apiSchema.AnyOf;
                 if (apiSchema.Not is not null) newSchema.Not = apiSchema.Not;
                 if (apiSchema.Required is { Count: > 0 })
                 {
