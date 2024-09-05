@@ -332,8 +332,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 shouldResume: shouldResume
             });
         }
+        state.pluginTypes = ['ApiPlugin'];
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputPluginType(input, state);
+        return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
     async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginTypeProvided) {
