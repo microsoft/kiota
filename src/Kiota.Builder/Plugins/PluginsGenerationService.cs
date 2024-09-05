@@ -319,7 +319,7 @@ public partial class PluginsGenerationService
             {
                 conversionStarters.Add(new ConversationStarter
                 {
-                    Text = function.Description,
+                    Text = function.Description.Length < 50 ? function.Description : function.Description.Substring(0, 50),
                 });
             }
         }
