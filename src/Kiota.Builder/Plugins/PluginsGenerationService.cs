@@ -313,13 +313,13 @@ public partial class PluginsGenerationService
     private static Capabilities GetPluginCapabilitiesFromFunctions(IList<Function> functions)
     {
         var conversionStarters = new List<ConversationStarter>();
-        foreach (var function in functions)
+        foreach (var description in functions.Select(x => x.Description))
         {
-            if (!string.IsNullOrEmpty(function.Description))
+            if (!string.IsNullOrEmpty(description))
             {
                 conversionStarters.Add(new ConversationStarter
                 {
-                    Text = function.Description.Length < 50 ? function.Description : function.Description.Substring(0, 50),
+                    Text = description.Length < 50 ? description : description.Substring(0, 50),
                 });
             }
         }
