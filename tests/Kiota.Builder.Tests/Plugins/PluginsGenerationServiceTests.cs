@@ -49,7 +49,6 @@ servers:
 paths:
   /test:
     get:
-      summary: summary for test path
       description: description for test path
       responses:
         '200':
