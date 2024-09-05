@@ -321,9 +321,9 @@ public partial class PluginsGenerationService
         var conversionStarters = functions.Select(static x => x.Description)
                                                               .Where(static x => !string.IsNullOrEmpty(x))
                                                               .Select(static x => new ConversationStarter
-                                                                        {
-                                                                            Text = x.Length < 50 ? x : x[..50],
-                                                                        })
+                                                              {
+                                                                  Text = x.Length < 50 ? x : x[..50],
+                                                              })
                                                               .ToList();
 
         return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
