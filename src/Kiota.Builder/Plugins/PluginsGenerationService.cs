@@ -141,7 +141,7 @@ public partial class PluginsGenerationService
         var capabilities = GetPluginCapabilitiesFromFunctions(functions);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
-        return new PluginManifestDocument
+        var pluginManifestDocument = new PluginManifestDocument
         {
             Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
             SchemaVersion = "v2.1",
@@ -163,8 +163,14 @@ public partial class PluginsGenerationService
                             })
                             .OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
-            Capabilities = capabilities,
         };
+
+        // Only add capabilities if there are any
+        if (capabilities != null)
+        {
+            pluginManifestDocument.Capabilities = capabilities;
+        }
+        return pluginManifestDocument;
     }
 
     private static OpenApiManifestInfo ExtractInfoFromDocument(OpenApiInfo? openApiInfo)
@@ -310,7 +316,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static Capabilities GetPluginCapabilitiesFromFunctions(IList<Function> functions)
+    private static Capabilities? GetPluginCapabilitiesFromFunctions(IList<Function> functions)
     {
         var conversionStarters = new List<ConversationStarter>();
         foreach (var description in functions.Select(x => x.Description))
@@ -324,12 +330,6 @@ public partial class PluginsGenerationService
             }
         }
 
-        var capabilities = new Capabilities();
-
-        if (conversionStarters.Count > 0)
-        {
-            capabilities.ConversationStarters = conversionStarters;
-        }
-        return capabilities;
+        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }
