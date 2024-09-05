@@ -318,17 +318,13 @@ public partial class PluginsGenerationService
 
     private static Capabilities? GetPluginCapabilitiesFromFunctions(IList<Function> functions)
     {
-        var conversionStarters = new List<ConversationStarter>();
-        foreach (var description in functions.Select(x => x.Description))
-        {
-            if (!string.IsNullOrEmpty(description))
-            {
-                conversionStarters.Add(new ConversationStarter
-                {
-                    Text = description.Length < 50 ? description : description[..50],
-                });
-            }
-        }
+        var conversionStarters = functions.Select(static x => x.Description)
+                                                              .Where(static x => !string.IsNullOrEmpty(descriptiox))
+                                                              .Select(new ConversationStarter
+                                                                        {
+                                                                            Text = description.Length < 50 ? description : description[..50],
+                                                                        })
+                                                              .ToArray();
 
         return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
