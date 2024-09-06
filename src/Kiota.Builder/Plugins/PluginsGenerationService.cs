@@ -106,19 +106,16 @@ public partial class PluginsGenerationService
     private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
     {
         if (openApiDocument.Paths is null) return openApiDocument;
-        foreach (var path in openApiDocument.Paths.Values.Where(static x => x?.Operations is not null))
+        var contentItems = openApiDocument.Paths.Values.Where(static x => x?.Operations is not null)
+            .SelectMany(static x => x.Operations.Values.Where(static x => x?.RequestBody?.Content is not null)
+                .SelectMany(static x => x.RequestBody.Content.Values));
+        foreach (var contentItem in contentItems)
         {
-            foreach (var operation in path.Operations.Values.Where(static x => x?.RequestBody?.Content is not null))
-            {
-                foreach (var contentItem in operation.RequestBody.Content.Values)
-                {
-                    var schema = contentItem.Schema;
-                    // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
-                    schema = MergeAllOfInSchema(schema);
-                    schema = SelectFirstAnyOfOrOneOf(schema);
-                    contentItem.Schema = schema;
-                }
-            }
+            var schema = contentItem.Schema;
+            // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
+            schema = MergeAllOfInSchema(schema);
+            schema = SelectFirstAnyOfOrOneOf(schema);
+            contentItem.Schema = schema;
         }
 
         return openApiDocument;
