@@ -4,6 +4,7 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { isTemporaryDirectory } from './utilities/temporary-folder';
+import { ifError } from 'assert';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -167,7 +168,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             case 'plugin':
                 return inputPluginName;
             case 'apimanifest':
-                return inputManifestName;
+                return inputPluginType;
             default:
                 throw new Error('unknown generation type');
         }
@@ -306,7 +307,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginTypeProvided) {
-            const items = ['API Plugin', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
+            const items = ['API Manifest', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a plugin type'),
                 step: step++,
@@ -316,9 +317,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'API Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
+            pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
         }
-        return (input: MultiStepInput) => inputPluginOutputPath(input, state);
+        return (input: MultiStepInput) => inputManifestName(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (!isDeepLinkOutputPathProvided) {
