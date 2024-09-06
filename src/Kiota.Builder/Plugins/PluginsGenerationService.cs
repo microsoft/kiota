@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +11,6 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
-using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -109,19 +106,17 @@ public partial class PluginsGenerationService
     private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
     {
         if (openApiDocument.Paths is null) return openApiDocument;
-        foreach (var path in openApiDocument.Paths)
+        foreach (var path in openApiDocument.Paths.Values.Where(static x => x?.Operations is not null))
         {
-            if (path.Value?.Operations is null) continue;
-            foreach (var operation in path.Value.Operations)
+            foreach (var operation in path.Operations.Values.Where(static x => x?.RequestBody?.Content is not null))
             {
-                if (operation.Value?.RequestBody?.Content is null) continue;
-                foreach (var contentItem in operation.Value.RequestBody.Content)
+                foreach (var contentItem in operation.RequestBody.Content.Values)
                 {
-                    var schema = contentItem.Value.Schema;
+                    var schema = contentItem.Schema;
                     // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
                     schema = MergeAllOfInSchema(schema);
                     schema = SelectFirstAnyOfOrOneOf(schema);
-                    contentItem.Value.Schema = schema;
+                    contentItem.Schema = schema;
                 }
             }
         }
