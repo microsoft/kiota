@@ -267,7 +267,11 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             if ((currentNode.isOperation || false) && this.rawRootNode) {
                 const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
                 if (parent && !parent.selected) {
-                    result.push(currentNode.path.replace(/\\/g, pathSeparator));
+                    let operationPath = currentNode.path.replace(/\\/g, pathSeparator);
+                    if(operationPath.startsWith('#')) {//its a operation at the root it needs a leading slash
+                        operationPath = `${pathSeparator}${operationPath}`;
+                    }
+                    result.push(operationPath);
                 }
             } else {
                 result.push(currentNode.path.replace(/\\/g, pathSeparator));

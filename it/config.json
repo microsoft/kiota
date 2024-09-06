@@ -161,8 +161,7 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2957"
       }
     ],
-    "IdempotencySuppressions": [
-    ]
+    "IdempotencySuppressions": []
   },
   "apisguru::twilio.com:api": {
     "ExcludePatterns": [
@@ -253,6 +252,10 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/5354"
       }
     ],
     "IdempotencySuppressions": [
@@ -301,13 +304,10 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
     ],
-    "IdempotencySuppressions": [
-    ]
+    "IdempotencySuppressions": []
   },
   "apisguru::apis.guru": {
-    "Suppressions": [
-    ],
-    "IdempotencySuppressions": [
-    ]
+    "Suppressions": [],
+    "IdempotencySuppressions": []
   }
 }

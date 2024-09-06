@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed a bug where collection/array of primitive types members for union/intersection types would be ignored. [#5283](https://github.com/microsoft/kiota/issues/5283)
+- Fixed a when generating a plugin when only an operation is selected in the root node in the extension. [#5300](https://github.com/microsoft/kiota/issues/5300)
+
+## [1.18.0] - 2024-09-05
+
+### Added
+
 - Added the ability to export the CodeDom to a file showing the public APIs to be generated in a given language [#4627](https://github.com/microsoft/kiota/issues/4627)
 - Added composed type serialization in Typescript [2462](https://github.com/microsoft/kiota/issues/2462)
 - Use authentication information available in the source OpenAPI document when generating a plugin manifest. [#5070](https://github.com/microsoft/kiota/issues/5070)
@@ -21,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where untyped node imports would be missing CSharp/Go/TypeScript/Java. [#5326](https://github.com/microsoft/kiota/issues/5326)
 - Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
 - Removed OpenAI plugins generation since the service does not support them anymore.
+- Fixed a bug where a nullable union type would lead to an exception at generation. [#5276](https://github.com/microsoft/kiota/issues/5276)
 - Fixed a bug where the error message would not be deserialized if the property name matched a reserved property. [#5311](https://github.com/microsoft/kiota/issues/5311)
 - Fixed an issue where TypeScript clients would be missing path parameters. [#5247](https://github.com/microsoft/kiota/issues/5247)
 - Fixed a bug where names normalization could lead to collisions in Ruby and other languages. [#5310](https://github.com/microsoft/kiota/issues/5310)
