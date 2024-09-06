@@ -20,9 +20,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         {
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
-                    .Select(static x => x.Declaration?.IsExternal ?? false ?
+                    .Select(x => x.Declaration?.IsExternal ?? false ?
                                     $"import 'package:{x.Declaration.Name}.dart';" :
-                                    $"import './{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';")
+                                    getImportStatement(x, codeElement))
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
@@ -39,5 +39,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
+    }
+
+    private static string getImportStatement(CodeUsing x, ClassDeclaration codeElement)
+    {
+        return codeElement.GetNamespaceDepth() == 1 ?
+             $"import './{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';"
+             : $"import '../{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
     }
 }

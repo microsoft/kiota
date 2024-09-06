@@ -79,6 +79,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 }, addCurrentTypeAsGenericTypeParameter: true);
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddInheritedTypeImport(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -199,6 +200,24 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
     {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
+    private static void AddInheritedTypeImport(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass &&
+           currentClass.StartBlock is ClassDeclaration currentClassDeclaration &&
+           currentClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentClassNamespace)
+        {
+            var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
+            var usingsToAdd = inheritTypes
+                            .SelectMany(static x => x.AllTypes.Select(static y => (type: y, ns: y.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                            .Where(static x => x.ns != null)
+                            .Select(static x => new CodeUsing { Name = x.ns!.Name, Declaration = x.type })
+                            .Where(x => x.Declaration?.TypeDefinition != currentElement)
+                            .ToArray();
 
 
+            if (usingsToAdd.Length != 0)
+                (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd);
+        }
+        CrawlTree(currentElement, AddInheritedTypeImport);
+    }
 }
