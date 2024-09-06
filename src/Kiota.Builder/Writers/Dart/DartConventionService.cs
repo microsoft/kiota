@@ -87,8 +87,8 @@ public class DartConventionService : CommonLanguageConventionService
         // Dart does not support access modifiers
         return "";
     }
-    
-    #pragma warning disable CA1822 // Method should be static
+
+#pragma warning disable CA1822 // Method should be static
     public string GetAccessModifierPrefix(AccessModifier access)
     {
         return access switch
@@ -120,7 +120,7 @@ public class DartConventionService : CommonLanguageConventionService
         if (string.IsNullOrEmpty(varName))
         {
             varName = TempDictionaryVarName;
-            writer.WriteLine($"var {varName} = new {pathParametersType.Name}({pathParametersReference});");
+            writer.WriteLine($"var {varName} = {pathParametersType.Name}({pathParametersReference});");
         }
         if (parameters.Length != 0)
         {

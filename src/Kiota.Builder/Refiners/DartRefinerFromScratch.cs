@@ -50,6 +50,21 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
             CorrectCommonNames(generatedCode);
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = AbstractionsNamespaceName,
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "DefaultQueryParameters",
+                    IsExternal = true,
+                });
 
             // This adds the BaseRequestBuilder class as a superclass
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
