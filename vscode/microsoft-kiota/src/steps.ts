@@ -4,7 +4,7 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
-import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
+import { isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -117,38 +117,6 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     await MultiStepInput.run(input => inputPathOrSearch(input, state), () => step -= 2);
     return state;
 }
-
-export function transformToGenerationconfig(deepLinkParams: Record<string, string | undefined>)
-    : Partial<GenerateState> {
-    const generationConfig: Partial<GenerateState> = {};
-    if (deepLinkParams.kind === "client") {
-        generationConfig.generationType = "client";
-        generationConfig.clientClassName = deepLinkParams.name;
-        generationConfig.language = deepLinkParams.language;
-    }
-    else if (deepLinkParams.kind === "plugin") {
-        generationConfig.pluginName = deepLinkParams.name;
-        switch (deepLinkParams.type) {
-            case "apiplugin":
-                generationConfig.generationType = "plugin";
-                generationConfig.pluginTypes = ["ApiPlugin"];
-                break;
-            case "openai":
-                generationConfig.generationType = "plugin";
-                generationConfig.pluginTypes = ['OpenAI'];
-                break;
-            case "apimanifest":
-                generationConfig.generationType = "apimanifest";
-                break;
-        }
-        generationConfig.outputPath =
-            (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
-                ? createTemporaryFolder()
-                : undefined;
-    }
-    return generationConfig;
-}
-
 
 export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
