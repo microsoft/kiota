@@ -145,7 +145,7 @@ paths:
         };
         var kiotaBuilder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, generationConfiguration, _httpClient, true);
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await kiotaBuilder.GeneratePluginAsync(CancellationToken.None));
-        Assert.Equal("No paths found in the OpenAPI document", exception.Message);
+        Assert.Equal("No paths found in the OpenAPI document.", exception.Message);
     }
 
     [Fact]
