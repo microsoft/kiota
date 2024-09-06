@@ -147,7 +147,7 @@ public class GitHubSearchProvider : ISearchProvider
         try
         {
             if (await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false)
-                 is not { ContentFile: { DownloadUrl: string downloadUrl } } || string.IsNullOrEmpty(downloadUrl))
+                 is not { ContentFile.DownloadUrl: string downloadUrl } || string.IsNullOrEmpty(downloadUrl))
                 return [];
             var targetUrl = new Uri(downloadUrl);
 #pragma warning disable CA2007
@@ -160,7 +160,7 @@ public class GitHubSearchProvider : ISearchProvider
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };
             if (indexFile is null || indexFile.Apis is null)
-                return Enumerable.Empty<Tuple<string, SearchResult>>();
+                return [];
             await GetUrlForRelativeDescriptionsAsync(indexFile.Apis, gitHubClient, org, repo, cancellationToken).ConfigureAwait(false);
             var results = indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
                                 .Select(x =>
@@ -219,7 +219,7 @@ public class GitHubSearchProvider : ISearchProvider
         {
             var fileName = originalUrl.TrimStart('/');
             if (await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false) is
-                { ContentFile: { DownloadUrl: string downloadUrl } } && !string.IsNullOrEmpty(downloadUrl))
+                { ContentFile.DownloadUrl: string downloadUrl } && !string.IsNullOrEmpty(downloadUrl))
                 return new Tuple<string, string?>(originalUrl, downloadUrl);
         }
         catch (BasicError)
