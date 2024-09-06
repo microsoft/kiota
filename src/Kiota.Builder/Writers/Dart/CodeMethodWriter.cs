@@ -272,8 +272,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                                 .ToArray());
         }
     }
-    private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
-
+    private string DefaultDeserializerValue => $"Map<String, Action<{conventions.ParseNodeInterfaceName}>>()";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
@@ -454,7 +453,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteSerializerBodyForInheritedModel(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         if (shouldHide)
-            writer.WriteLine("base.Serialize(writer);");
+            writer.WriteLine("super.serialize(writer);");
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
