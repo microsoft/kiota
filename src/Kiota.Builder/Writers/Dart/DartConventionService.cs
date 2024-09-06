@@ -45,7 +45,6 @@ public class DartConventionService : CommonLanguageConventionService
         var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Length != 0)
         {
-            writer.WriteLine(DocCommentPrefix);
             if (documentation.DescriptionAvailable)
             {
                 var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix);
@@ -274,15 +273,15 @@ public class DartConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        return type.Name switch
+        return type.Name.ToLowerInvariant() switch
         {
-            "integer" or "sbyte" or "byte"  => "int",
+            "integer" or "sbyte" or "byte" => "int",
             "boolean" => "bool",
             "string" => "String",
             "double" or "float" or "decimal" or "int64" => "double",
             "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
-            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
 
