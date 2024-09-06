@@ -169,6 +169,9 @@ export interface IntegrationParams {
   type: string;
   language: string;
   source: string;
+  ttkContext: {
+    lastCommand: string;
+  }
 };
 
 export function validateDeepLinkQueryParams(queryParameters: Partial<IntegrationParams>):
@@ -230,6 +233,7 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
     type: providedType,
     language: givenLanguage,
     source: source,
+    ttkContext: queryParameters.ttkContext ? queryParameters.ttkContext : undefined
   };
   return [validQueryParams, errormsg];
 }

@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory, IntegrationParams } from './util';
 import { createTemporaryFolder, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
@@ -117,7 +117,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-export function transformToGenerationconfig(deepLinkParams: Record<string, string | undefined>)
+export function transformToGenerationconfig(deepLinkParams: Partial<IntegrationParams>)
     : Partial<GenerateState> {
     const generationConfig: Partial<GenerateState> = {};
     if (deepLinkParams.kind === "client") {
