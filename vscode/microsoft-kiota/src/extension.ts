@@ -214,7 +214,8 @@ export async function activate(
                 'fx-extension.createprojectfromkiota',
                 [
                   pathOfSpec,
-                  pathPluginManifest
+                  pathPluginManifest,
+                  deepLinkParams.ttkContext ? deepLinkParams.ttkContext : undefined
                 ]
               );
             } catch (error) {
