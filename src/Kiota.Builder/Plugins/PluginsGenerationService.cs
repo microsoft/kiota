@@ -132,7 +132,7 @@ public partial class PluginsGenerationService
         }
 
         if (requestUrls.Count == 0)
-            throw new InvalidOperationException("No operations found in the OpenAPI document.");
+            throw new InvalidOperationException("No paths found in the OpenAPI document.");
 
         var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
         return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
