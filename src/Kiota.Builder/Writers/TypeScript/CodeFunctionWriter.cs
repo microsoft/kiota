@@ -70,7 +70,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
-        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType)))
+        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType, false)))
         {
             var functionName = GetDeserializerFunctionName(codeElement, mappedType);
             var variableName = composedParam.Name.ToFirstCharacterLowerCase();
@@ -86,12 +86,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         if (GetOriginalComposedType(composedParam) is not { } composedType) return;
 
-        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
+        if (composedType.IsComposedOfPrimitives((x, y) => IsPrimitiveType(x, y, false)))
         {
             var paramName = composedParam.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
             writer.StartBlock($"switch (typeof {paramName}) {{");
-            foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
+            foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)))
             {
                 WriteCaseStatementForPrimitiveTypeSerialization(type, "key", paramName, codeElement, writer);
             }
@@ -327,11 +327,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
 
         var codeFunction = Array.Find(codeFunctions,
-            func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name);
-
-        if (codeFunction == null)
+            func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??
             throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
-
         return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
     }
 

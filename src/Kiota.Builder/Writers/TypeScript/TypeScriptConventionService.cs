@@ -225,7 +225,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase));
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, true);
+
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
