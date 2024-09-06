@@ -131,6 +131,9 @@ public partial class PluginsGenerationService
             requestUrls[key] = path.Value.Operations.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
         }
 
+        if (requestUrls.Count == 0)
+            throw new InvalidOperationException("No paths found in the OpenAPI document.");
+
         var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
         return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
     }
@@ -138,9 +141,10 @@ public partial class PluginsGenerationService
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
+        var capabilities = GetPluginCapabilitiesFromFunctions(functions);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
-        return new PluginManifestDocument
+        var pluginManifestDocument = new PluginManifestDocument
         {
             Schema = "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
             SchemaVersion = "v2.1",
@@ -161,8 +165,15 @@ public partial class PluginsGenerationService
                                 return result;
                             })
                             .OrderBy(static x => x.RunForFunctions[0], StringComparer.OrdinalIgnoreCase)],
-            Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)]
+            Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
         };
+
+        // Only add capabilities if there are any
+        if (capabilities != null)
+        {
+            pluginManifestDocument.Capabilities = capabilities;
+        }
+        return pluginManifestDocument;
     }
 
     private static OpenApiManifestInfo ExtractInfoFromDocument(OpenApiInfo? openApiInfo)
@@ -306,5 +317,18 @@ public partial class PluginsGenerationService
         }
 
         return null;
+    }
+
+    private static Capabilities? GetPluginCapabilitiesFromFunctions(IList<Function> functions)
+    {
+        var conversionStarters = functions.Select(static x => x.Description)
+                                                              .Where(static x => !string.IsNullOrEmpty(x))
+                                                              .Select(static x => new ConversationStarter
+                                                              {
+                                                                  Text = x.Length < 50 ? x : x[..50],
+                                                              })
+                                                              .ToList();
+
+        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }

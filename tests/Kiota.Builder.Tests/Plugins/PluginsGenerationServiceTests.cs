@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
@@ -106,12 +107,48 @@ paths:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
+        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[0].Text.Length < 50);// Conversation starters are limited to 50 characters
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
     }
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
     private const string OpenApiFileName = "client-openapi.yml";
+
+    [Fact]
+    public async Task ThrowsOnEmptyPathsAfterFilteringAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      responses:
+        '200':
+          description: test";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
+            ClientClassName = "testPlugin",
+            IncludePatterns = ["test/id"]// this would filter out all paths
+        };
+        var kiotaBuilder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, generationConfiguration, _httpClient, true);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await kiotaBuilder.GeneratePluginAsync(CancellationToken.None));
+        Assert.Equal("No paths found in the OpenAPI document.", exception.Message);
+    }
 
     [Fact]
     public async Task GeneratesManifestAndCleansUpInputDescriptionAsync()
@@ -196,6 +233,7 @@ components:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
         var openApiReader = new OpenApiStreamReader();
