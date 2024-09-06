@@ -154,6 +154,45 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
+        ArgumentNullException.ThrowIfNull(currentProperty);
+
+        if (currentProperty.IsOfKind(CodePropertyKind.Options))
+            currentProperty.DefaultValue = "List<RequestOption>()";
+        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
+            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+        {
+            currentProperty.Type.Name = "RequestAdapter";
+            currentProperty.Type.IsNullable = true;
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        {
+            currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+        {
+            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            currentProperty.Type.Name = "Map<String, Object>";
+            currentProperty.DefaultValue = "Map<String, Object>()";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
+        {
+            currentProperty.Type.IsNullable = true;
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
+        {
+            currentProperty.Type.IsNullable = true;
+            currentProperty.Type.Name = "Map<String, Object>";
+            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                currentProperty.DefaultValue = "Map<String, Object>()";
+        }
+        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        // TODO KEES
+        // CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
     private static void CorrectImplements(ProprietableBlockDeclaration block)

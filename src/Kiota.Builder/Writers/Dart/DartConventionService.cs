@@ -109,8 +109,10 @@ public class DartConventionService : CommonLanguageConventionService
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-            var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterUpperCase() : urlTemplateVarName;
-            writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
+            var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterLowerCase() : urlTemplateVarName;
+            // TODO Kees this can't be the final output but curently it creates a correct ApiClient
+            writer.WriteLine($"{prefix}{returnType}({requestAdapterProp.Name.ToFirstCharacterLowerCase()}, \"\", {urlTplRef});");
+
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
