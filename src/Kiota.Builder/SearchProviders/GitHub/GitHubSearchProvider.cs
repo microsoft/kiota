@@ -143,12 +143,12 @@ public class GitHubSearchProvider : ISearchProvider
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepoAsync(GitHubClient.GitHubClient gitHubClient, string? org, string? repo, string fileName, string accept, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(org) || string.IsNullOrEmpty(repo))
-            return Enumerable.Empty<Tuple<string, SearchResult>>();
+            return [];
         try
         {
-            var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response == null || response.DownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
-                return Enumerable.Empty<Tuple<string, SearchResult>>();
+            if (await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false)
+                 is not { ContentFile: { DownloadUrl: string downloadUrl } } || string.IsNullOrEmpty(downloadUrl))
+                return [];
             var targetUrl = new Uri(downloadUrl);
 #pragma warning disable CA2007
             await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken).ConfigureAwait(false);
@@ -194,7 +194,7 @@ public class GitHubSearchProvider : ISearchProvider
         {
             _logger.LogError(ex, "Error while downloading the file {FileName} in {Org}/{Repo}", fileName, org, repo);
         }
-        return Enumerable.Empty<Tuple<string, SearchResult>>();
+        return [];
     }
     private async Task GetUrlForRelativeDescriptionsAsync(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken)
     {
@@ -218,8 +218,8 @@ public class GitHubSearchProvider : ISearchProvider
         try
         {
             var fileName = originalUrl.TrimStart('/');
-            var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response != null && response.DownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
+            if (await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false) is
+                { ContentFile: { DownloadUrl: string downloadUrl } } && !string.IsNullOrEmpty(downloadUrl))
                 return new Tuple<string, string?>(originalUrl, downloadUrl);
         }
         catch (BasicError)
