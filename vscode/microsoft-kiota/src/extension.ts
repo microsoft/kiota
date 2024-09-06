@@ -25,16 +25,15 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
+import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
-  IntegrationParams,
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
   handleMigration,
   isClientType, isPluginType, parseGenerationLanguage,
-  parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
+  parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
-import { isDeeplinkEnabled } from './utilities/deep-linking';
+import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -150,7 +149,7 @@ export async function activate(
           if (!deepLinkParams.name && openApiTreeProvider.apiTitle) {
             deepLinkParams.name = getSanitizedString(openApiTreeProvider.apiTitle);
           }
-          availableStateInfo = transformToGenerationconfig(deepLinkParams);
+          availableStateInfo = transformToGenerationConfig(deepLinkParams);
         } else {
           const pluginName = getSanitizedString(openApiTreeProvider.apiTitle);
           availableStateInfo = {
