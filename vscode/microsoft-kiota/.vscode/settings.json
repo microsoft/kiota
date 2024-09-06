@@ -12,11 +12,5 @@
     "typescript.tsc.autoDetect": "off",
     "cSpell.words": [
         "Kiota"
-    ],
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": "always"
-    }
+    ]
 }
