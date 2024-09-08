@@ -1158,22 +1158,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
         Assert.NotNull(modelCodeFile);
 
-        /*
-        \/**
-        * Creates a new instance of the appropriate class based on discriminator value
-        * @returns {ValidationError_errors_value}
-        *\/
-           export function createPrimitivesFromDiscriminatorValue(parseNode: ParseNode | undefined) : Primitives | undefined {
-                return parseNode?.getNumberValue() ?? parseNode?.getStringValue();
-            }
-         */
-
         // Test Factory function
         var factoryFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null);
         Assert.True(factoryFunction is not null);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("return parseNode?.getNumberValue() ?? parseNode?.getStringValue();", result);
+        Assert.Contains("return deserializeIntoPrimitives;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
@@ -1251,11 +1241,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(serializerFunction is not null);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
-        Assert.Contains("return", serializerFunctionStr);
-        Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"number\":", serializerFunctionStr);
-        Assert.Contains("case \"string\":", serializerFunctionStr);
-        Assert.Contains("break", serializerFunctionStr);
+        Assert.Contains("if (!primitives) return {};", serializerFunctionStr);
+        Assert.Contains("return {", serializerFunctionStr);
+        Assert.Contains("\"double\": n => { primitives.double = n.getNumberValue(); },", serializerFunctionStr);
+        Assert.Contains("\"string\": n => { primitives.string = n.getStringValue(); },", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1292,11 +1281,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(serializerFunction is not null);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
-        Assert.Contains("return", serializerFunctionStr);
-        Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"Cat\":", serializerFunctionStr);
-        Assert.Contains("case \"Dog\":", serializerFunctionStr);
-        Assert.Contains("break", serializerFunctionStr);
+        Assert.Contains("if (petsPatchRequestBody === undefined || petsPatchRequestBody === null) return;", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Dog>(\"Dog\", petsPatchRequestBody.dog, serializeDog);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Cat>(\"Cat\", petsPatchRequestBody.cat, serializeCat);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Cat>(\"Cat\", petsPatchRequestBody.petsPatchRequestBodyCat, serializeCat);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Dog>(\"Dog\", petsPatchRequestBody.petsPatchRequestBodyDog, serializeDog);", serializerFunctionStr);
+        Assert.Contains("if (petsPatchRequestBody.petsPatchRequestBodyCat) {", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1371,8 +1361,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(deserializerFunction is not null);
         writer.Write(deserializerFunction);
         var serializerFunctionStr = tw.ToString();
-        Assert.Contains("...deserializeIntoBar(fooBar as Bar),", serializerFunctionStr);
-        Assert.Contains("...deserializeIntoFoo(fooBar as Foo),", serializerFunctionStr);
+        Assert.Contains("\"bar\": n => { fooBar.bar = n.getObjectValue<Bar>(createBarFromDiscriminatorValue);", serializerFunctionStr);
+        Assert.Contains("\"foo\": n => { fooBar.foo = n.getObjectValue<Foo>(createFooFromDiscriminatorValue);", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1409,8 +1399,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(serializerFunction is not null);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
-        Assert.Contains("serializeBar(writer, fooBar as Bar);", serializerFunctionStr);
-        Assert.Contains("serializeFoo(writer, fooBar as Foo);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Bar>(\"Bar\", fooBar.bar, serializeBar);", serializerFunctionStr);
+        Assert.Contains("writer.writeObjectValue<Foo>(\"Foo\", fooBar.foo, serializeFoo);", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1454,23 +1444,18 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializeFunction);
         var result = tw.ToString();
 
-        Assert.Contains("case typeof parentClass.property === \"string\"", result);
-        Assert.Contains("writer.writeStringValue(\"property\", parentClass.property as string);", result);
-        Assert.Contains("case typeof parentClass.property === \"number\"", result);
-        Assert.Contains("writer.writeNumberValue(\"property\", parentClass.property as number);", result);
+        Assert.Contains("if (parentClass) {", result);
+        Assert.Contains("writer.writeStringValue(\"definedInParent\", parentClass.definedInParent);", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<string>(\"dummyColl\", parentClass.dummyColl);", result);
         Assert.Contains(
-            "writer.writeCollectionOfObjectValues<ArrayOfObjects>(\"property\", parentClass.property as ArrayOfObjects[] | undefined | null",
+            "writer.writeCollectionOfObjectValues<SomeComplexType>(\"dummyComplexColl\", parentClass.dummyComplexColl, serializeSomeComplexType);",
             result);
         Assert.Contains(
-            "writer.writeObjectValue<SingleObject>(\"property\", parentClass.property as SingleObject | undefined | null",
+            "writer.writeEnumValue<EnumType>(\"dummyEnumCollection\", parentClass.dummyEnumCollection);",
             result);
-        Assert.Contains("writeStringValue", result);
-        Assert.Contains("writeCollectionOfPrimitiveValues", result);
-        Assert.Contains("writeCollectionOfObjectValues", result);
-        Assert.Contains("serializeSomeComplexType", result);
-        Assert.Contains("writeEnumValue", result);
-        Assert.Contains("writer.writeAdditionalData", result);
-        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("writer.writeStringValue(\"dummyProp\", parentClass.dummyProp);", result);
+        Assert.Contains("writer.writeObjectValue<Union>(\"property\", parentClass.property, );", result);
+        Assert.Contains("writer.writeAdditionalData(parentClass.additionalData);", result);
     }
 
     [Fact]
@@ -1512,7 +1497,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializeFunction);
         var result = tw.ToString();
 
-        Assert.Contains("\"property\": n => { parentClass.property = n.getCollectionOfObjectValues<ArrayOfObjects>(createArrayOfObjectsFromDiscriminatorValue) ?? n.getNumberValue() ?? n.getObjectValue<SingleObject>(createSingleObjectFromDiscriminatorValue) ?? n.getStringValue(); }", result);
+        Assert.Contains("\"property\": n => { parentClass.property = n.getObjectValue<Union>(createUnionFromDiscriminatorValue); }", result);
     }
 }
 
