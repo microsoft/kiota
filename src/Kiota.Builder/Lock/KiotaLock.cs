@@ -34,7 +34,7 @@ public class KiotaLock
     /// <summary>
     /// The type access modifier to use for the client types.
     /// </summary>
-    public string TypeAccessModifier { get; set; } = string.Empty;
+    public string TypeAccessModifier { get; set; } = "Public";
     /// <summary>
     /// The main namespace for this client.
     /// </summary>

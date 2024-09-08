@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.Text.Json;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
@@ -24,6 +25,10 @@ internal class AddHandler : BaseKiotaCommandHandler
         get; init;
     }
     public required Option<GenerationLanguage> LanguageOption
+    {
+        get; init;
+    }
+    public required Option<AccessModifier> TypeAccessModifierOption
     {
         get; init;
     }
@@ -69,6 +74,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
+        AccessModifier typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
@@ -90,6 +96,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
         WarnUsingPreviewLanguage(language);
+        Configuration.Generation.TypeAccessModifier = typeAccessModifier;
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Add;
         if (includePatterns.Count != 0)

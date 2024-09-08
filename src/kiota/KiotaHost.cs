@@ -358,6 +358,13 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<GenerationLanguage?> GetOptionalLanguageOption()
+    {
+        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the generated code files.");
+        languageOption.AddAlias("-l");
+        AddEnumValidator(languageOption, "language");
+        return languageOption;
+    }
     internal static Option<AccessModifier> GetTypeAccessModifierOption()
     {
         var accessOption = new Option<AccessModifier>("--type-access-modifier", "The type access modifier to use for the client types.");
@@ -365,12 +372,12 @@ public static partial class KiotaHost
         AddEnumValidator(accessOption, "type-access-modifier");
         return accessOption;
     }
-    internal static Option<GenerationLanguage?> GetOptionalLanguageOption()
+    internal static Option<AccessModifier?> GetOptionalTypeAccessModifierOption()
     {
-        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the generated code files.");
-        languageOption.AddAlias("-l");
-        AddEnumValidator(languageOption, "language");
-        return languageOption;
+        var accessOption = new Option<AccessModifier?>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
     }
     internal static Option<string> GetNamespaceOption(string defaultNamespaceName)
     {

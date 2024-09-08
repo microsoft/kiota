@@ -266,11 +266,9 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         switch (currentElement)
         {
-            case CodeClass currentClass:
-                currentClass.Access = _configuration.TypeAccessModifier;
-                break;
-            case CodeEnum currentEnum:
-                currentEnum.Access = _configuration.TypeAccessModifier;
+            case CodeClass:
+            case CodeEnum:
+                ((IAccessibleElement)currentElement).Access = _configuration.TypeAccessModifier;
                 break;
         }
 
