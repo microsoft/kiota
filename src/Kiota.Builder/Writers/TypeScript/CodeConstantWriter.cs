@@ -114,7 +114,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 writer.StartBlock("errorMappings: {");
                 foreach (var errorMapping in executorMethod.ErrorMappings)
                 {
-                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
+                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {conventions.GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
                 }
                 writer.CloseBlock("},");
             }
@@ -169,7 +169,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
         if (isStream || IsPrimitiveType(typeName)) return $" \"{typeName}\"";
-        return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
+        return $" {conventions.GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
     {

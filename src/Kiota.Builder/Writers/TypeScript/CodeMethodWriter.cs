@@ -16,7 +16,7 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is CodeFunction) return;
 
-        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeElement, inlineComposedTypeString: true);
+        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         WriteMethodDocumentation(codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
@@ -33,19 +33,19 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         var returnRemark = (isVoid, code.IsAsync) switch
         {
             (true, _) => string.Empty,
-            (false, true) => $"@returns {{Promise<{GetTypescriptTypeString(code.ReturnType, code, inlineComposedTypeString: true)}>}}",
-            (false, false) => $"@returns {{{GetTypescriptTypeString(code.ReturnType, code, inlineComposedTypeString: true)}}}",
+            (false, true) => $"@returns {{Promise<{typeScriptConventionService.GetTypeString(code.ReturnType, code)}>}}",
+            (false, false) => $"@returns {{{typeScriptConventionService.GetTypeString(code.ReturnType, code)}}}",
         };
         typeScriptConventionService.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => typeScriptConventionService.GetTypeString(type, code), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark])
-                                            .Union(GetThrownExceptionsRemarks(code)));
+                                            .Union(GetThrownExceptionsRemarks(code, typeScriptConventionService)));
     }
-    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code)
+    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code, TypeScriptConventionService typeScriptConventionService)
     {
         if (code.Kind is not CodeMethodKind.RequestExecutor) yield break;
         foreach (var errorMapping in code.ErrorMappings)
@@ -55,7 +55,7 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
                 "XXX" => "4XX or 5XX",
                 _ => errorMapping.Key,
             };
-            var errorTypeString = GetTypescriptTypeString(errorMapping.Value, code, false, inlineComposedTypeString: true);
+            var errorTypeString = typeScriptConventionService.GetTypeString(errorMapping.Value, code, false);
             yield return $"@throws {{{errorTypeString}}} error when the service returns a {statusCode} status code";
         }
     }

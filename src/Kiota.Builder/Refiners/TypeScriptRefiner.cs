@@ -169,29 +169,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
-            CorrectSerializerParameters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
-    }
-
-    private static void CorrectSerializerParameters(CodeElement currentElement)
-    {
-        if (currentElement is CodeFunction currentFunction &&
-            currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
-        {
-            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters
-                         .Where(p => GetOriginalComposedType(p.Type) is CodeComposedTypeBase composedType &&
-                                     composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
-            {
-                var composedType = GetOriginalComposedType(parameter.Type)!;
-                var newType = (CodeComposedTypeBase)composedType.Clone();
-                var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
-                newType.SetTypes(nonPrimitiveTypes);
-                parameter.Type = newType;
-            }
-        }
-
-        CrawlTree(currentElement, CorrectSerializerParameters);
     }
 
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
@@ -303,150 +282,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        var functions = GetSerializationAndFactoryFunctions(codeInterface, codeNamespace).ToArray();
+        var functions = codeNamespace.GetChildElements(true).OfType<CodeFunction>().Where(codeFunction =>
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
+            codeFunction.OriginalLocalMethod.Parameters
+                .Any(x => x.Type.Name.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase)) ||
+
+            codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
+            codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+            codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace)
+        ).ToArray();
 
         if (functions.Length == 0)
             return null;
-
-        var composedType = GetOriginalComposedType(codeInterface);
-        var elements = composedType is null ? new List<CodeElement> { codeInterface }.Concat(functions) : GetCodeFileElementsForComposedType(codeInterface, codeNamespace, composedType, functions);
-
-        return codeNamespace.TryAddCodeFile(codeInterface.Name, elements.ToArray());
-    }
-
-    private static IEnumerable<CodeFunction> GetSerializationAndFactoryFunctions(CodeInterface codeInterface, CodeNamespace codeNamespace)
-    {
-        return codeNamespace.GetChildElements(true)
-            .OfType<CodeFunction>()
-            .Where(codeFunction =>
-                IsDeserializerOrSerializerFunction(codeFunction, codeInterface) ||
-                IsFactoryFunction(codeFunction, codeInterface, codeNamespace));
-    }
-
-    private static bool IsDeserializerOrSerializerFunction(CodeFunction codeFunction, CodeInterface codeInterface)
-    {
-        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer or CodeMethodKind.Serializer &&
-            codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Type is CodeType codeType && codeType.TypeDefinition == codeInterface);
-    }
-
-    private static bool IsFactoryFunction(CodeFunction codeFunction, CodeInterface codeInterface, CodeNamespace codeNamespace)
-    {
-        return codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Factory &&
-            codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
-            codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace);
-    }
-
-    private static List<CodeElement> GetCodeFileElementsForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, CodeFunction[] functions)
-    {
-        var children = new List<CodeElement>(functions)
-        {
-            // Add the composed type, The writer will output the composed type as a type definition e.g export type Pet = Cat | Dog
-            composedType
-        };
-
-        ReplaceFactoryMethodForComposedType(composedType, children);
-        ReplaceSerializerMethodForComposedType(composedType, children);
-        ReplaceDeserializerMethodForComposedType(codeInterface, codeNamespace, composedType, children);
-
-        return children;
-    }
-
-    private static CodeFunction? FindFunctionOfKind(List<CodeElement> elements, CodeMethodKind kind)
-    {
-        return elements.OfType<CodeFunction>().FirstOrDefault(function => function.OriginalLocalMethod.IsOfKind(kind));
-    }
-
-    private static void RemoveUnusedDeserializerImport(List<CodeElement> children, CodeFunction factoryFunction)
-    {
-        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is { } deserializerMethod)
-            factoryFunction.RemoveUsingsByDeclarationName(deserializerMethod.Name);
-    }
-
-    private static void ReplaceFactoryMethodForComposedType(CodeComposedTypeBase composedType, List<CodeElement> children)
-    {
-        if (composedType is null || FindFunctionOfKind(children, CodeMethodKind.Factory) is not { } function) return;
-
-        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
-        {
-            function.OriginalLocalMethod.ReturnType = composedType;
-            // Remove the deserializer import statement if its not being used
-            RemoveUnusedDeserializerImport(children, function);
-        }
-    }
-
-    private static void ReplaceSerializerMethodForComposedType(CodeComposedTypeBase composedType, List<CodeElement> children)
-    {
-        if (FindFunctionOfKind(children, CodeMethodKind.Serializer) is not { } function) return;
-
-        // Add the key parameter if the composed type is a union of primitive values
-        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
-            function.OriginalLocalMethod.AddParameter(CreateKeyParameter());
-
-        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        AddSerializationUsingsForCodeComposed(composedType, function, CodeMethodKind.Serializer);
-    }
-
-    private static void AddSerializationUsingsForCodeComposed(CodeComposedTypeBase composedType, CodeFunction function, CodeMethodKind kind)
-    {
-        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        foreach (var codeClass in composedType.Types.Where(x => !IsPrimitiveType(x, composedType))
-                .Select(static x => x.TypeDefinition)
-                     .OfType<CodeInterface>()
-                     .Select(static x => x.OriginalClass)
-                     .OfType<CodeClass>())
-        {
-            var (serializer, deserializer) = GetSerializationFunctionsForNamespace(codeClass);
-            if (kind == CodeMethodKind.Serializer)
-                AddSerializationUsingsToFunction(function, serializer);
-            if (kind == CodeMethodKind.Deserializer)
-                AddSerializationUsingsToFunction(function, deserializer);
-        }
-    }
-
-    private static void AddSerializationUsingsToFunction(CodeFunction function, CodeFunction serializationFunction)
-    {
-        if (serializationFunction.Parent is not null)
-        {
-            function.AddUsing(new CodeUsing
-            {
-                Name = serializationFunction.Parent.Name,
-                Declaration = new CodeType
-                {
-                    Name = serializationFunction.Name,
-                    TypeDefinition = serializationFunction
-                }
-            });
-        }
-    }
-
-    private static void ReplaceDeserializerMethodForComposedType(CodeInterface codeInterface, CodeNamespace codeNamespace, CodeComposedTypeBase composedType, List<CodeElement> children)
-    {
-        if (FindFunctionOfKind(children, CodeMethodKind.Deserializer) is not { } deserializerMethod) return;
-
-        // Deserializer function is not required for primitive values
-        if (composedType.IsComposedOfPrimitives(IsPrimitiveType))
-        {
-            children.Remove(deserializerMethod);
-            codeInterface.RemoveChildElement(deserializerMethod);
-            codeNamespace.RemoveChildElement(deserializerMethod);
-        }
-
-        // Add code usings for each individual item since the functions can be invoked to serialize/deserialize the contained classes/interfaces
-        AddSerializationUsingsForCodeComposed(composedType, deserializerMethod, CodeMethodKind.Deserializer);
-    }
-
-    private static CodeParameter CreateKeyParameter()
-    {
-        return new CodeParameter
-        {
-            Name = "key",
-            Type = new CodeType { Name = "string", IsExternal = true, IsNullable = false },
-            Optional = false,
-            Documentation = new()
-            {
-                DescriptionTemplate = "The name of the property to write in the serialization.",
-            },
-        };
+        return codeNamespace.TryAddCodeFile(codeInterface.Name, [codeInterface, .. functions]);
     }
 
     public static CodeComposedTypeBase? GetOriginalComposedType(CodeElement element)
