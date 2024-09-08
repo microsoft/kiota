@@ -64,62 +64,34 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null);
     }
 
-    private void WriteComposedTypeDeserializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
-    {
-
-        if (GetOriginalComposedType(composedParam) is not { } composedType) return;
-
-        writer.StartBlock("return {");
-        foreach (var mappedType in composedType.Types.Where(x => !conventions.IsPrimitiveType(x, composedType, false)))
-        {
-            var functionName = GetDeserializerFunctionName(codeElement, mappedType);
-            var variableName = composedParam.Name.ToFirstCharacterLowerCase();
-            var variableType = conventions.GetTypeString(mappedType, codeElement, includeCollectionInformation: false);
-
-            writer.WriteLine($"...{functionName}({variableName} as {variableType}),");
-        }
-        writer.CloseBlock();
-    }
-
     private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
         if (GetOriginalComposedType(composedParam) is not { } composedType) return;
-
-        if (composedType.IsComposedOfPrimitives((x, y) => conventions.IsPrimitiveType(x, y, false)))
-        {
+        
+        if(composedParam.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
+        {            
             var paramName = composedParam.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-            writer.StartBlock($"switch (true) {{");
-            foreach (var type in composedType.Types.Where(x => conventions.IsPrimitiveType(x, composedType, false)))
-            {
-                WriteCaseStatementForPrimitiveTypeSerialization(type, paramName, codeElement, writer);
-            }
-            writer.CloseBlock();
+            codeInterface.Properties
+                .Select(property => property.Name.ToFirstCharacterLowerCase())
+                .ToList()
+                .ForEach(codePropertyName =>
+                {
+                    writer.StartBlock($"if ({paramName}.{codePropertyName}) {{");
+                    WritePropertySerializer(paramName, codeInterface.Properties.First(p => p.Name.ToFirstCharacterLowerCase() == codePropertyName), writer, codeElement);
+                    writer.CloseBlock();
+                });
             return;
         }
 
         if (composedType is CodeIntersectionType)
         {
+            // fix me
             WriteSerializationFunctionForCodeIntersectionType(composedType, composedParam, codeElement, writer);
             return;
         }
 
         WriteSerializationFunctionForCodeUnionTypes(composedType, composedParam, codeElement, writer);
-    }
-
-    private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, String paramName, CodeFunction method, LanguageWriter writer)
-    {
-        var nodeType = conventions.GetTypeString(type, method, false);
-        var collectionNodeType = conventions.GetTypeString(type, method, true);
-        var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
-        if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
-
-        writer.StartBlock(type.IsCollection
-            ? $"case Array.isArray({paramName}) :"
-            : $"case typeof {paramName} === \"{nodeType}\":");
-
-        writer.WriteLine($"writer.{serializationName}(undefined, {paramName} as {collectionNodeType});");
-        writer.CloseBlock("break;");
     }
 
     private void WriteSerializationFunctionForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
