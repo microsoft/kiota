@@ -1,19 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using Kiota.Builder.CodeDOM;
 
-using static System.StringComparison;
-
 namespace Kiota.Builder.Refiners;
-public class CodeUsingDeclarationNameComparer : IEqualityComparer<CodeUsing>
+public class CodeUsingDeclarationNameComparer(StringComparer? stringComparer = null) : IEqualityComparer<CodeUsing>
 {
-    public bool Equals(CodeUsing? x, CodeUsing? y) =>
-        x == null && y == null ||
-        x != null &&
-        y != null &&
-        GetHashCode(x) == GetHashCode(y);
-    public int GetHashCode([DisallowNull] CodeUsing obj) =>
-        (string.IsNullOrEmpty(obj?.Name) ? 0 : obj.Name.GetHashCode(OrdinalIgnoreCase)) * 7 +
-        (string.IsNullOrEmpty(obj?.Declaration?.Name) ? 0 : obj.Declaration.Name.GetHashCode(OrdinalIgnoreCase));
+    private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+    public bool Equals(CodeUsing? x, CodeUsing? y)
+    {
+        if (x is null || y is null) return object.Equals(x, y);
+        return _stringComparer.Equals(x.Name, y.Name)
+               && _stringComparer.Equals(x.Declaration?.Name, y.Declaration?.Name);
+    }
+
+    public int GetHashCode([DisallowNull] CodeUsing obj)
+    {
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.Name, _stringComparer);
+        hash.Add(obj.Declaration?.Name, _stringComparer);
+        return hash.ToHashCode();
+    }
 }

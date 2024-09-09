@@ -25,15 +25,15 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps, transformToGenerationconfig } from "./steps";
+import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
-  IntegrationParams,
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
   handleMigration,
   isClientType, isPluginType, parseGenerationLanguage,
-  parseGenerationType, parsePluginType, updateTreeViewIcons, validateDeepLinkQueryParams
+  parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
+import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -145,11 +145,11 @@ export async function activate(
 
         let languagesInformation = await getLanguageInformation(context);
         let availableStateInfo: Partial<GenerateState>;
-        if(Object.keys(deepLinkParams).length > 0){
-          if (!deepLinkParams["name"] && openApiTreeProvider.apiTitle ){
-            deepLinkParams["name"] = getSanitizedString(openApiTreeProvider.apiTitle);
+        if (isDeeplinkEnabled(deepLinkParams)) {
+          if (!deepLinkParams.name && openApiTreeProvider.apiTitle) {
+            deepLinkParams.name = getSanitizedString(openApiTreeProvider.apiTitle);
           }
-          availableStateInfo = transformToGenerationconfig(deepLinkParams);
+          availableStateInfo = transformToGenerationConfig(deepLinkParams);
         } else {
           const pluginName = getSanitizedString(openApiTreeProvider.apiTitle);
           availableStateInfo = {
@@ -162,7 +162,8 @@ export async function activate(
         }
         config = await generateSteps(
           availableStateInfo,
-          languagesInformation
+          languagesInformation,
+          isDeeplinkEnabled(deepLinkParams)
         );
         const generationType = parseGenerationType(config.generationType);
         const outputPath = typeof config.outputPath === "string"
@@ -213,9 +214,11 @@ export async function activate(
                 [
                   pathOfSpec,
                   pathPluginManifest,
-                  true
+                  deepLinkParams.ttkContext ? deepLinkParams.ttkContext : undefined
                 ]
               );
+              openApiTreeProvider.closeDescription();
+              await updateTreeViewIcons(treeViewId, false);
             } catch (error) {
               reporter.sendTelemetryEvent("DeepLinked fx-extension.createprojectfromkiota", {
                 "error": JSON.stringify(error)
@@ -248,12 +251,12 @@ export async function activate(
       ) => {
         // set deeplink params if exists
         if (Object.keys(searchParams).length > 0) {
-          let errorsArray: string [];
+          let errorsArray: string[];
           [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-            reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
-              "searchParameters": JSON.stringify(searchParams),
-              "validationErrors": errorsArray.join(", ")
-            });
+          reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+            "searchParameters": JSON.stringify(searchParams),
+            "validationErrors": errorsArray.join(", ")
+          });
         }
 
         // proceed to enable loading of openapi description
