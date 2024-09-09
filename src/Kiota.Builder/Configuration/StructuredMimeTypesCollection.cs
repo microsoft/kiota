@@ -82,7 +82,7 @@ public partial class StructuredMimeTypesCollection : ICollection<string>
     }
     private static string NormalizeMimeType(string key, float value)
     {
-        if (value == 1)
+        if (value >= 1f)
             return key;
         else
             return string.Create(CultureInfo.InvariantCulture, $"{key};q={value}");
