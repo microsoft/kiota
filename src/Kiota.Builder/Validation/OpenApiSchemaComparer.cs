@@ -124,15 +124,17 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     public bool Equals(OpenApiDiscriminator? x, OpenApiDiscriminator? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-        return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && x.Mapping.SequenceEqual(y.Mapping, mappingComparer);
+        return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && GetOrderedRequests(x.Mapping).SequenceEqual(GetOrderedRequests(y.Mapping), mappingComparer);
     }
+    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string> mappings) =>
+    mappings.OrderBy(x => x.Key, StringComparer.Ordinal);
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
         hash.Add(obj.PropertyName);
-        foreach (var mapping in obj.Mapping)
+        foreach (var mapping in GetOrderedRequests(obj.Mapping))
         {
             hash.Add(mapping, mappingComparer);
         }
