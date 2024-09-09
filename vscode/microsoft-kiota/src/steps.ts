@@ -192,13 +192,15 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputPluginName;
             case 'apimanifest':
                 return inputManifestName;
+            case 'httpSnippet':
+                return inputHttpSnippetOutputPath;
             default:
                 throw new Error('unknown generation type');
         }
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!state.generationType){
-            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
+            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest'), l10n.t('Generate HTTP Snippet')];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
                 step: 1,
@@ -216,6 +218,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             }
             else if(option.label === l10n.t('Generate an API manifest')) {
                 state.generationType = "apimanifest";
+            }
+            else if(option.label === l10n.t('Generate HTTP Snippet')) {
+                state.generationType = "httpSnippet";
             }
         }
         let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
@@ -347,6 +352,44 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         while (true) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
+                step: 3,
+                totalSteps: 3,
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions,
+                shouldResume: shouldResume
+            });
+            if (selectedOption) {
+                if (selectedOption?.label === folderSelectionOption) {
+                    const folderUri = await input.showOpenDialog({
+                        canSelectMany: false,
+                        openLabel: 'Select',
+                        canSelectFolders: true,
+                        canSelectFiles: false
+                    });
+
+                    if (folderUri && folderUri[0]) {
+                        state.outputPath = folderUri[0].fsPath;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    state.outputPath = selectedOption.description;
+                    if (workspaceOpen) {
+                        state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                    } else {
+                        state.workingDirectory = path.dirname(selectedOption.description!);
+                    }
+                }
+            }
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
+            break;
+        }
+    }
+
+    async function inputHttpSnippetOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+        while (true) {
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Generate HTTP Snippet')} - ${l10n.t('output directory')}`,
                 step: 3,
                 totalSteps: 3,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),

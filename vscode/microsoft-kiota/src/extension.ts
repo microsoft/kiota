@@ -188,6 +188,9 @@ export async function activate(
           case GenerationType.ApiManifest:
             result = await generateManifestAndRefreshUI(config, settings, outputPath, selectedPaths);
             break;
+          case GenerationType.HttpSnippet:
+            result = await generateHttpSnippetAndRefreshUI(config, settings, outputPath, selectedPaths);
+            break;
           default:
             await vscode.window.showErrorMessage(
               vscode.l10n.t("Invalid generation type")
@@ -393,15 +396,19 @@ export async function activate(
           // open the http snippet file
           if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
             const httpSnippetFilePath = path.join(outputPath, "index.http");
-            if (fs.existsSync(httpSnippetFilePath)) {
-              await vscode.window.showTextDocument(vscode.Uri.file(httpSnippetFilePath));
-            }
+            await openFile(httpSnippetFilePath);
           }
           return result;
         });
       }
     )
   );
+
+  async function openFile(uri: string) {
+    if (fs.existsSync(uri)) {
+      await vscode.window.showTextDocument(vscode.Uri.file(uri));
+    }
+  }
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
@@ -484,6 +491,48 @@ export async function activate(
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
+      }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
+    return result;
+  }
+  async function generateHttpSnippetAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+    const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
+    const result = await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Generating http snippet...")
+    }, async (progress, _) => {
+      const start = performance.now();
+      const result = await generateHttpSnippet(
+        context,
+        openApiTreeProvider.descriptionUrl,
+        outputPath,
+        selectedPaths,
+        [],
+        settings.clearCache,
+        settings.cleanOutput,
+        settings.excludeBackwardCompatible,
+        settings.disableValidationRules,
+        settings.structuredMimeTypes
+      );
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      reporter.sendRawTelemetryEvent(`${extensionId}.generateHttpSnippet.completed`, {
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
+      return result;
+    });
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
+      } else {
+        // open the http snippet file
+        const httpSnippetFilePath = path.join(outputPath, "index.http");
+        await openFile(httpSnippetFilePath);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }

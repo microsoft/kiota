@@ -244,7 +244,11 @@ internal partial class Server : IServer
         {
             using var fileLogger = new FileLogLogger<KiotaBuilder>(configuration.OutputPath, LogLevel.Warning);
             var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
-            await new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value).GenerateHttpSnippetAsync(cancellationToken);
+            var result = await new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value).GenerateHttpSnippetAsync(cancellationToken);
+            if (result)
+                logger.LogInformation("Generation completed successfully");
+            else
+                logger.LogInformation("Generation skipped as --skip-generation was passed");
         }
         catch (Exception ex)
         {
