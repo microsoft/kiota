@@ -213,16 +213,6 @@ public class DartConventionService : CommonLanguageConventionService
             new HashSet<string>(0, StringComparer.OrdinalIgnoreCase);
 
         var typeName = TranslateType(currentType);
-        var areElementsInSameNamesSpace = DoesTypeExistsInSameNamesSpaceAsTarget(currentType, targetElement);
-        if (currentType.TypeDefinition != null &&
-                (
-                    GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !areElementsInSameNamesSpace         // match if elements are not in the same namespace and the type name is used in the namespace segments
-                || parentElementsHash.Contains(typeName)                                                                   // match if type name is used in the parent elements segments
-                || !areElementsInSameNamesSpace && DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)     // match if elements are not in the same namespace and the type exists in target ancestor namespace
-                || !areElementsInSameNamesSpace && DoesTypeExistsInOtherImportedNamespaces(currentType, targetElement)          // match if elements is not imported already by another namespace.
-                )
-            )
-            return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
         return typeName;
     }
 
