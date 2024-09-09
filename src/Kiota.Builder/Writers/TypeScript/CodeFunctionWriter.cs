@@ -206,9 +206,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string GetDeserializerFunctionName(CodeElement codeElement, CodeType returnType) =>
         FindFunctionInNameSpace($"deserializeInto{returnType.Name.ToFirstCharacterUpperCase()}", codeElement, returnType);
 
-    private string GetSerializerFunctionName(CodeElement codeElement, CodeType returnType) =>
-        FindFunctionInNameSpace($"serialize{returnType.Name.ToFirstCharacterUpperCase()}", codeElement, returnType);
-
     private string FindFunctionInNameSpace(string functionName, CodeElement codeElement, CodeType returnType)
     {
         var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
@@ -276,11 +273,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else
         {
-            WritePropertySerializationStatement(codeProperty, modelParamName, serializationName, defaultValueSuffix, codeFunction, writer);
+            WritePropertySerializationStatement(codeProperty, modelParamName, serializationName, defaultValueSuffix, writer);
         }
     }
 
-    private void WritePropertySerializationStatement(CodeProperty codeProperty, string modelParamName, string? serializationName, string? defaultValueSuffix, CodeFunction codeFunction, LanguageWriter writer)
+    private static void WritePropertySerializationStatement(CodeProperty codeProperty, string modelParamName, string? serializationName, string? defaultValueSuffix, LanguageWriter writer)
     {
         var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
