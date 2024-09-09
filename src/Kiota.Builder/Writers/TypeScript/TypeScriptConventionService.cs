@@ -85,7 +85,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(parameter);
         var paramType = GetTypeString(parameter.Type, targetElement);
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue} as {paramType}";
-        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {paramType}{(parameter.Type.IsNullable ? " | null | undefined" : string.Empty)}{defaultValueSuffix}";
+        var (partialPrefix, partialSuffix) = (parameter.Kind) switch
+        {
+            (CodeParameterKind.DeserializationTarget) => ("Partial<", ">"),
+            _ => (string.Empty, string.Empty),
+        };
+        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | null | undefined" : string.Empty)}{defaultValueSuffix}";
     }
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)

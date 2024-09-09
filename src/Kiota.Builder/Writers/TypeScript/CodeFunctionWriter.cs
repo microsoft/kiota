@@ -58,8 +58,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteComposedTypeSerializer(CodeFunction codeElement, LanguageWriter writer, CodeParameter composedParam)
     {
-        if (GetOriginalComposedType(composedParam) is not { } composedType) return;
-
         if (composedParam.Type is CodeType { TypeDefinition: CodeInterface codeInterface })
         {
             var paramName = composedParam.Name.ToFirstCharacterLowerCase();
@@ -73,81 +71,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                     WritePropertySerializer(paramName, codeInterface.Properties.First(p => p.Name.ToFirstCharacterLowerCase() == codePropertyName), writer, codeElement);
                     writer.CloseBlock();
                 });
-            return;
         }
-
-        if (composedType is CodeIntersectionType)
+        else
         {
-            WriteSerializationFunctionForCodeIntersectionType(composedType, composedParam, codeElement, writer);
-            return;
+            throw new InvalidOperationException("Composed types must be interfaces");
         }
-
-        WriteSerializationFunctionForCodeUnionTypes(composedType, composedParam, codeElement, writer);
-    }
-
-    private void WriteSerializationFunctionForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
-    {
-        // Serialization/Deserialization functions can be called for object types only
-        foreach (var mappedType in composedType.Types.Where(x => !conventions.IsPrimitiveType(x, composedType)))
-        {
-            var functionName = GetSerializerFunctionName(method, mappedType);
-            var variableName = composedParam.Name.ToFirstCharacterLowerCase();
-            var variableType = conventions.GetTypeString(mappedType, method, includeCollectionInformation: false);
-
-            writer.WriteLine($"{functionName}(writer, {variableName} as {variableType});");
-        }
-    }
-
-    private void WriteSerializationFunctionForCodeUnionTypes(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
-    {
-        var discriminatorInfo = codeElement.OriginalMethodParentClass.DiscriminatorInformation;
-        var discriminatorPropertyName = discriminatorInfo.DiscriminatorPropertyName;
-
-        if (string.IsNullOrEmpty(discriminatorPropertyName))
-        {
-            WriteBruteForceSerializationFunctionForCodeUnionType(composedType, composedParam, codeElement, writer);
-            return;
-        }
-
-        var paramName = composedParam.Name.ToFirstCharacterLowerCase();
-        writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-        WriteDiscriminatorSwitchBlock(discriminatorInfo, paramName, codeElement, writer);
-    }
-
-    /// <summary>
-    /// Writes the brute-force serialization function for a union type.
-    /// </summary>
-    /// <param name="composedType">The composed type representing the union.</param>
-    /// <param name="composedParam">The parameter associated with the composed type.</param>
-    /// <param name="codeElement">The function code element where serialization is performed.</param>
-    /// <param name="writer">The language writer used to generate the code.</param>
-    /// <remarks>
-    /// This method handles serialization for union types when the discriminator property is missing. 
-    /// In the absence of a discriminator, all possible types in the union are serialized. For example, 
-    /// a Pet union defined as Cat | Dog would result in the serialization of both Cat and Dog types. 
-    /// It delegates the task to the method responsible for intersection types, treating the union 
-    /// similarly to an intersection in this context.
-    /// </remarks>
-    private void WriteBruteForceSerializationFunctionForCodeUnionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
-    {
-        // Delegate the serialization logic to the method handling intersection types,
-        // as both require serializing all possible type variations.
-        WriteSerializationFunctionForCodeIntersectionType(composedType, composedParam, codeElement, writer);
-    }
-
-    private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
-    {
-        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName}) {{");
-
-        foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
-        {
-            writer.StartBlock($"case \"{mappedType.Key}\":");
-            writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType.Value)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
-            writer.WriteLine("break;");
-            writer.DecreaseIndent();
-        }
-
-        writer.CloseBlock();
     }
 
     private static void WriteApiConstructorBody(CodeFile parentFile, CodeMethod method, LanguageWriter writer)
@@ -344,10 +272,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
             var serializeName = GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
-            if (propType.TypeDefinition is CodeComposedTypeBase ct)
-                WriteSerializationStatementForComposedTypeProperty(ct, modelParamName, codeFunction, writer, codeProperty, serializeName);
-            else
-                writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
         }
         else
         {
@@ -363,65 +288,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (!string.IsNullOrWhiteSpace(spreadOperator))
             writer.WriteLine($"if({modelParamName}.{codePropertyName})");
-        if (codeProperty.Type is CodeComposedTypeBase composedType && (composedType.Types.Any(x => conventions.IsPrimitiveType(x, composedType))))
-            WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
-
-    private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
-    {
-        var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
-        writer.StartBlock("switch (true) {");
-        WriteComposedTypeSwitchClause(composedType, method, writer, codeProperty, modelParamName, defaultValueSuffix);
-        WriteComposedTypeDefaultClause(composedType, writer, codeProperty, modelParamName, defaultValueSuffix, serializeName);
-        writer.CloseBlock();
-    }
-
-    private void WriteComposedTypeSwitchClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
-    {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
-
-        foreach (var type in composedType.Types.Where(x => conventions.IsPrimitiveType(x, composedType)))
-        {
-            var nodeType = conventions.GetTypeString(type, method, false);
-            var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
-            if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
-
-            writer.StartBlock(type.IsCollection
-                ? $"case Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}') :"
-                : $"case typeof {modelParamName}.{codePropertyName} === \"{nodeType}\":");
-
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
-            writer.CloseBlock("break;");
-        }
-    }
-
-    private void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
-    {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var nonPrimitiveTypes = composedType.Types.Where(x => !conventions.IsPrimitiveType(x, composedType)).ToArray();
-        if (nonPrimitiveTypes.Length > 0)
-        {
-            writer.StartBlock("default:");
-            foreach (var groupedTypes in nonPrimitiveTypes.GroupBy(static x => x.IsCollection))
-            {
-                var collectionCodeType = (composedType.Clone() as CodeComposedTypeBase)!;
-                collectionCodeType.SetTypes(groupedTypes.ToArray());
-                var propTypeName = conventions.GetTypeString(collectionCodeType!, codeProperty.Parent!, false);
-
-                var writerFunction = groupedTypes.Key ? "writeCollectionOfObjectValues" : "writeObjectValue";
-                var propertyTypes = composedType.IsNullable ? " | undefined | null" : string.Empty;
-                var groupSymbol = groupedTypes.Key ? "[]" : string.Empty;
-
-                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
-            }
-            writer.CloseBlock("break;");
-        }
-    }
-
 
     private string GetSerializationMethodName(CodeTypeBase propertyType, CodeMethod method)
     {
@@ -472,13 +341,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
-        var composedParam = GetComposedTypeParameter(codeFunction);
-        if (composedParam is not null)
-        {
-            //WriteComposedTypeDeserializer(codeFunction, writer, composedParam);
-            //return;
-        }
-
         var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
         if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
