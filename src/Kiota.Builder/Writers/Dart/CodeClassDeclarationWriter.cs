@@ -40,8 +40,45 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
 
     private static string getImportStatement(CodeUsing x, ClassDeclaration codeElement)
     {
-        return codeElement.GetNamespaceDepth() == 1 ?
-             $"import './{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';"
-             : $"import '../{x.Name.Split('.')[1]}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
+        var classParent = codeElement.Parent?.Parent?.Name;
+        var import = x.Name;
+        if (classParent != null)
+        {
+            var importstatement = x.Name.Replace(classParent, "", StringComparison.Ordinal).Replace(".", "/", StringComparison.Ordinal);
+            int equalSegments = 0;
+            bool allSegmentsEqual = true;
+            var classArray = classParent.Split('.');
+            var importArray = import.Split('.');
+            for (int i = 0; i < importArray.Length && i < classArray.Length; i++)
+            {
+                if (!classArray[i].Equals(importArray[i], StringComparison.Ordinal))
+                {
+                    equalSegments = i;
+                    allSegmentsEqual = false;
+                    break;
+                }
+            }
+
+            //import falls within class directory
+            if (allSegmentsEqual)
+            {
+                for (int i = 0; i < classArray.Length; i++)
+                {
+                    importstatement = importstatement.Replace(classArray[i] + "/", "", StringComparison.Ordinal);
+                    importstatement = importstatement.Replace(classArray[i], "", StringComparison.Ordinal);
+                }
+                if (string.IsNullOrEmpty(importstatement))
+                {
+                    return classArray.Length == importArray.Length ? $"import './{x.Declaration!.Name.ToSnakeCase()}.dart';" : $"import '../{x.Declaration!.Name.ToSnakeCase()}.dart';";
+                }
+            }
+
+            for (int i = 0; i < (classArray.Length - equalSegments); i++)
+            {
+                importstatement = importstatement.Replace(classArray[i], "..", StringComparison.Ordinal);
+            }
+            return equalSegments == 0 ? $"import '.{importstatement}/{x.Declaration!.Name.ToSnakeCase()}.dart';" : $"import '{importstatement}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
+        }
+        return $"import './{x.Name.Split('.').Last()}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
     }
 }
