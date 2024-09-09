@@ -318,6 +318,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 shouldResume: shouldResume
             });
             pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
+            pluginTypes.label === 'API Manifest' ? state.generationType = 'apimanifest' : state.generationType = 'plugin';
         }
         return (input: MultiStepInput) => inputManifestName(input, state);
     }
