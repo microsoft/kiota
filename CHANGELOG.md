@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a stack overflow in the core generator caused by circular comparisons. [#5369](https://github.com/microsoft/kiota/issues/5369)
 - Fixed a bug where collection/array of primitive types members for union/intersection types would be ignored. [#5283](https://github.com/microsoft/kiota/issues/5283)
 - Fixed a when generating a plugin when only an operation is selected in the root node in the extension. [#5300](https://github.com/microsoft/kiota/issues/5300)
 
