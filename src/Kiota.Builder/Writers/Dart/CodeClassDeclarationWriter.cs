@@ -2,7 +2,6 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
@@ -30,7 +29,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
             writer.WriteLine();
         }
 
-        var derivation = codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name}";
+        var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : [conventions.GetTypeString(codeElement.Inherits, parentClass)]).ToArray();
+        var derivation = derivedTypes.Length != 0 ? " extends " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
         var implements = !codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
 
         conventions.WriteLongDescription(parentClass, writer);
