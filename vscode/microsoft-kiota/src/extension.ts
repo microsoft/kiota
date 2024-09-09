@@ -217,6 +217,8 @@ export async function activate(
                   deepLinkParams.ttkContext ? deepLinkParams.ttkContext : undefined
                 ]
               );
+              openApiTreeProvider.closeDescription();
+              await updateTreeViewIcons(treeViewId, false);
             } catch (error) {
               reporter.sendTelemetryEvent("DeepLinked fx-extension.createprojectfromkiota", {
                 "error": JSON.stringify(error)
