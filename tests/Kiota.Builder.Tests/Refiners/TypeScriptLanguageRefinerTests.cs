@@ -1,16 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-
+using Kiota.Builder.Tests.OpenApiSampleFiles;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class TypeScriptLanguageRefinerTests
+public sealed class TypeScriptLanguageRefinerTests : IDisposable
 {
+    private readonly HttpClient _httpClient = new();
+
+    private readonly List<string> _tempFiles = new();
+    public void Dispose()
+    {
+        foreach (var file in _tempFiles)
+            File.Delete(file);
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
     public TypeScriptLanguageRefinerTests()
@@ -700,7 +716,6 @@ public class TypeScriptLanguageRefinerTests
         Assert.Single(testNS.Constants.Where(static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper)));
     }
 
-
     [Fact]
     public async Task GeneratesCodeFilesAsync()
     {
@@ -841,6 +856,125 @@ public class TypeScriptLanguageRefinerTests
         Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
     }
     [Fact]
+    public async Task ParsesAndRefinesUnionOfPrimitiveValuesAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+        var unionType = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && TypeScriptRefiner.GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).ToList();
+        Assert.True(unionType.Count > 0);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsNull_WhenElementIsNull()
+    {
+        var codeElement = new Mock<CodeElement>();
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeElement.Object);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsComposedType()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+        var result = TypeScriptRefiner.GetOriginalComposedType(composedType.Object);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsParameter()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var codeType = new CodeType()
+        {
+            TypeDefinition = codeClass,
+        };
+
+        var parameter = new CodeParameter() { Type = codeType };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(parameter);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeType()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var codeType = new CodeType()
+        {
+            TypeDefinition = codeClass,
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeType);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeClass()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        CodeElement codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeClass);
+        Assert.Equal(composedType.Object, result);
+    }
+
+    [Fact]
+    public void GetOriginalComposedType_ReturnsComposedType_WhenElementIsCodeInterface()
+    {
+        var composedType = new Mock<CodeComposedTypeBase>();
+
+        var codeClass = new CodeClass
+        {
+            OriginalComposedType = composedType.Object
+        };
+
+        CodeElement codeInterface = new CodeInterface()
+        {
+            OriginalClass = codeClass,
+        };
+
+        var result = TypeScriptRefiner.GetOriginalComposedType(codeInterface);
+        Assert.Equal(composedType.Object, result);
+    }
+    [Fact]
     public async Task AddsUsingForUntypedNodeInReturnTypeAsync()
     {
         var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
@@ -880,7 +1014,8 @@ public class TypeScriptLanguageRefinerTests
             {
                 Name = KiotaBuilder.UntypedNodeName,
                 IsExternal = true
-            }
+            },
+            Kind = CodeParameterKind.RequestBody
         });
         requestBuilderClass.AddMethod(method);
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);

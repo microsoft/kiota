@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace kiota.Handlers.Plugin;
 
@@ -40,10 +41,24 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
+    public required Option<SecuritySchemeType> PluginAuthTypeOption
+    {
+        get; init;
+    }
+
+    public required Option<string> PluginAuthRefIdOption
+    {
+        get; init;
+    }
+
+
+
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         List<PluginType>? pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption);
+        SecuritySchemeType? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
+        string pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption) ?? string.Empty;
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
@@ -53,7 +68,8 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
-
+        if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
+            Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
@@ -85,7 +101,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
                     Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
-
+                Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
+                Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
@@ -112,10 +129,10 @@ internal class EditHandler : BaseKiotaCommandHandler
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error adding the plugin: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error editing the plugin: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error adding the plugin: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error editing the plugin: {exceptionMessage}", ex.Message);
                 return 1;
 #endif
             }

@@ -8,18 +8,22 @@ namespace Kiota.Builder.Refiners;
 public class CodeUsingComparer : IEqualityComparer<CodeUsing>
 {
     private readonly bool _compareOnDeclaration;
-    public CodeUsingComparer(bool compareOnDeclaration)
+    private readonly StringComparer _stringComparer;
+    public CodeUsingComparer(bool compareOnDeclaration, StringComparer? stringComparer = null)
     {
         _compareOnDeclaration = compareOnDeclaration;
+        _stringComparer = stringComparer ?? StringComparer.Ordinal;
     }
     public bool Equals(CodeUsing? x, CodeUsing? y)
     {
-        return (!_compareOnDeclaration || x?.Declaration == y?.Declaration) && (x?.Name?.Equals(y?.Name, StringComparison.Ordinal) ?? false);
+        return (!_compareOnDeclaration || x?.Declaration == y?.Declaration) && _stringComparer.Equals(x?.Name, y?.Name);
     }
 
     public int GetHashCode([DisallowNull] CodeUsing obj)
     {
-        return (_compareOnDeclaration ? (obj?.Declaration == null ? 0 : obj.Declaration.GetHashCode()) * 7 : 0) +
-                    (string.IsNullOrEmpty(obj?.Name) ? 0 : obj.Name.GetHashCode(StringComparison.Ordinal));
+        var hash = new HashCode();
+        if (_compareOnDeclaration) hash.Add(obj?.Declaration);
+        hash.Add(obj?.Name, _stringComparer);
+        return hash.ToHashCode();
     }
 }

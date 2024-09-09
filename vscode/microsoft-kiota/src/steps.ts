@@ -1,8 +1,10 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
+
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
+import { isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -116,38 +118,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-export function transformToGenerationconfig(deepLinkParams: Record<string, string|undefined>)
-    : Partial<GenerateState> 
-{
-    const generationConfig: Partial<GenerateState> = {};
-    if (deepLinkParams.kind === "client")
-    {
-        generationConfig["generationType"] = "client";
-        generationConfig["clientClassName"] = deepLinkParams.name;
-        generationConfig["language"] = deepLinkParams.language;
-    }
-    else if (deepLinkParams.kind === "plugin")
-    {
-        generationConfig["pluginName"] = deepLinkParams.name;
-        switch(deepLinkParams.type){
-            case "apiplugin":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ["ApiPlugin"];
-                break;
-            case "openai":
-                generationConfig["generationType"] = "plugin";
-                generationConfig["pluginTypes"] = ['OpenAI'];
-                break;
-            case "apimanifest":
-                generationConfig["generationType"] = "apimanifest";
-                break;
-            }
-    }
-    return generationConfig;
-}
-
-
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -155,7 +126,15 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string') {
+    const isDeepLinkPluginNameProvided = isDeeplinkEnabled && state.pluginName;
+    const isDeepLinkGenerationTypeProvided = isDeeplinkEnabled && state.generationType;
+    const isDeepLinkPluginTypeProvided = isDeeplinkEnabled && state.pluginTypes;
+    const isDeepLinkLanguageProvided = isDeeplinkEnabled && state.language;
+    const isDeepLinkOutputPathProvided = isDeeplinkEnabled && state.outputPath;
+    const isDeepLinkClientClassNameProvided = isDeeplinkEnabled && state.clientClassName;
+
+
+    if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
@@ -167,8 +146,6 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
 
     let step = 1;
-    let totalSteps = 4;
-
     const folderSelectionOption = l10n.t('Browse your output directory');
     let inputOptions = [
         { label: l10n.t('Default folder'), description: workspaceFolder },
@@ -184,8 +161,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             ];
         }
     }
-    function getNextStepForGenerationType(generationType: string|QuickPickItem) {
-        switch(generationType) {
+    function getNextStepForGenerationType(generationType: string | QuickPickItem) {
+        switch (generationType) {
             case 'client':
                 return inputClientClassName;
             case 'plugin':
@@ -199,39 +176,39 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.generationType){
-            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest'), l10n.t('Generate HTTP Snippet')];
+        if (!isDeepLinkGenerationTypeProvided) {
+            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest'), l10n.t('Generate HTTP snippet')];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
-                step: 1,
-                totalSteps: 1,
+                step: step++,
+                totalSteps: 3,
                 placeholder: l10n.t('Select an option'),
-                items: items.map(x => ({label: x})),
+                items: items.map(x => ({ label: x })),
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            if(option.label === l10n.t('Generate an API client')) {
+            if (option.label === l10n.t('Generate an API client')) {
                 state.generationType = "client";
             }
-            else if(option.label === l10n.t('Generate a plugin')) { 
+            else if (option.label === l10n.t('Generate a plugin')) {
                 state.generationType = "plugin";
             }
-            else if(option.label === l10n.t('Generate an API manifest')) {
+            else if (option.label === l10n.t('Generate an API manifest')) {
                 state.generationType = "apimanifest";
             }
-            else if(option.label === l10n.t('Generate HTTP Snippet')) {
+            else if(option.label === l10n.t('Generate HTTP snippet')) {
                 state.generationType = "httpSnippet";
             }
         }
         let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
         return (input: MultiStepInput) => nextStep(input, state);
-	}
+    }
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.clientClassName) {
+        if (!isDeepLinkClientClassNameProvided) {
             state.clientClassName = await input.showInputBox({
                 title: `${l10n.t('Create a new API client')} - ${l10n.t('class')}`,
                 step: step++,
-                totalSteps: totalSteps,
+                totalSteps: 5,
                 value: state.clientClassName ?? '',
                 placeholder: 'ApiClient',
                 prompt: l10n.t('Choose a name for the client class'),
@@ -246,7 +223,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         state.clientNamespaceName = await input.showInputBox({
             title: `${l10n.t('Create a new API client')} - ${l10n.t('namespace')}`,
             step: step++,
-            totalSteps: totalSteps,
+            totalSteps: 5,
             value: typeof state.clientNamespaceName === 'string' ? state.clientNamespaceName : '',
             placeholder: 'ApiSDK',
             prompt: l10n.t('Choose a name for the client class namespace'),
@@ -255,12 +232,49 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         });
         return (input: MultiStepInput) => inputOutputPath(input, state);
     }
+    async function inputHttpSnippetOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+        while (true) {
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Generate HTTP snippet')} - ${l10n.t('output directory')}`,
+                step: 3,
+                totalSteps: 3,
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions,
+                shouldResume: shouldResume
+            });
+            if (selectedOption) {
+                if (selectedOption?.label === folderSelectionOption) {
+                    const folderUri = await input.showOpenDialog({
+                        canSelectMany: false,
+                        openLabel: 'Select',
+                        canSelectFolders: true,
+                        canSelectFiles: false
+                    });
+
+                    if (folderUri && folderUri[0]) {
+                        state.outputPath = folderUri[0].fsPath;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    state.outputPath = selectedOption.description;
+                    if (workspaceOpen) {
+                        state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                    } else {
+                        state.workingDirectory = path.dirname(selectedOption.description!);
+                    }
+                }
+            }
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
+            break;
+        }
+    }
     async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (true) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
-                step: 4,
-                totalSteps: totalSteps,
+                step: step++,
+                totalSteps: 5,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
@@ -294,7 +308,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
     }
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.language) {
+        if (!isDeepLinkLanguageProvided) {
             const items = allGenerationLanguages.map(x => {
                 const lngName = generationLanguageToString(x);
                 const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
@@ -307,7 +321,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             const pick = await input.showQuickPick({
                 title: `${l10n.t('Create a new API client')} - ${l10n.t('language')}`,
                 step: step++,
-                totalSteps: totalSteps,
+                totalSteps: 5,
                 placeholder: l10n.t('Pick a language'),
                 items,
                 activeItem: typeof state.language === 'string' ? items.find(x => x.languageName === state.language) : undefined,
@@ -317,11 +331,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName){
+        if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 value: state.pluginName ?? '',
                 placeholder: 'MyPlugin',
                 prompt: l10n.t('Choose a name for the plugin'),
@@ -330,15 +344,15 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             });
         }
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputPluginType(input, state);      
-    }    
+        return (input: MultiStepInput) => inputPluginType(input, state);
+    }
     async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginTypes) {
-            const items = ['API Plugin','Open AI'].map(x => ({ label: x})as QuickPickItem);
+        if (!isDeepLinkPluginTypeProvided) {
+            const items = ['API Plugin', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a plugin type'),
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 placeholder: l10n.t('Select an option'),
                 items: items,
                 validate: validateIsNotEmpty,
@@ -349,11 +363,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
+        while (!isDeepLinkOutputPathProvided) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
-                step: 3,
-                totalSteps: 3,
+                step: step++,
+                totalSteps: 4,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
@@ -385,47 +399,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             break;
         }
     }
-
-    async function inputHttpSnippetOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
-            const selectedOption = await input.showQuickPick({
-                title: `${l10n.t('Generate HTTP Snippet')} - ${l10n.t('output directory')}`,
-                step: 3,
-                totalSteps: 3,
-                placeholder: l10n.t('Enter an output path relative to the root of the project'),
-                items: inputOptions,
-                shouldResume: shouldResume
-            });
-            if (selectedOption) {
-                if (selectedOption?.label === folderSelectionOption) {
-                    const folderUri = await input.showOpenDialog({
-                        canSelectMany: false,
-                        openLabel: 'Select',
-                        canSelectFolders: true,
-                        canSelectFiles: false
-                    });
-
-                    if (folderUri && folderUri[0]) {
-                        state.outputPath = folderUri[0].fsPath;
-                    } else {
-                        continue;
-                    }
-                } else {
-                    state.outputPath = selectedOption.description;
-                    if (workspaceOpen) {
-                        state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
-                    } else {
-                        state.workingDirectory = path.dirname(selectedOption.description!);
-                    }
-                }
-            }
-            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
-            break;
-        }
-    }
-
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        if (!state.pluginName){
+        if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
                 step: step++,
@@ -444,7 +419,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         while (true) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
-                step: 2,
+                step: step++,
                 totalSteps: 3,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
@@ -473,7 +448,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                     }
                 }
             }
-            state.outputPath === '' ? state.outputPath = 'output' : state.outputPath;
+            if (state.outputPath === '') {
+                state.outputPath = 'output';
+            }
             break;
         }
 
@@ -598,28 +575,22 @@ interface OpenDialogParameters {
 
 class MultiStepInput {
     async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles }: OpenDialogParameters): Promise<Uri[] | undefined> {
-        const disposables: Disposable[] = [];
+        return await new Promise<Uri[] | undefined>((resolve) => {
+            const input: OpenDialogOptions = {
+                canSelectMany,
+                openLabel,
+                canSelectFolders,
+                canSelectFiles
+            };
 
-        try {
-            return await new Promise<Uri[] | undefined>((resolve) => {
-                const input: OpenDialogOptions = {
-                    canSelectMany,
-                    openLabel,
-                    canSelectFolders,
-                    canSelectFiles
-                };
-
-                void window.showOpenDialog(input).then(folderUris => {
-                    if (folderUris && folderUris.length > 0) {
-                        resolve([folderUris[0]]);
-                    } else {
-                        resolve(undefined);
-                    }
-                });
+            void window.showOpenDialog(input).then(folderUris => {
+                if (folderUris && folderUris.length > 0) {
+                    resolve([folderUris[0]]);
+                } else {
+                    resolve(undefined);
+                }
             });
-        } finally {
-            disposables.forEach(d => d.dispose());
-        }
+        });
     }
 
     static async run<T>(start: InputStep, onNavBack?: () => void) {
@@ -643,7 +614,7 @@ class MultiStepInput {
             } catch (err) {
                 if (err === InputFlowAction.back) {
                     if (onNavBack) {
-                        onNavBack();
+                        onNavBack();  //Currently, step -= 2 passed as onNavBack because of using postfix increment in steps in the input functions
                     }
                     this.steps.pop();
                     step = this.steps.pop();

@@ -13,20 +13,36 @@ internal class OpenAPIRuntimeComparer : IEqualityComparer<OpenApiRuntime>
     {
         get; init;
     }
-    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
-    private static readonly AuthComparer _authComparer = new();
-    private static readonly OpenApiRuntimeSpecComparer _openApiRuntimeSpecComparer = new();
+    private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
+    private readonly AuthComparer _authComparer;
+    private readonly OpenApiRuntimeSpecComparer _openApiRuntimeSpecComparer;
+
+    public OpenAPIRuntimeComparer(
+        AuthComparer? authComparer = null,
+        OpenApiRuntimeSpecComparer? openApiRuntimeSpecComparer = null,
+        StringIEnumerableDeepComparer? stringIEnumerableDeepComparer = null)
+    {
+        _authComparer = authComparer ?? new AuthComparer();
+        _openApiRuntimeSpecComparer = openApiRuntimeSpecComparer ?? new OpenApiRuntimeSpecComparer();
+        _stringIEnumerableDeepComparer = stringIEnumerableDeepComparer ?? new StringIEnumerableDeepComparer();
+    }
+
     /// <inheritdoc/>
     public bool Equals(OpenApiRuntime? x, OpenApiRuntime? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        // Unit tests check for this
+        if (x is null || y is null) return object.Equals(x, y);
+        bool functionsEqual = !EvaluateFunctions || _stringIEnumerableDeepComparer.Equals(x.RunForFunctions, y.RunForFunctions);
+        return functionsEqual && _openApiRuntimeSpecComparer.Equals(x.Spec, y.Spec) && _authComparer.Equals(x.Auth, y.Auth);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiRuntime obj)
     {
-        if (obj == null) return 0;
-        return (EvaluateFunctions ? _stringIEnumerableDeepComparer.GetHashCode(obj.RunForFunctions ?? Enumerable.Empty<string>()) * 7 : 0) +
-            (obj.Spec is null ? 0 : _openApiRuntimeSpecComparer.GetHashCode(obj.Spec) * 5) +
-            (obj.Auth is null ? 0 : _authComparer.GetHashCode(obj.Auth) * 3);
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        if (EvaluateFunctions) hash.Add(obj.RunForFunctions, _stringIEnumerableDeepComparer);
+        hash.Add(obj.Spec, _openApiRuntimeSpecComparer);
+        hash.Add(obj.Auth, _authComparer);
+        return hash.ToHashCode();
     }
 }

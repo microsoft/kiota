@@ -4,5 +4,5 @@ import { globalConfig } from './config.global';
 export const config: IConfig = {
   ...globalConfig,
 
-  apiUrl: 'http://a-production-url',
+  apiUrl: 'https://a-production-url',
 };
