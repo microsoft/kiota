@@ -30,8 +30,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
             if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
                 writer.WriteLine($"if({parameterName} != null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
-            else
-                writer.WriteLine($"_ = {parameterName} ?? throw ArgumentError.notNull({parameterName});");
         }
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         writer.CloseBlock();
@@ -584,14 +582,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var hideModifier = (inherits, code.Kind) switch
         {
             (true, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "override ",
-            (false, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "virtual ",
-            (true, CodeMethodKind.Factory) => "new ",
             _ => string.Empty
         };
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
+        var asyncPrefix = code.IsAsync ? "async " + genericTypePrefix : string.Empty;
         var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
         if (code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor))
             voidCorrectedTaskReturnType = $"IEnumerable<{voidCorrectedTaskReturnType.StripArraySuffix()}>";
@@ -601,7 +597,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             $"{asyncPrefix}{voidCorrectedTaskReturnType}{genericTypeSuffix} ";
         var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
-        var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
+        var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterLowerCase();
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         if (includeNullableReferenceType)
         {

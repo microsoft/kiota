@@ -30,15 +30,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
             writer.WriteLine();
         }
 
-        var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : [conventions.GetTypeString(codeElement.Inherits, parentClass)])
-                                        .Union(codeElement.Implements.Select(static x => x.Name))
-                                        .OfType<string>()
-                                        .Select(static x => x.ToFirstCharacterUpperCase())
-                                        .ToArray();
-        var derivation = derivedTypes.Length != 0 ? "extends " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
+        var derivation = codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name}";
+        var implements = !codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
-        writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
+        writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}{implements} {{");
     }
 
     private static string getImportStatement(CodeUsing x, ClassDeclaration codeElement)

@@ -281,6 +281,7 @@ public class DartConventionService : CommonLanguageConventionService
             "double" or "float" or "decimal" or "int64" => "double",
             "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
+            "iparsenode" => "ParseNode",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
