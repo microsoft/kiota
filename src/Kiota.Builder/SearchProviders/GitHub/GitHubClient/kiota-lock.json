@@ -1,13 +1,15 @@
 {
-  "descriptionHash": "77543E6F637859FD64E2067E3ADB19193B93889719B8D93D5957D8DC103AB3614C3064A6956EA50A96C33123F53FD9477E94296825BDD94358971D0CECA162B6",
+  "descriptionHash": "B5F90171CE308585F338363FDA2722B0DA666E7362F96FB4E86187A4404F5BD2FCB101023866C95D57D97E0EA8B0D3B0F393913D7BD6D4EBD3EC36DB6E88E1A7",
   "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.2022-11-28.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "1.6.1",
+  "kiotaVersion": "1.18.0",
   "clientClassName": "GitHubClient",
   "clientNamespaceName": "Kiota.Builder.SearchProviders.GitHub.GitHubClient",
   "language": "CSharp",
   "usesBackingStore": false,
+  "excludeBackwardCompatible": true,
   "includeAdditionalData": true,
+  "disableSSLValidation": false,
   "serializers": [
     "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
     "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
@@ -26,10 +28,10 @@
     "text/yaml"
   ],
   "includePatterns": [
-    "**/search/repositories",
-    "**/repos/**/contents/**",
-    "**/repos/**/releases",
-    "/user/installations"
+    "**/search/repositories#GET",
+    "**/repos/**/contents/**#GET",
+    "**/repos/**/releases#GET",
+    "/user/installations#GET"
   ],
   "excludePatterns": [
     "**/migrations/**",
@@ -37,6 +39,5 @@
     "**/generate",
     "**/repos/**/topics"
   ],
-  "disabledValidationRules": [],
-  "disableSSLValidation": false
+  "disabledValidationRules": []
 }
