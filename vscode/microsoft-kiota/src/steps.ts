@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
+
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { isTemporaryDirectory } from './utilities/temporary-folder';
@@ -408,7 +409,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                     }
                 }
             }
-            state.outputPath === '' ? state.outputPath = 'output' : state.outputPath;
+            if (state.outputPath === '') {
+                state.outputPath = 'output';
+            }
             break;
         }
 
@@ -503,28 +506,22 @@ interface OpenDialogParameters {
 
 class MultiStepInput {
     async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles }: OpenDialogParameters): Promise<Uri[] | undefined> {
-        const disposables: Disposable[] = [];
+        return await new Promise<Uri[] | undefined>((resolve) => {
+            const input: OpenDialogOptions = {
+                canSelectMany,
+                openLabel,
+                canSelectFolders,
+                canSelectFiles
+            };
 
-        try {
-            return await new Promise<Uri[] | undefined>((resolve) => {
-                const input: OpenDialogOptions = {
-                    canSelectMany,
-                    openLabel,
-                    canSelectFolders,
-                    canSelectFiles
-                };
-
-                void window.showOpenDialog(input).then(folderUris => {
-                    if (folderUris && folderUris.length > 0) {
-                        resolve([folderUris[0]]);
-                    } else {
-                        resolve(undefined);
-                    }
-                });
+            void window.showOpenDialog(input).then(folderUris => {
+                if (folderUris && folderUris.length > 0) {
+                    resolve([folderUris[0]]);
+                } else {
+                    resolve(undefined);
+                }
             });
-        } finally {
-            disposables.forEach(d => d.dispose());
-        }
+        });
     }
 
     static async run<T>(start: InputStep, onNavBack?: () => void) {

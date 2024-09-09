@@ -1744,6 +1744,8 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(className))
                 if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                 {
+                    if (currentSchema.IsArray())
+                        primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                     if (!unionType.ContainsType(primitiveType))
                         unionType.AddType(primitiveType);
                     continue;

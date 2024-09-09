@@ -838,7 +838,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "nil"));
 
-        var paramsCall = requestInfoParameters.Count != 0 ? requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
+        var paramsCall = string.Join(", ", requestInfoParameters);
 
         writer.WriteLine(template(generatorMethodName, paramsCall));
     }

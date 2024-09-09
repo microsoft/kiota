@@ -74,10 +74,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error adding the client: {ExceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error generating the plugin: {ExceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error adding the client: {ExceptionMessage}", ex.Message);
+                logger.LogCritical("error generating the plugin: {ExceptionMessage}", ex.Message);
                 return 1;
 #endif
             }
