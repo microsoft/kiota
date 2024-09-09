@@ -264,12 +264,9 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private void SetTypeAccessModifiers(CodeElement currentElement)
     {
-        switch (currentElement)
+        if (currentElement is IAccessibleElement accessibleElement and (CodeEnum or CodeClass))
         {
-            case CodeClass:
-            case CodeEnum:
-                ((IAccessibleElement)currentElement).Access = _configuration.TypeAccessModifier;
-                break;
+            accessibleElement.Access = _configuration.TypeAccessModifier;
         }
 
         CrawlTree(currentElement, SetTypeAccessModifiers);
