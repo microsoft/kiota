@@ -23,7 +23,7 @@ public class ApiPluginConfigurationComparer : BaseApiConsumerConfigurationCompar
     public override bool Equals(ApiPluginConfiguration? x, ApiPluginConfiguration? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-        return x.Types.SequenceEqual(y.Types, _stringComparer) && base.Equals(x, y);
+        return _stringIEnumerableDeepComparer.Equals(x.Types, y.Types) && base.Equals(x, y);
     }
 
     /// <inheritdoc/>
