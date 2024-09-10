@@ -579,11 +579,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        var hideModifier = (inherits, code.Kind) switch
+        if (inherits && (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer))
         {
-            (true, CodeMethodKind.Serializer or CodeMethodKind.Deserializer) => "override ",
-            _ => string.Empty
-        };
+            writer.WriteLine("@override");
+        }
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
@@ -607,11 +606,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                                                         GetParameterSignatureWithNullableRefType(p, code) :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
         }
         else
         {
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
     }
 
