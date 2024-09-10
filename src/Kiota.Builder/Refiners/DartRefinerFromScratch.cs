@@ -82,7 +82,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             AddInheritedTypeImport(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, false);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-
+            AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
 
             ReplaceDefaultSerializationModules(
@@ -92,7 +92,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                     $"{SerializationNamespaceName}_json/{SerializationNamespaceName}_json.JsonSerializationWriterFactory",
                     $"{SerializationNamespaceName}_text/{SerializationNamespaceName}_text.TextSerializationWriterFactory",
                     $"{SerializationNamespaceName}_form/{SerializationNamespaceName}_form.FormSerializationWriterFactory",
-                    $"{SerializationNamespaceName}_multi/{SerializationNamespaceName}_multi.MultipartSerializationWriterFactory",
+                    // $"{SerializationNamespaceName}_multi/{SerializationNamespaceName}_multi.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
