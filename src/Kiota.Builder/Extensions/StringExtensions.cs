@@ -19,6 +19,7 @@ public static partial class StringExtensions
     public static string ToFirstCharacterUpperCase(this string? input)
         => string.IsNullOrEmpty(input) ? string.Empty : char.ToUpperInvariant(input[0]) + input[1..];
 
+    private static readonly char[] defaultSeparators = ['-'];
     /// <summary>
     /// Converts a string delimited by a symbol to camel case
     /// </summary>
@@ -28,7 +29,7 @@ public static partial class StringExtensions
     public static string ToCamelCase(this string? input, params char[] separators)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators is null || separators.Length == 0) separators = new[] { '-' };
+        if (separators is null || separators.Length == 0) separators = defaultSeparators;
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
         return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
@@ -37,7 +38,7 @@ public static partial class StringExtensions
     public static string ToPascalCase(this string? input, params char[] separators)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators is null || separators.Length == 0) separators = new[] { '-' };
+        if (separators is null || separators.Length == 0) separators = defaultSeparators;
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
         return string.Join(string.Empty, chunks.Select(ToFirstCharacterUpperCase));
