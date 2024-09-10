@@ -85,7 +85,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 defaultValue = $" = {propertyType}()";
                 goto default;
             default:
-                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()}{defaultValue};");
+                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
                 break;
         }
     }

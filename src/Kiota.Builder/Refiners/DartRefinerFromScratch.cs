@@ -80,7 +80,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddInheritedTypeImport(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, false);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
 
             cancellationToken.ThrowIfCancellationRequested();
