@@ -27,7 +27,9 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
-        return EqualsInternal(x, y);
+        // this workaround might result in collisions, however so far this has not been a problem
+        // implemented this way to avoid stack overflow caused by schemas referencing themselves
+        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
@@ -35,25 +37,6 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
         var hash = new HashCode();
         GetHashCodeInternal(obj, [], ref hash);
         return hash.ToHashCode();
-    }
-
-    private bool EqualsInternal(OpenApiSchema? x, OpenApiSchema? y)
-    {
-        if (x is null || y is null) return object.Equals(x, y);
-        return x.Deprecated == y.Deprecated
-               && x.Nullable == y.Nullable
-               && x.AdditionalPropertiesAllowed == y.AdditionalPropertiesAllowed
-               && discriminatorComparer.Equals(x.Discriminator, y.Discriminator)
-               && string.Equals(x.Format, y.Format, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(x.Title, y.Title, StringComparison.Ordinal)
-               && openApiAnyComparer.Equals(x.Default, y.Default)
-               && EqualsInternal(x.AdditionalProperties, y.AdditionalProperties)
-               && EqualsInternal(x.Items, y.Items)
-               && Enumerable.SequenceEqual(x.Properties, y.Properties, schemaMapComparer)
-               && Enumerable.SequenceEqual(x.AnyOf, y.AnyOf, this)
-               && Enumerable.SequenceEqual(x.AllOf, y.AllOf, this)
-               && Enumerable.SequenceEqual(x.OneOf, y.OneOf, this);
     }
 
     private void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
@@ -143,15 +126,17 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     public bool Equals(OpenApiDiscriminator? x, OpenApiDiscriminator? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
-        return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && x.Mapping.SequenceEqual(y.Mapping, mappingComparer);
+        return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && GetOrderedRequests(x.Mapping).SequenceEqual(GetOrderedRequests(y.Mapping), mappingComparer);
     }
+    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string> mappings) =>
+    mappings.OrderBy(x => x.Key, StringComparer.Ordinal);
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
         hash.Add(obj.PropertyName);
-        foreach (var mapping in obj.Mapping)
+        foreach (var mapping in GetOrderedRequests(obj.Mapping))
         {
             hash.Add(mapping, mappingComparer);
         }
