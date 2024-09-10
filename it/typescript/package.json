@@ -19,10 +19,10 @@
   "prettier": "./.prettierrc.json",
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
-    "@stylistic/eslint-plugin-ts": "^2.7.2",
+    "@stylistic/eslint-plugin-ts": "^2.8.0",
     "@types/node": "^22.5.4",
-    "@typescript-eslint/eslint-plugin": "^8.4.0",
-    "@typescript-eslint/parser": "^8.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "@typescript-eslint/parser": "^8.5.0",
     "esbuild": "^0.23.1",
     "eslint": "^9.10.0",
     "eslint-config-prettier": "^9.1.0",
@@ -39,7 +39,7 @@
     "@microsoft/kiota-serialization-json": "^1.0.0-preview.63",
     "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.41",
     "@microsoft/kiota-serialization-text": "^1.0.0-preview.60",
-    "express": "^4.19.2",
+    "express": "^4.20.0",
     "node-fetch": "^2.7.0"
   }
 }

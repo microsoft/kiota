@@ -51,12 +51,14 @@ servers:
 paths:
   /test:
     get:
+      summary: summary for test path
       description: description for test path
       responses:
         '200':
           description: test
   /test/{id}:
     get:
+      summary: Summary for test path with id that is longer than 50 characters 
       description: description for test path with id
       operationId: test.WithId
       parameters:
@@ -108,8 +110,10 @@ paths:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Contains("description for test path with id", resultingManifest.Document.Functions[1].Description);// Uses the operation description
         Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
-        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[0].Text.Length < 50);// Conversation starters are limited to 50 characters
+        Assert.Contains("Summary for test path with id", resultingManifest.Document.Capabilities.ConversationStarters[1].Text);// Uses the operation summary
+        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);// Conversation starters are limited to 50 characters
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
         Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);// description is pulled from info   
