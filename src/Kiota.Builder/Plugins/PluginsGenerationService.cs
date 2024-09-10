@@ -261,7 +261,7 @@ public partial class PluginsGenerationService
     {
         var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
         var capabilities = GetPluginCapabilitiesFromFunctions(functions);
-        var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
+        var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
         {
