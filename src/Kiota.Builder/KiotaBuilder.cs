@@ -71,7 +71,7 @@ public partial class KiotaBuilder
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
-            if (config.Operation == ConsumerOperation.GenerateHttpSnippet)
+            if (IsHttpSnippetGeneration(config))
             {
                 // Delete all files ending in .http in the current folder and all subdirectories
                 foreach (var file in Directory.EnumerateFiles(config.OutputPath, "*.http", SearchOption.AllDirectories))
@@ -272,7 +272,8 @@ public partial class KiotaBuilder
             sw.Start();
             var service = new HttpSnippetGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
             await service.GenerateHttpSnippetAsync(cancellationToken).ConfigureAwait(false);
-            StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
+            logger.LogInformation("http snippets generate successfully");
+            StopLogAndReset(sw, $"step {++stepId} - generate http snippet - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -338,6 +339,9 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
+            // if its http generaion we're done
+            if (IsHttpSnippetGeneration(config)) return true;
+
             if (shouldGenerate)
             {
                 stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
@@ -361,6 +365,7 @@ public partial class KiotaBuilder
         }
         return true;
     }
+    private static bool IsHttpSnippetGeneration(GenerationConfiguration config) => config.Operation == ConsumerOperation.GenerateHttpSnippet;
     private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
     {
         // Write lock file

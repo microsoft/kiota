@@ -248,7 +248,7 @@ internal partial class Server : IServer
             if (result)
                 logger.LogInformation("Generation completed successfully");
             else
-                logger.LogInformation("Generation skipped as --skip-generation was passed");
+                logger.LogInformation("Http snippet generation failed");
         }
         catch (Exception ex)
         {
