@@ -5,4 +5,5 @@ public enum ConsumerOperation
     Edit,
     Remove,
     Generate,
+    GenerateHttpSnippet
 }

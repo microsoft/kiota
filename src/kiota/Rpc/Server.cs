@@ -229,9 +229,9 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.OpenAPIFilePath = GetAbsolutePath(openAPIFilePath);
         configuration.OutputPath = GetAbsolutePath(outputPath);
-        configuration.CleanOutput = false; // don't delete existing files
+        configuration.CleanOutput = cleanOutput;
         configuration.ClearCache = clearCache;
-        configuration.Operation = ConsumerOperation.Generate; //TODO should be updated to edit in the edit scenario
+        configuration.Operation = ConsumerOperation.GenerateHttpSnippet;
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (includePatterns is { Length: > 0 })

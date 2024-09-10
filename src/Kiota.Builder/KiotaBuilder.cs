@@ -71,14 +71,26 @@ public partial class KiotaBuilder
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
-            logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
-            // not using Directory.Delete on the main directory because it's locked when mapped in a container
-            foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
-                Directory.Delete(subDir, true);
-            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
-                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
-                File.Delete(subFile);
+            if (config.Operation == ConsumerOperation.GenerateHttpSnippet)
+            {
+                // Delete all files ending in .http in the current folder and all subdirectories
+                foreach (var file in Directory.EnumerateFiles(config.OutputPath, "*.http", SearchOption.AllDirectories))
+                {
+                    File.Delete(file);
+                }
+            }
+            else
+            {
+                logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
+                // not using Directory.Delete on the main directory because it's locked when mapped in a container
+                foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
+                    Directory.Delete(subDir, true);
+                await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+                foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
+                                                .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
+                    File.Delete(subFile);
+            }
+
         }
     }
     public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
