@@ -78,13 +78,13 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.QueryParameter,
                     CodePropertyKind.RequestBuilder,
                 },
-                static s => s.ToCamelCase(UnderscoreArray).ToFirstCharacterLowerCase());
+                static s => s.ToCamelCase(UnderscoreArray));
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData
                 },
-                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
+                static (_, s) => s.ToPascalCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
@@ -95,7 +95,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.BackingStore
                 },
-                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
+                static (_, s) => s.ToPascalCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 false,
                 "get",

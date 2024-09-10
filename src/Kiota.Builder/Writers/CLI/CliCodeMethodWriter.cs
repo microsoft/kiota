@@ -867,7 +867,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     /// <returns></returns>
     private static string NormalizeToIdentifier(string input)
     {
-        return input.ToCamelCase('-', '_', '.');
+        return input.ToOriginalCamelCase('-', '_', '.');
     }
 
     /// <summary>
