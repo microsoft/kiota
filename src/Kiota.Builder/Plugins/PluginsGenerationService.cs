@@ -259,8 +259,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
-        var capabilities = GetPluginCapabilitiesFromFunctions(functions);
+        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
@@ -287,11 +286,16 @@ public partial class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
         };
 
-        // Only add capabilities if there are any
-        if (capabilities != null)
-        {
-            pluginManifestDocument.Capabilities = capabilities;
-        }
+        if (conversationStarters.Length > 0)
+            pluginManifestDocument.Capabilities = new Capabilities
+            {
+                ConversationStarters = conversationStarters.Where(static x => !string.IsNullOrEmpty(x.Text))
+                                            .Select(static x => new ConversationStarter
+                                            {
+                                                Text = x.Text?.Length < 50 ? x.Text : x.Text?[..50]
+                                            })
+                                            .ToList()
+            };
         return pluginManifestDocument;
     }
 
@@ -334,11 +338,12 @@ public partial class PluginsGenerationService
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
 
-    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
+    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
+        var conversationStarters = new List<ConversationStarter>();
         var configAuth = authInformation?.ToPluginManifestAuth();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
@@ -351,26 +356,34 @@ public partial class PluginsGenerationService
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath, },
                     RunForFunctions = [operation.OperationId]
                 });
+
+                var summary = operation.Summary.CleanupXMLString();
+                var description = operation.Description.CleanupXMLString();
+
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
-                    Description =
-                        operation.Summary.CleanupXMLString() is { } summary && !string.IsNullOrEmpty(summary)
-                            ? summary
-                            : operation.Description.CleanupXMLString(),
+                    Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
+
                 });
+                conversationStarters.Add(new ConversationStarter
+                {
+                    Text = !string.IsNullOrEmpty(summary) ? summary : description
+                });
+
             }
         }
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(document, authInformation, node.Value, openApiDocumentPath);
+            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
+            conversationStarters.AddRange(childConversationStarters);
         }
 
-        return (runtimes.ToArray(), functions.ToArray());
+        return (runtimes.ToArray(), functions.ToArray(), conversationStarters.ToArray());
     }
 
     private static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
@@ -436,18 +449,5 @@ public partial class PluginsGenerationService
         }
 
         return null;
-    }
-
-    private static Capabilities? GetPluginCapabilitiesFromFunctions(IList<Function> functions)
-    {
-        var conversionStarters = functions.Select(static x => x.Description)
-                                                              .Where(static x => !string.IsNullOrEmpty(x))
-                                                              .Select(static x => new ConversationStarter
-                                                              {
-                                                                  Text = x.Length < 50 ? x : x[..50],
-                                                              })
-                                                              .ToList();
-
-        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }
