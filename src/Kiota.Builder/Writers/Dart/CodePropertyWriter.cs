@@ -84,6 +84,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.QueryParameters:
                 defaultValue = $" = {propertyType}()";
                 goto default;
+            case CodePropertyKind.AdditionalData:
+                writer.WriteLine("@override");
+                goto default;
             default:
                 writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
                 break;
