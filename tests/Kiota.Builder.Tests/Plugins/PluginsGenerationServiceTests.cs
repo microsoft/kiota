@@ -44,6 +44,7 @@ public sealed class PluginsGenerationServiceTests : IDisposable
 info:
   title: test
   version: 1.0
+  description: test description we've created
 servers:
   - url: http://localhost/
     description: There's no place like home
@@ -115,6 +116,7 @@ paths:
         Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);// Conversation starters are limited to 50 characters
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
+        Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);// description is pulled from info   
     }
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
