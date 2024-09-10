@@ -27,6 +27,8 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
+        // this workaround might result in collisions, however so far this has not been a problem
+        // implemented this way to avoid stack overflow caused by schemas referencing themselves
         return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
