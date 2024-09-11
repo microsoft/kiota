@@ -5,35 +5,36 @@ import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { getWorkspaceJsonDirectory } from "./util";
 
-export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory:string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
-  const kiotaPath = getKiotaPath(context);
-  await ensureKiotaIsPresent(context);
-  const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: workingDirectory,
-    env: {
-        ...process.env,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        KIOTA_CONFIG_PREVIEW: "true",
+export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
+    const kiotaPath = getKiotaPath(context);
+    await ensureKiotaIsPresent(context);
+    const childProcess = cp.spawn(kiotaPath, ["rpc"], {
+        cwd: workingDirectory,
+        env: {
+            ...process.env,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            KIOTA_CONFIG_PREVIEW: "true",
+        }
+    });
+    let connection = rpc.createMessageConnection(
+        new rpc.StreamMessageReader(childProcess.stdout),
+        new rpc.StreamMessageWriter(childProcess.stdin));
+    connection.listen();
+    try {
+        return await callback(connection);
+    } catch (error) {
+        const errorMessage = (error as { data?: { message: string } })?.data?.message
+            || 'An unknown error occurred';
+        throw new Error(errorMessage);
+    } finally {
+        connection.dispose();
+        childProcess.kill();
     }
-  });
-  let connection = rpc.createMessageConnection(
-    new rpc.StreamMessageReader(childProcess.stdout),
-    new rpc.StreamMessageWriter(childProcess.stdin));
-  connection.listen();
-  try {
-    return await callback(connection);
-  } catch (error) {
-    console.error(error);
-    return undefined;
-  } finally {
-    connection.dispose();
-    childProcess.kill();
-  }
 }
 
 export interface KiotaLogEntry {
-  level: LogLevel;
-  message: string;
+    level: LogLevel;
+    message: string;
 }
 
 export interface KiotaOpenApiNode {
@@ -76,16 +77,16 @@ export interface KiotaSearchResult extends KiotaLoggedResult {
     results: Record<string, KiotaSearchResultItem>;
 }
 export interface KiotaSearchResultItem {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  Title: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  Description: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ServiceUrl?: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  DescriptionUrl?: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  VersionLabels?: string[];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Title: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Description: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ServiceUrl?: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    DescriptionUrl?: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    VersionLabels?: string[];
 }
 
 export enum ConsumerOperation {
