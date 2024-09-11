@@ -6,10 +6,11 @@
   "version": "1.18.100000001",
   "kiotaVersion": "1.18.0",
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
-  "icon": "images/logo.png",
+  "icon": "images/kiotalogo.png",
   "engines": {
     "vscode": "^1.93.0"
   },
+  "license": "MIT",
   "categories": [
     "Other"
   ],

@@ -1,16 +1,18 @@
 # Microsoft Kiota
 
-Kiota is a client generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
-Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability.
+Kiota is a client/plugin/manifest generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
+Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability. Recently, it has also added plugin and manifest generations based on OpenAPI descriptions that can speed up the process of generating Declarative Copilots.
 
 ## Features
 
 Using kiota you can:
 
 1. Search for API descriptions.
-1. Filter and select the API endpoints you need.
-1. Generate models and a chained method API surface in the language of your choice.
-1. Call the API with the new client.
+2. Filter and select the API endpoints you need by slicing only required endpoints from a rather bulky OpenAPI Description
+3. Generate models and a chained method API surface in the language of your choice. Supported languages can be viewed at https://github.com/microsoft/kiota/tree/main?tab=readme-ov-file#supported-languages
+4. Call the OpenAPI described API with the new client generated in step 3 above.
+5. Generate validated and working plugin manifests that can be easily integrated into LLMs. **New**
+6. Generate OpenApi manifests. **New**
 
 All that in a matter of seconds.
 
@@ -18,36 +20,89 @@ All that in a matter of seconds.
 
 This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension adds a rich UI for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more! 
 
- * Once the extension is installed, you will be able to see the commands available to you. 
+## Kiota extension installation
+1. In VS Code, navigate to `Extensions`.
+<img width="482" alt="Navigate to Extensions on VS Code" src="https://github.com/user-attachments/assets/ddffe716-ee41-493d-b6fa-373fc9e6f129">
 
-<img width="482" alt="VScode extension commands" src="https://user-images.githubusercontent.com/5781590/229946855-faff33bf-4e18-45eb-9b15-a42ac959a916.png">
+2. Search for 'kiota'
+3. Click on Install.
 
-* Search for an API description using a keyword 
+You can also install the extension package from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-graph.kiota). 
 
-<img width="479" alt="vscode extension search " src="https://user-images.githubusercontent.com/5781590/229947287-3a2850d0-d97e-4a1e-9440-9c97f8e66e1a.png">
+## Getting started
 
-<img width="478" alt="vscode extension search results" src="https://user-images.githubusercontent.com/5781590/229947317-dd24f722-d58c-41a6-a85b-fa7c0d48493e.png">
+Once the extension is installed, you will be able to see the commands available to you.
 
-* Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints 
+You can kick start the process by using the add file icons as appears below or using command pallete with the command `searchOrOpenApiDescription`
+<img width="482" alt="Use the add file icon" src="images/samples/SearchOrBrowseOptions.png">
 
-<img width="189" alt="Kiota OpenAPI explorer" src="https://user-images.githubusercontent.com/5781590/229947806-27ff49b9-5877-41a2-b7df-c9c19f6f736e.png">
+The notification bar will also notify you of ongoing background processes e.g when searching for an api using a keywork
 
-* Select the endpoints to include in your API client 
+<img width="479" alt="vscode extension search " src="images/samples/SearchOrBrowseOptions.png">
 
-<img width="225" alt="kiota vscode select endpoint" src="https://user-images.githubusercontent.com/5781590/229948168-efecfd85-214a-4d65-a225-10b100b15a68.png">
+<img width="479" alt="vscode extension search notification" src="images/samples/searchingNotification.png">
 
-* Finally, you can generate the API client. You will be prompted to provide some parameters for your client such as the class and namespace names. You will also need to select the language for the generated client.
+<img width="479" alt="vscode extension search results" src="images/samples/searchResults.png">
 
-<img width="349" alt="generation complete" src="https://user-images.githubusercontent.com/5781590/229949052-159f3a58-b0e6-421f-9ca5-b45dc49c4639.png">
+Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints 
+
+<img width="189" alt="Kiota OpenAPI explorer" src="images/samples/endpointSelectionandTheGenerateIcon.png">
+
+Select the endpoints to include in your API client as above and click the `generate` icon. Kiota extension will display with the options to generate either client, plugin or manifest.
+
+<img width="225" alt="kiota vscode generate options" src="images/samples/SelectGenerationOption.png">
+
+Finally, the notification bar at the bottom right will display "Generation Completed Successfully" once the generation is done. Click on your vscode file explorer to see the generated outputs in the current workspace if default selection was your output directory choice or navigate to selected folder to see the output.
+
+## Migrating from older use of lock file to a workspace.json
+
+Latest Kiota extension has been improved to using a workspace instead of a lock file to facilitate having multiple clients, plugins, or manifests within the same workspace. The workspace.json file also provides an opportunity to edit, or regenerate the outputs conveniently.
+
+<img width="255" alt="Working with the extension's workspace" src="images/samples/GenerationMultipleClientsSameWorkspace.png">
+
+If you previously generated a client that had a lock file, kiota prompts you to migrate to using the workspace once you open the previously generated folder containing a lock file. You can choose to migrate immediately or ask to be reminded later.
+
+<img width="255" alt="Notification to Migrate to extension's workspace" src="images/samples/MigratePromptOnOpeningFolder.png">
+
+You can also access the same feature later by using the contextual option on the lock file, by right-clicking on the lock file and selecting the option to migrate.
+
+<img width="255" alt="Contextual Migrate option on right-clicking on lockfile" src="images/samples/ContextualMigrateLockToWorkspace.png">
+
+Enjoy the benefits of the workspace once the migration is complete.
+
 
 ## Extension Settings
 
-None.
+See [src/extensionSettings.ts](src/extensionSettings.ts) file
 
-## Known Issues
+## Contributions
+There are many ways in which you can participate in the project, for example:
 
-Checkout the [list of open issues](https://github.com/microsoft/kiota/issues) to get a list of the known issues.
+[Download our latest builds](https://github.com/microsoft/kiota/releases).
+[Submit bugs and feature requests](https://github.com/microsoft/kiota/issues), and help us verify as they are checked in
+Review [source code changes](https://github.com/microsoft/kiota/pulls)
+Review the [documentation](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/README.md) and make pull requests for anything from typos to new content
 
-## Release Notes
+See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/CONTRIBUTING.md) page for more information
+Further guidelines are also available in the page [SUPPORT.md](https://github.com/microsoft/kiota/blob/main/SUPPORT.md)
 
-Checkout the [release notes](https://github.com/microsoft/kiota/releases) to get more information about each release.
+## Reporting security issues
+Check out our [SECURITY.md](https://github.com/microsoft/kiota/blob/main/SECURITY.md) page for details.
+
+## Telemetry
+
+Kiota collects usage data and sends it to Microsoft to help improve our products and services. Read our [Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839) and [Data Collection Notice](https://docs.opensource.microsoft.com/content/releasing/telemetry.html) to learn more. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
+trademarks or logos is subject to and must follow
+[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general).
+Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
+Any use of third-party trademarks or logos are subject to those third-party's policies.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
+contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
