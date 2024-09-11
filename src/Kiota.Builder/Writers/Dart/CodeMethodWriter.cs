@@ -32,7 +32,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.WriteLine($"if({parameterName} != null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
         }
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
-        writer.CloseBlock();
+
+        var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
+        if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+        {
+            writer.DecreaseIndent();
+        }
+        else
+        {
+            writer.CloseBlock();
+        }
     }
 
     protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
@@ -573,6 +582,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
+        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+        {
+            return " : ";
+        }
 
         return string.Empty;
     }
@@ -598,6 +611,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterLowerCase();
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
+        var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
@@ -610,7 +624,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {openingBracket}");
         }
     }
 

@@ -112,7 +112,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
 
-                
+
         }, cancellationToken);
     }
 
@@ -150,7 +150,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 
-    private static void CorrectMethodType(CodeMethod currentMethod) {
+    private static void CorrectMethodType(CodeMethod currentMethod)
+    {
 
     }
 
@@ -178,8 +179,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
-            currentProperty.Type.Name = "Map<String, Object>";
-            currentProperty.DefaultValue = "Map<String, Object>()";
+            currentProperty.Type.Name = "Map<String, Object?>";
+            currentProperty.DefaultValue = "Map<String, Object?>()";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
         {
