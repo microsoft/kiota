@@ -573,7 +573,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                             .ToList();
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "null"));
-        var paramsCall = requestInfoParameters.Count != 0 ? requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
+        var paramsCall = string.Join(", ", requestInfoParameters);
         writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)

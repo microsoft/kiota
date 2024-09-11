@@ -4,17 +4,29 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Manifest;
-public class RequestInfoComparer : IEqualityComparer<RequestInfo>
+
+/// <summary>
+/// <see cref="IEqualityComparer{T}"/> for <see cref="RequestInfo"/> objects.
+/// </summary>
+/// <param name="stringComparer">
+/// The string comparer to use when comparing string properties. Defaults to <see cref="StringComparer.OrdinalIgnoreCase"/>
+/// </param>
+public class RequestInfoComparer(StringComparer? stringComparer = null) : IEqualityComparer<RequestInfo>
 {
+    private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+
     public bool Equals(RequestInfo? x, RequestInfo? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+        return _stringComparer.Equals(x.Method, y.Method) && _stringComparer.Equals(x.UriTemplate, y.UriTemplate);
     }
 
     public int GetHashCode([DisallowNull] RequestInfo obj)
     {
-        if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.Method) ? 0 : obj.Method.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 7 +
-            (string.IsNullOrEmpty(obj.UriTemplate) ? 0 : obj.UriTemplate.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 3;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.Method, _stringComparer);
+        hash.Add(obj.UriTemplate, _stringComparer);
+        return hash.ToHashCode();
     }
 }

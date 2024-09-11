@@ -576,6 +576,18 @@ public static partial class KiotaHost
                 input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {validator}";
         });
     }
+    internal static void ValidateAllOrNoneOptions(CommandResult commandResult, params Option[] options)
+    {
+        var optionResults = options.Select(option => commandResult.Children.FirstOrDefault(c => c.Symbol == option) as OptionResult);
+        var optionsWithValue = optionResults.Where(result => result?.Tokens.Any() ?? false).ToList();
+
+        // If not all options are set and at least one is set, it's an error
+        if (optionsWithValue.Count > 0 && optionsWithValue.Count < options.Length)
+        {
+            var optionNames = options.Select(option => option.Aliases.FirstOrDefault() ?? "unknown option").ToArray();
+            commandResult.ErrorMessage = $"Either all of {string.Join(", ", optionNames)} must be provided or none.";
+        }
+    }
     internal static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues)
     {
         var knownValuesHash = new HashSet<string>(knownValues, StringComparer.OrdinalIgnoreCase);
@@ -585,26 +597,18 @@ public static partial class KiotaHost
             input.ErrorMessage = $"{unknownValue} is not a supported {parameterName}, supported values are {validOptionsList}";
         }
     }
-    private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T : struct, Enum
-    {
-        if (input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _))
-        {
-            var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
-            input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
-        }
-    }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
     private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T : struct, Enum
     {
         option.AddValidator(input =>
         {
-            ValidateEnumValue<T>(input, parameterName);
+            ValidateKnownValues(input, parameterName, Enum.GetValues<T>().Select(static x => x.ToString()));
         });
     }
 }

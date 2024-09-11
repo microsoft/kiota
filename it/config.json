@@ -44,10 +44,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
@@ -157,10 +153,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/3436"
       },
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       },
@@ -169,12 +161,7 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2957"
       }
     ],
-    "IdempotencySuppressions": [
-      {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
-      }
-    ]
+    "IdempotencySuppressions": []
   },
   "apisguru::twilio.com:api": {
     "ExcludePatterns": [
@@ -248,7 +235,7 @@
     "Suppressions": [
       {
         "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+        "Rationale": "https://github.com/microsoft/kiota/issues/5256"
       },
       {
         "Language": "go",
@@ -265,6 +252,10 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/5354"
       }
     ],
     "IdempotencySuppressions": [
@@ -279,10 +270,6 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
-      },
-      {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       },
       {
         "Language": "ruby",
@@ -313,25 +300,14 @@
   "apisguru::twitter.com:current": {
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
     ],
-    "IdempotencySuppressions": [
-      {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
-      }
-    ]
+    "IdempotencySuppressions": []
   },
   "apisguru::apis.guru": {
-    "Suppressions": [
-    ],
-    "IdempotencySuppressions": [
-    ]
+    "Suppressions": [],
+    "IdempotencySuppressions": []
   }
 }

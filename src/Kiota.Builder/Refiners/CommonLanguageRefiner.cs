@@ -16,7 +16,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(configuration);
         _configuration = configuration;
     }
-    public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
+    public abstract Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
@@ -119,7 +119,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (current is CodeClass currentClass && classNames &&
             refineName(currentClass.Name) is string refinedClassName &&
             !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal) &&
-            currentClass.Parent is IBlock parentBlock)
+            currentClass.Parent is IBlock parentBlock &&
+            parentBlock.FindChildByName<CodeElement>(refinedClassName) is null) // ensure the refinement won't generate a duplicate
         {
             parentBlock.RenameChildElement(currentClass.Name, refinedClassName);
         }
@@ -127,7 +128,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             enumNames &&
             refineName(currentEnum.Name) is string refinedEnumName &&
             !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal) &&
-            currentEnum.Parent is IBlock parentBlock2)
+            currentEnum.Parent is IBlock parentBlock2 &&
+            parentBlock2.FindChildByName<CodeElement>(refinedEnumName) is null) // ensure the refinement won't generate a duplicate
         {
             parentBlock2.RenameChildElement(currentEnum.Name, refinedEnumName);
         }
@@ -296,7 +298,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             null,
             x => (((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition) // rename properties or method of error classes matching the reserved names.
                                                 || (x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model) && codeClass.IsErrorDefinition
-                                                    && codeClass.Properties.FirstOrDefault(classProp => provider.ReservedNames.Contains(classProp.Name)) is { } matchingProperty && matchingProperty.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase)) // rename the a class if it has a matching property and the class has the same name as the property.
+                                                    && codeClass.Properties.FirstOrDefault(classProp => provider.ReservedNames.Contains(classProp.Name)) is { } matchingProperty && matchingProperty.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase)) // rename the class if it has a matching property and the class has the same name as the property.
         );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
@@ -1411,7 +1413,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 };
                 if (addCurrentTypeAsGenericTypeParameter)
                 {
-                    currentClass.StartBlock.Inherits.GenericTypeParameterValues.Add(new CodeType
+                    currentClass.StartBlock.Inherits.AddGenericTypeParameterValue(new CodeType
                     {
                         TypeDefinition = currentClass,
                     });
@@ -1502,7 +1504,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static CodeType GetGenericTypeForRequestConfiguration(CodeType configurationParameterType, CodeType genericTypeParamValue)
     {
         var newType = (CodeType)configurationParameterType.Clone();
-        newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+        newType.AddGenericTypeParameterValue(genericTypeParamValue);
         return newType;
     }
 
@@ -1512,12 +1514,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (asProperty)
             {
-                if (currentClass.Properties.FirstOrDefault(property => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } sameNameProperty)
+                if (currentClass.FindChildByName<CodeProperty>(name, false) is { } sameNameProperty)
                 {
                     if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
-                        currentClass.RemoveChildElementByName(name); // type matches so just remove it for replacement
-                    else
-                        currentClass.RenameChildElement(name, $"{name}Escaped"); // type mismatch so just rename it
+                    {
+                        // As the type may not be settable by the serialization logic
+                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly. 
+                        sameNameProperty.IsPrimaryErrorMessage = true;
+                    }
+                    if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
+                        sameNameProperty.SerializationName = sameNameProperty.Name;
+                    currentClass.RenameChildElement(name, $"{name}Escaped"); // rename to prevent collisions and keep the original
                 }
 
                 currentClass.AddProperty(new CodeProperty

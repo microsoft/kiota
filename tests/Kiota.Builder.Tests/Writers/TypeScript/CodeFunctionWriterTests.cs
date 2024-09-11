@@ -1,14 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Kiota.Builder.Writers;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
+using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 public sealed class CodeFunctionWriterTests : IDisposable
@@ -20,6 +26,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
     private readonly CodeNamespace root;
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
+    private readonly HttpClient _httpClient = new();
+    private readonly List<string> _tempFiles = new();
+    private const string IndexFileName = "index";
 
     public CodeFunctionWriterTests()
     {
@@ -30,17 +39,20 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
     public void Dispose()
     {
+        foreach (var file in _tempFiles)
+            File.Delete(file);
+        _httpClient.Dispose();
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
 
     [Fact]
-    public async Task WritesAutoGenerationStart()
+    public async Task WritesAutoGenerationStartAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(generationConfiguration, root);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -48,12 +60,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("/* tslint:disable */", result);
     }
     [Fact]
-    public async Task WritesAutoGenerationEnd()
+    public async Task WritesAutoGenerationEndAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(generationConfiguration, root);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -62,7 +74,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task WritesModelFactoryBody()
+    public async Task WritesModelFactoryBodyAsync()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var childModel = TestHelper.CreateModelClass(root, "childModel");
@@ -103,7 +115,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var modelInterface = root.FindChildByName<CodeInterface>("childModel");
         Assert.NotNull(modelInterface);
         var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
@@ -112,7 +124,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
+        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.type\")", result);
         Assert.Contains("if (mappingValueNode) {", result);
         Assert.Contains("const mappingValue = mappingValueNode.getStringValue()", result);
         Assert.Contains("if (mappingValue) {", result);
@@ -123,7 +135,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnMissingParameter()
+    public async Task DoesntWriteFactorySwitchOnMissingParameterAsync()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var childModel = TestHelper.CreateModelClass(root, "childModel");
@@ -149,7 +161,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             TypeDefinition = childModel,
         });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var modelInterface = root.FindChildByName<CodeInterface>("childModel");
         Assert.NotNull(modelInterface);
         var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
@@ -169,7 +181,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnEmptyPropertyName()
+    public async Task DoesntWriteFactorySwitchOnEmptyPropertyNameAsync()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var childModel = TestHelper.CreateModelClass(root, "childModel");
@@ -210,7 +222,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var modelInterface = root.FindChildByName<CodeInterface>("childModel");
         Assert.NotNull(modelInterface);
         var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
@@ -230,7 +242,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnEmptyMappings()
+    public async Task DoesntWriteFactorySwitchOnEmptyMappingsAsync()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var factoryMethod = parentModel.AddMethod(new CodeMethod
@@ -260,7 +272,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             Optional = false,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var modelInterface = root.FindChildByName<CodeInterface>("parentModel");
         Assert.NotNull(modelInterface);
         var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
@@ -281,12 +293,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task WritesInheritedDeSerializerBody()
+    public async Task WritesInheritedDeSerializerBodyAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
         var inheritedClass = parentClass.BaseClass;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(serializeFunction);
         var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -298,11 +310,11 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public async Task WritesDeSerializerBody()
+    public async Task WritesDeSerializerBodyAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass");
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(deserializerFunction);
         var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -317,7 +329,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public async Task WritesDeSerializerBodyWithDefaultValue()
+    public async Task WritesDeSerializerBodyWithDefaultValueAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass");
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
@@ -353,7 +365,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             }
         });
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(deserializerFunction);
         var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -365,13 +377,13 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
     [Fact]
-    public async Task WritesInheritedSerializerBody()
+    public async Task WritesInheritedSerializerBodyAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         var inheritedClass = parentClass.BaseClass;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(generationConfiguration, root);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
@@ -379,7 +391,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-    public async Task WritesSerializerBody()
+    public async Task WritesSerializerBodyAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
@@ -387,7 +399,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(serializeFunction);
         var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -405,7 +417,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task WritesSerializerBodyWithDefault()
+    public async Task WritesSerializerBodyWithDefaultAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
@@ -425,7 +437,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
         });
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         Assert.NotNull(serializeFunction);
         var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -437,7 +449,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task DoesntWriteReadOnlyPropertiesInSerializerBody()
+    public async Task DoesntWriteReadOnlyPropertiesInSerializerBodyAsync()
     {
         var model = TestHelper.CreateModelClass(root, "TestModel");
         model.AddProperty(new CodeProperty
@@ -458,7 +470,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 Name = "string",
             },
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>("SerializeTestModel");
         Assert.NotNull(serializeFunction);
         var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
@@ -471,7 +483,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()
     {
         var requestBuilder = root.AddClass(new CodeClass
         {
@@ -506,7 +518,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = requestBuilder.StartBlock;
         var serializeFunction = subNS.FindChildByName<CodeFunction>("createError4XXFromDiscriminatorValue");
@@ -514,7 +526,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("createError4XXFromDiscriminatorValue", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public async Task WritesMessageOverrideOnPrimary()
+    public async Task WritesMessageOverrideOnPrimaryAsync()
     {
         // Given
         var parentClass = root.AddClass(new CodeClass
@@ -551,7 +563,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
         });
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var function = root.FindChildByName<CodeFunction>("deserializeIntoODataError");
         Assert.NotNull(function);
         var parentNS = function.GetImmediateParentOfType<CodeNamespace>();
@@ -1089,7 +1101,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task WritesConstructorWithEnumValue()
+    public async Task WritesConstructorWithEnumValueAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
@@ -1112,10 +1124,395 @@ public sealed class CodeFunctionWriterTests : IDisposable
             Type = new CodeType { TypeDefinition = codeEnum }
         });
         method.IsStatic = true;
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.Contains($" ?? {codeEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
+    [Fact]
+    public async Task Writes_UnionOfPrimitiveValues_FactoryFunctionAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        /*
+        \/**
+        * Creates a new instance of the appropriate class based on discriminator value
+        * @returns {ValidationError_errors_value}
+        *\/
+           export function createPrimitivesFromDiscriminatorValue(parseNode: ParseNode | undefined) : Primitives | undefined {
+                return parseNode?.getNumberValue() ?? parseNode?.getStringValue();
+            }
+         */
+
+        // Test Factory function
+        var factoryFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null);
+        Assert.True(factoryFunction is not null);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("return parseNode?.getNumberValue() ?? parseNode?.getStringValue();", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_UnionOfObjects_FactoryMethodAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Pets", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var factoryFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory);
+        Assert.True(factoryFunction is not null);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("if (mappingValue)", result);
+        Assert.Contains("case \"Cat\":", result);
+        Assert.Contains("return deserializeIntoCat;", result);
+        Assert.Contains("case \"Dog\":", result);
+        Assert.Contains("return deserializeIntoDog;", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_UnionOfPrimitiveValues_SerializerFunctionAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Primitives", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.Parameters.FirstOrDefault(x => GetOriginalComposedType(x) is not null)) is not null);
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("return", serializerFunctionStr);
+        Assert.Contains("switch", serializerFunctionStr);
+        Assert.Contains("case \"number\":", serializerFunctionStr);
+        Assert.Contains("case \"string\":", serializerFunctionStr);
+        Assert.Contains("break", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
+
+    [Fact]
+    public async Task Writes_UnionOfObjects_SerializerFunctionsAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("Pets", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("return", serializerFunctionStr);
+        Assert.Contains("switch", serializerFunctionStr);
+        Assert.Contains("case \"Cat\":", serializerFunctionStr);
+        Assert.Contains("case \"Dog\":", serializerFunctionStr);
+        Assert.Contains("break", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
+
+    [Fact]
+    public async Task Writes_CodeIntersectionType_FactoryMethodAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("FooBar", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.foobar");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("foobarRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Factory Function
+        var factoryFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Factory);
+        Assert.True(factoryFunction is not null);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("export function createFooBarFromDiscriminatorValue(", result);
+        Assert.Contains("return deserializeIntoFooBar;", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_CodeIntersectionType_DeserializerFunctionsAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("FooBar", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.foobar");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("foobarRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Deserializer function
+        var deserializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Deserializer);
+        Assert.True(deserializerFunction is not null);
+        writer.Write(deserializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("...deserializeIntoBar(fooBar as Bar),", serializerFunctionStr);
+        Assert.Contains("...deserializeIntoFoo(fooBar as Foo),", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
+
+    [Fact]
+    public async Task Writes_CodeIntersectionType_SerializerFunctionsAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var clientBuilder = rootNS.FindChildByName<CodeClass>("FooBar", false);
+        Assert.NotNull(clientBuilder);
+        var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
+        Assert.NotNull(constructor);
+        Assert.Empty(constructor.SerializerModules);
+        Assert.Empty(constructor.DeserializerModules);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.foobar");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("foobarRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        // Test Serializer function
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
+        Assert.True(serializerFunction is not null);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        Assert.Contains("serializeBar(writer, fooBar as Bar);", serializerFunctionStr);
+        Assert.Contains("serializeFoo(writer, fooBar as Foo);", serializerFunctionStr);
+        AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
+    }
+
+    [Fact]
+    public async Task Writes_CodeUnionBetweenObjectsAndPrimitiveTypes_SerializerAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var composedType = new CodeUnionType { Name = "Union" };
+        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" },
+            new CodeType
+            {
+                Name = "ArrayOfObjects",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "ArrayOfObjects")
+            },
+            new CodeType
+            {
+                Name = "SingleObject",
+                TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject")
+            });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = composedType
+        });
+
+
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("case typeof parentClass.property === \"string\"", result);
+        Assert.Contains("writer.writeStringValue(\"property\", parentClass.property as string);", result);
+        Assert.Contains("case typeof parentClass.property === \"number\"", result);
+        Assert.Contains("writer.writeNumberValue(\"property\", parentClass.property as number);", result);
+        Assert.Contains(
+            "writer.writeCollectionOfObjectValues<ArrayOfObjects>(\"property\", parentClass.property as ArrayOfObjects[] | undefined | null",
+            result);
+        Assert.Contains(
+            "writer.writeObjectValue<SingleObject>(\"property\", parentClass.property as SingleObject | undefined | null",
+            result);
+        Assert.Contains("writeStringValue", result);
+        Assert.Contains("writeCollectionOfPrimitiveValues", result);
+        Assert.Contains("writeCollectionOfObjectValues", result);
+        Assert.Contains("serializeSomeComplexType", result);
+        Assert.Contains("writeEnumValue", result);
+        Assert.Contains("writer.writeAdditionalData", result);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Writes_CodeUnionBetweenObjectsAndPrimitiveTypes_DeserializerAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var composedType = new CodeUnionType { Name = "Union" };
+        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" },
+            new CodeType
+            {
+                Name = "ArrayOfObjects",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "ArrayOfObjects")
+            },
+            new CodeType
+            {
+                Name = "SingleObject",
+                TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject")
+            });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "property",
+            Type = composedType
+        });
+
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"DeserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("\"property\": n => { parentClass.property = n.getCollectionOfObjectValues<ArrayOfObjects>(createArrayOfObjectsFromDiscriminatorValue) ?? n.getNumberValue() ?? n.getObjectValue<SingleObject>(createSingleObjectFromDiscriminatorValue) ?? n.getStringValue(); }", result);
+    }
 }
+

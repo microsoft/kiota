@@ -7,19 +7,33 @@ using Kiota.Builder.Lock;
 namespace Kiota.Builder.WorkspaceManagement;
 public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityComparer<T> where T : BaseApiConsumerConfiguration
 {
-    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
+    private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
+    private readonly StringComparer _stringComparer;
+
+    internal BaseApiConsumerConfigurationComparer(StringIEnumerableDeepComparer? stringIEnumerableDeepComparer = null,
+        StringComparer? stringComparer = null)
+    {
+        _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+        _stringIEnumerableDeepComparer =
+            stringIEnumerableDeepComparer ?? new StringIEnumerableDeepComparer(_stringComparer);
+    }
     /// <inheritdoc/>
     public virtual bool Equals(T? x, T? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+        return _stringComparer.Equals(x.DescriptionLocation, y.DescriptionLocation)
+               && _stringComparer.Equals(x.OutputPath, y.OutputPath)
+               && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns);
     }
 
     public virtual int GetHashCode([DisallowNull] T obj)
     {
-        if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 7 +
-            (string.IsNullOrEmpty(obj.OutputPath) ? 0 : obj.OutputPath.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 5 +
-            _stringIEnumerableDeepComparer.GetHashCode(obj.IncludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 3 +
-            _stringIEnumerableDeepComparer.GetHashCode(obj.ExcludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 2;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.DescriptionLocation, _stringComparer);
+        hash.Add(obj.OutputPath, _stringComparer);
+        hash.Add(obj.IncludePatterns, _stringIEnumerableDeepComparer);
+        hash.Add(obj.ExcludePatterns, _stringIEnumerableDeepComparer);
+        return hash.ToHashCode();
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConventionService>
@@ -56,7 +57,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         {
             writer.StartBlock($"{navigationMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom && !string.IsNullOrEmpty(x.SerializationName)).Select(static x => $"\"{x.SerializationName}\"").ToArray());
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
@@ -101,7 +102,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
-            var isPrimitive = conventions.IsPrimitiveType(returnTypeWithoutCollectionSymbol);
+            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol);
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
@@ -167,7 +168,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
-        if (isStream || conventions.IsPrimitiveType(typeName)) return $" \"{typeName}\"";
+        if (isStream || IsPrimitiveType(typeName)) return $" \"{typeName}\"";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
@@ -177,46 +178,19 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
     }
-    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer)
-    {
-        var returnType = conventions.GetTypeString(targetClassType, currentElement, false, writer);
-        var targetClassName = conventions.TranslateType(targetClassType);
-        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-            return resultName;
-        if (targetClassType is CodeType currentType &&
-            currentType.TypeDefinition is CodeClass definitionClass &&
-            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
-        {
-            var methodName = conventions.GetTypeString(new CodeType
-            {
-                Name = resultName,
-                TypeDefinition = factoryMethod
-            }, currentElement, false, writer);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
-        }
-        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
-    }
 
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, bool isPrimitive, bool isEnum)
     {
-        if (isVoid)
+        return (isVoid, isEnum, isPrimitive || isStream, isCollection) switch
         {
-            return "sendNoResponseContent";
-        }
-        else if (isEnum)
-        {
-            return isCollection ? "sendCollectionOfEnum" : "sendEnum";
-        }
-        else if (isPrimitive || isStream)
-        {
-            return isCollection ? "sendCollectionOfPrimitive" : "sendPrimitive";
-        }
-        else
-        {
-            return isCollection ? "sendCollection" : "send";
-        }
+            (true, _, _, _) => "sendNoResponseContent",
+            (_, true, _, true) => "sendCollectionOfEnum",
+            (_, true, _, _) => "sendEnum",
+            (_, _, true, true) => "sendCollectionOfPrimitive",
+            (_, _, true, _) => "sendPrimitive",
+            (_, _, _, true) => "sendCollection",
+            _ => "send"
+        };
     }
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)

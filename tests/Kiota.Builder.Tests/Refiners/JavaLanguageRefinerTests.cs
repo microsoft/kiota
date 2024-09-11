@@ -13,7 +13,7 @@ public class JavaLanguageRefinerTests
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
-    public async Task DoesNotReplacesReservedEnumOptions()
+    public async Task DoesNotReplacesReservedEnumOptionsAsync()
     {
         var model = root.AddEnum(new CodeEnum
         {
@@ -24,12 +24,12 @@ public class JavaLanguageRefinerTests
             Name = "Void", // this a keyword
         };
         model.AddOption(option);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("Void", option.Name);
         Assert.Empty(option.SerializationName);
     }
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses()
+    public async Task AddsExceptionInheritanceOnErrorClassesAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -37,7 +37,7 @@ public class JavaLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
         var declaration = model.StartBlock;
 
@@ -45,7 +45,7 @@ public class JavaLanguageRefinerTests
         Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
-    public async Task InlineParentOnErrorClassesWhichAlreadyInherit()
+    public async Task InlineParentOnErrorClassesWhichAlreadyInheritAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -89,7 +89,7 @@ public class JavaLanguageRefinerTests
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
@@ -97,7 +97,7 @@ public class JavaLanguageRefinerTests
         Assert.Equal("ApiException", model.StartBlock.Inherits.Name);
     }
     [Fact]
-    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()
     {
         var requestBuilder = root.AddClass(new CodeClass
         {
@@ -125,14 +125,14 @@ public class JavaLanguageRefinerTests
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public async Task EscapesReservedKeywordsInInternalDeclaration()
+    public async Task EscapesReservedKeywordsInInternalDeclarationAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -149,42 +149,42 @@ public class JavaLanguageRefinerTests
             TypeDefinition = model
         };
         model.AddUsing(nUsing);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEqual("break", nUsing.Declaration.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("Escaped", nUsing.Declaration.Name);
     }
     [Fact]
-    public async Task EscapesReservedKeywords()
+    public async Task EscapesReservedKeywordsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("Escaped", model.Name);
     }
     [Fact]
-    public async Task EscapeReservedKeywordsInNamespaceToLowercase()
+    public async Task EscapeReservedKeywordsInNamespaceToLowercaseAsync()
     {
         var ns = root.AddNamespace("new");
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal(ns.Name.ToLower(), ns.Name);
     }
     [Fact]
-    public async Task ConvertEnumsToPascalCase()
+    public async Task ConvertEnumsToPascalCaseAsync()
     {
         var model = root.AddEnum(new CodeEnum
         {
             Name = "foo_bar"
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEqual("foo_bar", model.Name);
         Assert.Contains("FooBar", model.Name);
     }
     [Fact]
-    public async Task AddsDefaultImports()
+    public async Task AddsDefaultImportsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -205,12 +205,12 @@ public class JavaLanguageRefinerTests
                 Name = "string",
             },
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
     }
     [Fact]
-    public async Task ReplacesDateTimeOffsetByNativeType()
+    public async Task ReplacesDateTimeOffsetByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -225,12 +225,12 @@ public class JavaLanguageRefinerTests
                 Name = "DateTimeOffset"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("OffsetDateTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDateOnlyByNativeType()
+    public async Task ReplacesDateOnlyByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -245,12 +245,12 @@ public class JavaLanguageRefinerTests
                 Name = "DateOnly"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("LocalDate", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesTimeOnlyByNativeType()
+    public async Task ReplacesTimeOnlyByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -265,12 +265,12 @@ public class JavaLanguageRefinerTests
                 Name = "TimeOnly"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("LocalTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDurationByNativeType()
+    public async Task ReplacesDurationByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -285,12 +285,12 @@ public class JavaLanguageRefinerTests
                 Name = "TimeSpan"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("PeriodAndDuration", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesBinaryByNativeType()
+    public async Task ReplacesBinaryByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -305,12 +305,12 @@ public class JavaLanguageRefinerTests
                 Name = "binary"
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEqual("binary", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesIndexersByMethodsWithParameter()
+    public async Task ReplacesIndexersByMethodsWithParameterAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -366,14 +366,14 @@ public class JavaLanguageRefinerTests
                 TypeDefinition = requestBuilder,
             },
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
         Assert.Single(requestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
         Assert.Single(collectionRequestBuilder.Properties);
     }
     [Fact]
-    public async Task DoesNotKeepCancellationParametersInRequestExecutors()
+    public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -401,12 +401,12 @@ public class JavaLanguageRefinerTests
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root); //using CSharp so the cancelletionToken doesn't get removed
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
     [Fact]
-    public async Task NormalizeMethodTypesNames()
+    public async Task NormalizeMethodTypesNamesAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -435,12 +435,12 @@ public class JavaLanguageRefinerTests
         };
         method.AddParameter(nonNormalizedParam);
         method.AddParameter(normalizedParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("Foo_bar", method.Parameters.First().Type.Name);
         Assert.Equal("FooBaz", method.Parameters.Last().Type.Name);
     }
     [Fact]
-    public async Task NormalizeInheritedClassesNames()
+    public async Task NormalizeInheritedClassesNamesAsync()
     {
         var parentModel = root.AddClass(new CodeClass
         {
@@ -467,14 +467,14 @@ public class JavaLanguageRefinerTests
             Name = "implements_Model",
             TypeDefinition = implementsModel,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("ParentModel", childModel.StartBlock.Inherits.Name);
         Assert.Equal("ImplementsModel", childModel.StartBlock.Implements.First().Name);
     }
     #endregion
     #region JavaLanguageRefinerTests
     [Fact]
-    public async Task AddsEnumSetImport()
+    public async Task AddsEnumSetImportAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -495,11 +495,11 @@ public class JavaLanguageRefinerTests
                 }
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings.Where(x => "EnumSet".Equals(x.Name)));
     }
     [Fact]
-    public async Task CorrectsCoreType()
+    public async Task CorrectsCoreTypeAsync()
     {
         const string requestAdapterDefaultName = "IRequestAdapter";
         const string factoryDefaultName = "ISerializationWriterFactory";
@@ -578,7 +578,7 @@ public class JavaLanguageRefinerTests
                 Name = serializerDefaultName,
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
@@ -589,7 +589,7 @@ public class JavaLanguageRefinerTests
         Assert.Contains(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
-    public async Task ProduceCorrectNames()
+    public async Task ProduceCorrectNamesAsync()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -606,11 +606,11 @@ public class JavaLanguageRefinerTests
             }
         };
         model.AddProperty(custom);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.True(string.IsNullOrEmpty(model.Properties.First(static x => "custom".Equals(x.Name))!.NamePrefix));
     }
     [Fact]
-    public async Task AddsMethodsOverloads()
+    public async Task AddsMethodsOverloadsAsync()
     {
         var builder = root.AddClass(new CodeClass
         {
@@ -654,7 +654,7 @@ public class JavaLanguageRefinerTests
             }
         }).First();
         generator.AddParameter(executor.Parameters.ToArray());
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         var childMethods = builder.Methods;
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 1);//only the body
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//only the body
@@ -664,7 +664,7 @@ public class JavaLanguageRefinerTests
         Assert.Equal(2, childMethods.Count(x => x.IsOverload));
     }
     [Fact]
-    public async Task SplitsLongRefiners()
+    public async Task SplitsLongRefinersAsync()
     {
         var model = new CodeClass
         {
@@ -698,7 +698,7 @@ public class JavaLanguageRefinerTests
             IsStatic = true,
         });
         root.AddClass(model);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal(4, model.Methods.Count());
         Assert.Equal("String", model.Methods.First(static x => x.IsOverload).Parameters.First().Type.Name);
     }
@@ -706,7 +706,7 @@ public class JavaLanguageRefinerTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task AddsUsingForUntypedNode(bool usesBackingStore)
+    public async Task AddsUsingForUntypedNodeAsync(bool usesBackingStore)
     {
         var model = root.AddClass(new CodeClass
         {
@@ -722,11 +722,43 @@ public class JavaLanguageRefinerTests
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java, UsesBackingStore = usesBackingStore }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java, UsesBackingStore = usesBackingStore }, root);
         Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Equal(2, nodeUsing.Length); // one for the getter and another for setter. Writer will unionise
+        Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
+    }
+    [Fact]
+    public async Task AddsUsingForUntypedNodeInMethodParameterAsync()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var method = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.RequestExecutor
+        };
+        method.AddParameter(new CodeParameter()
+        {
+            Name = "jsonData",
+            Type = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName,
+                IsExternal = true
+            },
+            Kind = CodeParameterKind.RequestBody
+        });
+        requestBuilderClass.AddMethod(method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, method.Parameters.First().Type.Name);// type is renamed
+        Assert.NotEmpty(requestBuilderClass.StartBlock.Usings);
+        var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Single(nodeUsing);
         Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
     }
     #endregion

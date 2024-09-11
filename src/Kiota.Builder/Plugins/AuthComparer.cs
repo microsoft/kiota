@@ -5,17 +5,22 @@ using Microsoft.Plugins.Manifest;
 
 namespace Kiota.Builder.Plugins;
 
-internal class AuthComparer : IEqualityComparer<Auth>
+internal class AuthComparer(StringComparer? stringComparer = null) : IEqualityComparer<Auth?>
 {
+    private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
     /// <inheritdoc/>
     public bool Equals(Auth? x, Auth? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+        // TODO: Should we compare the reference id as well?
+        return _stringComparer.Equals(x.Type, y.Type);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] Auth obj)
     {
-        if (obj == null) return 0;
-        return obj.Type is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Type.Value.ToString()) * 3;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.Type, _stringComparer);
+        return hash.ToHashCode();
     }
 }

@@ -10,41 +10,66 @@ namespace Kiota.Builder.Validation;
 
 internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 {
-    private static readonly OpenApiDiscriminatorComparer discriminatorComparer = new();
-    private static readonly OpenApiAnyComparer openApiAnyComparer = new();
+    private readonly OpenApiDiscriminatorComparer discriminatorComparer;
+    private readonly OpenApiAnyComparer openApiAnyComparer;
+    private readonly KeyValueComparer<string, OpenApiSchema> schemaMapComparer;
+
+    public OpenApiSchemaComparer(
+        OpenApiDiscriminatorComparer? discriminatorComparer = null,
+        OpenApiAnyComparer? openApiAnyComparer = null,
+        KeyValueComparer<string, OpenApiSchema>? schemaMapComparer = null)
+    {
+        this.discriminatorComparer = discriminatorComparer ?? new OpenApiDiscriminatorComparer();
+        this.openApiAnyComparer = openApiAnyComparer ?? new OpenApiAnyComparer();
+        this.schemaMapComparer = schemaMapComparer ?? new KeyValueComparer<string, OpenApiSchema>(StringComparer.Ordinal, this);
+    }
+
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
+        // this workaround might result in collisions, however so far this has not been a problem
+        // implemented this way to avoid stack overflow caused by schemas referencing themselves
         return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiSchema obj)
     {
-        return GetHashCodeInternal(obj, new());
+        var hash = new HashCode();
+        GetHashCodeInternal(obj, [], ref hash);
+        return hash.ToHashCode();
     }
-    private static int GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas)
+
+    private void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
     {
-        if (obj == null) return 0;
-        if (visitedSchemas.Contains(obj)) return 0;
-        visitedSchemas.Add(obj);
-        unchecked
+        if (obj is null) return;
+        if (!visitedSchemas.Add(obj)) return;
+        hash.Add(obj.Deprecated);
+        hash.Add(obj.Nullable);
+        hash.Add(obj.Discriminator, discriminatorComparer);
+        GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas, ref hash);
+        hash.Add(obj.AdditionalPropertiesAllowed);
+        foreach (var prop in obj.Properties)
         {
-            return
-                Convert.ToInt32(obj.Deprecated) * 47 +
-                Convert.ToInt32(obj.Nullable) * 43 +
-                discriminatorComparer.GetHashCode(obj.Discriminator) * 41 +
-                (GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas) * 37) +
-                Convert.ToInt32(obj.AdditionalPropertiesAllowed) * 31 +
-                (obj.Properties.Select(x => GetHashCodeInternal(x.Value, visitedSchemas) + x.Key.GetHashCode(StringComparison.Ordinal)).SumUnchecked() * 29) +
-                openApiAnyComparer.GetHashCode(obj.Default) * 23 +
-                (GetHashCodeInternal(obj.Items, visitedSchemas) * 19) +
-                (obj.OneOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 17) +
-                (obj.AnyOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 11) +
-                (obj.AllOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 7) +
-                (string.IsNullOrEmpty(obj.Format) ? 0 : obj.Format.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 5 +
-                (string.IsNullOrEmpty(obj.Type) ? 0 : obj.Type.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 3 +
-                (string.IsNullOrEmpty(obj.Title) ? 0 : obj.Title.GetHashCode(StringComparison.Ordinal)) * 2;
+            hash.Add(prop.Key, StringComparer.Ordinal);
+            GetHashCodeInternal(prop.Value, visitedSchemas, ref hash);
         }
+        hash.Add(obj.Default, openApiAnyComparer);
+        GetHashCodeInternal(obj.Items, visitedSchemas, ref hash);
+        foreach (var schema in obj.OneOf)
+        {
+            GetHashCodeInternal(schema, visitedSchemas, ref hash);
+        }
+        foreach (var schema in obj.AnyOf)
+        {
+            GetHashCodeInternal(schema, visitedSchemas, ref hash);
+        }
+        foreach (var schema in obj.AllOf)
+        {
+            GetHashCodeInternal(schema, visitedSchemas, ref hash);
+        }
+        hash.Add(obj.Format, StringComparer.OrdinalIgnoreCase);
+        hash.Add(obj.Type, StringComparer.OrdinalIgnoreCase);
+        hash.Add(obj.Title, StringComparer.Ordinal);
         /**
          ignored properties since they don't impact generation:
          - Description
@@ -72,19 +97,50 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     }
 }
 
+internal class KeyValueComparer<K, V>(
+    IEqualityComparer<K>? keyComparer = null,
+    IEqualityComparer<V>? valueComparer = null)
+    : IEqualityComparer<KeyValuePair<K, V>>
+{
+    private readonly IEqualityComparer<K> _keyComparer = keyComparer ?? EqualityComparer<K>.Default;
+    private readonly IEqualityComparer<V> _valueComparer = valueComparer ?? EqualityComparer<V>.Default;
+
+    public bool Equals(KeyValuePair<K, V> x, KeyValuePair<K, V> y)
+    {
+        return _keyComparer.Equals(x.Key, y.Key) && _valueComparer.Equals(x.Value, y.Value);
+    }
+
+    public int GetHashCode(KeyValuePair<K, V> obj)
+    {
+        var hash = new HashCode();
+        hash.Add(obj.Key, _keyComparer);
+        hash.Add(obj.Value, _valueComparer);
+        return hash.ToHashCode();
+    }
+}
+
 internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscriminator>
 {
+    private static readonly KeyValueComparer<string, string> mappingComparer = new(StringComparer.Ordinal, StringComparer.Ordinal);
     /// <inheritdoc/>
     public bool Equals(OpenApiDiscriminator? x, OpenApiDiscriminator? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+        return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && GetOrderedRequests(x.Mapping).SequenceEqual(GetOrderedRequests(y.Mapping), mappingComparer);
     }
+    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string> mappings) =>
+    mappings.OrderBy(x => x.Key, StringComparer.Ordinal);
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {
-        if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.PropertyName) ? 0 : obj.PropertyName.GetHashCode(StringComparison.Ordinal)) * 89 +
-            (obj.Mapping?.Select(static x => x.Key.GetHashCode(StringComparison.Ordinal) + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode(StringComparison.Ordinal))).SumUnchecked() ?? 0) * 83;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.PropertyName);
+        foreach (var mapping in GetOrderedRequests(obj.Mapping))
+        {
+            hash.Add(mapping, mappingComparer);
+        }
+        return hash.ToHashCode();
     }
 }
 internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
@@ -92,12 +148,16 @@ internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
     /// <inheritdoc/>
     public bool Equals(IOpenApiAny? x, IOpenApiAny? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+        // TODO: Can we use the OpenAPI.NET implementation of Equals?
+        return x.AnyType == y.AnyType && string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] IOpenApiAny obj)
     {
-        if (obj == null || obj.ToString() is not string stringValue || string.IsNullOrEmpty(stringValue)) return 0;
-        return stringValue.GetHashCode(StringComparison.Ordinal) * 97;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.ToString());
+        return hash.ToHashCode();
     }
 }

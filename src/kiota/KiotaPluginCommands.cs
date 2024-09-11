@@ -2,6 +2,7 @@
 using kiota.Handlers.Plugin;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Microsoft.OpenApi.Models;
 
 namespace kiota;
 public static class KiotaPluginCommands
@@ -33,8 +34,31 @@ public static class KiotaPluginCommands
             typeOption.IsRequired = true;
             typeOption.Arity = ArgumentArity.OneOrMore;
         }
+        typeOption.AddCompletions(Enum.GetNames<PluginType>());
         typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
         return typeOption;
+    }
+
+    internal static Option<SecuritySchemeType> GetPluginAuthenticationTypeOption(bool isRequired = false)
+    {
+        var authTypeOption = new Option<SecuritySchemeType>("--authentication-type", "The authentication type for the plugin. Should be a valid OpenAPI security scheme.");
+        authTypeOption.AddAlias("--at");
+        {
+            authTypeOption.IsRequired = isRequired;
+            authTypeOption.Arity = ArgumentArity.ZeroOrOne;
+        }
+        authTypeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "authentication-type", Enum.GetNames<SecuritySchemeType>()));
+        return authTypeOption;
+    }
+
+    internal static Option<string> GetPluginAuthenticationReferenceIdOption(bool required = false)
+    {
+        var authRefIdOption = new Option<string>("--authentication-ref-id", "The authentication reference id for the plugin.")
+        {
+            IsRequired = required,
+        };
+        authRefIdOption.AddAlias("--refid");
+        return authRefIdOption;
     }
     public static Command GetAddCommand()
     {
@@ -46,6 +70,8 @@ public static class KiotaPluginCommands
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
         var pluginNameOption = GetPluginNameOption();
         var pluginType = GetPluginTypeOption();
+        var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
+        var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
         var command = new Command("add", "Adds a new plugin to the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -55,13 +81,21 @@ public static class KiotaPluginCommands
             outputOption,
             pluginNameOption,
             pluginType,
+            pluginAuthTypeOption,
+            pluginAuthRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
+        command.AddValidator(commandResult =>
+            {
+                KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+            });
         command.Handler = new AddHandler
         {
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
             PluginTypesOption = pluginType,
+            PluginAuthTypeOption = pluginAuthTypeOption,
+            PluginAuthRefIdOption = pluginAuthRefIdOption,
             DescriptionOption = descriptionOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
@@ -79,6 +113,8 @@ public static class KiotaPluginCommands
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
         var pluginNameOption = GetPluginNameOption();
         var pluginTypes = GetPluginTypeOption(false);
+        var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
+        var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
         var command = new Command("edit", "Edits a plugin configuration and updates the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -88,13 +124,21 @@ public static class KiotaPluginCommands
             outputOption,
             pluginNameOption,
             pluginTypes,
+            pluginAuthTypeOption,
+            pluginAuthRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
+        command.AddValidator(commandResult =>
+            {
+                KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
+            });
         command.Handler = new EditHandler
         {
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
             PluginTypesOption = pluginTypes,
+            PluginAuthTypeOption = pluginAuthTypeOption,
+            PluginAuthRefIdOption = pluginAuthRefIdOption,
             DescriptionOption = descriptionOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,

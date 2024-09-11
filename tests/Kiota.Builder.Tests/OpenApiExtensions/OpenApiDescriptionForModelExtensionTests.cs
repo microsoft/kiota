@@ -29,7 +29,7 @@ public sealed class OpenApiDescriptionForModelExtensionTests : IDisposable
     }
     private readonly string TempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     [Fact]
-    public async Task ParsesInDocument()
+    public async Task ParsesInDocumentAsync()
     {
         var documentContent = @"openapi: 3.0.0
 info:

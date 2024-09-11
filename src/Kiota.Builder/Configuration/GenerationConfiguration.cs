@@ -8,6 +8,7 @@ using Kiota.Builder.Lock;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Configuration;
+
 #pragma warning disable CA2227
 #pragma warning disable CA1056
 public class GenerationConfiguration : ICloneable
@@ -39,6 +40,10 @@ public class GenerationConfiguration : ICloneable
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
+    public bool ExportPublicApi
+    {
+        get; set;
+    }
     internal const string ModelsNamespaceSegmentName = "models";
     public string ModelsNamespaceName
     {
@@ -152,6 +157,8 @@ public class GenerationConfiguration : ICloneable
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
             DisableSSLValidation = DisableSSLValidation,
+            ExportPublicApi = ExportPublicApi,
+            PluginAuthInformation = PluginAuthInformation,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
@@ -203,6 +210,14 @@ public class GenerationConfiguration : ICloneable
     public bool IsPluginConfiguration => PluginTypes.Count != 0;
 
     public bool DisableSSLValidation
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Authentication information to be used when generating the plugin manifest.
+    /// </summary>
+    public PluginAuthConfiguration? PluginAuthInformation
     {
         get; set;
     }
