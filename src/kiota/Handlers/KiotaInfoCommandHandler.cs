@@ -39,6 +39,10 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<DependencyType[]> DependencyTypesOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -48,6 +52,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
         string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
         bool json = context.ParseResult.GetValueForOption(JsonOption);
+        DependencyType[] dependencyTypes = context.ParseResult.GetValueForOption(DependencyTypesOption) ?? [];
         GenerationLanguage? language = context.ParseResult.GetValueForOption(GenerationLanguage);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
@@ -95,7 +100,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                     return 1;
 #endif
                 }
-            ShowLanguageInformation(language.Value, instructions, json);
+            ShowLanguageInformation(language.Value, instructions, json, dependencyTypes);
             return 0;
         }
     }
@@ -113,7 +118,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         var layout = new StackLayoutView { view };
         console.Append(layout);
     }
-    private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource, bool json)
+    private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource, bool json, DependencyType[] dependencyTypes)
     {
         if (informationSource.TryGetValue(language.ToString(), out var languageInformation))
         {
@@ -122,17 +127,28 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
                             "After generating code for this language, you need to install the following packages:");
                 var orderedDependencies = languageInformation.Dependencies.OrderBy(static x => x.Name).Select(static x => x).ToList();
+                var filteredDependencies = (dependencyTypes.ToHashSet(), orderedDependencies.Any(static x => x.DependencyType is DependencyType.Bundle)) switch
+                {
+                    //if the user requested a specific type, we filter the dependencies
+                    ({ Count: > 0 }, _) => orderedDependencies.Where(x => x.DependencyType is null || dependencyTypes.Contains(x.DependencyType.Value)).ToList(),
+                    //otherwise we display only the bundle dependencies
+                    (_, true) => orderedDependencies.Where(static x => x.DependencyType is DependencyType.Bundle or DependencyType.Authentication).ToList(),
+                    //otherwise we display all dependencies
+                    _ => orderedDependencies
+                };
                 var view = new TableView<LanguageDependency>()
                 {
-                    Items = orderedDependencies,
+                    Items = filteredDependencies,
                 };
                 view.AddColumn(static x => x.Name, "Package Name");
                 view.AddColumn(static x => x.Version, "Version");
+                if (orderedDependencies.Any(static x => x.DependencyType is not null))
+                    view.AddColumn(static x => x.DependencyType?.ToString(), "Type");
                 var console = new SystemConsole();
                 using var terminal = new SystemConsoleTerminal(console);
                 var layout = new StackLayoutView { view };
                 console.Append(layout);
-                DisplayInstallHint(languageInformation, orderedDependencies);
+                DisplayInstallHint(languageInformation, filteredDependencies);
             }
             else
             {
