@@ -120,6 +120,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     $language = $appSettings.Languages.$languageName
     if ($languageName -eq "CSharp" -or $languageName -eq "CLI") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestNugetVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -129,6 +133,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "Go") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestGithubRelease -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -138,6 +146,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "TypeScript") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestNpmVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -147,6 +159,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "Java") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestMavenVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -156,6 +172,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "PHP") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestComposerVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -165,6 +185,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "Python") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestPypiVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
@@ -174,6 +198,10 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "Ruby") {
         foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestRubygemVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
