@@ -4,7 +4,7 @@
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
   "version": "1.18.100000001",
-  "kiotaVersion": "1.17.0",
+  "kiotaVersion": "1.18.0",
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
@@ -430,7 +430,6 @@
         "command": "kiota.migrateFromLockFile",
         "title": "%kiota.migrateClients.title%"
       }
-
     ],
     "languages": [
       {
@@ -487,23 +486,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "103A685302D9F3DC6D87B446414DDE7099F36749959AD3B31506AA306E6106B7"
+      "sha256": "EAB71122320CC135A18FA18E7D5079B65AD0BF2AE2355D29312841289453C443"
     },
     {
       "platformId": "win-x86",
-      "sha256": "C79D2108129C3187DE14320478AE9588DF100FF5E37270BEBACFBBDC2EF9AEED"
+      "sha256": "20F56AD821023B8A396AC0ACC197AB4CD62511D635A4ED9B1969BD8CFF286F16"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "C8F518D723B8ADFCE699E1E4E03BB3E03A300D9BA4F10558351634396EF3AA1E"
+      "sha256": "730C0A5469D83DBC9CDC206C9A3837DBE5892A7A3F0F09AF5A1EAC4CED4B033E"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "8EEFB9BF46871E8830BC59F3A52B0C2F20643F0C094611539A00548C70A2223A"
+      "sha256": "3446A580FFF5F8567E37E9E04D6E944A8B8E83F0B5584A5683527F501E6181FD"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "5FE16C08C749ABEB286520A7A2C9E7F62BE4102765486211433CAE6E8252E44F"
+      "sha256": "2525D4A8C3ED4972C05E57E4DB2D244E1A708325CE4A5CFB24822D9FD7BB7ED3"
     }
   ]
 }
