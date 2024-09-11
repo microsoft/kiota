@@ -19,6 +19,8 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 | `--include-path \| -i` | No | /repos/{owner}/{repo} | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | /repos/{owner}/{repo}#DELETE | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
 | `--type \| -t` | Yes | openai | The target type of plugin for the generated output files. Accepts multiple values. Possible values are `apiplugin`, `openai` and `apimanifest`.| Yes |
+| `--authentication-type \| -at` | No | oauth2 | The authentication type that will be used to connect to the API. Accepts a single value corresponding to a supported OpenAPI security scheme. Possible values are `apikey`, `http`, `oauth2` and `openidconnect`.| |
+| `--authentication-ref-id \| -refid` | No | xxxxxxxx | The authentication reference id that will be used to connect to the API. Accepts a single string value.| |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the current working directory. Defaults to `./output`. | Yes, without its value |
 
@@ -39,6 +41,8 @@ _The resulting `workspace.json` file will look like this:_
   "clients": {...}, //if any
   "plugins": {
     "GitHub": {
+      "authType": "OAuthPluginVault",
+      "authReferenceId": "somerefid",
       "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
       "includePatterns": ["/repos/{owner}/{repo}"],
       "excludePatterns": ["/repos/{owner}/{repo}#DELETE"],
@@ -79,7 +83,8 @@ _The resulting API Plugin named `github-apiplugin.json` will look like this:_
     {
       "type": "OpenApi",
       "auth": {
-        "type": "None"
+        "type": "OAuthPluginVault",
+        "reference_id": "somerefid"
       },
       "spec": {
         "url": "githubreposowner-openapi.yml"
