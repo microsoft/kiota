@@ -180,5 +180,5 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
 }
 
 # Write the updated appsettings.json file
-$appSettings | ConvertTo-Json -Depth 100 | Set-Content -Path $mainSettings
+$appSettings | ConvertTo-Json -Depth 100 | Set-Content -Path $mainSettings -NoNewLine
 
