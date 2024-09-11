@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using Microsoft.OpenApi.Extensions;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
@@ -418,33 +419,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
+        writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate)?.Name} : {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters)?.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null)
-            writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
+            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.put(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
     }
-    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";
+    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterLowerCase()}";
     private void WriteSerializerBody(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
@@ -631,7 +632,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
     {
         var signatureSegments = conventions.GetParameterSignature(parameter, targetElement).Split(" ", StringSplitOptions.RemoveEmptyEntries);
-        return $"{signatureSegments[0]}? {string.Join(" ", signatureSegments[1..])}";
+        var nullablesegment = signatureSegments[0];
+        if (!"void".Equals(nullablesegment, StringComparison.Ordinal))
+        {
+            nullablesegment = nullablesegment + "?";
+        }
+        return $"{nullablesegment} {string.Join(" ", signatureSegments[1..])}";
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)
     {

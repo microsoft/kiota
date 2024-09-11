@@ -197,7 +197,10 @@ public class DartConventionService : CommonLanguageConventionService
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
             if (currentType.ActionOf && includeActionInformation)
-                return $"Func<{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}>";
+            {
+                return $"void Function({collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix})";
+            }
+
             return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
         }
 
@@ -271,6 +274,7 @@ public class DartConventionService : CommonLanguageConventionService
             "double" or "float" or "decimal" or "int64" => "double",
             "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
+            string s when s.Contains("RequestConfiguration", StringComparison.OrdinalIgnoreCase) => "RequestConfiguration",
             "iparsenode" => "ParseNode",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
@@ -293,9 +297,8 @@ public class DartConventionService : CommonLanguageConventionService
         var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
-            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
-            _ when parameter.Optional => " = default",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" : {parameter.DefaultValue}",
+            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " : \"\"",
             _ => string.Empty,
         };
         return $"{GetDeprecationInformation(parameter)}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
