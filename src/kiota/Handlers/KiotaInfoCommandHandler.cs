@@ -132,7 +132,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                     //if the user requested a specific type, we filter the dependencies
                     ({ Count: > 0 }, _) => orderedDependencies.Where(x => x.DependencyType is null || dependencyTypes.Contains(x.DependencyType.Value)).ToList(),
                     //otherwise we display only the bundle dependencies
-                    (_, true) => orderedDependencies.Where(static x => x.DependencyType is DependencyType.Bundle or DependencyType.Authentication).ToList(),
+                    (_, true) => orderedDependencies.Where(static x => x.DependencyType is DependencyType.Bundle or DependencyType.Authentication or DependencyType.Additional).ToList(),
                     //otherwise we display all dependencies
                     _ => orderedDependencies
                 };

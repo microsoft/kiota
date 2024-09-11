@@ -126,4 +126,5 @@ public enum DependencyType
     Authentication,
     Http,
     Bundle,
+    Additional
 }
