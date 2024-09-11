@@ -13,9 +13,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
-    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : ("item".Equals(x, StringComparison.OrdinalIgnoreCase) ? "item_escaped" : x);
+    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : (ReservedItemName.Equals(x, StringComparison.OrdinalIgnoreCase) ? ReservedItemNameEscaped : x);
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
     private const string EscapedSuffix = "Escaped";
+    internal const string ReservedItemName = "Item";
+    internal const string ReservedItemNameEscaped = $"{ReservedItemName}_{EscapedSuffix}";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?

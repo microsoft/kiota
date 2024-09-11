@@ -291,7 +291,7 @@ components:
             prop.IsOfKind(CodePropertyKind.RequestBuilder) &&
             prop.Name.Equals("Item", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(navigationProperty);
-        Assert.Equal("Item_escapedRequestBuilder", navigationProperty.Type.Name);
+        Assert.Equal("Item_EscapedRequestBuilder", navigationProperty.Type.Name);
         var itemBuilderNs = mediaBuilderNs.FindNamespaceByName("ApiSdk.media.item_escaped");
         Assert.NotNull(itemBuilderNs);
         var itemRequestBuilder = itemBuilderNs.FindChildByName<CodeClass>("Item_escapedRequestBuilder", false);
