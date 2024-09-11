@@ -234,6 +234,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
 
     private hashDescription(description: KiotaOpenApiNode | undefined): string {
+        if (!description) {
+            return '';
+        }
         const json = JSON.stringify(description);
         return crypto.createHash('sha256').update(json).digest('hex');
     }
