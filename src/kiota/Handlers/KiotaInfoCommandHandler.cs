@@ -148,6 +148,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 using var terminal = new SystemConsoleTerminal(console);
                 var layout = new StackLayoutView { view };
                 console.Append(layout);
+                DisplayDependenciesHint(language);
                 DisplayInstallHint(languageInformation, filteredDependencies);
             }
             else
