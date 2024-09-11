@@ -2,11 +2,13 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
 {
-    public CodeClassDeclarationWriter(DartConventionService conventionService) : base(conventionService) { }
+    public CodeClassDeclarationWriter(DartConventionService conventionService) : base(conventionService) {}
+
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -15,18 +17,35 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         if (codeElement.Parent is not CodeClass parentClass)
             throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
 
+        var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+       
+        var relativeImportManager = new RelativeImportManager(
+            "keyhub", '.', (writer.PathSegmenter as DartPathSegmenter)!.GetRelativeFileName);
+
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             codeElement.Usings
-                    .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
-                    .Select(x => x.Declaration?.IsExternal ?? false ?
-                                    $"import 'package:{x.Declaration.Name}.dart';" :
-                                    getImportStatement(x, codeElement))
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(static x => x, StringComparer.Ordinal)
-                    .ToList()
-                    .ForEach(x => writer.WriteLine(x));
+                .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
+                .Where(static x => x.IsExternal)
+                .Select(x => $"import 'package:{x.Declaration!.Name}.dart';")
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static x => x, StringComparer.Ordinal)
+                .ToList()
+                .ForEach(x => writer.WriteLine(x));
+
+            foreach (var relativePath in codeElement.Usings
+                    .Where(static x => !x.IsExternal)
+                    .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ?
+                        (string.Empty, string.Empty, x.Declaration.Name) :
+                        relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
+                    .Select(static x => x.Item3)
+                    .Distinct()
+                    .Order(StringComparer.OrdinalIgnoreCase))
+                writer.WriteLine($"import '{relativePath.ToSnakeCase()}.dart';");
+
             writer.WriteLine();
+
         }
 
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : [conventions.GetTypeString(codeElement.Inherits, parentClass)]).ToArray();
@@ -36,49 +55,5 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}{implements} {{");
-    }
-
-    private static string getImportStatement(CodeUsing x, ClassDeclaration codeElement)
-    {
-        var classParent = codeElement.Parent?.Parent?.Name;
-        var import = x.Name;
-        if (classParent != null)
-        {
-            var importstatement = x.Name.Replace(classParent, "", StringComparison.Ordinal).Replace(".", "/", StringComparison.Ordinal);
-            int equalSegments = 0;
-            bool allSegmentsEqual = true;
-            var classArray = classParent.Split('.');
-            var importArray = import.Split('.');
-            for (int i = 0; i < importArray.Length && i < classArray.Length; i++)
-            {
-                if (!classArray[i].Equals(importArray[i], StringComparison.Ordinal))
-                {
-                    equalSegments = i;
-                    allSegmentsEqual = false;
-                    break;
-                }
-            }
-
-            //import falls within class directory
-            if (allSegmentsEqual)
-            {
-                for (int i = 0; i < classArray.Length; i++)
-                {
-                    importstatement = importstatement.Replace(classArray[i] + "/", "", StringComparison.Ordinal);
-                    importstatement = importstatement.Replace(classArray[i], "", StringComparison.Ordinal);
-                }
-                if (string.IsNullOrEmpty(importstatement))
-                {
-                    return classArray.Length == importArray.Length ? $"import './{x.Declaration!.Name.ToSnakeCase()}.dart';" : $"import '../{x.Declaration!.Name.ToSnakeCase()}.dart';";
-                }
-            }
-
-            for (int i = 0; i < (classArray.Length - equalSegments); i++)
-            {
-                importstatement = importstatement.Replace(classArray[i], "..", StringComparison.Ordinal);
-            }
-            return equalSegments == 0 ? $"import '.{importstatement}/{x.Declaration!.Name.ToSnakeCase()}.dart';" : $"import '{importstatement}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
-        }
-        return $"import './{x.Name.Split('.').Last()}/{x.Declaration!.Name.ToSnakeCase()}.dart';";
     }
 }
