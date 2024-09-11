@@ -3,7 +3,7 @@
 Kiota is a client/plugin/manifest generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
 Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability. Recently, it has also added plugin and manifest generations based on OpenAPI descriptions that can speed up the process of generating Declarative Copilots.
 
-## Features
+## Capabilities
 
 Using kiota you can:
 
@@ -77,12 +77,12 @@ See [src/extensionSettings.ts](https://github.com/microsoft/kiota/blob/865b5f9a3
 ## Contributions
 There are many ways in which you can participate in the project, for example:
 
-[Download our latest builds](https://github.com/microsoft/kiota/releases).
-[Submit bugs and feature requests](https://github.com/microsoft/kiota/issues), and help us verify as they are checked in
-Review [source code changes](https://github.com/microsoft/kiota/pulls)
-Review the [documentation](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/README.md) and make pull requests for anything from typos to new content
+- [Download our latest builds](https://github.com/microsoft/kiota/releases).
+- [Submit bugs and feature requests](https://github.com/microsoft/kiota/issues), and help us verify as they are checked in
+- Review [source code changes](https://github.com/microsoft/kiota/pulls)
+- Review the [documentation](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/README.md) and make pull requests for anything from typos to new content
 
-See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/CONTRIBUTING.md) page for more information
+See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/CONTRIBUTING.md) page for more information.
 Further guidelines are also available in the page [SUPPORT.md](https://github.com/microsoft/kiota/blob/main/SUPPORT.md)
 
 ## Reporting security issues
