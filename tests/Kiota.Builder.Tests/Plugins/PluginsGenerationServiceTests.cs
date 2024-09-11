@@ -44,18 +44,21 @@ public sealed class PluginsGenerationServiceTests : IDisposable
 info:
   title: test
   version: 1.0
+  description: test description we've created
 servers:
   - url: http://localhost/
     description: There's no place like home
 paths:
   /test:
     get:
+      summary: summary for test path
       description: description for test path
       responses:
         '200':
           description: test
   /test/{id}:
     get:
+      summary: Summary for test path with id that is longer than 50 characters 
       description: description for test path with id
       operationId: test.WithId
       parameters:
@@ -107,10 +110,13 @@ paths:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
+        Assert.Contains("description for test path with id", resultingManifest.Document.Functions[1].Description);// Uses the operation description
         Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
-        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[0].Text.Length < 50);// Conversation starters are limited to 50 characters
+        Assert.Contains("Summary for test path with id", resultingManifest.Document.Capabilities.ConversationStarters[1].Text);// Uses the operation summary
+        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);// Conversation starters are limited to 50 characters
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
+        Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);// description is pulled from info   
     }
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
@@ -549,4 +555,180 @@ components:
             // ignored
         }
     }
+
+    #region Validation
+
+    public static TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
+        ValidationSchemaTestInput()
+    {
+        return new TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
+        {
+            // AllOf
+            // simple disjoint
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    allOf: [
+                                        {type: string},
+                                        {maxLength: 5}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("string", schema.Type);
+                    Assert.Equal(5, schema.MaxLength);
+                }
+            },
+            // objects
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    allOf: [
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}},
+                                        {type: object, properties: {c: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(3, schema.Properties.Count);
+                }
+            },
+            // AnyOf
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    anyOf: [
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}},
+                                        {type: object, properties: {c: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(2, schema.Properties.Count);
+                }
+            },
+            // OneOf
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    oneOf: [
+                                        {type: object, properties: {c: {type: number}}},
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Single(schema.Properties);
+                }
+            },
+            // normal schema
+            {
+                """
+                content:
+                            application/json:
+                                schema: {type: object, properties: {c: {type: number}}}
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Single(schema.Properties);
+                }
+            },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidationSchemaTestInput))]
+    public async Task MergesAllOfRequestBodyAsync(string content, Action<OpenApiDocument, OpenApiDiagnostic> assertions)
+    {
+        var apiDescription = $"""
+        openapi: 3.0.0
+        info:
+          title: test
+          version: "1.0"
+        paths:
+          /test:
+            post:
+              description: description for test path
+              requestBody:
+                required: true
+                {content}
+              responses:
+                '200':
+                  description: "success"
+        """;
+        // creates a new schema with both type:string & maxLength:5
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        try
+        {
+            // Validate the sliced openapi
+            var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
+            var r = new OpenApiStringReader();
+            var slicedDocument = r.Read(slicedApiContent, out var diagnostic);
+            assertions(slicedDocument, diagnostic);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(outputDirectory);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+    }
+
+    #endregion
 }

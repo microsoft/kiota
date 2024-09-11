@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
-using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -60,6 +58,7 @@ public partial class PluginsGenerationService
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        trimmedPluginDocument = InlineRequestBodyAllOf(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
@@ -104,6 +103,126 @@ public partial class PluginsGenerationService
         }
     }
 
+    private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
+    {
+        if (openApiDocument.Paths is null) return openApiDocument;
+        var contentItems = openApiDocument.Paths.Values.Where(static x => x?.Operations is not null)
+            .SelectMany(static x => x.Operations.Values.Where(static x => x?.RequestBody?.Content is not null)
+                .SelectMany(static x => x.RequestBody.Content.Values));
+        foreach (var contentItem in contentItems)
+        {
+            var schema = contentItem.Schema;
+            // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
+            schema = MergeAllOfInSchema(schema);
+            schema = SelectFirstAnyOfOrOneOf(schema);
+            contentItem.Schema = schema;
+        }
+
+        return openApiDocument;
+
+        static OpenApiSchema? SelectFirstAnyOfOrOneOf(OpenApiSchema? schema)
+        {
+            if (schema?.AnyOf is not { Count: > 0 } && schema?.OneOf is not { Count: > 0 }) return schema;
+            OpenApiSchema newSchema;
+            if (schema.AnyOf is { Count: > 0 })
+            {
+                newSchema = schema.AnyOf[0];
+            }
+            else if (schema.OneOf is { Count: > 0 })
+            {
+                newSchema = schema.OneOf[0];
+            }
+            else
+            {
+                newSchema = schema;
+            }
+            return newSchema;
+        }
+        static OpenApiSchema? MergeAllOfInSchema(OpenApiSchema? schema)
+        {
+            if (schema?.AllOf is not { Count: > 0 }) return schema;
+            var newSchema = new OpenApiSchema();
+            foreach (var apiSchema in schema.AllOf)
+            {
+                if (apiSchema.Title is not null) newSchema.Title = apiSchema.Title;
+                if (!string.IsNullOrEmpty(apiSchema.Type))
+                {
+                    if (!string.IsNullOrEmpty(newSchema.Type) && newSchema.Type != apiSchema.Type)
+                    {
+                        throw new InvalidOperationException(
+                            $"The schemas in allOf cannot have different types: '{newSchema.Type}' and '{apiSchema.Type}'.");
+                    }
+                    newSchema.Type = apiSchema.Type;
+                }
+                if (apiSchema.Format is not null) newSchema.Format = apiSchema.Format;
+                if (!string.IsNullOrEmpty(apiSchema.Description)) newSchema.Description = apiSchema.Description;
+                if (apiSchema.Maximum is not null) newSchema.Maximum = apiSchema.Maximum;
+                if (apiSchema.ExclusiveMaximum is not null) newSchema.ExclusiveMaximum = apiSchema.ExclusiveMaximum;
+                if (apiSchema.Minimum is not null) newSchema.Minimum = apiSchema.Minimum;
+                if (apiSchema.ExclusiveMinimum is not null) newSchema.ExclusiveMinimum = apiSchema.ExclusiveMinimum;
+                if (apiSchema.MaxLength is not null) newSchema.MaxLength = apiSchema.MaxLength;
+                if (apiSchema.MinLength is not null) newSchema.MinLength = apiSchema.MinLength;
+                if (!string.IsNullOrEmpty(apiSchema.Pattern)) newSchema.Pattern = apiSchema.Pattern;
+                if (apiSchema.MultipleOf is not null) newSchema.MultipleOf = apiSchema.MultipleOf;
+                if (apiSchema.Default is not null) newSchema.Default = apiSchema.Default;
+                if (apiSchema.ReadOnly) newSchema.ReadOnly = apiSchema.ReadOnly;
+                if (apiSchema.WriteOnly) newSchema.WriteOnly = apiSchema.WriteOnly;
+                if (apiSchema.Not is not null) newSchema.Not = apiSchema.Not;
+                if (apiSchema.Required is { Count: > 0 })
+                {
+                    foreach (var r in apiSchema.Required.Where(static r => !string.IsNullOrEmpty(r)))
+                    {
+                        newSchema.Required.Add(r);
+                    }
+                }
+                if (apiSchema.Items is not null) newSchema.Items = apiSchema.Items;
+                if (apiSchema.MaxItems is not null) newSchema.MaxItems = apiSchema.MaxItems;
+                if (apiSchema.MinItems is not null) newSchema.MinItems = apiSchema.MinItems;
+                if (apiSchema.UniqueItems is not null) newSchema.UniqueItems = apiSchema.UniqueItems;
+                if (apiSchema.Properties is not null)
+                {
+                    foreach (var property in apiSchema.Properties)
+                    {
+                        newSchema.Properties.Add(property.Key, property.Value);
+                    }
+                }
+                if (apiSchema.MaxProperties is not null) newSchema.MaxProperties = apiSchema.MaxProperties;
+                if (apiSchema.MinProperties is not null) newSchema.MinProperties = apiSchema.MinProperties;
+                if (apiSchema.AdditionalPropertiesAllowed) newSchema.AdditionalPropertiesAllowed = true;
+                if (apiSchema.AdditionalProperties is not null) newSchema.AdditionalProperties = apiSchema.AdditionalProperties;
+                if (apiSchema.Discriminator is not null) newSchema.Discriminator = apiSchema.Discriminator;
+                if (apiSchema.Example is not null) newSchema.Example = apiSchema.Example;
+                if (apiSchema.Enum is not null)
+                {
+                    foreach (var enumValue in apiSchema.Enum)
+                    {
+                        newSchema.Enum.Add(enumValue);
+                    }
+                }
+                if (apiSchema.Nullable) newSchema.Nullable = apiSchema.Nullable;
+                if (apiSchema.ExternalDocs is not null) newSchema.ExternalDocs = apiSchema.ExternalDocs;
+                if (apiSchema.Deprecated) newSchema.Deprecated = apiSchema.Deprecated;
+                if (apiSchema.Xml is not null) newSchema.Xml = apiSchema.Xml;
+                if (apiSchema.Extensions is not null)
+                {
+                    foreach (var extension in apiSchema.Extensions)
+                    {
+                        newSchema.Extensions.Add(extension.Key, extension.Value);
+                    }
+                }
+                if (apiSchema.Reference is not null) newSchema.Reference = apiSchema.Reference;
+                if (apiSchema.Annotations is not null)
+                {
+                    foreach (var annotation in apiSchema.Annotations)
+                    {
+                        newSchema.Annotations.Add(annotation.Key, annotation.Value);
+                    }
+                }
+            }
+            return newSchema;
+        }
+    }
+
     [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex PluginNameCleanupRegex();
 
@@ -140,9 +259,8 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions) = GetRuntimesAndFunctionsFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
-        var capabilities = GetPluginCapabilitiesFromFunctions(functions);
-        var descriptionForHuman = OAIDocument.Info?.Description.CleanupXMLString() is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title.CleanupXMLString()}";
+        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
+        var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
         {
@@ -168,11 +286,16 @@ public partial class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
         };
 
-        // Only add capabilities if there are any
-        if (capabilities != null)
-        {
-            pluginManifestDocument.Capabilities = capabilities;
-        }
+        if (conversationStarters.Length > 0)
+            pluginManifestDocument.Capabilities = new Capabilities
+            {
+                ConversationStarters = conversationStarters.Where(static x => !string.IsNullOrEmpty(x.Text))
+                                            .Select(static x => new ConversationStarter
+                                            {
+                                                Text = x.Text?.Length < 50 ? x.Text : x.Text?[..50]
+                                            })
+                                            .ToList()
+            };
         return pluginManifestDocument;
     }
 
@@ -215,11 +338,12 @@ public partial class PluginsGenerationService
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
 
-    private static (OpenApiRuntime[], Function[]) GetRuntimesAndFunctionsFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
+    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
+        var conversationStarters = new List<ConversationStarter>();
         var configAuth = authInformation?.ToPluginManifestAuth();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
         {
@@ -232,26 +356,34 @@ public partial class PluginsGenerationService
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath, },
                     RunForFunctions = [operation.OperationId]
                 });
+
+                var summary = operation.Summary.CleanupXMLString();
+                var description = operation.Description.CleanupXMLString();
+
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
-                    Description =
-                        operation.Summary.CleanupXMLString() is { } summary && !string.IsNullOrEmpty(summary)
-                            ? summary
-                            : operation.Description.CleanupXMLString(),
+                    Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
+
                 });
+                conversationStarters.Add(new ConversationStarter
+                {
+                    Text = !string.IsNullOrEmpty(summary) ? summary : description
+                });
+
             }
         }
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions) = GetRuntimesAndFunctionsFromTree(document, authInformation, node.Value, openApiDocumentPath);
+            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
+            conversationStarters.AddRange(childConversationStarters);
         }
 
-        return (runtimes.ToArray(), functions.ToArray());
+        return (runtimes.ToArray(), functions.ToArray(), conversationStarters.ToArray());
     }
 
     private static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
@@ -317,18 +449,5 @@ public partial class PluginsGenerationService
         }
 
         return null;
-    }
-
-    private static Capabilities? GetPluginCapabilitiesFromFunctions(IList<Function> functions)
-    {
-        var conversionStarters = functions.Select(static x => x.Description)
-                                                              .Where(static x => !string.IsNullOrEmpty(x))
-                                                              .Select(static x => new ConversationStarter
-                                                              {
-                                                                  Text = x.Length < 50 ? x : x[..50],
-                                                              })
-                                                              .ToList();
-
-        return conversionStarters.Count > 0 ? new Capabilities { ConversationStarters = conversionStarters } : null;
     }
 }
