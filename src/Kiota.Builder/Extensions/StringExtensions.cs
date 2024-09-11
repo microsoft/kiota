@@ -34,7 +34,7 @@ public static partial class StringExtensions
     /// <param name="input">The input string</param>
     /// <param name="separators">The delimiters to use when converting to camel case. If none is given, defaults to '-'</param>
     /// <returns>A camel case string</returns>
-    public static string ToCamelCase(this string? input, params char[] separators) => ToInternalCamelCase(input, separators, false);
+    public static string ToCamelCase(this string? input, params char[] separators) => ToInternalCamelCase(input, separators);
 
     /// <summary>
     /// Converts a string delimited by a symbol to pascal case
