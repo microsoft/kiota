@@ -40,11 +40,6 @@ This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension ad
 
 <img width="349" alt="generation complete" src="https://user-images.githubusercontent.com/5781590/229949052-159f3a58-b0e6-421f-9ca5-b45dc49c4639.png">
 
-
-## Requirements
-
-None.
-
 ## Extension Settings
 
 None.
