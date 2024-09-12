@@ -447,7 +447,7 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
-      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+      void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
     }
     return result;
   }

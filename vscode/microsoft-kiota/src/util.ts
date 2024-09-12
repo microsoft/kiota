@@ -161,3 +161,12 @@ export function allGenerationLanguagesToString(): string[] {
   let allSupportedLanguages: string[] = allGenerationLanguages.map(langEnum => KiotaGenerationLanguage[langEnum]);
   return allSupportedLanguages;
 }
+
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
