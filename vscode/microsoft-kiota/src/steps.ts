@@ -367,7 +367,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         if (!isDeepLinkPluginNameProvided) {
             const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
             state.pluginName = await input.showInputBox({
-                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output name')}`,
                 step: step++,
                 totalSteps: 3,
                 value: state.pluginName ?? '',
@@ -382,8 +382,10 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (true) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
+
             const selectedOption = await input.showQuickPick({
-                title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
                 totalSteps: 3,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
