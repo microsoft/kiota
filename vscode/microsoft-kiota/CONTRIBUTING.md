@@ -54,6 +54,9 @@ You can try out the generator including your local changes by running:
 dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would pass>
 ```
 
+### Debugging the Kiota Extension
+See [Debugging the Extension](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/debugging.md)
+
 ## Contributing Code
 
 1. Fork the repository and clone it to your local machine.
@@ -64,17 +67,6 @@ dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would p
     - Add an entry to the `CHANGELOG.md` file describing your changes if appropriate.
 4. Push your changes to your fork: `git push origin my-new-feature`
 5. Create a pull request from your fork to the main repository. `gh pr create` (with the GitHub CLI)
-
-## Troubleshooting
-
-### Build errors
-
-If you get build errors, particularly a message like this:
-```
-CSC : error CS9057: The analyzer assembly '<path>/KiotaGenerated.dll' references version '4.5.0.0' of the compiler, which is newer than the currently running version '4.4.0.0'. 
-```
-
-try updating your .NET SDK to the latest version.
 
 ## Reporting Bugs
 
