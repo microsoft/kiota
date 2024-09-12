@@ -108,6 +108,7 @@ public static partial class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
+        var dependencyTypesOption = GetDependencyTypesOption();
         var jsonOption = new Option<bool>("--json", "Generate a plain and machine-parsable json output.");
         languageOption.AddAlias("-l");
         AddEnumValidator(languageOption, "language");
@@ -120,6 +121,7 @@ public static partial class KiotaHost
             searchTermOption,
             languageOption,
             jsonOption,
+            dependencyTypesOption,
         };
         infoCommand.Handler = new KiotaInfoCommandHandler
         {
@@ -131,8 +133,21 @@ public static partial class KiotaHost
             SearchTermOption = searchTermOption,
             GenerationLanguage = languageOption,
             JsonOption = jsonOption,
+            DependencyTypesOption = dependencyTypesOption,
         };
         return infoCommand;
+    }
+    private static Option<DependencyType[]> GetDependencyTypesOption()
+    {
+        var dependencyTypesOption = new Option<DependencyType[]>("--dependency-type", "The type of dependency to display instructions for.")
+        {
+            IsRequired = false,
+            Arity = ArgumentArity.ZeroOrMore,
+        };
+        dependencyTypesOption.AddAlias("--dt");
+        dependencyTypesOption.SetDefaultValue(Array.Empty<DependencyType>());
+        dependencyTypesOption.AddCompletions(Enum.GetNames<DependencyType>());
+        return dependencyTypesOption;
     }
     private static Option<string> GetSearchKeyOption()
     {

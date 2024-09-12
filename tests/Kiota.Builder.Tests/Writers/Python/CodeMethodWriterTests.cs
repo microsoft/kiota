@@ -1719,7 +1719,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("def __init__(self,request_adapter: RequestAdapter, path_parameters: Union[Dict[str, Any], str],", result);
         Assert.Contains("username: Optional[str] = None", result);
         Assert.Contains("if isinstance(path_parameters, dict):", result);
-        Assert.Contains("path_parameters['username'] = str(username)", result);
+        Assert.Contains("path_parameters['username'] = username", result);
         Assert.DoesNotContain("This property has a description", result);
         Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.DoesNotContain("get_path_parameters(", result);
