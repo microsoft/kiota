@@ -3,6 +3,7 @@ import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
 
 export function getKiotaVersion(context: vscode.ExtensionContext, kiotaOutputChannel: vscode.LogOutputChannel): Promise<string | undefined> {
+  try {
     return connectToKiota<string>(context, async (connection) => {
       const request = new rpc.RequestType0<string, void>("GetVersion");
       const result = await connection.sendRequest(request);
@@ -17,4 +18,7 @@ export function getKiotaVersion(context: vscode.ExtensionContext, kiotaOutputCha
       kiotaOutputChannel.show();
       return undefined;
     });
+  } catch (error) {
+    return Promise.resolve(undefined);
+  }
 };
