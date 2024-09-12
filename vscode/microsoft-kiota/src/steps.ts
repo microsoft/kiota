@@ -175,7 +175,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkGenerationTypeProvided) {
-            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
+            const items = [
+                l10n.t('Client'),
+                l10n.t('Generate a plugin'),
+                l10n.t('Generate an API manifest')
+            ];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
                 step: step++,
@@ -185,7 +189,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            if (option.label === l10n.t('Generate an API client')) {
+            if (option.label === l10n.t('Client')) {
                 state.generationType = "client";
             }
             else if (option.label === l10n.t('Generate a plugin')) {
