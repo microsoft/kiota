@@ -3,6 +3,7 @@ import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
 
 export function searchDescription(context: vscode.ExtensionContext, searchTerm: string, clearCache: boolean): Promise<Record<string, KiotaSearchResultItem> | undefined> {
+  try {
     return connectToKiota<Record<string, KiotaSearchResultItem>>(context, async (connection) => {
       const request = new rpc.RequestType2<string, boolean, KiotaSearchResult, void>(
         "Search"
@@ -12,9 +13,12 @@ export function searchDescription(context: vscode.ExtensionContext, searchTerm: 
         searchTerm,
         clearCache,
       );
-      if(result) {
+      if (result) {
         return result.results;
       }
       return undefined;
     });
+  } catch (error) {
+    return Promise.resolve(undefined);
+  }
 };
