@@ -77,5 +77,6 @@
   "Migration completed, but no changes were detected.":"移行が完了しましたが、変更は検出されませんでした。",
   "Migration failed":"移行に失敗しました",
   "Api clients migrated successfully!":"APIクライアントが正常に移行されました！",
-  "Could not determine the workspace folder.": "ワークスペースフォルダを特定できませんでした。"
+  "Could not determine the workspace folder.": "ワークスペースフォルダを特定できませんでした。",
+  "Client": ""
 }

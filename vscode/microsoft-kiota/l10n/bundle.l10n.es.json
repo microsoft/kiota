@@ -77,5 +77,6 @@
   "Migration completed, but no changes were detected.":"Migración completa, mas no se detectaron cambios.",
   "Migration failed":"Migración fallida",
   "API clients migrated successfully!":"Clientes API migrados existosamente.",
-  "Could not determine the workspace folder.": "No se pudo determinar la carpeta de espacio de trabajo."
+  "Could not determine the workspace folder.": "No se pudo determinar la carpeta de espacio de trabajo.",
+  "Client": ""
 }

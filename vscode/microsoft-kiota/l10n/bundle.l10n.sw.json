@@ -77,5 +77,6 @@
   "Migration completed, but no changes were detected." : "Uhamisho umekamilika, lakini hakuna mabadiliko yaligunduliwa.",
   "Migration failed" : "Uhamisho ulishindikana",
   "API client migrateds successfully!" : "Wateja wa API wamehamishwa kwa mafanikio!",
-  "Could not determine the workspace folder.": "Haiwezekani kubaini folda ya kazi."
+  "Could not determine the workspace folder.": "Haiwezekani kubaini folda ya kazi.",
+  "Client": ""
 }
