@@ -365,15 +365,14 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginNameProvided) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
             state.pluginName = await input.showInputBox({
-                title: `${state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest')
-                    ? l10n.t('Create a new manifest')
-                    : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
                 totalSteps: 3,
                 value: state.pluginName ?? '',
-                placeholder: 'MyManifest',
-                prompt: l10n.t('Choose a name for the manifest'),
+                placeholder: `${isManifest ? 'MyManifest' : 'MyOpenAIPlugin'}`,
+                prompt: `${isManifest ? l10n.t('Choose a name for the manifest') : l10n.t('Choose a name for the OpenAI plugin')}`,
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
