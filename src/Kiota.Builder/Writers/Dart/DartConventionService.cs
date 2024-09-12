@@ -109,8 +109,7 @@ public class DartConventionService : CommonLanguageConventionService
         {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterLowerCase() : urlTemplateVarName;
-            // TODO Kees this can't be the final output but curently it creates a correct ApiClient
-            writer.WriteLine($"{prefix}{returnType}({requestAdapterProp.Name.ToFirstCharacterLowerCase()}, \"\", {urlTplRef});");
+            writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterLowerCase()}{pathParametersSuffix});");
 
         }
     }
