@@ -430,7 +430,6 @@
         "command": "kiota.migrateFromLockFile",
         "title": "%kiota.migrateClients.title%"
       }
-
     ],
     "languages": [
       {
@@ -483,7 +482,6 @@
     "original-fs": "^1.2.0",
     "vscode-jsonrpc": "^8.2.1"
   },
-  "preview": true,
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
