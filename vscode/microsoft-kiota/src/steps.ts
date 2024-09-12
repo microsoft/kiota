@@ -5,7 +5,6 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import { isTemporaryDirectory } from './utilities/temporary-folder';
-import { ifError } from 'assert';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
