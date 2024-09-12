@@ -72,7 +72,12 @@ Enjoy the benefits of the workspace once the migration is complete.
 
 ## Extension Settings
 
-See [src/extensionSettings.ts](https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/src/extensionSettings.ts) file
+1. Navigate to extensions using the UI or (ctrl+shift+x) or (cmd+shift+x) for mac users
+2. Search 'kiota'
+3. Click on the settings icon on the kiota extension
+4. On the dropdown navigate to `Extension Settings` and click on it.
+5. This should open a settings tab on your vscode that has filtered for all Kiota supported extensions.
+6. Feel free to leave the settings as is or customize them for even better control.
 
 ## Contributions
 There are many ways in which you can participate in the project, for example:
@@ -90,7 +95,7 @@ Check out our [SECURITY.md](https://github.com/microsoft/kiota/blob/main/SECURIT
 
 ## Telemetry
 
-Kiota Core and Kiota extension collects usage data and sends it to Microsoft to help improve our products and services. Read our [Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839) and [Data Collection Notice](https://docs.opensource.microsoft.com/content/releasing/telemetry.html) to learn more. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
+Kiota extension collects usage data and sends it to Microsoft to help improve our products and services. Read our [Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839) and [Data Collection Notice](https://docs.opensource.microsoft.com/content/releasing/telemetry.html) to learn more. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
 
 ## Trademarks
 
