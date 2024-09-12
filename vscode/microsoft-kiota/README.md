@@ -1,7 +1,7 @@
 # Microsoft Kiota
 
 Kiota is a client/plugin/manifest generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
-Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability. Recently, it has also added plugin and manifest generations based on OpenAPI descriptions that can speed up the process of generating Declarative Copilots.
+Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability. It also helps with participating in the Microsoft Copilot ecosystem by enabling generation of API plugins.
 
 ## Capabilities
 
@@ -11,8 +11,8 @@ Using kiota you can:
 2. Filter and select the API endpoints you need by slicing only required endpoints from a rather bulky OpenAPI Description
 3. Generate models and a chained method API surface in the language of your choice. Supported languages can be viewed at https://github.com/microsoft/kiota/tree/main?tab=readme-ov-file#supported-languages
 4. Call the OpenAPI described API with the new client generated in step 3 above.
-5. Generate validated and working plugin manifests that can be easily integrated into LLMs. **New**
-6. Generate OpenApi manifests. **New**
+5. Generate API plugin manifests that can be easily integrated into Microsoft Copilot. **New**
+6. Generate [API manifests](https://datatracker.ietf.org/doc/draft-miller-api-manifest/). **New**
 
 All that in a matter of seconds.
 
@@ -33,7 +33,7 @@ You can also install the extension package from the [VS Code Marketplace](https:
 
 Once the extension is installed, you will be able to see the commands available to you.
 
-You can kick start the process by using the add file icons as appears below or using command pallete with the command `searchOrOpenApiDescription`
+You can kick start the process by using the add file icons as appears below or using command pallete with the command "Add API description"
 
 <img width="482" alt="Use the add file icon" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/SearchOrBrowseOptions.png">
 
@@ -47,7 +47,7 @@ Select the OpenAPI description you are interested in and you will be presented w
 
 <img width="482" alt="Kiota OpenAPI explorer" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
 
-Select the endpoints to include in your API client as above and click the `generate` icon. Kiota extension will display with the options to generate either client, plugin or manifest.
+Select the endpoints to include in your API client as above and click the `generate` icon. Kiota extension will display with the options to generate either client, plugin or other.
 
 <img width="482" alt="kiota vscode generate options" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/SelectGenerationOption.png">
 
