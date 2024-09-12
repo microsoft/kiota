@@ -105,6 +105,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
+            RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
 
 
@@ -152,6 +153,13 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
             currentMethod.Name = "getFieldDeserializers";
         }
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+        {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
+                .Where(x => x.Type.Name.StartsWith('I'))
+                .ToList()
+                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+        }
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
@@ -188,9 +196,9 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
             currentProperty.Type.IsNullable = true;
-            currentProperty.Type.Name = "Map<String, Object>";
+            currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "Map<String, Object>()";
+                currentProperty.DefaultValue = "Map<String, dynamic>()";
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         // TODO KEES
