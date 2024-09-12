@@ -178,7 +178,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             const items = [
                 l10n.t('Client'),
                 l10n.t('Copilot plugin'),
-                l10n.t('Generate an API manifest')
+                l10n.t('Other')
             ];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
@@ -195,7 +195,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             else if (option.label === l10n.t('Copilot plugin')) {
                 state.generationType = "plugin";
             }
-            else if (option.label === l10n.t('Generate an API manifest')) {
+            else if (option.label === l10n.t('Other')) {
                 state.generationType = "apimanifest";
             }
         }
