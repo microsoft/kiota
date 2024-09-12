@@ -297,7 +297,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
                 step: step++,
-                totalSteps: 4,
+                totalSteps: 3,
                 value: state.pluginName ?? '',
                 placeholder: 'MyPlugin',
                 prompt: l10n.t('Choose a name for the plugin'),
