@@ -127,7 +127,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    const deeplinkEnabled = !!deepLinkParams && isDeeplinkEnabled(deepLinkParams);
+    const deeplinkEnabled = deepLinkParams && isDeeplinkEnabled(deepLinkParams);
     const isDeepLinkPluginNameProvided = deeplinkEnabled && state.pluginName;
     const isDeepLinkGenerationTypeProvided = deeplinkEnabled && state.generationType;
     const isDeepLinkPluginTypeProvided = deeplinkEnabled && state.pluginTypes;
