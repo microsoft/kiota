@@ -153,6 +153,13 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
             currentMethod.Name = "getFieldDeserializers";
         }
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+        {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
+                .Where(x => x.Type.Name.StartsWith('I'))
+                .ToList()
+                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+        }
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)

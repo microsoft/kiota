@@ -113,7 +113,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, {requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.withUrl({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, {requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
@@ -576,7 +576,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     thirdParameterName = $", {pathParametersParameter.Name}";
                 else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
-                    thirdParameterName = $", {rawUrlParameter.Name}";
+                    thirdParameterName = $", {{RequestInformation.rawUrlKey : {rawUrlParameter.Name}}}";
                 else if (parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && !string.IsNullOrEmpty(pathParametersProperty.DefaultValue))
                     thirdParameterName = $", {pathParametersProperty.DefaultValue}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
@@ -619,7 +619,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             string.Empty : voidCorrectedTaskReturnType + " ";
         var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
-        var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterLowerCase();
+        var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
         if (includeNullableReferenceType)
@@ -636,6 +636,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}){baseSuffix}{async} {openingBracket}");
         }
+    }
+
+    private static string GetMethodName(CodeMethod code, CodeClass parentClass, bool isConstructor)
+    {
+        if (code.IsOfKind(CodeMethodKind.RawUrlConstructor))
+        {
+            return parentClass.Name.ToFirstCharacterUpperCase() + ".withUrl";
+        }
+        return isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterLowerCase();
     }
 
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
