@@ -59,11 +59,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                         Name = AbstractionsNamespaceName,
                         IsExternal = true
                     }
-                },
-                new CodeType
-                {
-                    Name = "DefaultQueryParameters",
-                    IsExternal = true,
                 });
 
             // This adds the BaseRequestBuilder class as a superclass
