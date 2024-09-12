@@ -186,7 +186,7 @@ public class DartConventionService : CommonLanguageConventionService
         {
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
             var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
-            var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
+            var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "Iterable<" : string.Empty;
             var collectionSuffix = currentType.CollectionKind switch
             {
                 CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",

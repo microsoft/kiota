@@ -152,7 +152,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
-
+        if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+        {
+            currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
+            currentMethod.Name = "getFieldDeserializers";
+        }
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)

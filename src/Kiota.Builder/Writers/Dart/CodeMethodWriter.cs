@@ -279,7 +279,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                                 .ToArray());
         }
     }
-    private string DefaultDeserializerValue => $"Map<String, Action<{conventions.ParseNodeInterfaceName}>>()";
+    private string DefaultDeserializerValue => $"Map<String, Function({conventions.ParseNodeInterfaceName})>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
@@ -308,6 +308,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         writer.WriteLine($"return {DefaultDeserializerValue}();");
     }
+    private const string DeserializerReturnType = "Map<String, Function(ParseNode)>";
     private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
@@ -330,18 +331,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         writer.WriteLine($"return {DefaultDeserializerValue}();");
     }
+    private const string DeserializerVarName = "deserializerMap";
     private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        var parentSerializationInfo = shouldHide ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
-        writer.StartBlock($"return {DefaultDeserializerValue}{parentSerializationInfo} {{");
-        foreach (var otherProp in parentClass
-                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
-                                        .Where(static x => !x.ExistsInBaseType)
-                                        .OrderBy(static x => x.Name, StringComparer.Ordinal))
+
+        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
+        writer.WriteLine($"{DeserializerReturnType} {DeserializerVarName} = " + (shouldHide ? "{};" : "super.getFieldDeserializers();"));
+
+        if (fieldToSerialize.Length != 0)
         {
-            writer.WriteLine($"{{\"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            fieldToSerialize
+                    .Where(static x => !x.ExistsInBaseType)
+                    .OrderBy(static x => x.Name)
+                    .Select(x =>
+                        $"{DeserializerVarName}['{x.WireName}'] = (node) => {x.WireName} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
+                    .ToList()
+                    .ForEach(x => writer.WriteLine(x));
         }
-        writer.CloseBlock("};");
+        writer.WriteLine($"return {DeserializerVarName};");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
@@ -351,22 +358,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (isCollection)
             {
-                var collectionMethod = propType.IsArray ? "?.ToArray()" : "?.ToList()";
+                var collectionMethod = "";
                 if (currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
+                    return $"getCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
                 else if (currentType.TypeDefinition is CodeEnum)
-                    return $"GetCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
+                    return $"getCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
+                    return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
-                return $"GetEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>()";
+                return $"getEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>()";
         }
         return propertyType switch
         {
-            "byte[]" => "GetByteArrayValue()",
-            _ when conventions.IsPrimitiveType(propertyType) => $"Get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
-            _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.CreateFromDiscriminatorValue)",
+            "byte[]" => "getByteArrayValue()",
+            String => "getStringValue()",
+            _ when conventions.IsPrimitiveType(propertyType) => $"get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.createFromDiscriminatorValue)",
         };
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
