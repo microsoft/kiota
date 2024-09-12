@@ -337,7 +337,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
 
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
-        writer.WriteLine($"{DeserializerReturnType} {DeserializerVarName} = " + (shouldHide ? "{};" : "super.getFieldDeserializers();"));
+        writer.WriteLine($"{DeserializerReturnType} {DeserializerVarName} = " + (shouldHide ? "super.getFieldDeserializers();" : "{};"));
 
         if (fieldToSerialize.Length != 0)
         {
@@ -464,7 +464,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             WriteSerializerBodyForInheritedModel(shouldHide, method, parentClass, writer);
 
         if (parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
-            writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
+            writer.WriteLine($"writer.writeAdditionalData({additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private void WriteSerializerBodyForInheritedModel(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
@@ -476,7 +476,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -601,7 +601,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        if (inherits && (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer))
+        if (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer)
         {
             writer.WriteLine("@override");
         }
@@ -655,20 +655,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
+                    return $"writeCollectionOfPrimitiveValues<{propertyType}>";
                 else if (currentType.TypeDefinition is CodeEnum)
-                    return $"WriteCollectionOfEnumValues<{propertyType.TrimEnd('?')}>";
+                    return $"writeCollectionOfEnumValues<{propertyType.TrimEnd('?')}>";
                 else
-                    return $"WriteCollectionOfObjectValues<{propertyType}>";
+                    return $"writeCollectionOfObjectValues<{propertyType}>";
             else if (currentType.TypeDefinition is CodeEnum enumType)
-                return $"WriteEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
+                return $"writeEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
 
         }
         return propertyType switch
         {
-            "byte[]" => "WriteByteArrayValue",
-            _ when conventions.IsPrimitiveType(propertyType) => $"Write{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
-            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : string.Empty)}>",
+            "byte[]" => "writeByteArrayValue",
+            "String" => "writeStringValue",
+            _ when conventions.IsPrimitiveType(propertyType) => $"write{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
+            _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : "")}>",
         };
     }
 }

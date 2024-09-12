@@ -276,6 +276,7 @@ public class DartConventionService : CommonLanguageConventionService
             "binary" or "base64" or "base64url" => "byte[]",
             string s when s.Contains("RequestConfiguration", StringComparison.OrdinalIgnoreCase) => "RequestConfiguration",
             "iparsenode" => "ParseNode",
+            "iserializationwriter" => "SerializationWriter",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
