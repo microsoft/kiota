@@ -78,5 +78,6 @@
   "Migration failed":"فشل الترحيل",
   "API clients migrated successfully!":"تم ترحيل عملاء API بنجاح!",
   "Could not determine the workspace folder.": "لا يمكن تحديد مجلد مساحة العمل.",
-  "Client": ""
+  "Client": "",
+  "Copilot plugin": ""
 }

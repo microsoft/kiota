@@ -77,5 +77,6 @@
   "Migration failed":"Миграция не удалась",
   "API clients migrated successfully!" : "Клиенты API успешно перенесены!",
   "Could not determine the workspace folder.": "Не удалось определить папку рабочего пространства.",
-  "Client": ""
+  "Client": "",
+  "Copilot plugin": ""
 }

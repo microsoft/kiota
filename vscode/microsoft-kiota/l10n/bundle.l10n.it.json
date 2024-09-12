@@ -78,5 +78,6 @@
   "Migration failed":"Migrazione fallita",
   "API clients migrated successfully!":"Client API migrati con successo!",
   "Could not determine the workspace folder.": "Impossibile determinare la cartella di lavoro.",
-  "Client": ""
+  "Client": "",
+  "Copilot plugin": ""
 }

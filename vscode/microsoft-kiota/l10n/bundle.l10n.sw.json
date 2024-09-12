@@ -78,5 +78,6 @@
   "Migration failed" : "Uhamisho ulishindikana",
   "API client migrateds successfully!" : "Wateja wa API wamehamishwa kwa mafanikio!",
   "Could not determine the workspace folder.": "Haiwezekani kubaini folda ya kazi.",
-  "Client": ""
+  "Client": "",
+  "Copilot plugin": ""
 }
