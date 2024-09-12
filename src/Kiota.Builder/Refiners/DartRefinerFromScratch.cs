@@ -75,7 +75,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddInheritedTypeImport(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, false);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, false, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -228,5 +228,14 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd);
         }
         CrawlTree(currentElement, AddInheritedTypeImport);
+    }
+
+    public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
+    {
+        var nestedTypes = usingsToAdd.OfType<CodeType>().Where(
+            static codeType => codeType.TypeDefinition is CodeClass codeClass
+            && codeClass.IsOfKind(CodeClassKind.RequestConfiguration));
+
+        return usingsToAdd.Except(nestedTypes);
     }
 }
