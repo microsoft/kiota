@@ -23,8 +23,7 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
         if (x is null || y is null) return object.Equals(x, y);
         return _stringComparer.Equals(x.DescriptionLocation, y.DescriptionLocation)
                && _stringComparer.Equals(x.OutputPath, y.OutputPath)
-               && x.IncludePatterns.SequenceEqual(y.IncludePatterns, _stringComparer)
-               && x.ExcludePatterns.SequenceEqual(y.ExcludePatterns, _stringComparer);
+               && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns);
     }
 
     public virtual int GetHashCode([DisallowNull] T obj)

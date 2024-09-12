@@ -43,10 +43,12 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
 
         string? xExtensions = GetDependencyExtensionsValue(x), yExtensions = GetDependencyExtensionsValue(y);
         // Assume requests are equal if we aren't comparing them.
-        var requestsEqual = !_compareRequests || x.Requests.SequenceEqual(y.Requests, _requestInfoComparer);
+        var requestsEqual = !_compareRequests || GetOrderedRequests(x.Requests).SequenceEqual(GetOrderedRequests(y.Requests), _requestInfoComparer);
         return _stringComparer.Equals(xExtensions, yExtensions)
                && requestsEqual;
     }
+    private static IOrderedEnumerable<RequestInfo> GetOrderedRequests(IList<RequestInfo> requests) =>
+    requests.OrderBy(x => x.UriTemplate, StringComparer.Ordinal).ThenBy(x => x.Method, StringComparer.Ordinal);
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] ApiDependency obj)
     {
@@ -56,7 +58,7 @@ public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
         hash.Add(GetDependencyExtensionsValue(obj) ?? string.Empty, _stringComparer);
         if (!_compareRequests) return hash.ToHashCode();
 
-        foreach (var request in obj.Requests)
+        foreach (var request in GetOrderedRequests(obj.Requests))
         {
             hash.Add(request, _requestInfoComparer);
         }

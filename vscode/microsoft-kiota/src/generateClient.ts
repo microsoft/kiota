@@ -24,6 +24,7 @@ export function generateClient(context: vscode.ExtensionContext,
   operation: ConsumerOperation,
   workingDirectory: string = getWorkspaceJsonDirectory()
 ): Promise<KiotaLogEntry[] | undefined> {
+  try {
     return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
       const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
         "Generate"
@@ -51,4 +52,7 @@ export function generateClient(context: vscode.ExtensionContext,
         } as GenerationConfiguration,
       );
     }, workingDirectory);
+  } catch (error) {
+    return Promise.resolve(undefined);
+  }
 };

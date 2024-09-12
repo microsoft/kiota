@@ -344,7 +344,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                         foreach (var parameter in pathParameters)
                         {
                             var (name, identName) = parameter;
-                            writer.WriteLine($"{pathParametersParameter.Name}['{name}'] = str({identName})");
+                            writer.WriteLine($"{pathParametersParameter.Name}['{name}'] = {identName}");
                         }
                         writer.DecreaseIndent();
                     }
@@ -759,12 +759,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToCamelCase()})";
+                return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToPascalCase()})";
             if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"get_collection_of_primitive_values({propertyType})";
                 else
-                    return $"get_collection_of_object_values({propertyType.ToCamelCase()})";
+                    return $"get_collection_of_object_values({propertyType.ToPascalCase()})";
         }
         return propertyType switch
         {
@@ -773,7 +773,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             "datetime.date" => "get_date_value()",
             "datetime.time" => "get_time_value()",
             "datetime.timedelta" => "get_timedelta_value()",
-            _ => $"get_object_value({propertyType.ToCamelCase()})",
+            _ => $"get_object_value({propertyType.ToPascalCase()})",
         };
     }
     private string GetSerializationMethodName(CodeTypeBase propType)

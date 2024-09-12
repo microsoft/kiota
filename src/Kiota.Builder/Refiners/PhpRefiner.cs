@@ -66,7 +66,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore
                 },
-                static (_, s) => s.ToCamelCase(UnderscoreArray),
+                static (_, s) => s.ToPascalCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
@@ -136,7 +136,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
                 },
-                static s => s.ToCamelCase(UnderscoreArray).ToFirstCharacterLowerCase());
+                static s => s.ToCamelCase(UnderscoreArray));
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
