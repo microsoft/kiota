@@ -177,7 +177,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         if (!isDeepLinkGenerationTypeProvided) {
             const items = [
                 l10n.t('Client'),
-                l10n.t('Generate a plugin'),
+                l10n.t('Copilot plugin'),
                 l10n.t('Generate an API manifest')
             ];
             const option = await input.showQuickPick({
@@ -192,7 +192,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             if (option.label === l10n.t('Client')) {
                 state.generationType = "client";
             }
-            else if (option.label === l10n.t('Generate a plugin')) {
+            else if (option.label === l10n.t('Copilot plugin')) {
                 state.generationType = "plugin";
             }
             else if (option.label === l10n.t('Generate an API manifest')) {
