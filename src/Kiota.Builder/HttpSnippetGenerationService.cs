@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
-using Kiota.Builder.Writers.Go;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder
 {

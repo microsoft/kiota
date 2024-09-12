@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Writers
 {
-    internal class HttpSnippetWriter
+    internal class HttpSnippetWriter(TextWriter writer)
     {
         /// <summary>
         /// The text writer.
@@ -15,12 +15,7 @@ namespace Kiota.Builder.Writers
         protected TextWriter Writer
         {
             get;
-        }
-
-        public HttpSnippetWriter(TextWriter writer)
-        {
-            Writer = writer;
-        }
+        } = writer;
 
         /// <summary>
         /// Writes the given OpenAPI URL tree node to the writer.
