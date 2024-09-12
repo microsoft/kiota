@@ -366,7 +366,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginNameProvided) {
             state.pluginName = await input.showInputBox({
-                title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
+                title: `${state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest')
+                    ? l10n.t('Create a new manifest')
+                    : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
                 totalSteps: 3,
                 value: state.pluginName ?? '',
