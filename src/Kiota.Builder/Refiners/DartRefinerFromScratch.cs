@@ -189,9 +189,9 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
             currentProperty.Type.IsNullable = true;
-            currentProperty.Type.Name = "Map<String, Object>";
+            currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "Map<String, Object>()";
+                currentProperty.DefaultValue = "Map<String, dynamic>()";
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         // TODO KEES
