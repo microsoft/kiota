@@ -339,10 +339,7 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            // if its http generaion we're done
-            if (IsHttpSnippetGeneration(config)) return true;
-
-            if (shouldGenerate)
+            if (shouldGenerate || IsHttpSnippetGeneration(config))
             {
                 stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
 

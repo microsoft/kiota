@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Kiota.Builder.Writers.Go;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi.Writers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Kiota.Builder.Writers
 {
@@ -69,11 +71,46 @@ namespace Kiota.Builder.Writers
                 var path = SanitizePath(node.Path);
                 var operation = item.Key.ToString().ToUpperInvariant();
 
+                // write the comment which also acts as the sections delimiter 
                 Writer.WriteLine($"### {operation} {path}");
+
                 // write the parameters 
                 WriteParameters(item.Value.Parameters);
+
+                // write the http request operation 
                 Writer.WriteLine($"{operation} {{{{url}}}}{path} HTTP/1.1");
+
+                // Write the request body if any
+                WriteRequestBody(item.Value.RequestBody);
+
                 Writer.WriteLine();
+            }
+        }
+
+        private void WriteRequestBody(OpenApiRequestBody requestBody)
+        {
+            if (requestBody == null) return;
+
+            foreach (var content in requestBody.Content)
+            {
+                // Write content type
+                Writer.WriteLine("Content-Type: " + content.Key);
+
+                // If example exist use it
+                if (content.Value.Example != null)
+                {
+                    Writer.WriteLine(content.Value.Example);
+                }
+                else
+                {
+                    var schema = content.Value.Schema;
+                    if (schema == null) return;
+
+                    var schemaString = ConvertSchemaToJsonString(schema);
+                    JObject parsedJson = JObject.Parse(schemaString);
+                    JObject strippedJson = StripJsonDownToRequestObject(parsedJson);
+                    Writer.WriteLine(strippedJson.ToString(Formatting.Indented));
+                }
             }
         }
 
@@ -113,5 +150,105 @@ namespace Kiota.Builder.Writers
             Writer.Flush();
         }
 
+        private static string ConvertSchemaToJsonString(OpenApiSchema schema)
+        {
+            using (var stringWriter = new StringWriter())
+            {
+                // Create OpenApiWriterSettings with InlineReferencedSchemas set to true
+                var settings = new OpenApiWriterSettings
+                {
+                    InlineLocalReferences = true,
+                    InlineExternalReferences = true, // This will inline the references
+                };
+
+                var jsonWriter = new OpenApiJsonWriter(stringWriter, settings);
+
+                schema.SerializeAsV3WithoutReference(jsonWriter);
+
+                // Return the resulting JSON string
+                return stringWriter.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Recursively processes a JSON schema to remove `type` properties and replaces them with placeholders.
+        /// Handles primitive types (`string`, `integer`, `number`, `boolean`, `null`), arrays, objects, 
+        /// and special schema keywords (`enum`, `const`, `oneOf`, `anyOf`, `allOf`).
+        /// </summary>
+        /// <param name="obj">The JSON object (JObject) representing a schema.</param>
+        /// <returns>A new JObject with `type` properties stripped and replaced with placeholders.</returns>
+        private static JObject StripJsonDownToRequestObject(JObject obj)
+        {
+            if (obj.ContainsKey("properties"))
+            {
+                var propertiesObject = obj["properties"];
+
+                if (propertiesObject == null) return [];
+
+                JObject properties = (JObject)propertiesObject;
+
+                var newProperties = new JObject();
+
+                foreach (var property in properties)
+                {
+                    var propertyName = property.Key;
+
+                    if (property.Value is JObject propertyValue)
+                    {
+                        if (propertyValue.ContainsKey("type"))
+                        {
+                            var type = propertyValue["type"]?.ToString();
+
+                            // Handle primitive types
+                            if (type == "string" || type == "integer" || type == "number" || type == "boolean" || type == "null")
+                            {
+                                newProperties[propertyName] = propertyName;
+                            }
+                            else if (type == "object" && propertyValue.ContainsKey("properties"))
+                            {
+                                // Recursively handle child objects
+                                newProperties[propertyName] = StripJsonDownToRequestObject(propertyValue);
+                            }
+                            else if (type == "array" && propertyValue.ContainsKey("items"))
+                            {
+                                if (propertyValue["items"] is JObject items && items.ContainsKey("type"))
+                                {
+                                    var itemType = items["type"]?.ToString();
+
+                                    if (itemType == "string" || itemType == "integer" || itemType == "number" || itemType == "boolean" || itemType == "null")
+                                    {
+                                        newProperties[propertyName] = new JArray(propertyName); // Replace array with property name placeholder
+                                    }
+                                    else if (itemType == "object" && items.ContainsKey("properties"))
+                                    {
+                                        // Recursively process the object items within the array
+                                        newProperties[propertyName] = new JArray(StripJsonDownToRequestObject(items));
+                                    }
+                                }
+                            }
+                        }
+                        else if (propertyValue.ContainsKey("enum"))
+                        {
+                            // Handle enums, replace with property name
+                            newProperties[propertyName] = propertyName;
+                        }
+                        else if (propertyValue.ContainsKey("const"))
+                        {
+                            // Handle const, replace with property name
+                            newProperties[propertyName] = propertyName;
+                        }
+                        else if (propertyValue.ContainsKey("oneOf") || propertyValue.ContainsKey("anyOf") || propertyValue.ContainsKey("allOf"))
+                        {
+                            // Handle complex validation keywords like oneOf, anyOf, allOf
+                            newProperties[propertyName] = propertyName;
+                        }
+                    }
+                }
+
+                return newProperties;
+            }
+
+            return obj;
+        }
     }
 }
