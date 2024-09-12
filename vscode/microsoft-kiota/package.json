@@ -18,6 +18,13 @@
     "url": "https://github.com/microsoft/kiota.git",
     "type": "git"
   },
+  "keywords": [
+        "openapi",
+        "api client",
+        "copilot",
+        "api plugins",
+        "api manifest"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],

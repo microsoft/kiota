@@ -1,4 +1,4 @@
-# Microsoft Kiota
+# Kiota
 
 Kiota is a client/plugin/manifest generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
 Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability. It also helps with participating in the Microsoft Copilot ecosystem by enabling generation of API plugins.
