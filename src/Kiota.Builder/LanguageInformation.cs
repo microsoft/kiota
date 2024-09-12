@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
@@ -72,6 +73,12 @@ public record LanguageDependency : IOpenApiSerializable
 {
     public string Name { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
+    [JsonPropertyName("Type")]
+    public DependencyType? DependencyType
+    {
+        get; set;
+    }
+    private const string TypePropertyName = "type";
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
@@ -79,6 +86,10 @@ public record LanguageDependency : IOpenApiSerializable
         writer.WriteStartObject();
         writer.WriteProperty(nameof(Name).ToFirstCharacterLowerCase(), Name);
         writer.WriteProperty(nameof(Version).ToFirstCharacterLowerCase(), Version);
+        if (DependencyType is not null)
+        {
+            writer.WriteProperty(TypePropertyName, DependencyType.ToString());
+        }
         writer.WriteEndObject();
     }
     public static LanguageDependency Parse(IOpenApiAny source)
@@ -93,6 +104,10 @@ public record LanguageDependency : IOpenApiSerializable
         {
             extension.Version = versionValue.Value;
         }
+        if (rawObject.TryGetValue(TypePropertyName, out var typeValue) && typeValue is OpenApiString typeStringValue && Enum.TryParse<DependencyType>(typeStringValue.Value, true, out var parsedTypeValue))
+        {
+            extension.DependencyType = parsedTypeValue;
+        }
         return extension;
     }
 }
@@ -102,4 +117,14 @@ public enum LanguageMaturityLevel
     Experimental,
     Preview,
     Stable
+}
+
+public enum DependencyType
+{
+    Abstractions,
+    Serialization,
+    Authentication,
+    Http,
+    Bundle,
+    Additional
 }

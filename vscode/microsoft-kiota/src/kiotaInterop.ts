@@ -176,6 +176,8 @@ export interface LanguageDependency {
     Name: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Version: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    DependencyType: DependencyType;
 }
 export enum MaturityLevel {
     experimental = 0,
@@ -193,6 +195,32 @@ export function maturityLevelToString(level: MaturityLevel): string {
         default:
             throw new Error("unknown level");
     }
+}
+export enum DependencyType {
+  abstractions,
+  serialization,
+  authentication,
+  http,
+  bundle,
+  additional,
+}
+export function dependencyTypeToString(type: DependencyType): string {
+  switch (type) {
+    case DependencyType.abstractions:
+      return "abstractions";
+    case DependencyType.serialization:
+      return "serialization";
+    case DependencyType.authentication:
+      return "authentication";
+    case DependencyType.http:
+      return "http";
+    case DependencyType.bundle:
+      return "bundle";
+    case DependencyType.additional:
+      return "additional";
+    default:
+      throw new Error("unknown type");
+  }
 }
 export interface ConfigurationFile {
     version: string;
