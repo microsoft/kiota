@@ -325,6 +325,18 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
                     $"Example: kiota info {sourceArg} -l {language}");
     }
+    protected void DisplayDependenciesHint(GenerationLanguage generationLanguage)
+    {
+        DisplayHint("Legend:",
+                    "- Abstractions dependencies define the core concepts of the language. Required at build time.",
+                    "- Authentication dependencies implement authentication providers. Optional at runtime.",
+                    "- Additional dependencies are required in addition to the abstractions or bundle. Required at build time.",
+                    "- Bundle dependencies include abstractions, serialization and HTTP dependencies for simpler management.",
+                    "- HTTP dependencies implement the request adapter with a specific HTTP client. Required at runtime.",
+                    "- Serialization dependencies implement serialization and deserialization for a given format. Required at runtime.");
+        DisplayHint("Hint: use the --dependency-type argument to filter the dependencies by type.",
+                    $"Example: kiota info -l {generationLanguage} --dependency-type serialization");
+    }
     protected void DisplayInstallHint(LanguageInformation languageInformation, List<LanguageDependency> languageDependencies)
     {
         if (!string.IsNullOrEmpty(languageInformation.DependencyInstallCommand) && languageDependencies.Count > 0)

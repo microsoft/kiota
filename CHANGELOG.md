@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📢📢📢 The Visual Studio Code extension is now generally available!. [#5368](https://github.com/microsoft/kiota/issues/5368)
 - Fixed a stack overflow in the core generator caused by circular comparisons. [#5369](https://github.com/microsoft/kiota/issues/5369)
 - Fixed a bug where collection/array of primitive types members for union/intersection types would be ignored. [#5283](https://github.com/microsoft/kiota/issues/5283)
+- Updated dependencies command and view to reflect the availability of bundles. [#5317](https://github.com/microsoft/kiota/issues/5317)
 - Fixed a when generating a plugin when only an operation is selected in the root node in the extension. [#5300](https://github.com/microsoft/kiota/issues/5300)
 - Fixed a bug where function descriptions in plugin manifest defaults to path summary instead of description. [#5301](https://github.com/microsoft/kiota/issues/5301)
 - Fixed a bug where TypeScript would not properly build URIs with uppercase first characters query parameter names.[#5382](https://github.com/microsoft/kiota/issues/5382)

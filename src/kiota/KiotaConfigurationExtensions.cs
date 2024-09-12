@@ -45,6 +45,7 @@ internal static class KiotaConfigurationExtensions
                 {
                     Version = dependency[nameof(LanguageDependency.Version)] ?? string.Empty,
                     Name = dependency[nameof(LanguageDependency.Name)] ?? string.Empty,
+                    DependencyType = dependency["Type"] is string typeValue && !string.IsNullOrEmpty(typeValue) && Enum.TryParse<DependencyType>(typeValue, true, out var dt) ? dt : null,
                 });
             }
             configObject.Languages.Add(section.Key, lngInfo);
