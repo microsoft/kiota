@@ -80,5 +80,6 @@
   "Could not determine the workspace folder.": "Nepodařilo se určit složku pracovního prostoru.",
   "Client": "",
   "Copilot plugin": "",
-  "Other": ""
+  "Other": "",
+  "Create a new OpenAI plugin": ""
 }

@@ -79,5 +79,6 @@
   "Could not determine the workspace folder.": "无法确定工作区文件夹",
   "Client": "",
   "Copilot plugin": "",
-  "Other": ""
+  "Other": "",
+  "Create a new OpenAI plugin": ""
 }

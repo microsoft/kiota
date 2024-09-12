@@ -80,5 +80,6 @@
   "Could not determine the workspace folder.": "No se pudo determinar la carpeta de espacio de trabajo.",
   "Client": "",
   "Copilot plugin": "",
-  "Other": ""
+  "Other": "",
+  "Create a new OpenAI plugin": ""
 }

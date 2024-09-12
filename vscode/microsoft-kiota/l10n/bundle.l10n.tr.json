@@ -80,5 +80,6 @@
   "Could not determine the workspace folder.": "Çalışma alanı klasörü belirlenemedi.",
   "Client": "",
   "Copilot plugin": "",
-  "Other": ""
+  "Other": "",
+  "Create a new OpenAI plugin": ""
 }

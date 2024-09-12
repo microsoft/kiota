@@ -80,5 +80,6 @@
   "Could not determine the workspace folder.": "ワークスペースフォルダを特定できませんでした。",
   "Client": "",
   "Copilot plugin": "",
-  "Other": ""
+  "Other": "",
+  "Create a new OpenAI plugin": ""
 }
