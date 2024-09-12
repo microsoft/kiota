@@ -84,5 +84,6 @@
   "Client": "",
   "Copilot plugin": "",
   "Other": "",
-  "Create a new OpenAI plugin": ""
+  "Create a new OpenAI plugin": "",
+  "Choose a name for the OpenAI plugin": ""
 }
