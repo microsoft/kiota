@@ -79,5 +79,6 @@
   "Api clients migrated successfully!":"APIクライアントが正常に移行されました！",
   "Could not determine the workspace folder.": "ワークスペースフォルダを特定できませんでした。",
   "Client": "",
-  "Copilot plugin": ""
+  "Copilot plugin": "",
+  "Other": ""
 }

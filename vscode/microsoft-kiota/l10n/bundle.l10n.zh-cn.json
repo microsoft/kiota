@@ -78,5 +78,6 @@
   "API clients migrated successfully!":"Api客户端迁移成功!",
   "Could not determine the workspace folder.": "无法确定工作区文件夹",
   "Client": "",
-  "Copilot plugin": ""
+  "Copilot plugin": "",
+  "Other": ""
 }

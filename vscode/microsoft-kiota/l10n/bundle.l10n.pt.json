@@ -79,5 +79,6 @@
   "API clients migrated successfully!":"Clientes de APIs migrados com sucesso!",
   "Could not determine the workspace folder.": "Não foi possível determinar a pasta de trabalho.",
   "Client": "",
-  "Copilot plugin": ""
+  "Copilot plugin": "",
+  "Other": ""
 }
