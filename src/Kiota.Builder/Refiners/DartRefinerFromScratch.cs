@@ -105,6 +105,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
+            RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
 
 
