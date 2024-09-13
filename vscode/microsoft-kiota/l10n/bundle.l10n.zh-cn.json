@@ -68,6 +68,7 @@
   "OK": "OK",
   "Generating manifest...": "正在生成清单...",
   "Generating plugin...": "正在生成插件...",
+  "Plugin generated successfully.": "插件生成成功",
   "Re-generating client...": "重新生成客户端...",
   "Re-generating plugin...": "正在重新生成插件...",
   "Please migrate your API clients to Kiota workspace.":"请将您的 API 客户端迁移到 Kiota 工作区",

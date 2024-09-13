@@ -3,8 +3,9 @@ import * as vscode from 'vscode';
 import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
 
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
-import { isTemporaryDirectory } from './utilities/temporary-folder';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory, isValidUrl } from './util';
+import { IntegrationParams, isDeeplinkEnabled } from './utilities/deep-linking';
+import { isFilePath, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -72,28 +73,17 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        if (state.searchQuery && (isValidUrl(state.searchQuery) || isFilePath(state.searchQuery))) {
+            state.descriptionPath = state.searchQuery;
+            return;
+        }
         state.searchResults = await searchCallBack(state.searchQuery);
         if (state.searchResults && Object.keys(state.searchResults).length > 0) {
             return (input: MultiStepInput) => pickSearchResult(input, state);
         } else {
-            state.descriptionPath = state.searchQuery;
-            return (input: MultiStepInput) => inputPathOrUrl(input, state);
-        }
-    }
-
-    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
-        if (state.descriptionPath) {
+            vscode.window.showErrorMessage(l10n.t('No results found. Try pasting a path or url instead.'));
             return;
         }
-        state.descriptionPath = await input.showInputBox({
-            title,
-            step: step++,
-            totalSteps: 1,
-            value: state.descriptionPath || '',
-            prompt: l10n.t('Search or paste a path to an API description'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
     }
 
     async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
@@ -107,7 +97,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
         const pick = await input.showQuickPick({
             title,
             step: step++,
-            totalSteps: totalSteps,
+            totalSteps: totalSteps + 1,
             placeholder: l10n.t('Pick a search result'),
             items: items,
             shouldResume: shouldResume
@@ -118,7 +108,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, deepLinkParams?: Partial<IntegrationParams>) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -126,13 +116,13 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    const isDeepLinkPluginNameProvided = isDeeplinkEnabled && state.pluginName;
-    const isDeepLinkGenerationTypeProvided = isDeeplinkEnabled && state.generationType;
-    const isDeepLinkPluginTypeProvided = isDeeplinkEnabled && state.pluginTypes;
-    const isDeepLinkLanguageProvided = isDeeplinkEnabled && state.language;
-    const isDeepLinkOutputPathProvided = isDeeplinkEnabled && state.outputPath;
-    const isDeepLinkClientClassNameProvided = isDeeplinkEnabled && state.clientClassName;
-
+    const deeplinkEnabled = deepLinkParams && isDeeplinkEnabled(deepLinkParams);
+    const isDeepLinkPluginNameProvided = deeplinkEnabled && state.pluginName;
+    const isDeepLinkGenerationTypeProvided = deeplinkEnabled && state.generationType;
+    const isDeepLinkPluginTypeProvided = deeplinkEnabled && state.pluginTypes;
+    const isDeepLinkLanguageProvided = deeplinkEnabled && state.language;
+    const isDeepLinkOutputPathProvided = deeplinkEnabled && state.outputPath;
+    const isDeepLinkClientClassNameProvided = deeplinkEnabled && state.clientClassName;
 
     if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
@@ -143,6 +133,10 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     const appPackagePath = findAppPackageDirectory(workspaceFolder);
     if (appPackagePath) {
         workspaceFolder = appPackagePath;
+    }
+
+    if (isDeepLinkOutputPathProvided && deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
+        state.workingDirectory = state.outputPath as string;
     }
 
     let step = 1;

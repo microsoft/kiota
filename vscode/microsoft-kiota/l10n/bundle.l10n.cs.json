@@ -69,6 +69,7 @@
   "OK": "OK",
   "Generating manifest...": "Generování manifestu...",
   "Generating plugin...": "Generování pluginu...",
+  "Plugin generated successfully.": "Generování bylo úspěšně dokončeno",
   "Re-generating client...": "Opětovné generování klienta...",
   "Re-generating plugin...": "Opětovné generování pluginu...",
   "Please migrate your API clients to Kiota workspace.":"Prosím, přesuňte své klienty API do pracovního prostoru Kiota.",
