@@ -79,9 +79,9 @@
   "Migration failed":"Migracja nie powiodła się.",
   "API clients migrated successfully!":"Klienci API zostali pomyślnie przeniesieni!",
   "Could not determine the workspace folder.": "Nie można określić folderu przestrzeni roboczej.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Client": "Klient",
+  "Copilot plugin": "Plugin Copilot",
+  "Other": "Inne",
+  "Create a new OpenAI plugin": "Utwórz nowy plugin OpenAI",
+  "Choose a name for the OpenAI plugin": "Wybierz nazwę dla pluginu OpenAI"
 }
