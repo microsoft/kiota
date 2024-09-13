@@ -50,6 +50,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
             CorrectCommonNames(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"by{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.Dart);
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing
                 {

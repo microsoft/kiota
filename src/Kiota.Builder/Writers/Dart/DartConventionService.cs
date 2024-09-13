@@ -102,15 +102,21 @@ public class DartConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default, IEnumerable<CodeParameter>? customParameters = default)
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterLowerCase() : urlTemplateVarName;
+            if (customParameters?.Any() ?? false)
+            {
+                urlTplRef = TempDictionaryVarName;
+                writer.WriteLine($"var {urlTplRef} = Map.of({pathParametersProp.Name.ToFirstCharacterLowerCase()});");
+                foreach (var param in customParameters)
+                    writer.WriteLine($"{urlTplRef}.putIfAbsent(\"{param.Name.ToFirstCharacterLowerCase()}\", ()=> {param.Name.ToFirstCharacterLowerCase()});");
+            }
             writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterLowerCase()}{pathParametersSuffix});");
-
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";

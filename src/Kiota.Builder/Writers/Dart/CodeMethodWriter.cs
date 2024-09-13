@@ -81,6 +81,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             case CodeMethodKind.RawUrlConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer);
                 break;
+            case CodeMethodKind.IndexerBackwardCompatibility:
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderBody(parentClass, codeElement, writer);
                 break;
@@ -219,7 +220,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)), customParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Custom)));
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
