@@ -363,7 +363,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             state.pluginName = await input.showInputBox({
                 title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output name')}`,
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 value: state.pluginName ?? '',
                 placeholder: `${isManifest ? 'MyManifest' : 'MyOpenAIPlugin'}`,
                 prompt: `${isManifest ? l10n.t('Choose a name for the manifest') : l10n.t('Choose a name for the OpenAI plugin')}`,
@@ -381,7 +381,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             const selectedOption = await input.showQuickPick({
                 title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
