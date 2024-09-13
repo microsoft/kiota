@@ -58,7 +58,7 @@ tomlkit==0.13.2 ; python_version >= '3.7'
 
 typing-extensions==4.12.2 ; python_version >= '3.7'
 
-urllib3==2.2.2 ; python_version >= '3.7'
+urllib3==2.2.3 ; python_version >= '3.7'
 
 wrapt==1.15.0 ; python_version < '3.11'
 
@@ -76,7 +76,7 @@ async-timeout==4.0.3 ; python_version >= '3.6'
 
 attrs==24.2.0 ; python_version >= '3.7'
 
-azure-core==1.30.2 ; python_version >= '3.7'
+azure-core==1.31.0 ; python_version >= '3.7'
 
 azure-identity==1.17.1
 

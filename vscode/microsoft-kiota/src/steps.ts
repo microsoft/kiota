@@ -4,6 +4,7 @@ import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, Quic
 
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory, isValidUrl } from './util';
+import { IntegrationParams, isDeeplinkEnabled } from './utilities/deep-linking';
 import { isFilePath, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
@@ -107,7 +108,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, isDeeplinkEnabled?: boolean) {
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, deepLinkParams?: Partial<IntegrationParams>) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -115,13 +116,13 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    const isDeepLinkPluginNameProvided = isDeeplinkEnabled && state.pluginName;
-    const isDeepLinkGenerationTypeProvided = isDeeplinkEnabled && state.generationType;
-    const isDeepLinkPluginTypeProvided = isDeeplinkEnabled && state.pluginTypes;
-    const isDeepLinkLanguageProvided = isDeeplinkEnabled && state.language;
-    const isDeepLinkOutputPathProvided = isDeeplinkEnabled && state.outputPath;
-    const isDeepLinkClientClassNameProvided = isDeeplinkEnabled && state.clientClassName;
-
+    const deeplinkEnabled = deepLinkParams && isDeeplinkEnabled(deepLinkParams);
+    const isDeepLinkPluginNameProvided = deeplinkEnabled && state.pluginName;
+    const isDeepLinkGenerationTypeProvided = deeplinkEnabled && state.generationType;
+    const isDeepLinkPluginTypeProvided = deeplinkEnabled && state.pluginTypes;
+    const isDeepLinkLanguageProvided = deeplinkEnabled && state.language;
+    const isDeepLinkOutputPathProvided = deeplinkEnabled && state.outputPath;
+    const isDeepLinkClientClassNameProvided = deeplinkEnabled && state.clientClassName;
 
     if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
@@ -132,6 +133,10 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     const appPackagePath = findAppPackageDirectory(workspaceFolder);
     if (appPackagePath) {
         workspaceFolder = appPackagePath;
+    }
+
+    if (isDeepLinkOutputPathProvided && deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
+        state.workingDirectory = state.outputPath as string;
     }
 
     let step = 1;
