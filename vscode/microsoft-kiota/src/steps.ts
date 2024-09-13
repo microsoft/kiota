@@ -305,7 +305,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     }
     async function chooseOtherGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginTypeProvided) {
-            const items = ['API Manifest', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
+            const items = ['API Manifest', 'Open AI Plugin'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
                 title: l10n.t('Choose a type'),
                 step: step++,
