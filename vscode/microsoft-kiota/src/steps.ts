@@ -161,8 +161,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputClientClassName;
             case 'plugin':
                 return inputPluginName;
-            case 'apimanifest':
-                return inputPluginType;
+            case 'other':
+                return chooseOtherGenerationType;
             default:
                 throw new Error('unknown generation type');
         }
@@ -190,7 +190,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 state.generationType = "plugin";
             }
             else if (option.label === l10n.t('Other')) {
-                state.generationType = "apimanifest";
+                state.generationType = "other";
             }
         }
         let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
@@ -303,7 +303,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         updateWorkspaceFolder(state.pluginName);
         return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
-    async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function chooseOtherGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginTypeProvided) {
             const items = ['API Manifest', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
@@ -318,7 +318,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
             pluginTypes.label === 'API Manifest' ? state.generationType = 'apimanifest' : state.generationType = 'plugin';
         }
-        return (input: MultiStepInput) => inputManifestName(input, state);
+        return (input: MultiStepInput) => inputOtherGenerationTypeName(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (!isDeepLinkOutputPathProvided) {
@@ -357,7 +357,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             break;
         }
     }
-    async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function inputOtherGenerationTypeName(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginNameProvided) {
             const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
             state.pluginName = await input.showInputBox({
@@ -372,9 +372,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             });
         }
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputManifestOutputPath(input, state);
+        return (input: MultiStepInput) => inputOtherGenerationTypeOutputPath(input, state);
     }
-    async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function inputOtherGenerationTypeOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (true) {
             const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
 
