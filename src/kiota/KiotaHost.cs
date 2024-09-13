@@ -369,6 +369,7 @@ public static partial class KiotaHost
     {
         var accessOption = new Option<AccessModifier>("--type-access-modifier", "The type access modifier to use for the client types.");
         accessOption.AddAlias("--tam");
+        accessOption.SetDefaultValue(AccessModifier.Public);
         AddEnumValidator(accessOption, "type-access-modifier");
         return accessOption;
     }
