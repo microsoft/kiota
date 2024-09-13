@@ -77,9 +77,9 @@
   "Migration failed":"Миграция не удалась",
   "API clients migrated successfully!" : "Клиенты API успешно перенесены!",
   "Could not determine the workspace folder.": "Не удалось определить папку рабочего пространства.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Client": "Клиент",
+  "Copilot plugin": "Плагин Copilot",
+  "Other": "Другое",
+  "Create a new OpenAI plugin": "Создать новый плагин OpenAI",
+  "Choose a name for the OpenAI plugin": "Выберите название для плагина OpenA"
 }
