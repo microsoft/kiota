@@ -19,7 +19,6 @@ sudo dotnet workload restore
 # On Windows, run the following command in an elevated prompt
 dotnet workload restore
 # then
-dotnet restore
 dotnet build
 ```
 

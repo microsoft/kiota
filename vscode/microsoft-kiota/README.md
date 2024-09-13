@@ -16,7 +16,7 @@ Using kiota you can:
 
 All that in a matter of seconds.
 
-## Microsoft Kiota extension for Visual Studio Code 
+## Kiota extension for Visual Studio Code 
 
 This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension adds a rich UI for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more! 
 
@@ -55,7 +55,7 @@ Finally, the notification bar at the bottom right will display "Generation Compl
 
 ## Migrating from older use of lock file to a workspace.json
 
-Latest Kiota extension has been improved to using a workspace instead of a lock file to facilitate having multiple clients, plugins, or manifests within the same workspace. The workspace.json file also provides an opportunity to edit, or regenerate the outputs conveniently.
+The latest version of the Kiota extension has been improved to using a workspace instead of a lock file to facilitate having multiple clients, plugins, or manifests within the same workspace. The workspace.json file also provides an opportunity to edit, or regenerate the outputs conveniently.
 
 <img width="482" alt="Working with the extension's workspace" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/GenerationMultipleClientsSameWorkspace.png">
 
