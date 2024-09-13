@@ -41,7 +41,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.WriteLine(GeneratedCodeAttribute);
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        writer.WriteLine($"public partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
+        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
     }
