@@ -282,6 +282,7 @@ export async function activate(
         }));
         if (config.descriptionPath) {
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
+          void vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from ') + openApiTreeProvider.apiTitle);
         }
       }
     ),
