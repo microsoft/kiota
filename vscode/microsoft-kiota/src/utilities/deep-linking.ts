@@ -4,7 +4,8 @@ import { getSanitizedString, parseGenerationLanguage, allGenerationLanguagesToSt
 import { createTemporaryFolder } from "./temporary-folder";
 
 export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): boolean {
-  return Object.keys(deepLinkParams).length > 0;
+  const minimumNumberOfParams = 1;
+  return Object.values(deepLinkParams).filter(property => property).length >= minimumNumberOfParams;
 }
 
 export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
