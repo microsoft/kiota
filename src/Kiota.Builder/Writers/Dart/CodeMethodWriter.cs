@@ -608,7 +608,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var genericTypePrefix = isVoid ? string.Empty : "<";
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
+        var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? "void" : returnType;
         var async = code.IsAsync ? " async" : string.Empty;
         if (code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor))
             voidCorrectedTaskReturnType = $"IEnumerable<{voidCorrectedTaskReturnType.StripArraySuffix()}>";
