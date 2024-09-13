@@ -123,7 +123,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
     }
-    
+
     [Theory]
     [InlineData(AccessModifier.Public)]
     [InlineData(AccessModifier.Internal)]

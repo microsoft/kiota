@@ -924,7 +924,7 @@ public class CSharpLanguageRefinerTests
         {
             Name = "Enum1",
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp, TypeAccessModifier = accessModifier}, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp, TypeAccessModifier = accessModifier }, root);
         Assert.Equal(codeClass.Access, accessModifier);
         Assert.Equal(codeEnum.Access, accessModifier);
     }

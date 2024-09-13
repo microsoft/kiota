@@ -139,7 +139,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Matches(GeneratedCodePattern, result);
     }
-    
+
     [Theory]
     [InlineData(AccessModifier.Public)]
     [InlineData(AccessModifier.Internal)]
