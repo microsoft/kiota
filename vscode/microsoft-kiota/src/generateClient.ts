@@ -24,35 +24,31 @@ export function generateClient(context: vscode.ExtensionContext,
   operation: ConsumerOperation,
   workingDirectory: string = getWorkspaceJsonDirectory()
 ): Promise<KiotaLogEntry[] | undefined> {
-  try {
-    return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
-      const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-        "Generate"
-      );
-      return await connection.sendRequest(
-        request,
-        {
-          cleanOutput: cleanOutput,
-          clearCache: clearCache,
-          clientClassName: clientClassName,
-          clientNamespaceName: clientNamespaceName,
-          deserializers: deserializers,
-          disabledValidationRules: disableValidationRules,
-          excludeBackwardCompatible: excludeBackwardCompatible,
-          excludePatterns: excludeFilters,
-          includeAdditionalData: includeAdditionalData,
-          includePatterns: includeFilters,
-          language: language,
-          openAPIFilePath: descriptionPath,
-          outputPath: output,
-          serializers: serializers,
-          structuredMimeTypes: structuredMimeTypes,
-          usesBackingStore: usesBackingStore,
-          operation: operation
-        } as GenerationConfiguration,
-      );
-    }, workingDirectory);
-  } catch (error) {
-    return Promise.resolve(undefined);
-  }
+  return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
+    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
+      "Generate"
+    );
+    return await connection.sendRequest(
+      request,
+      {
+        cleanOutput: cleanOutput,
+        clearCache: clearCache,
+        clientClassName: clientClassName,
+        clientNamespaceName: clientNamespaceName,
+        deserializers: deserializers,
+        disabledValidationRules: disableValidationRules,
+        excludeBackwardCompatible: excludeBackwardCompatible,
+        excludePatterns: excludeFilters,
+        includeAdditionalData: includeAdditionalData,
+        includePatterns: includeFilters,
+        language: language,
+        openAPIFilePath: descriptionPath,
+        outputPath: output,
+        serializers: serializers,
+        structuredMimeTypes: structuredMimeTypes,
+        usesBackingStore: usesBackingStore,
+        operation: operation
+      } as GenerationConfiguration,
+    );
+  }, workingDirectory);
 };
