@@ -4,18 +4,19 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import * as crypto from 'crypto';
-import { 
-    ClientObjectProperties, 
-    ClientOrPluginProperties, 
-    connectToKiota, 
-    KiotaGetManifestDetailsConfiguration, 
-    KiotaLogEntry, 
-    KiotaManifestResult, 
-    KiotaOpenApiNode, 
-    KiotaShowConfiguration, 
-    KiotaShowResult, 
-    ConfigurationFile, 
-    PluginObjectProperties } from './kiotaInterop';
+import {
+    ClientObjectProperties,
+    ClientOrPluginProperties,
+    connectToKiota,
+    KiotaGetManifestDetailsConfiguration,
+    KiotaLogEntry,
+    KiotaManifestResult,
+    KiotaOpenApiNode,
+    KiotaShowConfiguration,
+    KiotaShowResult,
+    ConfigurationFile,
+    PluginObjectProperties
+} from './kiotaInterop';
 import { ExtensionSettings } from './extensionSettings';
 import { treeViewId } from './constants';
 import { updateTreeViewIcons } from './util';
@@ -233,6 +234,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
 
     private hashDescription(description: KiotaOpenApiNode | undefined): string {
+        if (!description) {
+            return '';
+        }
         const json = JSON.stringify(description);
         return crypto.createHash('sha256').update(json).digest('hex');
     }
@@ -244,7 +248,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const currentStateHash = this.hashDescription(this.rawRootNode);
         return currentStateHash !== this.initialStateHash;
     }
-    
+
     public resetInitialState(): void {
         this.initialStateHash = this.hashDescription(this.rawRootNode);
     }
@@ -268,7 +272,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
                 if (parent && !parent.selected) {
                     let operationPath = currentNode.path.replace(/\\/g, pathSeparator);
-                    if(operationPath.startsWith('#')) {//its a operation at the root it needs a leading slash
+                    if (operationPath.startsWith('#')) {//its a operation at the root it needs a leading slash
                         operationPath = `${pathSeparator}${operationPath}`;
                     }
                     result.push(operationPath);
@@ -316,35 +320,39 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
-        const result = await connectToKiota(this.context, async (connection) => {
-            const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
-            return await connection.sendRequest(request, {
-                includeFilters: this.includeFilters,
-                excludeFilters: this.excludeFilters,
-                descriptionPath: this.descriptionUrl,
-                clearCache
+        try {
+            const result = await connectToKiota(this.context, async (connection) => {
+                const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
+                return await connection.sendRequest(request, {
+                    includeFilters: this.includeFilters,
+                    excludeFilters: this.excludeFilters,
+                    descriptionPath: this.descriptionUrl,
+                    clearCache
+                });
             });
-        });
-        if (result) {
-            this.apiTitle = result.apiTitle;
-            if (result.rootNode) {
-                if (this.includeFilters.length === 0) {
-                    this.setAllSelected(result.rootNode, false);
+            if (result) {
+                this.apiTitle = result.apiTitle;
+                if (result.rootNode) {
+                    if (this.includeFilters.length === 0) {
+                        this.setAllSelected(result.rootNode, false);
+                    }
+                    this.rawRootNode = result.rootNode;
+                    if (clientNameOrPluginName) {
+                        this.rawRootNode = createKiotaOpenApiNode(
+                            clientNameOrPluginName,
+                            '/',
+                            [this.rawRootNode],
+                            false,
+                            false,
+                            undefined,
+                            clientNameOrPluginName
+                        );
+                    }
+                    await updateTreeViewIcons(treeViewId, true, false);
                 }
-                this.rawRootNode = result.rootNode;
-                if (clientNameOrPluginName) {
-                    this.rawRootNode = createKiotaOpenApiNode(
-                        clientNameOrPluginName,
-                        '/',
-                        [this.rawRootNode],
-                        false,
-                        false,
-                        undefined,
-                        clientNameOrPluginName
-                    );
-                }
-               await updateTreeViewIcons(treeViewId, true, false);
             }
+        } catch (err) {
+            vscode.window.showErrorMessage((err as Error)?.message || 'An unknown error occurred');
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {

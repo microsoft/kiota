@@ -31,3 +31,12 @@ function createFolderInFileSystem(directoryPath: string) {
 export function isTemporaryDirectory(path: string): boolean {
   return path.startsWith(os.tmpdir());
 }
+
+export function isFilePath(filePath: string): boolean {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.isFile();
+  } catch (e) {
+    return false;
+  }
+}

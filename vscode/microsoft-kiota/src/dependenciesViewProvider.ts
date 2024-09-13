@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { KiotaGenerationLanguage } from './enums';
-import { generationLanguageToString, LanguageInformation, LanguagesInformation } from './kiotaInterop';
+import { DependencyType, dependencyTypeToString, generationLanguageToString, LanguageInformation, LanguagesInformation } from './kiotaInterop';
 
 export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
@@ -39,8 +39,17 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
         const noLanguageSelected = vscode.l10n.t('No language selected, select a language first');
         const title = vscode.l10n.t('Kiota Dependencies Information');
         const dependencies = vscode.l10n.t('Dependencies');
+        const name = vscode.l10n.t('Name');
+        const version = vscode.l10n.t('Version');
+        const type = vscode.l10n.t('Type');
+        let dependenciesList = this._languageInformation ?
+                                this._languageInformation.Dependencies :
+                                [];
+        if (dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle).length > 0) {
+            dependenciesList = dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle || dep.DependencyType === DependencyType.additional || dep.DependencyType === DependencyType.authentication);
+        }
         const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>${installationCommands}</h2>
-            <pre>${this._languageInformation.Dependencies.map(dep => this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version)).join('\n')}</pre>`
+            <pre>${dependenciesList.map(dep => this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version)).join('\n')}</pre>`
         : '';
 
 		return `<!DOCTYPE html>
@@ -55,9 +64,10 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
 			<body>
                 <h1>${this._language !== undefined ? generationLanguageToString(this._language) : noLanguageSelected}</h1>
                 <h2>${dependencies}</h2>
-				<ul>
-                    ${this._languageInformation ? this._languageInformation?.Dependencies.map(dep => `<li>${dep.Name} (${dep.Version})</li>`).join('') : ''}
-				</ul>
+                <table>
+                    <tr><th>${name}</th><th>${version}</th><th>${type}</th></tr>
+                    ${dependenciesList.map(dep => `<tr><td>${dep.Name}</td><td>${dep.Version}</td><td>${dependencyTypeToString(dep.DependencyType)}</td></tr>`).join('')}
+                </table>
                 ${installationBlock}
 			</body>
 			</html>`;

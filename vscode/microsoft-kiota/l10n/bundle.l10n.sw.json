@@ -69,6 +69,7 @@
   "OK": "Sawa",
   "Generating manifest...": "Inatengeneza  dhariri..",
   "Generating plugin...": "Inatengeneza programu-jalizi...",
+  "Plugin generated successfully.": "programu-jalizi imefanikiwa kuundwa.",
   "Re-generating client...": "Inatengeneza mteja upya...",
   "Re-generating plugin...": "Inatengeneza programu-jalizi upya ...",
   "Please migrate your API clients to Kiota workspace." : "Tafadhali hamisha wateja wako wa API kwenye nafasi ya kazi ya Kiota.",

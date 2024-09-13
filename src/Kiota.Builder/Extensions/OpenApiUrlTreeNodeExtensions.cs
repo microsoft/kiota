@@ -294,7 +294,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "")
     {
         if (string.IsNullOrEmpty(original)) return original;
-        return removePctEncodedCharacters().Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
+        return removePctEncodedCharacters().Replace(original.ToOriginalCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
     }
     private const string DeduplicatedSegmentKey = "x-ms-kiota-deduplicatedSegment";
     public static string DeduplicatedSegment(this OpenApiUrlTreeNode currentNode)

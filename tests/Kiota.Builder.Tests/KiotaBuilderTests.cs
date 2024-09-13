@@ -1827,10 +1827,10 @@ paths:
             .SingleOrDefault(static cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "ConsistencyLevel" && p.Kind == CodeParameterKind.Headers));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "select" && p.Kind == CodeParameterKind.QueryParameter));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));
+        Assert.Single(parameters.Where(p => "IfMatch".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers));
+        Assert.Single(parameters.Where(p => "ConsistencyLevel".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers));
+        Assert.Single(parameters.Where(p => "select".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.QueryParameter));
+        Assert.Single(parameters.Where(p => "scope".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Path));
     }
     [Fact]
     public void DeduplicatesConflictingParameterNamesForCLI()
