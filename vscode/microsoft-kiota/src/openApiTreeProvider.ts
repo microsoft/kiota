@@ -292,7 +292,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return;
         }
-        this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase()).sort();
+        this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase()).sort((a, b) => a.localeCompare(b));
         this.refreshView();
     }
     public get filter(): string {
