@@ -77,10 +77,5 @@
   "Migration completed, but no changes were detected.":"Migração concluída. Nenhuma mudança foi realizada.",
   "Migration failed":"A migração falhou",
   "API clients migrated successfully!":"Clientes de APIs migrados com sucesso!",
-  "Could not determine the workspace folder.": "Não foi possível determinar a pasta de trabalho.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Could not determine the workspace folder.": "Não foi possível determinar a pasta de trabalho."
 }

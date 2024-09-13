@@ -77,10 +77,5 @@
   "Migration completed, but no changes were detected.":"Taşıma tamamlandı, ancak herhangi bir değişiklik tespit edilmedi.",
   "Migration failed":"Taşıma başarısız oldu.",
   "API clients migrated successfully!":"API istemcileri başarıyla taşındı!",
-  "Could not determine the workspace folder.": "Çalışma alanı klasörü belirlenemedi.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Could not determine the workspace folder.": "Çalışma alanı klasörü belirlenemedi."
 }

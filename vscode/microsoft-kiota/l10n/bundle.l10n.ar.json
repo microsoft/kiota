@@ -77,10 +77,5 @@
   "Migration completed, but no changes were detected.": "تم الانتهاء من الترحيل، ولكن لم يتم اكتشاف أي تغييرات.",
   "Migration failed":"فشل الترحيل",
   "API clients migrated successfully!":"تم ترحيل عملاء API بنجاح!",
-  "Could not determine the workspace folder.": "لا يمكن تحديد مجلد مساحة العمل.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Could not determine the workspace folder.": "لا يمكن تحديد مجلد مساحة العمل."
 }

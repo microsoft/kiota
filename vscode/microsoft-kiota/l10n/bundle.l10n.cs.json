@@ -78,10 +78,5 @@
   "Migration completed, but no changes were detected.":"Migrace dokončena, ale nebyly zjištěny žádné změny.",
   "Migration failed":"Migrace selhala.",
   "API clients migrated successfully!":"Klienti API byli úspěšně přesunuti!",
-  "Could not determine the workspace folder.": "Nepodařilo se určit složku pracovního prostoru.",
-  "Client": "",
-  "Copilot plugin": "",
-  "Other": "",
-  "Create a new OpenAI plugin": "",
-  "Choose a name for the OpenAI plugin": ""
+  "Could not determine the workspace folder.": "Nepodařilo se určit složku pracovního prostoru."
 }
