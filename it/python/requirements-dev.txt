@@ -76,7 +76,7 @@ async-timeout==4.0.3 ; python_version >= '3.6'
 
 attrs==24.2.0 ; python_version >= '3.7'
 
-azure-core==1.30.2 ; python_version >= '3.7'
+azure-core==1.31.0 ; python_version >= '3.7'
 
 azure-identity==1.17.1
 
