@@ -2,8 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.18.100000002] - 2024-09-12
+## [Unreleased]
 
 ### Added
 
-- Extension Released for GA
+- TTK integration
+- Deep linking
+- Lockfile to Workspace Migration
+- Bug fixes
+
+### Changed
+- Kiota extension logo [#5399](https://github.com/microsoft/kiota/issues/5399)
