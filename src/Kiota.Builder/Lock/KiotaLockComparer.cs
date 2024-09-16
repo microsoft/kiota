@@ -35,6 +35,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
                && _stringComparer.Equals(x.ClientClassName, y.ClientClassName)
                && _stringComparer.Equals(x.ClientNamespaceName, y.ClientNamespaceName)
                && _stringComparer.Equals(x.Language, y.Language)
+               && _stringComparer.Equals(x.TypeAccessModifier, y.TypeAccessModifier)
                && _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
                && _stringIEnumerableDeepComparer.Equals(x.Serializers, y.Serializers)
                && _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers)
@@ -56,6 +57,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         hash.Add(obj.ClientClassName, _stringComparer);
         hash.Add(obj.ClientNamespaceName, _stringComparer);
         hash.Add(obj.Language, _stringComparer);
+        hash.Add(obj.TypeAccessModifier, _stringComparer);
         hash.Add(obj.ExcludeBackwardCompatible);
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);

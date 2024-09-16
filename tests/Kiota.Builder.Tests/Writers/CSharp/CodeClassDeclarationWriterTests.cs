@@ -123,4 +123,15 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Matches(CodeEnumWriterTests.GeneratedCodePattern, result);
     }
+
+    [Theory]
+    [InlineData(AccessModifier.Public)]
+    [InlineData(AccessModifier.Internal)]
+    public void WritesAccessModifier(AccessModifier accessModifier)
+    {
+        parentClass.Access = accessModifier;
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains($"{accessModifier.ToString().ToLower()} partial class", result);
+    }
 }
