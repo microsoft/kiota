@@ -197,7 +197,7 @@ public class DartConventionService : CommonLanguageConventionService
             {
                 collectionPrefix = "List<";
             }
-            var collectionSuffix = currentType.CollectionKind == CodeTypeCollectionKind.None ? string.Empty : ">";
+            var collectionSuffix = currentType.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : ">";
             var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
