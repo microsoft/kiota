@@ -30,7 +30,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
             if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
-                writer.WriteLine($"if({parameterName} != null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
+                writer.WriteLine($"if({parameterName} == null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
         }
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
 
@@ -120,7 +120,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
     private void WriteFactoryMethodBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        writer.StartBlock($"return {DiscriminatorMappingVarName} switch {{");
+        writer.StartBlock($"return switch({DiscriminatorMappingVarName}) {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
             writer.WriteLine($"\"{mappedType.Key}\" => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
@@ -206,7 +206,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")?.GetStringValue();");
+        {
+            var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+            discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{discriminatorPropertyName}\")?.getStringValue();");
+        }
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
@@ -232,7 +236,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl != null || {requestAdapterPropertyName}.baseUrl!.isEmpty) {{");
+            writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl == null || {requestAdapterPropertyName}.baseUrl!.isEmpty) {{");
             writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
             if (pathParametersProperty != null)
@@ -346,7 +350,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     .Where(static x => !x.ExistsInBaseType)
                     .OrderBy(static x => x.Name)
                     .Select(x =>
-                        $"{DeserializerVarName}['{x.WireName}'] = (node) => {x.WireName} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
+                        $"{DeserializerVarName}['{x.WireName}'] = (node) => {x.Name.ToFirstCharacterLowerCase()} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }

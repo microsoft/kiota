@@ -2,6 +2,7 @@
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, DartConventionService>
@@ -22,7 +23,7 @@ public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, DartConventionServ
             writer.WriteLine($"{classElement.Name.ToFirstCharacterUpperCase()} clone() {{");
             writer.IncreaseIndent();
             var constructor = classElement.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
-            String? argumentList = constructor?.Parameters.Select(static x => x.Name).Aggregate(static (x, y) => $"{x}, {y}");
+            String? argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer()).Select(static x => x.Name).Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"return {classElement.Name.ToFirstCharacterUpperCase()}({argumentList});");
             writer.DecreaseIndent();
             writer.WriteLine("}");
