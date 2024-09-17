@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Globalization;
 using System.Linq;
 
@@ -192,12 +193,11 @@ public class DartConventionService : CommonLanguageConventionService
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
             var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
             var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "Iterable<" : string.Empty;
-            var collectionSuffix = currentType.CollectionKind switch
+            if (currentType.CollectionKind == CodeTypeCollectionKind.Array && includeCollectionInformation)
             {
-                CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
-                CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
-                _ => string.Empty,
-            };
+                collectionPrefix = "List<";
+            }
+            var collectionSuffix = currentType.CollectionKind == CodeTypeCollectionKind.None ? string.Empty : ">";
             var genericParameters = currentType.GenericTypeParameterValues.Count != 0 ?
                 $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
                 string.Empty;
