@@ -75,18 +75,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         {
             var discriminatorInformation = (method.Parent as IDiscriminatorInformationHolder)!.DiscriminatorInformation;
             var discriminatorMappings = discriminatorInformation.DiscriminatorMappings;
-            foreach(var discriminatorMapping in discriminatorMappings) {
+            foreach (var discriminatorMapping in discriminatorMappings)
+            {
                 var className = discriminatorMapping.Value.Name;
-                // ToSnakeCase does not process strings starting with a capital letter correctly
-                // so we change the first lettter to lower case
-                className = $"./{string.Concat(className[..1].ToLowerInvariant(), className.AsSpan(1))}";
-                classDeclaration.AddUsings(new CodeUsing {
+                classDeclaration.AddUsings(new CodeUsing
+                {
                     Name = className,
-                    Declaration = new()
-                    {
-                        Name = className,
-                        IsExternal = false,
-                    }
+                    Declaration = discriminatorMapping.Value
                 });
             }
         }
