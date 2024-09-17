@@ -79,7 +79,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 }, addCurrentTypeAsGenericTypeParameter: true);
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, false, codeTypeFilter);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -111,7 +111,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-
 
         }, cancellationToken);
     }
