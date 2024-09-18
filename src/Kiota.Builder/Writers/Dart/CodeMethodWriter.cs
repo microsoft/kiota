@@ -370,7 +370,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"getCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
                 else
-                    return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
+                    return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.createFromDiscriminatorValue){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
                 return $"getEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>()";
@@ -378,7 +378,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         return propertyType switch
         {
             "byte[]" => "getByteArrayValue()",
-            String => "getStringValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.createFromDiscriminatorValue)",
         };

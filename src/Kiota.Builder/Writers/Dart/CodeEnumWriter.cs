@@ -4,6 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
@@ -16,7 +17,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any())
             return;
-
+        DartReservedNamesProvider reservedNamesProvider = new DartReservedNamesProvider();
         conventions.WriteShortDescription(codeElement, writer);
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
@@ -26,14 +27,13 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
-            if (IsAllCapital(option.Name))
+            var value = option.Name.ToLowerInvariant().ToCamelCase('_');
+            if (reservedNamesProvider.ReservedNames.Contains(value))
             {
-                writer.WriteLine($"{option.Name}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+                value = value.ToUpperInvariant();
             }
-            else
-            {
-                writer.WriteLine($"{option.Name.ToFirstCharacterLowerCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
-            }
+            writer.WriteLine($"{value}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+
             idx++;
         }
     }
