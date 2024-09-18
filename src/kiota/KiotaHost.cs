@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
@@ -364,6 +365,21 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<AccessModifier> GetTypeAccessModifierOption()
+    {
+        var accessOption = new Option<AccessModifier>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        accessOption.SetDefaultValue(AccessModifier.Public);
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
+    }
+    internal static Option<AccessModifier?> GetOptionalTypeAccessModifierOption()
+    {
+        var accessOption = new Option<AccessModifier?>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
+    }
     internal static Option<string> GetNamespaceOption(string defaultNamespaceName)
     {
         var namespaceOption = new Option<string>("--namespace-name", () => defaultNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
@@ -432,6 +448,8 @@ public static partial class KiotaHost
         classOption.ArgumentHelpName = "name";
         AddStringRegexValidator(classOption, classNameRegex(), "class name");
 
+        var typeAccessModifierOption = GetTypeAccessModifierOption();
+
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
         var logLevelOption = GetLogLevelOption();
@@ -474,6 +492,7 @@ public static partial class KiotaHost
             outputOption,
             languageOption,
             classOption,
+            typeAccessModifierOption,
             namespaceOption,
             logLevelOption,
             backingStoreOption,
@@ -496,6 +515,7 @@ public static partial class KiotaHost
             OutputOption = outputOption,
             LanguageOption = languageOption,
             ClassOption = classOption,
+            TypeAccessModifierOption = typeAccessModifierOption,
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,

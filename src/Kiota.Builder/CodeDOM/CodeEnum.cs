@@ -5,9 +5,10 @@ using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 #pragma warning disable CA1711
-public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition, IDeprecableElement
+public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition, IDeprecableElement, IAccessibleElement
 {
 #pragma warning restore CA2227
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool Flags
     {
         get; set;

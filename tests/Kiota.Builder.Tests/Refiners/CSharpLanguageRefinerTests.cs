@@ -910,5 +910,23 @@ public class CSharpLanguageRefinerTests
         Assert.Equal("Microsoft.Kiota.Abstractions.Serialization", nodeUsing[0].Declaration.Name);
 
     }
+    [Theory]
+    [InlineData(AccessModifier.Public)]
+    [InlineData(AccessModifier.Internal)]
+    public async Task SetTypeAccessModifierAsync(AccessModifier accessModifier)
+    {
+        var codeClass = root.AddClass(new CodeClass
+        {
+            Name = "Class1",
+            Kind = CodeClassKind.Model
+        }).First();
+        var codeEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "Enum1",
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp, TypeAccessModifier = accessModifier }, root);
+        Assert.Equal(codeClass.Access, accessModifier);
+        Assert.Equal(codeEnum.Access, accessModifier);
+    }
     #endregion
 }
