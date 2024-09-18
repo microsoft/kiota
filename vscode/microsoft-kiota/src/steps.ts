@@ -161,15 +161,19 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputClientClassName;
             case 'plugin':
                 return inputPluginName;
-            case 'apimanifest':
-                return inputManifestName;
+            case 'other':
+                return chooseOtherGenerationType;
             default:
                 throw new Error('unknown generation type');
         }
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkGenerationTypeProvided) {
-            const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
+            const items = [
+                l10n.t('Client'),
+                l10n.t('Copilot plugin'),
+                l10n.t('Other')
+            ];
             const option = await input.showQuickPick({
                 title: l10n.t('What do you want to generate?'),
                 step: step++,
@@ -179,14 +183,14 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            if (option.label === l10n.t('Generate an API client')) {
+            if (option.label === l10n.t('Client')) {
                 state.generationType = "client";
             }
-            else if (option.label === l10n.t('Generate a plugin')) {
+            else if (option.label === l10n.t('Copilot plugin')) {
                 state.generationType = "plugin";
             }
-            else if (option.label === l10n.t('Generate an API manifest')) {
-                state.generationType = "apimanifest";
+            else if (option.label === l10n.t('Other')) {
+                state.generationType = "other";
             }
         }
         let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
@@ -287,7 +291,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             state.pluginName = await input.showInputBox({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
                 step: step++,
-                totalSteps: 4,
+                totalSteps: 3,
                 value: state.pluginName ?? '',
                 placeholder: 'MyPlugin',
                 prompt: l10n.t('Choose a name for the plugin'),
@@ -295,14 +299,15 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 shouldResume: shouldResume
             });
         }
+        state.pluginTypes = ['ApiPlugin'];
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputPluginType(input, state);
+        return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
-    async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function chooseOtherGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginTypeProvided) {
-            const items = ['API Plugin', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
+            const items = ['API Manifest', 'Open AI Plugin'].map(x => ({ label: x }) as QuickPickItem);
             const pluginTypes = await input.showQuickPick({
-                title: l10n.t('Choose a plugin type'),
+                title: l10n.t('Choose a type'),
                 step: step++,
                 totalSteps: 4,
                 placeholder: l10n.t('Select an option'),
@@ -310,9 +315,13 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'API Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
+            pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
+            
         }
-        return (input: MultiStepInput) => inputPluginOutputPath(input, state);
+
+        Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest') ?
+            state.generationType = 'apimanifest' : state.generationType = 'plugin';
+        return (input: MultiStepInput) => inputOtherGenerationTypeName(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (!isDeepLinkOutputPathProvided) {
@@ -351,28 +360,31 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             break;
         }
     }
-    async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function inputOtherGenerationTypeName(input: MultiStepInput, state: Partial<GenerateState>) {
         if (!isDeepLinkPluginNameProvided) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
             state.pluginName = await input.showInputBox({
-                title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output name')}`,
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 value: state.pluginName ?? '',
-                placeholder: 'MyManifest',
-                prompt: l10n.t('Choose a name for the manifest'),
+                placeholder: `${isManifest ? 'MyManifest' : 'MyOpenAIPlugin'}`,
+                prompt: `${isManifest ? l10n.t('Choose a name for the manifest') : l10n.t('Choose a name for the OpenAI plugin')}`,
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
         }
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputManifestOutputPath(input, state);
+        return (input: MultiStepInput) => inputOtherGenerationTypeOutputPath(input, state);
     }
-    async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function inputOtherGenerationTypeOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (true) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
+
             const selectedOption = await input.showQuickPick({
-                title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
                 step: step++,
-                totalSteps: 3,
+                totalSteps: 4,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume

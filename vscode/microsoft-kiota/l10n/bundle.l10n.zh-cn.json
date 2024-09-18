@@ -77,5 +77,10 @@
   "Migration completed, but no changes were detected.":"迁移已完成，但未检测到任何更改",
   "Migration failed":"迁移失败",
   "API clients migrated successfully!":"Api客户端迁移成功!",
-  "Could not determine the workspace folder.": "无法确定工作区文件夹"
+  "Could not determine the workspace folder.": "无法确定工作区文件夹",
+  "Client": "客户",
+  "Copilot plugin": "Copilot插件",
+  "Other": "其他",
+  "Create a new OpenAI plugin": "创建一个新的 OpenAI 插件",
+  "Choose a name for the OpenAI plugin": "为 OpenAI 插件选择一个名称"
 }
