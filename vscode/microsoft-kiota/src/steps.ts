@@ -315,7 +315,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            state.pluginTypes = pluginTypes;
+            pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
+            
         }
 
         Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest') ?
