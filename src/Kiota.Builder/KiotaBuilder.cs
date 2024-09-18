@@ -634,7 +634,7 @@ public partial class KiotaBuilder
         {
             var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
             var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
-            if (child.Path.EndsWith(OpenApiUrlTreeNodeExtensions.ReservedItemName, StringComparison.OrdinalIgnoreCase))
+            if (child.Segment.Equals(OpenApiUrlTreeNodeExtensions.ReservedItemName, StringComparison.OrdinalIgnoreCase) && !child.DoesNodeBelongToItemSubnamespace())
                 propType = propType.Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase);
 
             if (child.IsPathSegmentWithSingleSimpleParameter())
