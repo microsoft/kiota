@@ -29,6 +29,7 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
         break;
       case "apimanifest":
         generationConfig.generationType = "apimanifest";
+        generationConfig.pluginTypes = ["ApiManifest"];
         break;
     }
     generationConfig.outputPath =

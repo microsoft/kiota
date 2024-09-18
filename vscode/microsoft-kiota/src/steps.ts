@@ -161,6 +161,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputClientClassName;
             case 'plugin':
                 return inputPluginName;
+            case 'apimanifest':
             case 'other':
                 return chooseOtherGenerationType;
             default:
