@@ -293,7 +293,7 @@ public class DartConventionService : CommonLanguageConventionService
         typeName = typeName.StripArraySuffix().TrimEnd('?').ToLowerInvariant();
         return typeName switch
         {
-            "String" => true,
+            "string" or "dateonly" or "datetime" => true,
             _ when NullableTypes.Contains(typeName) => true,
             _ => false,
         };
