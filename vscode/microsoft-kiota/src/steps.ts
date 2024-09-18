@@ -161,7 +161,6 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputClientClassName;
             case 'plugin':
                 return inputPluginName;
-            case 'apimanifest':
             case 'other':
                 return chooseOtherGenerationType;
             default:
@@ -316,9 +315,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 validate: validateIsNotEmpty,
                 shouldResume: shouldResume
             });
-            pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
-            pluginTypes.label === 'API Manifest' ? state.generationType = 'apimanifest' : state.generationType = 'plugin';
+            state.pluginTypes = pluginTypes;
         }
+
+        Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest') ?
+            state.generationType = 'apimanifest' : state.generationType = 'plugin';
         return (input: MultiStepInput) => inputOtherGenerationTypeName(input, state);
     }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {

@@ -24,11 +24,11 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
         generationConfig.pluginTypes = ["ApiPlugin"];
         break;
       case "openai":
-        generationConfig.generationType = "plugin";
+        generationConfig.generationType = "other";
         generationConfig.pluginTypes = ['OpenAI'];
         break;
       case "apimanifest":
-        generationConfig.generationType = "apimanifest";
+        generationConfig.generationType = "other";
         generationConfig.pluginTypes = ["ApiManifest"];
         break;
     }
