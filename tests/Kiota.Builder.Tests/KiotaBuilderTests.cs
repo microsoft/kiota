@@ -256,6 +256,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaResponseModel'
+  /media/item/{{id}}/nestedItem:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponseModel'
 components:
   schemas:
     MediaResponseModel:
@@ -308,6 +322,10 @@ components:
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
         Assert.NotNull(modelsNS);
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MediaResponseModel", false));
+        var nestedNestedItemProperty =
+            nestedItemRequestBuilder.FindChildByName<CodeProperty>("NestedItem", false);
+        Assert.NotNull(nestedNestedItemProperty);
+        Assert.Equal("NestedItemRequestBuilder", nestedNestedItemProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
     }
     private readonly HttpClient _httpClient = new();
     [Fact]
