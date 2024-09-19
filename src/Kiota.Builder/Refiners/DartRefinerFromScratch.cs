@@ -55,7 +55,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Dart);
-
             AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -82,9 +81,9 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                             Name = "DefaultQueryParameters",
                             IsExternal = true,
                         });
-
+            MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -252,7 +251,29 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                     DescriptionTemplate = "Extracts the query parameters into a map for the URI template parsing.",
                 },
             });
+            currentClass.AddUsing(new CodeUsing
+            {
+                Name = "AbstractQueryParameters",
+                Declaration = new CodeType { Name = AbstractionsNamespaceName, IsExternal = true },
+            });
         }
         CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
+    }
+
+    private void MoveQueryParameterClass(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            var nestedClasses = currentClass.InnerClasses.Where(x => x.IsOfKind(CodeClassKind.QueryParameters));
+            foreach (CodeClass nestedClass in nestedClasses)
+            {
+
+                parentNamespace.AddClass(nestedClass);
+                currentClass.RemoveChildElementByName(nestedClass.Name);
+            }
+        }
+        CrawlTree(currentElement, x => MoveQueryParameterClass(x));
     }
 }
