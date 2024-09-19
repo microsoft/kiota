@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- TTK integration
+- Teams Toolkit integration
 - Deep linking
 - Lockfile to Workspace Migration
 - Bug fixes
