@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using Microsoft.OpenApi.Expressions;
 using Microsoft.OpenApi.Extensions;
 
 namespace Kiota.Builder.Writers.Dart;
@@ -433,8 +434,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var operationName = codeElement.HttpMethod.ToString();
         writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate)?.Name} : {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters)?.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
-        if (requestParams.requestConfiguration != null)
-            writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name});");
+        if (requestParams.requestConfiguration != null && requestParams.requestConfiguration.Type is CodeType paramType)
+        {
+            var parameterClassName = paramType.GenericTypeParameterValues.First().Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{RequestInfoVarName}.configure<{parameterClassName}>({requestParams.requestConfiguration.Name}, () => {parameterClassName}());");
+        }
 
         if (codeElement.ShouldAddAcceptHeader)
             writer.WriteLine($"{RequestInfoVarName}.headers.put(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");

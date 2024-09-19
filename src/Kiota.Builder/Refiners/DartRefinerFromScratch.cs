@@ -55,17 +55,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Dart);
-            RemoveRequestConfigurationClasses(generatedCode,
-                new CodeUsing
-                {
-                    Name = "RequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = AbstractionsNamespaceName,
-                        IsExternal = true
-                    }
-                });
 
+            AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
@@ -77,6 +68,20 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true,
                     }
                 }, addCurrentTypeAsGenericTypeParameter: true);
+            RemoveRequestConfigurationClasses(generatedCode,
+                        new CodeUsing
+                        {
+                            Name = "RequestConfiguration",
+                            Declaration = new CodeType
+                            {
+                                Name = AbstractionsNamespaceName,
+                                IsExternal = true
+                            }
+                        }, new CodeType
+                        {
+                            Name = "DefaultQueryParameters",
+                            IsExternal = true,
+                        });
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
@@ -219,5 +224,35 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             && codeClass.IsOfKind(CodeClassKind.RequestConfiguration));
 
         return usingsToAdd.Except(nestedTypes);
+    }
+    private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "getQueryParameters")
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.QueryParameters))
+        {
+            currentClass.StartBlock.AddImplements(new CodeType
+            {
+                IsExternal = true,
+                Name = "AbstractQueryParameters"
+            });
+            currentClass.AddMethod(new CodeMethod
+            {
+                Name = methodName,
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType
+                {
+                    Name = "Map<String, dynamic>",
+                    IsNullable = false,
+                },
+                IsAsync = false,
+                IsStatic = false,
+                Kind = CodeMethodKind.QueryParametersMapper,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "Extracts the query parameters into a map for the URI template parsing.",
+                },
+            });
+        }
+        CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
     }
 }

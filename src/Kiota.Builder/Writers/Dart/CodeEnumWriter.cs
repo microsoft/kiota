@@ -38,11 +38,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         }
     }
 
-    private bool IsAllCapital(String text)
-    {
-        return text.All(c => char.IsUpper(c));
-    }
-
     private static readonly Func<int, string> GetEnumFlag = static idx =>
         (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
 }
