@@ -86,6 +86,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderBody(parentClass, codeElement, writer);
                 break;
+            case CodeMethodKind.QueryParametersMapper:
+                WriteQueryparametersBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.Getter:
             case CodeMethodKind.Setter:
                 throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
@@ -111,6 +114,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 break;
         }
     }
+
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
@@ -609,7 +613,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        if (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer)
+        if (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer || code.Kind == CodeMethodKind.QueryParametersMapper)
         {
             writer.WriteLine("@override");
         }
@@ -665,6 +669,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         return $"{nullablesegment} {string.Join(" ", signatureSegments[1..])}";
     }
+
+
+    private void WriteQueryparametersBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        writer.WriteLine("return {");
+        writer.IncreaseIndent();
+        foreach (CodeProperty property in parentClass.Properties)
+        {
+            writer.WriteLine($"\"{property.Name}\" : {property.Name},");
+        }
+        writer.DecreaseIndent();
+        writer.WriteLine("};");
+    }
+
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

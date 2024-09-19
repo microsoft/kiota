@@ -269,7 +269,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             var nestedClasses = currentClass.InnerClasses.Where(x => x.IsOfKind(CodeClassKind.QueryParameters));
             foreach (CodeClass nestedClass in nestedClasses)
             {
-
                 parentNamespace.AddClass(nestedClass);
                 currentClass.RemoveChildElementByName(nestedClass.Name);
             }
