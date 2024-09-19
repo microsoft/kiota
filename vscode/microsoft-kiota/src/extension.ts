@@ -449,7 +449,10 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
-      void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
+      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk'? true : false;
+      if (!isttkIntegration) {
+        void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
+      }
     }
     return result;
   }
