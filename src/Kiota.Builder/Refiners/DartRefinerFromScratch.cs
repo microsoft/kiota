@@ -83,7 +83,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                         });
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -218,11 +218,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
     }
     public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
     {
-        var nestedTypes = usingsToAdd.OfType<CodeType>().Where(
-            static codeType => codeType.TypeDefinition is CodeClass codeClass
-            && codeClass.IsOfKind(CodeClassKind.RequestConfiguration));
+        var genericParameterTypes = usingsToAdd.OfType<CodeType>().Where(
+            static codeType => codeType.Parent is CodeParameter parameter
+            && parameter.IsOfKind(CodeParameterKind.RequestConfiguration)).Select(x => x.GenericTypeParameterValues.First());
 
-        return usingsToAdd.Except(nestedTypes);
+        return usingsToAdd.Union(genericParameterTypes);
     }
     private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "getQueryParameters")
     {
