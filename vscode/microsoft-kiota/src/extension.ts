@@ -231,6 +231,8 @@ export async function activate(
               await displayGenerationResults(context, openApiTreeProvider, config);
             }
           }
+
+          deepLinkParams = {};  // Clear the state after the generation
         }
       }
     ),
