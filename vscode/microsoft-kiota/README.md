@@ -22,7 +22,7 @@ This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension ad
 
 ## Kiota extension installation
 1. In VS Code, navigate to `Extensions`.
-<img width="482" alt="Navigate to Extensions on VS Code" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/Navigate%20to%20Extensions%20on%20VS%20Code.png">
+<img width="482" alt="Navigate to Extensions on VS Code" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/Navigate%20to%20Extensions%20on%20VS%20Code.png">
 
 2. Search for 'kiota'
 3. Click on Install.
@@ -35,21 +35,21 @@ Once the extension is installed, you will be able to see the commands available 
 
 You can kick start the process by using the add file icons as appears below or using command pallete with the command "Add API description"
 
-<img width="482" alt="Use the add file icon" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/SearchOrBrowseOptions.png">
+<img width="482" alt="Use the add file icon" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/SearchOrBrowseOptions.png">
 
 The notification bar will also notify you of ongoing background processes e.g when searching for an api using a keyword
 
-<img width="482" alt="vscode extension search notification" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/searchingNotification.png">
+<img width="482" alt="vscode extension search notification" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/searchingNotification.png">
 
-<img width="482" alt="vscode extension search results" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/searchResults.png">
+<img width="482" alt="vscode extension search results" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/searchResults.png">
 
 Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints 
 
-<img width="482" alt="Kiota OpenAPI explorer" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
+<img width="482" alt="Kiota OpenAPI explorer" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
 
 Select the endpoints to include in your API client as above and click the `generate` icon. Kiota extension will display with the options to generate either client, plugin or other.
 
-<img width="482" alt="kiota vscode generate options" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/SelectGenerationOption.png">
+<img width="482" alt="kiota vscode generate options" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/SelectGenerationOption.png">
 
 Finally, the notification bar at the bottom right will display "Generation Completed Successfully" once the generation is done. Click on your vscode file explorer to see the generated outputs in the current workspace if default selection was your output directory choice or navigate to selected folder to see the output.
 
@@ -57,15 +57,15 @@ Finally, the notification bar at the bottom right will display "Generation Compl
 
 The latest version of the Kiota extension has been improved to using a workspace instead of a lock file to facilitate having multiple clients, plugins, or manifests within the same workspace. The workspace.json file also provides an opportunity to edit, or regenerate the outputs conveniently.
 
-<img width="482" alt="Working with the extension's workspace" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/GenerationMultipleClientsSameWorkspace.png">
+<img width="482" alt="Working with the extension's workspace" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/GenerationMultipleClientsSameWorkspace.png">
 
 If you previously generated a client that had a lock file, kiota prompts you to migrate to using the workspace once you open the previously generated folder containing a lock file. You can choose to migrate immediately or ask to be reminded later.
 
-<img width="482" alt="Notification to Migrate to extension's workspace" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/MigratePromptOnOpeningFolder.png">
+<img width="482" alt="Notification to Migrate to extension's workspace" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/MigratePromptOnOpeningFolder.png">
 
 You can also access the same feature later by using the contextual option on the lock file, by right-clicking on the lock file and selecting the option to migrate.
 
-<img width="482" alt="Contextual Migrate option on right-clicking on lockfile" src="https://github.com/microsoft/kiota/blob/865b5f9a3b6aa495f42a397714b09a08bdb99011/vscode/microsoft-kiota/images/samples/ContextualMigrateLockToWorkspace.png">
+<img width="482" alt="Contextual Migrate option on right-clicking on lockfile" src="https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/samples/ContextualMigrateLockToWorkspace.png">
 
 Enjoy the benefits of the workspace once the migration is complete.
 
