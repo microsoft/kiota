@@ -371,9 +371,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             {
                 var collectionMethod = "";
                 if (currentType.TypeDefinition == null)
-                    return $"getCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
-                else if (currentType.TypeDefinition is CodeEnum)
-                    return $"getCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
+                    return $"getCollectionOfPrimitiveValues<{propertyType.TrimEnd(DartConventionService.NullableMarker)}>(){collectionMethod}";
+                else if (currentType.TypeDefinition is CodeEnum enumType)
+                {
+                    var typeName = enumType.Name.ToFirstCharacterUpperCase();
+                    return $"getCollectionOfEnumValues<{typeName}>((stringValue) => {typeName}.values.where((enumVal) => enumVal.value == stringValue).firstOrNull)";
+                }
                 else
                     return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.createFromDiscriminatorValue){collectionMethod}";
             }

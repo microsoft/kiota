@@ -206,7 +206,7 @@ public class DartConventionService : CommonLanguageConventionService
                 return $"Function({collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix})";
             }
 
-            return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
+            return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}{nullableSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
