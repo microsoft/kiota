@@ -34,16 +34,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.WriteLine($"if({parameterName} == null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
         }
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
-
         var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
-        {
-            writer.DecreaseIndent();
+
+        if (codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+            writer.DecreaseIndent();            
+        } else {
+            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+            {
+                writer.DecreaseIndent();
+            } else {
+                writer.CloseBlock();
+            }
+
         }
-        else
-        {
-            writer.CloseBlock();
-        }
+
     }
 
     protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
@@ -644,6 +648,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
+
+        if (code.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+            openingBracket = ";";
+        } 
+
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
