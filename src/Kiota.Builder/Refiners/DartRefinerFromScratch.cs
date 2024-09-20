@@ -137,21 +137,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
         }
-        else if (currentElement is CodeEnum e)
-        {
-            foreach (var option in e.Options)
-            {
-                if (!string.IsNullOrEmpty(option.Name) && Char.IsLower(option.Name[0]))
-                {
-                    if (string.IsNullOrEmpty(option.SerializationName))
-                    {
-                        option.SerializationName = option.Name;
-                    }
-                    option.Name = option.Name.ToFirstCharacterUpperCase();
-                }
-            }
-        }
-
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 

@@ -489,7 +489,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()});");
+            var secondArgument = "";
+            if (otherProp.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType)
+            {
+                secondArgument = $", (e) => e?.value";
+            }
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()}{secondArgument});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
