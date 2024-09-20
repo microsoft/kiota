@@ -488,7 +488,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
+            var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
