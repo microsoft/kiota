@@ -18,26 +18,30 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         if (!codeElement.Options.Any())
             return;
         DartReservedNamesProvider reservedNamesProvider = new DartReservedNamesProvider();
+        var enumName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription(codeElement, writer);
-        if (codeElement.Flags)
-            writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        writer.StartBlock($"enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
-        var idx = 0;
+        writer.StartBlock($"enum {enumName} {{");
+        var lastOption = codeElement.Options.Last();
+
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
-            var value = option.Name.ToLowerInvariant().ToCamelCase('_');
-            if (reservedNamesProvider.ReservedNames.Contains(value))
+            var correctedName = getCorrectedName(option.Name);
+            if (reservedNamesProvider.ReservedNames.Contains(correctedName))
             {
-                value = value.ToUpperInvariant();
+                correctedName = correctedName.ToUpperInvariant();
             }
-            writer.WriteLine($"{value}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
-
-            idx++;
+            writer.WriteLine($"{correctedName}(\"{option.Name}\"){(option == lastOption ? ";" : ",")}");
         }
+        writer.WriteLine($"const {enumName}(this.value);");
+        writer.WriteLine("final String value;");
     }
 
-    private static readonly Func<int, string> GetEnumFlag = static idx =>
-        (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
+    private string getCorrectedName(string name)
+    {
+        if (name.Contains('_', StringComparison.Ordinal))
+            return name.ToLowerInvariant().ToCamelCase('_');
+        return name.All(c => char.IsUpper(c)) ? name.ToLowerInvariant() : name;
+    }
 }
