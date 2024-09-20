@@ -1,10 +1,12 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConventionService>
 {
+    private DartReservedNamesProvider reservedNamesProvider = new DartReservedNamesProvider();
     public CodePropertyWriter(DartConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
@@ -42,10 +44,15 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         if (!string.IsNullOrEmpty(accessModifierAttribute))
             writer.WriteLine(accessModifierAttribute);
 
+        var propertyName = codeElement.Name.ToCamelCase();
+        if (reservedNamesProvider.ReservedNames.Contains(propertyName))
+        {
+            propertyName += "Escaped";
+        }
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()} {{");
+                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer, prefix: "return ");
                 writer.DecreaseIndent();
@@ -54,7 +61,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
-                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToCamelCase()} {{");
+                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\");");
                 writer.DecreaseIndent();

@@ -39,6 +39,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
+        new (static x => x is CodeProperty prop && prop.Type.Name.EqualsIgnoreCase("Guid"),
+            "uuid/uuid", "Uuid"),
     };
 
 
@@ -190,6 +192,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
         {
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+            if (currentProperty.Type.Name.Equals("Guid", StringComparison.OrdinalIgnoreCase))
+                currentProperty.Type.Name = "Uuid";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
