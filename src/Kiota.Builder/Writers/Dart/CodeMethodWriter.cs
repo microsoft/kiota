@@ -561,10 +561,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (isVoid) return "sendNoContent";
         else if (isStream || conventions.IsPrimitiveType(returnTypeName) || isEnum)
             if (returnType.IsCollection)
-                return $"sendPrimitiveCollectionAsync<{returnTypeName}>";
+                return $"sendPrimitiveCollection<{returnTypeName}>";
             else
                 return $"sendPrimitive<{returnTypeName}>";
         else if (returnType.IsCollection) return $"sendCollection<{returnTypeName}>";
+        else if (returnType.Name.EqualsIgnoreCase("binary")) return "sendPrimitiveCollection<int>";
         else return $"send<{returnTypeName}>";
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
