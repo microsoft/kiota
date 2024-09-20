@@ -378,7 +378,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.createFromDiscriminatorValue){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
-                return $"getEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>()";
+            {
+                var typeName = enumType.Name.ToFirstCharacterUpperCase();
+                return $"getEnumValue<{typeName}>((stringValue) => {typeName}.values.where((enumVal) => enumVal.value == stringValue).firstOrNull)";
+            }
         }
         return propertyType switch
         {
