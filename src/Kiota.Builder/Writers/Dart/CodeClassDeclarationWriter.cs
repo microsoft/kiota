@@ -65,10 +65,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
     /// </summary
     void addImportsForDiscriminatorTypes(ClassDeclaration classDeclaration)
     {
-        // Only for top-level classes
-        if (classDeclaration.Inherits != null) return;
 
-        var parent = classDeclaration.Parent as CodeClass;
+       var parent = classDeclaration.Parent as CodeClass;
         var methods = parent!.GetMethodsOffKind(CodeMethodKind.Factory);
         var method = methods?.FirstOrDefault();
         if (method != null && method.Parent is CodeElement codeElement && method.Parent is IDiscriminatorInformationHolder)
