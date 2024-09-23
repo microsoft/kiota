@@ -36,6 +36,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
 
+        if (isConstructor) {
+            Console.WriteLine(codeElement.Name + ":" + codeElement.Kind + ":" + codeElement.Parent.Name);
+        }
         if (codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
             writer.DecreaseIndent();            
         } else {

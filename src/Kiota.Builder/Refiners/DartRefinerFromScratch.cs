@@ -183,7 +183,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Map<String, Object?>";
-            currentProperty.DefaultValue = "Map<String, Object?>()";
+            currentProperty.DefaultValue = "{}";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
         {
