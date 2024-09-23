@@ -585,7 +585,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             _codeUsingWriter.WriteInternalErrorMappingImports(parentClass, writer);
             errorMappingVarName = "error_mapping";
-            writer.StartBlock($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
+            writer.StartBlock($"{errorMappingVarName}: Dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
                 writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
@@ -736,8 +736,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                                         .Select(p => new PythonConventionService() // requires a writer instance because method parameters use inline type definitions
                                                         .GetParameterSignature(p, code, writer))
                                                         .ToList());
-        var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
-        var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
+        var isStreamType = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+        var nullablePrefix = (code.ReturnType.IsNullable || isStreamType) && !isVoid ? "Optional[" : string.Empty;
+        var nullableSuffix = (code.ReturnType.IsNullable || isStreamType) && !isVoid ? "]" : string.Empty;
         var propertyDecorator = code.Kind switch
         {
             CodeMethodKind.Getter => "@property",
