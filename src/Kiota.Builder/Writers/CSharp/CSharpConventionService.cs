@@ -96,6 +96,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         return access switch
         {
+            AccessModifier.Internal => "internal",
             AccessModifier.Public => "public",
             AccessModifier.Protected => "protected",
             _ => "private",

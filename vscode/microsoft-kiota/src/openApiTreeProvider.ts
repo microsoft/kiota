@@ -350,6 +350,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     }
                     await updateTreeViewIcons(treeViewId, true, false);
                 }
+                void vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from {0}', this.apiTitle!));
             }
         } catch (err) {
             vscode.window.showErrorMessage((err as Error)?.message || 'An unknown error occurred');

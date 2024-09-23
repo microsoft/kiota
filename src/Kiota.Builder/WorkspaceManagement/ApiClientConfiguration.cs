@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.ApiManifest;
 
@@ -14,6 +15,10 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
     /// The language for this client.
     /// </summary>
     public string Language { get; set; } = string.Empty;
+    /// <summary>
+    /// The type access modifier to use for the client types.
+    /// </summary>
+    public string TypeAccessModifier { get; set; } = "Public";
     /// <summary>
     /// The structured mime types used for this client.
     /// </summary>
@@ -64,6 +69,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
     {
         ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
+        TypeAccessModifier = config.TypeAccessModifier.ToString();
         ClientNamespaceName = config.ClientNamespaceName;
         UsesBackingStore = config.UsesBackingStore;
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;
@@ -84,6 +90,8 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         config.ClientNamespaceName = ClientNamespaceName;
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
             config.Language = parsedLanguage;
+        if (Enum.TryParse<AccessModifier>(TypeAccessModifier, out var parsedTypeAccessModifier))
+            config.TypeAccessModifier = parsedTypeAccessModifier;
         config.UsesBackingStore = UsesBackingStore;
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
@@ -97,6 +105,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         var result = new ApiClientConfiguration
         {
             Language = Language,
+            TypeAccessModifier = TypeAccessModifier,
             StructuredMimeTypes = [.. StructuredMimeTypes],
             ClientNamespaceName = ClientNamespaceName,
             UsesBackingStore = UsesBackingStore,

@@ -164,7 +164,7 @@ export async function activate(
         config = await generateSteps(
           availableStateInfo,
           languagesInformation,
-          isDeeplinkEnabled(deepLinkParams)
+          deepLinkParams
         );
         const generationType = parseGenerationType(config.generationType);
         const outputPath = typeof config.outputPath === "string"
@@ -235,6 +235,8 @@ export async function activate(
               await displayGenerationResults(context, openApiTreeProvider, config);
             }
           }
+
+          deepLinkParams = {};  // Clear the state after the generation
         }
       }
     ),
@@ -561,7 +563,10 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
-      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk'? true : false;
+      if (!isttkIntegration) {
+        void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
+      }
     }
     return result;
   }

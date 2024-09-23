@@ -4,7 +4,8 @@ import { getSanitizedString, parseGenerationLanguage, allGenerationLanguagesToSt
 import { createTemporaryFolder } from "./temporary-folder";
 
 export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): boolean {
-  return Object.keys(deepLinkParams).length > 0;
+  const minimumNumberOfParams = 1;
+  return Object.values(deepLinkParams).filter(property => property).length >= minimumNumberOfParams;
 }
 
 export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
@@ -23,11 +24,12 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
         generationConfig.pluginTypes = ["ApiPlugin"];
         break;
       case "openai":
-        generationConfig.generationType = "plugin";
+        generationConfig.generationType = "other";
         generationConfig.pluginTypes = ['OpenAI'];
         break;
       case "apimanifest":
-        generationConfig.generationType = "apimanifest";
+        generationConfig.generationType = "other";
+        generationConfig.pluginTypes = ["ApiManifest"];
         break;
     }
     generationConfig.outputPath =

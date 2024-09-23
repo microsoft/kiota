@@ -139,4 +139,18 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Matches(GeneratedCodePattern, result);
     }
+
+    [Theory]
+    [InlineData(AccessModifier.Public)]
+    [InlineData(AccessModifier.Internal)]
+    public void WritesAccessModifier(AccessModifier accessModifier)
+    {
+        currentEnum.Access = accessModifier;
+        currentEnum.AddOption(Option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"{accessModifier.ToString().ToLower()} enum", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        Assert.Contains(Option.Name, result);
+    }
 }

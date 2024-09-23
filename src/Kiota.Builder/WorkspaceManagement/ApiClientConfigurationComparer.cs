@@ -28,6 +28,7 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         if (x.IncludeAdditionalData != y.IncludeAdditionalData) return false;
         if (!_stringComparer.Equals(x.ClientNamespaceName, y.ClientNamespaceName)) return false;
         if (!_stringComparer.Equals(x.Language, y.Language)) return false;
+        if (!_stringComparer.Equals(x.TypeAccessModifier, y.TypeAccessModifier)) return false;
 
         // slow deep comparison
         return _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
@@ -42,6 +43,7 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         hash.Add(obj.DisabledValidationRules, _stringIEnumerableDeepComparer); // _stringIEnumerableDeepComparer orders
         hash.Add(obj.ClientNamespaceName, _stringComparer);
         hash.Add(obj.Language, _stringComparer);
+        hash.Add(obj.TypeAccessModifier, _stringComparer);
         hash.Add(obj.ExcludeBackwardCompatible);
         hash.Add(obj.UsesBackingStore);
         hash.Add(obj.IncludeAdditionalData);
