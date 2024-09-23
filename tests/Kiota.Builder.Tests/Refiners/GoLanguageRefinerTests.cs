@@ -901,7 +901,7 @@ components:
         };
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(model.Properties);
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility)));
+        Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility));
     }
     [Fact]
     public async Task AddsErrorImportForEnumsForMultiValueEnumAsync()
@@ -913,7 +913,7 @@ components:
         }).First();
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.DoesNotContain(testEnum.Usings, static x => "errors".Equals(x.Name, StringComparison.Ordinal));
-        Assert.Single(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.Single(testEnum.Usings, static x => "strings".Equals(x.Name, StringComparison.Ordinal));
     }
     [Fact]
     public async Task AddsErrorImportForEnumsForSingleValueEnumAsync()

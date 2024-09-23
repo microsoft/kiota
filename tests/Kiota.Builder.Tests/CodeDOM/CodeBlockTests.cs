@@ -254,6 +254,6 @@ public class CodeBlockTests
         });
         model.StartBlock.ReplaceImplementByName("IParsable", "Parsable");
         Assert.DoesNotContain(model.StartBlock.Implements, x => x.Name == "IParsable");
-        Assert.Single(model.StartBlock.Implements.Where(x => x.Name == "Parsable"));
+        Assert.Single(model.StartBlock.Implements, x => x.Name == "Parsable");
     }
 }
