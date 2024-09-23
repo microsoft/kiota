@@ -102,6 +102,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
+            AddAsyncSuffix(generatedCode);
+
 
             ReplaceDefaultSerializationModules(
                 generatedCode,
@@ -226,6 +228,12 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             && parameter.IsOfKind(CodeParameterKind.RequestConfiguration)).Select(x => x.GenericTypeParameterValues.First());
 
         return usingsToAdd.Union(genericParameterTypes);
+    }
+    protected static void AddAsyncSuffix(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
+            currentMethod.Name += "Async";
+        CrawlTree(currentElement, AddAsyncSuffix);
     }
     private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "getQueryParameters")
     {
