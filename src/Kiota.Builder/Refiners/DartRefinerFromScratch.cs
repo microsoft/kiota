@@ -84,6 +84,18 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                             Name = "DefaultQueryParameters",
                             IsExternal = true,
                         });
+            var reservedNamesProvider = new DartReservedNamesProvider();
+            CorrectNames(generatedCode, s =>
+            {
+                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            });
+
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
