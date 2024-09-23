@@ -369,7 +369,7 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
-        Assert.Single(requestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
+        Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
         Assert.Single(collectionRequestBuilder.Properties);
     }
     [Fact]
@@ -496,7 +496,7 @@ public class JavaLanguageRefinerTests
             }
         });
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.NotEmpty(model.StartBlock.Usings.Where(x => "EnumSet".Equals(x.Name)));
+        Assert.Contains(model.StartBlock.Usings, x => "EnumSet".Equals(x.Name));
     }
     [Fact]
     public async Task CorrectsCoreTypeAsync()

@@ -61,7 +61,7 @@ public class PythonLanguageRefinerTests
         Assert.Empty(model.Methods);
 
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+        Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
     [Fact]
     public async Task AddsQueryParameterMapperMethodAfterManglingAsync()
@@ -85,9 +85,9 @@ public class PythonLanguageRefinerTests
         Assert.Empty(model.Methods);
 
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
-        Assert.Single(model.Properties.Where(x => x.Name.Equals("if_exists")));
-        Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+        Assert.Single(model.Properties, x => x.Name.Equals("if_exists"));
+        Assert.Single(model.Properties, x => x.IsNameEscaped);
+        Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
     [Theory]
     [InlineData("None")]
@@ -429,7 +429,7 @@ public class PythonLanguageRefinerTests
         Assert.DoesNotContain(model.Properties, x => PathParametersDefaultValue.Equals(x.DefaultValue));
         Assert.DoesNotContain(model.Methods, x => DeserializeDefaultName.Equals(x.ReturnType.Name));
         Assert.DoesNotContain(model.Methods.SelectMany(x => x.Parameters), x => serializerDefaultName.Equals(x.Type.Name));
-        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeTypeBase));
+        Assert.Single(constructorMethod.Parameters, x => x.Type is CodeTypeBase);
     }
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeTypeAsync()
@@ -581,7 +581,7 @@ public class PythonLanguageRefinerTests
         Assert.Empty(model.Methods);
         var declaration = model.StartBlock;
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
-        Assert.Single(requestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
+        Assert.Single(requestBuilder.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.DoesNotContain("QueryParameters", declaration.Usings.Select(x => x.Name));
     }
     #endregion

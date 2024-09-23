@@ -232,8 +232,8 @@ public class RubyLanguageRefinerTests
             }
         });
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-        Assert.Single(declaration.Usings.Where(static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(declaration.Usings.Where(static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(declaration.Usings, static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Single(declaration.Usings, static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task ShortensLongNamespaceNamesAsync()
@@ -271,7 +271,7 @@ public class RubyLanguageRefinerTests
         Assert.Empty(model.Methods);
 
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+        Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
     [Fact]
     public async Task AddsQueryParameterMapperMethodAfterManglingAsync()
@@ -295,9 +295,9 @@ public class RubyLanguageRefinerTests
         Assert.Empty(model.Methods);
 
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
-        Assert.Single(model.Properties.Where(x => x.Name.Equals("if_exists")));
-        Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
-        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+        Assert.Single(model.Properties, x => x.Name.Equals("if_exists"));
+        Assert.Single(model.Properties, x => x.IsNameEscaped);
+        Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
     [Fact]
     public async Task FlattensModelsNamespaceAsync()
@@ -339,8 +339,8 @@ public class RubyLanguageRefinerTests
             Name = "some_model",
         });
         await ILanguageRefiner.RefineAsync(config, root);
-        Assert.Single(modelsNS.Classes.Where(x => x.Name.Equals("SomeModel")));
-        Assert.Single(modelsNS.Enums.Where(x => x.Name.Equals("some_model")));
+        Assert.Single(modelsNS.Classes, x => x.Name.Equals("SomeModel"));
+        Assert.Single(modelsNS.Enums, x => x.Name.Equals("some_model"));
     }
     #endregion
 }
