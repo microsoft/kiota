@@ -395,6 +395,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         return propertyType switch
         {
+            "UuidValue" => "getGuidValue()",
             "byte[]" => "getByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.createFromDiscriminatorValue)",
