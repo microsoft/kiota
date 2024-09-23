@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -30,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
             var correctedName = getCorrectedName(option.Name);
             if (reservedNamesProvider.ReservedNames.Contains(correctedName))
             {
-                correctedName = correctedName.ToUpperInvariant();
+                correctedName += "Escaped";
             }
             writer.WriteLine($"{correctedName}(\"{option.Name}\"){(option == lastOption ? ";" : ",")}");
         }
@@ -42,6 +41,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
     {
         if (name.Contains('_', StringComparison.Ordinal))
             return name.ToLowerInvariant().ToCamelCase('_');
-        return name.All(c => char.IsUpper(c)) ? name.ToLowerInvariant() : name;
+        return name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
     }
 }
