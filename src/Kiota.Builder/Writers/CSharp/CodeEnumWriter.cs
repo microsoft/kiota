@@ -37,7 +37,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
-        writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()}");
+        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} enum {codeElement.Name.ToFirstCharacterUpperCase()}");
         if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
         writer.StartBlock();
         var idx = 0;

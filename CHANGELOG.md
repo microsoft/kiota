@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Control generated type access modifier for C# via `--type-access-modifier` flag. [#4788](https://github.com/microsoft/kiota/issues/4788)
 
 ### Changed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where TypeScript would not properly build URIs with uppercase first characters query parameter names.[#5382](https://github.com/microsoft/kiota/issues/5382)
 - Fixed a bug where the description special characters are encoded. [5286](https://github.com/microsoft/kiota/issues/5286)
 - Fixed a bug where python constructor parameters are being cast to strings leading to bugs as the types is unknown on graph call. [microsoftgraph/msgraph-sdk-python#165](https://github.com/microsoftgraph/msgraph-sdk-python/issues/165)
+- Fixed a bug where child path segment from single parameter path segment would be incorrectly escaped. [#5433](https://github.com/microsoft/kiota/issues/5433)
 
 ## [1.18.0] - 2024-09-05
 

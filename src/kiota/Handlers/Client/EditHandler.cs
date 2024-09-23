@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.Text.Json;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
@@ -24,6 +25,10 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
     public required Option<GenerationLanguage?> LanguageOption
+    {
+        get; init;
+    }
+    public required Option<AccessModifier?> TypeAccessModifierOption
     {
         get; init;
     }
@@ -69,6 +74,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage? language = context.ParseResult.GetValueForOption(LanguageOption);
+        AccessModifier? typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool? backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool? excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
@@ -109,6 +115,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                 clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(Configuration.Generation, className);
                 if (language.HasValue)
                     Configuration.Generation.Language = language.Value;
+                if (typeAccessModifier.HasValue)
+                    Configuration.Generation.TypeAccessModifier = typeAccessModifier.Value;
                 if (backingStore.HasValue)
                     Configuration.Generation.UsesBackingStore = backingStore.Value;
                 if (excludeBackwardCompatible.HasValue)

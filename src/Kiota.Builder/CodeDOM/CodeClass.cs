@@ -30,9 +30,12 @@ public enum CodeClassKind
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement, IAccessibleElement
 {
     private readonly ConcurrentDictionary<string, CodeProperty> PropertiesByWireName = new(StringComparer.OrdinalIgnoreCase);
+
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
+
     public bool IsErrorDefinition
     {
         get; set;
