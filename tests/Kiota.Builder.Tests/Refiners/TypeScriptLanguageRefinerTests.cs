@@ -433,7 +433,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
-        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(static x => x.Name.Equals("Guid", StringComparison.Ordinal)));
+        Assert.Contains(modelInterface.StartBlock.Usings, static x => x.Name.Equals("Guid", StringComparison.Ordinal));
         Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name.Equals(codeProperty.Name, StringComparison.OrdinalIgnoreCase)).Type.Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
@@ -713,7 +713,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Empty(requestBuilder.InnerClasses);
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(testNS.Constants.Where(static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper)));
+        Assert.Single(testNS.Constants, static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper));
     }
 
     [Fact]
