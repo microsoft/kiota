@@ -4,8 +4,6 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
-using Microsoft.OpenApi.Expressions;
-using Microsoft.OpenApi.Extensions;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
@@ -36,10 +34,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
 
-        if (isConstructor) {
-            Console.WriteLine(codeElement.Name + ":" + codeElement.Kind + ":" + codeElement.Parent.Name);
-        }
-        if (codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor)) {
+            // Constuctors (except for ClientConstructor) don't need a body.
             writer.DecreaseIndent();            
         } else {
             if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
@@ -48,7 +44,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             } else {
                 writer.CloseBlock();
             }
-
         }
 
     }
@@ -98,7 +93,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 break;
             case CodeMethodKind.Getter:
             case CodeMethodKind.Setter:
-                throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
+                throw new InvalidOperationException("getters and setters are automatically added on fields in Dart");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
             case CodeMethodKind.ErrorMessageOverride:
@@ -656,7 +651,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
 
-        if (code.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+        // Constuctors (except for ClientConstructor) don't need a body but a closing statement
+        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !code.IsOfKind(CodeMethodKind.ClientConstructor)) {
             openingBracket = ";";
         } 
 
