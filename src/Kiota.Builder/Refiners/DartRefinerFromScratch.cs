@@ -132,6 +132,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
 
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            DisambiguatePropertiesWithClassNames(generatedCode);
 
         }, cancellationToken);
     }
@@ -178,7 +179,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "List<RequestOption>()";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
             currentProperty.Type.Name = "RequestAdapter";
@@ -191,7 +192,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
         {
-            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
@@ -213,8 +214,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "UuidValue";
 
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-        // TODO KEES
-        // CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
     private static void CorrectImplements(ProprietableBlockDeclaration block)
@@ -286,4 +285,23 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => MoveQueryParameterClass(x));
     }
+
+    protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass)
+        {
+            var sameNameProperty = currentClass.Properties
+                                            .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
+            if (sameNameProperty != null)
+            {
+                currentClass.RemoveChildElement(sameNameProperty);
+                if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
+                    sameNameProperty.SerializationName = sameNameProperty.Name;
+                sameNameProperty.Name = $"{sameNameProperty.Name}Prop";
+                currentClass.AddProperty(sameNameProperty);
+            }
+        }
+        CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
+    }
+
 }
