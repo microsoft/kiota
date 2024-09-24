@@ -268,11 +268,11 @@ public partial class KiotaBuilder
         {
             if (openApiDocument is null || openApiTree is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the http snippet");
-            // generate plugin
+            // generate http snippets
             sw.Start();
             var service = new HttpSnippetGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
             await service.GenerateHttpSnippetAsync(cancellationToken).ConfigureAwait(false);
-            logger.LogInformation("http snippets generate successfully");
+            logger.LogInformation("http snippets generated successfully");
             StopLogAndReset(sw, $"step {++stepId} - generate http snippet - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);

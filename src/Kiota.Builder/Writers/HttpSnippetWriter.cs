@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers
 
         /// <summary>
         /// Writes all the path items for the given OpenAPI URL tree node to the writer.
-        /// Each path item is processed by calling the <see cref="WriteOpenApiPathItemOperation"/> method.
+        /// Each path item is processed by calling the <see cref="WriteOpenApiPathItem"/> method.
         /// </summary>
         /// <param name="node">The OpenAPI URL tree node containing the path items to write.</param>
         private void WritePathItems(OpenApiUrlTreeNode node)
@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers
             // Write all the path items
             foreach (var item in node.PathItems)
             {
-                WriteOpenApiPathItemOperation(item.Value, node);
+                WriteOpenApiPathItem(item.Value, node.Path);
             }
         }
 
@@ -62,13 +62,14 @@ namespace Kiota.Builder.Writers
         /// Each operation includes the HTTP method, sanitized path, parameters, and a formatted HTTP request line.
         /// </summary>
         /// <param name="pathItem">The OpenAPI path item containing the operations to write.</param>
-        /// <param name="node">The OpenAPI URL tree node representing the path.</param>
-        private void WriteOpenApiPathItemOperation(OpenApiPathItem pathItem, OpenApiUrlTreeNode node)
+        public void WriteOpenApiPathItem(OpenApiPathItem pathItem, string path)
         {
+            // Sanitize the path element
+            path = SanitizePath(path);
+
             // Write the operation
             foreach (var item in pathItem.Operations)
             {
-                var path = SanitizePath(node.Path);
                 var operation = item.Key.ToString().ToUpperInvariant();
 
                 // write the comment which also acts as the sections delimiter 
@@ -96,7 +97,7 @@ namespace Kiota.Builder.Writers
                 // Write content type
                 Writer.WriteLine("Content-Type: " + content.Key);
 
-                // If example exist use it
+                // If example exist, use it
                 if (content.Value.Example != null)
                 {
                     Writer.WriteLine(content.Value.Example);
