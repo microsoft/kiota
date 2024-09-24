@@ -403,7 +403,7 @@ components:
         Assert.Equal("Standard_LRS", thirdOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.DescriptionTemplate);
-        Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(enumDef.Options, static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -1689,7 +1689,7 @@ paths:
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters, static x => x.IsOfKind(CodeParameterKind.Path));
     }
     [Fact]
     public void Supports_Path_Query_And_Header_Parameters()
@@ -1839,16 +1839,16 @@ paths:
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters, static x => x.IsOfKind(CodeParameterKind.Path));
         var parameters = getEffectivePermissionsRequestBuilder
             .Methods
             .SingleOrDefault(static cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
-        Assert.Single(parameters.Where(p => "IfMatch".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers));
-        Assert.Single(parameters.Where(p => "ConsistencyLevel".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers));
-        Assert.Single(parameters.Where(p => "select".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.QueryParameter));
-        Assert.Single(parameters.Where(p => "scope".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Path));
+        Assert.Single(parameters, p => "IfMatch".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers);
+        Assert.Single(parameters, p => "ConsistencyLevel".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers);
+        Assert.Single(parameters, p => "select".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.QueryParameter);
+        Assert.Single(parameters, p => "scope".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Path);
     }
     [Fact]
     public void DeduplicatesConflictingParameterNamesForCLI()
@@ -4010,7 +4010,7 @@ components:
         var unionType = response.ReturnType as CodeIntersectionType;
 
         Assert.Equal(2, unionType.Types.Count());
-        Assert.Single(unionType.Types.Where(x => x.Name == "FooResponseObject" && x.IsCollection));
+        Assert.Single(unionType.Types, x => x.Name == "FooResponseObject" && x.IsCollection);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks()
@@ -5512,7 +5512,7 @@ components:
         Assert.Equal("some path item description", requestBuilderClass.Documentation.DescriptionTemplate);
 
         if (excludeBackwardCompatible)
-            Assert.Single(requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor));
+            Assert.Single(requestBuilderClass.Methods, static x => x.Kind is CodeMethodKind.RequestExecutor);
         else
             Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
 
@@ -5823,7 +5823,7 @@ components:
         Assert.NotNull(rbNS);
         var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        Assert.Single(rbClass.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
+        Assert.Single(rbClass.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
@@ -5894,7 +5894,7 @@ components:
         Assert.NotNull(rbNS);
         var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        Assert.Single(rbClass.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
+        Assert.Single(rbClass.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.Equal("void", executor.ReturnType.Name);
@@ -6560,8 +6560,8 @@ components:
         Assert.NotNull(messagesNS);
         var messagesRS = messagesNS.FindChildByName<CodeClass>("MessagesRequestBuilder");
         Assert.NotNull(messagesRS);
-        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var studentsNS = codeModel.FindNamespaceByName("TestSdk.students");
         var studentsRS = studentsNS.FindChildByName<CodeClass>("StudentsRequestBuilder");
@@ -7303,7 +7303,7 @@ paths:
         Assert.NotNull(propertiesToValidate);
         Assert.NotEmpty(propertiesToValidate);
         Assert.Equal(keysToCheck.Count, propertiesToValidate.Length);// all the properties are present
-        Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
@@ -7959,11 +7959,11 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Linkable"));
         var classificationClass = codeModel.FindChildByName<CodeClass>("GroupClassification");
-        Assert.Single(classificationClass.Properties.Where(static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationClass.Properties, static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(classificationClass);
         var classificationPrimerClass = codeModel.FindChildByName<CodeClass>("GroupClassificationPrimer");
         Assert.NotNull(classificationPrimerClass);
-        Assert.Single(classificationPrimerClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationPrimerClass.Properties, static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfInBaseTypeAsync()
@@ -8166,10 +8166,10 @@ components:
         Assert.NotNull(groupClass);
         Assert.Equal(4, groupClass.Properties.Count());
         Assert.Null(groupClass.StartBlock.Inherits);
-        Assert.Single(groupClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -8338,9 +8338,9 @@ components:
         var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
         Assert.Null(registeredModelClass.StartBlock.Inherits);
         Assert.NotNull(registeredModelClass);
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(registeredModelClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaParentClassAsync()
@@ -8407,10 +8407,10 @@ components:
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
         Assert.NotNull(directoryObjectClass);
         Assert.Null(directoryObjectClass.StartBlock.Inherits);
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
         var groupClass = codeModel.FindChildByName<CodeClass>("Group");
         Assert.NotNull(groupClass);
         Assert.Single(groupClass.Properties);
@@ -8419,7 +8419,7 @@ components:
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith2Parts1Schema1InlineNoDiscriminatorAsync()
@@ -8469,7 +8469,7 @@ components:
         Assert.NotNull(resultClass);
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(resultClass.Properties);
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith1Part1SchemaAndPropertiesNoDiscriminatorAsync()
@@ -8517,7 +8517,7 @@ components:
         Assert.NotNull(resultClass);
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(resultClass.Properties);
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [InlineData(true)]
     [InlineData(false)]
@@ -8574,8 +8574,8 @@ components:
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(2, resultClass.Properties.Count());
         Assert.DoesNotContain(resultClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithoutObjectTypeHasAllPropertiesAsync()
@@ -8624,7 +8624,7 @@ components:
         Assert.NotNull(outerPayloadClass);
         Assert.Equal("innerPayload", outerPayloadClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(outerPayloadClass.Properties);
-        Assert.Single(outerPayloadClass.Properties.Where(static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(outerPayloadClass.Properties, static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineTypeAsync()
@@ -9103,15 +9103,15 @@ components:
         Assert.NotNull(administrativeUnitsNS);
         var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
         Assert.NotNull(administrativeUnitsRS);
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
         Assert.NotNull(administrativeUnitsItemsNS);
         var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
         Assert.NotNull(administrativeUnitItemsRS);
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.DoesNotContain(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
     }
     [Fact]
@@ -9248,15 +9248,15 @@ components:
         Assert.NotNull(administrativeUnitsNS);
         var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
         Assert.NotNull(administrativeUnitsRS);
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
         Assert.NotNull(administrativeUnitsItemsNS);
         var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
         Assert.NotNull(administrativeUnitItemsRS);
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.DoesNotContain(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
     }
     [Fact]
