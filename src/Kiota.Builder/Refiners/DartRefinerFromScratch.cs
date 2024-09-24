@@ -130,6 +130,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiException",
+                    AbstractionsNamespaceName
+            );
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
