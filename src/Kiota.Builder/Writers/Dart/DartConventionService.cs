@@ -273,10 +273,10 @@ public class DartConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(type);
         return type.Name.ToLowerInvariant() switch
         {
-            "integer" or "sbyte" or "byte" => "int",
+            "integer" or "sbyte" or "byte" or "int64" => "int",
             "boolean" => "bool",
             "string" => "String",
-            "double" or "float" or "decimal" or "int64" => "double",
+            "double" or "float" or "decimal" => "double",
             "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "Iterable<int>",
             "datetimeoffset" => "DateTime",
