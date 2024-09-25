@@ -34,14 +34,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
 
-        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor)) {
+        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor))
+        {
             // Constuctors (except for ClientConstructor) don't need a body.
-            writer.DecreaseIndent();            
-        } else {
+            writer.DecreaseIndent();
+        }
+        else
+        {
             if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
             {
                 writer.DecreaseIndent();
-            } else {
+            }
+            else
+            {
                 writer.CloseBlock();
             }
         }
@@ -347,8 +352,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private const string DeserializerVarName = "deserializerMap";
     private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-
-        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
+        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride).ToArray();
         writer.WriteLine($"{DeserializerReturnType} {DeserializerVarName} = " + (shouldHide ? "super.getFieldDeserializers();" : "{};"));
 
         if (fieldToSerialize.Length != 0)
@@ -492,7 +496,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (shouldHide)
             writer.WriteLine("super.serialize(writer);");
         foreach (var otherProp in parentClass
-                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                         .OrderBy(static x => x.Name))
         {
@@ -652,9 +656,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
 
         // Constuctors (except for ClientConstructor) don't need a body but a closing statement
-        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !code.IsOfKind(CodeMethodKind.ClientConstructor)) {
+        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !code.IsOfKind(CodeMethodKind.ClientConstructor))
+        {
             openingBracket = ";";
-        } 
+        }
 
         var optionalParamOpen = methodName.EqualsIgnoreCase("getAsync") ? "[" : "";
         var optionalParamClose = methodName.EqualsIgnoreCase("getAsync") ? "]" : "";

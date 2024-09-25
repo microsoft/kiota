@@ -17,7 +17,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         var isNullableReferenceType = !propertyType.EndsWith('?')
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
-                                            CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
+                                            CodePropertyKind.QueryParameter, CodePropertyKind.ErrorMessageOverride);
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
@@ -75,15 +75,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 writer.WriteLine("@override");
-
-                if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(),
-                        static x => x.Name.ToFirstCharacterUpperCase(), "?.") is { } primaryMessageCodePath &&
-                    !string.IsNullOrEmpty(primaryMessageCodePath))
-                    defaultValue = $"=> {primaryMessageCodePath} ?? \"\";";
-                else
-                    defaultValue = "=> super.Message;";
-
-                getterModifier = "get ";
                 goto default;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"/// @QueryParameter(\"{codeElement.SerializationName}\")");

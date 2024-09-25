@@ -135,6 +135,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                     "ApiException",
                     AbstractionsNamespaceName
             );
+            AddPrimaryErrorMessage(generatedCode,
+                "message",
+                () => new CodeType { Name = "string", IsNullable = true, IsExternal = false },
+                true
+            );
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
