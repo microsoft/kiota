@@ -226,24 +226,79 @@ public class GoRefiner : CommonLanguageRefiner
             ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
 
         if (modelsNameSpace == null)
-            throw new InvalidOperationException($"missing models namespace");
+            throw new InvalidOperationException("missing models namespace");
 
         var dependencies = new Dictionary<string, HashSet<string>>();
         GetUsingsInModelsNameSpace(modelsNameSpace, modelsNameSpace, dependencies);
 
         // check cycles
+        var migratedNamespaces = new Dictionary<string, string>();
         var cycles = FindCycles(dependencies);
         foreach (var cycle in cycles)
         {
-            //Console.WriteLine(string.Join(" -> ", cycle));
-            // TODO move the classes to the root namespace
-            //FlattenNameSpace(cycle, modelsNameSpace);
+            foreach (var duplicate in cycle.Value)
+            {
+                var dupNS = duplicate[^2]; // 2nd last element is the duplicate namespace
+                var nameSpace = modelsNameSpace.FindNamespaceByName(dupNS, true);
+                var rootNameSpace = cycle.Key.Equals(modelsNameSpace.Name, StringComparison.OrdinalIgnoreCase) ? modelsNameSpace : modelsNameSpace.FindNamespaceByName(cycle.Key, true);
+                migratedNamespaces[dupNS] = cycle.Key;
+                FlattenNameSpace(nameSpace!, rootNameSpace!);
+            }
+        }
+
+        // update all elements that have a migrated namespace
+        foreach (var migrated in migratedNamespaces)
+        {
+            // TODO 
+            // update all elements that have a migrated namespace
         }
     }
 
     private void FlattenNameSpace(CodeNamespace currentNameSpace, CodeNamespace targetNameSpace)
     {
+        Func<CodeElement, string> GetComposedName = codeClass =>
+        {
+            var classNameList = getPathsName(codeClass, codeClass.Name);
+            return string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+        };
 
+        currentNameSpace.Classes.ToList().ForEach(x =>
+        {
+            currentNameSpace.RemoveChildElement(x);
+            x.Name = GetComposedName(x);
+            x.Parent = targetNameSpace;
+            targetNameSpace.AddClass(x);
+        });
+        currentNameSpace.Enums.ToList().ForEach(x =>
+        {
+            currentNameSpace.RemoveChildElement(x);
+            x.Name = GetComposedName(x);
+            x.Parent = targetNameSpace;
+            targetNameSpace.AddEnum(x);
+        });
+        currentNameSpace.Interfaces.ToList().ForEach(x =>
+        {
+            currentNameSpace.RemoveChildElement(x);
+            x.Name = GetComposedName(x);
+            x.Parent = targetNameSpace;
+            targetNameSpace.AddInterface(x);
+        });
+        currentNameSpace.Functions.ToList().ForEach(x =>
+        {
+            currentNameSpace.RemoveChildElement(x);
+            x.Name = GetComposedName(x);
+            x.Parent = targetNameSpace;
+            targetNameSpace.AddFunction(x);
+        });
+        currentNameSpace.Constants.ToList().ForEach(x =>
+        {
+            currentNameSpace.RemoveChildElement(x);
+            x.Name = GetComposedName(x);
+            x.Parent = targetNameSpace;
+            targetNameSpace.AddConstant(x);
+        });
+
+        currentNameSpace.Namespaces.ToList().ForEach(x => FlattenNameSpace(x, targetNameSpace));
     }
 
     private void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
@@ -251,23 +306,23 @@ public class GoRefiner : CommonLanguageRefiner
         if (!modelsNameSpace.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase) && !currentNameSpace.IsChildOf(modelsNameSpace))
             return;
 
+        dependencies[currentNameSpace.Name] = currentNameSpace.Classes
+            .SelectMany(codeClass => codeClass.Usings)
+            .Where(x => x.Declaration != null && !x.Declaration.IsExternal)
+            .Select(static x => x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
+            .Where(ns => ns != null && ns.Name != currentNameSpace.Name)
+            .Select(static ns => ns!.Name)
+            .ToHashSet();
+
         currentNameSpace.Namespaces
             .Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name))
             .ToList()
-            .ForEach(codeNameSpace =>
-            {
-                dependencies[codeNameSpace.Name] = codeNameSpace.Classes
-                    .SelectMany(codeClass => codeClass.Usings)
-                    .Select(usingStatement => usingStatement.Name)
-                    .ToHashSet();
-
-                GetUsingsInModelsNameSpace(modelsNameSpace, codeNameSpace, dependencies);
-            });
+            .ForEach(codeNameSpace => GetUsingsInModelsNameSpace(modelsNameSpace, codeNameSpace, dependencies));
     }
 
-    static Dictionary<string, List<string>> FindCycles(Dictionary<string, HashSet<string>> dependencies)
+    static Dictionary<string, List<List<string>>> FindCycles(Dictionary<string, HashSet<string>> dependencies)
     {
-        var cycles = new Dictionary<string, List<string>>();
+        var cycles = new Dictionary<string, List<List<string>>>();
         var visited = new HashSet<string>();
         var stack = new Stack<string>();
 
@@ -275,14 +330,14 @@ public class GoRefiner : CommonLanguageRefiner
         {
             if (!visited.Contains(node))
             {
-                Dfs(node, dependencies, visited, stack, cycles);
+                Dfs(node, node, dependencies, visited, stack, cycles);
             }
         }
 
         return cycles;
     }
 
-    static void Dfs(string node, Dictionary<string, HashSet<string>> dependencies, HashSet<string> visited, Stack<string> stack, Dictionary<string, List<string>> cycles)
+    static void Dfs(string parentNode, string node, Dictionary<string, HashSet<string>> dependencies, HashSet<string> visited, Stack<string> stack, Dictionary<string, List<List<string>>> cycles)
     {
         visited.Add(node);
         stack.Push(node);
@@ -293,13 +348,15 @@ public class GoRefiner : CommonLanguageRefiner
             {
                 if (stack.Contains(neighbor))
                 {
-                    var cycle = stack.Reverse().TakeWhile(n => n != neighbor).Reverse().Concat(new[] { neighbor })
-                        .ToList();
-                    cycles[node] = cycle;
+                    var cycle = stack.Reverse().Concat(new[] { neighbor }).ToList();
+                    if (!cycles.ContainsKey(parentNode))
+                        cycles[parentNode] = new List<List<string>>();
+
+                    cycles[parentNode].Add(cycle);
                 }
                 else if (!visited.Contains(neighbor))
                 {
-                    Dfs(neighbor, dependencies, visited, stack, cycles);
+                    Dfs(parentNode, neighbor, dependencies, visited, stack, cycles);
                 }
             }
         }

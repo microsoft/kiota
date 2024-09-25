@@ -72,11 +72,11 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
     public IEnumerable<CodeConstant> Constants => InnerChildElements.Values.OfType<CodeConstant>();
     public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
-    public CodeNamespace? FindNamespaceByName(string nsName)
+    public CodeNamespace? FindNamespaceByName(string nsName, bool findInChildElements = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);
         if (nsName.Equals(Name, StringComparison.OrdinalIgnoreCase)) return this;
-        var result = FindChildByName<CodeNamespace>(nsName, false);
+        var result = FindChildByName<CodeNamespace>(nsName, findInChildElements);
         if (result == null)
             foreach (var childNS in InnerChildElements.Values.OfType<CodeNamespace>())
             {
