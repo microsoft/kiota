@@ -183,7 +183,7 @@ public partial class PluginsGenerationService
                 {
                     foreach (var property in apiSchema.Properties)
                     {
-                        newSchema.Properties.Add(property.Key, property.Value);
+                        CollectionExtensions.TryAdd(newSchema.Properties, property.Key, property.Value);
                     }
                 }
                 if (apiSchema.MaxProperties is not null) newSchema.MaxProperties = apiSchema.MaxProperties;
