@@ -396,6 +396,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         return propertyType switch
         {
+            "Iterable<int>" => "getCollectionOfPrimitiveValues<int>()",
             "UuidValue" => "getGuidValue()",
             "byte[]" => "getByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
@@ -735,6 +736,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             "byte[]" => "writeByteArrayValue",
             "String" => "writeStringValue",
+            "Iterable<int>" => "writeCollectionOfPrimitiveValues<int>",
             _ when conventions.IsPrimitiveType(propertyType) => $"write{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
             _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : "")}>",
         };
