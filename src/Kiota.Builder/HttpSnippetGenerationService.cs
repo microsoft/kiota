@@ -15,18 +15,15 @@ namespace Kiota.Builder
         private readonly OpenApiDocument OAIDocument;
         private readonly OpenApiUrlTreeNode TreeNode;
         private readonly GenerationConfiguration Configuration;
-        private readonly string WorkingDirectory;
 
-        public HttpSnippetGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration, string workingDirectory)
+        public HttpSnippetGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration)
         {
             ArgumentNullException.ThrowIfNull(document);
             ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
             ArgumentNullException.ThrowIfNull(configuration);
-            ArgumentException.ThrowIfNullOrEmpty(workingDirectory);
             OAIDocument = document;
             TreeNode = openApiUrlTreeNode;
             Configuration = configuration;
-            WorkingDirectory = workingDirectory;
         }
 
         public async Task GenerateHttpSnippetAsync(CancellationToken cancellationToken = default)
