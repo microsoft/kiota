@@ -169,7 +169,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
-            CorrectSerializerParameters(generatedCode);
+            //CorrectSerializerParameters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
