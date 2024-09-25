@@ -23,7 +23,6 @@
         "/consoleloggerparameters:NoSummary"
       ],
       "problemMatcher": "$msCompile",
-      "dependsOn": ["checkout:sample:locks"]
     },
     {
       "label": "checkout:sample:locks",
