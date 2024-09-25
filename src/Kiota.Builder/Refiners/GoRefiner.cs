@@ -201,6 +201,7 @@ public class GoRefiner : CommonLanguageRefiner
                 x => $"{x.Name}able"
             );
             AddContextParameterToGeneratorMethods(generatedCode);
+            CorrectCyclicReference(generatedCode);
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
             CorrectBackingStoreTypes(generatedCode);
@@ -216,6 +217,94 @@ public class GoRefiner : CommonLanguageRefiner
             );
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
+    }
+
+    private void CorrectCyclicReference(CodeElement currentElement)
+    {
+        var currentNameSpace = currentElement.GetImmediateParentOfType<CodeNamespace>();
+        var modelsNameSpace = findClientNameSpace(currentNameSpace)
+            ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
+
+        if (modelsNameSpace == null)
+            throw new InvalidOperationException($"missing models namespace");
+
+        var dependencies = new Dictionary<string, HashSet<string>>();
+        GetUsingsInModelsNameSpace(modelsNameSpace, modelsNameSpace, dependencies);
+
+        // check cycles
+        var cycles = FindCycles(dependencies);
+        foreach (var cycle in cycles)
+        {
+            //Console.WriteLine(string.Join(" -> ", cycle));
+            // TODO move the classes to the root namespace
+            //FlattenNameSpace(cycle, modelsNameSpace);
+        }
+    }
+
+    private void FlattenNameSpace(CodeNamespace currentNameSpace, CodeNamespace targetNameSpace)
+    {
+
+    }
+
+    private void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
+    {
+        if (!modelsNameSpace.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase) && !currentNameSpace.IsChildOf(modelsNameSpace))
+            return;
+
+        currentNameSpace.Namespaces
+            .Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name))
+            .ToList()
+            .ForEach(codeNameSpace =>
+            {
+                dependencies[codeNameSpace.Name] = codeNameSpace.Classes
+                    .SelectMany(codeClass => codeClass.Usings)
+                    .Select(usingStatement => usingStatement.Name)
+                    .ToHashSet();
+
+                GetUsingsInModelsNameSpace(modelsNameSpace, codeNameSpace, dependencies);
+            });
+    }
+
+    static Dictionary<string, List<string>> FindCycles(Dictionary<string, HashSet<string>> dependencies)
+    {
+        var cycles = new Dictionary<string, List<string>>();
+        var visited = new HashSet<string>();
+        var stack = new Stack<string>();
+
+        foreach (var node in dependencies.Keys)
+        {
+            if (!visited.Contains(node))
+            {
+                Dfs(node, dependencies, visited, stack, cycles);
+            }
+        }
+
+        return cycles;
+    }
+
+    static void Dfs(string node, Dictionary<string, HashSet<string>> dependencies, HashSet<string> visited, Stack<string> stack, Dictionary<string, List<string>> cycles)
+    {
+        visited.Add(node);
+        stack.Push(node);
+
+        if (dependencies.TryGetValue(node, out var value))
+        {
+            foreach (var neighbor in value)
+            {
+                if (stack.Contains(neighbor))
+                {
+                    var cycle = stack.Reverse().TakeWhile(n => n != neighbor).Reverse().Concat(new[] { neighbor })
+                        .ToList();
+                    cycles[node] = cycle;
+                }
+                else if (!visited.Contains(neighbor))
+                {
+                    Dfs(neighbor, dependencies, visited, stack, cycles);
+                }
+            }
+        }
+
+        stack.Pop();
     }
 
     private void GenerateCodeFiles(CodeElement currentElement)
