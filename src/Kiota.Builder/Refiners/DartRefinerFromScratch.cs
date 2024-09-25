@@ -140,6 +140,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 () => new CodeType { Name = "string", IsNullable = true, IsExternal = false },
                 true
             );
+            DeduplicateErrorMappings(generatedCode);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
