@@ -171,5 +171,5 @@ paths:
       - $ref: '#/components/parameters/post-id'
       responses:
         '200':
-          description: OK"; 
+          description: OK";
 }
