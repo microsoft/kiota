@@ -144,7 +144,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
-
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
         }, cancellationToken);
     }
 
