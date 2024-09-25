@@ -46,7 +46,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                     .Select(static x => x.Item3)
                     .Distinct()
                     .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"import '{relativePath.ToSnakeCase()}.dart';");
+                writer.WriteLine($"import '{relativePath}.dart';");
 
             writer.WriteLine();
 
@@ -66,7 +66,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
     void addImportsForDiscriminatorTypes(ClassDeclaration classDeclaration)
     {
 
-       var parent = classDeclaration.Parent as CodeClass;
+        var parent = classDeclaration.Parent as CodeClass;
         var methods = parent!.GetMethodsOffKind(CodeMethodKind.Factory);
         var method = methods?.FirstOrDefault();
         if (method != null && method.Parent is CodeElement codeElement && method.Parent is IDiscriminatorInformationHolder)
