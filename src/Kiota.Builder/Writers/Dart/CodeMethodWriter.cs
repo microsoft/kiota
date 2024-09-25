@@ -114,6 +114,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.Custom:
+                WriteCustomMethodBody(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
@@ -121,7 +124,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 break;
         }
     }
-
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
@@ -633,7 +635,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        if (code.Kind == CodeMethodKind.Serializer || code.Kind == CodeMethodKind.Deserializer || code.Kind == CodeMethodKind.QueryParametersMapper)
+        if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || (code.IsOfKind(CodeMethodKind.Custom) && code.Name.Equals("clone", StringComparison.OrdinalIgnoreCase)))
         {
             writer.WriteLine("@override");
         }
@@ -736,5 +738,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             _ when conventions.IsPrimitiveType(propertyType) => $"write{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
             _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : "")}>",
         };
+    }
+    private void WriteCustomMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        if (codeElement.Name.Equals("clone", StringComparison.OrdinalIgnoreCase))
+        {
+            var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
+            String? argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer()).Select(static x => x.Name).Aggregate(static (x, y) => $"{x}, {y}");
+            writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({argumentList});");
+        }
     }
 }

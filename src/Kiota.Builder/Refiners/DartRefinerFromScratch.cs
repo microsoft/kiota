@@ -145,6 +145,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
+            AddCloneMethodToRequestBuilders(generatedCode);
         }, cancellationToken);
     }
 
@@ -314,5 +315,30 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
     }
+    private void AddCloneMethodToRequestBuilders(CodeElement currentElement, string methodName = "clone")
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            currentClass.AddMethod(new CodeMethod
+            {
+                Name = methodName,
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType
+                {
+                    Name = currentClass.Name,
+                    IsNullable = false,
+                },
+                IsAsync = false,
+                IsStatic = false,
 
+                Kind = CodeMethodKind.Custom,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "Clones the requestbuilder.",
+                },
+            });
+        }
+        CrawlTree(currentElement, x => AddCloneMethodToRequestBuilders(x, methodName));
+    }
 }
