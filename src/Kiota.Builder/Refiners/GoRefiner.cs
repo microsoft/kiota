@@ -223,7 +223,8 @@ public class GoRefiner : CommonLanguageRefiner
     {
         var currentNameSpace = currentElement.GetImmediateParentOfType<CodeNamespace>();
         var modelsNameSpace = findClientNameSpace(currentNameSpace)
-            ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
+            ?.FindNamespaceByName(
+                $"{_configuration.ClientNamespaceName}.{GenerationConfiguration.ModelsNamespaceSegmentName}");
 
         if (modelsNameSpace == null)
             throw new InvalidOperationException("missing models namespace");
@@ -231,7 +232,6 @@ public class GoRefiner : CommonLanguageRefiner
         var dependencies = new Dictionary<string, HashSet<string>>();
         GetUsingsInModelsNameSpace(modelsNameSpace, modelsNameSpace, dependencies);
 
-        // check cycles
         var migratedNamespaces = new Dictionary<string, string>();
         var cycles = FindCycles(dependencies);
         foreach (var cycle in cycles)
@@ -240,28 +240,17 @@ public class GoRefiner : CommonLanguageRefiner
             {
                 var dupNS = duplicate[^2]; // 2nd last element is the duplicate namespace
                 var nameSpace = modelsNameSpace.FindNamespaceByName(dupNS, true);
-                var rootNameSpace = cycle.Key.Equals(modelsNameSpace.Name, StringComparison.OrdinalIgnoreCase) ? modelsNameSpace : modelsNameSpace.FindNamespaceByName(cycle.Key, true);
+                var rootNameSpace = cycle.Key.Equals(modelsNameSpace.Name, StringComparison.OrdinalIgnoreCase)
+                    ? modelsNameSpace
+                    : modelsNameSpace.FindNamespaceByName(cycle.Key, true);
                 migratedNamespaces[dupNS] = cycle.Key;
                 FlattenNameSpace(nameSpace!, rootNameSpace!);
             }
-        }
-
-        // update all elements that have a migrated namespace
-        foreach (var migrated in migratedNamespaces)
-        {
-            // TODO 
-            // update all elements that have a migrated namespace
         }
     }
 
     private void FlattenNameSpace(CodeNamespace currentNameSpace, CodeNamespace targetNameSpace)
     {
-        Func<CodeElement, string> GetComposedName = codeClass =>
-        {
-            var classNameList = getPathsName(codeClass, codeClass.Name);
-            return string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
-        };
-
         currentNameSpace.Classes.ToList().ForEach(x =>
         {
             currentNameSpace.RemoveChildElement(x);
@@ -299,6 +288,13 @@ public class GoRefiner : CommonLanguageRefiner
         });
 
         currentNameSpace.Namespaces.ToList().ForEach(x => FlattenNameSpace(x, targetNameSpace));
+        return;
+
+        string GetComposedName(CodeElement codeClass)
+        {
+            var classNameList = getPathsName(codeClass, codeClass.Name);
+            return string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+        }
     }
 
     private void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
