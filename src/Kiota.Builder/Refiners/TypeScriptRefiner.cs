@@ -728,7 +728,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}"),
         new (static x => (x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
                          || (x is CodeMethod method && (method.Parameters.Any(param => param.Kind is CodeParameterKind.RequestBody && param.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)) || method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
-            AbstractionsPackageName, KiotaBuilder.UntypedNodeName, "createUntypedNodeFromDiscriminatorValue"),
+            AbstractionsPackageName, "createUntypedNodeFromDiscriminatorValue"),
+        new (static x => (x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+                         || (x is CodeMethod method && (method.Parameters.Any(param => param.Kind is CodeParameterKind.RequestBody && param.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)) || method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
+            AbstractionsPackageName, true, KiotaBuilder.UntypedNodeName),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
