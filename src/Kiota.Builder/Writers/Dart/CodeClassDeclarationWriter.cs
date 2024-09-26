@@ -19,8 +19,6 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         if (codeElement.Parent is not CodeClass parentClass)
             throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
 
-        addImportsForDiscriminatorTypes(codeElement);
-
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
 
         var relativeImportManager = new RelativeImportManager(
@@ -59,29 +57,5 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}{implements} {{");
-    }
-    /// <summary>
-    /// Dart needs import statements for classes that are in the same folder.
-    /// </summary
-    void addImportsForDiscriminatorTypes(ClassDeclaration classDeclaration)
-    {
-
-        var parent = classDeclaration.Parent as CodeClass;
-        var methods = parent!.GetMethodsOffKind(CodeMethodKind.Factory);
-        var method = methods?.FirstOrDefault();
-        if (method != null && method.Parent is CodeElement codeElement && method.Parent is IDiscriminatorInformationHolder)
-        {
-            var discriminatorInformation = (method.Parent as IDiscriminatorInformationHolder)!.DiscriminatorInformation;
-            var discriminatorMappings = discriminatorInformation.DiscriminatorMappings;
-            foreach (var discriminatorMapping in discriminatorMappings)
-            {
-                var className = discriminatorMapping.Value.Name;
-                classDeclaration.AddUsings(new CodeUsing
-                {
-                    Name = className,
-                    Declaration = discriminatorMapping.Value
-                });
-            }
-        }
     }
 }

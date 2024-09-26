@@ -103,7 +103,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddAsyncSuffix(generatedCode);
-
+            AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
             ReplaceDefaultSerializationModules(
                 generatedCode,
