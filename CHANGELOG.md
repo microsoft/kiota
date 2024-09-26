@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where python constructor parameters are being cast to strings leading to bugs as the types is unknown on graph call. [microsoftgraph/msgraph-sdk-python#165](https://github.com/microsoftgraph/msgraph-sdk-python/issues/165)
 - Fixed a bug where child path segment from single parameter path segment would be incorrectly escaped. [#5433](https://github.com/microsoft/kiota/issues/5433)
 - Fixed inconsistent typing information generated for `ParsableFactory` and stream return types in python [kiota-abstractions-python#533](https://github.com/microsoft/kiota-abstractions-python/issues/333) 
+- Fixed cyclic depencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
 
 ## [1.18.0] - 2024-09-05
 

@@ -841,6 +841,53 @@ components:
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("ISODuration", method.ReturnType.Name);
     }
+    [Fact]
+    public async Task CorrectesCircularDependencies()
+    {
+        var modelsNS = root.AddNamespace("ApiSdk.models");
+
+        var subANamespace = modelsNS.AddNamespace($"{modelsNS.Name}.suba");
+        var modelA = subANamespace.AddClass(new CodeClass
+        {
+            Kind = CodeClassKind.Model,
+            Name = "ModelA",
+        }).First();
+
+        var subBNamespace = modelsNS.AddNamespace($"{modelsNS.Name}.subb");
+        var modelB = subBNamespace.AddClass(new CodeClass
+        {
+            Kind = CodeClassKind.Model,
+            Name = "ModelB",
+        }).First();
+
+        modelA.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = subBNamespace.Name,
+            Declaration = new()
+            {
+                Name = modelB.Name,
+                TypeDefinition = modelB,
+                IsExternal = false
+            }
+        });
+
+        modelB.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = subANamespace.Name,
+            Declaration = new()
+            {
+                Name = modelA.Name,
+                TypeDefinition = modelA,
+                IsExternal = false
+            }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal("ApiSdk.models", modelB.GetImmediateParentOfType<CodeNamespace>().Name); // migrated to root namespace
+        Assert.Equal("ApiSdk.models", modelA.GetImmediateParentOfType<CodeNamespace>().Name); // migrated to root namespace
+        Assert.Equal("SubaModelA", modelA.Name); // renamed to avoid conflict
+        Assert.Equal("SubbModelB", modelB.Name); // renamed to avoid conflict
+    }
     #endregion
 
     #region GoRefinerTests
