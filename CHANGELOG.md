@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where untyped not imports in TypeScripts would not be erasable. [microsoft/kiota-typescript#1381](https://github.com/microsoft/kiota-typescript/issues/1381)
 - Updated schema link in plugin manifest to the correct url. [#5441](https://github.com/microsoft/kiota/issues/5441)
 - Removed registration of default serialization and deserialization classes in client constructor. [#5478](https://github.com/microsoft/kiota/pull/5478)
+- Fixed incorrect type name generation in aliased scenario in TS due to broad searching of types in root namespaces. [#5404](https://github.com/microsoft/kiota/issues/5404)
 
 ## [1.18.0] - 2024-09-05
 
