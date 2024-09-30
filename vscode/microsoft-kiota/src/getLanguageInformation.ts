@@ -15,33 +15,25 @@ export async function getLanguageInformation(context: vscode.ExtensionContext): 
 };
 
 function getLanguageInformationInternal(context: vscode.ExtensionContext): Promise<LanguagesInformation | undefined> {
-  try {
-    return connectToKiota<LanguagesInformation>(context, async (connection) => {
-      const request = new rpc.RequestType0<LanguagesInformation, void>(
-        "Info"
-      );
-      return await connection.sendRequest(
-        request,
-      );
-    });
-  } catch (error) {
-    return Promise.resolve(undefined);
-  }
+  return connectToKiota<LanguagesInformation>(context, async (connection) => {
+    const request = new rpc.RequestType0<LanguagesInformation, void>(
+      "Info"
+    );
+    return await connection.sendRequest(
+      request,
+    );
+  });
 };
 
 export function getLanguageInformationForDescription(context: vscode.ExtensionContext, descriptionUrl: string, clearCache: boolean): Promise<LanguagesInformation | undefined> {
-  try {
-    return connectToKiota<LanguagesInformation>(context, async (connection) => {
-      const request = new rpc.RequestType2<string, boolean, LanguagesInformation, void>(
-        "InfoForDescription"
-      );
-      return await connection.sendRequest(
-        request,
-        descriptionUrl,
-        clearCache
-      );
-    });
-  } catch (error) {
-    return Promise.resolve(undefined);
-  }
+  return connectToKiota<LanguagesInformation>(context, async (connection) => {
+    const request = new rpc.RequestType2<string, boolean, LanguagesInformation, void>(
+      "InfoForDescription"
+    );
+    return await connection.sendRequest(
+      request,
+      descriptionUrl,
+      clearCache
+    );
+  });
 };
