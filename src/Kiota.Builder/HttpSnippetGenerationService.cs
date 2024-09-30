@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.http;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
