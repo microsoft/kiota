@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -295,7 +295,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
-    private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
+    internal static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
     {
         return definitionClass.GetImmediateParentOfType<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
