@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
-using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
@@ -82,7 +81,7 @@ public partial class PluginsGenerationService
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
                     // pass empty config hash so that its not included in this manifest.
-                    apiManifest.ApiDependencies.AddOrReplace(Configuration.ClientClassName, Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory));
+                    apiManifest.ApiDependencies[Configuration.ClientClassName] = Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory);
                     var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
                         ? DefaultContactName
                         : OAIDocument.Info.Contact.Name;
@@ -183,7 +182,7 @@ public partial class PluginsGenerationService
                 {
                     foreach (var property in apiSchema.Properties)
                     {
-                        CollectionExtensions.TryAdd(newSchema.Properties, property.Key, property.Value);
+                        newSchema.Properties.TryAdd(property.Key, property.Value);
                     }
                 }
                 if (apiSchema.MaxProperties is not null) newSchema.MaxProperties = apiSchema.MaxProperties;
