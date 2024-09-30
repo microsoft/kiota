@@ -146,7 +146,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             DisambiguatePropertiesWithClassNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
             AddCloneMethodToRequestBuilders(generatedCode);
-            escapeUrlTemplates(generatedCode);
+            escapeStringValues(generatedCode);
         }, cancellationToken);
     }
 
@@ -343,7 +343,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, x => AddCloneMethodToRequestBuilders(x, methodName));
     }
 
-    private void escapeUrlTemplates(CodeElement currentElement)
+    private void escapeStringValues(CodeElement currentElement)
     {
         if (currentElement is CodeProperty property &&
             property.IsOfKind(CodePropertyKind.UrlTemplate))
@@ -353,6 +353,13 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
             }
         }
-        CrawlTree(currentElement, escapeUrlTemplates);
+        else if (currentElement is CodeProperty prop)
+        {
+            if (!String.IsNullOrEmpty(prop.SerializationName) && prop.SerializationName.Contains('$', StringComparison.Ordinal))
+            {
+                prop.SerializationName = prop.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
+            }
+        }
+        CrawlTree(currentElement, escapeStringValues);
     }
 }
