@@ -34,6 +34,7 @@ import {
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -314,6 +315,11 @@ export async function activate(
       await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
+      const regenerate = await confirmOverride();
+      if (!regenerate) {
+        return;
+      }
+
       if (!clientOrPluginKey || clientOrPluginKey === '') {
         clientOrPluginKey = config.clientClassName || config.pluginName || '';
       }
@@ -339,6 +345,11 @@ export async function activate(
       }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+      const regenerate = await confirmOverride();
+      if (!regenerate) {
+        return;
+      }
+
       const settings = getExtensionSettings(extensionId);
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
       if (workspaceJson && workspaceJson.isDirty) {
@@ -449,7 +460,7 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
-      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk'? true : false;
+      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk';
       if (!isttkIntegration) {
         void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
       }
