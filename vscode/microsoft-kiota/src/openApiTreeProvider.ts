@@ -320,40 +320,36 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
-        try {
-            const result = await connectToKiota(this.context, async (connection) => {
-                const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
-                return await connection.sendRequest(request, {
-                    includeFilters: this.includeFilters,
-                    excludeFilters: this.excludeFilters,
-                    descriptionPath: this.descriptionUrl,
-                    clearCache
-                });
+        const result = await connectToKiota(this.context, async (connection) => {
+            const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
+            return await connection.sendRequest(request, {
+                includeFilters: this.includeFilters,
+                excludeFilters: this.excludeFilters,
+                descriptionPath: this.descriptionUrl,
+                clearCache
             });
-            if (result) {
-                this.apiTitle = result.apiTitle;
-                if (result.rootNode) {
-                    if (this.includeFilters.length === 0) {
-                        this.setAllSelected(result.rootNode, false);
-                    }
-                    this.rawRootNode = result.rootNode;
-                    if (clientNameOrPluginName) {
-                        this.rawRootNode = createKiotaOpenApiNode(
-                            clientNameOrPluginName,
-                            '/',
-                            [this.rawRootNode],
-                            false,
-                            false,
-                            undefined,
-                            clientNameOrPluginName
-                        );
-                    }
-                    await updateTreeViewIcons(treeViewId, true, false);
+        });
+        if (result) {
+            this.apiTitle = result.apiTitle;
+            if (result.rootNode) {
+                if (this.includeFilters.length === 0) {
+                    this.setAllSelected(result.rootNode, false);
                 }
-                void vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from {0}', this.apiTitle!));
+                this.rawRootNode = result.rootNode;
+                if (clientNameOrPluginName) {
+                    this.rawRootNode = createKiotaOpenApiNode(
+                        clientNameOrPluginName,
+                        '/',
+                        [this.rawRootNode],
+                        false,
+                        false,
+                        undefined,
+                        clientNameOrPluginName
+                    );
+                }
+                await updateTreeViewIcons(treeViewId, true, false);
             }
-        } catch (err) {
-            vscode.window.showErrorMessage((err as Error)?.message || 'An unknown error occurred');
+            void vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from {0}', this.apiTitle!));
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {
