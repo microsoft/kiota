@@ -604,6 +604,26 @@ components:
                     Assert.Equal(3, schema.Properties.Count);
                 }
             },
+            // objects with repeated properties
+            {
+                """
+                content:
+                            application/json:
+                                schema:
+                                    allOf: [
+                                        {type: object, properties: {a: {type: string}, b: {type: number}}},
+                                        {type: object, properties: {b: {type: number}}}
+                                    ]
+                """, (slicedDocument, _) =>
+                {
+                    Assert.NotNull(slicedDocument);
+                    Assert.NotEmpty(slicedDocument.Paths);
+                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                        .Content["application/json"].Schema;
+                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(2, schema.Properties.Count);
+                }
+            },
             // AnyOf
             {
                 """
