@@ -1,18 +1,18 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.http;
+using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using Kiota.Builder.Tests.OpenApiSampleFiles;
-using System.Threading;
 
 namespace Kiota.Builder.Tests.http;
 
@@ -56,7 +56,7 @@ public sealed class HttpSnippetGenerationServiceTests : IDisposable
         var fileNames = openApiDocument.Paths
                 .Where(x => x.Value.Operations.Any())
                 .Select(x => x.Key)
-                .Select(x => Path.Combine(outputDirectory, x.TrimStart('/')+".http"))
+                .Select(x => Path.Combine(outputDirectory, x.TrimStart('/') + ".http"))
                 .ToList();
 
         foreach (var file in fileNames)
