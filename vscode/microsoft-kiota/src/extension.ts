@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -29,7 +30,6 @@ import { GenerateState, filterSteps, generateSteps, searchSteps, generateHttpSni
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration,
   isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
@@ -62,6 +62,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -370,16 +371,7 @@ export async function activate(
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
-    registerCommandWithTelemetry(reporter, `${extensionId}.migrateFromLockFile`, async (uri: vscode.Uri) => {
-      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-
-      if (!workspaceFolder) {
-        vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
-        return;
-      }
-
-      await handleMigration(context, workspaceFolder);
-    }),
+    registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateHttpSnippet`,
       async () => {
@@ -494,47 +486,6 @@ export async function activate(
     }
     return result;
   }
-  async function generateHttpSnippetAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
-    const result = await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      cancellable: false,
-      title: vscode.l10n.t("Generating http snippet...")
-    }, async (progress, _) => {
-      const start = performance.now();
-      const result = await generateHttpSnippet(
-        context,
-        openApiTreeProvider.descriptionUrl,
-        outputPath,
-        selectedPaths,
-        [],
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.excludeBackwardCompatible,
-        settings.disableValidationRules,
-        settings.structuredMimeTypes
-      );
-      const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      reporter.sendRawTelemetryEvent(`${extensionId}.generateHttpSnippet.completed`, {
-        "errorsCount": errorsCount.toString(),
-      }, {
-        "duration": duration,
-      });
-      return result;
-    });
-    if (result) {
-      const isSuccess = await checkForSuccess(result);
-      if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
-      } else {
-        // open the http snippet file
-        const httpSnippetFilePath = path.join(outputPath, "index.http");
-        await openFile(httpSnippetFilePath);
-      }
-      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
-    }
-    return result;
-  }
   async function generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
     const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
@@ -641,6 +592,48 @@ export async function activate(
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
+      }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
+    return result;
+  }
+
+  async function generateHttpSnippetAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+    const result = await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Generating http snippet...")
+    }, async (progress, _) => {
+      const start = performance.now();
+      const result = await generateHttpSnippet(
+        context,
+        openApiTreeProvider.descriptionUrl,
+        outputPath,
+        selectedPaths,
+        [],
+        settings.clearCache,
+        settings.cleanOutput,
+        settings.excludeBackwardCompatible,
+        settings.disableValidationRules,
+        settings.structuredMimeTypes
+      );
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      reporter.sendRawTelemetryEvent(`${extensionId}.generateHttpSnippet.completed`, {
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
+      return result;
+    });
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
+      } else {
+        // open the http snippet file
+        const httpSnippetFilePath = path.join(outputPath, "index.http");
+        await openFile(httpSnippetFilePath);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
