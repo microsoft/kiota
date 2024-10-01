@@ -231,6 +231,74 @@ components:
         Assert.NotNull(specializedNS.FindChildByName<CodeClass>("StorageAccount", false));
     }
     [Fact]
+    public async Task HandlesPathWithRepeatedSegment()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://api.funtranslations.com
+paths:
+  /media/response/response/{{id}}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponseModel'
+components:
+  schemas:
+    MediaResponseModel:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        mediaType:
+          type: string
+        url:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "Graph",
+            OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
+        }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var responseBuilderNs = codeModel.FindNamespaceByName("ApiSdk.media.response");
+        Assert.NotNull(responseBuilderNs);
+        var responseRequestBuilder = responseBuilderNs.FindChildByName<CodeClass>("ResponseRequestBuilder", false);
+        Assert.NotNull(responseRequestBuilder);
+        var navigationProperty = responseRequestBuilder.Properties.FirstOrDefault(prop =>
+            prop.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            prop.Name.Equals("Response", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(navigationProperty);
+        var navigationPropertyType = navigationProperty.Type as CodeType;
+        Assert.NotNull(navigationPropertyType);
+        Assert.NotEqual(responseRequestBuilder, navigationPropertyType.TypeDefinition);// the request builder should not be the same as the class it is in.
+        var nestedResponseBuilderNs = codeModel.FindNamespaceByName("ApiSdk.media.response.response");
+        var nestedResponseRequestBuilder = nestedResponseBuilderNs.FindChildByName<CodeClass>("ResponseRequestBuilder", false);
+        Assert.Equal(nestedResponseRequestBuilder, navigationPropertyType.TypeDefinition);// the request builder should not be the same as the class it is in.
+    }
+    [Fact]
     public async Task HandlesPathWithItemInNameSegment()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
