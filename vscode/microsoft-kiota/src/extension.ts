@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
+import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDescriptionCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -26,7 +27,7 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
+import { GenerateState, generateSteps, searchSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
@@ -62,6 +63,7 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
+  const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -302,11 +304,8 @@ export async function activate(
       }
     }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
-      async () => {
-        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
-      }
-    ),
+    registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
+
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
