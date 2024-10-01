@@ -36,6 +36,7 @@ import {
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -62,6 +63,7 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
+  const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -122,9 +124,7 @@ export async function activate(
       `${treeViewId}.addToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
     ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addAllToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
+    registerCommandWithTelemetry(reporter, addAllToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addAllToSelectedEndpointsCommand.execute(openApiTreeNode)
     ),
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.removeFromSelectedEndpoints`,
