@@ -1,3 +1,4 @@
+import { treeViewId } from "../../constants";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { filterSteps } from "../../steps";
 import { Command } from "../Command";
@@ -12,7 +13,7 @@ export class FilterDescriptionCommand extends Command {
   }
 
   public getName(): string {
-    throw new Error("Method not implemented.");
+    return `${treeViewId}.filterDescription`;
   }
 
   public async execute(): Promise<void> {
