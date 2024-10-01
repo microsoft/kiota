@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -29,7 +30,6 @@ import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps"
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration,
   isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
@@ -61,6 +61,7 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -366,16 +367,7 @@ export async function activate(
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
-    registerCommandWithTelemetry(reporter, `${extensionId}.migrateFromLockFile`, async (uri: vscode.Uri) => {
-      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-
-      if (!workspaceFolder) {
-        vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
-        return;
-      }
-
-      await handleMigration(context, workspaceFolder);
-    })
+    registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
   );
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
