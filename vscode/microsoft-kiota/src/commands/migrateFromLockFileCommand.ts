@@ -16,6 +16,7 @@ export class MigrateFromLockFileCommand extends Command {
   public getName(): string {
     return `${extensionId}.migrateFromLockFile`;
   }
+
   async execute(uri: Uri): Promise<void> {
     const workspaceFolder = workspace.getWorkspaceFolder(uri);
 
