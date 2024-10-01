@@ -6,23 +6,19 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Writers.http;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Services;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.http
 {
     public partial class HttpSnippetGenerationService
     {
         private readonly OpenApiDocument OAIDocument;
-        private readonly OpenApiUrlTreeNode TreeNode;
         private readonly GenerationConfiguration Configuration;
 
-        public HttpSnippetGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode, GenerationConfiguration configuration)
+        public HttpSnippetGenerationService(OpenApiDocument document, GenerationConfiguration configuration)
         {
             ArgumentNullException.ThrowIfNull(document);
-            ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
             ArgumentNullException.ThrowIfNull(configuration);
             OAIDocument = document;
-            TreeNode = openApiUrlTreeNode;
             Configuration = configuration;
         }
 

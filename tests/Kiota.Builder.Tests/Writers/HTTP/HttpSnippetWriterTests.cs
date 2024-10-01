@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.http;
 using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Kiota.Builder.Writers.http;
 using Microsoft.Extensions.Logging;

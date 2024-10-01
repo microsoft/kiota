@@ -21,6 +21,7 @@ using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Export;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.http;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
@@ -266,11 +267,11 @@ public partial class KiotaBuilder
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
-            if (openApiDocument is null || openApiTree is null)
+            if (openApiDocument is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the http snippet");
             // generate http snippets
             sw.Start();
-            var service = new HttpSnippetGenerationService(openApiDocument, openApiTree, config);
+            var service = new HttpSnippetGenerationService(openApiDocument, config);
             await service.GenerateHttpSnippetAsync(cancellationToken).ConfigureAwait(false);
             logger.LogInformation("http snippets generated successfully");
             StopLogAndReset(sw, $"step {++stepId} - generate http snippet - took");
