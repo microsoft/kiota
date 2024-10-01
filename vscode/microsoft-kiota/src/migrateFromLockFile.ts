@@ -5,20 +5,16 @@ import { KIOTA_LOCK_FILE } from "./constants";
 import { getWorkspaceJsonPath, handleMigration } from "./util";
 
 export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
-    try {
-        return connectToKiota(context, async (connection) => {
-            const request = new rpc.RequestType1<string, KiotaLogEntry[], void>(
-                "MigrateFromLockFile"
-            );
-            const result = await connection.sendRequest(
-                request,
-                lockFileDirectory
-            );
-            return result;
-        });
-    } catch (error) {
-        return Promise.resolve(undefined);
-    }
+    return connectToKiota(context, async (connection) => {
+        const request = new rpc.RequestType1<string, KiotaLogEntry[], void>(
+            "MigrateFromLockFile"
+        );
+        const result = await connection.sendRequest(
+            request,
+            lockFileDirectory
+        );
+        return result;
+    });
 };
 
 export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {

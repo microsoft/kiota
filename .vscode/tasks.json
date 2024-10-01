@@ -22,17 +22,7 @@
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
-      "problemMatcher": "$msCompile",
-      "dependsOn": ["checkout:sample:locks"]
-    },
-    {
-      "label": "checkout:sample:locks",
-      "type": "process",
-      "command": "git",
-      "args": ["checkout", "**/kiota-lock.json"],
-      "options": {
-        "cwd": "${workspaceFolder}/samples"
-      }
+      "problemMatcher": "$msCompile"
     },
     {
       "label": "test",

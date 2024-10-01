@@ -25,7 +25,7 @@ export async function connectToKiota<T>(context: vscode.ExtensionContext, callba
     } catch (error) {
         const errorMessage = (error as { data?: { message: string } })?.data?.message
             || 'An unknown error occurred';
-        throw new Error(errorMessage);
+        vscode.window.showErrorMessage(errorMessage);
     } finally {
         connection.dispose();
         childProcess.kill();
@@ -197,30 +197,30 @@ export function maturityLevelToString(level: MaturityLevel): string {
     }
 }
 export enum DependencyType {
-  abstractions,
-  serialization,
-  authentication,
-  http,
-  bundle,
-  additional,
+    abstractions,
+    serialization,
+    authentication,
+    http,
+    bundle,
+    additional,
 }
 export function dependencyTypeToString(type: DependencyType): string {
-  switch (type) {
-    case DependencyType.abstractions:
-      return "abstractions";
-    case DependencyType.serialization:
-      return "serialization";
-    case DependencyType.authentication:
-      return "authentication";
-    case DependencyType.http:
-      return "http";
-    case DependencyType.bundle:
-      return "bundle";
-    case DependencyType.additional:
-      return "additional";
-    default:
-      throw new Error("unknown type");
-  }
+    switch (type) {
+        case DependencyType.abstractions:
+            return "abstractions";
+        case DependencyType.serialization:
+            return "serialization";
+        case DependencyType.authentication:
+            return "authentication";
+        case DependencyType.http:
+            return "http";
+        case DependencyType.bundle:
+            return "bundle";
+        case DependencyType.additional:
+            return "additional";
+        default:
+            throw new Error("unknown type");
+    }
 }
 export interface ConfigurationFile {
     version: string;
