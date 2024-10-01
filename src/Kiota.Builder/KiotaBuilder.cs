@@ -955,8 +955,11 @@ public partial class KiotaBuilder
 
         Parallel.ForEach(unmappedRequestBuilderTypes, parallelOptions, x =>
         {
+            var parentClass = x.Parent?.Parent as CodeClass;
             var parentNS = x.Parent?.Parent?.Parent as CodeNamespace;
-            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name).MinBy(shortestNamespaceOrder);
+            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name)
+                .Except([parentClass]).OfType<CodeClass>() // the property method should not reference itself as a return type. 
+                .MinBy(shortestNamespaceOrder);
             // searching down first because most request builder properties on a request builder are just sub paths on the API
             if (x.TypeDefinition == null)
             {
