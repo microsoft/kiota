@@ -9545,6 +9545,7 @@ components:
         {
             OutputPath = outputDirectory,
             OpenAPIFilePath = simpleDescriptionPath,
+            Operation = ConsumerOperation.GenerateHttpSnippet
         };
         var kiotaBuilder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, generationConfiguration, _httpClient, true);
         var result = await kiotaBuilder.GenerateHttpSnippetAsync(CancellationToken.None);
