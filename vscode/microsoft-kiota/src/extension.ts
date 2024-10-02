@@ -7,6 +7,10 @@ import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
+import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
+import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
+import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -63,6 +67,12 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
+
+  const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
+  const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
+  const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
+
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -119,22 +129,11 @@ export async function activate(
       `${treeViewId}.openDocumentationPage`,
       (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
     ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addAllToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeAllFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
-    ),
+    registerCommandWithTelemetry(reporter, addToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addAllToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeAllFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateClient`,
       async () => {
