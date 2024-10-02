@@ -9,6 +9,7 @@ import { CodeLensProvider } from "./codelensProvider";
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
+import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDescriptionCommand';
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
@@ -30,7 +31,7 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
+import { GenerateState, generateSteps, searchSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
@@ -65,12 +66,13 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
-  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
 
+  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
   const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
+  const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -301,11 +303,8 @@ export async function activate(
       }
     }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
-      async () => {
-        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
-      }
-    ),
+    registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
+
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
