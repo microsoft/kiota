@@ -40,7 +40,7 @@ public class WorkspaceConfigurationStorageService
     {
         if (await IsInitializedAsync(cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException("The workspace configuration already exists");
-        await UpdateWorkspaceConfigurationAsync(new WorkspaceConfiguration(), null, cancellationToken).ConfigureAwait(false);
+        await UpdateWorkspaceConfigurationAsync(new WorkspaceConfiguration(Kiota.Generated.KiotaVersion.Current()), null, cancellationToken).ConfigureAwait(false);
     }
     public async Task UpdateWorkspaceConfigurationAsync(WorkspaceConfiguration configuration, ApiManifestDocument? manifestDocument, CancellationToken cancellationToken = default)
     {
