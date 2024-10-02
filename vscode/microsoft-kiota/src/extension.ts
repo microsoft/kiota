@@ -42,6 +42,7 @@ import {
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { EditPathsCommand } from './commands/editPathsCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -75,6 +76,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -303,15 +305,8 @@ export async function activate(
     }
     ),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
+    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async () => await editPathsCommand.execute()),
 
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-      clientOrPluginKey = clientKey;
-      clientOrPluginObject = clientObject;
-      workspaceGenerationType = generationType;
-      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-      openApiTreeProvider.resetInitialState();
-      await updateTreeViewIcons(treeViewId, false, true);
-    }),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       const regenerate = await confirmOverride();
       if (!regenerate) {
