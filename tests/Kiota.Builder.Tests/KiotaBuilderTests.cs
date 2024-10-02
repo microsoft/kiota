@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-
+using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi.Any;
@@ -9533,6 +9533,24 @@ components:
         Assert.Equal("PostAdministrativeUnits_With201_response", operations[1].Value.OperationId);
         Assert.Equal("directory_adminstativeunits_item_get", operations[2].Value.OperationId);
     }
+
+    [Fact]
+    public async Task GeneratesHttpSnippetsAsync()
+    {
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, Posts.OpenApiYaml);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+        };
+        var kiotaBuilder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, generationConfiguration, _httpClient, true);
+        var result = await kiotaBuilder.GenerateHttpSnippetAsync(CancellationToken.None);
+        Assert.True(result);
+    }
+
     [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex OperationIdValidationRegex();
 }
