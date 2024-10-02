@@ -112,6 +112,8 @@ export function parseGenerationType(generationType: string | QuickPickItem | und
             return GenerationType.Plugin;
         case "apimanifest":
             return GenerationType.ApiManifest;
+        case "httpSnippet":
+            return GenerationType.HttpSnippet;
         default:
             throw new Error(`Unknown generation type ${generationType}`);
     }

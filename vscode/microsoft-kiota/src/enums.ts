@@ -5,6 +5,8 @@ export enum GenerationType {
     Plugin = 1,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ApiManifest = 2,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    HttpSnippet = 3,
 };
 
 export enum KiotaGenerationLanguage {

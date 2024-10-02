@@ -21,6 +21,7 @@ using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Export;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.http;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
@@ -71,14 +72,26 @@ public partial class KiotaBuilder
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
-            logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
-            // not using Directory.Delete on the main directory because it's locked when mapped in a container
-            foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
-                Directory.Delete(subDir, true);
-            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
-                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
-                File.Delete(subFile);
+            if (IsHttpSnippetGeneration(config))
+            {
+                // Delete all files ending in .http in the current folder and all subdirectories
+                foreach (var file in Directory.EnumerateFiles(config.OutputPath, "*.http", SearchOption.AllDirectories))
+                {
+                    File.Delete(file);
+                }
+            }
+            else
+            {
+                logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
+                // not using Directory.Delete on the main directory because it's locked when mapped in a container
+                foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
+                    Directory.Delete(subDir, true);
+                await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+                foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
+                                                .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
+                    File.Delete(subFile);
+            }
+
         }
     }
     public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
@@ -250,6 +263,22 @@ public partial class KiotaBuilder
         }, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<bool> GenerateHttpSnippetAsync(CancellationToken cancellationToken)
+    {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        {
+            if (openApiDocument is null)
+                throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the http snippet");
+            // generate http snippets
+            sw.Start();
+            var service = new HttpSnippetGenerationService(openApiDocument, config);
+            await service.GenerateHttpSnippetAsync(cancellationToken).ConfigureAwait(false);
+            logger.LogInformation("http snippets generated successfully");
+            StopLogAndReset(sw, $"step {++stepId} - generate http snippet - took");
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Generates the code from the OpenAPI document
     /// </summary>
@@ -311,7 +340,7 @@ public partial class KiotaBuilder
         {
             var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
-            if (shouldGenerate)
+            if (shouldGenerate || IsHttpSnippetGeneration(config))
             {
                 stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
 
@@ -334,6 +363,7 @@ public partial class KiotaBuilder
         }
         return true;
     }
+    private static bool IsHttpSnippetGeneration(GenerationConfiguration config) => config.Operation == ConsumerOperation.GenerateHttpSnippet;
     private async Task FinalizeWorkspaceAsync(Stopwatch sw, int stepId, OpenApiUrlTreeNode? openApiTree, string inputPath, CancellationToken cancellationToken)
     {
         // Write lock file

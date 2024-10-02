@@ -271,3 +271,5 @@ export interface PluginObjectProperties extends WorkspaceObjectProperties {
 }
 
 export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;
+
+export type HttpGenerationConfiguration = Omit<GenerationConfiguration, 'clientClassName' | 'usesBackingStore' | 'clientNamespaceName' | 'serializers' | 'deserializers' | 'language' | 'includeAdditionalData'>;

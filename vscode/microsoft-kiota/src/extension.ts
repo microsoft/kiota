@@ -30,7 +30,7 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
+import { GenerateState, filterSteps, generateSteps, searchSteps, generateHttpSnippetsSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
@@ -40,6 +40,7 @@ import {
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { generateHttpSnippet } from './generateHttpSnippet';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -190,6 +191,9 @@ export async function activate(
             break;
           case GenerationType.ApiManifest:
             result = await generateManifestAndRefreshUI(config, settings, outputPath, selectedPaths);
+            break;
+          case GenerationType.HttpSnippet:
+            result = await generateHttpSnippetAndRefreshUI(config, settings, outputPath, selectedPaths);
             break;
           default:
             await vscode.window.showErrorMessage(
@@ -367,6 +371,75 @@ export async function activate(
       }
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
+    registerCommandWithTelemetry(reporter,
+      `${treeViewId}.generateHttpSnippet`,
+      async () => {
+        const selectedPaths = openApiTreeProvider.getSelectedPaths();
+        if (selectedPaths.length === 0) {
+          await vscode.window.showErrorMessage(
+            vscode.l10n.t("No endpoints selected, select endpoints first")
+          );
+          return;
+        }
+        if (
+          !vscode.workspace.workspaceFolders ||
+          vscode.workspace.workspaceFolders.length === 0
+        ) {
+          await vscode.window.showErrorMessage(
+            vscode.l10n.t("No workspace folder found, open a folder first")
+          );
+          return;
+        }
+        const config = await generateHttpSnippetsSteps(
+          {
+            outputPath: openApiTreeProvider.outputPath,
+          }
+        );
+        const outputPath = typeof config.outputPath === "string"
+              ? config.outputPath
+              : "./output";
+        if (!openApiTreeProvider.descriptionUrl) {
+          await vscode.window.showErrorMessage(
+            vscode.l10n.t("No description found, select a description first")
+          );
+          return;
+        }
+        const settings = getExtensionSettings(extensionId);
+        const result = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+          title: vscode.l10n.t("Generating http snippet...")
+        }, async (progress, _) => {
+          const start = performance.now();
+          const result = await generateHttpSnippet(
+            context,
+            openApiTreeProvider.descriptionUrl,
+            outputPath,
+            selectedPaths,
+            [],
+            settings.clearCache,
+            settings.cleanOutput,
+            settings.excludeBackwardCompatible,
+            settings.disableValidationRules,
+            settings.structuredMimeTypes
+          );
+          const duration = performance.now() - start;
+          const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+          reporter.sendRawTelemetryEvent(`${extensionId}.generateHttpSnippet.completed`, {
+            "errorsCount": errorsCount.toString(),
+          }, {
+            "duration": duration,
+          });
+
+          // open the http snippet file
+          if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
+            const httpSnippetFilePath = path.join(outputPath, "index.http");
+            await openFile(httpSnippetFilePath);
+          }
+          return result;
+        });
+      }
+    )
   );
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
@@ -518,6 +591,48 @@ export async function activate(
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
+      }
+      void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
+    }
+    return result;
+  }
+
+  async function generateHttpSnippetAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+    const result = await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Generating http snippet...")
+    }, async (progress, _) => {
+      const start = performance.now();
+      const result = await generateHttpSnippet(
+        context,
+        openApiTreeProvider.descriptionUrl,
+        outputPath,
+        selectedPaths,
+        [],
+        settings.clearCache,
+        settings.cleanOutput,
+        settings.excludeBackwardCompatible,
+        settings.disableValidationRules,
+        settings.structuredMimeTypes
+      );
+      const duration = performance.now() - start;
+      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      reporter.sendRawTelemetryEvent(`${extensionId}.generateHttpSnippet.completed`, {
+        "errorsCount": errorsCount.toString(),
+      }, {
+        "duration": duration,
+      });
+      return result;
+    });
+    if (result) {
+      const isSuccess = await checkForSuccess(result);
+      if (!isSuccess) {
+        await exportLogsAndShowErrors(result);
+      } else {
+        // open the http snippet file
+        const httpSnippetFilePath = path.join(outputPath, "index.http");
+        await openFile(httpSnippetFilePath);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
@@ -798,6 +913,11 @@ async function checkForSuccess(results: KiotaLogEntry[]) {
   return false;
 }
 
+async function openFile(uri: string) {
+  if (fs.existsSync(uri)) {
+    await vscode.window.showTextDocument(vscode.Uri.file(uri));
+  }
+}
 
 // This method is called when your extension is deactivated
 export function deactivate() { }

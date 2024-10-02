@@ -163,8 +163,47 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                 return inputPluginName;
             case 'other':
                 return chooseOtherGenerationType;
+            case 'httpSnippet':
+                return inputHttpSnippetOutputPath;
             default:
                 throw new Error('unknown generation type');
+        }
+    }
+    async function inputHttpSnippetOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+        while (true) {
+            const selectedOption = await input.showQuickPick({
+                title: `${l10n.t('Generate HTTP snippet')} - ${l10n.t('output directory')}`,
+                step: 3,
+                totalSteps: 3,
+                placeholder: l10n.t('Enter an output path relative to the root of the project'),
+                items: inputOptions,
+                shouldResume: shouldResume
+            });
+            if (selectedOption) {
+                if (selectedOption?.label === folderSelectionOption) {
+                    const folderUri = await input.showOpenDialog({
+                        canSelectMany: false,
+                        openLabel: 'Select',
+                        canSelectFolders: true,
+                        canSelectFiles: false
+                    });
+
+                    if (folderUri && folderUri[0]) {
+                        state.outputPath = folderUri[0].fsPath;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    state.outputPath = selectedOption.description;
+                    if (workspaceOpen) {
+                        state.workingDirectory = vscode.workspace.workspaceFolders![0].uri.fsPath;
+                    } else {
+                        state.workingDirectory = path.dirname(selectedOption.description!);
+                    }
+                }
+            }
+            state.outputPath = state.outputPath === '' ? 'output' : state.outputPath;
+            break;
         }
     }
     async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -172,6 +211,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             const items = [
                 l10n.t('Client'),
                 l10n.t('Copilot plugin'),
+                l10n.t('HTTP snippet'),
                 l10n.t('Other')
             ];
             const option = await input.showQuickPick({
@@ -188,6 +228,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             }
             else if (option.label === l10n.t('Copilot plugin')) {
                 state.generationType = "plugin";
+            }
+            else if (option.label === l10n.t('HTTP snippet')) {
+                state.generationType = "httpSnippet";
             }
             else if (option.label === l10n.t('Other')) {
                 state.generationType = "other";
@@ -433,6 +476,32 @@ function shouldResume() {
     });
 }
 
+export async function generateHttpSnippetsSteps(existingConfiguration: Partial<GenerateHttpSnippetState>) {
+    const state = {...existingConfiguration} as Partial<GenerateState>;
+    const title = l10n.t('Generate HTTP snippet');
+    let step = 1;
+    let totalSteps = 1;
+
+    async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateHttpSnippetState>) {
+        const options: vscode.OpenDialogOptions = {
+            canSelectMany: false,
+            openLabel: 'Select',
+            canSelectFiles: false,
+            canSelectFolders: true,
+        };
+
+        const folderUri = await vscode.window.showOpenDialog(options);
+        if (folderUri && folderUri[0]) {
+            state.outputPath = folderUri[0].fsPath;
+        } else {
+            throw new Error('No folder selected');
+        }
+    }
+
+    await MultiStepInput.run(input => inputOutputPath(input, state), () => step -= 2);
+    return state;
+}
+
 function validateIsNotEmpty(value: string) {
     return Promise.resolve(value.length > 0 ? undefined : l10n.t('Required'));
 }
@@ -467,6 +536,10 @@ export interface GenerateState extends BaseStepsState {
     language: QuickPickItem | string;
     outputPath: QuickPickItem | string;
     workingDirectory: string;
+}
+
+interface GenerateHttpSnippetState extends BaseStepsState {
+    outputPath: QuickPickItem | string;
 }
 
 class InputFlowAction {
