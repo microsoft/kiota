@@ -1490,6 +1490,23 @@ public partial class KiotaBuilder
     }
 
     private readonly ConcurrentDictionary<CodeElement, bool> multipartPropertiesModels = new();
+
+    private static bool IsSupportedMultipartDefault(OpenApiSchema openApiSchema,
+        StructuredMimeTypesCollection structuredMimeTypes)
+    {
+        // https://spec.openapis.org/oas/v3.0.3.html#special-considerations-for-multipart-content
+        if (openApiSchema.IsObjectType() && structuredMimeTypes.Contains("application/json"))
+            return true;
+
+        if (GetPrimitiveType(openApiSchema) is { IsExternal: true } primitiveType &&     // it s a primitive
+               (primitiveType.Name.Equals("binary", StringComparison.OrdinalIgnoreCase)
+                || primitiveType.Name.Equals("base64", StringComparison.OrdinalIgnoreCase) // streams are handled irrespective of configs
+                || structuredMimeTypes.Contains("text/plain")))                             // other primitives need text/plain
+            return true;
+
+        return false;
+    }
+
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
@@ -1510,6 +1527,18 @@ public partial class KiotaBuilder
                                 operation, method, $"{operationType}RequestBody",
                                 isRequestBody: true) is CodeType propertyType &&
                             propertyType.TypeDefinition is not null)
+                            multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    }
+                }
+                else if (requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
+                         && operation.RequestBody.Content.Count == 1)// it's the only content type.
+                {
+                    requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
+                    foreach (var property in requestBodySchema.Properties.Values.Where(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes)))
+                    {
+                        if (CreateModelDeclarations(currentNode, property,
+                                operation, method, $"{operationType}RequestBody",
+                                isRequestBody: true) is CodeType { TypeDefinition: not null } propertyType)
                             multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                     }
                 }
