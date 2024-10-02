@@ -5,16 +5,12 @@ using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.WorkspaceManagement;
 
-public class WorkspaceConfiguration(string kiotaVersion) : ICloneable
+public class WorkspaceConfiguration : ICloneable
 {
     /// <summary>
     /// The version of the configuration file schema.
     /// </summary>
     public string Version { get; set; } = "1.0.0";
-    /// <summary>
-    /// The version of kiota used by the curent workspace.
-    /// </summary>
-    public string KiotaVersion { get; set; } = kiotaVersion;
 #pragma warning disable CA2227 // Collection properties should be read only
     /// <summary>
     /// The clients to generate.
@@ -34,7 +30,7 @@ public class WorkspaceConfiguration(string kiotaVersion) : ICloneable
     public bool AnyConsumerPresent => Clients.Count != 0 || Plugins.Count != 0;
     public object Clone()
     {
-        return new WorkspaceConfiguration(KiotaVersion)
+        return new WorkspaceConfiguration
         {
             Version = Version,
             Clients = Clients.ToDictionary(static x => x.Key, static x => (ApiClientConfiguration)x.Value.Clone(), StringComparer.OrdinalIgnoreCase),

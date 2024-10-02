@@ -7,7 +7,7 @@ public sealed class WorkspaceConfigurationTests
     [Fact]
     public void Clones()
     {
-        var source = new WorkspaceConfiguration("")
+        var source = new WorkspaceConfiguration
         {
             Clients = { { "GraphClient", new ApiClientConfiguration { ClientNamespaceName = "foo" } } },
         };
