@@ -267,17 +267,17 @@ public class GoRefiner : CommonLanguageRefiner
             return;
 
         dependencies[currentNameSpace.Name] = currentNameSpace.Classes
-            .SelectMany(codeClass => codeClass.Usings)
-            .Where(x => x.Declaration != null && !x.Declaration.IsExternal)
+            .SelectMany(static codeClass => codeClass.Usings)
+            .Where(static x => x.Declaration != null && !x.Declaration.IsExternal)
             .Select(static x => x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
-            .Where(ns => ns != null && ns.Name != currentNameSpace.Name)
+            .Where(ns => ns != null && !ns.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase))
             .Select(static ns => ns!.Name)
             .ToHashSet();
 
-        currentNameSpace.Namespaces
-            .Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name))
-            .ToList()
-            .ForEach(codeNameSpace => GetUsingsInModelsNameSpace(modelsNameSpace, codeNameSpace, dependencies));
+        foreach (var codeNameSpace in currentNameSpace.Namespaces.Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name)))
+        {
+            GetUsingsInModelsNameSpace(modelsNameSpace, codeNameSpace, dependencies);
+        }
     }
 
     /// <summary>
@@ -286,7 +286,7 @@ public class GoRefiner : CommonLanguageRefiner
     /// </summary>
     /// <param name="dependencies"></param>
     /// <returns></returns>
-    static Dictionary<string, List<List<string>>> FindCycles(Dictionary<string, HashSet<string>> dependencies)
+    private static Dictionary<string, List<List<string>>> FindCycles(Dictionary<string, HashSet<string>> dependencies)
     {
         var cycles = new Dictionary<string, List<List<string>>>();
         var visited = new HashSet<string>();
@@ -307,18 +307,19 @@ public class GoRefiner : CommonLanguageRefiner
     /// <summary>
     /// Performs a DFS search to find cycles in the graph. Method will stop at the first cycle found in each node
     /// </summary>
-    static void SearchCycles(string parentNode, string node, Dictionary<string, HashSet<string>> dependencies, HashSet<string> visited, Stack<string> stack, Dictionary<string, List<List<string>>> cycles)
+    private static void SearchCycles(string parentNode, string node, Dictionary<string, HashSet<string>> dependencies, HashSet<string> visited, Stack<string> stack, Dictionary<string, List<List<string>>> cycles)
     {
         visited.Add(node);
         stack.Push(node);
 
         if (dependencies.TryGetValue(node, out var value))
         {
+            var stackSet = new HashSet<string>(stack);
             foreach (var neighbor in value)
             {
-                if (stack.Contains(neighbor))
+                if (stackSet.Contains(neighbor))
                 {
-                    var cycle = stack.Reverse().Concat(new[] { neighbor }).ToList();
+                    var cycle = stack.Reverse().Concat([neighbor]).ToList();
                     if (!cycles.ContainsKey(parentNode))
                         cycles[parentNode] = new List<List<string>>();
 
@@ -336,50 +337,57 @@ public class GoRefiner : CommonLanguageRefiner
 
     private void MigrateNameSpace(CodeNamespace currentNameSpace, CodeNamespace targetNameSpace)
     {
-        currentNameSpace.Classes.ToList().ForEach(x =>
+        foreach (var codeClass in currentNameSpace.Classes)
         {
-            currentNameSpace.RemoveChildElement(x);
-            x.Name = GetComposedName(x);
-            x.Parent = targetNameSpace;
-            targetNameSpace.AddClass(x);
-        });
-        currentNameSpace.Enums.ToList().ForEach(x =>
+            currentNameSpace.RemoveChildElement(codeClass);
+            codeClass.Name = GetComposedName(codeClass);
+            codeClass.Parent = targetNameSpace;
+            targetNameSpace.AddClass(codeClass);
+        }
+
+        foreach (var x in currentNameSpace.Enums)
         {
             currentNameSpace.RemoveChildElement(x);
             x.Name = GetComposedName(x);
             x.Parent = targetNameSpace;
             targetNameSpace.AddEnum(x);
-        });
-        currentNameSpace.Interfaces.ToList().ForEach(x =>
+        }
+
+        foreach (var x in currentNameSpace.Interfaces)
         {
             currentNameSpace.RemoveChildElement(x);
             x.Name = GetComposedName(x);
             x.Parent = targetNameSpace;
             targetNameSpace.AddInterface(x);
-        });
-        currentNameSpace.Functions.ToList().ForEach(x =>
+        }
+
+        foreach (var x in currentNameSpace.Functions)
         {
             currentNameSpace.RemoveChildElement(x);
             x.Name = GetComposedName(x);
             x.Parent = targetNameSpace;
             targetNameSpace.AddFunction(x);
-        });
-        currentNameSpace.Constants.ToList().ForEach(x =>
+        }
+
+        foreach (var x in currentNameSpace.Constants)
         {
             currentNameSpace.RemoveChildElement(x);
             x.Name = GetComposedName(x);
             x.Parent = targetNameSpace;
             targetNameSpace.AddConstant(x);
-        });
+        }
 
-        currentNameSpace.Namespaces.ToList().ForEach(x => MigrateNameSpace(x, targetNameSpace));
+        foreach (var ns in currentNameSpace.Namespaces)
+        {
+            MigrateNameSpace(ns, targetNameSpace);
+        }
     }
     private void CorrectReferencesToMigratedModels(CodeElement currentElement, Dictionary<string, string> migratedNamespaces)
     {
         if (currentElement is CodeNamespace cn)
         {
             var usings = cn.GetChildElements()
-                .SelectMany(static x => x.GetChildElements(false))
+                .SelectMany(static x => x.GetChildElements())
                 .OfType<ProprietableBlockDeclaration>()
                 .SelectMany(static x => x.Usings)
                 .Where(x => migratedNamespaces.ContainsKey(x.Name))
@@ -388,8 +396,8 @@ public class GoRefiner : CommonLanguageRefiner
             foreach (var codeUsing in usings)
             {
                 if (codeUsing.Parent is not ProprietableBlockDeclaration blockDeclaration ||
-                    codeUsing.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>().Name !=
-                    migratedNamespaces[codeUsing.Name])
+                    codeUsing.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>().Name.Equals(migratedNamespaces[codeUsing.Name], StringComparison.OrdinalIgnoreCase) == false
+                    )
                 {
                     continue;
                 }
