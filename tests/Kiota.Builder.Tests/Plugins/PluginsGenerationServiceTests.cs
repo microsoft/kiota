@@ -571,7 +571,7 @@ components:
             // ignored
         }
     }
-    
+
     [Fact]
     public async Task GeneratesManifestWithMultipleSecuritySchemesAsync()
     {
