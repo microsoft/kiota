@@ -77,7 +77,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
-  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -306,7 +306,12 @@ export async function activate(
     }
     ),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async () => await editPathsCommand.execute()),
+    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+      clientOrPluginKey = clientKey;
+      clientOrPluginObject = clientObject;
+      workspaceGenerationType = generationType;
+      await editPathsCommand.execute({ clientKey, clientObject });
+    }),
 
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       const regenerate = await confirmOverride();

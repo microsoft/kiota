@@ -8,27 +8,23 @@ import { Command } from "./Command";
 export class EditPathsCommand extends Command {
 
   private _openApiTreeProvider: OpenApiTreeProvider;
-  private _clientKey: string;
-  private _clientObject: ClientOrPluginProperties;
 
-  public constructor(openApiTreeProvider: OpenApiTreeProvider, clientKey: string, clientObject: ClientOrPluginProperties) {
+  public constructor(openApiTreeProvider: OpenApiTreeProvider) {
     super();
     this._openApiTreeProvider = openApiTreeProvider;
-    this._clientKey = clientKey;
-    this._clientObject = clientObject;
   }
 
   public getName(): string {
     return `${extensionId}.editPaths`;
   }
 
-  public async execute(): Promise<void> {
-    await this.loadEditPaths();
+  public async execute({ clientKey, clientObject }: { clientKey: string, clientObject: ClientOrPluginProperties }): Promise<void> {
+    await this.loadEditPaths(clientKey, clientObject);
     this._openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }
 
-  private async loadEditPaths() {
-    await openTreeViewWithProgress(() => this._openApiTreeProvider.loadEditPaths(this._clientKey, this._clientObject));
+  private async loadEditPaths(clientKey: string, clientObject: ClientOrPluginProperties) {
+    await openTreeViewWithProgress(() => this._openApiTreeProvider.loadEditPaths(clientKey, clientObject));
   }
 }
