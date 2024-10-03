@@ -19,11 +19,11 @@
     "type": "git"
   },
   "keywords": [
-        "openapi",
-        "api client",
-        "copilot",
-        "api plugins",
-        "api manifest"
+    "openapi",
+    "api client",
+    "copilot",
+    "api plugins",
+    "api manifest"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -463,22 +463,28 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint",
-    "test": "node ./out/test/runTest.js"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^2.9.0",
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.9",
+    "@types/chai": "^5.0.0",
     "@types/node": "22.x",
+    "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
+    "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.13.0",
+    "chai": "^5.1.1",
     "glob": "^11.0.0",
     "mocha": "^10.7.3",
+    "sinon": "^19.0.2",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.6.3",
+    "typemoq": "^2.1.0",
+    "typescript": "^5.5.4",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"
   },
