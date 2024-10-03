@@ -238,16 +238,18 @@ public class GoRefiner : CommonLanguageRefiner
         {
             foreach (var cycleReference in cycle.Value)
             {
-                var dupNS = cycleReference[^2]; // 2nd last element is target base namespace
-                var nameSpace = modelsNameSpace.FindNamespaceByName(dupNS, true);
+                var dupNs = cycleReference[^2]; // 2nd last element is target base namespace
+                var nameSpace = modelsNameSpace.FindNamespaceByName(dupNs, true);
 
-                migratedNamespaces[dupNS] = modelsNameSpace.Name;
+                migratedNamespaces[dupNs] = modelsNameSpace.Name;
                 MigrateNameSpace(nameSpace!, modelsNameSpace);
 
-                if (!cycle.Key.Equals(modelsNameSpace.Name, StringComparison.OrdinalIgnoreCase) && !migratedNamespaces.ContainsKey(cycle.Key))
+                if (!cycle.Key.Equals(modelsNameSpace.Name, StringComparison.OrdinalIgnoreCase)
+                    && !migratedNamespaces.ContainsKey(cycle.Key)
+                    && modelsNameSpace.FindNamespaceByName(cycle.Key, true) is { } currentNs)
                 {
                     migratedNamespaces[cycle.Key] = modelsNameSpace.Name;
-                    MigrateNameSpace(modelsNameSpace.FindNamespaceByName(cycle.Key, true)!, modelsNameSpace);
+                    MigrateNameSpace(currentNs, modelsNameSpace);
                 }
             }
         }
@@ -270,8 +272,9 @@ public class GoRefiner : CommonLanguageRefiner
             .SelectMany(static codeClass => codeClass.Usings)
             .Where(static x => x.Declaration != null && !x.Declaration.IsExternal)
             .Select(static x => x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
-            .Where(ns => ns != null && !ns.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase))
-            .Select(static ns => ns!.Name)
+            .OfType<CodeNamespace>()
+            .Where(ns => !ns.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase))
+            .Select(static ns => ns.Name)
             .ToHashSet();
 
         foreach (var codeNameSpace in currentNameSpace.Namespaces.Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name)))
