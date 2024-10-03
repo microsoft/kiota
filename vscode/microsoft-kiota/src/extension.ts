@@ -6,7 +6,15 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { EditPathsCommand } from './commands/editPathsCommand';
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
+import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
+import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDescriptionCommand';
+import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/openDocumentationPageCommand';
+import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
+import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
+import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -15,6 +23,7 @@ import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
+import { clearDeepLinkParams, getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
 import {
   ClientOrPluginProperties,
   ConsumerOperation,
@@ -25,8 +34,7 @@ import {
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
+import { GenerateState, generateSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
@@ -34,6 +42,7 @@ import {
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { openTreeViewWithProgress } from './utilities/progress';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
 
@@ -61,11 +70,20 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
+  const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
+  const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
+  const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
+  const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
+  const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
+  const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
+
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  let deepLinkParams: Partial<IntegrationParams> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -74,13 +92,14 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
-          let errorsArray: string[];
-          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(queryParameters);
+          let [params, errorsArray] = validateDeepLinkQueryParams(queryParameters);
+          setDeepLinkParams(params);
           reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
             "queryParameters": JSON.stringify(queryParameters),
             "validationErrors": errorsArray.join(", ")
           });
 
+          let deepLinkParams = getDeepLinkParams();
           if (deepLinkParams.descriptionurl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
             return;
@@ -114,29 +133,16 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.openDocumentationPage`,
-      (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addAllToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeAllFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
-    ),
+    registerCommandWithTelemetry(reporter, openDocumentationPageCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await openDocumentationPageCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addAllToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeAllFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateClient`,
       async () => {
+        const deepLinkParams = getDeepLinkParams();
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
         if (selectedPaths.length === 0) {
           await vscode.window.showErrorMessage(
@@ -234,7 +240,7 @@ export async function activate(
             }
           }
 
-          deepLinkParams = {};  // Clear the state after the generation
+          clearDeepLinkParams();  // Clear the state after the generation
         }
       }
     ),
@@ -247,47 +253,8 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(
-      reporter,
-      `${treeViewId}.searchOrOpenApiDescription`,
-      async (
-        searchParams: Partial<IntegrationParams> = {}
-      ) => {
-        // set deeplink params if exists
-        if (Object.keys(searchParams).length > 0) {
-          let errorsArray: string[];
-          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-          reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
-            "searchParameters": JSON.stringify(searchParams),
-            "validationErrors": errorsArray.join(", ")
-          });
-        }
-
-        // proceed to enable loading of openapi description
-        const yesAnswer = vscode.l10n.t("Yes, override it");
-        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
-          const response = await vscode.window.showWarningMessage(
-            vscode.l10n.t(
-              "Before adding a new API description, consider that your changes and current selection will be lost."),
-            yesAnswer,
-            vscode.l10n.t("Cancel")
-          );
-          if (response !== yesAnswer) {
-            return;
-          }
-        }
-        const config = await searchSteps(x => vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Searching...")
-        }, (progress, _) => {
-          const settings = getExtensionSettings(extensionId);
-          return searchDescription(context, x, settings.clearCache);
-        }));
-        if (config.descriptionPath) {
-          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
-        }
-      }
+    registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.getName(),
+      async (searchParams: Partial<IntegrationParams> = {}) => await searchOrOpenApiDescriptionCommand.execute(searchParams)
     ),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
@@ -302,19 +269,14 @@ export async function activate(
       }
     }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
-      async () => {
-        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
-      }
-    ),
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+    registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
+    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
       workspaceGenerationType = generationType;
-      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-      openApiTreeProvider.resetInitialState();
-      await updateTreeViewIcons(treeViewId, false, true);
+      await editPathsCommand.execute({ clientKey, clientObject });
     }),
+
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       const regenerate = await confirmOverride();
       if (!regenerate) {
@@ -452,6 +414,7 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
+      const deepLinkParams = getDeepLinkParams();
       const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk';
       if (!isttkIntegration) {
         void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
@@ -678,17 +641,7 @@ export async function activate(
 
   context.subscriptions.push(disposable);
 }
-function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
-  return vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    cancellable: false,
-    title: vscode.l10n.t("Loading...")
-  }, async (progress, _) => {
-    const result = await callback();
-    await vscode.commands.executeCommand(treeViewFocusCommand);
-    return result;
-  });
-}
+
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {
     const splatCommand = command.split('/');
