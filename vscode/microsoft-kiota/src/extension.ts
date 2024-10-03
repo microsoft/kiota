@@ -13,7 +13,7 @@ import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDe
 import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/openDocumentationPageCommand';
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
-import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/searchOrOpenApiDescriptionCommand';
+import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";

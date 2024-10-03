@@ -1,14 +1,14 @@
 import TelemetryReporter from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
-import { extensionId, treeViewId } from "../../constants";
-import { getExtensionSettings } from "../../extensionSettings";
-import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
-import { searchDescription } from "../../searchDescription";
-import { searchSteps } from "../../steps";
-import { IntegrationParams, validateDeepLinkQueryParams } from "../../utilities/deep-linking";
-import { Command } from "../Command";
+import { extensionId, treeViewId } from "../../../constants";
+import { getExtensionSettings } from "../../../extensionSettings";
+import { setDeepLinkParams } from "../../../handlers/deepLinkParamsHandler";
+import { OpenApiTreeProvider } from "../../../openApiTreeProvider";
+import { searchSteps } from "../../../steps";
+import { IntegrationParams, validateDeepLinkQueryParams } from "../../../utilities/deep-linking";
+import { Command } from "../../Command";
+import { searchDescription } from "./searchDescription";
 
 export class SearchOrOpenApiDescriptionCommand extends Command {
 
