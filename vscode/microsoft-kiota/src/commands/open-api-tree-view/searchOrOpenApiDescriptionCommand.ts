@@ -1,8 +1,9 @@
-import * as vscode from "vscode";
 import TelemetryReporter from "@vscode/extension-telemetry";
+import * as vscode from "vscode";
 
 import { extensionId, treeViewId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
+import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { searchDescription } from "../../searchDescription";
 import { searchSteps } from "../../steps";
@@ -27,10 +28,8 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
   public async execute(searchParams: Partial<IntegrationParams>): Promise<void> {
     // set deeplink params if exists
     if (Object.keys(searchParams).length > 0) {
-      let errorsArray: string[];
-      let deepLinkParams: Partial<IntegrationParams>;
-      [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-
+      let [params, errorsArray] = validateDeepLinkQueryParams(searchParams);
+      setDeepLinkParams(params);
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
         "searchParameters": JSON.stringify(searchParams),

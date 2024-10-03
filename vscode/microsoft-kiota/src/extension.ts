@@ -22,6 +22,7 @@ import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
+import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
 import {
   ClientOrPluginProperties,
   ConsumerOperation,
@@ -80,7 +81,6 @@ export async function activate(
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
-  let deepLinkParams: Partial<IntegrationParams> = {};
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       handleUri: async (uri: vscode.Uri) => {
@@ -89,13 +89,14 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
-          let errorsArray: string[];
-          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(queryParameters);
+          let [params, errorsArray] = validateDeepLinkQueryParams(queryParameters);
+          setDeepLinkParams(params);
           reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
             "queryParameters": JSON.stringify(queryParameters),
             "validationErrors": errorsArray.join(", ")
           });
 
+          let deepLinkParams = getDeepLinkParams();
           if (deepLinkParams.descriptionurl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
             return;
@@ -138,6 +139,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateClient`,
       async () => {
+        const deepLinkParams = getDeepLinkParams();
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
         if (selectedPaths.length === 0) {
           await vscode.window.showErrorMessage(
@@ -235,7 +237,7 @@ export async function activate(
             }
           }
 
-          deepLinkParams = {};  // Clear the state after the generation
+          setDeepLinkParams({});  // Clear the state after the generation
         }
       }
     ),
@@ -411,6 +413,7 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
+      const deepLinkParams = getDeepLinkParams();
       const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk';
       if (!isttkIntegration) {
         void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
