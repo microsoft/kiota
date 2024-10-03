@@ -40,7 +40,7 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
 
     // proceed to enable loading of openapi description
     const yesAnswer = vscode.l10n.t("Yes, override it");
-    if (!this._openApiTreeProvider.isEmpty() && this._openApiTreeProvider.hasChanges()) {
+    if (this._openApiTreeProvider.hasChanges()) {
       const response = await vscode.window.showWarningMessage(
         vscode.l10n.t(
           "Before adding a new API description, consider that your changes and current selection will be lost."),
