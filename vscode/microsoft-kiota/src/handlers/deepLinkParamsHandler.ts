@@ -6,3 +6,6 @@ export const getDeepLinkParams = () => deepLinkParams;
 export const setDeepLinkParams = (params: Partial<IntegrationParams>) => {
   deepLinkParams = { ...deepLinkParams, ...params };
 };
+export const clearDeepLinkParams = () => {
+  deepLinkParams = {};
+};

@@ -23,7 +23,7 @@ import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
-import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
+import { clearDeepLinkParams, getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
 import {
   ClientOrPluginProperties,
   ConsumerOperation,
@@ -240,7 +240,7 @@ export async function activate(
             }
           }
 
-          setDeepLinkParams({});  // Clear the state after the generation
+          clearDeepLinkParams();  // Clear the state after the generation
         }
       }
     ),
