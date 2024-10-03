@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { EditPathsCommand } from './commands/editPathsCommand';
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
@@ -40,6 +41,7 @@ import {
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { openTreeViewWithProgress } from './utilities/progress';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
 
@@ -75,6 +77,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -303,15 +306,13 @@ export async function activate(
     }
     ),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
-
-    registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
       workspaceGenerationType = generationType;
-      await loadEditPaths(clientOrPluginKey, clientObject, openApiTreeProvider);
-      openApiTreeProvider.resetInitialState();
-      await updateTreeViewIcons(treeViewId, false, true);
+      await editPathsCommand.execute({ clientKey, clientObject });
     }),
+
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
       const regenerate = await confirmOverride();
       if (!regenerate) {
@@ -675,17 +676,7 @@ export async function activate(
 
   context.subscriptions.push(disposable);
 }
-function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
-  return vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    cancellable: false,
-    title: vscode.l10n.t("Loading...")
-  }, async (progress, _) => {
-    const result = await callback();
-    await vscode.commands.executeCommand(treeViewFocusCommand);
-    return result;
-  });
-}
+
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {
     const splatCommand = command.split('/');
