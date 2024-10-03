@@ -6,6 +6,13 @@ import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
+import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
+import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
+import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDescriptionCommand';
+import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/openDocumentationPageCommand';
+import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
+import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -25,15 +32,15 @@ import {
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { searchDescription } from "./searchDescription";
-import { GenerateState, filterSteps, generateSteps, searchSteps } from "./steps";
+import { GenerateState, generateSteps, searchSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
-  handleMigration,
   isClientType, isPluginType, parseGenerationLanguage,
   parseGenerationType, parsePluginType, updateTreeViewIcons
 } from "./util";
 import { IntegrationParams, isDeeplinkEnabled, transformToGenerationConfig, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -60,6 +67,15 @@ export async function activate(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+
+  const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
+  const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
+  const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
+  const removeAllFromSelectedEndpointsCommand = new RemoveAllFromSelectedEndpointsCommand(openApiTreeProvider);
+  const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
+  const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
+  const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
@@ -112,26 +128,12 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.openDocumentationPage`,
-      (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.addAllToSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
-    ),
-    registerCommandWithTelemetry(reporter,
-      `${treeViewId}.removeAllFromSelectedEndpoints`,
-      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
-    ),
+    registerCommandWithTelemetry(reporter, openDocumentationPageCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await openDocumentationPageCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, addAllToSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await addAllToSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+    registerCommandWithTelemetry(reporter, removeAllFromSelectedEndpointsCommand.getName(), async (openApiTreeNode: OpenApiTreeNode) => await removeAllFromSelectedEndpointsCommand.execute(openApiTreeNode)),
+
     registerCommandWithTelemetry(reporter,
       `${treeViewId}.generateClient`,
       async () => {
@@ -300,11 +302,8 @@ export async function activate(
       }
     }
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
-      async () => {
-        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
-      }
-    ),
+    registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
+
     registerCommandWithTelemetry(reporter, `${extensionId}.editPaths`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
       clientOrPluginObject = clientObject;
@@ -314,6 +313,11 @@ export async function activate(
       await updateTreeViewIcons(treeViewId, false, true);
     }),
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
+      const regenerate = await confirmOverride();
+      if (!regenerate) {
+        return;
+      }
+
       if (!clientOrPluginKey || clientOrPluginKey === '') {
         clientOrPluginKey = config.clientClassName || config.pluginName || '';
       }
@@ -339,6 +343,11 @@ export async function activate(
       }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
+      const regenerate = await confirmOverride();
+      if (!regenerate) {
+        return;
+      }
+
       const settings = getExtensionSettings(extensionId);
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
       if (workspaceJson && workspaceJson.isDirty) {
@@ -355,16 +364,7 @@ export async function activate(
         await regeneratePlugin(clientKey, clientObject, settings);
       }
     }),
-    registerCommandWithTelemetry(reporter, `${extensionId}.migrateFromLockFile`, async (uri: vscode.Uri) => {
-      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-
-      if (!workspaceFolder) {
-        vscode.window.showErrorMessage(vscode.l10n.t("Could not determine the workspace folder."));
-        return;
-      }
-
-      await handleMigration(context, workspaceFolder);
-    })
+    registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
   );
 
   async function generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
@@ -449,7 +449,7 @@ export async function activate(
       if (!isSuccess) {
         await exportLogsAndShowErrors(result);
       }
-      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk'? true : false;
+      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk';
       if (!isttkIntegration) {
         void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
       }
