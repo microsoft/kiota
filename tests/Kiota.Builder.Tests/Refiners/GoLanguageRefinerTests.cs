@@ -852,6 +852,24 @@ components:
             Kind = CodeClassKind.Model,
             Name = "ModelA",
         }).First();
+        subANamespace.AddEnum(new CodeEnum
+        {
+            Name = "ModelAEnum",
+        });
+        subANamespace.AddInterface(new CodeInterface
+        {
+            Name = "ModelAInterface",
+            OriginalClass = modelA,
+        });
+        subANamespace.AddFunction(new CodeFunction(
+            new CodeMethod
+            {
+                Name = "ModelAFunction",
+                IsStatic = true,
+                Parent = modelA,
+                ReturnType = new CodeType()
+            })
+        );
 
         var subBNamespace = modelsNS.AddNamespace($"{modelsNS.Name}.subb");
         var modelB = subBNamespace.AddClass(new CodeClass
@@ -887,6 +905,8 @@ components:
         Assert.Equal("ApiSdk.models", modelA.GetImmediateParentOfType<CodeNamespace>().Name); // migrated to root namespace
         Assert.Equal("SubaModelA", modelA.Name); // renamed to avoid conflict
         Assert.Equal("SubbModelB", modelB.Name); // renamed to avoid conflict
+
+        Assert.Empty(subANamespace.GetChildElements(true));
     }
     #endregion
 
