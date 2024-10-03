@@ -13,6 +13,7 @@ import { FilterDescriptionCommand } from './commands/open-api-tree-view/filterDe
 import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/openDocumentationPageCommand';
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
+import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/searchOrOpenApiDescriptionCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
@@ -31,8 +32,7 @@ import {
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { searchDescription } from "./searchDescription";
-import { GenerateState, generateSteps, searchSteps } from "./steps";
+import { GenerateState, generateSteps } from "./steps";
 import { updateClients } from "./updateClients";
 import {
   getSanitizedString, getWorkspaceJsonDirectory, getWorkspaceJsonPath,
@@ -75,6 +75,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
+  const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -247,47 +248,8 @@ export async function activate(
         void context.workspaceState.update('generatedOutput', undefined);
       }
     }),
-    registerCommandWithTelemetry(
-      reporter,
-      `${treeViewId}.searchOrOpenApiDescription`,
-      async (
-        searchParams: Partial<IntegrationParams> = {}
-      ) => {
-        // set deeplink params if exists
-        if (Object.keys(searchParams).length > 0) {
-          let errorsArray: string[];
-          [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
-          reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
-            "searchParameters": JSON.stringify(searchParams),
-            "validationErrors": errorsArray.join(", ")
-          });
-        }
-
-        // proceed to enable loading of openapi description
-        const yesAnswer = vscode.l10n.t("Yes, override it");
-        if (!openApiTreeProvider.isEmpty() && openApiTreeProvider.hasChanges()) {
-          const response = await vscode.window.showWarningMessage(
-            vscode.l10n.t(
-              "Before adding a new API description, consider that your changes and current selection will be lost."),
-            yesAnswer,
-            vscode.l10n.t("Cancel")
-          );
-          if (response !== yesAnswer) {
-            return;
-          }
-        }
-        const config = await searchSteps(x => vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Searching...")
-        }, (progress, _) => {
-          const settings = getExtensionSettings(extensionId);
-          return searchDescription(context, x, settings.clearCache);
-        }));
-        if (config.descriptionPath) {
-          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
-        }
-      }
+    registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.getName(),
+      async (searchParams: Partial<IntegrationParams> = {}) => await searchOrOpenApiDescriptionCommand.execute(searchParams)
     ),
     registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
