@@ -1,0 +1,68 @@
+import * as vscode from "vscode";
+import TelemetryReporter from "@vscode/extension-telemetry";
+
+import { extensionId, treeViewId } from "../../constants";
+import { getExtensionSettings } from "../../extensionSettings";
+import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { searchDescription } from "../../searchDescription";
+import { searchSteps } from "../../steps";
+import { IntegrationParams, validateDeepLinkQueryParams } from "../../utilities/deep-linking";
+import { Command } from "../Command";
+
+export class SearchOrOpenApiDescriptionCommand extends Command {
+
+  private _openApiTreeProvider: OpenApiTreeProvider;
+  private _context: vscode.ExtensionContext;
+
+  constructor(openApiTreeProvider: OpenApiTreeProvider, context: vscode.ExtensionContext) {
+    super();
+    this._openApiTreeProvider = openApiTreeProvider;
+    this._context = context;
+  }
+
+  public getName(): string {
+    return `${treeViewId}.searchOrOpenApiDescription`;
+  }
+
+  public async execute(searchParams: Partial<IntegrationParams>): Promise<void> {
+    // set deeplink params if exists
+    if (Object.keys(searchParams).length > 0) {
+      let errorsArray: string[];
+      let deepLinkParams: Partial<IntegrationParams>;
+      [deepLinkParams, errorsArray] = validateDeepLinkQueryParams(searchParams);
+
+      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
+      reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
+        "searchParameters": JSON.stringify(searchParams),
+        "validationErrors": errorsArray.join(", ")
+      });
+    }
+
+    // proceed to enable loading of openapi description
+    const yesAnswer = vscode.l10n.t("Yes, override it");
+    if (!this._openApiTreeProvider.isEmpty() && this._openApiTreeProvider.hasChanges()) {
+      const response = await vscode.window.showWarningMessage(
+        vscode.l10n.t(
+          "Before adding a new API description, consider that your changes and current selection will be lost."),
+        yesAnswer,
+        vscode.l10n.t("Cancel")
+      );
+      if (response !== yesAnswer) {
+        return;
+      }
+    }
+    const config = await searchSteps(x => vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+      title: vscode.l10n.t("Searching...")
+    }, (progress, _) => {
+      const settings = getExtensionSettings(extensionId);
+      return searchDescription(this._context, x, settings.clearCache);
+    }));
+
+    if (config.descriptionPath) {
+      // TODO: implement this with the openTreeViewWithProgress function that's been extracted to it's own file
+      // await openTreeViewWithProgress(() => this._openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
+    }
+  }
+}
