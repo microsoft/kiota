@@ -12,8 +12,11 @@ export async function showUpgradeWarningMessage(clientPath: string, context: vsc
   }
   const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(workspaceFilePath));
   const workspaceFile = JSON.parse(workspaceFileData.toString()) as { kiotaVersion: string };
-  const clientVersion = workspaceFile.kiotaVersion.toLocaleLowerCase();
-  if (clientVersion.toLocaleLowerCase() !== kiotaVersion) {
-    await vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, kiotaVersion));
+  // don't fail if kiotaVersion isn't in the workspace config file
+  if (workspaceFile.kiotaVersion) {
+    const clientVersion = workspaceFile.kiotaVersion.toLocaleLowerCase();
+    if (clientVersion !== kiotaVersion) {
+      await vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, kiotaVersion));
+    }
   }
 }
