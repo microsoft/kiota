@@ -9,6 +9,7 @@ import { searchSteps } from "../../../steps";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../../utilities/deep-linking";
 import { Command } from "../../Command";
 import { searchDescription } from "./searchDescription";
+import { openTreeViewWithProgress } from "../../../utilities/progress";
 
 export class SearchOrOpenApiDescriptionCommand extends Command {
 
@@ -50,6 +51,7 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
         return;
       }
     }
+
     const config = await searchSteps(x => vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -60,8 +62,7 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
     }));
 
     if (config.descriptionPath) {
-      // TODO: implement this with the openTreeViewWithProgress function that's been extracted to it's own file
-      // await openTreeViewWithProgress(() => this._openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
+      await openTreeViewWithProgress(() => this._openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
     }
   }
 }
