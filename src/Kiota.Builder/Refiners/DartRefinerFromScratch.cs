@@ -146,7 +146,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             DisambiguatePropertiesWithClassNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
             AddCloneMethodToRequestBuilders(generatedCode);
-            escapeStringValues(generatedCode);
+            EscapeStringValues(generatedCode);
         }, cancellationToken);
     }
 
@@ -165,6 +165,10 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentElement is CodeIndexer i)
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentElement.Name.Equals("clone", StringComparison.Ordinal) && currentElement is not CodeMethod && currentElement.Parent is CodeClass parentClass2)
+        {
+            parentClass2.RenameChildElement(currentElement.Name, "cloneEscaped");
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
@@ -343,7 +347,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, x => AddCloneMethodToRequestBuilders(x, methodName));
     }
 
-    private void escapeStringValues(CodeElement currentElement)
+    private void EscapeStringValues(CodeElement currentElement)
     {
         if (currentElement is CodeProperty property &&
             property.IsOfKind(CodePropertyKind.UrlTemplate))
@@ -360,6 +364,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                 prop.SerializationName = prop.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
             }
         }
-        CrawlTree(currentElement, escapeStringValues);
+        CrawlTree(currentElement, EscapeStringValues);
     }
 }

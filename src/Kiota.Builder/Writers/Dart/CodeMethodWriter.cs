@@ -25,18 +25,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         WriteMethodDocumentation(codeElement, writer);
         WriteMethodPrototype(codeElement, parentClass, writer, returnType, inherits, isVoid);
         writer.IncreaseIndent();
-        foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters, CodeParameterKind.RawUrl)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            var parameterName = parameter.Name.ToFirstCharacterLowerCase();
-            if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
-                writer.WriteLine($"if({parameterName} == null || {parameterName}.isEmpty) throw ArgumentError.notNull({parameterName});");
-        }
+
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
 
-        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor))
+        if (HasEmptyConstructorBody(codeElement, parentClass, isConstructor))
         {
-            // Constuctors (except for ClientConstructor) don't need a body.
             writer.DecreaseIndent();
         }
         else
@@ -53,6 +47,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
     }
 
+    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
+    {
+        if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor))
+        {
+            return !parentClass.Properties.Where(prop => !string.IsNullOrEmpty(prop.DefaultValue)).Any();
+        }
+        var hasBody = codeElement.Parameters.Where(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters)).Any();
+        return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
+    }
+
     protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -64,6 +68,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var requestConfig = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
         var requestParams = new RequestParams(requestBodyParam, requestConfig, requestContentType);
+
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
@@ -292,7 +297,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type,
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                    pathParametersProp.Name.ToFirstCharacterUpperCase(),
+                                                    pathParametersProp.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(static x => x.IsOfKind(CodeParameterKind.Path))
                                                                 .Select(static x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
@@ -659,7 +664,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
 
         // Constuctors (except for ClientConstructor) don't need a body but a closing statement
-        if (isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !code.IsOfKind(CodeMethodKind.ClientConstructor))
+        if (HasEmptyConstructorBody(code, parentClass, isConstructor))
         {
             openingBracket = ";";
         }
@@ -746,7 +751,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.Name.Equals("clone", StringComparison.OrdinalIgnoreCase))
         {
             var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
-            String? argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer()).Select(static x => x.Name).Aggregate(static (x, y) => $"{x}, {y}");
+            String? argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer())
+            .Select(static x => x.Type.Parent is CodeParameter param && param.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)
+                    ? x.Name :
+                    x.Optional ? "null" : x.DefaultValue)
+            .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({argumentList});");
         }
     }

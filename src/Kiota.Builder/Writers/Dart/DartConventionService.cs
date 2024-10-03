@@ -16,7 +16,7 @@ public class DartConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -108,7 +108,8 @@ public class DartConventionService : CommonLanguageConventionService
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty :
+            $", {string.Join(", ", pathParameters.Select(x => x.Optional ? $"{x.Name.ToFirstCharacterLowerCase()} : {x.Name.ToFirstCharacterLowerCase()}" : $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterLowerCase() : urlTemplateVarName;
             if (customParameters?.Any() ?? false)
             {
@@ -138,11 +139,11 @@ public class DartConventionService : CommonLanguageConventionService
                 if (ct.CollectionKind == CodeTypeCollectionKind.None && ct.IsNullable)
                 {
                     if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
-                        nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
+                        nullCheck = $"if ({identName}!= null && {identName}.isNotEmpty) ";
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }
-                return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
+                return $"{nullCheck}{varName}[\"{name}\"]={identName};";
             }).ToArray());
         }
     }
@@ -301,14 +302,16 @@ public class DartConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var parameterType = GetTypeString(parameter.Type, targetElement);
+        var parameterType = GetTypeString(parameter.Type, targetElement, true, parameter.Optional);
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" : {parameter.DefaultValue}",
-            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " : \"\"",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
             _ => string.Empty,
         };
-        return $"{GetDeprecationInformation(parameter)}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
+        var open = !string.IsNullOrEmpty(defaultValue) ? "{" : "";
+        var close = !string.IsNullOrEmpty(defaultValue) ? "}" : "";
+        return $"{GetDeprecationInformation(parameter)}{open}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}{close}";
     }
     private static string GetDeprecationInformation(IDeprecableElement element)
     {
