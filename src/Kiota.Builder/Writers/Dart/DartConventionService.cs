@@ -16,7 +16,7 @@ public class DartConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string", "datetime" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -294,7 +294,7 @@ public class DartConventionService : CommonLanguageConventionService
         typeName = typeName.StripArraySuffix().TrimEnd('?').ToLowerInvariant();
         return typeName switch
         {
-            "string" or "dateonly" or "datetime" => true,
+            "string" or "dateonly" or "timeonly" or "datetime" or "duration" => true,
             _ when NullableTypes.Contains(typeName) => true,
             _ => false,
         };

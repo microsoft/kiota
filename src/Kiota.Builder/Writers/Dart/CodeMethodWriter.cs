@@ -737,11 +737,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 return $"writeEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
 
         }
+
         return propertyType switch
         {
             "byte[]" => "writeByteArrayValue",
             "String" => "writeStringValue",
             "Iterable<int>" => "writeCollectionOfPrimitiveValues<int>",
+            "UuidValue" => "writeUuidValue",
             _ when conventions.IsPrimitiveType(propertyType) => $"write{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
             _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?" : "")}>",
         };

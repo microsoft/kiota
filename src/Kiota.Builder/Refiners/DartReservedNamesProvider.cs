@@ -72,7 +72,9 @@ public class DartReservedNamesProvider : IReservedNamesProvider
         "when",
         "with",
         "while",
-        "yield"
+        "yield",
+        "BaseRequestBuilder",
+        "clone"
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

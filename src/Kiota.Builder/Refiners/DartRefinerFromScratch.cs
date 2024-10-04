@@ -36,12 +36,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
-            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
-        new (static x => x is CodeProperty prop && prop.Type.Name.EqualsIgnoreCase("Guid"),
-            "uuid/uuid", "Uuid", "UuidValue"),
     };
 
 
@@ -53,6 +49,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
             CorrectCommonNames(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
@@ -105,6 +102,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             AddAsyncSuffix(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", new HashSet<Type> { typeof(CodeEnumOption) });
             ReplaceDefaultSerializationModules(
                 generatedCode,
                 defaultConfiguration.Serializers,
@@ -142,7 +140,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             );
             DeduplicateErrorMappings(generatedCode);
             RemoveCancellationParameter(generatedCode);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             DisambiguatePropertiesWithClassNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
             AddCloneMethodToRequestBuilders(generatedCode);
@@ -165,10 +162,6 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         else if (currentElement is CodeIndexer i)
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
-        }
-        else if (currentElement.Name.Equals("clone", StringComparison.Ordinal) && currentElement is not CodeMethod && currentElement.Parent is CodeClass parentClass2)
-        {
-            parentClass2.RenameChildElement(currentElement.Name, "cloneEscaped");
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
@@ -227,10 +220,8 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
-        if (currentProperty.Type.Name.Equals("Guid", StringComparison.OrdinalIgnoreCase))
-            currentProperty.Type.Name = "UuidValue";
-
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
     private static void CorrectImplements(ProprietableBlockDeclaration block)
@@ -366,4 +357,17 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, EscapeStringValues);
     }
+
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
+
+    {"TimeSpan", ("Duration", null)},
+    {"Guid", ("UuidValue", new CodeUsing {
+                            Name = "UuidValue",
+                            Declaration = new CodeType {
+                                Name = "uuid/uuid",
+                                IsExternal = true,
+                            },
+                        })},
+    };
+
 }
