@@ -26,7 +26,7 @@ import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration, setGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { getWorkspaceGenerationType, setWorkspaceGenerationType } from './handlers/workspsceGenerationTypeHandler';
+import { getWorkspaceGenerationType, setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
 import {
   ClientOrPluginProperties,
   ConsumerOperation,

@@ -12,7 +12,7 @@ import { generatePlugin } from "../../generatePlugin";
 import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { setWorkspaceGenerationType } from "../../handlers/workspsceGenerationTypeHandler";
+import { setWorkspaceGenerationType } from "../../handlers/workspaceGenerationTypeHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { GenerateState, generateSteps } from "../../steps";
