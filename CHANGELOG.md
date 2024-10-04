@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.19.0] - 2024-10-03
+
+### Added
+
 - Control generated type access modifier for C# via `--type-access-modifier` flag. [#4788](https://github.com/microsoft/kiota/issues/4788)
 
 ### Changed
@@ -1463,3 +1469,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
