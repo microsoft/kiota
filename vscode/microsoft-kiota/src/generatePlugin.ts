@@ -16,28 +16,24 @@ export function generatePlugin(context: vscode.ExtensionContext,
   disableValidationRules: string[],
   operation: ConsumerOperation,
   workingDirectory: string = getWorkspaceJsonDirectory()): Promise<KiotaLogEntry[] | undefined> {
-  try {
-    return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
-      const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-        "GeneratePlugin"
-      );
-      return await connection.sendRequest(
-        request,
-        {
-          pluginTypes: pluginTypes,
-          cleanOutput: cleanOutput,
-          clearCache: clearCache,
-          clientClassName: clientClassName,
-          disabledValidationRules: disableValidationRules,
-          excludePatterns: excludeFilters,
-          includePatterns: includeFilters,
-          openAPIFilePath: descriptionPath,
-          outputPath: output,
-          operation: operation
-        } as GenerationConfiguration,
-      );
-    }, workingDirectory);
-  } catch (error) {
-    return Promise.resolve(undefined);
-  }
+  return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
+    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
+      "GeneratePlugin"
+    );
+    return await connection.sendRequest(
+      request,
+      {
+        pluginTypes: pluginTypes,
+        cleanOutput: cleanOutput,
+        clearCache: clearCache,
+        clientClassName: clientClassName,
+        disabledValidationRules: disableValidationRules,
+        excludePatterns: excludeFilters,
+        includePatterns: includeFilters,
+        openAPIFilePath: descriptionPath,
+        outputPath: output,
+        operation: operation
+      } as GenerationConfiguration,
+    );
+  }, workingDirectory);
 };
