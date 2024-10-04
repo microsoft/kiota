@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed cyclic depencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
+
 ## [1.19.0] - 2024-10-03
 
 ### Added
@@ -38,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed registration of default serialization and deserialization classes in client constructor. [#5478](https://github.com/microsoft/kiota/pull/5478)
 - Fixed incorrect type name generation in aliased scenario in TS due to broad searching of types in root namespaces. [#5404](https://github.com/microsoft/kiota/issues/5404)
 - Fixed incorrect type mapping in request builders with subsequent paths with the same name. [#5462](https://github.com/microsoft/kiota/issues/5462)
-- Fixed cyclic depencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
+- Fixed multipart generation to default Content-Types are defined for multipart [#5504](https://github.com/microsoft/kiota/issues/5504) 
 
 ## [1.18.0] - 2024-09-05
 
