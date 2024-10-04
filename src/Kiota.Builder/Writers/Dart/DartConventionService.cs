@@ -16,7 +16,7 @@ public class DartConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string", "datetime" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string", "datetime", "dateonly", "timeonly" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -313,14 +313,14 @@ public class DartConventionService : CommonLanguageConventionService
         var close = !string.IsNullOrEmpty(defaultValue) ? "}" : "";
         return $"{GetDeprecationInformation(parameter)}{open}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}{close}";
     }
-    private static string GetDeprecationInformation(IDeprecableElement element)
+    private string GetDeprecationInformation(IDeprecableElement element)
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return string.Empty;
 
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"@obsolete(\"{element.Deprecation.GetDescription}{versionComment}{dateComment}{removalComment}\")";
+        return $"@Deprecated(\"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}\")";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

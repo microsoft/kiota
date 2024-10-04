@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
+using Microsoft.OpenApi.Any;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
@@ -23,18 +25,29 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         writer.StartBlock($"enum {enumName} {{");
         var lastOption = codeElement.Options.Last();
 
+        HashSet<String> usedNames = new HashSet<string>();
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
             var correctedName = getCorrectedName(option.Name);
-            if (reservedNamesProvider.ReservedNames.Contains(correctedName))
+            if (reservedNamesProvider.ReservedNames.Contains(correctedName) || IllegalEnumValue(correctedName))
             {
                 correctedName += "Escaped";
+            }
+            if (!usedNames.Add(correctedName))
+            {
+                correctedName = option.Name;
+                usedNames.Add(correctedName);
             }
             writer.WriteLine($"{correctedName}(\"{option.Name}\"){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
+    }
+
+    private bool IllegalEnumValue(string correctedName)
+    {
+        return correctedName.EqualsIgnoreCase("string") || correctedName.EqualsIgnoreCase("index");
     }
 
     private string getCorrectedName(string name)
