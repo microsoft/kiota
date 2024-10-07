@@ -114,7 +114,7 @@ export class GenerateClientCommand extends Command {
 
       const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yml`);
       const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);
-      if (deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
+      if (deepLinkParams.source?.toLowerCase() === 'ttk') {
         try {
           await vscode.commands.executeCommand(
             'fx-extension.createprojectfromkiota',
