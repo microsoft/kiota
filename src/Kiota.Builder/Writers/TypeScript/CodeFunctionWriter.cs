@@ -73,7 +73,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (composedType.Types.Any(x => IsPrimitiveType(x, composedType, false)))
         {
             var expression = string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeElement.OriginalLocalMethod, composedType.IsCollection)}"));
-            writer.WriteLine($"\"\": n => {{ {composedParam.Name.ToFirstCharacterLowerCase()} = {expression}}},");
+            writer.WriteLine($"\"\" : n => {{ {composedParam.Name.ToFirstCharacterLowerCase()} = {expression}}},");
         }
         foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType, false)))
         {
