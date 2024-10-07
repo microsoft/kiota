@@ -276,12 +276,14 @@ components:
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
 
+    #region Security
+
     public static TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         SecurityInformationSuccess()
     {
         return new TheoryData<string, string, string, PluginAuthConfiguration, Action<DocumentValidationResults<PluginManifestDocument>>>
         {
-            // security scheme in operation object
+            // security requirement in operation object
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
                 string.Empty, "security: [apiKey0: []]", null, resultingManifest =>
@@ -295,7 +297,21 @@ components:
                     Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
                 }
             },
-            // security scheme in root object
+            // multiple security schemes
+            {
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header }, apiKey1: {type: apiKey, name: x-api-key1, in: header }}}",
+                string.Empty, "security: [apiKey0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<ApiKeyPluginVault>(auth0);
+                    Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
+                    Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                }
+            },
+            // security requirement in root object
             // TODO: Revisit when https://github.com/microsoft/OpenAPI.NET/issues/1797 is fixed
             // {
             //     "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
@@ -555,6 +571,96 @@ components:
             // ignored
         }
     }
+
+    [Fact]
+    public async Task GeneratesManifestWithMultipleSecuritySchemesAsync()
+    {
+        var apiDescription = """
+                              openapi: 3.0.0
+                              info:
+                                title: test
+                                version: "1.0"
+                              servers:
+                                - url: https://localhost:8080
+                              paths:
+                                /test:
+                                  get:
+                                    description: description for test path
+                                    responses:
+                                      "200":
+                                        description: test
+                                    security: [{apiKey0: []}]
+                                  patch:
+                                    description: description for test path
+                                    responses:
+                                      "200":
+                                        description: test
+                                    security: [{apiKey1: []}]
+                              components:
+                                {
+                                  securitySchemes: {
+                                    apiKey0: { type: apiKey, name: x-api-key0, in: header },
+                                    apiKey1: { type: apiKey, name: x-api-key1, in: header },
+                                  },
+                                }
+                              """;
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openApiDocumentStream, _) =
+            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument =
+            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
+        Assert.NotNull(openApiDocument);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService =
+            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Empty(resultingManifest.Problems);
+        Assert.NotEmpty(resultingManifest.Document.Runtimes);
+        var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+        Assert.IsType<ApiKeyPluginVault>(auth0);
+        Assert.Equal(AuthType.ApiKeyPluginVault, auth0.Type);
+        Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+        var auth1 = resultingManifest.Document.Runtimes[1].Auth;
+        Assert.IsType<ApiKeyPluginVault>(auth1);
+        Assert.Equal(AuthType.ApiKeyPluginVault, auth1.Type);
+        Assert.Equal("{apiKey1_REGISTRATION_ID}", ((ApiKeyPluginVault)auth1!).ReferenceId);
+        // Cleanup
+        try
+        {
+            Directory.Delete(outputDirectory);
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+    #endregion
 
     #region Validation
 
