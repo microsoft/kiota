@@ -170,12 +170,17 @@ export async function activate(
     }),
 
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
+      const configuration = getGenerationConfiguration();
       const regenerate = await confirmOverride();
       if (!regenerate) {
         return;
       }
 
-      if (!getGenerationConfiguration()) {
+      if (!clientOrPluginKey || clientOrPluginKey === '') {
+        clientOrPluginKey = configuration.clientClassName || configuration.pluginName || '';
+      }
+
+      if (!configuration) {
         setGenerationConfiguration({
           outputPath: clientOrPluginObject.outputPath,
           clientClassName: clientOrPluginKey,
