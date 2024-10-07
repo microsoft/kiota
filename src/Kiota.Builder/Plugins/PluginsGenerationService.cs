@@ -352,7 +352,7 @@ public partial class PluginsGenerationService
                 {
                     // Configuration overrides document information
                     Auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements),
-                    Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath, },
+                    Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath },
                     RunForFunctions = [operation.OperationId]
                 });
 
@@ -387,9 +387,14 @@ public partial class PluginsGenerationService
 
     private static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
     {
-        // Only one security object is allowed
-        var security = securityRequirements.SingleOrDefault();
-        var opSecurity = security?.Keys.SingleOrDefault();
+        // Only one security requirement object is allowed
+        const string tooManySchemesError = "Multiple security requirements are not supported. Operations can only list one security requirement.";
+        if (securityRequirements.Count > 1 || securityRequirements.FirstOrDefault()?.Keys.Count > 1)
+        {
+            throw new InvalidOperationException(tooManySchemesError);
+        }
+        var security = securityRequirements.FirstOrDefault();
+        var opSecurity = security?.Keys.FirstOrDefault();
         return (opSecurity is null || opSecurity.UnresolvedReference) ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
     }
 
