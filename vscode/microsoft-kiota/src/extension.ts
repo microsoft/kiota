@@ -196,11 +196,13 @@ export async function activate(
         return;
       }
       const workspaceGenerationType = getWorkspaceGenerationType();
+      const configObject = clientOrPluginObject || configuration;
+
       if (isClientType(workspaceGenerationType)) {
-        await regenerateClient(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
+        await regenerateClient(clientOrPluginKey, configObject, settings, selectedPaths);
       }
       if (isPluginType(workspaceGenerationType)) {
-        await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
+        await regeneratePlugin(clientOrPluginKey, configObject, settings, selectedPaths);
       }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
