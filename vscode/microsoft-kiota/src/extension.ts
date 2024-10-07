@@ -24,7 +24,7 @@ import { generateClient } from "./generateClient";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
-import { getGenerationConfiguration } from './handlers/configurationHandler';
+import { getGenerationConfiguration, setGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
 import { getWorkspaceGenerationType, setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
 import {
@@ -173,6 +173,13 @@ export async function activate(
       const regenerate = await confirmOverride();
       if (!regenerate) {
         return;
+      }
+
+      if (!getGenerationConfiguration()) {
+        setGenerationConfiguration({
+          outputPath: clientOrPluginObject.outputPath,
+          clientClassName: clientOrPluginKey,
+        });
       }
 
       const settings = getExtensionSettings(extensionId);
