@@ -146,6 +146,10 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return '';
     }
 
+    public get clientOrPluginName(): string {
+        return this.rawRootNode?.clientNameOrPluginName || '';
+    }
+
     public get language(): string {
         if (this._workspaceFile?.clients) {
             const client = this.getFirstClient();
