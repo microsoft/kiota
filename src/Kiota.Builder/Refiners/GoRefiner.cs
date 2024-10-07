@@ -263,7 +263,7 @@ public class GoRefiner : CommonLanguageRefiner
         return string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
     }
 
-    private void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
+    private static void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
     {
         if (!modelsNameSpace.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase) && !currentNameSpace.IsChildOf(modelsNameSpace))
             return;
@@ -275,7 +275,7 @@ public class GoRefiner : CommonLanguageRefiner
             .OfType<CodeNamespace>()
             .Where(ns => !ns.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase))
             .Select(static ns => ns.Name)
-            .ToHashSet();
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var codeNameSpace in currentNameSpace.Namespaces.Where(codeNameSpace => !dependencies.ContainsKey(codeNameSpace.Name)))
         {
@@ -385,7 +385,7 @@ public class GoRefiner : CommonLanguageRefiner
             MigrateNameSpace(ns, targetNameSpace);
         }
     }
-    private void CorrectReferencesToMigratedModels(CodeElement currentElement, Dictionary<string, string> migratedNamespaces)
+    private static void CorrectReferencesToMigratedModels(CodeElement currentElement, Dictionary<string, string> migratedNamespaces)
     {
         if (currentElement is CodeNamespace cn)
         {
