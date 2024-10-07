@@ -26,7 +26,7 @@ import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
+import { getWorkspaceGenerationType, setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
 import {
   ClientOrPluginProperties,
   ConsumerOperation,
@@ -170,21 +170,11 @@ export async function activate(
     }),
 
     registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
-      let configuration = getGenerationConfiguration();
       const regenerate = await confirmOverride();
       if (!regenerate) {
         return;
       }
 
-      if (!clientOrPluginKey || clientOrPluginKey === '') {
-        clientOrPluginKey = configuration.clientClassName || configuration.pluginName || '';
-      }
-      if (!configuration) {
-        setGenerationConfiguration({
-          outputPath: clientOrPluginObject.outputPath,
-          clientClassName: clientOrPluginKey,
-        });
-      }
       const settings = getExtensionSettings(extensionId);
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
       if (selectedPaths.length === 0) {
@@ -195,10 +185,10 @@ export async function activate(
       }
       const workspaceGenerationType = getWorkspaceGenerationType();
       if (isClientType(workspaceGenerationType)) {
-        await regenerateClient(clientOrPluginKey, getGenerationConfiguration(), settings, selectedPaths);
+        await regenerateClient(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
       }
       if (isPluginType(workspaceGenerationType)) {
-        await regeneratePlugin(clientOrPluginKey, getGenerationConfiguration(), settings, selectedPaths);
+        await regeneratePlugin(clientOrPluginKey, clientOrPluginObject, settings, selectedPaths);
       }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
