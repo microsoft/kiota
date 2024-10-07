@@ -70,7 +70,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         Configuration.Generation.Operation = ConsumerOperation.Edit;
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
