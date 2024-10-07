@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed cyclic depencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
+
 ## [1.19.0] - 2024-10-03
 
 ### Added
