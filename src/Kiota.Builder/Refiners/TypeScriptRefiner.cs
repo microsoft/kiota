@@ -169,29 +169,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
-            //CorrectSerializerParameters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
-    }
-
-    private static void CorrectSerializerParameters(CodeElement currentElement)
-    {
-        if (currentElement is CodeFunction currentFunction &&
-            currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
-        {
-            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters
-                         .Where(p => GetOriginalComposedType(p.Type) is CodeComposedTypeBase composedType &&
-                                     composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
-            {
-                var composedType = GetOriginalComposedType(parameter.Type)!;
-                var newType = (CodeComposedTypeBase)composedType.Clone();
-                var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
-                newType.SetTypes(nonPrimitiveTypes);
-                parameter.Type = newType;
-            }
-        }
-
-        CrawlTree(currentElement, CorrectSerializerParameters);
     }
 
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
