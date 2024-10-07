@@ -229,7 +229,7 @@ export class GenerateClientCommand extends Command {
         await exportLogsAndShowErrors(result);
       }
       const deepLinkParams = getDeepLinkParams();
-      const isttkIntegration = deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk';
+      const isttkIntegration = deepLinkParams.source?.toLowerCase() === 'ttk';
       if (!isttkIntegration) {
         void vscode.window.showInformationMessage(vscode.l10n.t('Plugin generated successfully.'));
       }
