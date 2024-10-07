@@ -1252,10 +1252,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
         Assert.Contains("return", serializerFunctionStr);
-        Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"number\":", serializerFunctionStr);
-        Assert.Contains("case \"string\":", serializerFunctionStr);
-        Assert.Contains("break", serializerFunctionStr);
+        Assert.Contains("typeof primitives === \"number\"", serializerFunctionStr);
+        Assert.Contains("typeof primitives === \"string\"", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1454,9 +1452,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializeFunction);
         var result = tw.ToString();
 
-        Assert.Contains("case typeof parentClass.property === \"string\"", result);
+        Assert.Contains("typeof parentClass.property === \"string\"", result);
         Assert.Contains("writer.writeStringValue(\"property\", parentClass.property as string);", result);
-        Assert.Contains("case typeof parentClass.property === \"number\"", result);
+        Assert.Contains("typeof parentClass.property === \"number\"", result);
         Assert.Contains("writer.writeNumberValue(\"property\", parentClass.property as number);", result);
         Assert.Contains(
             "writer.writeCollectionOfObjectValues<ArrayOfObjects>(\"property\", parentClass.property as ArrayOfObjects[] | undefined | null",

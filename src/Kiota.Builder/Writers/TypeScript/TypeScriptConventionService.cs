@@ -84,17 +84,25 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
         var composedType = GetOriginalComposedType(parameter.Type);
+        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+
+        if (composedType != null && parameter.Parent is CodeMethod cm && cm.IsOfKind(CodeMethodKind.Serializer))
+        {
+            // eliminate primitive types from serializers with composed type signature
+            var newType = (CodeComposedTypeBase)composedType.Clone();
+            var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
+            newType.SetTypes(nonPrimitiveTypes);
+            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+        }
         var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
 
-        // add a 'Parsable' suffix to composed parameters of primitives only if they are not deserialization targets
+        // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
-            composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveTypeOrPrimitiveCollection),
-            parameter.Parent is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer)
+            composedType != null,
+            parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
             ) switch
         {
-            (true, false) => string.Empty,
             (true, true) => "Parsable | ",
             _ => string.Empty,
         };
@@ -240,9 +248,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, true);
 
-    public static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
-
     public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
+
+    private static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")

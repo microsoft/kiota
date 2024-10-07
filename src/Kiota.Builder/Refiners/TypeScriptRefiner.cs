@@ -1461,7 +1461,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             function.AddUsing(new CodeUsing
             {
-                Name = modelDeserializerFunction.Parent.Name,
+                Name = modelDeserializerFunction.Name,
                 Declaration = new CodeType
                 {
                     Name = modelDeserializerFunction.Name,
