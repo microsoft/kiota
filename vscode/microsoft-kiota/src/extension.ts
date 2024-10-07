@@ -15,7 +15,7 @@ import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/open
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
-import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
+import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS, dependenciesInfo, extensionId, statusBarCommandId, treeViewFocusCommand, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "./enums";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
@@ -282,16 +282,26 @@ export async function activate(
       if (!regenerate) {
         return;
       }
+      const { clientOrPluginName } = openApiTreeProvider;
 
-      if (!clientOrPluginKey || clientOrPluginKey === '') {
-        clientOrPluginKey = config.clientClassName || config.pluginName || '';
-      }
-      if (!config) {
-        config = {
-          outputPath: clientOrPluginObject.outputPath,
-          clientClassName: clientOrPluginKey,
-        };
-      }
+      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
+      if (!workspaceJson) { return; }
+
+      const jsonObject = JSON.parse(workspaceJson.getText());
+      const options: { [key: string]: { clientObject: ClientOrPluginProperties; generationType: string } } = {};
+      [CLIENTS, PLUGINS].forEach(objectKey => {
+        const object = jsonObject[objectKey];
+        if (object) {
+          Object.keys(object).forEach(clientKey => {
+            options[clientKey] = { clientObject: object[clientKey], generationType: objectKey };
+          });
+        }
+      });
+
+      const configuration = options[clientOrPluginName];
+      if (!configuration) { return; }
+
+      const { clientObject, generationType } = configuration;
       const settings = getExtensionSettings(extensionId);
       const selectedPaths = openApiTreeProvider.getSelectedPaths();
       if (selectedPaths.length === 0) {
@@ -300,11 +310,11 @@ export async function activate(
         );
         return;
       }
-      if (isClientType(workspaceGenerationType)) {
-        await regenerateClient(clientOrPluginKey, config, settings, selectedPaths);
+      if (isClientType(generationType)) {
+        await regenerateClient(clientOrPluginName, clientObject, settings, selectedPaths);
       }
-      if (isPluginType(workspaceGenerationType)) {
-        await regeneratePlugin(clientOrPluginKey, config, settings, selectedPaths);
+      if (isPluginType(generationType)) {
+        await regeneratePlugin(clientOrPluginName, clientObject, settings, selectedPaths);
       }
     }),
     registerCommandWithTelemetry(reporter, `${extensionId}.regenerate`, async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
