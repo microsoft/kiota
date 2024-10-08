@@ -468,7 +468,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^2.9.0",
     "@types/adm-zip": "^0.5.5",
-    "@types/mocha": "^10.0.8",
+    "@types/mocha": "^10.0.9",
     "@types/node": "22.x",
     "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
