@@ -3,3 +3,4 @@ out/
 .kiotabin/
 *.vsix
 .vscode-test
+coverage/

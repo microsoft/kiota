@@ -1,9 +1,9 @@
-import stylisticTs from '@stylistic/eslint-plugin-ts'
+import stylisticTs from '@stylistic/eslint-plugin-ts';
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
 export default [{
-    ignores: ["**/out", "**/dist", "**/*.d.ts", ".vscode-test", "node_modules", "eslint.config.mjs", "webpack.config.cjs"],
+    ignores: ["**/out", "**/dist", "**/*.d.ts", ".vscode-test", "node_modules", "eslint.config.mjs", "webpack.config.cjs", "coverage"],
 }, {
     files: ["**/*.ts"],
     plugins: {
