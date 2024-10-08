@@ -12,7 +12,7 @@ import { generatePlugin } from "../../generatePlugin";
 import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { setWorkspaceGenerationType } from "../../handlers/workspaceGenerationTypeHandler";
+import { setWorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { GenerateState, generateSteps } from "../../steps";
@@ -85,7 +85,7 @@ export class GenerateClientCommand extends Command {
     }
 
     const settings = getExtensionSettings(extensionId);
-    setWorkspaceGenerationType(config.generationType as string);
+    setWorkspaceGenerationContext({ generationType: config.generationType as string });
     let result;
     switch (generationType) {
       case GenerationType.Client:

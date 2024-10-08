@@ -4,13 +4,12 @@ import { ExtensionContext } from "vscode";
 import { extensionId, treeViewId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { getGenerationConfiguration, setGenerationConfiguration } from "../../handlers/configurationHandler";
-import { getWorkspaceGenerationType } from "../../handlers/workspaceGenerationTypeHandler";
+import { getWorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";
 import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
-import { ClientOrPluginProperties } from "../../kiotaInterop";
 
 export class RegenerateButtonCommand extends Command {
   private _context: ExtensionContext;
@@ -26,8 +25,9 @@ export class RegenerateButtonCommand extends Command {
     return `${treeViewId}.regenerateButton`;
   }
 
-  public async execute({ clientOrPluginKey, clientOrPluginObject }: { clientOrPluginKey: string; clientOrPluginObject: ClientOrPluginProperties }): Promise<void> {
+  public async execute(): Promise<void> {
     const configuration = getGenerationConfiguration();
+    let { generationType, clientOrPluginKey, clientOrPluginObject } = getWorkspaceGenerationContext();
     const regenerate = await confirmOverride();
     if (!regenerate) {
       return;
@@ -52,14 +52,14 @@ export class RegenerateButtonCommand extends Command {
       );
       return;
     }
-    const workspaceGenerationType = getWorkspaceGenerationType();
+
     const configObject = clientOrPluginObject || configuration;
     const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, configObject);
 
-    if (isClientType(workspaceGenerationType)) {
+    if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings, selectedPaths);
     }
-    if (isPluginType(workspaceGenerationType)) {
+    if (isPluginType(generationType)) {
       await regenerateService.regeneratePlugin(settings, selectedPaths);
     }
   }

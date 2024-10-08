@@ -3,8 +3,7 @@ import { ExtensionContext } from "vscode";
 
 import { extensionId, KIOTA_WORKSPACE_FILE } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
-import { getWorkspaceGenerationType } from "../../handlers/workspaceGenerationTypeHandler";
-import { ClientOrPluginProperties } from "../../kiotaInterop";
+import { getWorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";
@@ -25,7 +24,7 @@ export class RegenerateCommand extends Command {
     return `${extensionId}.regenerate`;
   }
 
-  public async execute({ clientKey, clientObject }: { clientKey: string, clientObject: ClientOrPluginProperties }): Promise<void> {
+  public async execute(): Promise<void> {
     const regenerate = await confirmOverride();
     if (!regenerate) {
       return;
@@ -41,8 +40,8 @@ export class RegenerateCommand extends Command {
       return;
     }
 
-    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientKey, clientObject);
-    const generationType = getWorkspaceGenerationType();
+    const { generationType, clientOrPluginKey, clientOrPluginObject } = getWorkspaceGenerationContext();
+    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings);
     }

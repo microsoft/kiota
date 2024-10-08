@@ -25,7 +25,7 @@ import { GeneratedOutputState } from './GeneratedOutputState';
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
+import { setWorkspaceGenerationContext } from './handlers/workspaceGenerationContextHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
@@ -44,8 +44,6 @@ import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
-let clientOrPluginKey: string;
-let clientOrPluginObject: ClientOrPluginProperties;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(
@@ -158,16 +156,14 @@ export async function activate(
     }
     ),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
-    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-      clientOrPluginKey = clientKey;
-      clientOrPluginObject = clientObject;
-      setWorkspaceGenerationType(generationType);
-      await editPathsCommand.execute({ clientKey, clientObject });
+    registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
+      setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });
+      await editPathsCommand.execute();
     }),
-    registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => await regenerateButtonCommand.execute({ clientOrPluginKey, clientOrPluginObject })),
-    registerCommandWithTelemetry(reporter, regenerateCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
-      setWorkspaceGenerationType(generationType);
-      await regenerateCommand.execute({ clientKey, clientObject });
+    registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => await regenerateButtonCommand.execute()),
+    registerCommandWithTelemetry(reporter, regenerateCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
+      setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });
+      await regenerateCommand.execute();
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
   );
