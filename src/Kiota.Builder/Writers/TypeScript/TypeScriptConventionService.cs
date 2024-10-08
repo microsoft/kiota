@@ -84,17 +84,25 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
         var composedType = GetOriginalComposedType(parameter.Type);
+        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+
+        if (composedType != null && parameter.Parent is CodeMethod cm && cm.IsOfKind(CodeMethodKind.Serializer))
+        {
+            // eliminate primitive types from serializers with composed type signature
+            var newType = (CodeComposedTypeBase)composedType.Clone();
+            var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
+            newType.SetTypes(nonPrimitiveTypes);
+            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+        }
         var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
 
-        // add a 'Parsable' suffix to composed parameters of primitives only if they are not deserialization targets
+        // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
-            composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveTypeOrPrimitiveCollection),
-            parameter.Parent is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer)
+            composedType != null,
+            parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer) || method.IsOfKind(CodeMethodKind.Serializer))
             ) switch
         {
-            (true, false) => string.Empty,
             (true, true) => "Parsable | ",
             _ => string.Empty,
         };
