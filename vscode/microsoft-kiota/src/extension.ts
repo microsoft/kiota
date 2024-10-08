@@ -16,7 +16,7 @@ import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/open
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
-import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
+import { API_MANIFEST_FILE, KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { KiotaGenerationLanguage, KiotaPluginType } from "./enums";
 import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
@@ -336,9 +336,9 @@ export async function activate(
         );
         return;
       }
-      const existingworkspaceFileUris = await vscode.workspace.findFiles(`**/${KIOTA_WORKSPACE_FILE}`);
-      if (existingworkspaceFileUris.length > 0) {
-        await Promise.all(existingworkspaceFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(x, context)));
+      const existingApiManifestFileUris = await vscode.workspace.findFiles(`**/${API_MANIFEST_FILE}`);
+      if (existingApiManifestFileUris.length > 0) {
+        await Promise.all(existingApiManifestFileUris.map(uri => showUpgradeWarningMessage(uri, null, null, context)));
       }
       await updateStatusBarItem(context);
       try {

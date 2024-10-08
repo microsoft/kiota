@@ -2,7 +2,7 @@ import TelemetryReporter from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
+import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { DependenciesViewProvider } from "../../dependenciesViewProvider";
 import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "../../enums";
 import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
@@ -76,7 +76,17 @@ export class GenerateClientCommand extends Command {
     const outputPath = typeof config.outputPath === "string"
       ? config.outputPath
       : "./output";
-    await showUpgradeWarningMessage(outputPath, this._context);
+    let manifestKey = null;
+    switch (config.generationType) {
+      case "client":
+        manifestKey = config.clientClassName;
+        break;
+      case "plugin":
+      case "other":
+        manifestKey = config.pluginName;
+        break;
+    }
+    await showUpgradeWarningMessage(path.join(outputPath, ".kiota", API_MANIFEST_FILE), manifestKey, config.generationType as string, this._context);
     if (!this._openApiTreeProvider.descriptionUrl) {
       await vscode.window.showErrorMessage(
         vscode.l10n.t("No description found, select a description first")
