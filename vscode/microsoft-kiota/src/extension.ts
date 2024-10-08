@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { CodeLensProvider } from "./codelensProvider";
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
-import { checkForSuccess, displayGenerationResults } from './commands/generate/generation-util';
+import { displayGenerationResults } from './commands/generate/generation-util';
 import { MigrateFromLockFileCommand } from './commands/migrateFromLockFileCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/open-api-tree-view/addAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/open-api-tree-view/addToSelectedEndpointsCommand';
@@ -16,39 +16,31 @@ import { OpenDocumentationPageCommand } from './commands/open-api-tree-view/open
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-view/removeFromSelectedEndpointsCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
+import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonCommand';
+import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
 import { KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
-import { KiotaGenerationLanguage, KiotaPluginType } from "./enums";
-import { ExtensionSettings, getExtensionSettings } from "./extensionSettings";
-import { generateClient } from "./generateClient";
+import { getExtensionSettings } from "./extensionSettings";
 import { GeneratedOutputState } from './GeneratedOutputState';
-import { generatePlugin } from "./generatePlugin";
 import { getKiotaVersion } from "./getKiotaVersion";
-import { getGenerationConfiguration, setGenerationConfiguration } from './handlers/configurationHandler';
+import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { getWorkspaceGenerationType, setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
+import { setWorkspaceGenerationType } from './handlers/workspaceGenerationTypeHandler';
 import {
-  ClientOrPluginProperties,
-  ConsumerOperation,
-  LogLevel,
-  getLogEntriesForLevel
+  ClientOrPluginProperties
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { updateClients } from "./updateClients";
 import {
-  isClientType, isPluginType, parseGenerationLanguage,
-  parsePluginType, updateTreeViewIcons
+  updateTreeViewIcons
 } from "./util";
 import { IntegrationParams, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
 import { exportLogsAndShowErrors } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
 import { openTreeViewWithProgress } from './utilities/progress';
-import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
-import { RegenerateService } from './commands/regenerate/regenerate.service';
-import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -79,6 +71,7 @@ export async function activate(
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
+  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -171,47 +164,10 @@ export async function activate(
       setWorkspaceGenerationType(generationType);
       await editPathsCommand.execute({ clientKey, clientObject });
     }),
-
-    registerCommandWithTelemetry(reporter, `${treeViewId}.regenerateButton`, async () => {
-      const configuration = getGenerationConfiguration();
-      const regenerate = await confirmOverride();
-      if (!regenerate) {
-        return;
-      }
-
-      if (!clientOrPluginKey || clientOrPluginKey === '') {
-        clientOrPluginKey = configuration.clientClassName || configuration.pluginName || '';
-      }
-
-      if (!configuration) {
-        setGenerationConfiguration({
-          outputPath: clientOrPluginObject.outputPath,
-          clientClassName: clientOrPluginKey,
-        });
-      }
-
-      const settings = getExtensionSettings(extensionId);
-      const selectedPaths = openApiTreeProvider.getSelectedPaths();
-      if (selectedPaths.length === 0) {
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("No endpoints selected, select endpoints first")
-        );
-        return;
-      }
-      const workspaceGenerationType = getWorkspaceGenerationType();
-      const configObject = clientOrPluginObject || configuration;
-      const regenerateService = new RegenerateService(context, openApiTreeProvider, clientOrPluginKey, configObject);
-
-      if (isClientType(workspaceGenerationType)) {
-        await regenerateService.regenerateClient(settings, selectedPaths);
-      }
-      if (isPluginType(workspaceGenerationType)) {
-        await regenerateService.regeneratePlugin(settings, selectedPaths);
-      }
-    }),
+    registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => await regenerateButtonCommand.execute({ clientOrPluginKey, clientOrPluginObject })),
     registerCommandWithTelemetry(reporter, regenerateCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       setWorkspaceGenerationType(generationType);
-      await regenerateCommand.execute({ clientKey, clientObject })
+      await regenerateCommand.execute({ clientKey, clientObject });
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
   );
