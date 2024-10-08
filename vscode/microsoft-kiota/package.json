@@ -461,12 +461,14 @@
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
-    "test": "vscode-test"
+    "test": "npm run pretest && vscode-test",
+    "test-with-coverage": "npm run pretest && vscode-test --coverage"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^2.9.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/adm-zip": "^0.5.5",
     "@types/mocha": "^10.0.9",
     "@types/chai": "^5.0.0",
@@ -483,7 +485,6 @@
     "mocha": "^10.7.3",
     "sinon": "^19.0.2",
     "ts-loader": "^9.5.1",
-    "typemoq": "^2.1.0",
     "typescript": "^5.5.4",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"

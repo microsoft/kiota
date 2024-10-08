@@ -14,3 +14,4 @@ vsc-extension-quickstart.md
 .kiotabin/
 .vsix
 images/samples/
+coverage/

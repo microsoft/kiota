@@ -6,6 +6,7 @@ import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as filterModule from "../../commands/open-api-tree-view/filterDescriptionCommand";
 import * as treeModule from "../../openApiTreeProvider";
+import * as stepsModule from "../../steps";
 
 
 suite('Extension Test Suite', () => {
@@ -21,9 +22,18 @@ suite('Extension Test Suite', () => {
         assert.strictEqual(-1, [1, 2, 3].indexOf(0));
     });
 
-    test('test open-api-tree-view function filterDescriptionCommand', () => {
+    test('test function getName of filterDescriptionCommand', () => {
         var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         const filterDescriptionCommand = new filterModule.FilterDescriptionCommand(treeProvider);
         assert.strictEqual("kiota.openApiExplorer.filterDescription", filterDescriptionCommand.getName());
+    });
+
+    test('test function execute of filterDescriptionCommand', async () => {
+        const filterStepsStub = sanbox.stub(stepsModule, 'filterSteps');
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
+        const filterDescriptionCommand = new filterModule.FilterDescriptionCommand(treeProvider);
+        await filterDescriptionCommand.execute();
+        sinon.assert.calledOnce(filterStepsStub);
+        sinon.assert.calledWith(filterStepsStub, treeProvider.filter, sinon.match.func);
     });
 });
