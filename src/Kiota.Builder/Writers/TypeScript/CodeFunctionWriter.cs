@@ -336,7 +336,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var codeFunction = Array.Find(codeFunctions,
             func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??
             throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
-        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
+
+        var targetElement = codeElement.GetImmediateParentOfType<CodeFile>();
+
+        return GetTypescriptTypeString(new CodeType { TypeDefinition = codeFunction }, targetElement, includeCollectionInformation: false);
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
