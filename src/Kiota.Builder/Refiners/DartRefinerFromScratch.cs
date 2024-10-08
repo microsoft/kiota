@@ -14,6 +14,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "kiota_abstractions/kiota_abstractions";
     private const string SerializationNamespaceName = "kiota_serialization";
+    private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
 
     protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -144,6 +145,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
             AddCloneMethodToRequestBuilders(generatedCode);
             EscapeStringValues(generatedCode);
+            AliasUsingWithSameSymbol(generatedCode);
         }, cancellationToken);
     }
 
@@ -369,5 +371,31 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                             },
                         })},
     };
-
+    private static void AliasUsingWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal))
+        {
+            var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
+                .Distinct(usingComparer)
+                .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.Count() > 1)
+                .SelectMany(x => x)
+                .Union(currentClass.StartBlock
+                    .Usings
+                    .Where(x => !x.IsExternal)
+                    .Where(x => x.Declaration!
+                        .Name
+                        .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+            foreach (var usingElement in duplicatedSymbolsUsings)
+            {
+                var replacement = string.Join("_", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
+                    .Split(".", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLowerInvariant())
+                    .ToArray());
+                usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"{replacement}")}_{usingElement.Declaration!.TypeDefinition!.Name.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, AliasUsingWithSameSymbol);
+    }
 }

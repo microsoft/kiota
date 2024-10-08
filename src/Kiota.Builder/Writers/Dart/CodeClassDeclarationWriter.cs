@@ -9,7 +9,13 @@ using Microsoft.Kiota.Abstractions.Extensions;
 namespace Kiota.Builder.Writers.Dart;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
 {
-    public CodeClassDeclarationWriter(DartConventionService conventionService) : base(conventionService) { }
+    private readonly RelativeImportManager relativeImportManager;
+
+    public CodeClassDeclarationWriter(DartConventionService conventionService, string clientNamespaceName, DartPathSegmenter pathSegmenter) : base(conventionService)
+    {
+        ArgumentNullException.ThrowIfNull(pathSegmenter);
+        relativeImportManager = new RelativeImportManager(clientNamespaceName, '.', pathSegmenter.GetRelativeFileName);
+    }
 
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
@@ -20,9 +26,6 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
             throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
 
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-
-        var relativeImportManager = new RelativeImportManager(
-            "keyhub", '.', (writer.PathSegmenter as DartPathSegmenter)!.GetRelativeFileName);
 
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
@@ -39,12 +42,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                     .Where(static x => !x.IsExternal)
                     .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
                     .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ?
-                        (string.Empty, string.Empty, x.Declaration.Name) :
+                        (string.Empty, x.Alias, x.Declaration.Name) :
                         relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
-                    .Select(static x => x.Item3)
-                    .Distinct()
-                    .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"import '{relativePath}.dart';");
+                    .OrderBy(static x => x.Item3, StringComparer.Ordinal))
+                writer.WriteLine($"import '{relativePath.Item3}.dart'{getAlias(relativePath.Item2)};");
 
             writer.WriteLine();
 
@@ -57,5 +58,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}{implements} {{");
+    }
+
+    private String getAlias(string alias)
+    {
+        return string.IsNullOrEmpty(alias) ? string.Empty : $" as {alias}";
     }
 }

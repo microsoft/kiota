@@ -192,6 +192,11 @@ public class DartConventionService : CommonLanguageConventionService
         if (code is CodeType currentType)
         {
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
+            var alias = GetTypeAlias(currentType, targetElement);
+            if (!string.IsNullOrEmpty(alias))
+            {
+                typeName = alias + "." + typeName;
+            }
             var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
             var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "Iterable<" : string.Empty;
             if (currentType.CollectionKind == CodeTypeCollectionKind.Array && includeCollectionInformation)
@@ -211,6 +216,18 @@ public class DartConventionService : CommonLanguageConventionService
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
+    }
+
+    private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
+    {
+        if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock &&
+            parentBlock.Usings
+                        .FirstOrDefault(x => !x.IsExternal &&
+                                        x.Declaration?.TypeDefinition != null &&
+                                        x.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                                        !string.IsNullOrEmpty(x.Alias)) is CodeUsing aliasedUsing)
+            return aliasedUsing.Alias;
+        return string.Empty;
     }
     private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
     {
