@@ -157,7 +157,7 @@ export class GenerateClientCommand extends Command {
         }
       }
 
-      clearDeepLinkParams();  // Clear the state after the generation
+      clearDeepLinkParams();  // Clear the state after successful generation
     }
   }
 
