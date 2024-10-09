@@ -183,6 +183,7 @@ public class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
     }
     public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
+    public const string KiotaVersionManifestExtensionKey = "x-ms-kiota-version";
     public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations, string targetDirectory)
     {
         var dependency = new ApiDependency()
@@ -197,6 +198,7 @@ public class GenerationConfiguration : ICloneable
         {
             dependency.Extensions.Add(KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash));// only include non empty value.
         }
+        dependency.Extensions.Add(KiotaVersionManifestExtensionKey, Kiota.Generated.KiotaVersion.Current());
         return dependency;
     }
     private string NormalizeDescriptionLocation(string targetDirectory)
