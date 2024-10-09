@@ -27,19 +27,19 @@ export class GenerateClientCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _context: vscode.ExtensionContext;
   private _dependenciesViewProvider: DependenciesViewProvider;
-  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void; // Add a private member variable
+  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void; 
 
   constructor(
     openApiTreeProvider: OpenApiTreeProvider,
     context: vscode.ExtensionContext,
     dependenciesViewProvider: DependenciesViewProvider,
-    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void // Add the fourth parameter
+    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void 
   ) {
     super();
     this._openApiTreeProvider = openApiTreeProvider;
     this._context = context;
     this._dependenciesViewProvider = dependenciesViewProvider;
-    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext; // Store the parameter in the member variable
+    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext; 
   }
 
   public getName(): string {
