@@ -1,10 +1,9 @@
-import * as path from 'path';
-import * as https from 'https';
+import AdmZip from 'adm-zip';
+import { createHash } from 'crypto';
 import * as fs from 'fs';
-import {createHash} from 'crypto';
-import * as admZip from 'adm-zip';
+import * as https from 'https';
+import * as path from 'path';
 import * as vscode from "vscode";
-import isOnline from 'is-online';
 
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
@@ -35,13 +34,16 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 title: vscode.l10n.t("Downloading kiota...")
 
             }, async (progress, _) => {
-              const online = await isOnline();
-              if (!online) {
-                await vscode.window.showErrorMessage(
-                  vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
-                );
-                return;
-              }
+                await (async () => {
+                    const isOnline = (await import('is-online')).default;
+                    const online = await isOnline();
+                    if (!online) {
+                        await vscode.window.showErrorMessage(
+                            vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
+                        );
+                        return;
+                    }
+                })();
               await runIfNotLocked(context, async () => {
                 try {
                         const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
@@ -105,7 +107,7 @@ function getKiotaPathInternal(context: vscode.ExtensionContext, withFileName = t
 }
 
 function unzipFile(zipFilePath: string, destinationPath: string) {
-    const zip = new admZip(zipFilePath);
+    const zip = new AdmZip(zipFilePath);
     zip.extractAllTo(destinationPath, true);
 }
 
