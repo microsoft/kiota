@@ -4,9 +4,9 @@
 import assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
-import * as filterModule from "../../commands/open-api-tree-view/filterDescriptionCommand";
-import * as treeModule from "../../openApiTreeProvider";
-import * as stepsModule from "../../steps";
+import * as filterModule from "../../../commands/open-api-tree-view/filterDescriptionCommand";
+import * as treeModule from "../../../openApiTreeProvider";
+import * as stepsModule from "../../../steps";
 
 
 suite('Extension Test Suite', () => {
@@ -15,11 +15,6 @@ suite('Extension Test Suite', () => {
 
     teardown(async () => {
         sanbox.restore();
-    });
-
-    test('Sample test', () => {
-        assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-        assert.strictEqual(-1, [1, 2, 3].indexOf(0));
     });
 
     test('test function getName of filterDescriptionCommand', () => {
