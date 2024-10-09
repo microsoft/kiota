@@ -108,7 +108,7 @@ export class RegenerateService {
         if (!isSuccess) {
           await exportLogsAndShowErrors(result);
         }
-        void vscode.window.showInformationMessage(`Plugin ${this._clientKey} re-generated successfully.`);
+        void vscode.window.showInformationMessage(vscode.l10n.t(`Plugin ${this._clientKey} re-generated successfully.`));
       }
       return result;
     });
