@@ -3,8 +3,8 @@ import { ExtensionContext } from "vscode";
 
 import { extensionId, KIOTA_WORKSPACE_FILE } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
-import { WorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";
 import { Command } from "../Command";

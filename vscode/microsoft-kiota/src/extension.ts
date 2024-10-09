@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import TelemetryReporter from '@vscode/extension-telemetry';
-import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
@@ -18,19 +17,19 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-vie
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
-import { API_MANIFEST_FILE, KIOTA_WORKSPACE_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
+import { API_MANIFEST_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { getWorkspaceGenerationContext, setWorkspaceGenerationContext } from './handlers/workspaceGenerationContextHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
+import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
 import { updateClients } from "./updateClients";
 import {
   updateTreeViewIcons
@@ -44,6 +43,8 @@ import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
+let workspaceGenerationContext: WorkspaceGenerationContext;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(
@@ -58,6 +59,10 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
 
+  const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>) => {
+    workspaceGenerationContext = { ...workspaceGenerationContext, ...params };
+  };
+
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
@@ -67,7 +72,7 @@ export async function activate(
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
-  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider);
+  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
 
@@ -161,7 +166,7 @@ export async function activate(
       await editPathsCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
     registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => {
-      await regenerateButtonCommand.execute(getWorkspaceGenerationContext());
+      await regenerateButtonCommand.execute(workspaceGenerationContext);
     }),
     registerCommandWithTelemetry(reporter, regenerateCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
       setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });

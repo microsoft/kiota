@@ -12,10 +12,10 @@ import { generatePlugin } from "../../generatePlugin";
 import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { setWorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { GenerateState, generateSteps } from "../../steps";
+import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
 import { exportLogsAndShowErrors } from "../../utilities/logging";
@@ -27,12 +27,19 @@ export class GenerateClientCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _context: vscode.ExtensionContext;
   private _dependenciesViewProvider: DependenciesViewProvider;
+  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void; // Add a private member variable
 
-  constructor(openApiTreeProvider: OpenApiTreeProvider, context: vscode.ExtensionContext, dependenciesViewProvider: DependenciesViewProvider) {
+  constructor(
+    openApiTreeProvider: OpenApiTreeProvider,
+    context: vscode.ExtensionContext,
+    dependenciesViewProvider: DependenciesViewProvider,
+    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void // Add the fourth parameter
+  ) {
     super();
     this._openApiTreeProvider = openApiTreeProvider;
     this._context = context;
     this._dependenciesViewProvider = dependenciesViewProvider;
+    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext; // Store the parameter in the member variable
   }
 
   public getName(): string {
@@ -95,7 +102,7 @@ export class GenerateClientCommand extends Command {
     }
 
     const settings = getExtensionSettings(extensionId);
-    setWorkspaceGenerationContext({ generationType: config.generationType as string });
+    this._setWorkspaceGenerationContext({ generationType: config.generationType as string });
     let result;
     switch (generationType) {
       case GenerationType.Client:
