@@ -4,7 +4,7 @@ astroid==3.2.4 ; python_full_version >= '3.7.2'
 
 certifi==2024.8.30 ; python_version >= '3.6'
 
-charset-normalizer==3.3.2 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.0 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
