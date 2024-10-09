@@ -4,7 +4,7 @@ import { ExtensionContext } from "vscode";
 import { extensionId, treeViewId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { getGenerationConfiguration, setGenerationConfiguration } from "../../handlers/configurationHandler";
-import { getWorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
+import { WorkspaceGenerationContext } from "../../handlers/workspaceGenerationContextHandler";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";
@@ -25,9 +25,8 @@ export class RegenerateButtonCommand extends Command {
     return `${treeViewId}.regenerateButton`;
   }
 
-  public async execute(): Promise<void> {
+  public async execute({ generationType, clientOrPluginKey, clientOrPluginObject }: WorkspaceGenerationContext): Promise<void> {
     const configuration = getGenerationConfiguration();
-    let { generationType, clientOrPluginKey, clientOrPluginObject } = getWorkspaceGenerationContext();
     const regenerate = await confirmOverride();
     if (!regenerate) {
       return;

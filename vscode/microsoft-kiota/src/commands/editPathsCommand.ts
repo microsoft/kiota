@@ -1,5 +1,6 @@
 import { extensionId, treeViewId } from "../constants";
-import { getWorkspaceGenerationContext } from "../handlers/workspaceGenerationContextHandler";
+import { WorkspaceGenerationContext } from "../handlers/workspaceGenerationContextHandler";
+import { ClientOrPluginProperties } from "../kiotaInterop";
 import { OpenApiTreeProvider } from "../openApiTreeProvider";
 import { updateTreeViewIcons } from "../util";
 import { openTreeViewWithProgress } from "../utilities/progress";
@@ -18,14 +19,13 @@ export class EditPathsCommand extends Command {
     return `${extensionId}.editPaths`;
   }
 
-  public async execute(): Promise<void> {
-    await this.loadEditPaths();
+  public async execute({ clientOrPluginKey, clientOrPluginObject }: Partial<WorkspaceGenerationContext>): Promise<void> {
+    await this.loadEditPaths(clientOrPluginKey!, clientOrPluginObject!);
     this._openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
   }
 
-  private async loadEditPaths() {
-    const { clientOrPluginKey, clientOrPluginObject } = getWorkspaceGenerationContext();
+  private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {
     await openTreeViewWithProgress(() => this._openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject));
   }
 }

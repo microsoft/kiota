@@ -25,7 +25,7 @@ import { GeneratedOutputState } from './GeneratedOutputState';
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
-import { setWorkspaceGenerationContext } from './handlers/workspaceGenerationContextHandler';
+import { getWorkspaceGenerationContext, setWorkspaceGenerationContext } from './handlers/workspaceGenerationContextHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
@@ -158,12 +158,14 @@ export async function activate(
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
       setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });
-      await editPathsCommand.execute();
+      await editPathsCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
-    registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => await regenerateButtonCommand.execute()),
+    registerCommandWithTelemetry(reporter, regenerateButtonCommand.getName(), async () => {
+      await regenerateButtonCommand.execute(getWorkspaceGenerationContext());
+    }),
     registerCommandWithTelemetry(reporter, regenerateCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
       setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });
-      await regenerateCommand.execute();
+      await regenerateCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
   );

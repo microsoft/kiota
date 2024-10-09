@@ -1,6 +1,6 @@
 import { ClientOrPluginProperties } from "../kiotaInterop";
 
-interface WorkspaceGenerationContext {
+export interface WorkspaceGenerationContext {
   clientOrPluginKey: string;
   clientOrPluginObject: ClientOrPluginProperties;
   generationType: string;
