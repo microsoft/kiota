@@ -81,19 +81,32 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    private static bool ShouldIncludeCollectionInformationForParameter(CodeParameter parameter)
-    {
-        return !(GetOriginalComposedType(parameter) is not null
-            && parameter.Parent is CodeMethod codeMethod
-            && (codeMethod.IsOfKind(CodeMethodKind.Serializer) || codeMethod.IsOfKind(CodeMethodKind.Deserializer)));
-    }
-
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var includeCollectionInformation = ShouldIncludeCollectionInformationForParameter(parameter);
-        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: includeCollectionInformation, inlineComposedTypeString: true);
-        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+        var composedType = GetOriginalComposedType(parameter.Type);
+        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+
+        if (composedType != null && parameter.Parent is CodeMethod cm && cm.IsOfKind(CodeMethodKind.Serializer))
+        {
+            // eliminate primitive types from serializers with composed type signature
+            var newType = (CodeComposedTypeBase)composedType.Clone();
+            var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
+            newType.SetTypes(nonPrimitiveTypes);
+            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+        }
+        var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+
+        // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
+        var parsableTypes = (
+            composedType != null,
+            parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer) || method.IsOfKind(CodeMethodKind.Serializer))
+            ) switch
+        {
+            (true, true) => "Parsable | ",
+            _ => string.Empty,
+        };
+
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
@@ -107,7 +120,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             (false, CodeParameterKind.DeserializationTarget) => ("Partial<", ">"),
             _ => (string.Empty, string.Empty),
         };
-        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
+        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{parsableTypes}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
     }
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
@@ -226,6 +239,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     }
 
     public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, true);
+
+    public static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
     public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
 
