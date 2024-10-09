@@ -134,16 +134,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
                     "ApiException",
                     AbstractionsNamespaceName
             );
-            AddPrimaryErrorMessage(generatedCode,
-                "message",
-                () => new CodeType { Name = "string", IsNullable = true, IsExternal = false },
-                true
-            );
             DeduplicateErrorMappings(generatedCode);
             RemoveCancellationParameter(generatedCode);
             DisambiguatePropertiesWithClassNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
-            AddCloneMethodToRequestBuilders(generatedCode);
+            AddCustomMethods(generatedCode);
             EscapeStringValues(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
         }, cancellationToken);
@@ -313,31 +308,54 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
     }
-    private void AddCloneMethodToRequestBuilders(CodeElement currentElement, string methodName = "clone")
+    private void AddCustomMethods(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass &&
-            currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (currentElement is CodeClass currentClass)
         {
-            currentClass.AddMethod(new CodeMethod
+            if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
             {
-                Name = methodName,
-                Access = AccessModifier.Public,
-                ReturnType = new CodeType
+                currentClass.AddMethod(new CodeMethod
                 {
-                    Name = currentClass.Name,
-                    IsNullable = false,
-                },
-                IsAsync = false,
-                IsStatic = false,
+                    Name = "clone",
+                    Access = AccessModifier.Public,
+                    ReturnType = new CodeType
+                    {
+                        Name = currentClass.Name,
+                        IsNullable = false,
+                    },
+                    IsAsync = false,
+                    IsStatic = false,
 
-                Kind = CodeMethodKind.Custom,
-                Documentation = new()
+                    Kind = CodeMethodKind.Custom,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Clones the requestbuilder.",
+                    },
+                });
+            }
+            if (currentClass.IsOfKind(CodeClassKind.Model) && currentClass.IsErrorDefinition)
+            {
+                currentClass.AddMethod(new CodeMethod
                 {
-                    DescriptionTemplate = "Clones the requestbuilder.",
-                },
-            });
+                    Name = "copyWith",
+                    Access = AccessModifier.Public,
+                    ReturnType = new CodeType
+                    {
+                        Name = currentClass.Name,
+                        IsNullable = false,
+                    },
+                    IsAsync = false,
+                    IsStatic = false,
+
+                    Kind = CodeMethodKind.Custom,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Creates a copy of the object.",
+                    },
+                });
+            }
         }
-        CrawlTree(currentElement, x => AddCloneMethodToRequestBuilders(x, methodName));
+        CrawlTree(currentElement, x => AddCustomMethods(x));
     }
 
     private void EscapeStringValues(CodeElement currentElement)

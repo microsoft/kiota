@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
@@ -35,16 +36,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition)
             {
                 writer.DecreaseIndent();
+            }
+            else if (isConstructor && parentClass.IsErrorDefinition)
+            {
+                writer.CloseBlock("});");
             }
             else
             {
                 writer.CloseBlock();
             }
         }
-
     }
 
     private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
@@ -219,6 +223,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         writer.WriteLine($"return {ResultVarName};");
     }
+
     private const string DiscriminatorMappingVarName = "mappingValue";
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -237,9 +242,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
+        else if (parentClass.IsErrorDefinition)
+        {
+            writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(additionalData: {{}});");
+        }
         else
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}();");
     }
+
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
@@ -272,38 +282,63 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
-        foreach (var propWithDefault in parentClass
-                                        .Properties
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name))
+        if (parentClass.IsErrorDefinition)
         {
-            var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
-            {
-                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
-            }
-            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue};");
+            WriteErrorClassConstructor(parentClass, currentMethod, writer);
         }
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
-            currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+        else
         {
-            var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
-            if (pathParameters.Any())
-                conventions.AddParametersAssignment(writer,
-                                                    pathParametersParam.Type,
-                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                    pathParametersProp.Name.ToFirstCharacterLowerCase(),
-                                                    currentMethod.Parameters
-                                                                .Where(static x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(static x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                                .ToArray());
+            foreach (var propWithDefault in parentClass
+                                            .Properties
+                                            .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
+                                            // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                            .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+                                            .OrderByDescending(static x => x.Kind)
+                                            .ThenBy(static x => x.Name))
+            {
+                var defaultValue = propWithDefault.DefaultValue;
+                if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
+                {
+                    defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+                }
+                writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue};");
+            }
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+                parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
+                currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+            {
+                var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
+                if (pathParameters.Any())
+                    conventions.AddParametersAssignment(writer,
+                                                        pathParametersParam.Type,
+                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        pathParametersProp.Name.ToFirstCharacterLowerCase(),
+                                                        currentMethod.Parameters
+                                                                    .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+                                                                    .Select(static x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                    .ToArray());
+            }
         }
     }
+
+    private void WriteErrorClassConstructor(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        foreach (string prop in DartConventionService.ErrorClassProperties)
+        {
+            writer.WriteLine($"super.{prop},");
+        }
+        foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
+        {
+            var required = prop.Type.IsNullable ? "" : "required ";
+
+            if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
+            {
+                writer.WriteLine($"{required}this.{prop.Name.ToFirstCharacterLowerCase()},");
+            }
+        }
+    }
+
     private string DefaultDeserializerValue => $"Map<String, Function({conventions.ParseNodeInterfaceName})>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -365,7 +400,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (fieldToSerialize.Length != 0)
         {
             fieldToSerialize
-                    .Where(static x => !x.ExistsInBaseType)
+                    .Where(x => !x.ExistsInBaseType && !conventions.ErrorClassPropertyExistsInSuperClass(x))
                     .OrderBy(static x => x.Name)
                     .Select(x =>
                         $"{DeserializerVarName}['{x.WireName}'] = (node) => {x.Name.ToFirstCharacterLowerCase()} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
@@ -505,7 +540,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.WriteLine("super.serialize(writer);");
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride)
-                                        .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
+                                        .Where(x => !x.ExistsInBaseType && !x.ReadOnly && !conventions.ErrorClassPropertyExistsInSuperClass(x))
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
@@ -631,7 +666,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition)
         {
             return " : ";
         }
@@ -641,7 +676,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || (code.IsOfKind(CodeMethodKind.Custom) && code.Name.Equals("clone", StringComparison.OrdinalIgnoreCase)))
+        if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || (code.IsOfKind(CodeMethodKind.Custom)))
         {
             writer.WriteLine("@override");
         }
@@ -662,7 +697,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
-
+        var closingparenthesis = (isConstructor && parentClass.IsErrorDefinition) ? string.Empty : ")";
         // Constuctors (except for ClientConstructor) don't need a body but a closing statement
         if (HasEmptyConstructorBody(code, parentClass, isConstructor))
         {
@@ -681,10 +716,28 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                           .ToList());
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnTypeWithNullable}{methodName}({optionalParamOpen}{nullableParameters}{optionalParamClose}){baseSuffix}{async} {{");
         }
+        else if (parentClass.IsOfKind(CodeClassKind.Model) && code.IsOfKind(CodeMethodKind.Custom) && code.Name.EqualsIgnoreCase("copyWith"))
+        {
+            var parentParameters = "int? statusCode, String? message, Map<String, List<String>>? responseHeaders, Iterable<Object?>? innerExceptions, ";
+            var ownParameters = string.Join(", ", parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)
+                                .Where(p => !conventions.ErrorClassPropertyExistsInSuperClass(p))
+                                .Select(p => $"{GetPrefix(p)}{conventions.TranslateType(p.Type)}{getSuffix(p)}? {p.Name.ToFirstCharacterLowerCase()}"));
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({openingBracket}{parentParameters}{ownParameters} }}){{");
+        }
         else
         {
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({optionalParamOpen}{parameters}{optionalParamClose}){baseSuffix}{async} {openingBracket}");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({optionalParamOpen}{parameters}{optionalParamClose}{closingparenthesis}{baseSuffix}{async} {openingBracket}");
         }
+    }
+
+    private string getSuffix(CodeProperty property)
+    {
+        return property.Type.CollectionKind == CodeTypeCollectionKind.Complex ? ">" : string.Empty;
+    }
+
+    private string GetPrefix(CodeProperty property)
+    {
+        return property.Type.CollectionKind == CodeTypeCollectionKind.Complex ? "Iterable<" : string.Empty;
     }
 
     private static string GetMethodName(CodeMethod code, CodeClass parentClass, bool isConstructor)
@@ -759,6 +812,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     x.Optional ? "null" : x.DefaultValue)
             .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({argumentList});");
+        }
+        if (codeElement.Name.Equals("copyWith", StringComparison.Ordinal))
+        {
+            writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(");
+            foreach (string prop in DartConventionService.ErrorClassProperties)
+            {
+                writer.WriteLine($"{prop} : {prop} ?? this.{prop}, ");
+            }
+            foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
+            {
+                var propertyname = prop.Name.ToFirstCharacterLowerCase();
+                if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
+                {
+                    writer.WriteLine($"{propertyname} : {propertyname} ?? this.{propertyname}, ");
+                }
+            }
+            writer.WriteLine($");");
         }
     }
 }

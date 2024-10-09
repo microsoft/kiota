@@ -12,7 +12,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.ExistsInExternalBaseType) return;
+        if (codeElement.ExistsInExternalBaseType || conventions.ErrorClassPropertyExistsInSuperClass(codeElement)) return;
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isNullableReferenceType = !propertyType.EndsWith('?')
                                       && codeElement.IsOfKind(
