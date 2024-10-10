@@ -4,7 +4,7 @@ using System;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>The leve of permission to grant the access token to manage Dependabot secrets.</summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public enum AppPermissions_dependabot_secrets
     {
         [EnumMember(Value = "read")]

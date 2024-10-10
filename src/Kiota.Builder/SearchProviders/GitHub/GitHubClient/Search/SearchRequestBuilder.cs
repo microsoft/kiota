@@ -12,7 +12,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search
     /// <summary>
     /// Builds and executes requests for operations under \search
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class SearchRequestBuilder : BaseRequestBuilder
     {
         /// <summary>The repositories property</summary>

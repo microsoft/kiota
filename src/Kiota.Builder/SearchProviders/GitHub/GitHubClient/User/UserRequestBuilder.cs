@@ -12,7 +12,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User
     /// <summary>
     /// Builds and executes requests for operations under \user
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class UserRequestBuilder : BaseRequestBuilder
     {
         /// <summary>The installations property</summary>

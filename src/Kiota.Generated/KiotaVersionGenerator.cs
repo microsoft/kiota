@@ -22,6 +22,7 @@ public class KiotaVersionGenerator : IIncrementalGenerator
                 csproj.Load(PathHelper.Join(directory, "Kiota.Builder.csproj"));
 
                 var version = csproj.GetElementsByTagName("VersionPrefix")[0].InnerText;
+                var majorVersion = $"{Version.Parse(version).Major}.0.0";
                 var versionSuffixTag = csproj.GetElementsByTagName("VersionSuffix");
                 if (versionSuffixTag != null && versionSuffixTag.Count > 0)
                 {
@@ -43,6 +44,14 @@ namespace Kiota.Generated
         public static string Current()
         {{
             return ""{version}"";
+        }}
+
+        /// <summary>
+        /// The current major version string
+        /// </summary>
+        public static string CurrentMajor()
+        {{
+            return ""{majorVersion}"";
         }}
     }}
 }}
