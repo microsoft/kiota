@@ -164,7 +164,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key}.toUpperCase()\".equals({DiscriminatorMappingVarName}.toUpperCase())) {{");
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({mappedType.Key}.toUpperCase().equals({DiscriminatorMappingVarName}.toUpperCase())) {{");
                     writer.IncreaseIndent();
                     writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {conventions.GetTypeString(propertyType, codeElement)}();");
                     writer.CloseBlock();
@@ -175,7 +175,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                     writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {valueVarName};");
                     writer.CloseBlock();
                 }
             if (!includeElse)
@@ -197,7 +197,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                 writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
-                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {valueVarName};");
                 writer.CloseBlock();
             }
             if (!includeElse)
@@ -215,7 +215,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.IncreaseIndent();
             }
             foreach (var property in complexProperties)
-                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToFirstCharacterUpperCase()} = {conventions.GetTypeString(property.Item2, codeElement)}();");
+                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToFirstCharacterLowerCase()} = {conventions.GetTypeString(property.Item2, codeElement)}();");
             if (includeElse)
             {
                 writer.CloseBlock();
@@ -358,10 +358,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name)
-                                        .Select(static x => x.Name.ToFirstCharacterUpperCase()))
+                                        .Select(static x => x.Name.ToFirstCharacterLowerCase()))
         {
             writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({otherPropName} != null) {{");
-            writer.WriteLine($"return {otherPropName}.{method.Name.ToFirstCharacterUpperCase()}();");
+            writer.WriteLine($"return {otherPropName}!.{method.Name.ToFirstCharacterLowerCase()}();");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
@@ -562,9 +562,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
+            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterLowerCase()} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterLowerCase()});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
@@ -598,7 +598,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.IncreaseIndent();
             }
             var propertiesNames = complexProperties
-                                .Select(static x => x.Name.ToFirstCharacterUpperCase())
+                                .Select(static x => x.Name.ToFirstCharacterLowerCase())
                                 .OrderBy(static x => x)
                                 .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.First().Type, method)}(null, {propertiesNames});");

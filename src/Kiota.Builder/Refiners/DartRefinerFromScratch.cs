@@ -49,6 +49,11 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                false,
+                AbstractionsNamespaceName);
             CorrectCommonNames(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
