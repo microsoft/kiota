@@ -4,7 +4,7 @@ using System;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>The level of permission to grant the access token for viewing and managing fine-grained personal access tokens that have been approved by an organization.</summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public enum AppPermissions_organization_personal_access_token_requests
     {
         [EnumMember(Value = "read")]

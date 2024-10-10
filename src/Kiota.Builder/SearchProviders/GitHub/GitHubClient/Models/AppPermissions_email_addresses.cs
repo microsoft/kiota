@@ -4,7 +4,7 @@ using System;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>The level of permission to grant the access token to manage the email addresses belonging to a user.</summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public enum AppPermissions_email_addresses
     {
         [EnumMember(Value = "read")]

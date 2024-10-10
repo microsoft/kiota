@@ -14,7 +14,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Rele
     /// <summary>
     /// Builds and executes requests for operations under \repos\{owner}\{repo}\releases
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class ReleasesRequestBuilder : BaseRequestBuilder
     {
         /// <summary>
@@ -89,7 +89,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Rele
         /// <summary>
         /// This returns a list of releases, which does not include regular Git tags that have not been associated with a release. To get a list of Git tags, use the [Repository Tags API](https://docs.github.com/rest/repos/repos#list-repository-tags).Information about published releases are available to everyone. Only users with push access will receive listings for draft releases.
         /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         public partial class ReleasesRequestBuilderGetQueryParameters 
         {
             /// <summary>The page number of the results to fetch. For more information, see &quot;[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api).&quot;</summary>

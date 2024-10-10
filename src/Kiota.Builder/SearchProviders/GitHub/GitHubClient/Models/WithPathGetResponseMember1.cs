@@ -10,7 +10,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
     /// <summary>
     /// A list of directory items
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class WithPathGetResponseMember1 : IAdditionalDataHolder, IParsable
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>

@@ -14,7 +14,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
     /// <summary>
     /// Builds and executes requests for operations under \repos\{owner}\{repo}\contents\{path}
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class WithPathItemRequestBuilder : BaseRequestBuilder
     {
         /// <summary>
@@ -90,7 +90,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>
         /// Composed type wrapper for classes <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile"/>, <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSubmodule"/>, <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSymlink"/>, List&lt;global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.WithPathGetResponseMember1&gt;
         /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         public partial class WithPathGetResponse : IComposedTypeWrapper, IParsable
         {
             /// <summary>Composed type representation for type <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile"/></summary>
@@ -213,7 +213,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>
         /// Gets the contents of a file or directory in a repository. Specify the file path or directory with the `path` parameter. If you omit the `path` parameter, you will receive the contents of the repository&apos;s root directory.This endpoint supports the following custom media types. For more information, see &quot;[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types).&quot;- **`application/vnd.github.raw+json`**: Returns the raw file contents for files and symlinks.- **`application/vnd.github.html+json`**: Returns the file contents in HTML. Markup languages are rendered to HTML using GitHub&apos;s open-source [Markup library](https://github.com/github/markup).- **`application/vnd.github.object+json`**: Returns the contents in a consistent object format regardless of the content type. For example, instead of an array of objects for a directory, the response will be an object with an `entries` attribute containing the array of objects.If the content is a directory, the response will be an array of objects, one object for each item in the directory. When listing the contents of a directory, submodules have their &quot;type&quot; specified as &quot;file&quot;. Logically, the value _should_ be &quot;submodule&quot;. This behavior exists [for backwards compatibility purposes](https://git.io/v1YCW). In the next major version of the API, the type will be returned as &quot;submodule&quot;.If the content is a symlink and the symlink&apos;s target is a normal file in the repository, then the API responds with the content of the file. Otherwise, the API responds with an object describing the symlink itself.If the content is a submodule, the `submodule_git_url` field identifies the location of the submodule repository, and the `sha` identifies a specific commit within the submodule repository. Git uses the given URL when cloning the submodule repository, and checks out the submodule at that specific commit. If the submodule repository is not hosted on github.com, the Git URLs (`git_url` and `_links[&quot;git&quot;]`) and the github.com URLs (`html_url` and `_links[&quot;html&quot;]`) will have null values.**Notes**:- To get a repository&apos;s contents recursively, you can [recursively get the tree](https://docs.github.com/rest/git/trees#get-a-tree).- This API has an upper limit of 1,000 files for a directory. If you need to retrievemore files, use the [Git Trees API](https://docs.github.com/rest/git/trees#get-a-tree).- Download URLs expire and are meant to be used just once. To ensure the download URL does not expire, please use the contents API to obtain a fresh download URL for each download.- If the requested file&apos;s size is:  - 1 MB or smaller: All features of this endpoint are supported.  - Between 1-100 MB: Only the `raw` or `object` custom media types are supported. Both will work as normal, except that when using the `object` media type, the `content` field will be an emptystring and the `encoding` field will be `&quot;none&quot;`. To get the contents of these larger files, use the `raw` media type.  - Greater than 100 MB: This endpoint is not supported.
         /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         public partial class WithPathItemRequestBuilderGetQueryParameters
         {
             /// <summary>The name of the commit/branch/tag. Default: the repository’s default branch.</summary>
