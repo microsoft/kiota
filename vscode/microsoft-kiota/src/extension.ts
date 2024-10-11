@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import TelemetryReporter from '@vscode/extension-telemetry';
-import * as path from 'path';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { checkForSuccess, displayGenerationResults } from './commands/generate/generation-util';
@@ -38,7 +38,7 @@ import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { updateClients } from "./updateClients";
 import {
   isClientType, isPluginType, parseGenerationLanguage,
-  parsePluginType, updateTreeViewIcons
+  parsePluginType
 } from "./util";
 import { IntegrationParams, validateDeepLinkQueryParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
@@ -50,8 +50,8 @@ import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
-let clientOrPluginKey: string;
-let clientOrPluginObject: ClientOrPluginProperties;
+export let clientOrPluginKey: string;
+export let clientOrPluginObject: ClientOrPluginProperties;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(
@@ -76,6 +76,7 @@ export async function activate(
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider);
+  const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -148,19 +149,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.getName(),
       async (searchParams: Partial<IntegrationParams> = {}) => await searchOrOpenApiDescriptionCommand.execute(searchParams)
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
-      const yesAnswer = vscode.l10n.t("Yes");
-      const response = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Do you want to remove this API description?"),
-        yesAnswer,
-        vscode.l10n.t("No")
-      );
-      if (response === yesAnswer) {
-        openApiTreeProvider.closeDescription();
-        await updateTreeViewIcons(treeViewId, false);
-      }
-    }
-    ),
+    registerCommandWithTelemetry(reporter, closeDescriptionCommand.getName(), async () => await closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientKey: string, clientObject: ClientOrPluginProperties, generationType: string) => {
       clientOrPluginKey = clientKey;
@@ -376,7 +365,7 @@ export async function activate(
   context.subscriptions.push(disposable);
 }
 
-function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
+export function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {
     const splatCommand = command.split('/');
     const eventName = splatCommand[splatCommand.length - 1];
