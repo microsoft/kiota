@@ -18,6 +18,7 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-vie
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
+import { SelectLockCommand } from './commands/selectLockCommand';
 import { StatusCommand } from './commands/statusCommand';
 import { API_MANIFEST_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
@@ -25,7 +26,7 @@ import { getExtensionSettings } from "./extensionSettings";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { getKiotaVersion } from "./getKiotaVersion";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
-import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
+import { UriHandler } from './handlers/uriHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
@@ -33,13 +34,11 @@ import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
 import { updateClients } from "./updateClients";
-import { IntegrationParams, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
 import { exportLogsAndShowErrors } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
-import { openTreeViewWithProgress } from './utilities/progress';
 import { loadTreeView } from "./workspaceTreeProvider";
-import { SelectLockCommand } from './commands/selectLockCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -63,6 +62,7 @@ export async function activate(
     workspaceGenerationContext = { ...workspaceGenerationContext, ...params };
   };
 
+  const uriHandler = new UriHandler(context, openApiTreeProvider);
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
@@ -83,32 +83,7 @@ export async function activate(
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
-    vscode.window.registerUriHandler({
-      handleUri: async (uri: vscode.Uri) => {
-        if (uri.path === "/") {
-          return;
-        }
-        const queryParameters = getQueryParameters(uri);
-        if (uri.path.toLowerCase() === "/opendescription") {
-          let [params, errorsArray] = validateDeepLinkQueryParams(queryParameters);
-          setDeepLinkParams(params);
-          reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
-            "queryParameters": JSON.stringify(queryParameters),
-            "validationErrors": errorsArray.join(", ")
-          });
-
-          let deepLinkParams = getDeepLinkParams();
-          if (deepLinkParams.descriptionurl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
-            return;
-          }
-        }
-        void vscode.window.showErrorMessage(
-          vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
-        );
-      }
-    }),
-
+    vscode.window.registerUriHandler({ handleUri: async (uri: vscode.Uri) => await uriHandler.handleUri(uri) }),
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
     registerCommandWithTelemetry(reporter, selectLockCommand.getName(), async (x) => await loadWorkspaceFile(x, openApiTreeProvider)),
@@ -240,20 +215,6 @@ async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<vo
     );
   }
   kiotaStatusBarItem.show();
-}
-
-function getQueryParameters(uri: vscode.Uri): Record<string, string> {
-  const query = uri.query;
-  if (!query) {
-    return {};
-  }
-  const queryParameters = (query.startsWith('?') ? query.substring(1) : query).split("&");
-  const parameters = {} as Record<string, string>;
-  queryParameters.forEach((element) => {
-    const keyValue = element.split("=");
-    parameters[keyValue[0].toLowerCase()] = decodeURIComponent(keyValue[1]);
-  });
-  return parameters;
 }
 
 // This method is called when your extension is deactivated
