@@ -47,6 +47,7 @@ import { showUpgradeWarningMessage } from './utilities/messaging';
 import { openTreeViewWithProgress } from './utilities/progress';
 import { confirmOverride } from './utilities/regeneration';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { StatusCommand } from './commands/statusCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -77,6 +78,7 @@ export async function activate(
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
+  const statusCommand = new StatusCommand();
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -114,17 +116,7 @@ export async function activate(
       `${extensionId}.selectLock`,
       (x) => loadWorkspaceFile(x, openApiTreeProvider)
     ),
-    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => {
-      const yesAnswer = vscode.l10n.t("Yes");
-      const response = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Open installation instructions for kiota?"),
-        yesAnswer,
-        vscode.l10n.t("No")
-      );
-      if (response === yesAnswer) {
-        await vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
-      }
-    }),
+    registerCommandWithTelemetry(reporter, statusCommand.getName(), async () => await statusCommand.execute()),
     vscode.window.registerWebviewViewProvider(
       dependenciesInfo,
       dependenciesInfoProvider
