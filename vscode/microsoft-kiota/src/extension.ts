@@ -39,6 +39,7 @@ import { exportLogsAndShowErrors } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
 import { openTreeViewWithProgress } from './utilities/progress';
 import { loadTreeView } from "./workspaceTreeProvider";
+import { SelectLockCommand } from './commands/selectLockCommand';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -76,6 +77,7 @@ export async function activate(
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
+  const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -109,10 +111,7 @@ export async function activate(
 
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
-    registerCommandWithTelemetry(reporter,
-      `${extensionId}.selectLock`,
-      (x) => loadWorkspaceFile(x, openApiTreeProvider)
-    ),
+    registerCommandWithTelemetry(reporter, selectLockCommand.getName(), async (x) => await loadWorkspaceFile(x, openApiTreeProvider)),
     registerCommandWithTelemetry(reporter, statusCommand.getName(), async () => await statusCommand.execute()),
     vscode.window.registerWebviewViewProvider(
       dependenciesInfo,
