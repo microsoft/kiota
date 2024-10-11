@@ -216,17 +216,13 @@ export async function activate(
   context.subscriptions.push(disposable);
 }
 
-export function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
+function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {
     const splatCommand = command.split('/');
     const eventName = splatCommand[splatCommand.length - 1];
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientObject));
 }
 
 async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {
