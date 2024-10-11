@@ -4,7 +4,7 @@ using System;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>State of the release asset.</summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public enum ReleaseAsset_state
     {
         [EnumMember(Value = "uploaded")]
