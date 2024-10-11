@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.19.1] - 2024-10-11
+
+### Added
+
+### Changed
+
 - Fixed incompatibility with detecting odata primitives after conversion library updates at [OpenAPI.NET.OData#581](https://github.com/microsoft/OpenAPI.NET.OData/issues/581);
 - Fixed cyclic dependencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
 - Fixed a bug where default output folder is created on plugin edit and generate commands. [#5510](https://github.com/microsoft/kiota/issues/5429)
@@ -1475,4 +1481,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
