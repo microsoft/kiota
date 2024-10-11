@@ -9,8 +9,8 @@ import * as treeModule from "../../../openApiTreeProvider";
 import * as stepsModule from "../../../steps";
 
 
-suite('Extension Test Suite', () => {
-	void vscode.window.showInformationMessage('Start all tests.');
+suite('FilterDescriptionCommand Test Suite', () => {
+	void vscode.window.showInformationMessage('Start FilterDescriptionCommand tests.');
     const sanbox = sinon.createSandbox();
 
     teardown(async () => {
