@@ -13,10 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.19.1] - 2024-10-11
+
+### Added
+
+### Changed
+
 - Fixed incompatibility with detecting odata primitives after conversion library updates at [OpenAPI.NET.OData#581](https://github.com/microsoft/OpenAPI.NET.OData/issues/581);
 - Fixed cyclic dependencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
 - Fixed a bug where default output folder is created on plugin edit and generate commands. [#5510](https://github.com/microsoft/kiota/issues/5429)
 - Changed GeneratedCode attribute applied when generating CSharp to only include the major version of Kiota. [#5489](https://github.com/microsoft/kiota/issues/5489)
+- Fixed genarating CSharp client displays clean hint regardless of whether --clean-output is already passed [#5576](https://github.com/microsoft/kiota/issues/5576)
 
 ## [1.19.0] - 2024-10-03
 
@@ -1474,4 +1481,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 

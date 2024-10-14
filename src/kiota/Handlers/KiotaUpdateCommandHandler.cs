@@ -69,7 +69,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach (var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
-                if (Array.Exists(results, static x => x))
+                if (Array.Exists(results, static x => x) && !cleanOutput)
                     DisplayCleanHint("update");
                 return 0;
             }
