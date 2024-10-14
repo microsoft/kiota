@@ -1,6 +1,7 @@
-import { connectToKiota, KiotaLogEntry } from "./kiotaInterop";
-import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import * as rpc from "vscode-jsonrpc/node";
+
+import { KiotaLogEntry, connectToKiota } from "../../kiotaInterop";
 
 export function updateClients(context: vscode.ExtensionContext, cleanOutput: boolean, clearCache: boolean): Promise<KiotaLogEntry[] | undefined> {
   return connectToKiota(context, async (connection) => {
