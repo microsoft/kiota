@@ -112,7 +112,6 @@ async function doesFileHashMatch(destinationPath: string, hashValue: string): Pr
     const hash = createHash('sha256');
     return new Promise((resolve, reject) => {
         fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
-            ;
             const computedValue = hash.digest('hex');
             hash.destroy();
             resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
