@@ -4,12 +4,12 @@ import * as vscode from "vscode";
 import { extensionId, treeViewId } from "../../../constants";
 import { getExtensionSettings } from "../../../extensionSettings";
 import { setDeepLinkParams } from "../../../handlers/deepLinkParamsHandler";
+import { searchSteps } from "../../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../../openApiTreeProvider";
-import { searchSteps } from "../../../steps";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../../utilities/deep-linking";
+import { openTreeViewWithProgress } from "../../../utilities/progress";
 import { Command } from "../../Command";
 import { searchDescription } from "./searchDescription";
-import { openTreeViewWithProgress } from "../../../utilities/progress";
 
 export class SearchOrOpenApiDescriptionCommand extends Command {
 

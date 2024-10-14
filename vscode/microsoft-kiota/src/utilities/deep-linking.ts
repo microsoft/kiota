@@ -1,5 +1,5 @@
 import { KiotaGenerationLanguage, KiotaPluginType } from "../enums";
-import { GenerateState } from "../steps";
+import { GenerateState } from "../modules/steps/generateSteps";
 import { getSanitizedString, parseGenerationLanguage, allGenerationLanguagesToString, parsePluginType } from "../util";
 import { createTemporaryFolder } from "./temporary-folder";
 

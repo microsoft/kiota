@@ -13,8 +13,8 @@ import { getLanguageInformation, getLanguageInformationForDescription } from "..
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
-import { GenerateState, generateSteps } from "../../steps";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";

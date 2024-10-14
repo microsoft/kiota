@@ -1,6 +1,6 @@
 import { treeViewId } from "../../constants";
 import { OpenApiTreeProvider } from "../../openApiTreeProvider";
-import { filterSteps } from "../../steps";
+import { filterSteps } from '../../modules/steps/filterSteps';
 import { Command } from "../Command";
 
 export class FilterDescriptionCommand extends Command {
