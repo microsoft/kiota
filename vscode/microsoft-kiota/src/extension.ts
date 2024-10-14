@@ -9,24 +9,24 @@ import { GenerateClientCommand } from './commands/generate/generateClientCommand
 import { displayGenerationResults } from './commands/generate/generation-util';
 import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile";
 import { MigrateFromLockFileCommand } from './commands/migrate/migrateFromLockFileCommand';
+import { SearchOrOpenApiDescriptionCommand } from './commands/openApidescription/searchOrOpenApiDescriptionCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/openApiTreeView/addAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/openApiTreeView/addToSelectedEndpointsCommand';
 import { FilterDescriptionCommand } from './commands/openApiTreeView/filterDescriptionCommand';
 import { OpenDocumentationPageCommand } from './commands/openApiTreeView/openDocumentationPageCommand';
 import { RemoveAllFromSelectedEndpointsCommand } from './commands/openApiTreeView/removeAllFromSelectedEndpointsCommand';
 import { RemoveFromSelectedEndpointsCommand } from './commands/openApiTreeView/removeFromSelectedEndpointsCommand';
-import { SearchOrOpenApiDescriptionCommand } from './commands/openApidescription/searchOrOpenApiDescriptionCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
 import { SelectLockCommand } from './commands/selectLockCommand';
 import { StatusCommand } from './commands/statusCommand';
-import { API_MANIFEST_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
+import { UpdateClientsCommand } from './commands/updateClients/updateClientsCommand';
+import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { UriHandler } from './handlers/uriHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
-import { getKiotaVersion } from './kiotaInterop/getKiotaVersion';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
@@ -34,11 +34,9 @@ import { loadTreeView } from './providers/workspaceTreeProvider';
 import { getExtensionSettings } from "./types/extensionSettings";
 import { GeneratedOutputState } from './types/GeneratedOutputState';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
-import { updateClients } from "./updateClients";
 import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
-import { exportLogsAndShowErrors } from './utilities/logging';
-import { showUpgradeWarningMessage } from './utilities/messaging';
+import { updateStatusBarItem } from './utilities/status';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -78,6 +76,7 @@ export async function activate(
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
+  const updateClientsCommand = new UpdateClientsCommand(context);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
@@ -137,57 +136,8 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem(context);
-  let disposable = vscode.commands.registerCommand(
-    `${extensionId}.updateClients`,
-    async () => {
-      if (
-        !vscode.workspace.workspaceFolders ||
-        vscode.workspace.workspaceFolders.length === 0
-      ) {
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("No workspace folder found, open a folder first")
-        );
-        return;
-      }
-      const existingApiManifestFileUris = await vscode.workspace.findFiles(`**/${API_MANIFEST_FILE}`);
-      if (existingApiManifestFileUris.length > 0) {
-        await Promise.all(existingApiManifestFileUris.map(uri => showUpgradeWarningMessage(uri, null, null, context)));
-      }
-      await updateStatusBarItem(context);
-      try {
-        kiotaOutputChannel.clear();
-        kiotaOutputChannel.show();
-        kiotaOutputChannel.info(
-          vscode.l10n.t("updating client with path {path}", {
-            path: vscode.workspace.workspaceFolders[0].uri.fsPath,
-          })
-        );
-        const res = await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Updating clients...")
-        }, (progress, _) => {
-          const settings = getExtensionSettings(extensionId);
-          return updateClients(context, settings.cleanOutput, settings.clearCache);
-        });
-        if (res) {
-          await exportLogsAndShowErrors(res);
-        }
-      } catch (error) {
-        kiotaOutputChannel.error(
-          vscode.l10n.t("error updating the clients {error}"),
-          error
-        );
-        await vscode.window.showErrorMessage(
-          vscode.l10n.t("error updating the clients {error}"),
-          error as string
-        );
-      }
-    }
-  );
-
-  context.subscriptions.push(disposable);
+  await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
+  context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaOutputChannel, kiotaStatusBarItem })));
 }
 
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
@@ -197,24 +147,6 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {
-  try {
-    const version = await getKiotaVersion(context, kiotaOutputChannel);
-    if (!version) {
-      throw new Error("kiota not found");
-    }
-    kiotaStatusBarItem.text = `$(extensions-info-message) kiota ${version}`;
-  } catch (error) {
-    kiotaStatusBarItem.text = `$(extensions-warning-message) kiota ${vscode.l10n.t(
-      "not found"
-    )}`;
-    kiotaStatusBarItem.backgroundColor = new vscode.ThemeColor(
-      "statusBarItem.errorBackground"
-    );
-  }
-  kiotaStatusBarItem.show();
 }
 
 // This method is called when your extension is deactivated
