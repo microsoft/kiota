@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { treeViewId } from "../../constants";
-import { OpenApiTreeNode } from "../../openApiTreeProvider";
+import { OpenApiTreeNode } from "../../providers/openApiTreeProvider";
 import { Command } from "../Command";
 
 export class OpenDocumentationPageCommand extends Command {

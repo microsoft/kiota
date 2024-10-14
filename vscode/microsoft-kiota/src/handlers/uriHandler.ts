@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import TelemetryReporter from '@vscode/extension-telemetry';
 
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { validateDeepLinkQueryParams } from '../utilities/deep-linking';
 import { openTreeViewWithProgress } from '../utilities/progress';
 import { setDeepLinkParams, getDeepLinkParams } from './deepLinkParamsHandler';

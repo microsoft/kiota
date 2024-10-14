@@ -1,8 +1,9 @@
-import { connectToKiota, KiotaLogEntry, LogLevel } from "./kiotaInterop";
-import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
-import { KIOTA_LOCK_FILE } from "./constants";
-import { getWorkspaceJsonPath, handleMigration } from "./util";
+import * as rpc from "vscode-jsonrpc/node";
+
+import { KIOTA_LOCK_FILE } from "../../constants";
+import { connectToKiota, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { getWorkspaceJsonPath, handleMigration } from "../../util";
 
 export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
     return connectToKiota(context, async (connection) => {

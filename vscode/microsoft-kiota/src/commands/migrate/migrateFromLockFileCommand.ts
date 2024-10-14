@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { ExtensionContext, Uri, workspace } from "vscode";
 
-import { extensionId } from "../constants";
-import { Command } from "./Command";
-import { handleMigration } from "../util";
+import { extensionId } from "../../constants";
+import { handleMigration } from "../../util";
+import { Command } from "../Command";
 
 export class MigrateFromLockFileCommand extends Command {
   private _context: ExtensionContext;

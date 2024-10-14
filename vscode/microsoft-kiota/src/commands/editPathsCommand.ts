@@ -1,6 +1,6 @@
 import { extensionId, treeViewId } from "../constants";
 import { ClientOrPluginProperties } from "../kiotaInterop";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { WorkspaceGenerationContext } from "../types/WorkspaceGenerationContext";
 import { updateTreeViewIcons } from "../util";
 import { openTreeViewWithProgress } from "../utilities/progress";

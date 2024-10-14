@@ -1,6 +1,7 @@
-import { connectToKiota, LanguagesInformation } from "./kiotaInterop";
-import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import * as rpc from "vscode-jsonrpc/node";
+
+import { connectToKiota, LanguagesInformation } from "../../kiotaInterop";
 
 let _languageInformation: LanguagesInformation | undefined; // doesn't change over the lifecycle of the extension
 export async function getLanguageInformation(context: vscode.ExtensionContext): Promise<LanguagesInformation | undefined> {

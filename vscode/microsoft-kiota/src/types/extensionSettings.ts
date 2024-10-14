@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { KiotaGenerationLanguage } from "./enums";
 
-export function getExtensionSettings(extensionId: string) : ExtensionSettings {
+export function getExtensionSettings(extensionId: string): ExtensionSettings {
     return {
         includeAdditionalData: getBooleanConfiguration(extensionId, "generate.includeAdditionalData.enabled"),
         backingStore: getBooleanConfiguration(extensionId, "generate.backingStore.enabled"),

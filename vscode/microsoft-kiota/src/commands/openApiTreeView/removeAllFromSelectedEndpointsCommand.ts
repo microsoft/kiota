@@ -1,8 +1,8 @@
 import { treeViewId } from "../../constants";
-import { OpenApiTreeNode, OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeNode, OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { Command } from "../Command";
 
-export class AddAllToSelectedEndpointsCommand extends Command {
+export class RemoveAllFromSelectedEndpointsCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;
 
   constructor(openApiTreeProvider: OpenApiTreeProvider) {
@@ -11,10 +11,10 @@ export class AddAllToSelectedEndpointsCommand extends Command {
   }
 
   public getName(): string {
-    return `${treeViewId}.addAllToSelectedEndpoints`;
+    return `${treeViewId}.removeAllFromSelectedEndpoints`;
   }
 
   public async execute(openApiTreeNode: OpenApiTreeNode): Promise<void> {
-    this._openApiTreeProvider.select(openApiTreeNode, true, true);
+    this._openApiTreeProvider.select(openApiTreeNode, false, true);
   }
 }

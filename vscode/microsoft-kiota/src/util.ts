@@ -2,10 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { QuickPickItem } from "vscode";
+
+import { displayMigrationMessages, migrateFromLockFile } from './commands/migrate/migrateFromLockFile';
 import { APIMANIFEST, CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS } from './constants';
-import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { allGenerationLanguages } from './kiotaInterop';
-import { displayMigrationMessages, migrateFromLockFile } from './migrateFromLockFile';
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from './types/enums';
 
 const clientTypes = [CLIENT, CLIENTS];
 const pluginTypes = [PLUGIN, PLUGINS, APIMANIFEST];

@@ -3,25 +3,25 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
-import { DependenciesViewProvider } from "../../dependenciesViewProvider";
-import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "../../enums";
-import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
-import { generateClient } from "../../generateClient";
-import { GeneratedOutputState } from "../../GeneratedOutputState";
-import { generatePlugin } from "../../generatePlugin";
-import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
+import { ExtensionSettings, getExtensionSettings } from "../../types/extensionSettings";
+import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
 import { exportLogsAndShowErrors } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
+import { generateClient } from "./generateClient";
+import { generatePlugin } from "./generatePlugin";
 import { checkForSuccess, displayGenerationResults } from "./generation-util";
+import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 
 export class GenerateClientCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;
