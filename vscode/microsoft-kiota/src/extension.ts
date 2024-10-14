@@ -4,6 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
 import { CodeLensProvider } from "./codelensProvider";
+import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
@@ -17,25 +18,23 @@ import { RemoveFromSelectedEndpointsCommand } from './commands/open-api-tree-vie
 import { SearchOrOpenApiDescriptionCommand } from './commands/open-api-tree-view/search-or-open-api-description/searchOrOpenApiDescriptionCommand';
 import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonCommand';
 import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
+import { SelectLockCommand } from './commands/selectLockCommand';
+import { StatusCommand } from './commands/statusCommand';
 import { UpdateClientsCommand } from './commands/updateClientsCommand';
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { getGenerationConfiguration } from './handlers/configurationHandler';
-import { getDeepLinkParams, setDeepLinkParams } from './handlers/deepLinkParamsHandler';
+import { UriHandler } from './handlers/uriHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
-import {
-  updateTreeViewIcons
-} from "./util";
-import { IntegrationParams, validateDeepLinkQueryParams } from './utilities/deep-linking';
+import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
-import { openTreeViewWithProgress } from './utilities/progress';
 import { updateStatusBarItem } from './utilities/status';
 import { loadTreeView } from "./workspaceTreeProvider";
 
@@ -61,6 +60,7 @@ export async function activate(
     workspaceGenerationContext = { ...workspaceGenerationContext, ...params };
   };
 
+  const uriHandler = new UriHandler(context, openApiTreeProvider);
   const migrateFromLockFileCommand = new MigrateFromLockFileCommand(context);
   const addAllToSelectedEndpointsCommand = new AddAllToSelectedEndpointsCommand(openApiTreeProvider);
   const addToSelectedEndpointsCommand = new AddToSelectedEndpointsCommand(openApiTreeProvider);
@@ -73,55 +73,20 @@ export async function activate(
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
+  const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
+  const statusCommand = new StatusCommand();
+  const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
 
   await loadTreeView(context);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
-    vscode.window.registerUriHandler({
-      handleUri: async (uri: vscode.Uri) => {
-        if (uri.path === "/") {
-          return;
-        }
-        const queryParameters = getQueryParameters(uri);
-        if (uri.path.toLowerCase() === "/opendescription") {
-          let [params, errorsArray] = validateDeepLinkQueryParams(queryParameters);
-          setDeepLinkParams(params);
-          reporter.sendTelemetryEvent("DeepLink.OpenDescription initialization status", {
-            "queryParameters": JSON.stringify(queryParameters),
-            "validationErrors": errorsArray.join(", ")
-          });
-
-          let deepLinkParams = getDeepLinkParams();
-          if (deepLinkParams.descriptionurl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
-            return;
-          }
-        }
-        void vscode.window.showErrorMessage(
-          vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
-        );
-      }
-    }),
-
+    vscode.window.registerUriHandler({ handleUri: async (uri: vscode.Uri) => await uriHandler.handleUri(uri) }),
     vscode.languages.registerCodeLensProvider('json', codeLensProvider),
     reporter,
-    registerCommandWithTelemetry(reporter,
-      `${extensionId}.selectLock`,
-      (x) => loadWorkspaceFile(x, openApiTreeProvider)
-    ),
-    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => {
-      const yesAnswer = vscode.l10n.t("Yes");
-      const response = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Open installation instructions for kiota?"),
-        yesAnswer,
-        vscode.l10n.t("No")
-      );
-      if (response === yesAnswer) {
-        await vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
-      }
-    }),
+    registerCommandWithTelemetry(reporter, selectLockCommand.getName(), async (x) => await loadWorkspaceFile(x, openApiTreeProvider)),
+    registerCommandWithTelemetry(reporter, statusCommand.getName(), async () => await statusCommand.execute()),
     vscode.window.registerWebviewViewProvider(
       dependenciesInfo,
       dependenciesInfoProvider
@@ -146,19 +111,7 @@ export async function activate(
     registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.getName(),
       async (searchParams: Partial<IntegrationParams> = {}) => await searchOrOpenApiDescriptionCommand.execute(searchParams)
     ),
-    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, async () => {
-      const yesAnswer = vscode.l10n.t("Yes");
-      const response = await vscode.window.showInformationMessage(
-        vscode.l10n.t("Do you want to remove this API description?"),
-        yesAnswer,
-        vscode.l10n.t("No")
-      );
-      if (response === yesAnswer) {
-        openApiTreeProvider.closeDescription();
-        await updateTreeViewIcons(treeViewId, false);
-      }
-    }
-    ),
+    registerCommandWithTelemetry(reporter, closeDescriptionCommand.getName(), async () => await closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, editPathsCommand.getName(), async (clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties, generationType: string) => {
       setWorkspaceGenerationContext({ clientOrPluginKey, clientOrPluginObject, generationType });
@@ -194,26 +147,6 @@ function registerCommandWithTelemetry(reporter: TelemetryReporter, command: stri
     reporter.sendTelemetryEvent(eventName);
     return callback.apply(thisArg, args);
   }, thisArg);
-}
-
-async function loadEditPaths(clientOrPluginKey: string, clientObject: any, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await openTreeViewWithProgress(() => openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientObject));
-}
-
-
-
-function getQueryParameters(uri: vscode.Uri): Record<string, string> {
-  const query = uri.query;
-  if (!query) {
-    return {};
-  }
-  const queryParameters = (query.startsWith('?') ? query.substring(1) : query).split("&");
-  const parameters = {} as Record<string, string>;
-  queryParameters.forEach((element) => {
-    const keyValue = element.split("=");
-    parameters[keyValue[0].toLowerCase()] = decodeURIComponent(keyValue[1]);
-  });
-  return parameters;
 }
 
 // This method is called when your extension is deactivated
