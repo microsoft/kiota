@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 
 import { treeViewId } from '../constants';
-import { ExtensionSettings } from '../extensionSettings';
 import {
     ClientObjectProperties,
     ClientOrPluginProperties,
@@ -20,6 +19,7 @@ import {
     KiotaShowResult,
     PluginObjectProperties
 } from '../kiotaInterop';
+import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {

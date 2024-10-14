@@ -3,14 +3,14 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../../constants";
-import { KiotaGenerationLanguage, KiotaPluginType } from "../../enums";
-import { ExtensionSettings } from "../../extensionSettings";
-import { generateClient } from "../../generateClient";
-import { generatePlugin } from "../generate/generatePlugin";
 import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, getLogEntriesForLevel, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
+import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
+import { ExtensionSettings } from "../../types/extensionSettings";
 import { parseGenerationLanguage, parsePluginType } from "../../util";
 import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { generateClient } from "../generate/generateClient";
+import { generatePlugin } from "../generate/generatePlugin";
 import { checkForSuccess } from "../generate/generation-util";
 
 export class RegenerateService {

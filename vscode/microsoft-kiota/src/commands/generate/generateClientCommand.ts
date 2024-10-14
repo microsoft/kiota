@@ -3,16 +3,15 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
-import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "../../enums";
-import { ExtensionSettings, getExtensionSettings } from "../../extensionSettings";
-import { GeneratedOutputState } from "../../GeneratedOutputState";
-import { getLanguageInformation, getLanguageInformationForDescription } from "../../getLanguageInformation";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerateState, generateSteps } from "../../steps";
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
+import { ExtensionSettings, getExtensionSettings } from "../../types/extensionSettings";
+import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
@@ -22,6 +21,7 @@ import { Command } from "../Command";
 import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
 import { checkForSuccess, displayGenerationResults } from "./generation-util";
+import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 
 export class GenerateClientCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;

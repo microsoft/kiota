@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { KiotaGenerationLanguage } from '../enums';
 import { DependencyType, dependencyTypeToString, generationLanguageToString, LanguageInformation, LanguagesInformation } from '../kiotaInterop';
+import { KiotaGenerationLanguage } from '../types/enums';
 
 export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;

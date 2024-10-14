@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId, KIOTA_WORKSPACE_FILE } from "../../constants";
-import { getExtensionSettings } from "../../extensionSettings";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
+import { getExtensionSettings } from "../../types/extensionSettings";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";
