@@ -1,12 +1,15 @@
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
-import * as crypto from 'crypto';
+
+import { treeViewId } from '../constants';
 import {
     ClientObjectProperties,
     ClientOrPluginProperties,
+    ConfigurationFile,
     connectToKiota,
     KiotaGetManifestDetailsConfiguration,
     KiotaLogEntry,
@@ -14,12 +17,10 @@ import {
     KiotaOpenApiNode,
     KiotaShowConfiguration,
     KiotaShowResult,
-    ConfigurationFile,
     PluginObjectProperties
-} from './kiotaInterop';
-import { ExtensionSettings } from './extensionSettings';
-import { treeViewId } from './constants';
-import { updateTreeViewIcons } from './util';
+} from '../kiotaInterop';
+import { ExtensionSettings } from '../types/extensionSettings';
+import { updateTreeViewIcons } from '../util';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();

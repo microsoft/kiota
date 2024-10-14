@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { getKiotaVersion } from '../getKiotaVersion';
+import { getKiotaVersion } from '../kiotaInterop/getKiotaVersion';
 
 async function updateStatusBarItem(context: vscode.ExtensionContext, kiotaOutputChannel: vscode.LogOutputChannel, kiotaStatusBarItem: vscode.StatusBarItem): Promise<void> {
   try {

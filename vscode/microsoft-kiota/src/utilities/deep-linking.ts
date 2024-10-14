@@ -1,6 +1,6 @@
-import { KiotaGenerationLanguage, KiotaPluginType } from "../enums";
 import { GenerateState } from "../steps";
-import { getSanitizedString, parseGenerationLanguage, allGenerationLanguagesToString, parsePluginType } from "../util";
+import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
+import { allGenerationLanguagesToString, getSanitizedString, parseGenerationLanguage, parsePluginType } from "../util";
 import { createTemporaryFolder } from "./temporary-folder";
 
 export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): boolean {

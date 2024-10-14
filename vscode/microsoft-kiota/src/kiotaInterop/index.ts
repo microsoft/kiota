@@ -1,9 +1,10 @@
 import * as cp from 'child_process';
 import * as vscode from "vscode";
 import * as rpc from 'vscode-jsonrpc/node';
-import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
+
+import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
+import { getWorkspaceJsonDirectory } from "../util";
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
-import { getWorkspaceJsonDirectory } from "./util";
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);

@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
-import { KiotaPluginType } from "./enums";
-import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "./kiotaInterop";
-import { getWorkspaceJsonDirectory } from "./util";
+
+import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "../../kiotaInterop";
+import { KiotaPluginType } from "../../types/enums";
+import { getWorkspaceJsonDirectory } from "../../util";
 
 export function generatePlugin(context: vscode.ExtensionContext,
   descriptionPath: string,

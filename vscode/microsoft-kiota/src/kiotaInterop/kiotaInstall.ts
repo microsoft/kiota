@@ -1,27 +1,26 @@
-import * as path from 'path';
-import * as https from 'https';
-import * as fs from 'fs';
-import {createHash} from 'crypto';
 import * as admZip from 'adm-zip';
-import * as vscode from "vscode";
+import { createHash } from 'crypto';
+import * as fs from 'fs';
+import * as https from 'https';
 import isOnline from 'is-online';
-
+import * as path from 'path';
+import * as vscode from "vscode";
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
 async function runIfNotLocked(context: vscode.ExtensionContext, action: () => Promise<void>) {
-  const installStartTimeStamp = context.globalState.get<number>(kiotaInstallStatusKey);
-  const currentTimeStamp = new Date().getTime();
-  if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
-    //locking the context to prevent multiple downloads across multiple instances of vscode
-    //overriding after 30 seconds to prevent stale locks
-    await context.globalState.update(kiotaInstallStatusKey, currentTimeStamp);
-    try {
-      await action();
-    } finally {
-      await context.globalState.update(kiotaInstallStatusKey, undefined);
+    const installStartTimeStamp = context.globalState.get<number>(kiotaInstallStatusKey);
+    const currentTimeStamp = new Date().getTime();
+    if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
+        //locking the context to prevent multiple downloads across multiple instances of vscode
+        //overriding after 30 seconds to prevent stale locks
+        await context.globalState.update(kiotaInstallStatusKey, currentTimeStamp);
+        try {
+            await action();
+        } finally {
+            await context.globalState.update(kiotaInstallStatusKey, undefined);
+        }
     }
-  }
 }
 export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
     const runtimeDependencies = getRuntimeDependenciesPackages(context);
@@ -35,15 +34,15 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 title: vscode.l10n.t("Downloading kiota...")
 
             }, async (progress, _) => {
-              const online = await isOnline();
-              if (!online) {
-                await vscode.window.showErrorMessage(
-                  vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
-                );
-                return;
-              }
-              await runIfNotLocked(context, async () => {
-                try {
+                const online = await isOnline();
+                if (!online) {
+                    await vscode.window.showErrorMessage(
+                        vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
+                    );
+                    return;
+                }
+                await runIfNotLocked(context, async () => {
+                    try {
                         const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
                         if (!packageToInstall) {
                             throw new Error("Could not find package to install");
@@ -60,7 +59,7 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                         } else {
                             throw new Error("Hash mismatch");
                         }
-                    } catch(error) {
+                    } catch (error) {
                         await vscode.window.showErrorMessage(
                             vscode.l10n.t("Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.")
                         );
@@ -77,7 +76,7 @@ let kiotaPath: string | undefined;
 export function getKiotaPath(context: vscode.ExtensionContext): string {
     if (!kiotaPath) {
         kiotaPath = getKiotaPathInternal(context);
-        if(!kiotaPath) {
+        if (!kiotaPath) {
             throw new Error("Could not find kiota");
         }
     }
@@ -109,10 +108,10 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
     zip.extractAllTo(destinationPath, true);
 }
 
-async function doesFileHashMatch(destinationPath: string, hashValue: string) : Promise<boolean> {
+async function doesFileHashMatch(destinationPath: string, hashValue: string): Promise<boolean> {
     const hash = createHash('sha256');
     return new Promise((resolve, reject) => {
-        fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {;
+        fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
             const computedValue = hash.digest('hex');
             hash.destroy();
             resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
