@@ -30,6 +30,7 @@ public static class OpenApiOperationExtensions
     }
     internal static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiOperation operation, HashSet<string> successCodesToUse, StructuredMimeTypesCollection structuredMimeTypes)
     {
+        if (operation.Responses is null) return [];
         // Return Schema that represents all the possible success responses!
         return operation.Responses.Where(r => successCodesToUse.Contains(r.Key))
                             .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
@@ -67,7 +68,7 @@ public static class OpenApiOperationExtensions
                     .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries)[0], c.Value))
                     .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup(c.Key)))
                     .Select(static co => co.Value.Schema)
-                    .Where(static s => s is not null);
+                    .OfType<OpenApiSchema>();
     }
     internal static OpenApiSchema? GetResponseSchema(this OpenApiResponse response, StructuredMimeTypesCollection structuredMimeTypes)
     {
