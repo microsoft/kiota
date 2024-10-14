@@ -53,7 +53,7 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsArray(this OpenApiSchema? schema)
     {
-        return "array".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase) && schema.Items != null &&
+        return schema is not null && "array".Equals(schema.Type, StringComparison.OrdinalIgnoreCase) && schema.Items is not null &&
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
@@ -62,7 +62,7 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsObjectType(this OpenApiSchema? schema)
     {
-        return "object".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase);
+        return schema is not null && "object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase);
     }
     public static bool HasAnyProperty(this OpenApiSchema? schema)
     {

@@ -51,7 +51,7 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
     };
     public InconsistentTypeFormatPair() : base(nameof(InconsistentTypeFormatPair), static (context, schema) =>
     {
-        if (string.IsNullOrEmpty(schema?.Type) || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type))
+        if (schema is null || string.IsNullOrEmpty(schema.Type) || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type))
             return;
         if (!validPairs.TryGetValue(schema.Type, out var validFormats) || !validFormats.Contains(schema.Format))
             context.CreateWarning(nameof(InconsistentTypeFormatPair), $"The format {schema.Format} is not supported by Kiota for the type {schema.Type} and the string type will be used.");

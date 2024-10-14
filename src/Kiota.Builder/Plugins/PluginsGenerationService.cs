@@ -107,7 +107,7 @@ public partial class PluginsGenerationService
         if (openApiDocument.Paths is null) return openApiDocument;
         var contentItems = openApiDocument.Paths.Values.Where(static x => x?.Operations is not null)
             .SelectMany(static x => x.Operations.Values.Where(static x => x?.RequestBody?.Content is not null)
-                .SelectMany(static x => x.RequestBody.Content.Values));
+                .SelectMany(static x => x.RequestBody!.Content.Values));
         foreach (var contentItem in contentItems)
         {
             var schema = contentItem.Schema;
@@ -351,9 +351,9 @@ public partial class PluginsGenerationService
                 runtimes.Add(new OpenApiRuntime
                 {
                     // Configuration overrides document information
-                    Auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements),
+                    Auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements ?? []),
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath },
-                    RunForFunctions = [operation.OperationId]
+                    RunForFunctions = [operation.OperationId!]
                 });
 
                 var summary = operation.Summary.CleanupXMLString();
@@ -361,7 +361,7 @@ public partial class PluginsGenerationService
 
                 functions.Add(new Function
                 {
-                    Name = operation.OperationId,
+                    Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
 
@@ -441,7 +441,8 @@ public partial class PluginsGenerationService
     private static State? GetStateFromExtension<T>(OpenApiOperation openApiOperation, string extensionName,
         Func<T, List<string>> instructionsExtractor)
     {
-        if (openApiOperation.Extensions.TryGetValue(extensionName, out var rExtRaw) &&
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var rExtRaw) &&
             rExtRaw is T rExt &&
             instructionsExtractor(rExt).Exists(static x => !string.IsNullOrEmpty(x)))
         {
