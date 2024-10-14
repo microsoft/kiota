@@ -63,7 +63,7 @@ export class UpdateClientsCommand extends Command {
         error
       );
       await vscode.window.showErrorMessage(
-        vscode.l10n.t("error updating the clients {error}"),
+        vscode.l10n.t(`error updating the clients {error}`),
         error as string
       );
     }
