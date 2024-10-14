@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { API_MANIFEST_FILE, extensionId } from "../../constants";
-import { getExtensionSettings } from '../../extensionSettings';
+import { getExtensionSettings } from '../../types/extensionSettings';
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from '../../utilities/messaging';
 import { updateStatusBarItem } from '../../utilities/status';
