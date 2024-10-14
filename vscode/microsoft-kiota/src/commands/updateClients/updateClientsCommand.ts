@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-import { API_MANIFEST_FILE, extensionId } from "../constants";
-import { getExtensionSettings } from '../extensionSettings';
-import { updateClients } from '../updateClients';
-import { exportLogsAndShowErrors } from '../utilities/logging';
-import { showUpgradeWarningMessage } from '../utilities/messaging';
-import { updateStatusBarItem } from '../utilities/status';
-import { Command } from "./Command";
+import { API_MANIFEST_FILE, extensionId } from "../../constants";
+import { getExtensionSettings } from '../../extensionSettings';
+import { exportLogsAndShowErrors } from '../../utilities/logging';
+import { showUpgradeWarningMessage } from '../../utilities/messaging';
+import { updateStatusBarItem } from '../../utilities/status';
+import { Command } from "../Command";
+import { updateClients } from './updateClients';
 
 interface UpdateClientsCommandProps {
   kiotaOutputChannel: vscode.LogOutputChannel;

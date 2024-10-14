@@ -20,7 +20,7 @@ import { RegenerateButtonCommand } from './commands/regenerate/regenerateButtonC
 import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
 import { SelectLockCommand } from './commands/selectLockCommand';
 import { StatusCommand } from './commands/statusCommand';
-import { UpdateClientsCommand } from './commands/updateClientsCommand';
+import { UpdateClientsCommand } from './commands/updateClients/updateClientsCommand';
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
