@@ -59,7 +59,7 @@ export class UpdateClientsCommand extends Command {
       }
     } catch (error) {
       kiotaOutputChannel.error(
-        vscode.l10n.t("error updating the clients {error}"),
+        vscode.l10n.t(`error updating the clients {error}`),
         error
       );
       await vscode.window.showErrorMessage(
