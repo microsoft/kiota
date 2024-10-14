@@ -4,7 +4,7 @@ import { ExtensionContext } from "vscode";
 import { extensionId, treeViewId } from "../../constants";
 import { getExtensionSettings } from "../../extensionSettings";
 import { getGenerationConfiguration, setGenerationConfiguration } from "../../handlers/configurationHandler";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { isClientType, isPluginType } from "../../util";
 import { confirmOverride } from "../../utilities/regeneration";

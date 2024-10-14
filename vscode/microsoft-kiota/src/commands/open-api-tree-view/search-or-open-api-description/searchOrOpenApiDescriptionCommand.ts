@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import { extensionId, treeViewId } from "../../../constants";
 import { getExtensionSettings } from "../../../extensionSettings";
 import { setDeepLinkParams } from "../../../handlers/deepLinkParamsHandler";
-import { OpenApiTreeProvider } from "../../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../../providers/openApiTreeProvider";
 import { searchSteps } from "../../../steps";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../../utilities/deep-linking";
 import { Command } from "../../Command";

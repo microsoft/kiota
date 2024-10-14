@@ -3,7 +3,6 @@
 import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
-import { CodeLensProvider } from "./codelensProvider";
 import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
@@ -21,7 +20,6 @@ import { RegenerateCommand } from './commands/regenerate/regenerateCommand';
 import { SelectLockCommand } from './commands/selectLockCommand';
 import { StatusCommand } from './commands/statusCommand';
 import { API_MANIFEST_FILE, dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
-import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { getExtensionSettings } from "./extensionSettings";
 import { GeneratedOutputState } from './GeneratedOutputState';
 import { getKiotaVersion } from "./getKiotaVersion";
@@ -31,14 +29,16 @@ import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
 import { checkForLockFileAndPrompt } from "./migrateFromLockFile";
-import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
+import { CodeLensProvider } from './providers/codelensProvider';
+import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
+import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
+import { loadTreeView } from './providers/workspaceTreeProvider';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
 import { updateClients } from "./updateClients";
 import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
 import { exportLogsAndShowErrors } from './utilities/logging';
 import { showUpgradeWarningMessage } from './utilities/messaging';
-import { loadTreeView } from "./workspaceTreeProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
