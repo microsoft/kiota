@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
 
@@ -26,8 +27,9 @@ public record LanguageInformation : IOpenApiSerializable
 #pragma warning disable CA2227
     public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore CA2227
-    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
-    public void SerializeAsV3(IOpenApiWriter writer)
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV31(writer);
+    public void SerializeAsV3(IOpenApiWriter writer) => SerializeAsV31(writer);
+    public void SerializeAsV31(IOpenApiWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
@@ -39,32 +41,34 @@ public record LanguageInformation : IOpenApiSerializable
         writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, (w, x) => w.WriteValue(x));
         writer.WriteEndObject();
     }
-    public static LanguageInformation Parse(IOpenApiAny source)
+    public static LanguageInformation Parse(JsonNode source)
     {
-        if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
+        if (source.GetValueKind() is not JsonValueKind.Object ||
+        source.AsObject() is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new LanguageInformation();
-        if (rawObject.TryGetValue(nameof(Dependencies).ToFirstCharacterLowerCase(), out var dependencies) && dependencies is OpenApiArray arrayValue)
+        if (rawObject.TryGetPropertyValue(nameof(Dependencies).ToFirstCharacterLowerCase(), out var dependencies) && dependencies is JsonArray arrayValue)
         {
-            foreach (var entry in arrayValue)
+            foreach (var entry in arrayValue.OfType<JsonValue>())
                 extension.Dependencies.Add(LanguageDependency.Parse(entry));
         }
-        if (rawObject.TryGetValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is OpenApiString stringValue)
+        if (rawObject.TryGetPropertyValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is JsonValue stringValue)
         {
-            extension.DependencyInstallCommand = stringValue.Value;
+            extension.DependencyInstallCommand = stringValue.GetValue<string>();
         }
         // not parsing the maturity level on purpose, we don't want APIs to be able to change that
-        if (rawObject.TryGetValue(nameof(ClientClassName).ToFirstCharacterLowerCase(), out var clientClassName) && clientClassName is OpenApiString clientClassNameValue)
+        if (rawObject.TryGetPropertyValue(nameof(ClientClassName).ToFirstCharacterLowerCase(), out var clientClassName) && clientClassName is JsonValue clientClassNameValue)
         {
-            extension.ClientClassName = clientClassNameValue.Value;
+            extension.ClientClassName = clientClassNameValue.GetValue<string>();
         }
-        if (rawObject.TryGetValue(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), out var clientNamespaceName) && clientNamespaceName is OpenApiString clientNamespaceNameValue)
+        if (rawObject.TryGetPropertyValue(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), out var clientNamespaceName) && clientNamespaceName is JsonValue clientNamespaceNameValue)
         {
-            extension.ClientNamespaceName = clientNamespaceNameValue.Value;
+            extension.ClientNamespaceName = clientNamespaceNameValue.GetValue<string>();
         }
-        if (rawObject.TryGetValue(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), out var structuredMimeTypes) && structuredMimeTypes is OpenApiArray structuredMimeTypesValue)
+        if (rawObject.TryGetPropertyValue(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), out var structuredMimeTypes) && structuredMimeTypes is JsonArray structuredMimeTypesValue)
         {
-            foreach (var entry in structuredMimeTypesValue.OfType<OpenApiString>())
-                extension.StructuredMimeTypes.Add(entry.Value);
+            foreach (var entry in structuredMimeTypesValue.OfType<JsonValue>())
+                extension.StructuredMimeTypes.Add(entry.GetValue<string>());
         }
         return extension;
     }
@@ -79,8 +83,9 @@ public record LanguageDependency : IOpenApiSerializable
         get; set;
     }
     private const string TypePropertyName = "type";
-    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
-    public void SerializeAsV3(IOpenApiWriter writer)
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV31(writer);
+    public void SerializeAsV3(IOpenApiWriter writer) => SerializeAsV31(writer);
+    public void SerializeAsV31(IOpenApiWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
@@ -92,19 +97,21 @@ public record LanguageDependency : IOpenApiSerializable
         }
         writer.WriteEndObject();
     }
-    public static LanguageDependency Parse(IOpenApiAny source)
+    public static LanguageDependency Parse(JsonNode source)
     {
-        if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
+        if (source.GetValueKind() is not JsonValueKind.Object ||
+        source.AsObject() is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new LanguageDependency();
-        if (rawObject.TryGetValue(nameof(Name).ToFirstCharacterLowerCase(), out var name) && name is OpenApiString stringValue)
+        if (rawObject.TryGetPropertyValue(nameof(Name).ToFirstCharacterLowerCase(), out var nameNode) && nameNode is JsonValue nameJsonValue && nameJsonValue.TryGetValue<string>(out var nameValue))
         {
-            extension.Name = stringValue.Value;
+            extension.Name = nameValue;
         }
-        if (rawObject.TryGetValue(nameof(Version).ToFirstCharacterLowerCase(), out var version) && version is OpenApiString versionValue)
+        if (rawObject.TryGetPropertyValue(nameof(Version).ToFirstCharacterLowerCase(), out var versionNode) && versionNode is JsonValue versionJsonValue && versionJsonValue.TryGetValue<string>(out var versionValue))
         {
-            extension.Version = versionValue.Value;
+            extension.Version = versionValue;
         }
-        if (rawObject.TryGetValue(TypePropertyName, out var typeValue) && typeValue is OpenApiString typeStringValue && Enum.TryParse<DependencyType>(typeStringValue.Value, true, out var parsedTypeValue))
+        if (rawObject.TryGetPropertyValue(TypePropertyName, out var typeNode) && typeNode is JsonValue typeJsonValue && typeJsonValue.TryGetValue<string>(out var typeValue) && Enum.TryParse<DependencyType>(typeValue, true, out var parsedTypeValue))
         {
             extension.DependencyType = parsedTypeValue;
         }

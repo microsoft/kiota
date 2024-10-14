@@ -143,17 +143,17 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
         return hash.ToHashCode();
     }
 }
-internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
+internal class OpenApiAnyComparer : IEqualityComparer<OpenApiAny>
 {
     /// <inheritdoc/>
-    public bool Equals(IOpenApiAny? x, IOpenApiAny? y)
+    public bool Equals(OpenApiAny? x, OpenApiAny? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
         // TODO: Can we use the OpenAPI.NET implementation of Equals?
-        return x.AnyType == y.AnyType && string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
+        return x.Node.GetValueKind() == y.Node.GetValueKind() && string.Equals(x.Node.ToString(), y.Node.ToString(), StringComparison.OrdinalIgnoreCase);
     }
     /// <inheritdoc/>
-    public int GetHashCode([DisallowNull] IOpenApiAny obj)
+    public int GetHashCode([DisallowNull] OpenApiAny obj)
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
