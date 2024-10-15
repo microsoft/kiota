@@ -1,5 +1,5 @@
 # Step 1: Find all instances of vscode.l10n.t() and extract the strings from .ts and .tsx files
-Get-ChildItem -Path src -Recurse -Include *.ts, *.tsx | 
+Get-ChildItem -Path vscode/microsoft-kiota/src -Recurse -Include *.ts, *.tsx | 
 Select-String -Pattern 'vscode.l10n.t\("([^"]+)"\)' | 
 ForEach-Object { $_.Matches.Groups[1].Value } | 
 Sort-Object | 
