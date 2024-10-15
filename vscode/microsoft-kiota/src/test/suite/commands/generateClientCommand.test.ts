@@ -1,6 +1,7 @@
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 // import { assert } from "chai";
+import TelemetryReporter from "@vscode/extension-telemetry";
 import assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
@@ -13,7 +14,8 @@ import * as deepLinkParamsHandler from "../../../handlers/deepLinkParamsHandler"
 import { KiotaLogEntry } from "../../../kiotaInterop";
 import * as treeModule from "../../../openApiTreeProvider";
 import * as stepsModule from "../../../steps";
-import { transformToGenerationConfig } from "../../../utilities/deep-linking";
+import { getSanitizedString } from "../../../util";
+import { IntegrationParams, transformToGenerationConfig } from "../../../utilities/deep-linking";
 import * as msgUtilitiesModule from "../../../utilities/messaging";
 
 
@@ -39,7 +41,11 @@ let context: vscode.ExtensionContext = {
     storageUri: vscode.Uri.parse(''),
     globalStorageUri: vscode.Uri.parse(''),
     logUri: vscode.Uri.parse(''),
-    extension: {} as vscode.Extension<any>
+    extension: {
+        packageJSON: {
+            telemetryInstrumentationKey: ""
+        }
+    } as vscode.Extension<any>
 };
 
 let extensionSettings = {
@@ -155,7 +161,6 @@ suite('GenerateClientCommand Test Suite', () => {
         deepLinkParamsHandler.setDeepLinkParams(pluginParams);
 
         //stub and call generateCommand
-        // context.workspaceState.update = (key: string, value: any) => {};
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
         const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generatePluginAndRefreshUI").once().withArgs(
@@ -174,5 +179,85 @@ suite('GenerateClientCommand Test Suite', () => {
 
         // assert successful call to method generatePluginAndRefreshUI
         generatePluginAndRefreshUIExpectation.verify();
+        sinon.restore();
+    });
+
+    test('test ttk integration in function execute of GenerateClientCommand', async () => {
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
+        sinon.stub(
+            treeProvider, "descriptionUrl"
+        ).get( 
+            function getterFn() {
+                return "https://graph.microsoft.com/v1.0/$metadata";
+            }
+        );
+        treeProvider.getSelectedPaths.returns(["repairs"]);
+        treeProvider.apiTitle = "Repairs OAD";
+        let sanitizedApiTitle = getSanitizedString(treeProvider.apiTitle);
+        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
+        const vscodeWindowSpy = sinon.mock(vscode.window).expects("showErrorMessage").never();
+        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
+        getlanguageInfoFn.resolves(undefined);
+        sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
+        const clearDeepLinkParamSpy = sinon.spy(deepLinkParamsHandler, "clearDeepLinkParams");
+        sinon.stub(settingsModule, "getExtensionSettings").returns(extensionSettings);
+        var pluginParams: any = {
+            kind: "plugin",
+            type: "apimanifest",
+            source: "TTK",
+            ttkContext: {
+                lastCommand: 'createDeclarativeCopilotWithManifest'
+            }
+        }; 
+        let config: Partial<stepsModule.GenerateState> = {generationType: "apimanifest", outputPath: "path/to/temp/folder", pluginName: sanitizedApiTitle};
+        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        generateStepsFn.resolves(config);
+        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
+
+        //stub and call generateCommand
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
+            "generateManifestAndRefreshUI").twice().withArgs(
+                config, extensionSettings, "path/to/temp/folder", ["repairs"]
+            );
+        generateManifestAndRefreshUIExpectation.resolves(result);
+        let executeCommandStub = sinon.stub(vscode.commands, "executeCommand");
+        executeCommandStub.resolves();
+        await generateClientCommand.execute();
+
+        // assertions
+        vscodeWindowSpy.verify();
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        var updatedDeepLinkParams: Partial<IntegrationParams> = JSON.parse(JSON.stringify(pluginParams));
+        updatedDeepLinkParams["name"] = sanitizedApiTitle;
+        sinon.assert.calledOnce(generateStepsFn);
+        sinon.assert.calledWithMatch(
+            executeCommandStub, 
+            'fx-extension.createprojectfromkiota',
+            [
+              `path\\to\\temp\\folder\\${sanitizedApiTitle?.toLowerCase()}-openapi.yml`,
+              `path\\to\\temp\\folder\\${sanitizedApiTitle?.toLowerCase()}-apiplugin.json`,
+              {lastCommand: 'createDeclarativeCopilotWithManifest'}
+            ]
+        );
+        sinon.assert.calledOnce(clearDeepLinkParamSpy);
+
+        //test call to ttk createprojectfromkiota fails with undefined ttkContext Param
+        pluginParams = {
+            kind: "plugin",
+            type: "apimanifest",
+            source: "TTK",
+        }; 
+        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
+        executeCommandStub.throws("ttk context not provided");
+        const telemetryStub = sinon.stub(TelemetryReporter.prototype, "sendTelemetryEvent").resolves();
+        //call execute command again but this time expect call to fail
+        await generateClientCommand.execute();
+        sinon.assert.calledWith(
+            telemetryStub,
+            "DeepLinked fx-extension.createprojectfromkiota",
+            {"error": '{"name":"ttk context not provided"}' }
+        );
+        generateManifestAndRefreshUIExpectation.verify();
     });
 });
