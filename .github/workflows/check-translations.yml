@@ -20,10 +20,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 18.x
+        
 
     - name: Run translation check
       working-directory: vscode/microsoft-kiota
-      run: scripts/check-translations.ps1
+      run: ./scripts/check-translations.ps1
       shell: pwsh
 
     - name: Upload untranslated strings
