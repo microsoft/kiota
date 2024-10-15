@@ -311,10 +311,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void MergeConflictingBuilderCodeFilesForElement(CodeElement currentElement)
     {
-        if (currentElement is CodeNamespace currentNamespace && currentNamespace.Files.Count() > 1)
+        if (currentElement is CodeNamespace currentNamespace && currentNamespace.Files.ToArray() is { Length: > 1 } codeFiles)
         {
-            var targetFile = currentNamespace.Files.First();
-            foreach (var fileToMerge in currentNamespace.Files.Skip(1))
+            var targetFile = codeFiles.First();
+            foreach (var fileToMerge in codeFiles.Skip(1))
             {
                 if (fileToMerge.Classes.Any())
                     targetFile.AddElements(fileToMerge.Classes.ToArray());
