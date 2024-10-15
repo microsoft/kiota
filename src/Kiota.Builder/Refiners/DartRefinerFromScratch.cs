@@ -52,8 +52,7 @@ public class DartRefinerFromScratch : CommonLanguageRefiner, ILanguageRefiner
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 static s => s,
-                false,
-                AbstractionsNamespaceName);
+                false);
             CorrectCommonNames(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             ReplaceIndexersByMethodsWithParameter(generatedCode,

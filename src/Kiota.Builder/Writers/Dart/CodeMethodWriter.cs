@@ -156,30 +156,32 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         writer.WriteLine($"var {ResultVarName} = {parentClass.Name.ToFirstCharacterUpperCase()}();");
         var includeElse = false;
-        foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                            .ThenBy(static x => x.Name, StringComparer.Ordinal))
+        if (parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
         {
-            if (property.Type is CodeType propertyType)
-                if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
-                {
-                    var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({mappedType.Key}.toUpperCase().equals({DiscriminatorMappingVarName}.toUpperCase())) {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {conventions.GetTypeString(propertyType, codeElement)}();");
-                    writer.CloseBlock();
-                }
-                else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
-                {
-                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
-                    var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {valueVarName};");
-                    writer.CloseBlock();
-                }
-            if (!includeElse)
-                includeElse = true;
+            foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                                .ThenBy(static x => x.Name, StringComparer.Ordinal))
+            {
+                if (property.Type is CodeType propertyType)
+                    if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
+                    {
+                        var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({mappedType.Key}.toUpperCase().equals({DiscriminatorMappingVarName}.toUpperCase())) {{");
+                        writer.IncreaseIndent();
+                        writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {conventions.GetTypeString(propertyType, codeElement)}();");
+                        writer.CloseBlock();
+                    }
+                    else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
+                    {
+                        var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName}) {{");
+                        writer.IncreaseIndent();
+                        writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)};");
+                        writer.CloseBlock();
+                    }
+                if (!includeElse)
+                    includeElse = true;
+            }
         }
         writer.WriteLine($"return {ResultVarName};");
     }
@@ -195,9 +197,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             if (property.Type is CodeType propertyType)
             {
                 var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
-                var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
-                writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
-                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {valueVarName};");
+                writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName}) {{");
+                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)};");
                 writer.CloseBlock();
             }
             if (!includeElse)
@@ -229,7 +230,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
-        if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+        if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
         {
             var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
             discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
@@ -369,27 +370,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.WriteLine($"return {DefaultDeserializerValue}();");
     }
     private const string DeserializerReturnType = "Map<String, Function(ParseNode)>";
+    private const string DeserializerName = "deserializers";
+
     private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
+
+        writer.WriteLine($"{DefaultDeserializerValue} {DeserializerName} = {{}};");
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
                                             .ToArray();
-        if (complexProperties.Length != 0)
+        foreach (CodeProperty prop in complexProperties)
         {
-            var propertiesNames = complexProperties
-                                .Select(static x => x.Name.ToFirstCharacterUpperCase())
-                                .OrderBy(static x => x)
-                                .ToArray();
-            var propertiesNamesAsConditions = propertiesNames
-                                .Select(static x => $"{x} != null")
-                                .Aggregate(static (x, y) => $"{x} || {y}");
-            writer.StartBlock($"if({propertiesNamesAsConditions}) {{");
-            var propertiesNamesAsArgument = propertiesNames
-                                .Aggregate(static (x, y) => $"{x}, {y}");
-            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
-            writer.CloseBlock();
+            writer.WriteLine($"if({prop.Name.ToFirstCharacterLowerCase()} != null){{{DeserializerName}.addAll({prop.Name.ToFirstCharacterLowerCase()}!.getFieldDeserializers());}}");
         }
-        writer.WriteLine($"return {DefaultDeserializerValue}();");
+        writer.WriteLine($"return {DeserializerName};");
     }
     private const string DeserializerVarName = "deserializerMap";
     private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
@@ -580,9 +574,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
+            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterLowerCase()} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterLowerCase()});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
