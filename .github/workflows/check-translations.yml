@@ -1,0 +1,34 @@
+name: Check Translations
+
+on: 
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+
+    - name: Run translation check
+      working-directory: vscode/microsoft-kiota
+      run: scripts/check-translations.ps1
+      shell: pwsh
+
+    - name: Upload untranslated strings
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: untranslated-strings
+        path: vscode/microsoft-kiota/untranslated_strings.html
