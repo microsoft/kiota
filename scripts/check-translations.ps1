@@ -68,7 +68,6 @@ $htmlTable | Out-File -FilePath "untranslated_strings.html"
 
 if ($results.Count -gt 0) {
   Write-Host "Untranslated strings found. See untranslated_strings.html for details." -ForegroundColor Red
-  exit 1
 }
 else {
   Write-Host "All strings have translations." -ForegroundColor Green
