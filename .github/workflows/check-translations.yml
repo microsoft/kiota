@@ -20,14 +20,13 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 18.x
-        
+
     - name: Run translation check
       run: ./scripts/check-translations.ps1
       shell: pwsh
 
     - name: Upload untranslated strings
-      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: untranslated-strings
-        path: vscode/microsoft-kiota/untranslated_strings.html
+        path: ./untranslated_strings.html

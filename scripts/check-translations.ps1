@@ -7,7 +7,7 @@ Out-File -FilePath "strings.txt"
 
 # Step 2: Check translation files in the l10n folder
 $results = @()
-foreach ($file in Get-ChildItem -Path "l10n" -Filter bundle.l10n.*.json -Recurse) {
+foreach ($file in Get-ChildItem -Path "vscode/microsoft-kiota/l10n" -Filter bundle.l10n.*.json -Recurse) {
   $translations = Get-Content $file.FullName | 
   Select-String -Pattern '"[^"]+"' | 
   ForEach-Object { $_.Matches.Groups[0].Value.Trim('"') } | 
