@@ -19,7 +19,8 @@ foreach ($file in Get-ChildItem -Path "vscode/microsoft-kiota/l10n" -Filter bund
   if ($missing) {
     $untranslatedItems = $missing | ForEach-Object { "<li>$_</li>" }
     $results += [PSCustomObject]@{
-      "LanguageFile"        = "$($file.Name) ($($untranslatedItems.Count) found)"
+      "LanguageFile"        = "$($file.Name)"
+      "Count"               = "$($untranslatedItems.Count) found"
       "UntranslatedStrings" = "<ul>$($untranslatedItems -join "`n")</ul>"
     }
   }
@@ -55,7 +56,7 @@ $htmlTable = @"
 "@
 
 foreach ($result in $results) {
-  $htmlTable += "<tr><td>$($result.LanguageFile)</td><td>$($result.UntranslatedStrings)</td></tr>"
+  $htmlTable += "<tr><td>$($result.LanguageFile) ($($result.Count))</td><td>$($result.UntranslatedStrings)</td></tr>"
 }
 
 $htmlTable += @"
@@ -66,8 +67,14 @@ $htmlTable += @"
 
 $htmlTable | Out-File -FilePath "untranslated_strings.html"
 
+# Output a summary table to the workflow log
 if ($results.Count -gt 0) {
   Write-Host "Untranslated strings found. See untranslated_strings.html for details." -ForegroundColor Red
+  Write-Host "| Language File                          | Count   |"
+  Write-Host "|----------------------------------------|---------|"
+  foreach ($result in $results) {
+    Write-Host "| $($result.LanguageFile) | $($result.Count) |"
+  }
 }
 else {
   Write-Host "All strings have translations." -ForegroundColor Green
