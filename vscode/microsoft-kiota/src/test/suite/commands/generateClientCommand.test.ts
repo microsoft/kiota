@@ -6,12 +6,25 @@ import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as generateModule from "../../../commands/generate/generateClientCommand";
 import * as dependenciesModule from "../../../dependenciesViewProvider";
+import { KiotaGenerationLanguage } from "../../../enums";
+import * as settingsModule from "../../../extensionSettings";
+import * as languageInfoModule from "../../../getLanguageInformation";
+import * as deepLinkParamsHandler from "../../../handlers/deepLinkParamsHandler";
+import { KiotaLogEntry } from "../../../kiotaInterop";
 import * as treeModule from "../../../openApiTreeProvider";
+import * as stepsModule from "../../../steps";
+import { transformToGenerationConfig } from "../../../utilities/deep-linking";
+import * as msgUtilitiesModule from "../../../utilities/messaging";
+
 
 
 let context: vscode.ExtensionContext = {
     subscriptions: [],
-    workspaceState: {} as vscode.Memento,
+    workspaceState: {
+        update: sinon.stub().resolves(),
+        keys: sinon.stub().returns([]),
+        get: sinon.stub().returns(undefined)
+    } as vscode.Memento,
     globalState: {} as any,
     secrets: {} as vscode.SecretStorage,
     extensionUri: vscode.Uri.parse(''),
@@ -29,11 +42,34 @@ let context: vscode.ExtensionContext = {
     extension: {} as vscode.Extension<any>
 };
 
+let extensionSettings = {
+    includeAdditionalData:false,
+    backingStore: false,
+    excludeBackwardCompatible: false,
+    cleanOutput: false,
+    clearCache: true,
+    disableValidationRules: [],
+    structuredMimeTypes: [],
+    languagesSerializationConfiguration: {
+        [KiotaGenerationLanguage.CLI]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.CSharp]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Go]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Java]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.PHP]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Python]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Ruby]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Swift]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.TypeScript]: { serializers: [], deserializers: [] }
+    },
+};
+
+let result: KiotaLogEntry[] = [{level: 1, message: "Parsing OpenAPI file"},{level:2, message: "Generation completed successfully"}];
+
+
 suite('GenerateClientCommand Test Suite', () => {
-	void vscode.window.showInformationMessage('Start GenerateClientCommand tests.');
     const sanbox = sinon.createSandbox();
 
-    teardown(async () => {
+    teardown(() => {
         sanbox.restore();
     });
 
@@ -53,6 +89,90 @@ suite('GenerateClientCommand Test Suite', () => {
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 0);
         sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
-        // sinon.assert.calledWith(filterStepsStub, treeProvider.filter, sinon.match.func);
+        vscodeWindowSpy.restore();
+    });
+
+    test('test function execute of GenerateClientCommand with descriptionUrl unset', async () => {
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
+        treeProvider.getSelectedPaths.returns(["repairs"]);
+        treeProvider.apiTitle = "Repairs OAD";
+        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
+        const vscodeWindowSpy = sinon.mock(vscode.window).expects(
+            "showErrorMessage").once().withArgs(
+                vscode.l10n.t("No description found, select a description first")
+            );
+        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
+        getlanguageInfoFn.resolves(undefined);
+        let config: Partial<stepsModule.GenerateState> = {generationType: "client"};
+        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        generateStepsFn.resolves(config);
+        const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        await generateClientCommand.execute();
+        assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
+        vscodeWindowSpy.verify();
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        let stateInfo: Partial<stepsModule.GenerateState> = {
+            clientClassName: treeProvider.clientClassName,
+            clientNamespaceName: treeProvider.clientNamespaceName,
+            language: treeProvider.language,
+            outputPath: treeProvider.outputPath,
+            pluginName:"RepairsOAD"
+        };
+        assert.strictEqual(!treeProvider.descriptionUrl, true);
+        sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , {});
+        sinon.assert.calledOnce(showUpgradeWarningMessageStub);
+        sinon.restore();
+    });
+
+    test('test successful completion of function execute of GenerateClientCommand', async () => {
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
+        sinon.stub(
+            treeProvider, "descriptionUrl"
+        ).get(
+            function getterFn() {
+                return "https://graph.microsoft.com/v1.0/$metadata";
+            }
+        );
+        treeProvider.getSelectedPaths.returns(["repairs"]);
+        treeProvider.apiTitle = "Repairs OAD";
+        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
+        const vscodeWindowSpy = sinon.mock(vscode.window).expects("showErrorMessage").never();
+        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
+        getlanguageInfoFn.resolves(undefined);
+        const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
+        const getExtensionSettingsStub = sinon.stub(settingsModule, "getExtensionSettings").onFirstCall().returns(extensionSettings);
+        //set deeplinkparams with name provided.
+        var pluginParams: any = {
+            name: "OverridingRepairsOADname", //sanitized before setDeepLinkParams is called
+            kind: "plugin",
+            type: "ApiPlugin",
+            source: "tafutaAPI"
+        };
+        let config: Partial<stepsModule.GenerateState> = {generationType: "plugin", outputPath: "path/to/temp/folder", pluginName: pluginParams.name};
+        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        generateStepsFn.resolves(config);
+        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
+
+        //stub and call generateCommand
+        // context.workspaceState.update = (key: string, value: any) => {};
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
+            "generatePluginAndRefreshUI").once().withArgs(
+                config, extensionSettings, "path/to/temp/folder", ["repairs"]
+            );
+        generatePluginAndRefreshUIExpectation.resolves(result);
+        await generateClientCommand.execute();
+        assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
+        assert.strictEqual(!treeProvider.descriptionUrl, false);
+        vscodeWindowSpy.verify();
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        let stateInfo = transformToGenerationConfig(pluginParams);
+        sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , pluginParams);
+        sinon.assert.calledOnce(showUpgradeWarningMessageStub);
+        sinon.assert.calledOnceWithMatch(getExtensionSettingsStub, "kiota");
+
+        // assert successful call to method generatePluginAndRefreshUI
+        generatePluginAndRefreshUIExpectation.verify();
     });
 });

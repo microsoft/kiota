@@ -8,7 +8,7 @@ export default defineConfig({
     ],
     coverage: {
         includeAll: true,
-        exclude: ["**/src/test", "**/dist"],
+        exclude: ["**/src/test", "**/dist", "**/*.test.[tj]s", "**/*.ts"],
         reporter: ["text", "html", "json-summary", "lcov"],
     },
 });
