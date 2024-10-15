@@ -9,6 +9,6 @@ export default defineConfig({
     coverage: {
         includeAll: true,
         exclude: ["**/src/test", "**/dist", "**/*.test.[tj]s", "**/*.ts"],
-        reporter: ["text", "html", "json-summary", "lcov"],
+        reporter: ["text-summary", "html", "json-summary", "lcov", "cobertura"],
     },
 });
