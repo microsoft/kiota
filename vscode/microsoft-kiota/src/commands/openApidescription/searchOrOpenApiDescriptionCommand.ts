@@ -3,8 +3,8 @@ import * as vscode from "vscode";
 
 import { extensionId, treeViewId } from "../../constants";
 import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
+import { searchSteps } from "../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
-import { searchSteps } from "../../steps";
 import { getExtensionSettings } from "../../types/extensionSettings";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../utilities/deep-linking";
 import { openTreeViewWithProgress } from "../../utilities/progress";

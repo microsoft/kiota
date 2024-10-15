@@ -1,4 +1,4 @@
-import { GenerateState } from "../steps";
+import { GenerateState } from "../modules/steps/generateSteps";
 
 let configuration: Partial<GenerateState>;
 
