@@ -1,5 +1,5 @@
 import { extensionId } from "../constants";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { loadWorkspaceFile } from "../utilities/file";
 import { Command } from "./Command";
 
