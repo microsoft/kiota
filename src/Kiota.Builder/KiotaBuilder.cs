@@ -1154,6 +1154,7 @@ public partial class KiotaBuilder
                 ("number" or "integer", "int8") => "sbyte",
                 ("number" or "integer", "uint8") => "byte",
                 ("number" or "integer", "int64") => "int64",
+                ("number", "int16") => "integer",
                 ("number", "int32") => "integer",
                 ("number", _) => "double",
                 ("integer", _) => "integer",

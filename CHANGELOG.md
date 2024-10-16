@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed an issue where when generating Go code the deserializer for unions was using `CodeClass` as a filter and not `CodeInterface`. [#4844](https://github.com/microsoft/kiota/issues/4844)
-
+- Fixes mapping of `int16` format to the `integer` type rather than `double` when the type is `integer` or `number` [#5611](https://github.com/microsoft/kiota/issues/5611)
 
 ## [1.19.1] - 2024-10-11
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cyclic dependencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
 - Fixed a bug where default output folder is created on plugin edit and generate commands. [#5510](https://github.com/microsoft/kiota/issues/5429)
 - Changed GeneratedCode attribute applied when generating CSharp to only include the major version of Kiota. [#5489](https://github.com/microsoft/kiota/issues/5489)
-- Fixed genarating CSharp client displays clean hint regardless of whether --clean-output is already passed [#5576](https://github.com/microsoft/kiota/issues/5576)
+- Fixed generating CSharp client displays clean hint regardless of whether --clean-output is already passed [#5576](https://github.com/microsoft/kiota/issues/5576)
 
 ## [1.19.0] - 2024-10-03
 
