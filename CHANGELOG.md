@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where default output folder is created on plugin edit and generate commands. [#5510](https://github.com/microsoft/kiota/issues/5429)
 - Changed GeneratedCode attribute applied when generating CSharp to only include the major version of Kiota. [#5489](https://github.com/microsoft/kiota/issues/5489)
 - Fixed genarating CSharp client displays clean hint regardless of whether --clean-output is already passed [#5576](https://github.com/microsoft/kiota/issues/5576)
+-Fixed Issue with primitive values being stringified in python python. [#5417](https://github.com/microsoft/kiota/issues/5417)
+
 
 ## [1.19.0] - 2024-10-03
 
