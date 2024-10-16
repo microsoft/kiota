@@ -138,6 +138,8 @@ export class GenerateClientCommand extends Command {
 
       const pathOfSpec = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-openapi.yml`);
       const pathPluginManifest = path.join(outputPath, `${outputState.clientClassName?.toLowerCase()}-apiplugin.json`);
+      const apiManifestPath = path.join(outputPath, ".kiota", API_MANIFEST_FILE);
+      const worksPacePath = path.join(outputPath, ".kiota", "workspace.json");
       if (deepLinkParams.source?.toLowerCase() === 'ttk') {
         try {
           await vscode.commands.executeCommand(
