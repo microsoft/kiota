@@ -80,9 +80,16 @@ export class GenerateClientCommand extends Command {
     );
     setGenerationConfiguration(config);
     const generationType = parseGenerationType(config.generationType);
-    const outputPath = typeof config.outputPath === "string"
-      ? deepLinkParams.source?.toLowerCase() === 'ttk' ? path.join(config.outputPath, "appPackage") : config.outputPath
-      : "./output";
+
+    let outputPath = "./output";
+    if (typeof config.outputPath === "string") {
+      if (deepLinkParams.source?.toLowerCase() === 'ttk') {
+        outputPath = path.join(config.outputPath, "appPackage");
+      } else {
+        outputPath = config.outputPath;
+      }
+    }
+
     let manifestKey = null;
     switch (config.generationType) {
       case "client":
