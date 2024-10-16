@@ -761,7 +761,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.IncreaseIndent();
         foreach (CodeProperty property in parentClass.Properties)
         {
-            writer.WriteLine($"\"{property.Name}\" : {property.Name},");
+            writer.WriteLine($"\"{property.Name}\" : {property.Name.ToFirstCharacterLowerCase()},");
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");
