@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue where when generating Go code the deserializer for unions was using `CodeClass` as a filter and not `CodeInterface`. [#4844](https://github.com/microsoft/kiota/issues/4844)
+
+
 ## [1.19.1] - 2024-10-11
 
 ### Added
