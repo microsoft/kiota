@@ -158,11 +158,11 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/shemogumbe/openapi/refs/heads/main/openapi/namesdata.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
         "--language",
         "python",
         "-o",
-        "${workspaceFolder}/samples/msgraph-names/python",
+        "${workspaceFolder}/samples/msgraph-mail/python",
         "-n",
         "GraphPythonv1"
       ],
