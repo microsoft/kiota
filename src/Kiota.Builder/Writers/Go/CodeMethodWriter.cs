@@ -632,7 +632,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var otherPropGetters = parentClass
                                 .GetPropertiesOfKind(CodePropertyKind.Custom)
                                 .Where(static x => !x.ExistsInBaseType && x.Getter != null)
-                                .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeInterface)
                                 .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                 .ThenBy(static x => x.Name)
                                 .Select(static x => x.Getter!.Name.ToFirstCharacterUpperCase())
