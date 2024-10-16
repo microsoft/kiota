@@ -261,10 +261,11 @@ public partial class PluginsGenerationService
         var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
+        const string schemaVersion = "v2.1";
         var pluginManifestDocument = new PluginManifestDocument
         {
             Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
-            SchemaVersion = "v2.1",
+            SchemaVersion = schemaVersion,
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
@@ -295,6 +296,9 @@ public partial class PluginsGenerationService
                                             })
                                             .ToList()
             };
+        
+        var ruleSet = PluginManifestRuleSets.GetDefaultAuthoringRuleSet();
+        pluginManifestDocument.Validate(ruleSet, new ValidationContext(schemaVersion));
         return pluginManifestDocument;
     }
 
