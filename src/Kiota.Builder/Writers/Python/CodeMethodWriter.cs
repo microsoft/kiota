@@ -806,7 +806,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
     {
         if (isVoid) return string.Empty;
-        // if (isStream || conventions.IsPrimitiveType(returnType)) return $" {returnType},";
         if (isStream || conventions.IsPrimitiveType(returnType)) return $" {returnType},";
 
         return $" {returnType},";
