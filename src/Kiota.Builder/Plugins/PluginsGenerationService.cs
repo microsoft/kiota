@@ -296,7 +296,7 @@ public partial class PluginsGenerationService
                                             })
                                             .ToList()
             };
-        
+
         var ruleSet = PluginManifestRuleSets.GetDefaultAuthoringRuleSet();
         pluginManifestDocument.Validate(ruleSet, new ValidationContext(schemaVersion));
         return pluginManifestDocument;
