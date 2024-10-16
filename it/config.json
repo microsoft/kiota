@@ -230,10 +230,6 @@
   "apisguru::stripe.com": {
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5256"
-      },
-      {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },

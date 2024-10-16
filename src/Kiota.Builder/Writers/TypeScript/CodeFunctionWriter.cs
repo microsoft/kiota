@@ -70,6 +70,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (GetOriginalComposedType(composedParam) is not { } composedType) return;
 
         writer.StartBlock("return {");
+        if (composedType.Types.Any(x => IsPrimitiveType(x, composedType, false)))
+        {
+            var expression = string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeElement.OriginalLocalMethod, composedType.IsCollection)}"));
+            writer.WriteLine($"\"\" : n => {{ {composedParam.Name.ToFirstCharacterLowerCase()} = {expression}}},");
+        }
         foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType, false)))
         {
             var functionName = GetDeserializerFunctionName(codeElement, mappedType);
@@ -90,10 +95,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             var paramName = composedParam.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-            writer.StartBlock($"switch (typeof {paramName}) {{");
+            writer.StartBlock($"switch (true) {{");
             foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)))
             {
-                WriteCaseStatementForPrimitiveTypeSerialization(type, "key", paramName, codeElement, writer);
+                WriteCaseStatementForPrimitiveTypeSerialization(type, "undefined", paramName, codeElement, writer);
             }
             writer.CloseBlock();
             return;
@@ -110,7 +115,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteSerializationFunctionForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
-        // Serialization/Deserialization functions can be called for object types only
         foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType)))
         {
             var functionName = GetSerializerFunctionName(method, mappedType);
@@ -173,15 +177,18 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.CloseBlock();
     }
 
-    private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string value, CodeFunction method, LanguageWriter writer)
+    private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string modelParamName, CodeFunction method, LanguageWriter writer)
     {
         var nodeType = conventions.GetTypeString(type, method, false);
         var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
         if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
 
-        writer.StartBlock($"case \"{nodeType}\":");
-        writer.WriteLine($"writer.{serializationName}({key}, {value});");
-        writer.WriteLine($"break;");
+        writer.StartBlock(type.IsCollection
+            ? $"case Array.isArray({modelParamName}) && ({modelParamName}).every(item => typeof item === '{nodeType}') :"
+            : $"case typeof {modelParamName} === \"{nodeType}\":");
+
+        writer.WriteLine($"writer.{serializationName}({key}, {modelParamName} as {conventions.GetTypeString(type, method)});");
+        writer.WriteLine("break;");
         writer.DecreaseIndent();
     }
 
@@ -329,7 +336,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var codeFunction = Array.Find(codeFunctions,
             func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??
             throw new InvalidOperationException($"Function {functionName} not found in namespace {myNamespace.Name}");
-        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
+
+        var targetElement = codeElement.GetImmediateParentOfType<CodeFile>();
+
+        return GetTypescriptTypeString(new CodeType { TypeDefinition = codeFunction }, targetElement, includeCollectionInformation: false);
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
@@ -432,7 +442,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
 
             writer.StartBlock(type.IsCollection
-                ? $"Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}') :"
+                ? $"case Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}') :"
                 : $"case typeof {modelParamName}.{codePropertyName} === \"{nodeType}\":");
 
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
