@@ -466,7 +466,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.ErrorMappings.Any())
         {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"var {errorMappingVarName} = {{");
+            writer.WriteLine($"Map<String, ParsableFactory<Parsable>> {errorMappingVarName} = {{");
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
