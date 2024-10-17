@@ -3,21 +3,22 @@
 // import { assert } from "chai";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import assert from "assert";
+import * as path from "path";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as generateModule from "../../../commands/generate/generateClientCommand";
-import * as dependenciesModule from "../../../dependenciesViewProvider";
-import { KiotaGenerationLanguage } from "../../../enums";
-import * as settingsModule from "../../../extensionSettings";
-import * as languageInfoModule from "../../../getLanguageInformation";
+import * as languageInfoModule from "../../../commands/generate/getLanguageInformation";
 import * as deepLinkParamsHandler from "../../../handlers/deepLinkParamsHandler";
 import { KiotaLogEntry } from "../../../kiotaInterop";
-import * as treeModule from "../../../openApiTreeProvider";
-import * as stepsModule from "../../../steps";
+import * as generateStepsModule from "../../../modules/steps/generateSteps";
+import * as dependenciesModule from "../../../providers/dependenciesViewProvider";
+import * as treeModule from "../../../providers/openApiTreeProvider";
+import { KiotaGenerationLanguage } from "../../../types/enums";
+import * as settingsModule from "../../../types/extensionSettings";
+import { WorkspaceGenerationContext } from "../../../types/WorkspaceGenerationContext";
 import { getSanitizedString } from "../../../util";
 import { IntegrationParams, transformToGenerationConfig } from "../../../utilities/deep-linking";
 import * as msgUtilitiesModule from "../../../utilities/messaging";
-
 
 
 let context: vscode.ExtensionContext = {
@@ -71,6 +72,7 @@ let extensionSettings = {
 
 let result: KiotaLogEntry[] = [{level: 1, message: "Parsing OpenAPI file"},{level:2, message: "Generation completed successfully"}];
 
+const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>):void =>{};
 
 suite('GenerateClientCommand Test Suite', () => {
     const sanbox = sinon.createSandbox();
@@ -82,7 +84,7 @@ suite('GenerateClientCommand Test Suite', () => {
     test('test function getName of GenerateClientCommand', () => {
         var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
         assert.strictEqual("kiota.openApiExplorer.generateClient", generateClientCommand.getName());
     });
 
@@ -91,7 +93,7 @@ suite('GenerateClientCommand Test Suite', () => {
         treeProvider.getSelectedPaths.returns([]);
         var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
         const vscodeWindowSpy = sinon.stub(vscode.window, "showErrorMessage");
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 0);
         sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
@@ -109,16 +111,16 @@ suite('GenerateClientCommand Test Suite', () => {
             );
         const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
         getlanguageInfoFn.resolves(undefined);
-        let config: Partial<stepsModule.GenerateState> = {generationType: "client"};
-        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        let config: Partial<generateStepsModule.GenerateState> = {generationType: "client"};
+        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
         generateStepsFn.resolves(config);
         const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
-        let stateInfo: Partial<stepsModule.GenerateState> = {
+        let stateInfo: Partial<generateStepsModule.GenerateState> = {
             clientClassName: treeProvider.clientClassName,
             clientNamespaceName: treeProvider.clientNamespaceName,
             language: treeProvider.language,
@@ -155,13 +157,13 @@ suite('GenerateClientCommand Test Suite', () => {
             type: "ApiPlugin",
             source: "tafutaAPI"
         };
-        let config: Partial<stepsModule.GenerateState> = {generationType: "plugin", outputPath: "path/to/temp/folder", pluginName: pluginParams.name};
-        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        let config: Partial<generateStepsModule.GenerateState> = {generationType: "plugin", outputPath: "path/to/temp/folder", pluginName: pluginParams.name};
+        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
         generateStepsFn.resolves(config);
         deepLinkParamsHandler.setDeepLinkParams(pluginParams);
 
         //stub and call generateCommand
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
         const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generatePluginAndRefreshUI").once().withArgs(
                 config, extensionSettings, "path/to/temp/folder", ["repairs"]
@@ -209,16 +211,17 @@ suite('GenerateClientCommand Test Suite', () => {
                 lastCommand: 'createDeclarativeCopilotWithManifest'
             }
         }; 
-        let config: Partial<stepsModule.GenerateState> = {generationType: "apimanifest", outputPath: "path/to/temp/folder", pluginName: sanitizedApiTitle};
-        const generateStepsFn = sinon.stub(stepsModule, "generateSteps");
+        let config: Partial<generateStepsModule.GenerateState> = {generationType: "apimanifest", outputPath: "path/to/temp/folder", pluginName: sanitizedApiTitle};
+        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
         generateStepsFn.resolves(config);
         deepLinkParamsHandler.setDeepLinkParams(pluginParams);
 
         //stub and call generateCommand
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
+        var outputPath = "path/to/temp/folder";
         const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generateManifestAndRefreshUI").twice().withArgs(
-                config, extensionSettings, "path/to/temp/folder", ["repairs"]
+                config, extensionSettings, outputPath, ["repairs"]
             );
         generateManifestAndRefreshUIExpectation.resolves(result);
         let executeCommandStub = sinon.stub(vscode.commands, "executeCommand");
@@ -235,9 +238,9 @@ suite('GenerateClientCommand Test Suite', () => {
             executeCommandStub, 
             'fx-extension.createprojectfromkiota',
             [
-              `path\\to\\temp\\folder\\${sanitizedApiTitle?.toLowerCase()}-openapi.yml`,
-              `path\\to\\temp\\folder\\${sanitizedApiTitle?.toLowerCase()}-apiplugin.json`,
-              {lastCommand: 'createDeclarativeCopilotWithManifest'}
+                path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-openapi.yml`),
+                path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-apiplugin.json`),
+                {lastCommand: 'createDeclarativeCopilotWithManifest'}
             ]
         );
         sinon.assert.calledOnce(clearDeepLinkParamSpy);

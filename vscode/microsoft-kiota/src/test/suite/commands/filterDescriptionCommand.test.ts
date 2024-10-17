@@ -4,9 +4,9 @@
 import assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
-import * as filterModule from "../../../commands/open-api-tree-view/filterDescriptionCommand";
-import * as treeModule from "../../../openApiTreeProvider";
-import * as stepsModule from "../../../steps";
+import * as filterModule from "../../../commands/openApiTreeView/filterDescriptionCommand";
+import * as filterStepsModule from "../../../modules/steps/filterSteps";
+import * as treeModule from "../../../providers/openApiTreeProvider";
 
 
 suite('FilterDescriptionCommand Test Suite', () => {
@@ -24,7 +24,7 @@ suite('FilterDescriptionCommand Test Suite', () => {
     });
 
     test('test function execute of filterDescriptionCommand', async () => {
-        const filterStepsStub = sanbox.stub(stepsModule, 'filterSteps');
+        const filterStepsStub = sanbox.stub(filterStepsModule, 'filterSteps');
         var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         const filterDescriptionCommand = new filterModule.FilterDescriptionCommand(treeProvider);
         await filterDescriptionCommand.execute();
