@@ -10,10 +10,12 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
+using ValidationRuleSet = Microsoft.OpenApi.Validations.ValidationRuleSet;
 
 namespace Kiota.Builder.Plugins;
 
@@ -258,13 +260,29 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
+        // Validate OpenAPI
+        var ruleSet = new ValidationRuleSet
+        {
+            Microsoft.Plugins.Manifest.OpenApiRules.OpenApiServerUrlRule.ServerUrlMustBeHttps,
+            Microsoft.Plugins.Manifest.OpenApiRules.OpenApiCombinedAuthFlowRule
+                .PathsCanOnlyHaveOneSecuritySchemePerOperation(OAIDocument.SecurityRequirements),
+            Microsoft.Plugins.Manifest.OpenApiRules.OpenApiRequestBodySchemaRule.RequestBodySchemaObjectsMustNeverBeNested,
+            Microsoft.Plugins.Manifest.OpenApiRules.OpenApiApiKeyBearerRule.ApiKeyNotSupportedOnlyBearerPlusHttp(OAIDocument.SecurityRequirements)
+        };
+        var errors = OAIDocument.Validate(ruleSet)?.ToArray();
+        if (errors != null && errors.Length != 0)
+        {
+            var message = string.Join(Environment.NewLine, errors.Select(e => $"{e.Pointer}: {e.Message}"));
+            throw new InvalidOperationException(message);
+        }
         var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
+        const string schemaVersion = "v2.1";
         var pluginManifestDocument = new PluginManifestDocument
         {
             Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
-            SchemaVersion = "v2.1",
+            SchemaVersion = schemaVersion,
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
@@ -295,6 +313,7 @@ public partial class PluginsGenerationService
                                             })
                                             .ToList()
             };
+
         return pluginManifestDocument;
     }
 
