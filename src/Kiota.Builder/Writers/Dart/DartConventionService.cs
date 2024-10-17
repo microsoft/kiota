@@ -352,4 +352,12 @@ public class DartConventionService : CommonLanguageConventionService
     {
         return codeElement?.Parent is CodeClass parentClass && parentClass.IsErrorDefinition && ErrorClassProperties.Contains(codeElement.Name);
     }
+
+    public string getCorrectedEnumName(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.Contains('_', StringComparison.Ordinal))
+            return name.ToLowerInvariant().ToCamelCase('_');
+        return name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
+    }
 }

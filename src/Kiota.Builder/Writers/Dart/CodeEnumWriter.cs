@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
-            var correctedName = getCorrectedName(option.Name);
+            var correctedName = conventions.getCorrectedEnumName(option.Name);
             if (reservedNamesProvider.ReservedNames.Contains(correctedName) || IllegalEnumValue(correctedName))
             {
                 correctedName += "Escaped";
@@ -48,12 +48,5 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
     private bool IllegalEnumValue(string correctedName)
     {
         return correctedName.EqualsIgnoreCase("string") || correctedName.EqualsIgnoreCase("index");
-    }
-
-    private string getCorrectedName(string name)
-    {
-        if (name.Contains('_', StringComparison.Ordinal))
-            return name.ToLowerInvariant().ToCamelCase('_');
-        return name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
     }
 }
