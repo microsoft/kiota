@@ -6,22 +6,62 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Dart;
 
 namespace Kiota.Builder.Refiners;
 public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
+    private const string MultipartBodyClassName = "MultipartBody";
+    private const string AbstractionsNamespaceName = "kiota_abstractions/kiota_abstractions";
+    private const string SerializationNamespaceName = "kiota_serialization";
+    private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
+
+    protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+            AbstractionsNamespaceName, "RequestAdapter"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            AbstractionsNamespaceName, "Method", "RequestInformation", "RequestOption"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+            AbstractionsNamespaceName, "SerializationWriter"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+            AbstractionsNamespaceName, "ParseNode"),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+            AbstractionsNamespaceName, "Parsable"),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+            AbstractionsNamespaceName, "AdditionalDataHolder"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+            AbstractionsNamespaceName, "Parsable"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
+            AbstractionsNamespaceName, "QueryParameterAttribute"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
+            AbstractionsNamespaceName, "ParseNodeHelper"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+            AbstractionsNamespaceName, "RequestHeaders"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            AbstractionsNamespaceName, MultipartBodyClassName),
+    };
+
+
     public DartRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            AddPrimaryErrorMessage(generatedCode,
-                "Message",
-                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
-                true
-            );
-            DeduplicateErrorMappings(generatedCode);
+            var defaultConfiguration = new GenerationConfiguration();
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                static s => s,
+                false);
+            CorrectCommonNames(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"by{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.Dart);
+            AddQueryParameterExtractorMethod(generatedCode);
+            // This adds the BaseRequestBuilder class as a superclass
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -29,120 +69,239 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Declaration = new CodeType
                     {
                         Name = AbstractionsNamespaceName,
-                        IsExternal = true
+                        IsExternal = true,
                     }
-                });
-
+                }, addCurrentTypeAsGenericTypeParameter: true);
             RemoveRequestConfigurationClasses(generatedCode,
-                new CodeUsing
-                {
-                    Name = "RequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = AbstractionsNamespaceName,
-                        IsExternal = true
-                    }
-                },
-                new CodeType
-                {
-                    Name = "DefaultQueryParameters",
-                    IsExternal = true,
-                },
-                !_configuration.ExcludeBackwardCompatible,//TODO remove the condition for v2
-                !_configuration.ExcludeBackwardCompatible);
+                        new CodeUsing
+                        {
+                            Name = "RequestConfiguration",
+                            Declaration = new CodeType
+                            {
+                                Name = AbstractionsNamespaceName,
+                                IsExternal = true
+                            }
+                        }, new CodeType
+                        {
+                            Name = "DefaultQueryParameters",
+                            IsExternal = true,
+                        });
+            var reservedNamesProvider = new DartReservedNamesProvider();
+            CorrectNames(generatedCode, s =>
+            {
+                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            });
+
+            MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                static s => s,
-                true,
-                AbstractionsNamespaceName,
-                "IComposedTypeWrapper"
-            );
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
-            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            cancellationToken.ThrowIfCancellationRequested();
-            AddParsableImplementsForModelClasses(generatedCode, "IParsable");
-            CapitalizeNamespacesFirstLetters(generatedCode);
-            ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
-            MakeEnumPropertiesNullable(generatedCode);
-            /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
-                * code classes, class declarations, property names, using declarations, namespace names
-                * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
-            */
-            ReplaceReservedNames(
-                generatedCode,
-                new DartReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum), typeof(CodeEnumOption) }
-            );
-            ReplaceReservedNames(
-                generatedCode,
-                new DartReservedNamesProvider(),
-                x => $"{x.ToFirstCharacterUpperCase()}Escaped"
-            );
+            AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
+
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", [typeof(CodeEnumOption)]);
+            ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
                 new DartExceptionsReservedNamesProvider(),
-                static x => $"{x.ToFirstCharacterUpperCase()}Escaped"
+                static x => $"{x.ToFirstCharacterLowerCase()}Escaped"
             );
-            cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedModelTypes(generatedCode, new DartReservedNamesProvider(), x => $"{x}Object");
-            ReplaceReservedNamespaceTypeNames(generatedCode, new DartReservedNamesProvider(), static x => $"{x}Namespace");
-            ReplacePropertyNames(generatedCode,
-                new() {
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.QueryParameter,
-                },
-                static s => s.ToPascalCase(UnderscoreArray));
-            LowerCaseNamespaceNames(generatedCode);
 
-            var defaultConfiguration = new GenerationConfiguration();
-            cancellationToken.ThrowIfCancellationRequested();
             ReplaceDefaultSerializationModules(
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    $"{SerializationNamespaceName}.JsonSerializationWriterFactory",
-                    $"{SerializationNamespaceName}.TextSerializationWriterFactory",
-                    $"{SerializationNamespaceName}.FormSerializationWriterFactory",
-                    $"{SerializationNamespaceName}.MultipartSerializationWriterFactory",
+                    $"{SerializationNamespaceName}_json/{SerializationNamespaceName}_json.JsonSerializationWriterFactory",
+                    $"{SerializationNamespaceName}_text/{SerializationNamespaceName}_text.TextSerializationWriterFactory",
+                    $"{SerializationNamespaceName}_form/{SerializationNamespaceName}_form.FormSerializationWriterFactory",
+                    // $"{SerializationNamespaceName}_multi/{SerializationNamespaceName}_multi.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    $"{SerializationNamespaceName}.JsonParseNodeFactory",
-                    $"{SerializationNamespaceName}.FormParseNodeFactory",
-                    $"{SerializationNamespaceName}.TextParseNodeFactory"
+                    $"{SerializationNamespaceName}_json/{SerializationNamespaceName}_json.JsonParseNodeFactory",
+                    $"{SerializationNamespaceName}_form/{SerializationNamespaceName}_form.FormParseNodeFactory",
+                    $"{SerializationNamespaceName}_text/{SerializationNamespaceName}_text.TextParseNodeFactory"
                 }
             );
-
-            DisambiguatePropertiesWithClassNames(generatedCode);
-            // Correct the core types after reserved names for types/properties are done to avoid collision of types e.g. renaming custom model called `DateOnly` to `Date`
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, correctIndexer: CorrectIndexerType);
+            AddSerializationModulesImport(generatedCode,
+                [$"{AbstractionsNamespaceName}.ApiClientBuilder",
+                 $"{AbstractionsNamespaceName}.SerializationWriterFactoryRegistry"],
+                [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
-            AddSerializationModulesImport(generatedCode,
-                                        [ $"{AbstractionsNamespaceName}.ApiClientBuilder",
-                                                $"{SerializationNamespaceName}.SerializationWriterFactoryRegistry" ],
-                                        [$"{SerializationNamespaceName}.ParseNodeFactoryRegistry"], '^');
-
-
-
             AddParentClassToErrorClasses(
-                generatedCode,
-                "ApiException",
-                AbstractionsNamespaceName
+                    generatedCode,
+                    "ApiException",
+                    AbstractionsNamespaceName
             );
-            AddConstructorsForDefaultValues(generatedCode, false);
-            AddDiscriminatorMappingsUsingsToParentClasses(
-                generatedCode,
-                "IParseNode"
-            );
+            DeduplicateErrorMappings(generatedCode);
+            RemoveCancellationParameter(generatedCode);
+            DisambiguatePropertiesWithClassNames(generatedCode);
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
+            AddCustomMethods(generatedCode);
+            EscapeStringValues(generatedCode);
+            AliasUsingWithSameSymbol(generatedCode);
         }, cancellationToken);
     }
+
+    /// <summary> 
+    /// Corrects common names so they can be used with Dart.
+    /// This normally comes down to changing the first character to lower case.
+    /// <example><code>GetFieldDeserializers</code> is corrected to <code>getFieldDeserializers</code>
+    /// </summary>
+    private static void CorrectCommonNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod m &&
+            currentElement.Parent is CodeClass parentClass)
+        {
+            parentClass.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase());
+        }
+        else if (currentElement is CodeIndexer i)
+        {
+            i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+        CrawlTree(currentElement, element => CorrectCommonNames(element));
+    }
+
+    private static void CorrectMethodType(CodeMethod currentMethod)
+    {
+        if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+        {
+            currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
+            currentMethod.Name = "getFieldDeserializers";
+        }
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+        {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
+                .Where(x => x.Type.Name.StartsWith('I'))
+                .ToList()
+                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+        }
+    }
+
+    private static void CorrectPropertyType(CodeProperty currentProperty)
+    {
+        ArgumentNullException.ThrowIfNull(currentProperty);
+
+        if (currentProperty.IsOfKind(CodePropertyKind.Options))
+            currentProperty.DefaultValue = "List<RequestOption>()";
+        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+        {
+            currentProperty.Type.Name = "RequestAdapter";
+            currentProperty.Type.IsNullable = true;
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        {
+            currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+        {
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            currentProperty.Type.Name = "Map<String, Object?>";
+            currentProperty.DefaultValue = "{}";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
+        {
+            currentProperty.Type.IsNullable = true;
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
+        {
+            currentProperty.Type.IsNullable = true;
+            currentProperty.Type.Name = "Map<String, dynamic>";
+            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                currentProperty.DefaultValue = "{}";
+        }
+        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+    }
+
+    private static void CorrectImplements(ProprietableBlockDeclaration block)
+    {
+        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+    }
+    public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
+    {
+        var genericParameterTypes = usingsToAdd.OfType<CodeType>().Where(
+            static codeType => codeType.Parent is CodeParameter parameter
+            && parameter.IsOfKind(CodeParameterKind.RequestConfiguration)).Select(x => x.GenericTypeParameterValues.First());
+
+        return usingsToAdd.Union(genericParameterTypes);
+    }
+    protected static void AddAsyncSuffix(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
+            currentMethod.Name += "Async";
+        CrawlTree(currentElement, AddAsyncSuffix);
+    }
+    private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "getQueryParameters")
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.QueryParameters))
+        {
+            currentClass.StartBlock.AddImplements(new CodeType
+            {
+                IsExternal = true,
+                Name = "AbstractQueryParameters"
+            });
+            currentClass.AddMethod(new CodeMethod
+            {
+                Name = methodName,
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType
+                {
+                    Name = "Map<String, dynamic>",
+                    IsNullable = false,
+                },
+                IsAsync = false,
+                IsStatic = false,
+                Kind = CodeMethodKind.QueryParametersMapper,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "Extracts the query parameters into a map for the URI template parsing.",
+                },
+            });
+            currentClass.AddUsing(new CodeUsing
+            {
+                Name = "AbstractQueryParameters",
+                Declaration = new CodeType { Name = AbstractionsNamespaceName, IsExternal = true },
+            });
+        }
+        CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
+    }
+
+    private void MoveQueryParameterClass(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            var nestedClasses = currentClass.InnerClasses.Where(x => x.IsOfKind(CodeClassKind.QueryParameters));
+            foreach (CodeClass nestedClass in nestedClasses)
+            {
+                parentNamespace.AddClass(nestedClass);
+                currentClass.RemoveChildElementByName(nestedClass.Name);
+            }
+        }
+        CrawlTree(currentElement, x => MoveQueryParameterClass(x));
+    }
+
     protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass)
@@ -160,144 +319,112 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
     }
-    protected static void MakeEnumPropertiesNullable(CodeElement currentElement)
+    private void AddCustomMethods(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
-            currentClass.Properties
-                        .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
-                        .ToList()
-                        .ForEach(x => x.Type.IsNullable = true);
-        CrawlTree(currentElement, MakeEnumPropertiesNullable);
-    }
-    private const string AbstractionsNamespaceName = "Microsoft.Kiota.Abstractions";
-    private const string SerializationNamespaceName = $"{AbstractionsNamespaceName}.Serialization";
-    private const string StoreNamespaceName = $"{AbstractionsNamespaceName}.Store";
-    private const string ExtensionsNamespaceName = $"{AbstractionsNamespaceName}.Extensions";
-
-    protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            AbstractionsNamespaceName, "RequestAdapter"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsNamespaceName, "Method", "RequestInformation", "IRequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            SerializationNamespaceName, "SerializationWriter"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            SerializationNamespaceName, "ParseNode"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor),
-            ExtensionsNamespaceName, "Mao"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            SerializationNamespaceName, "Parsable"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            SerializationNamespaceName, "AdditionalDataHolder"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            SerializationNamespaceName, "Parsable"),
-        new (static x => x is CodeClass || x is CodeEnum,
-            "System", "String"),
-        new (static x => x is CodeClass,
-            "System.Collections.Generic", "List", "Dictionary"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-            "System.IO", "Stream"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "System.Threading", "CancellationToken"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "System.Threading.Tasks", "Task"),
-        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-            ExtensionsNamespaceName, "Enumerable"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            StoreNamespaceName,  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            StoreNamespaceName,  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
-            AbstractionsNamespaceName, "QueryParameterAttribute"),
-        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
-            SerializationNamespaceName, "ParseNodeHelper"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            AbstractionsNamespaceName, "RequestHeaders"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
-            SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
-        new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
-            "System.Runtime.Serialization", "EnumMemberAttribute"),
-        new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
-            "System", "ObsoleteAttribute"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
-            AbstractionsNamespaceName, MultipartBodyClassName),
-    };
-    private const string MultipartBodyClassName = "MultipartBody";
-    protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
-    {
-        if (current is CodeNamespace currentNamespace)
-            currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
-        CrawlTree(current, CapitalizeNamespacesFirstLetters);
-    }
-    protected static void AddAsyncSuffix(CodeElement currentElement)
-    {
-        if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
-            currentMethod.Name += "Async";
-        CrawlTree(currentElement, AddAsyncSuffix);
-    }
-    protected static void CorrectPropertyType(CodeProperty currentProperty)
-    {
-        ArgumentNullException.ThrowIfNull(currentProperty);
-        if (currentProperty.IsOfKind(CodePropertyKind.Options))
-            currentProperty.DefaultValue = "new List<IRequestOption>()";
-        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
-    }
-    protected static void CorrectMethodType(CodeMethod currentMethod)
-    {
-        ArgumentNullException.ThrowIfNull(currentMethod);
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
-                                                .Select(x => x.Type)
-                                                .Union(new[] { currentMethod.ReturnType })
-                                                .ToArray());
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.PathQueryAndHeaderParameters
-                                                .Select(x => x.Type)
-                                                .Union(new[] { currentMethod.ReturnType })
-                                                .ToArray());
-    }
-    protected static void CorrectIndexerType(CodeIndexer currentIndexer)
-    {
-        ArgumentNullException.ThrowIfNull(currentIndexer);
-        CorrectCoreTypes(currentIndexer.Parent as CodeClass, DateTypesReplacements, currentIndexer.IndexParameter.Type);
-    }
-
-    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
-    {
+        if (currentElement is CodeClass currentClass)
         {
-            "DateOnly",("Date", new CodeUsing
+            if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            {
+                currentClass.AddMethod(new CodeMethod
                 {
-                    Name = "Date",
-                    Declaration = new CodeType
+                    Name = "clone",
+                    Access = AccessModifier.Public,
+                    ReturnType = new CodeType
                     {
-                        Name = AbstractionsNamespaceName,
-                        IsExternal = true,
+                        Name = currentClass.Name,
+                        IsNullable = false,
                     },
-                })
-        },
-        {
-            "TimeOnly",("Time", new CodeUsing
+                    IsAsync = false,
+                    IsStatic = false,
+
+                    Kind = CodeMethodKind.Custom,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Clones the requestbuilder.",
+                    },
+                });
+            }
+            if (currentClass.IsOfKind(CodeClassKind.Model) && currentClass.IsErrorDefinition)
+            {
+                currentClass.AddMethod(new CodeMethod
                 {
-                    Name = "Time",
-                    Declaration = new CodeType
+                    Name = "copyWith",
+                    Access = AccessModifier.Public,
+                    ReturnType = new CodeType
                     {
-                        Name = AbstractionsNamespaceName,
-                        IsExternal = true,
+                        Name = currentClass.Name,
+                        IsNullable = false,
                     },
-                })
-        },
-    };
+                    IsAsync = false,
+                    IsStatic = false,
 
-    private static void LowerCaseNamespaceNames(CodeElement currentElement)
-    {
-        if (currentElement is CodeNamespace codeNamespace)
-        {
-            if (!string.IsNullOrEmpty(codeNamespace.Name))
-                codeNamespace.Name = codeNamespace.Name.ToLowerInvariant();
-
-            CrawlTree(currentElement, LowerCaseNamespaceNames);
+                    Kind = CodeMethodKind.Custom,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Creates a copy of the object.",
+                    },
+                });
+            }
         }
+        CrawlTree(currentElement, x => AddCustomMethods(x));
     }
 
+    private void EscapeStringValues(CodeElement currentElement)
+    {
+        if (currentElement is CodeProperty property &&
+            property.IsOfKind(CodePropertyKind.UrlTemplate))
+        {
+            if (property.DefaultValue.Contains('$', StringComparison.Ordinal))
+            {
+                property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
+            }
+        }
+        else if (currentElement is CodeProperty prop)
+        {
+            if (!String.IsNullOrEmpty(prop.SerializationName) && prop.SerializationName.Contains('$', StringComparison.Ordinal))
+            {
+                prop.SerializationName = prop.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
+            }
+        }
+        CrawlTree(currentElement, EscapeStringValues);
+    }
+
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
+
+    {"TimeSpan", ("Duration", null)},
+    {"Guid", ("UuidValue", new CodeUsing {
+                            Name = "UuidValue",
+                            Declaration = new CodeType {
+                                Name = "uuid/uuid",
+                                IsExternal = true,
+                            },
+                        })},
+    };
+    private static void AliasUsingWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal))
+        {
+            var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
+                .Distinct(usingComparer)
+                .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.Count() > 1)
+                .SelectMany(x => x)
+                .Union(currentClass.StartBlock
+                    .Usings
+                    .Where(x => !x.IsExternal)
+                    .Where(x => x.Declaration!
+                        .Name
+                        .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+            foreach (var usingElement in duplicatedSymbolsUsings)
+            {
+                var replacement = string.Join("_", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
+                    .Split(".", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLowerInvariant())
+                    .ToArray());
+                usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"{replacement}")}_{usingElement.Declaration!.TypeDefinition!.Name.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, AliasUsingWithSameSymbol);
+    }
 }
