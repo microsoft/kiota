@@ -22,6 +22,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
+        var returnTypeIsEnum = codeElement.ReturnType is CodeType { TypeDefinition: CodeEnum };
         var isVoid = NoneKeyword.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         if (parentClass.IsOfKind(CodeClassKind.Model) && (codeElement.IsOfKind(CodeMethodKind.Setter) || codeElement.IsOfKind(CodeMethodKind.Getter) || codeElement.IsOfKind(CodeMethodKind.Constructor)))
         {
@@ -79,7 +80,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer, returnTypeIsEnum);
                 writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Getter:
@@ -556,7 +557,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         writer.WriteLine("return fields");
     }
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnType, LanguageWriter writer)
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass,
+        bool isVoid, string returnType, LanguageWriter writer, bool isEnum)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
@@ -578,8 +580,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine(")");
         var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
-        var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
-        var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol);
+        var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol, isEnum);
+        var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol, isEnum);
         var errorMappingVarName = NoneKeyword;
         if (codeElement.ErrorMappings.Any())
         {
@@ -803,22 +805,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => "write_object_value",
         };
     }
-    private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
+    private string GetTypeFactory(bool isVoid, bool isStream, string returnType, bool isEnum)
     {
         if (isVoid) return string.Empty;
-        if (isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+        if (isStream || conventions.IsPrimitiveType(returnType) || isEnum) return $" \"{returnType}\",";
         return $" {returnType},";
     }
-    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType,
+        bool isEnum)
     {
         if (isVoid) return "send_no_response_content_async";
         if (isCollection)
         {
-            if (conventions.IsPrimitiveType(returnType)) return "send_collection_of_primitive_async";
-            return $"send_collection_async";
+            if (conventions.IsPrimitiveType(returnType) || isEnum) return "send_collection_of_primitive_async";
+            return "send_collection_async";
         }
 
-        if (isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
+        if (isStream || conventions.IsPrimitiveType(returnType) || isEnum) return "send_primitive_async";
         return "send_async";
     }
     private void UpdateRequestInformationFromRequestBody(CodeMethod codeElement, RequestParams requestParams, CodeProperty requestAdapterProperty, LanguageWriter writer)

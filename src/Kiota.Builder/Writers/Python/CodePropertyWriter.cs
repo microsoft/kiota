@@ -45,7 +45,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 writer.WriteLine("@property");
-                writer.StartBlock($"def {codeElement.Name}(self) -> {codeElement.Type.Name}:");
+                writer.StartBlock($"def {codeElement.Name}(self) -> Optional[{codeElement.Type.Name}]:");
                 conventions.WriteLongDescription(codeElement, writer);
                 if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(),
                         static x => x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
