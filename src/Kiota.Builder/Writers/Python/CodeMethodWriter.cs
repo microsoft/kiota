@@ -213,9 +213,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
         {
             writer.StartBlock("try:");
-            writer.WriteLine($"{DiscriminatorMappingVarName} = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\").get_str_value()");
+            writer.WriteLine($"child_node = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"{DiscriminatorMappingVarName} = child_node.get_str_value() if child_node else {NoneKeyword}");
             writer.DecreaseIndent();
-            writer.StartBlock($"except AttributeError:");
+            writer.StartBlock("except AttributeError:");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NoneKeyword}");
             writer.DecreaseIndent();
         }
@@ -528,11 +529,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                 .OrderBy(static x => x)
                                 .ToArray();
             var propertiesNamesAsConditions = propertiesNames
-                                .Select(static x => $"{x}")
-                                .Aggregate(static (x, y) => $"self.{x} or self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x} or {y}");
             writer.StartBlock($"if {propertiesNamesAsConditions}:");
             var propertiesNamesAsArgument = propertiesNames
-                                .Aggregate(static (x, y) => $"self.{x}, self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"return ParseNodeHelper.merge_deserializers_for_intersection_wrapper({propertiesNamesAsArgument})");
             writer.DecreaseIndent();
         }
@@ -697,7 +699,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var propertiesNames = complexProperties
                                 .Select(static x => x.Name)
                                 .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)
-                                .Aggregate(static (x, y) => $"self.{x}, self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties[0].Type)}({NoneKeyword}, {propertiesNames})");
             if (includeElse)
             {
