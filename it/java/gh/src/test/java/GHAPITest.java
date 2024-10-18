@@ -13,7 +13,7 @@ public class GHAPITest {
         var client = new ApiClient(adapter);
 
         client.repos().byOrgId("my-owner").byRepoId("my-repo").get();
-        client.repos().byOrgId("my-owner").byRepoId("my-repo").generate().post(null);
+        client.repos().byOrgId("my-owner").byRepoId("my-repo").generate().post(new GeneratePostRequestBody());
     }
 
 }
