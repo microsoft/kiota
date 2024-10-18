@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes mapping of `int16` format to the `integer` type rather than `double` when the type is `integer` or `number` [#5611](https://github.com/microsoft/kiota/issues/5611)
 - Fixed a bug where default boolean values with quotes would fail in Java/PHP/CSharp.
 - Fixed a bug where the type name for inherited inline models would be incorrect. [#5610](https://github.com/microsoft/kiota/issues/5610)
+- Fixes typing inconsistencies in generated code and libraries in Python [kiota-python#333](https://github.com/microsoft/kiota-python/issues/333)
 
 ## [1.19.1] - 2024-10-11
 
