@@ -304,7 +304,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 }
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
                 {
-                    defaultValue = conventions.getCorrectedEnumName(defaultValue.Trim('"'));
+                    defaultValue = conventions.getCorrectedEnumName(defaultValue.Trim('"')).CleanupSymbolName();
                     defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
                 }
                 else if (propWithDefault.Type is CodeType propertyType2 && propertyType2.Name.Equals("String", StringComparison.Ordinal))
@@ -475,7 +475,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
-        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass
+        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
                                 ? $", {returnTypeWithoutCollectionInformation}.createFromDiscriminatorValue"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch

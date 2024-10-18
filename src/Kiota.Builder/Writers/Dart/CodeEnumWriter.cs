@@ -39,7 +39,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
                 correctedName = option.Name;
                 usedNames.Add(correctedName);
             }
-            writer.WriteLine($"{correctedName}(\"{option.Name}\"){(option == lastOption ? ";" : ",")}");
+            writer.WriteLine($"{correctedName}(\"{option.SerializationName}\"){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
