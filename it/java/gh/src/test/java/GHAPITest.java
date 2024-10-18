@@ -1,14 +1,10 @@
 import apisdk.ApiClient;
-import com.microsoft.kiota.ApiException;
+import apisdk.repos.item.item.generate.GeneratePostRequestBody;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
-
-public class BasicAPITest {
+public class GHAPITest {
 
     @Test
     void basicTest() throws Exception {
