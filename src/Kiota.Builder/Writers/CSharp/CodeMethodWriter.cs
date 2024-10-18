@@ -250,11 +250,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             {
                 defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
-            // avoid setting null as a string.
-            if (propWithDefault.Type.IsNullable &&
+            else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {
+            { // avoid setting null as a string.
                 defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = defaultValue.TrimQuotes();
             }
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }

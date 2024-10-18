@@ -9,7 +9,7 @@
   <version>0.0.1-SNAPSHOT</version>
 
   <properties>
-    <mockserver.version>5.14.0</mockserver.version>
+    <mockserver.version>5.15.0</mockserver.version>
   </properties>
 
   <build>

@@ -1871,6 +1871,32 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "string",
             }
         });
+        var defaultValueNull = "\"null\"";
+        var nullPropName = "propWithDefaultNullValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = nullPropName,
+            DefaultValue = defaultValueNull,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int",
+                IsNullable = true
+            }
+        });
+        var defaultValueBool = "\"true\"";
+        var boolPropName = "propWithDefaultBoolValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = boolPropName,
+            DefaultValue = defaultValueBool,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "boolean",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1885,6 +1911,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"m.Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
+        Assert.Contains($"m.SetPropWithDefaultNullValue(nil)", result);
+        Assert.Contains($"propWithDefaultBoolValueValue := true", result);
+        Assert.Contains($"m.SetPropWithDefaultBoolValue(&propWithDefaultBoolValueValue)", result);
         Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]

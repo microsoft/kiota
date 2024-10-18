@@ -1502,6 +1502,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueBool = "\"true\"";
+        var boolPropName = "propWithDefaultBoolValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = boolPropName,
+            DefaultValue = defaultValueBool,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "boolean",
+                IsNullable = true
+            }
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<summary>", result);
@@ -1509,6 +1522,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
         Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
+        Assert.Contains($"{boolPropName.ToFirstCharacterUpperCase()} = {defaultValueBool.TrimQuotes()}", result);
     }
     [Fact]
     public void WritesWithUrl()

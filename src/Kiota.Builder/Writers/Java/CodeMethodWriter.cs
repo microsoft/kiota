@@ -358,11 +358,14 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {
                 defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
             }
-            // avoid setting null as a string.
-            if (propWithDefault.Type.IsNullable &&
+            else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {
+            {// avoid setting null as a string.
                 defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = defaultValue.TrimQuotes();
             }
             writer.WriteLine($"this.{setterName}({defaultValue});");
         }
