@@ -250,7 +250,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.Name += "Async";
         CrawlTree(currentElement, AddAsyncSuffix);
     }
-    private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "getQueryParameters")
+    private void AddQueryParameterExtractorMethod(CodeElement currentElement, string methodName = "toMap")
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.QueryParameters))
