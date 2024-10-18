@@ -478,15 +478,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
                                 ? $", {returnTypeWithoutCollectionInformation}.createFromDiscriminatorValue"
                                 : null;
-        var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
-        {
-            (true, _) => string.Empty,
-            (_, true) => "var collectionResult = ",
-            (_, _) => "return ",
-        };
-        writer.WriteLine($"{prefix}await requestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName});");
-        if (codeElement.ReturnType.IsCollection)
-            writer.WriteLine("return collectionResult?.toList();");
+        writer.WriteLine($"return await requestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName});");
     }
     private const string RequestInfoVarName = "requestInfo";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
@@ -629,7 +621,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (isVoid) return "sendNoContent";
         else if (isStream || conventions.IsPrimitiveType(returnTypeName) || isEnum)
             if (returnType.IsCollection)
-                return $"sendPrimitiveCollection<{returnTypeName}>";
+                return $"sendPrimitiveCollection<{returnTypeName.TrimEnd('?')}>";
             else
                 return $"sendPrimitive<{returnTypeName}>";
         else if (returnType.IsCollection) return $"sendCollection<{returnTypeName}>";
