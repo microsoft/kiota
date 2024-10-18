@@ -7328,7 +7328,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
-        Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
+        Assert.Equal(4, resultClass.Properties.Count(static x => x.IsOfKind(CodePropertyKind.Custom)));
     }
     [Fact]
     public async Task SkipsInvalidItemsPropertiesAsync()
@@ -7373,7 +7373,7 @@ paths:
         Assert.NotNull(propertiesToValidate);
         Assert.NotEmpty(propertiesToValidate);
         Assert.Equal(keysToCheck.Count, propertiesToValidate.Length);// all the properties are present
-        Assert.Single(resultClass.Properties, x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(resultClass.Properties, static x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
