@@ -77,7 +77,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 writer.WriteLine("@override");
                 goto default;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"/// @QueryParameter(\"{codeElement.SerializationName}\")");
+                writer.WriteLine($"/// @QueryParameter('{codeElement.SerializationName}')");
                 goto default;
             case CodePropertyKind.QueryParameters:
                 defaultValue = $" = {propertyType}()";

@@ -146,7 +146,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.StartBlock($"return switch({DiscriminatorMappingVarName}) {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"\"{mappedType.Key}\" => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
+            writer.WriteLine($"'{mappedType.Key}' => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
         }
         writer.WriteLine($"_ => {parentClass.Name.ToFirstCharacterUpperCase()}(),");
         writer.CloseBlock("};");
@@ -231,7 +231,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
             discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
-            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{discriminatorPropertyName}\")?.getStringValue();");
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
         }
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
@@ -264,10 +264,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl == null || {requestAdapterPropertyName}.baseUrl!.isEmpty) {{");
-            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
+            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = '{method.BaseUrl}';");
             writer.CloseBlock();
             if (pathParametersProperty != null)
-                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = {requestAdapterPropertyName}.baseUrl;");
+                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterLowerCase()}['baseurl'] = {requestAdapterPropertyName}.baseUrl;");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
@@ -470,7 +470,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\" :  {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.createFromDiscriminatorValue,");
+                writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.createFromDiscriminatorValue,");
             }
             writer.CloseBlock("};");
         }
@@ -497,7 +497,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.headers.put(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.put('Accept', '{codeElement.AcceptHeaderValue}');");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
@@ -506,13 +506,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, \"{codeElement.RequestBodyContentType}\");");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, '{codeElement.RequestBodyContentType}');");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable{suffix}({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable{suffix}({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, '{codeElement.RequestBodyContentType}', {requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, '{codeElement.RequestBodyContentType}', {requestParams.requestBody.Name});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
@@ -546,7 +546,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             {
                 secondArgument = $", (e) => e?.value";
             }
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()}{secondArgument});");
+            writer.WriteLine($"writer.{serializationMethodName}('{otherProp.WireName}', {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()}{secondArgument});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -765,7 +765,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.IncreaseIndent();
         foreach (CodeProperty property in parentClass.Properties)
         {
-            writer.WriteLine($"\"{property.Name}\" : {property.Name.ToFirstCharacterLowerCase()},");
+            writer.WriteLine($"'{property.Name}' : {property.Name.ToFirstCharacterLowerCase()},");
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");

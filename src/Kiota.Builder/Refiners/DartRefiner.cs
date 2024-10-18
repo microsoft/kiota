@@ -371,19 +371,15 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private void EscapeStringValues(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty property &&
-            property.IsOfKind(CodePropertyKind.UrlTemplate))
+        if (currentElement is CodeProperty property)
         {
+            if (!String.IsNullOrEmpty(property.SerializationName) && property.SerializationName.Contains('$', StringComparison.Ordinal))
+            {
+                property.SerializationName = property.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
+            }
             if (property.DefaultValue.Contains('$', StringComparison.Ordinal))
             {
                 property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
-            }
-        }
-        else if (currentElement is CodeProperty prop)
-        {
-            if (!String.IsNullOrEmpty(prop.SerializationName) && prop.SerializationName.Contains('$', StringComparison.Ordinal))
-            {
-                prop.SerializationName = prop.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
             }
         }
         CrawlTree(currentElement, EscapeStringValues);
