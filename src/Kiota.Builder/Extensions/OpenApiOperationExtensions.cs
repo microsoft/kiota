@@ -41,7 +41,7 @@ public static class OpenApiOperationExtensions
         return operation.RequestBody?.Content
                             .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
-    private static readonly StructuredMimeTypesCollection multipartMimeTypes = new(new string[] { "multipart/form-data" });
+    private static readonly StructuredMimeTypesCollection multipartMimeTypes = new(["multipart/form-data"]);
     internal static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
     {
         return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is OpenApiSchema schema &&
@@ -53,7 +53,7 @@ public static class OpenApiOperationExtensions
         ArgumentNullException.ThrowIfNull(structuredMimeTypes);
         if (structuredMimeTypes.Count == 0) return false;
         if (!source.ContainsKey(multipartMimeTypes.First())) return false;
-        if (source.Count == 1) return true;
+        if (source.Count == 1 || !source.Keys.Where(static x => !multipartMimeTypes.Contains(x)).Any(x => structuredMimeTypes.Contains(x))) return true;
         return structuredMimeTypes.First() == multipartMimeTypes.First();
     }
     internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
