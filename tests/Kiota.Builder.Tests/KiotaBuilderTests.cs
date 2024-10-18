@@ -7603,6 +7603,16 @@ paths:
     post:
       requestBody:
         content:
+          text/csv:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string,
+                  format: binary
+            encoding:
+              file:
+                style: form
           multipart/form-data:
             schema:
               type: object
