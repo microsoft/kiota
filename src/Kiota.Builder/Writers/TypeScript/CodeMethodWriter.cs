@@ -16,7 +16,8 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is CodeFunction) return;
 
-        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeElement, inlineComposedTypeString: true);
+        var codeFile = codeElement.GetImmediateParentOfType<CodeFile>();
+        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeFile, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         WriteMethodDocumentation(codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
@@ -30,6 +31,7 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
     }
     internal static void WriteMethodDocumentationInternal(CodeMethod code, LanguageWriter writer, bool isVoid, TypeScriptConventionService typeScriptConventionService)
     {
+        var codeFile = code.GetImmediateParentOfType<CodeFile>();
         var returnRemark = (isVoid, code.IsAsync) switch
         {
             (true, _) => string.Empty,
@@ -41,7 +43,7 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, codeFile, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark])
                                             .Union(GetThrownExceptionsRemarks(code)));
     }
