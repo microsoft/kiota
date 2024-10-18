@@ -33,6 +33,9 @@ jobs:
         working-directory: vscode/microsoft-kiota
       - run: npm run package
         working-directory: vscode/microsoft-kiota
+      - name: run tests
+        run: npm run test-with-coverage
+        working-directory: vscode/microsoft-kiota
       - run: npm i -g @vscode/vsce
       - run: vsce package
         working-directory: vscode/microsoft-kiota

@@ -1,10 +1,10 @@
-import * as admZip from 'adm-zip';
+import AdmZip from 'adm-zip';
 import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as https from 'https';
-import isOnline from 'is-online';
 import * as path from 'path';
 import * as vscode from "vscode";
+
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
@@ -34,15 +34,18 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 title: vscode.l10n.t("Downloading kiota...")
 
             }, async (progress, _) => {
-                const online = await isOnline();
-                if (!online) {
-                    await vscode.window.showErrorMessage(
-                        vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
-                    );
-                    return;
-                }
-                await runIfNotLocked(context, async () => {
-                    try {
+                await (async () => {
+                    const isOnline = (await import('is-online')).default;
+                    const online = await isOnline();
+                    if (!online) {
+                        await vscode.window.showErrorMessage(
+                            vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
+                        );
+                        return;
+                    }
+                })();
+              await runIfNotLocked(context, async () => {
+                try {
                         const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
                         if (!packageToInstall) {
                             throw new Error("Could not find package to install");
@@ -104,7 +107,7 @@ function getKiotaPathInternal(context: vscode.ExtensionContext, withFileName = t
 }
 
 function unzipFile(zipFilePath: string, destinationPath: string) {
-    const zip = new admZip(zipFilePath);
+    const zip = new AdmZip(zipFilePath);
     zip.extractAllTo(destinationPath, true);
 }
 
