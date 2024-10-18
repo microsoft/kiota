@@ -7376,6 +7376,61 @@ paths:
         Assert.Single(resultClass.Properties, static x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
+    public async Task GetsCorrectInheritedInlineSchemaNameAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+servers:
+- url: https://api.github.com
+info:
+  title: GitHub API
+  version: 1.0.0
+paths:
+  '/app-manifests/{code}/conversions':
+    post:
+      operationId: apps/create-from-manifest
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                allOf:
+                - '$ref': '#/components/schemas/integration'
+                - additionalProperties: true
+                  properties:
+                    client_id:
+                      type: string
+                    client_secret:
+                      type: string
+                    pem:
+                      type: string
+                    webhook_secret:
+                      nullable: true
+                      type: string
+                  type: object
+          description: Response
+components:
+  schemas:
+    integration:
+      properties:
+        client_id:
+          type: string
+      title: GitHub app
+      type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel.FindChildByName<CodeClass>("ConversionsPostResponse"));
+    }
+    [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
