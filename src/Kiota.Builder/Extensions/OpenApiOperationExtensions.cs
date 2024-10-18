@@ -53,7 +53,7 @@ public static class OpenApiOperationExtensions
         ArgumentNullException.ThrowIfNull(structuredMimeTypes);
         if (structuredMimeTypes.Count == 0) return false;
         if (!source.ContainsKey(multipartMimeTypes.First())) return false;
-        if (source.Count == 1 || !source.Keys.Where(static x => !multipartMimeTypes.Contains(x)).Any(x => structuredMimeTypes.Contains(x))) return true;
+        if (source.Count == 1 || !source.Keys.Where(static x => !multipartMimeTypes.Contains(x)).Any(structuredMimeTypes.Contains)) return true;
         return structuredMimeTypes.First() == multipartMimeTypes.First();
     }
     internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
