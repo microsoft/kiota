@@ -21,10 +21,6 @@
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
-        "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/4241"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
