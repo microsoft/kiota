@@ -150,11 +150,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
-            // avoid setting null as a string.
-            if (propWithDefault.Type.IsNullable &&
+            else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {
+            { // avoid setting null as a string.
                 defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = defaultValue.TrimQuotes();
             }
             writer.WriteLine($"$this->{setterName}({defaultValue});");
         }
@@ -241,7 +244,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         currentMethod.Parameters.Where(static parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
             .ForEach(parameter =>
             {
-                var key = String.IsNullOrEmpty(parameter.SerializationName)
+                var key = string.IsNullOrEmpty(parameter.SerializationName)
                     ? parameter.Name
                     : parameter.SerializationName;
                 writer.WriteLine($"{UrlTemplateTempVarName}['{key}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
