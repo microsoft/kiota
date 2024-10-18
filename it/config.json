@@ -200,6 +200,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/5354"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/5353"
       }
     ],
     "IdempotencySuppressions": [
