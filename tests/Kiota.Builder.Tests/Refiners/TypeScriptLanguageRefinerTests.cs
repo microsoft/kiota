@@ -961,6 +961,55 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         var unionType = modelCodeFile.GetChildElements().Where(x => x is CodeFunction function && TypeScriptRefiner.GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null).ToList();
         Assert.True(unionType.Count > 0);
     }
+    [Fact]
+    public async Task ParsesAndRefinesPathsWithTrailingSlashAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, TrailingSlashSampleYml.OpenApiYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Testing", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS);
+        Assert.NotNull(rootNS);
+
+        var fooNS = rootNS.FindNamespaceByName("ApiSdk.foo");
+        Assert.NotNull(fooNS);
+        var fooCodeFile = fooNS.FindChildByName<CodeFile>("fooRequestBuilder", false);
+        Assert.NotNull(fooCodeFile);
+        var fooRequestBuilder = fooCodeFile.FindChildByName<CodeInterface>("fooRequestBuilder", false);
+        var fooSlashRequestBuilder = fooCodeFile.FindChildByName<CodeInterface>("fooSlashRequestBuilder", false);
+        Assert.NotNull(fooRequestBuilder);
+        Assert.NotNull(fooSlashRequestBuilder);
+
+        var messageNS = rootNS.FindNamespaceByName("ApiSdk.message");
+        Assert.NotNull(messageNS);
+        var messageCodeFile = messageNS.FindChildByName<CodeFile>("messageRequestBuilder", false);
+        Assert.NotNull(messageCodeFile);
+        var messageRequestBuilder = messageCodeFile.FindChildByName<CodeInterface>("messageRequestBuilder", false);
+        Assert.NotNull(messageRequestBuilder);
+        var messageWithIdSlashMethod = messageRequestBuilder.FindChildByName<CodeMethod>("withIdSlash", false);
+        var messageByIdMethod = messageRequestBuilder.FindChildByName<CodeMethod>("byId", false);
+        Assert.NotNull(messageWithIdSlashMethod);
+        Assert.NotNull(messageByIdMethod);
+
+        var bucketNS = rootNS.FindNamespaceByName("ApiSdk.bucket");
+        Assert.NotNull(bucketNS);
+        var bucketItemNS = bucketNS.FindChildByName<CodeNamespace>("ApiSdk.bucket.item", false);
+        Assert.NotNull(bucketItemNS);
+        var bucketItemCodeFile = bucketItemNS.FindChildByName<CodeFile>("WithNameItemRequestBuilder", false);
+        Assert.NotNull(bucketItemCodeFile);
+        var bucketWithNameItemRequestBuilder = bucketItemCodeFile.FindChildByName<CodeInterface>("WithNameItemRequestBuilder", false);
+        var bucketWithNameSlashRequestBuilder = bucketItemCodeFile.FindChildByName<CodeInterface>("WithNameSlashRequestBuilder", false);
+        Assert.NotNull(bucketWithNameItemRequestBuilder);
+        Assert.NotNull(bucketWithNameSlashRequestBuilder);
+    }
 
     [Fact]
     public void GetOriginalComposedType_ReturnsNull_WhenElementIsNull()
