@@ -39,6 +39,13 @@ jobs:
         if: runner.os != 'Linux'
         run: npm run test-with-coverage
         working-directory: vscode/microsoft-kiota
+      - name: Run sonar cloud analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: vscode/microsoft-kiota
       - run: npm run package
         working-directory: vscode/microsoft-kiota
       - run: npm i -g @vscode/vsce
