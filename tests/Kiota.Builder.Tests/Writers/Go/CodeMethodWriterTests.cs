@@ -291,16 +291,20 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     private CodeClass AddUnionTypeWrapper()
     {
-        var complexType1 = root.AddClass(new CodeClass
+        var complexType1 = root.AddInterface(new CodeInterface
         {
             Name = "ComplexType1",
-            Kind = CodeClassKind.Model,
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }
         }).First();
-        var complexType2 = root.AddClass(new CodeClass
+
+        var complexType2 = root.AddInterface(new CodeInterface
         {
             Name = "ComplexType2",
-            Kind = CodeClassKind.Model,
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }
         }).First();
+
         var unionTypeWrapper = root.AddClass(new CodeClass
         {
             Name = "UnionTypeWrapper",
