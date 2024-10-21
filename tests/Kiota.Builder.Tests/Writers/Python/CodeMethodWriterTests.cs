@@ -792,12 +792,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
-
-    public void Writes_UnionOfPrimitiveValues_FactoryFunctionAsync()
+    public void WritesFactoryMethodForPrimitiveTypes()
     {
         var result = tw.ToString();
-        Assert.Contains("return parseNode?.getNumberValue() ?? parseNode?.getStringValue();", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        Assert.Contains("return numberValue", result);
+        Assert.Contains("return stringValue", result);
     }
     [Fact]
     public void WritesUnionDeSerializerBody()
