@@ -1170,7 +1170,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("try:", result);
-        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("mapping_value = child_node.get_str_value() if child_node else None", result);
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.childclass\".casefold()", result);
@@ -1205,7 +1206,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("try:", result);
-        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("mapping_value = child_node.get_str_value() if child_node else None", result);
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("result = UnionTypeWrapper()", result);

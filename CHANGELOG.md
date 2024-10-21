@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -Fixed python generation client serailization failure str being quoted as "str"
 --Fixed Issue with primitive values being stringified in python python. [#5417](https://github.com/microsoft/kiota/issues/5417)
 
+- Fixed an issue where when generating Go code the deserializer for unions was using `CodeClass` as a filter and not `CodeInterface`. [#4844](https://github.com/microsoft/kiota/issues/4844)
 - Fixes mapping of `int16` format to the `integer` type rather than `double` when the type is `integer` or `number` [#5611](https://github.com/microsoft/kiota/issues/5611)
+- Fixes typing inconsistencies in generated code and libraries in Python [kiota-python#333](https://github.com/microsoft/kiota-python/issues/333)
 
 ## [1.19.1] - 2024-10-11
 
@@ -1487,5 +1489,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
-

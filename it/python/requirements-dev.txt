@@ -30,7 +30,7 @@ lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.12.0
+mypy==1.12.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -82,7 +82,7 @@ azure-identity==1.19.0
 
 cffi==1.17.1
 
-cryptography==43.0.1 ; python_version >= '3.7'
+cryptography==43.0.3 ; python_version >= '3.7'
 
 frozenlist==1.4.1 ; python_version >= '3.7'
 
@@ -98,19 +98,19 @@ httpx[http2]==0.27.2
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.3.3
+microsoft-kiota-abstractions==1.4.6
 
-microsoft-kiota-authentication-azure==1.1.0
+microsoft-kiota-authentication-azure==1.4.6
 
-microsoft-kiota-http==1.3.4
+microsoft-kiota-http==1.4.6
 
-microsoft-kiota-serialization-json==1.3.3
+microsoft-kiota-serialization-json==1.4.6
 
-microsoft-kiota-serialization-text==1.0.0
+microsoft-kiota-serialization-text==1.4.6
 
-microsoft-kiota-serialization-form==0.1.1
+microsoft-kiota-serialization-form==1.4.6
 
-microsoft-kiota-serialization-multipart==0.1.0
+microsoft-kiota-serialization-multipart==1.4.6
 
 msal==1.31.0
 
@@ -136,5 +136,5 @@ sniffio==1.3.1 ; python_version >= '3.7'
 
 uritemplate==4.1.1 ; python_version >= '3.6'
 
-yarl==1.15.3 ; python_version >= '3.7'
+yarl==1.15.5 ; python_version >= '3.7'
 
