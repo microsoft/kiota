@@ -25,6 +25,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "param_name";
+
     public CodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
@@ -791,13 +792,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return fields", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
-    [Fact]
-    public void WritesFactoryMethodForPrimitiveTypes()
-    {
-        var result = tw.ToString();
-        Assert.Contains("return numberValue", result);
-        Assert.Contains("return stringValue", result);
-    }
+
     [Fact]
     public void WritesUnionDeSerializerBody()
     {
@@ -821,6 +816,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if self.complex_type1_value:", result);
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
+    }
+    [Fact]
+    public void WritesFactoryMethodForStrType()
+    {
+        var method = new CodeMethod
+        {
+            Kind = CodeMethodKind.Factory,
+            Name = "create_from_discriminator_value",
+            ReturnType = new CodeType { Name = "str" }
+        };
+
+        var stringWriter = new StringWriter();
+        var codeWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
+        codeWriter.SetTextWriter(stringWriter);
+
+        writer.Write(method);
+
+        var result = stringWriter.ToString();
+        Assert.Contains("def create_from_discriminator_value(parse_node: Optional[ParseNode] = None) -> str:", result);
+        Assert.Contains("return parse_node.get_str_value() if parse_node else None", result);
     }
     [Fact]
     public void WritesIntersectionDeSerializerBody()
