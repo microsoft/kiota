@@ -823,7 +823,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return {}", result);
     }
     [Theory]
-     [InlineData(true, false, false, "string", "")]
+    [InlineData(true, false, false, "string", "")]
     [InlineData(false, true, false, "Stream", " \"Stream\",")]
     [InlineData(false, false, true, "SomeEnum", " \"SomeEnum\",")]
     [InlineData(false, false, false, "int", " int,")]
