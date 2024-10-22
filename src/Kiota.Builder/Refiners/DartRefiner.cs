@@ -37,6 +37,8 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             AbstractionsNamespaceName, "RequestHeaders"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
+            AbstractionsNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName),
     };
@@ -176,7 +178,15 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
-        if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+        if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer)).ToList().ForEach(x =>
+            {
+                x.Optional = false;
+                x.Type.IsNullable = true;
+                if (x.Type.Name.StartsWith('I'))
+                    x.Type.Name = x.Type.Name[1..];
+            });
+        else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
         {
             currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
             currentMethod.Name = "getFieldDeserializers";
@@ -188,6 +198,10 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+                                                .Select(static x => x.Type)
+                                                .Union(new[] { currentMethod.ReturnType })
+                                                .ToArray());
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
@@ -388,6 +402,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
 
     {"TimeSpan", ("Duration", null)},
+    {"DateTimeOffset", ("DateTime", null)},
     {"Guid", ("UuidValue", new CodeUsing {
                             Name = "UuidValue",
                             Declaration = new CodeType {

@@ -299,7 +299,6 @@ public class DartConventionService : CommonLanguageConventionService
             "double" or "float" or "decimal" => "double",
             "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "Iterable<int>",
-            "datetimeoffset" => "DateTime",
             string s when s.Contains("RequestConfiguration", StringComparison.OrdinalIgnoreCase) => "RequestConfiguration",
             "iparsenode" => "ParseNode",
             "iserializationwriter" => "SerializationWriter",

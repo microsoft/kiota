@@ -211,7 +211,7 @@ public sealed class GenerateSample : IDisposable
                 Assert.Contains("[QueryParameter(\"startDateTime\")]", fullText);
                 break;
             case GenerationLanguage.Dart:
-                Assert.Contains("\"EndDateTime\" : endDateTime", fullText);
+                Assert.Contains("'EndDateTime' : endDateTime", fullText);
                 break;
             case GenerationLanguage.Go:
                 Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
