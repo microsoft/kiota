@@ -838,9 +838,8 @@ public sealed class CodeMethodWriterTests : IDisposable
             false // usesBackingStore
         );
 
-        var methodInfo = typeof(CodeMethodWriter).GetMethod("GetTypeFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType);
 
-        var result = methodInfo.Invoke(codeMethodWriter, new object[] { isVoid, isStream, isEnum, returnType });
 
         Assert.Equal(expected, result);
     }
