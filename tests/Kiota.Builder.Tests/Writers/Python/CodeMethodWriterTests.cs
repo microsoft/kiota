@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -25,6 +26,8 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "param_name";
+    private readonly CodeMethodWriter _codeMethodWriter;
+
 
     public CodeMethodWriterTests()
     {
@@ -32,6 +35,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+        _codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), ClientNamespaceName, false);
+
     }
     private void setup(bool withInheritance = false)
     {
@@ -817,25 +822,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
     }
-    [Fact]
-    public void WritesFactoryMethodForStrType()
+    [Theory]
+    [InlineData(true, false, "string", "")]
+    [InlineData(false, true, "Stream", " Stream,")]
+    [InlineData(false, false, "int", " int,")]
+    [InlineData(false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, string returnType, string expected)
     {
-        var method = new CodeMethod
-        {
-            Kind = CodeMethodKind.Factory,
-            Name = "create_from_discriminator_value",
-            ReturnType = new CodeType { Name = "str" }
-        };
-
-        var stringWriter = new StringWriter();
-        var codeWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
-        codeWriter.SetTextWriter(stringWriter);
-
-        writer.Write(method);
-
-        var result = stringWriter.ToString();
-        Assert.Contains("def create_from_discriminator_value(parse_node: Optional[ParseNode] = None) -> str:", result);
-        Assert.Contains("return parse_node.get_str_value() if parse_node else None", result);
+        var methodInfo = typeof(CodeMethodWriter).GetMethod("GetTypeFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+        var result = methodInfo.Invoke(_codeMethodWriter, new object[] { isVoid, isStream, returnType });
+        Assert.Equal(expected, result);
     }
     [Fact]
     public void WritesIntersectionDeSerializerBody()
