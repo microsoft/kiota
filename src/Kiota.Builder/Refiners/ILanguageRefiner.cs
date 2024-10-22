@@ -41,7 +41,7 @@ public interface ILanguageRefiner
                 await new PythonRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Dart:
-                await new DartRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new DartRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
         }
     }
