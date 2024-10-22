@@ -823,11 +823,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return {}", result);
     }
     [Theory]
-    [InlineData(true, false, "string", "")]
-    [InlineData(false, true, "Stream", " \"Stream\",")]
-    [InlineData(false, false, "int", " int,")]
-    [InlineData(false, false, "CustomType", " CustomType,")]
-    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, string returnType, string expected)
+     [InlineData(true, false, false, "string", "")]
+    [InlineData(false, true, false, "Stream", " \"Stream\",")]
+    [InlineData(false, false, true, "SomeEnum", " \"SomeEnum\",")]
+    [InlineData(false, false, false, "int", " int,")]
+    [InlineData(false, false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, string returnType, string expected)
     {
         var mockConventionService = new Mock<PythonConventionService>();
 
@@ -839,7 +840,7 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         var methodInfo = typeof(CodeMethodWriter).GetMethod("GetTypeFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        var result = methodInfo.Invoke(codeMethodWriter, new object[] { isVoid, isStream, returnType });
+        var result = methodInfo.Invoke(codeMethodWriter, new object[] { isVoid, isStream, isEnum, returnType });
 
         Assert.Equal(expected, result);
     }
