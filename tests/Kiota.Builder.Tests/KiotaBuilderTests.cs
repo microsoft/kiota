@@ -581,6 +581,103 @@ components:
         Assert.NotNull(innerRequestBuilderNS.FindChildByName<CodeClass>("InnerRequestBuilder", false));
 
     }
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Ruby)]
+    public async Task DoesNotAddSuperflousFieldsToModelsAsync(GenerationLanguage language)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+servers:
+  - url: ""https://localhost:8080""
+paths:
+  ""/api/all"":
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ""#/components/schemas/AorB""
+        required: true
+      responses:
+        ""200"":
+          $ref: ""#/components/responses/AorBResponse""
+components:
+  schemas:
+    A:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""a""
+    B:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""b""
+    AorB:
+      oneOf:
+        - $ref: ""#/components/schemas/A""
+        - $ref: ""#/components/schemas/B""
+      discriminator:
+        propertyName: type
+        mapping:
+          a: ""#/components/schemas/A""
+          b: ""#/components/schemas/B""
+  responses:
+    AorBResponse:
+      description: mandatory
+      content:
+        application/json:
+          schema:
+            $ref: ""#/components/schemas/AorB""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var generationConfiguration = new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = language }; // we can use any language that creates wrapper types for composed types in different ways
+        var builder = new KiotaBuilder(mockLogger.Object, generationConfiguration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
+        Assert.NotNull(requestBuilderNamespace);
+        if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
+        {// these languages use CodeFiles
+            var requestExecutorMethod = codeModel.FindChildByName<CodeMethod>("post");
+            Assert.NotNull(requestExecutorMethod);
+            var returnType = requestExecutorMethod.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeInterface;
+            if (language == GenerationLanguage.TypeScript)
+            {
+                Assert.Equal(2, returnTypeDefinition.Properties.Count());
+            }
+            if (language == GenerationLanguage.Go)
+            {
+                Assert.Equal(4, returnTypeDefinition.Methods.Count());// a getter and a setter for each property in Go.
+            }
+        }
+        else
+        {
+            var allRequestBuilderClass = requestBuilderNamespace.FindChildByName<CodeClass>("allRequestBuilder", false);
+            var executor = allRequestBuilderClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.RequestExecutor));
+            Assert.NotNull(executor);
+            var returnType = executor.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeClass;
+            Assert.Equal(2, returnTypeDefinition.Properties.Count());
+        }
+    }
     [Fact]
     public async Task NamesComponentsInlineSchemasProperlyAsync()
     {
