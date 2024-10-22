@@ -1,38 +1,40 @@
-import * as vscode from "vscode";
 import * as cp from 'child_process';
+import * as vscode from "vscode";
 import * as rpc from 'vscode-jsonrpc/node';
+import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { getWorkspaceJsonDirectory } from "./util";
 
-export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory:string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
-  const kiotaPath = getKiotaPath(context);
-  await ensureKiotaIsPresent(context);
-  const childProcess = cp.spawn(kiotaPath, ["rpc"],{
-    cwd: workingDirectory,
-    env: {
-        ...process.env,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        KIOTA_CONFIG_PREVIEW: "true",
+export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
+    const kiotaPath = getKiotaPath(context);
+    await ensureKiotaIsPresent(context);
+    const childProcess = cp.spawn(kiotaPath, ["rpc"], {
+        cwd: workingDirectory,
+        env: {
+            ...process.env,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            KIOTA_CONFIG_PREVIEW: "true",
+        }
+    });
+    let connection = rpc.createMessageConnection(
+        new rpc.StreamMessageReader(childProcess.stdout),
+        new rpc.StreamMessageWriter(childProcess.stdin));
+    connection.listen();
+    try {
+        return await callback(connection);
+    } catch (error) {
+        const errorMessage = (error as { data?: { message: string } })?.data?.message
+            || 'An unknown error occurred';
+        vscode.window.showErrorMessage(errorMessage);
+    } finally {
+        connection.dispose();
+        childProcess.kill();
     }
-  });
-  let connection = rpc.createMessageConnection(
-    new rpc.StreamMessageReader(childProcess.stdout),
-    new rpc.StreamMessageWriter(childProcess.stdin));
-  connection.listen();
-  try {
-    return await callback(connection);
-  } catch (error) {
-    console.error(error);
-    return undefined;
-  } finally {
-    connection.dispose();
-    childProcess.kill();
-  }
 }
 
 export interface KiotaLogEntry {
-  level: LogLevel;
-  message: string;
+    level: LogLevel;
+    message: string;
 }
 
 export interface KiotaOpenApiNode {
@@ -75,45 +77,16 @@ export interface KiotaSearchResult extends KiotaLoggedResult {
     results: Record<string, KiotaSearchResultItem>;
 }
 export interface KiotaSearchResultItem {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  Title: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  Description: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ServiceUrl?: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  DescriptionUrl?: string;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  VersionLabels?: string[];
-}
-
-export enum KiotaGenerationLanguage {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    CSharp = 0,
+    Title: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Java = 1,
+    Description: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    TypeScript = 2,
+    ServiceUrl?: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    PHP = 3,
+    DescriptionUrl?: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Python = 4,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Go = 5,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Swift = 6,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Ruby = 7,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    CLI = 8,
-}
-export enum KiotaPluginType {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    OpenAI = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiManifest = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiPlugin = 2,
+    VersionLabels?: string[];
 }
 
 export enum ConsumerOperation {
@@ -125,20 +98,6 @@ export enum ConsumerOperation {
     Remove,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Generate
-}
-export function parsePluginType(values: string[]): KiotaPluginType[] {
-    return values.map(value => {
-        switch (value.toLowerCase()) {
-            case "openai":
-                return KiotaPluginType.OpenAI;
-            case "apimanifest":
-                return KiotaPluginType.ApiManifest;
-            case "apiplugin":
-                return KiotaPluginType.ApiPlugin;
-            default:
-                throw new Error(`unknown plugin type: ${value}`);
-        }
-    });
 }
 
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
@@ -165,30 +124,7 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             throw new Error("unknown language");
     }
 }
-export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
-    switch (value) {
-        case "CSharp":
-            return KiotaGenerationLanguage.CSharp;
-        case "Java":
-            return KiotaGenerationLanguage.Java;
-        case "TypeScript":
-            return KiotaGenerationLanguage.TypeScript;
-        case "PHP":
-            return KiotaGenerationLanguage.PHP;
-        case "Python":
-            return KiotaGenerationLanguage.Python;
-        case "Go":
-            return KiotaGenerationLanguage.Go;
-        case "Swift":
-            return KiotaGenerationLanguage.Swift;
-        case "Ruby":
-            return KiotaGenerationLanguage.Ruby;
-        case "CLI":
-            return KiotaGenerationLanguage.CLI;
-        default:
-            throw new Error("unknown language");
-    }
-}
+
 export const allGenerationLanguages = [
     KiotaGenerationLanguage.CSharp,
     KiotaGenerationLanguage.Go,
@@ -240,6 +176,8 @@ export interface LanguageDependency {
     Name: string;
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Version: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    DependencyType: DependencyType;
 }
 export enum MaturityLevel {
     experimental = 0,
@@ -256,6 +194,32 @@ export function maturityLevelToString(level: MaturityLevel): string {
             return "stable";
         default:
             throw new Error("unknown level");
+    }
+}
+export enum DependencyType {
+    abstractions,
+    serialization,
+    authentication,
+    http,
+    bundle,
+    additional,
+}
+export function dependencyTypeToString(type: DependencyType): string {
+    switch (type) {
+        case DependencyType.abstractions:
+            return "abstractions";
+        case DependencyType.serialization:
+            return "serialization";
+        case DependencyType.authentication:
+            return "authentication";
+        case DependencyType.http:
+            return "http";
+        case DependencyType.bundle:
+            return "bundle";
+        case DependencyType.additional:
+            return "additional";
+        default:
+            throw new Error("unknown type");
     }
 }
 export interface ConfigurationFile {

@@ -19,6 +19,7 @@ using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.EqualityComparers;
 using Kiota.Builder.Exceptions;
+using Kiota.Builder.Export;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
@@ -66,7 +67,7 @@ public partial class KiotaBuilder
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
-    private async Task CleanOutputDirectory(CancellationToken cancellationToken)
+    private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
@@ -84,7 +85,7 @@ public partial class KiotaBuilder
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
+        var (_, openApiTree, _) = await GetTreeNodeInternalAsync(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
     public OpenApiDocument? OpenApiDocument => openApiDocument;
@@ -140,7 +141,7 @@ public partial class KiotaBuilder
             return null;
         }
     }
-    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
+    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
@@ -158,7 +159,7 @@ public partial class KiotaBuilder
         }
         sw.Start();
 #pragma warning disable CA2007
-        await using var input = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);
+        await using var input = await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
         if (input.Length == 0)
             return (0, null, false);
@@ -217,7 +218,7 @@ public partial class KiotaBuilder
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
+        await GetTreeNodeInternalAsync(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
 
         return GetLanguagesInformationInternal();
     }
@@ -265,8 +266,20 @@ public partial class KiotaBuilder
 
             // RefineByLanguage
             sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
+            await ApplyLanguageRefinementAsync(config, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+            if (config.ExportPublicApi)
+            {
+                // Generate public API export
+                sw.Start();
+                var fileStream = File.Create(Path.Combine(config.OutputPath, PublicApiExportService.DomExportFileName));
+                await using (fileStream.ConfigureAwait(false))
+                {
+                    await new PublicApiExportService(config).SerializeDomAsync(fileStream, generatedCode, cancellationToken).ConfigureAwait(false);
+                }
+                StopLogAndReset(sw, $"step {++stepId} - generated public API export - took");
+            }
 
             // Write language source
             sw.Start();
@@ -281,12 +294,12 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
-        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresent(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+        if (config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresentAsync(config.ClientClassName, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
 
         try
         {
-            await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
+            await CleanOutputDirectoryAsync(cancellationToken).ConfigureAwait(false);
             // doing this verification at the beginning to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         }
@@ -296,7 +309,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (shouldGenerate)
             {
@@ -325,7 +338,7 @@ public partial class KiotaBuilder
     {
         // Write lock file
         sw.Start();
-        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStream(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
+        using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
         await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
@@ -447,7 +460,7 @@ public partial class KiotaBuilder
         sw.Reset();
     }
     private bool isDescriptionFromWorkspaceCopy;
-    private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
+    private async Task<Stream> LoadStreamAsync(string inputPath, CancellationToken cancellationToken)
     {
         var (input, isCopy) = await openApiDocumentDownloadService.LoadStreamAsync(inputPath, config, workspaceManagementService, useKiotaConfig, cancellationToken).ConfigureAwait(false);
         isDescriptionFromWorkspaceCopy = isCopy;
@@ -547,12 +560,12 @@ public partial class KiotaBuilder
     /// <param name="config"></param>
     /// <param name="generatedCode"></param>
     /// <param name="token"></param>
-    public async Task ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
+    public async Task ApplyLanguageRefinementAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await ILanguageRefiner.Refine(config, generatedCode, token).ConfigureAwait(false);
+        await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
 
         stopwatch.Stop();
         logger.LogDebug("{Timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
@@ -605,7 +618,7 @@ public partial class KiotaBuilder
             var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
-                Name = className.CleanupSymbolName(),
+                Name = currentNamespace.Name.EndsWith(OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
@@ -617,21 +630,23 @@ public partial class KiotaBuilder
         logger.LogTrace("Creating class {Class}", codeClass.Name);
 
         // Add properties for children
-        foreach (var child in currentNode.Children)
+        foreach (var child in currentNode.Children.Select(static x => x.Value))
         {
-            var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
+            var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            if (child.Segment.Equals(OpenApiUrlTreeNodeExtensions.ReservedItemName, StringComparison.OrdinalIgnoreCase) && !child.DoesNodeBelongToItemSubnamespace())
+                propType = propType.Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase);
 
-            if (child.Value.IsPathSegmentWithSingleSimpleParameter())
+            if (child.IsPathSegmentWithSingleSimpleParameter())
             {
-                var indexerParameterType = GetIndexerParameter(child.Value, currentNode);
-                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
+                var indexerParameterType = GetIndexerParameter(child, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child, currentNode));
             }
-            else if (child.Value.IsComplexPathMultipleParameters())
-                CreateMethod(propIdentifier, propType, codeClass, child.Value);
+            else if (child.IsComplexPathMultipleParameters())
+                CreateMethod(propIdentifier, propType, codeClass, child);
             else
             {
-                var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
+                var description = child.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                 if (prop is null)
                 {
@@ -941,7 +956,10 @@ public partial class KiotaBuilder
         Parallel.ForEach(unmappedRequestBuilderTypes, parallelOptions, x =>
         {
             var parentNS = x.Parent?.Parent?.Parent as CodeNamespace;
-            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name).MinBy(shortestNamespaceOrder);
+            CodeClass[] exceptions = x.Parent?.Parent is CodeClass parentClass ? [parentClass] : [];
+            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name)
+                .Except(exceptions)// the property method should not reference itself as a return type. 
+                .MinBy(shortestNamespaceOrder);
             // searching down first because most request builder properties on a request builder are just sub paths on the API
             if (x.TypeDefinition == null)
             {
@@ -1472,6 +1490,23 @@ public partial class KiotaBuilder
     }
 
     private readonly ConcurrentDictionary<CodeElement, bool> multipartPropertiesModels = new();
+
+    private static bool IsSupportedMultipartDefault(OpenApiSchema openApiSchema,
+        StructuredMimeTypesCollection structuredMimeTypes)
+    {
+        // https://spec.openapis.org/oas/v3.0.3.html#special-considerations-for-multipart-content
+        if (openApiSchema.IsObjectType() && structuredMimeTypes.Contains("application/json"))
+            return true;
+
+        if (GetPrimitiveType(openApiSchema) is { IsExternal: true } primitiveType &&     // it s a primitive
+               (primitiveType.Name.Equals("binary", StringComparison.OrdinalIgnoreCase)
+                || primitiveType.Name.Equals("base64", StringComparison.OrdinalIgnoreCase) // streams are handled irrespective of configs
+                || structuredMimeTypes.Contains("text/plain")))                             // other primitives need text/plain
+            return true;
+
+        return false;
+    }
+
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
@@ -1492,6 +1527,18 @@ public partial class KiotaBuilder
                                 operation, method, $"{operationType}RequestBody",
                                 isRequestBody: true) is CodeType propertyType &&
                             propertyType.TypeDefinition is not null)
+                            multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    }
+                }
+                else if (requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
+                         && operation.RequestBody.Content.Count == 1)// it's the only content type.
+                {
+                    requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
+                    foreach (var property in requestBodySchema.Properties.Values.Where(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes)))
+                    {
+                        if (CreateModelDeclarations(currentNode, property,
+                                operation, method, $"{operationType}RequestBody",
+                                isRequestBody: true) is CodeType { TypeDefinition: not null } propertyType)
                             multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                     }
                 }
@@ -1685,7 +1732,7 @@ public partial class KiotaBuilder
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
+        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
                                                         !x.HasAnyProperty() &&
@@ -1694,19 +1741,16 @@ public partial class KiotaBuilder
                                                         !x.IsInherited() &&
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
-                                                        !x.IsReferencedSchema()) ?? false))
-        { // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
-            var targetSchema = schema.AnyOf?.First(static x => !string.IsNullOrEmpty(x.GetSchemaName()));
-            if (targetSchema is not null)
+                                                        !x.IsReferencedSchema()) ?? false)) &&
+            schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+        {// once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
+            var className = targetSchema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            return new CodeType
             {
-                var className = targetSchema.GetSchemaName().CleanupSymbolName();
-                var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
-                return new CodeType
-                {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
-                    CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
-                };// so we don't create unnecessary union types when anyOf was used only for nullable.
-            }
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
+                CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
+            };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
         var (unionType, schemas) = (schema.IsExclusiveUnion(), schema.IsInclusiveUnion()) switch
         {
@@ -1734,6 +1778,8 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(className))
                 if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                 {
+                    if (currentSchema.IsArray())
+                        primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                     if (!unionType.ContainsType(primitiveType))
                         unionType.AddType(primitiveType);
                     continue;

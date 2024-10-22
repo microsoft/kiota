@@ -4,6 +4,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : RelativeImportManager(namespacePrefix, namespaceSeparator)
 {
+    private const string IndexFileName = "index.js";
     /// <summary>
     /// Returns the relative import path for the given using and import context namespace.
     /// </summary>
@@ -31,5 +32,4 @@ public class TypescriptRelativeImportManager(string namespacePrefix, char namesp
             importPath += ".js";
         return (importSymbol, codeUsing.Alias, importPath);
     }
-    private const string IndexFileName = "index.js";
 }

@@ -53,7 +53,7 @@ public class CliRefinerTests
     }
 
     [Fact]
-    public async Task AddsUsingsForCommandTypesUsedInCommandBuilder()
+    public async Task AddsUsingsForCommandTypesUsedInCommandBuilderAsync()
     {
         var requestBuilder = root.AddClass(new CodeClass
         {
@@ -71,7 +71,7 @@ public class CliRefinerTests
                 IsExternal = true
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -79,7 +79,7 @@ public class CliRefinerTests
     }
 
     [Fact]
-    public async Task CreatesCommandBuilders()
+    public async Task CreatesCommandBuildersAsync()
     {
         var requestBuilder = root.AddClass(new CodeClass
         {
@@ -166,7 +166,7 @@ public class CliRefinerTests
             SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" }
         });
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var methods = root.GetChildElements().OfType<CodeClass>().SelectMany(c => c.Methods);
         var methodNames = methods.Select(m => m.Name);
@@ -188,7 +188,7 @@ public class CliRefinerTests
     }
 
     [Fact]
-    public async Task RemovesRequestAdaptersFromCodeDom()
+    public async Task RemovesRequestAdaptersFromCodeDomAsync()
     {
         var requestBuilder = root.AddClass(new CodeClass
         {
@@ -239,7 +239,7 @@ public class CliRefinerTests
         Assert.Contains("adapter", propertyNames);
         Assert.Contains("adapter", methodParamNames);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.DoesNotContain("adapter", propertyNames);
         Assert.DoesNotContain("adapter", methodParamNames);
@@ -247,7 +247,7 @@ public class CliRefinerTests
     }
 
     [Fact]
-    public async Task RenamesNavPropertiesInIndexersWithConflicts()
+    public async Task RenamesNavPropertiesInIndexersWithConflictsAsync()
     {
         var subNs = root.AddNamespace($"{root.Name}.subns");
         var rootRequestBuilder = root.AddClass(new CodeClass
@@ -285,13 +285,13 @@ public class CliRefinerTests
         };
         rootRequestBuilder.AddIndexer(indexer);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.Equal("GraphOrgContactNav-ById", idxNavProp.Name);
     }
 
     [Fact]
-    public async Task RenamesNavPropertiesMatchingParentNameWithConflicts()
+    public async Task RenamesNavPropertiesMatchingParentNameWithConflictsAsync()
     {
         var subNs = root.AddNamespace($"{root.Name}.subns");
         var subNs2 = root.AddNamespace($"{root.Name}.subns.subns");
@@ -338,7 +338,7 @@ public class CliRefinerTests
         };
         rootRequestBuilder.AddProperty(rootTestProp);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.Equal("sub-test", leafTestProp.Name);
     }

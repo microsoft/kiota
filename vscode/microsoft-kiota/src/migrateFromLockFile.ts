@@ -20,27 +20,27 @@ export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDi
 export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
 
-    if(workspaceFolders) {
-      const lockFile = await vscode.workspace.findFiles(`{**/${KIOTA_LOCK_FILE},${KIOTA_LOCK_FILE}}`);
+    if (workspaceFolders) {
+        const lockFile = await vscode.workspace.findFiles(`{**/${KIOTA_LOCK_FILE},${KIOTA_LOCK_FILE}}`);
 
-      if (lockFile.length > 0) {
-        const result = await vscode.window.showInformationMessage(
-          vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
-          vscode.l10n.t("OK"),
-          vscode.l10n.t("Remind me later")
-        );
+        if (lockFile.length > 0) {
+            const result = await vscode.window.showInformationMessage(
+                vscode.l10n.t("Please migrate your API clients to Kiota workspace."),
+                vscode.l10n.t("OK"),
+                vscode.l10n.t("Remind me later")
+            );
 
-        if (result === vscode.l10n.t("OK")) {
-          await handleMigration(context, workspaceFolders![0]);
-          await vscode.commands.executeCommand('kiota.workspace.refresh');
-        }  
-      }
+            if (result === vscode.l10n.t("OK")) {
+                await handleMigration(context, workspaceFolders![0]);
+                await vscode.commands.executeCommand('kiota.workspace.refresh');
+            }
+        }
     }
-  };
+};
 
 export function displayMigrationMessages(logEntries: KiotaLogEntry[]) {
     const workspaceJsonUri = vscode.Uri.file(getWorkspaceJsonPath());
-    const successEntries = logEntries.filter(entry => 
+    const successEntries = logEntries.filter(entry =>
         entry.level === LogLevel.information && entry.message.includes("migrated successfully")
     );
 

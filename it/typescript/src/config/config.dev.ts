@@ -4,5 +4,5 @@ import { IConfig } from './config.interface';
 export const config: IConfig = {
   ...globalConfig,
 
-  apiUrl: 'http://a-development-url',
+  apiUrl: 'https://a-development-url',
 };

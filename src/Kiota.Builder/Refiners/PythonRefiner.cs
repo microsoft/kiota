@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners;
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
+    public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
@@ -255,7 +255,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         option.SerializationName = option.Name;
                     }
-                    option.Name = option.Name.ToCamelCase().ToFirstCharacterUpperCase();
+                    option.Name = option.Name.ToPascalCase();
                 }
             }
         }

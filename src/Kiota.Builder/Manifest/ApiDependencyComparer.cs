@@ -11,25 +11,57 @@ namespace Kiota.Builder.Manifest;
 
 public class ApiDependencyComparer : IEqualityComparer<ApiDependency>
 {
-    public ApiDependencyComparer(bool compareRequests = false)
+    private readonly StringComparer _stringComparer;
+    private readonly RequestInfoComparer _requestInfoComparer;
+    private readonly bool _compareRequests;
+
+    public ApiDependencyComparer(StringComparer? stringComparer = null, bool compareRequests = false)
     {
-        CompareRequests = compareRequests;
+        _compareRequests = compareRequests;
+        _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
+        _requestInfoComparer = new RequestInfoComparer(_stringComparer);
     }
-    private static readonly RequestInfoComparer requestInfoComparer = new();
-    private readonly bool CompareRequests;
+
+    private static string? GetDependencyExtensionsValue(ApiDependency dependency)
+    {
+        if (dependency.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var n0) ==
+            true && n0 is JsonValue valueX && valueX.GetValueKind() is JsonValueKind.String)
+        {
+            return valueX.GetValue<string>();
+        }
+
+        return null;
+    }
+
     /// <inheritdoc/>
     public bool Equals(ApiDependency? x, ApiDependency? y)
     {
-        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
+        if (x is null || y is null) return object.Equals(x, y);
+
+        if (!_stringComparer.Equals(x.ApiDescriptionUrl, y.ApiDescriptionUrl)) return false;
+        if (!_stringComparer.Equals(x.ApiDescriptionVersion, y.ApiDescriptionVersion)) return false;
+
+        string? xExtensions = GetDependencyExtensionsValue(x), yExtensions = GetDependencyExtensionsValue(y);
+        // Assume requests are equal if we aren't comparing them.
+        var requestsEqual = !_compareRequests || GetOrderedRequests(x.Requests).SequenceEqual(GetOrderedRequests(y.Requests), _requestInfoComparer);
+        return _stringComparer.Equals(xExtensions, yExtensions)
+               && requestsEqual;
     }
+    private static IOrderedEnumerable<RequestInfo> GetOrderedRequests(IList<RequestInfo> requests) =>
+    requests.OrderBy(x => x.UriTemplate, StringComparer.Ordinal).ThenBy(x => x.Method, StringComparer.Ordinal);
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] ApiDependency obj)
     {
-        if (obj == null) return 0;
-        return
-            (string.IsNullOrEmpty(obj.ApiDescriptionUrl) ? 0 : obj.ApiDescriptionUrl.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
-            (string.IsNullOrEmpty(obj.ApiDescriptionVersion) ? 0 : obj.ApiDescriptionVersion.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
-            (obj.Extensions is not null && obj.Extensions.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var jsonNode) && jsonNode is JsonValue jsonValue && jsonValue.GetValueKind() is JsonValueKind.String ? jsonValue.GetValue<string>().GetHashCode(StringComparison.OrdinalIgnoreCase) : 0) * 19 +
-            (CompareRequests ? obj.Requests.Select(requestInfoComparer.GetHashCode).Sum() : 0) * 17;
+        var hash = new HashCode();
+        if (obj == null) return hash.ToHashCode();
+        hash.Add(obj.ApiDescriptionUrl, _stringComparer);
+        hash.Add(GetDependencyExtensionsValue(obj) ?? string.Empty, _stringComparer);
+        if (!_compareRequests) return hash.ToHashCode();
+
+        foreach (var request in GetOrderedRequests(obj.Requests))
+        {
+            hash.Add(request, _requestInfoComparer);
+        }
+        return hash.ToHashCode();
     }
 }

@@ -4,13 +4,11 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
-public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
+public class CodeMethodWriter(TypeScriptConventionService conventionService) : BaseElementWriter<CodeMethod, TypeScriptConventionService>(conventionService)
 {
-    public CodeMethodWriter(TypeScriptConventionService conventionService) : base(conventionService)
-    {
-    }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -18,7 +16,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is CodeFunction) return;
 
-        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         WriteMethodDocumentation(codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
@@ -35,19 +33,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnRemark = (isVoid, code.IsAsync) switch
         {
             (true, _) => string.Empty,
-            (false, true) => $"@returns {{Promise<{typeScriptConventionService.GetTypeString(code.ReturnType, code)}>}}",
-            (false, false) => $"@returns {{{typeScriptConventionService.GetTypeString(code.ReturnType, code)}}}",
+            (false, true) => $"@returns {{Promise<{GetTypescriptTypeString(code.ReturnType, code, inlineComposedTypeString: true)}>}}",
+            (false, false) => $"@returns {{{GetTypescriptTypeString(code.ReturnType, code, inlineComposedTypeString: true)}}}",
         };
         typeScriptConventionService.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => typeScriptConventionService.GetTypeString(type, code), TypeScriptConventionService.ReferenceTypePrefix, TypeScriptConventionService.ReferenceTypeSuffix, TypeScriptConventionService.RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark])
-                                            .Union(GetThrownExceptionsRemarks(code, typeScriptConventionService)));
+                                            .Union(GetThrownExceptionsRemarks(code)));
     }
-    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code, TypeScriptConventionService typeScriptConventionService)
+    private static IEnumerable<string> GetThrownExceptionsRemarks(CodeMethod code)
     {
         if (code.Kind is not CodeMethodKind.RequestExecutor) yield break;
         foreach (var errorMapping in code.ErrorMappings)
@@ -57,7 +55,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 "XXX" => "4XX or 5XX",
                 _ => errorMapping.Key,
             };
-            var errorTypeString = typeScriptConventionService.GetTypeString(errorMapping.Value, code, false);
+            var errorTypeString = GetTypescriptTypeString(errorMapping.Value, code, false, inlineComposedTypeString: true);
             yield return $"@throws {{{errorTypeString}}} error when the service returns a {statusCode} status code";
         }
     }
@@ -83,16 +81,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<" : string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
-        var accessorPrefix = code.Kind switch
-        {
-            CodeMethodKind.Getter => "get ",
-            CodeMethodKind.Setter => "set ",
-            _ => string.Empty
-        };
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && !string.IsNullOrEmpty(returnType);
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         var openBracketSuffix = code.Parent is CodeClass || isFunction ? " {" : ";";
-        writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
+        writer.WriteLine($"{accessModifier}{functionPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
     }
 
     internal static void WriteMethodTypecheckIgnoreInternal(CodeMethod code, LanguageWriter writer)

@@ -1,6 +1,7 @@
-import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
-import * as rpc from "vscode-jsonrpc/node";
 import * as vscode from "vscode";
+import * as rpc from "vscode-jsonrpc/node";
+import { KiotaGenerationLanguage } from "./enums";
+import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "./kiotaInterop";
 import { getWorkspaceJsonDirectory } from "./util";
 
 export function generateClient(context: vscode.ExtensionContext, 
@@ -23,31 +24,31 @@ export function generateClient(context: vscode.ExtensionContext,
   operation: ConsumerOperation,
   workingDirectory: string = getWorkspaceJsonDirectory()
 ): Promise<KiotaLogEntry[] | undefined> {
-    return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
-      const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-        "Generate"
-      );
-      return await connection.sendRequest(
-        request,
-        {
-          cleanOutput: cleanOutput,
-          clearCache: clearCache,
-          clientClassName: clientClassName,
-          clientNamespaceName: clientNamespaceName,
-          deserializers: deserializers,
-          disabledValidationRules: disableValidationRules,
-          excludeBackwardCompatible: excludeBackwardCompatible,
-          excludePatterns: excludeFilters,
-          includeAdditionalData: includeAdditionalData,
-          includePatterns: includeFilters,
-          language: language,
-          openAPIFilePath: descriptionPath,
-          outputPath: output,
-          serializers: serializers,
-          structuredMimeTypes: structuredMimeTypes,
-          usesBackingStore: usesBackingStore,
-          operation: operation
-        } as GenerationConfiguration,
-      );
-    }, workingDirectory);
+  return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
+    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
+      "Generate"
+    );
+    return await connection.sendRequest(
+      request,
+      {
+        cleanOutput: cleanOutput,
+        clearCache: clearCache,
+        clientClassName: clientClassName,
+        clientNamespaceName: clientNamespaceName,
+        deserializers: deserializers,
+        disabledValidationRules: disableValidationRules,
+        excludeBackwardCompatible: excludeBackwardCompatible,
+        excludePatterns: excludeFilters,
+        includeAdditionalData: includeAdditionalData,
+        includePatterns: includeFilters,
+        language: language,
+        openAPIFilePath: descriptionPath,
+        outputPath: output,
+        serializers: serializers,
+        structuredMimeTypes: structuredMimeTypes,
+        usesBackingStore: usesBackingStore,
+        operation: operation
+      } as GenerationConfiguration,
+    );
+  }, workingDirectory);
 };

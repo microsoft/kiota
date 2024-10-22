@@ -1,8 +1,11 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as vscode from 'vscode';
+import { QuickPickItem } from "vscode";
 import { APIMANIFEST, CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS } from './constants';
-import { migrateFromLockFile, displayMigrationMessages } from './migrateFromLockFile';
+import { GenerationType, KiotaGenerationLanguage, KiotaPluginType } from './enums';
+import { allGenerationLanguages } from './kiotaInterop';
+import { displayMigrationMessages, migrateFromLockFile } from './migrateFromLockFile';
 
 const clientTypes = [CLIENT, CLIENTS];
 const pluginTypes = [PLUGIN, PLUGINS, APIMANIFEST];
@@ -92,4 +95,78 @@ export async function handleMigration(
           vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
       }
   });
+}
+
+export function getSanitizedString(rawValue?: string): string| undefined{
+  return rawValue?.replace(/[^a-zA-Z0-9_]+/g, '');
+};
+
+export function parseGenerationType(generationType: string | QuickPickItem | undefined): GenerationType {
+    if(typeof generationType !== 'string') {
+        throw new Error('generationType has not been selected yet');
+    }
+    switch(generationType) {
+        case "client":
+            return GenerationType.Client;
+        case "plugin":
+            return GenerationType.Plugin;
+        case "apimanifest":
+            return GenerationType.ApiManifest;
+        default:
+            throw new Error(`Unknown generation type ${generationType}`);
+    }
+}
+
+export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
+    switch (value.toLowerCase()) {
+      case "csharp":
+          return KiotaGenerationLanguage.CSharp;
+      case "java":
+          return KiotaGenerationLanguage.Java;
+      case "typescript":
+          return KiotaGenerationLanguage.TypeScript;
+      case "php":
+          return KiotaGenerationLanguage.PHP;
+      case "python":
+          return KiotaGenerationLanguage.Python;
+      case "go":
+          return KiotaGenerationLanguage.Go;
+      case "swift":
+          return KiotaGenerationLanguage.Swift;
+      case "ruby":
+          return KiotaGenerationLanguage.Ruby;
+      case "cli":
+          return KiotaGenerationLanguage.CLI;
+      default:
+          throw new Error("unknown language " + value);
+    }
+}
+
+export function parsePluginType(values: string[]): KiotaPluginType[] {
+    return values.map(value => {
+        switch (value.toLowerCase()) {
+            case "openai":
+                return KiotaPluginType.OpenAI;
+            case "apimanifest":
+                return KiotaPluginType.ApiManifest;
+            case "apiplugin":
+                return KiotaPluginType.ApiPlugin;
+            default:
+                throw new Error(`unknown plugin type: ${value}`);
+        }
+    });
+}
+
+export function allGenerationLanguagesToString(): string[] {
+  let allSupportedLanguages: string[] = allGenerationLanguages.map(langEnum => KiotaGenerationLanguage[langEnum]);
+  return allSupportedLanguages;
+}
+
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }

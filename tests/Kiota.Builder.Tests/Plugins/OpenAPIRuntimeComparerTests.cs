@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Plugins;
+﻿using System;
+using Kiota.Builder.Plugins;
 using Microsoft.Plugins.Manifest;
 using Xunit;
 
@@ -9,7 +10,7 @@ public class OpenAPIRuntimeComparerTests
     [Fact]
     public void Defensive()
     {
-        Assert.Equal(0, _comparer.GetHashCode(null));
+        Assert.Equal(new HashCode().ToHashCode(), _comparer.GetHashCode(null));
         Assert.True(_comparer.Equals(null, null));
         Assert.False(_comparer.Equals(new(), null));
         Assert.False(_comparer.Equals(null, new()));

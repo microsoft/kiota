@@ -39,12 +39,12 @@ public sealed class CodeEnumWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public async Task WritesEnum()
+    public async Task WritesEnumAsync()
     {
         var declaration = currentEnum.Parent as CodeNamespace;
         const string optionName = "option1";
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration);
         _codeEnumWriter.WriteCodeElement(currentEnum, writer);
         var result = tw.ToString();
         Assert.Contains("<?php", result);

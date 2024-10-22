@@ -218,7 +218,7 @@ internal partial class Server : IServer
         }
         catch (Exception ex)
         {
-            globalLogger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
+            globalLogger.LogCritical(ex, "error generating the plugin: {exceptionMessage}", ex.Message);
         }
         return globalLogger.LogEntries;
     }

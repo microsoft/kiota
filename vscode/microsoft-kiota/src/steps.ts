@@ -1,8 +1,11 @@
-import * as vscode from 'vscode';
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri, OpenDialogOptions } from 'vscode';
-import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
-import { findAppPackageDirectory, getWorkspaceJsonDirectory } from './util';
 import * as path from 'path';
+import * as vscode from 'vscode';
+import { Disposable, l10n, OpenDialogOptions, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window, workspace } from 'vscode';
+
+import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
+import { findAppPackageDirectory, getWorkspaceJsonDirectory, isValidUrl } from './util';
+import { IntegrationParams, isDeeplinkEnabled } from './utilities/deep-linking';
+import { isFilePath, isTemporaryDirectory } from './utilities/temporary-folder';
 
 export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
@@ -70,28 +73,17 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
+        if (state.searchQuery && (isValidUrl(state.searchQuery) || isFilePath(state.searchQuery))) {
+            state.descriptionPath = state.searchQuery;
+            return;
+        }
         state.searchResults = await searchCallBack(state.searchQuery);
         if (state.searchResults && Object.keys(state.searchResults).length > 0) {
             return (input: MultiStepInput) => pickSearchResult(input, state);
         } else {
-            state.descriptionPath = state.searchQuery;
-            return (input: MultiStepInput) => inputPathOrUrl(input, state);
-        }
-    }
-
-    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
-        if (state.descriptionPath) {
+            vscode.window.showErrorMessage(l10n.t('No results found. Try pasting a path or url instead.'));
             return;
         }
-        state.descriptionPath = await input.showInputBox({
-            title,
-            step: step++,
-            totalSteps: 1,
-            value: state.descriptionPath || '',
-            prompt: l10n.t('Search or paste a path to an API description'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
     }
 
     async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState & OpenState>) {
@@ -105,7 +97,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
         const pick = await input.showQuickPick({
             title,
             step: step++,
-            totalSteps: totalSteps,
+            totalSteps: totalSteps + 1,
             placeholder: l10n.t('Pick a search result'),
             items: items,
             shouldResume: shouldResume
@@ -116,8 +108,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Thena
     return state;
 }
 
-
-export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation, deepLinkParams?: Partial<IntegrationParams>) {
     const state = { ...existingConfiguration } as Partial<GenerateState>;
     if (existingConfiguration.generationType && existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
         typeof existingConfiguration.generationType === 'string' && existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
@@ -125,7 +116,15 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         return state;
     }
 
-    if (typeof state.outputPath === 'string') {
+    const deeplinkEnabled = deepLinkParams && isDeeplinkEnabled(deepLinkParams);
+    const isDeepLinkPluginNameProvided = deeplinkEnabled && state.pluginName;
+    const isDeepLinkGenerationTypeProvided = deeplinkEnabled && state.generationType;
+    const isDeepLinkPluginTypeProvided = deeplinkEnabled && state.pluginTypes;
+    const isDeepLinkLanguageProvided = deeplinkEnabled && state.language;
+    const isDeepLinkOutputPathProvided = deeplinkEnabled && state.outputPath;
+    const isDeepLinkClientClassNameProvided = deeplinkEnabled && state.clientClassName;
+
+    if (typeof state.outputPath === 'string' && !isTemporaryDirectory(state.outputPath)) {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
     const workspaceOpen = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
@@ -136,9 +135,11 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         workspaceFolder = appPackagePath;
     }
 
-    let step = 1;
-    let totalSteps = 4;
+    if (isDeepLinkOutputPathProvided && deepLinkParams.source && deepLinkParams.source.toLowerCase() === 'ttk') {
+        state.workingDirectory = state.outputPath as string;
+    }
 
+    let step = 1;
     const folderSelectionOption = l10n.t('Browse your output directory');
     let inputOptions = [
         { label: l10n.t('Default folder'), description: workspaceFolder },
@@ -154,41 +155,60 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             ];
         }
     }
-    async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
-        const items = [l10n.t('Generate an API client'), l10n.t('Generate a plugin'), l10n.t('Generate an API manifest')];
-        const option = await input.showQuickPick({
-            title: l10n.t('What do you want to generate?'),
-            step: 1,
-            totalSteps: 1,
-            placeholder: l10n.t('Select an option'),
-            items: items.map(x => ({ label: x })),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
-        if (option.label === l10n.t('Generate an API client')) {
-            state.generationType = "client";
-            return (input: MultiStepInput) => inputClientClassName(input, state);
-        }
-        else if (option.label === l10n.t('Generate a plugin')) {
-            state.generationType = "plugin";
-            return (input: MultiStepInput) => inputPluginName(input, state);
-        }
-        else if (option.label === l10n.t('Generate an API manifest')) {
-            state.generationType = "apimanifest";
-            return (input: MultiStepInput) => inputManifestName(input, state);
+    function getNextStepForGenerationType(generationType: string | QuickPickItem) {
+        switch (generationType) {
+            case 'client':
+                return inputClientClassName;
+            case 'plugin':
+                return inputPluginName;
+            case 'other':
+                return chooseOtherGenerationType;
+            default:
+                throw new Error('unknown generation type');
         }
     }
+    async function inputGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
+        if (!isDeepLinkGenerationTypeProvided) {
+            const items = [
+                l10n.t('Client'),
+                l10n.t('Copilot plugin'),
+                l10n.t('Other')
+            ];
+            const option = await input.showQuickPick({
+                title: l10n.t('What do you want to generate?'),
+                step: step++,
+                totalSteps: 3,
+                placeholder: l10n.t('Select an option'),
+                items: items.map(x => ({ label: x })),
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+            if (option.label === l10n.t('Client')) {
+                state.generationType = "client";
+            }
+            else if (option.label === l10n.t('Copilot plugin')) {
+                state.generationType = "plugin";
+            }
+            else if (option.label === l10n.t('Other')) {
+                state.generationType = "other";
+            }
+        }
+        let nextStep = getNextStepForGenerationType(state.generationType?.toString() || '');
+        return (input: MultiStepInput) => nextStep(input, state);
+    }
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
-        state.clientClassName = await input.showInputBox({
-            title: `${l10n.t('Create a new API client')} - ${l10n.t('class')}`,
-            step: step++,
-            totalSteps: totalSteps,
-            value: state.clientClassName ?? '',
-            placeholder: 'ApiClient',
-            prompt: l10n.t('Choose a name for the client class'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
+        if (!isDeepLinkClientClassNameProvided) {
+            state.clientClassName = await input.showInputBox({
+                title: `${l10n.t('Create a new API client')} - ${l10n.t('class')}`,
+                step: step++,
+                totalSteps: 5,
+                value: state.clientClassName ?? '',
+                placeholder: 'ApiClient',
+                prompt: l10n.t('Choose a name for the client class'),
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+        }
         updateWorkspaceFolder(state.clientClassName);
         return (input: MultiStepInput) => inputClientNamespaceName(input, state);
     }
@@ -196,7 +216,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         state.clientNamespaceName = await input.showInputBox({
             title: `${l10n.t('Create a new API client')} - ${l10n.t('namespace')}`,
             step: step++,
-            totalSteps: totalSteps,
+            totalSteps: 5,
             value: typeof state.clientNamespaceName === 'string' ? state.clientNamespaceName : '',
             placeholder: 'ApiSDK',
             prompt: l10n.t('Choose a name for the client class namespace'),
@@ -209,8 +229,8 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         while (true) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new API client')} - ${l10n.t('output directory')}`,
-                step: 4,
-                totalSteps: totalSteps,
+                step: step++,
+                totalSteps: 5,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
@@ -244,60 +264,71 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
     }
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
-        const items = allGenerationLanguages.map(x => {
-            const lngName = generationLanguageToString(x);
-            const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
-            const lngMaturity = lngInfo ? ` - ${maturityLevelToString(lngInfo.MaturityLevel)}` : '';
-            return {
-                label: `${lngName}${lngMaturity}`,
-                languageName: lngName,
-            } as (QuickPickItem & { languageName: string });
-        });
-        const pick = await input.showQuickPick({
-            title: `${l10n.t('Create a new API client')} - ${l10n.t('language')}`,
-            step: step++,
-            totalSteps: totalSteps,
-            placeholder: l10n.t('Pick a language'),
-            items,
-            activeItem: typeof state.language === 'string' ? items.find(x => x.languageName === state.language) : undefined,
-            shouldResume: shouldResume
-        });
-        state.language = pick.label.split('-')[0].trim();
+        if (!isDeepLinkLanguageProvided) {
+            const items = allGenerationLanguages.map(x => {
+                const lngName = generationLanguageToString(x);
+                const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
+                const lngMaturity = lngInfo ? ` - ${maturityLevelToString(lngInfo.MaturityLevel)}` : '';
+                return {
+                    label: `${lngName}${lngMaturity}`,
+                    languageName: lngName,
+                } as (QuickPickItem & { languageName: string });
+            });
+            const pick = await input.showQuickPick({
+                title: `${l10n.t('Create a new API client')} - ${l10n.t('language')}`,
+                step: step++,
+                totalSteps: 5,
+                placeholder: l10n.t('Pick a language'),
+                items,
+                activeItem: typeof state.language === 'string' ? items.find(x => x.languageName === state.language) : undefined,
+                shouldResume: shouldResume
+            });
+            state.language = pick.label.split('-')[0].trim();
+        }
     }
     async function inputPluginName(input: MultiStepInput, state: Partial<GenerateState>) {
-        state.pluginName = await input.showInputBox({
-            title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
-            step: step++,
-            totalSteps: 3,
-            value: state.pluginName ?? '',
-            placeholder: 'MyPlugin',
-            prompt: l10n.t('Choose a name for the plugin'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
+        if (!isDeepLinkPluginNameProvided) {
+            state.pluginName = await input.showInputBox({
+                title: `${l10n.t('Create a new plugin')} - ${l10n.t('plugin name')}`,
+                step: step++,
+                totalSteps: 3,
+                value: state.pluginName ?? '',
+                placeholder: 'MyPlugin',
+                prompt: l10n.t('Choose a name for the plugin'),
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+        }
+        state.pluginTypes = ['ApiPlugin'];
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputPluginType(input, state);
-    }
-    async function inputPluginType(input: MultiStepInput, state: Partial<GenerateState>) {
-        const items = ['API Plugin', 'Open AI'].map(x => ({ label: x }) as QuickPickItem);
-        const pluginTypes = await input.showQuickPick({
-            title: l10n.t('Choose a plugin type'),
-            step: step++,
-            totalSteps: 3,
-            placeholder: l10n.t('Select an option'),
-            items: items,
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
-        pluginTypes.label === 'API Plugin' ? state.pluginTypes = ['ApiPlugin'] : state.pluginTypes = ['OpenAI'];
         return (input: MultiStepInput) => inputPluginOutputPath(input, state);
     }
+    async function chooseOtherGenerationType(input: MultiStepInput, state: Partial<GenerateState>) {
+        if (!isDeepLinkPluginTypeProvided) {
+            const items = ['API Manifest', 'Open AI Plugin'].map(x => ({ label: x }) as QuickPickItem);
+            const pluginTypes = await input.showQuickPick({
+                title: l10n.t('Choose a type'),
+                step: step++,
+                totalSteps: 4,
+                placeholder: l10n.t('Select an option'),
+                items: items,
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+            pluginTypes.label === 'API Manifest' ? state.pluginTypes = ['ApiManifest'] : state.pluginTypes = ['OpenAI'];
+            
+        }
+
+        Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest') ?
+            state.generationType = 'apimanifest' : state.generationType = 'plugin';
+        return (input: MultiStepInput) => inputOtherGenerationTypeName(input, state);
+    }
     async function inputPluginOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
-        while (true) {
+        while (!isDeepLinkOutputPathProvided) {
             const selectedOption = await input.showQuickPick({
                 title: `${l10n.t('Create a new plugin')} - ${l10n.t('output directory')}`,
-                step: 3,
-                totalSteps: 3,
+                step: step++,
+                totalSteps: 4,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
@@ -329,27 +360,31 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
             break;
         }
     }
-
-    async function inputManifestName(input: MultiStepInput, state: Partial<GenerateState>) {
-        state.pluginName = await input.showInputBox({
-            title: `${l10n.t('Create a new manifest')} - ${l10n.t('manifest name')}`,
-            step: step++,
-            totalSteps: 3,
-            value: state.pluginName ?? '',
-            placeholder: 'MyManifest',
-            prompt: l10n.t('Choose a name for the manifest'),
-            validate: validateIsNotEmpty,
-            shouldResume: shouldResume
-        });
+    async function inputOtherGenerationTypeName(input: MultiStepInput, state: Partial<GenerateState>) {
+        if (!isDeepLinkPluginNameProvided) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
+            state.pluginName = await input.showInputBox({
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output name')}`,
+                step: step++,
+                totalSteps: 4,
+                value: state.pluginName ?? '',
+                placeholder: `${isManifest ? 'MyManifest' : 'MyOpenAIPlugin'}`,
+                prompt: `${isManifest ? l10n.t('Choose a name for the manifest') : l10n.t('Choose a name for the OpenAI plugin')}`,
+                validate: validateIsNotEmpty,
+                shouldResume: shouldResume
+            });
+        }
         updateWorkspaceFolder(state.pluginName);
-        return (input: MultiStepInput) => inputManifestOutputPath(input, state);
+        return (input: MultiStepInput) => inputOtherGenerationTypeOutputPath(input, state);
     }
-    async function inputManifestOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
+    async function inputOtherGenerationTypeOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
         while (true) {
+            const isManifest = state.pluginTypes && Array.isArray(state.pluginTypes) && state.pluginTypes.includes('ApiManifest');
+
             const selectedOption = await input.showQuickPick({
-                title: `${l10n.t('Create a new manifest')} - ${l10n.t('output directory')}`,
-                step: 2,
-                totalSteps: 3,
+                title: `${isManifest ? l10n.t('Create a new manifest') : l10n.t('Create a new OpenAI plugin')} - ${l10n.t('output directory')}`,
+                step: step++,
+                totalSteps: 4,
                 placeholder: l10n.t('Enter an output path relative to the root of the project'),
                 items: inputOptions,
                 shouldResume: shouldResume
@@ -377,7 +412,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
                     }
                 }
             }
-            state.outputPath === '' ? state.outputPath = 'output' : state.outputPath;
+            if (state.outputPath === '') {
+                state.outputPath = 'output';
+            }
             break;
         }
 
@@ -431,29 +468,7 @@ export interface GenerateState extends BaseStepsState {
     outputPath: QuickPickItem | string;
     workingDirectory: string;
 }
-export enum GenerationType {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Client = 0,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Plugin = 1,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    ApiManifest = 2,
-}
-export function parseGenerationType(generationType: string | QuickPickItem | undefined): GenerationType {
-    if (typeof generationType !== 'string') {
-        throw new Error('generationType has not been selected yet');
-    }
-    switch (generationType) {
-        case "client":
-            return GenerationType.Client;
-        case "plugin":
-            return GenerationType.Plugin;
-        case "apimanifest":
-            return GenerationType.ApiManifest;
-        default:
-            throw new Error(`Unknown generation type ${generationType}`);
-    }
-}
+
 class InputFlowAction {
     static back = new InputFlowAction();
     static cancel = new InputFlowAction();
@@ -494,28 +509,22 @@ interface OpenDialogParameters {
 
 class MultiStepInput {
     async showOpenDialog({ canSelectMany, openLabel, canSelectFolders, canSelectFiles }: OpenDialogParameters): Promise<Uri[] | undefined> {
-        const disposables: Disposable[] = [];
+        return await new Promise<Uri[] | undefined>((resolve) => {
+            const input: OpenDialogOptions = {
+                canSelectMany,
+                openLabel,
+                canSelectFolders,
+                canSelectFiles
+            };
 
-        try {
-            return await new Promise<Uri[] | undefined>((resolve) => {
-                const input: OpenDialogOptions = {
-                    canSelectMany,
-                    openLabel,
-                    canSelectFolders,
-                    canSelectFiles
-                };
-
-                void window.showOpenDialog(input).then(folderUris => {
-                    if (folderUris && folderUris.length > 0) {
-                        resolve([folderUris[0]]);
-                    } else {
-                        resolve(undefined);
-                    }
-                });
+            void window.showOpenDialog(input).then(folderUris => {
+                if (folderUris && folderUris.length > 0) {
+                    resolve([folderUris[0]]);
+                } else {
+                    resolve(undefined);
+                }
             });
-        } finally {
-            disposables.forEach(d => d.dispose());
-        }
+        });
     }
 
     static async run<T>(start: InputStep, onNavBack?: () => void) {
@@ -539,7 +548,7 @@ class MultiStepInput {
             } catch (err) {
                 if (err === InputFlowAction.back) {
                     if (onNavBack) {
-                        onNavBack();
+                        onNavBack();  //Currently, step -= 2 passed as onNavBack because of using postfix increment in steps in the input functions
                     }
                     this.steps.pop();
                     step = this.steps.pop();

@@ -23,7 +23,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         bool refresh = context.ParseResult.GetValueForOption(RefreshOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -74,10 +74,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             catch (Exception ex)
             {
 #if DEBUG
-                logger.LogCritical(ex, "error adding the client: {ExceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error generating the plugin: {ExceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
 #else
-                logger.LogCritical("error adding the client: {ExceptionMessage}", ex.Message);
+                logger.LogCritical("error generating the plugin: {ExceptionMessage}", ex.Message);
                 return 1;
 #endif
             }

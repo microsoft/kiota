@@ -19,28 +19,44 @@ public static partial class StringExtensions
     public static string ToFirstCharacterUpperCase(this string? input)
         => string.IsNullOrEmpty(input) ? string.Empty : char.ToUpperInvariant(input[0]) + input[1..];
 
+    private static readonly char[] defaultSeparators = ['-'];
+    /// <summary>
+    /// Converts a string delimited by a symbol to camel case, conserving the casing for the first character
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="separators"></param>
+    /// <returns>A camel case string with the original casing for the first character</returns>
+    public static string ToOriginalCamelCase(this string? input, params char[] separators) => ToInternalCamelCase(input, separators, normalizeFirstCharacter: false);
+
     /// <summary>
     /// Converts a string delimited by a symbol to camel case
     /// </summary>
     /// <param name="input">The input string</param>
     /// <param name="separators">The delimiters to use when converting to camel case. If none is given, defaults to '-'</param>
     /// <returns>A camel case string</returns>
-    public static string ToCamelCase(this string? input, params char[] separators)
-    {
-        if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators is null || separators.Length == 0) separators = new[] { '-' };
-        var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-        if (chunks.Length == 0) return string.Empty;
-        return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
-    }
+    public static string ToCamelCase(this string? input, params char[] separators) => ToInternalCamelCase(input, separators);
 
-    public static string ToPascalCase(this string? input, params char[] separators)
+    /// <summary>
+    /// Converts a string delimited by a symbol to pascal case
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="separators"></param>
+    /// <returns>A pascal case string</returns>
+    public static string ToPascalCase(this string? input, params char[] separators) => ToInternalCamelCase(input, separators, true);
+
+    private static string ToInternalCamelCase(string? input, char[] separators, bool firstCharacterUpperCase = false, bool normalizeFirstCharacter = true)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators is null || separators.Length == 0) separators = new[] { '-' };
+        if (separators is null || separators.Length == 0) separators = defaultSeparators;
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
-        return string.Join(string.Empty, chunks.Select(ToFirstCharacterUpperCase));
+        return ((normalizeFirstCharacter, firstCharacterUpperCase) switch
+        {
+            (false, _) => chunks[0],
+            (true, true) => chunks[0].ToFirstCharacterUpperCase(),
+            (true, false) => chunks[0].ToFirstCharacterLowerCase()
+        }) +
+                string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
     }
 
     public static string ReplaceValueIdentifier(this string? original) =>
@@ -51,8 +67,8 @@ public static partial class StringExtensions
     /// <summary>
     /// Shortens a file name to the maximum allowed length on the file system using a hash to avoid collisions
     /// </summary>
-    /// <param name="fileName">The file name to shorten</param>
-    /// <param name="maxFileNameLength">The maximum length of the file name. Default 251 = 255 - .ext</param>
+    /// <param name="name">The file name to shorten</param>
+    /// <param name="length">The maximum length of the file name. Default 251 = 255 - .ext</param>
     public static string ShortenFileName(this string name, int length = 251) =>
 #pragma warning disable CA1308
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;

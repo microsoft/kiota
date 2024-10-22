@@ -623,7 +623,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("from .error401 import Error401", result);
         Assert.Contains("from .error4_x_x import Error4XX", result);
         Assert.Contains("from .error5_x_x import Error5XX", result);
-        Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
+        Assert.Contains("error_mapping: Dict[str, type[ParsableFactory]] =", result);
         Assert.Contains("\"4XX\": Error4XX", result);
         Assert.Contains("\"5XX\": Error5XX", result);
         Assert.Contains("\"401\": Error401", result);
@@ -1719,7 +1719,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("def __init__(self,request_adapter: RequestAdapter, path_parameters: Union[Dict[str, Any], str],", result);
         Assert.Contains("username: Optional[str] = None", result);
         Assert.Contains("if isinstance(path_parameters, dict):", result);
-        Assert.Contains("path_parameters['username'] = str(username)", result);
+        Assert.Contains("path_parameters['username'] = username", result);
         Assert.DoesNotContain("This property has a description", result);
         Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.DoesNotContain("get_path_parameters(", result);

@@ -785,4 +785,66 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.False(schema.IsEnum());
     }
+    [Fact]
+    public void IsOdataPrimitive()
+    {
+        var schema = new OpenApiSchema
+        {
+            OneOf = new List<OpenApiSchema>
+            {
+                new ()
+                {
+                    Type = "number",
+                    Format = "double",
+                    Nullable = true
+                },
+                new ()
+                {
+                    Type = "string",
+                    Nullable = true
+                },
+                new ()
+                {
+                    Enum = new List<IOpenApiAny>()
+                    {
+                        new OpenApiString("INF"),
+                        new OpenApiString("INF"),
+                        new OpenApiString("NaN"),
+                    },
+                    Type = "string",
+                    Nullable = true
+                }
+            }
+        };
+        Assert.True(schema.IsODataPrimitiveType());
+    }
+    [Fact]
+    public void IsOdataPrimitiveBackwardCompatible()
+    {
+        var schema = new OpenApiSchema
+        {
+            OneOf = new List<OpenApiSchema>
+            {
+                new ()
+                {
+                    Type = "number",
+                    Format = "double",
+                },
+                new ()
+                {
+                    Type = "string",
+                },
+                new ()
+                {
+                    Enum = new List<IOpenApiAny>()
+                    {
+                        new OpenApiString("INF"),
+                        new OpenApiString("INF"),
+                        new OpenApiString("NaN"),
+                    }
+                }
+            }
+        };
+        Assert.True(schema.IsODataPrimitiveType());
+    }
 }

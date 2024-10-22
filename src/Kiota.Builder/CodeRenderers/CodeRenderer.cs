@@ -55,13 +55,13 @@ public class CodeRenderer
                         await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, path, cancellationToken).ConfigureAwait(false);
                     break;
                 case CodeNamespace codeNamespace:
-                    await RenderBarrel(writer, currentNamespace, codeNamespace, cancellationToken).ConfigureAwait(false);
+                    await RenderBarrelAsync(writer, currentNamespace, codeNamespace, cancellationToken).ConfigureAwait(false);
                     await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, cancellationToken).ConfigureAwait(false);
                     break;
             }
         }
     }
-    private async Task RenderBarrel(LanguageWriter writer, CodeNamespace parentNamespace, CodeNamespace codeNamespace, CancellationToken cancellationToken)
+    private async Task RenderBarrelAsync(LanguageWriter writer, CodeNamespace parentNamespace, CodeNamespace codeNamespace, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(codeNamespace.Name) &&
             Configuration.ShouldWriteNamespaceIndices &&

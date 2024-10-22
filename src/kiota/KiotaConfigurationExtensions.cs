@@ -1,4 +1,5 @@
 ﻿using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Configuration;
 
@@ -45,6 +46,7 @@ internal static class KiotaConfigurationExtensions
                 {
                     Version = dependency[nameof(LanguageDependency.Version)] ?? string.Empty,
                     Name = dependency[nameof(LanguageDependency.Name)] ?? string.Empty,
+                    DependencyType = dependency["Type"] is string typeValue && !string.IsNullOrEmpty(typeValue) && Enum.TryParse<DependencyType>(typeValue, true, out var dt) ? dt : null,
                 });
             }
             configObject.Languages.Add(section.Key, lngInfo);
@@ -53,6 +55,7 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.OpenAPIFilePath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OpenAPIFilePath)}"] is string openApiFilePath && !string.IsNullOrEmpty(openApiFilePath) ? openApiFilePath : configObject.Generation.OpenAPIFilePath;
         configObject.Generation.OutputPath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OutputPath)}"] is string outputPath && !string.IsNullOrEmpty(outputPath) ? outputPath : configObject.Generation.OutputPath;
         configObject.Generation.ClientClassName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientClassName)}"] is string clientClassName && !string.IsNullOrEmpty(clientClassName) ? clientClassName : configObject.Generation.ClientClassName;
+        configObject.Generation.TypeAccessModifier = Enum.TryParse<AccessModifier>(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.TypeAccessModifier)}"], true, out var accessModifier) ? accessModifier : AccessModifier.Public;
         configObject.Generation.ClientNamespaceName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientNamespaceName)}"] is string clientNamespaceName && !string.IsNullOrEmpty(clientNamespaceName) ? clientNamespaceName : configObject.Generation.ClientNamespaceName;
         configObject.Generation.UsesBackingStore = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.UsesBackingStore)}"], out var usesBackingStore) && usesBackingStore;
         configObject.Generation.IncludeAdditionalData = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludeAdditionalData)}"], out var includeAdditionalData) && includeAdditionalData;
@@ -60,6 +63,7 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClearCache)}"], out var clearCache) && clearCache;
         configObject.Generation.ExcludeBackwardCompatible = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludeBackwardCompatible)}"], out var excludeBackwardCompatible) && excludeBackwardCompatible;
         configObject.Generation.MaxDegreeOfParallelism = int.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.MaxDegreeOfParallelism)}"], out var maxDegreeOfParallelism) ? maxDegreeOfParallelism : configObject.Generation.MaxDegreeOfParallelism;
+        configObject.Generation.ExportPublicApi = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExportPublicApi)}"], out var exportPublicApi) && exportPublicApi;
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadCollection(configObject.Generation.StructuredMimeTypes);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Serializers)}").LoadHashSet(configObject.Generation.Serializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Deserializers)}").LoadHashSet(configObject.Generation.Deserializers);
