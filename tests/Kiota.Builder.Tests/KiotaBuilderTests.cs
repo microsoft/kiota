@@ -581,6 +581,103 @@ components:
         Assert.NotNull(innerRequestBuilderNS.FindChildByName<CodeClass>("InnerRequestBuilder", false));
 
     }
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Ruby)]
+    public async Task DoesNotAddSuperflousFieldsToModelsAsync(GenerationLanguage language)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+servers:
+  - url: ""https://localhost:8080""
+paths:
+  ""/api/all"":
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ""#/components/schemas/AorB""
+        required: true
+      responses:
+        ""200"":
+          $ref: ""#/components/responses/AorBResponse""
+components:
+  schemas:
+    A:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""a""
+    B:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""b""
+    AorB:
+      oneOf:
+        - $ref: ""#/components/schemas/A""
+        - $ref: ""#/components/schemas/B""
+      discriminator:
+        propertyName: type
+        mapping:
+          a: ""#/components/schemas/A""
+          b: ""#/components/schemas/B""
+  responses:
+    AorBResponse:
+      description: mandatory
+      content:
+        application/json:
+          schema:
+            $ref: ""#/components/schemas/AorB""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var generationConfiguration = new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = language }; // we can use any language that creates wrapper types for composed types in different ways
+        var builder = new KiotaBuilder(mockLogger.Object, generationConfiguration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
+        Assert.NotNull(requestBuilderNamespace);
+        if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
+        {// these languages use CodeFiles
+            var requestExecutorMethod = codeModel.FindChildByName<CodeMethod>("post");
+            Assert.NotNull(requestExecutorMethod);
+            var returnType = requestExecutorMethod.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeInterface;
+            if (language == GenerationLanguage.TypeScript)
+            {
+                Assert.Equal(2, returnTypeDefinition.Properties.Count());
+            }
+            if (language == GenerationLanguage.Go)
+            {
+                Assert.Equal(4, returnTypeDefinition.Methods.Count());// a getter and a setter for each property in Go.
+            }
+        }
+        else
+        {
+            var allRequestBuilderClass = requestBuilderNamespace.FindChildByName<CodeClass>("allRequestBuilder", false);
+            var executor = allRequestBuilderClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.RequestExecutor));
+            Assert.NotNull(executor);
+            var returnType = executor.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeClass;
+            Assert.Equal(2, returnTypeDefinition.Properties.Count());
+        }
+    }
     [Fact]
     public async Task NamesComponentsInlineSchemasProperlyAsync()
     {
@@ -4491,6 +4588,8 @@ components:
     [InlineData("integer", "int64", "int64")]
     [InlineData("number", "int8", "sbyte")]
     [InlineData("integer", "int8", "sbyte")]
+    [InlineData("number", "int16", "integer")]
+    [InlineData("integer", "int16", "integer")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
     [InlineData("number", "", "double")]
@@ -7326,7 +7425,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
-        Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
+        Assert.Equal(4, resultClass.Properties.Count(static x => x.IsOfKind(CodePropertyKind.Custom)));
     }
     [Fact]
     public async Task SkipsInvalidItemsPropertiesAsync()
@@ -7371,7 +7470,62 @@ paths:
         Assert.NotNull(propertiesToValidate);
         Assert.NotEmpty(propertiesToValidate);
         Assert.Equal(keysToCheck.Count, propertiesToValidate.Length);// all the properties are present
-        Assert.Single(resultClass.Properties, x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(resultClass.Properties, static x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
+    public async Task GetsCorrectInheritedInlineSchemaNameAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+servers:
+- url: https://api.github.com
+info:
+  title: GitHub API
+  version: 1.0.0
+paths:
+  '/app-manifests/{code}/conversions':
+    post:
+      operationId: apps/create-from-manifest
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                allOf:
+                - '$ref': '#/components/schemas/integration'
+                - additionalProperties: true
+                  properties:
+                    client_id:
+                      type: string
+                    client_secret:
+                      type: string
+                    pem:
+                      type: string
+                    webhook_secret:
+                      nullable: true
+                      type: string
+                  type: object
+          description: Response
+components:
+  schemas:
+    integration:
+      properties:
+        client_id:
+          type: string
+      title: GitHub app
+      type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel.FindChildByName<CodeClass>("ConversionsPostResponse"));
     }
     [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
@@ -7601,6 +7755,16 @@ paths:
     post:
       requestBody:
         content:
+          text/csv:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string,
+                  format: binary
+            encoding:
+              file:
+                style: form
           multipart/form-data:
             schema:
               type: object

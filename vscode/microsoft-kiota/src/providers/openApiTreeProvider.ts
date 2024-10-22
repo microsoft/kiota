@@ -350,7 +350,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 }
                 await updateTreeViewIcons(treeViewId, true, false);
             }
-            void vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from {0}', this.apiTitle!));
         }
     }
     getCollapsedState(node: KiotaOpenApiNode): vscode.TreeItemCollapsibleState {

@@ -1138,6 +1138,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueBool = "\"true\"";
+        var boolPropName = "propWithDefaultBoolValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = boolPropName,
+            DefaultValue = defaultValueBool,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "boolean",
+                IsNullable = true
+            }
+        });
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
         var result = stringWriter.ToString();
@@ -1146,6 +1159,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->setType('#microsoft.graph.entity')", result);
         Assert.Contains("$this->setCountryCode(new CountryCode('+254'));", result);
         Assert.Contains("$this->setPropWithDefaultNullValue(null)", result);
+        Assert.Contains("$this->setPropWithDefaultBoolValue(true)", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
