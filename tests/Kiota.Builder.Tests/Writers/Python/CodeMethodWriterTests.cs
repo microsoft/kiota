@@ -824,7 +824,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
     [Theory]
     [InlineData(true, false, "string", "")]
-    [InlineData(false, true, "Stream", " Stream,")]
+    [InlineData(false, true, "Stream", " \"Stream\",")]
     [InlineData(false, false, "int", " int,")]
     [InlineData(false, false, "CustomType", " CustomType,")]
     public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, string returnType, string expected)
