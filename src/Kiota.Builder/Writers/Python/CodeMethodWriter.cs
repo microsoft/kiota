@@ -646,6 +646,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         if (inherits)
             writer.WriteLine("super().serialize(writer)");
+        _codeUsingWriter.WriteInternalImports(parentClass, writer);
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
