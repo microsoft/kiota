@@ -15,11 +15,11 @@ public class HttpConventionService : CommonLanguageConventionService
     }
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
-    public override string DocCommentPrefix => "/// ";
+    public override string DocCommentPrefix => "###";
     public static readonly char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
-    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "<summary>", string suffix = "</summary>")
+    public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
@@ -69,8 +69,6 @@ public class HttpConventionService : CommonLanguageConventionService
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
-        if (code is CodeComposedTypeBase)
-            throw new InvalidOperationException($"Swift does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
         {
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
@@ -106,7 +104,7 @@ public class HttpConventionService : CommonLanguageConventionService
             "guid" => "UUID",
             "void" or "uint8" or "int8" or "int32" or "int64" or "float32" or "float64" or "string" => type.Name.ToFirstCharacterUpperCase(),
             "binary" or "base64" or "base64url" => "[UInt8]",
-            "DateTimeOffset" => "Date", // TODO,
+            "DateTimeOffset" => "Date",
             null => "object",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };

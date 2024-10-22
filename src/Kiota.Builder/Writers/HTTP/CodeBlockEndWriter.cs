@@ -8,10 +8,5 @@ public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        writer.CloseBlock();
-        if (codeElement?.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer)))
-        {
-            writer.CloseBlock();
-        }
     }
 }

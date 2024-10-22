@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -27,7 +27,7 @@ public class HttpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(
                 generatedCode,
-                new SwiftReservedNamesProvider(),
+                new HttpReservedNamesProvider(),
                 x => $"{x}_escaped");
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(
@@ -70,7 +70,7 @@ public class HttpRefiner : CommonLanguageRefiner
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "MicrosoftKiotaAbstractions", "AdditionalDataHolder"),
-    };//TODO add backing store types once we have them defined
+    };
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -124,14 +124,14 @@ public class HttpRefiner : CommonLanguageRefiner
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
         {"DateTimeOffset", ("Date", new CodeUsing {
-                                        Name = "Date",//TODO
+                                        Name = "Date",
                                         Declaration = new CodeType {
                                             Name = "Foundation",
                                             IsExternal = true,
                                         },
                                     })},
         {"TimeSpan", ("Date", new CodeUsing {
-                                        Name = "Date",//TODO
+                                        Name = "Date",
                                         Declaration = new CodeType {
                                             Name = "Foundation",
                                             IsExternal = true,
@@ -145,7 +145,7 @@ public class HttpRefiner : CommonLanguageRefiner
                                 },
                             })},
         {"TimeOnly", ("Date", new CodeUsing {
-                                Name = "Date",//TODO
+                                Name = "Date",
                                 Declaration = new CodeType {
                                     Name = "Foundation",
                                     IsExternal = true,

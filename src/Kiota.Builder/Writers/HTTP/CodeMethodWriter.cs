@@ -1,11 +1,13 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using System.Linq;
+using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.http;
-public class CodeMethodWriter : BaseElementWriter<CodeMethod, HttpConventionService>
+public class CodeMethodWriter(HttpConventionService conventionService) : BaseElementWriter<CodeMethod, HttpConventionService>(conventionService)
 {
-    public CodeMethodWriter(HttpConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        // TODO (HTTP)
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
     }
 }
