@@ -1,5 +1,5 @@
 # Step 1: Find all instances of vscode.l10n.t() and extract the strings from .ts and .tsx files
-$withParamsPattern = 'vscode\.l10n\.t\(["' + "`'" + '`](.+?)["' + "`'" + '`],'
+$withParamsPattern = 'vscode\.l10n\.t\(["''`](.+?)["''`],'
 Get-ChildItem -Path vscode/microsoft-kiota/src -Recurse -Include *.ts, *.tsx |
 Select-String -Pattern $withParamsPattern |
 ForEach-Object { $_.Matches.Groups[1].Value } |
