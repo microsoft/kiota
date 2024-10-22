@@ -569,7 +569,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .OrderBy(static x => x.Name))
         {
             var defaultValueReference = propWithDefault.DefaultValue;
-            if (defaultValueReference.StartsWith('"'))
+            if (propWithDefault.Type.IsNullable &&
+                    defaultValueReference.TrimQuotes().Equals("null", StringComparison.OrdinalIgnoreCase))
+            {// avoid setting null as a string.
+                defaultValueReference = "nil";
+            }
+            else if (defaultValueReference.StartsWith('"'))
             {
                 defaultValueReference = $"{propWithDefault.Name.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;
@@ -579,6 +584,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     defaultValue =
                         enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
                     defaultValue = $"{defaultValue.ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
+                }
+                else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+                {
+                    defaultValue = defaultValue.TrimQuotes();
                 }
                 writer.WriteLine($"{defaultValueReference} := {defaultValue}");
                 defaultValueReference = $"&{defaultValueReference}";

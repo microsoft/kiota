@@ -56,7 +56,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 true,
-                AbstractionsNamespaceName,
+                SerializationNamespaceName,
                 "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
