@@ -2,11 +2,11 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
@@ -829,8 +829,18 @@ public sealed class CodeMethodWriterTests : IDisposable
     [InlineData(false, false, "CustomType", " CustomType,")]
     public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, string returnType, string expected)
     {
+        var mockConventionService = new Mock<PythonConventionService>();
+
+        var codeMethodWriter = new CodeMethodWriter(
+            mockConventionService.Object,
+            "TestNamespace",
+            false // usesBackingStore
+        );
+
         var methodInfo = typeof(CodeMethodWriter).GetMethod("GetTypeFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-        var result = methodInfo.Invoke(_codeMethodWriter, new object[] { isVoid, isStream, returnType });
+
+        var result = methodInfo.Invoke(codeMethodWriter, new object[] { isVoid, isStream, returnType });
+
         Assert.Equal(expected, result);
     }
     [Fact]
