@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
--Fixed python generation client serailization failure str being quoted as "str"
+- Fixed python generation client serailization failure str being quoted as "str"
 --Fixed Issue with primitive values being stringified in python python. [#5417](https://github.com/microsoft/kiota/issues/5417)
 
 - Fixed an issue where multipart request content would be ignored if other unstructured content was present in the description. [#5638](https://github.com/microsoft/kiota/issues/5638)
