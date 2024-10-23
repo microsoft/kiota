@@ -558,9 +558,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+            var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
             writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterLowerCase()} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterLowerCase()});");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
@@ -576,9 +578,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
         {
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+            var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
             writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterLowerCase()} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterLowerCase()});");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name.ToFirstCharacterLowerCase()});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
