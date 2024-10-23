@@ -252,11 +252,12 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
     {
+        var result = usingsToAdd.OfType<CodeType>().Except(usingsToAdd.Where(static codeType => codeType.Parent is ClassDeclaration declaration && declaration.Parent is CodeClass codeClass && codeClass.IsErrorDefinition));
         var genericParameterTypes = usingsToAdd.OfType<CodeType>().Where(
             static codeType => codeType.Parent is CodeParameter parameter
             && parameter.IsOfKind(CodeParameterKind.RequestConfiguration)).Select(x => x.GenericTypeParameterValues.First());
 
-        return usingsToAdd.Union(genericParameterTypes);
+        return result.Union(genericParameterTypes);
     }
     protected static void AddAsyncSuffix(CodeElement currentElement)
     {

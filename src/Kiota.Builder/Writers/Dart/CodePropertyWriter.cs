@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
@@ -83,7 +84,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 defaultValue = $" = {propertyType}()";
                 goto default;
             case CodePropertyKind.AdditionalData:
-                writer.WriteLine("@override");
+                if (parentClass.StartBlock.Implements.Where(static x => x.Name.Equals("AdditionalDataHolder", StringComparison.Ordinal)).Any())
+                    writer.WriteLine("@override");
                 goto default;
             default:
                 writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
