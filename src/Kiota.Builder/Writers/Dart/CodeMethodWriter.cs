@@ -54,7 +54,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
     private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
     {
-        if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor))
+        if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
             return !parentClass.Properties.Where(prop => !string.IsNullOrEmpty(prop.DefaultValue)).Any();
         }
@@ -242,7 +242,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-        else if (parentClass.IsErrorDefinition)
+        else if (parentClass.IsErrorDefinition && parentClass.StartBlock.Implements.Where(static x => x.Name.Equals("AdditionalDataHolder", StringComparison.Ordinal)).Any())
         {
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(additionalData: {{}});");
         }

@@ -106,6 +106,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
+            AddConstructorForErrorClass(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddAsyncSuffix(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
@@ -156,6 +157,35 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             EscapeStringValues(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
         }, cancellationToken);
+    }
+
+    ///error classes should always have a constructor for the copyWith method
+    private void AddConstructorForErrorClass(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition && !codeClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.Constructor)).Any())
+        {
+            codeClass.AddMethod(new CodeMethod
+            {
+                Name = "constructor",
+                Kind = CodeMethodKind.Constructor,
+                IsAsync = false,
+                IsStatic = false,
+                Documentation = new(new() {
+                                {"TypeName", new CodeType {
+                                    IsExternal = false,
+                                    TypeDefinition = codeClass,
+                                }
+                            }
+            })
+                {
+                    DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
+                },
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType { Name = "void", IsExternal = true },
+                Parent = codeClass,
+            });
+        }
+        CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
 
     /// <summary> 
