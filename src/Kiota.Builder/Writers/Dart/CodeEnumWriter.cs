@@ -18,7 +18,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any())
             return;
-        DartReservedNamesProvider reservedNamesProvider = new DartReservedNamesProvider();
         var enumName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
@@ -30,10 +29,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         {
             conventions.WriteShortDescription(option, writer);
             var correctedName = conventions.getCorrectedEnumName(option.Name);
-            if (reservedNamesProvider.ReservedNames.Contains(correctedName) || IllegalEnumValue(correctedName))
-            {
-                correctedName += "Escaped";
-            }
             if (!usedNames.Add(correctedName))
             {
                 correctedName = option.Name;

@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using Kiota.Builder.Refiners;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Dart;
@@ -306,12 +307,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
                 {
                     defaultValue = conventions.getCorrectedEnumName(defaultValue.Trim('"')).CleanupSymbolName();
+                    if (new DartReservedNamesProvider().ReservedNames.Contains(defaultValue))
+                    {
+                        defaultValue = defaultValue + "Escaped";
+                    }
                     defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
                 }
                 else if (propWithDefault.Type is CodeType propertyType2 && propertyType2.Name.Equals("String", StringComparison.Ordinal))
                 {
-                    defaultValue = conventions.getCorrectedEnumName(defaultValue.Trim('"'));
+                    defaultValue = defaultValue.Trim('"');
                     defaultValue = $"'{defaultValue}'";
+                }
+                else if (propWithDefault.Type is CodeType propertyType3 && propertyType3.Name.Equals("Boolean", StringComparison.Ordinal))
+                {
+                    defaultValue = defaultValue.Trim('"');
+                    defaultValue = $"{defaultValue}";
                 }
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue}{separator}");
             }

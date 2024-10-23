@@ -110,7 +110,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddAsyncSuffix(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
-            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", [typeof(CodeEnumOption)]);
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped");
             ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,

@@ -61,6 +61,7 @@ public class DartReservedNamesProvider : IReservedNamesProvider
         "set",
         "show",
         "static",
+        "stream",
         "string",
         "super",
         "switch",
