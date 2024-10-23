@@ -702,17 +702,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             openingBracket = ";";
         }
 
-        var optionalParamOpen = methodName.EqualsIgnoreCase("getAsync") ? "[" : "";
-        var optionalParamClose = methodName.EqualsIgnoreCase("getAsync") ? "]" : "";
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
             var nullableParameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer)
                                                           .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ?
-                                                                                        GetParameterSignatureWithNullableRefType(p, code) :
+                                                                                        $"[{GetParameterSignatureWithNullableRefType(p, code)}]" :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnTypeWithNullable}{methodName}({optionalParamOpen}{nullableParameters}{optionalParamClose}){baseSuffix}{async} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix}{async} {{");
         }
         else if (parentClass.IsOfKind(CodeClassKind.Model) && code.IsOfKind(CodeMethodKind.Custom) && code.Name.EqualsIgnoreCase("copyWith"))
         {
@@ -724,7 +722,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({optionalParamOpen}{parameters}{optionalParamClose}{closingparenthesis}{baseSuffix}{async} {openingBracket}");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}{closingparenthesis}{baseSuffix}{async} {openingBracket}");
         }
     }
 
