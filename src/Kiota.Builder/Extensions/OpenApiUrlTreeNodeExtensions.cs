@@ -261,15 +261,18 @@ public static partial class OpenApiUrlTreeNodeExtensions
             yield return new KeyValuePair<string, HashSet<string>>(currentNode.GetUrlTemplate(null, false, false).TrimStart('/'), operations.Select(static x => x.Key.ToString().ToUpperInvariant()).ToHashSet(StringComparer.OrdinalIgnoreCase));
         }
     }
-    [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 500)]
+    [GeneratedRegex(@"{[^}]+}", RegexOptions.Singleline, 500)]
     private static partial Regex pathParamMatcher();
     private static string SanitizePathParameterNamesForUrlTemplate(string original, HashSet<string> reservedParameterNames)
     {
         if (string.IsNullOrEmpty(original) || !original.Contains('{', StringComparison.OrdinalIgnoreCase)) return original;
-        var parameters = pathParamMatcher().Matches(original);
-        foreach (var value in parameters.Select(x => x.Groups["paramname"].Value))
-            original = original.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
-        return original;
+        var updated = original;
+        foreach (var match in pathParamMatcher().EnumerateMatches(original))
+        {
+            var value = original[(match.Index + 1)..(match.Index + match.Length - 1)];// ignore the { and }
+            updated = updated.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
+        }
+        return updated;
     }
     public static string SanitizeParameterNameForUrlTemplate(this string original)
     {
