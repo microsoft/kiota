@@ -55,13 +55,14 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 false);
-            CorrectCommonNames(generatedCode);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Dart);
+            CorrectCommonNames(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+
             AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
