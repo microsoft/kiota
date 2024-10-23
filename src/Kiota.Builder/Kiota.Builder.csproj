@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.22" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="0.5.5-preview" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.22" />
-    <PackageReference Include="Microsoft.Plugins.Manifest" Version="1.0.0-preview2" />
+    <PackageReference Include="Microsoft.Plugins.Manifest" Version="1.0.0-preview3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.11.20">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
