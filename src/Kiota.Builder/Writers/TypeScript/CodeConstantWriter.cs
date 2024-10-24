@@ -92,8 +92,20 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                     .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                     .ToArray() is not { Length: > 0 } executorMethods)
             return;
-        var uriTemplateConstant = codeElement.Parent is CodeFile parentFile && parentFile.Constants.FirstOrDefault(static x => x.Kind is CodeConstantKind.UriTemplate) is CodeConstant tplct ?
-            tplct : throw new InvalidOperationException("Couldn't find the associated uri template constant for the requests metadata constant");
+        CodeConstant? uriTemplateConstant = null;
+        if (codeElement.Parent is CodeFile parentFile)
+        {
+            var uriTemplates = parentFile.Constants.Where(static x => x.Kind is CodeConstantKind.UriTemplate).ToArray();
+            var uriTemplate = uriTemplates.Length == 1
+                                ? uriTemplates.First()
+                                : uriTemplates.FirstOrDefault(x => x.Name == codeElement.UriTemplate);
+            if (uriTemplate is CodeConstant tplct)
+            {
+                uriTemplateConstant = tplct;
+            }
+        }
+        if (uriTemplateConstant == null)
+            throw new InvalidOperationException("Couldn't find the associated uri template constant for the requests metadata constant");
         writer.StartBlock($"export const {codeElement.Name.ToFirstCharacterUpperCase()}: RequestsMetadata = {{");
         foreach (var executorMethod in executorMethods)
         {
