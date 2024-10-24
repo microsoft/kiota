@@ -39,9 +39,4 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
     }
-
-    private bool IllegalEnumValue(string correctedName)
-    {
-        return correctedName.EqualsIgnoreCase("string") || correctedName.EqualsIgnoreCase("index");
-    }
 }

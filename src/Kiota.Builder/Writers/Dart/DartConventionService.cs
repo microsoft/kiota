@@ -355,8 +355,15 @@ public class DartConventionService : CommonLanguageConventionService
     public string getCorrectedEnumName(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
+        var correctedName = "";
         if (name.Contains('_', StringComparison.Ordinal))
-            return name.ToLowerInvariant().ToCamelCase('_');
-        return name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
+        {
+            correctedName = name.ToLowerInvariant().ToCamelCase('_');
+        }
+        else
+        {
+            correctedName = name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
+        }
+        return correctedName.Equals("index", StringComparison.Ordinal) ? correctedName + "Escaped" : correctedName;
     }
 }

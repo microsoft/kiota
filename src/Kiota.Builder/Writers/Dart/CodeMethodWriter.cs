@@ -156,6 +156,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {
         writer.WriteLine($"var {ResultVarName} = {parentClass.Name.ToFirstCharacterUpperCase()}();");
+
+        if (parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => x.Type is CodeType cType && cType.TypeDefinition is CodeClass && !cType.IsCollection).Any())
+        {
+            var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+            discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
+        }
         var includeElse = false;
         foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .OrderBy(static x => x, CodePropertyTypeForwardComparer)
@@ -173,7 +180,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName}) {{");
+                    var check = propertyType.IsCollection ? ".isNotEmpty" : $" is {typeName}";
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
                     writer.IncreaseIndent();
                     writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterLowerCase()} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)};");
                     writer.CloseBlock();
@@ -229,15 +237,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
-        if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
         {
             var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
             discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
             writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
-        }
-
-        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
+        }
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
