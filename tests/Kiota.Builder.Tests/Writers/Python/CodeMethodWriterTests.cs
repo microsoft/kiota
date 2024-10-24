@@ -25,7 +25,6 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "param_name";
-    private readonly CodeMethodWriter _codeMethodWriter;
 
 
     public CodeMethodWriterTests()
@@ -34,7 +33,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        _codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), ClientNamespaceName, false);
 
     }
     private void setup(bool withInheritance = false)
