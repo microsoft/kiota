@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
@@ -25,12 +25,15 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "param_name";
+
+
     public CodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+
     }
     private void setup(bool withInheritance = false)
     {
@@ -791,6 +794,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return fields", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
+
     [Fact]
     public void WritesUnionDeSerializerBody()
     {
@@ -814,6 +818,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if self.complex_type1_value:", result);
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
+    }
+    [Theory]
+    [InlineData(true, false, false, "string", "")]
+    [InlineData(false, true, false, "Stream", " \"Stream\",")]
+    [InlineData(false, false, true, "SomeEnum", " \"SomeEnum\",")]
+    [InlineData(false, false, false, "int", " int,")]
+    [InlineData(false, false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, string returnType, string expected)
+    {
+        var mockConventionService = new Mock<PythonConventionService>();
+
+        var codeMethodWriter = new CodeMethodWriter(
+            mockConventionService.Object,
+            "TestNamespace",
+            false // usesBackingStore
+        );
+
+        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType);
+
+
+        Assert.Equal(expected, result);
     }
     [Fact]
     public void WritesIntersectionDeSerializerBody()
