@@ -248,7 +248,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-        else if (parentClass.IsErrorDefinition && parentClass.StartBlock.Implements.Where(static x => x.Name.Equals("AdditionalDataHolder", StringComparison.Ordinal)).Any())
+        else if (parentClass.IsErrorDefinition && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
         {
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(additionalData: {{}});");
         }
