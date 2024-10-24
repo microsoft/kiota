@@ -1,7 +1,8 @@
 import 'package:kiota_abstractions/kiota_abstractions.dart';
 import 'package:kiota_http/kiota_http.dart';
 import 'package:test/test.dart';
-import 'src/api_client.dart';
+import '../src/api_client.dart';
+import '../src/models/error.dart';
 
 void main() {
   group('apiclient', () {
@@ -14,8 +15,10 @@ void main() {
       );
       requestAdapter.baseUrl = "http://localhost:1080";
       var client = ApiClient(requestAdapter);
-
-      expect(() => client.api.v1.topics.getAsync(), throwsException);
+      expect(
+          () => client.api.v1.topics.getAsync(),
+          throwsA(predicate(
+              (e) => e is Error && e.id == 'my-sample-id' && e.code == 123)));
     });
   });
 }

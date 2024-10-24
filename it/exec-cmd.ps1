@@ -202,7 +202,7 @@ elseif ($language -eq "python") {
         Pop-Location
     }
 }
-if ($language -eq "dart") {
+elseif ($language -eq "dart") {
     if ($mockServerTest) {
         Push-Location $itTestPath
 
