@@ -1252,9 +1252,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
         Assert.Contains("return", serializerFunctionStr);
-        Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"number\":", serializerFunctionStr);
-        Assert.Contains("case \"string\":", serializerFunctionStr);
+        Assert.Contains("switch (true)", serializerFunctionStr);
+        Assert.Contains("case typeof primitives === \"number\":", serializerFunctionStr);
+        Assert.Contains("case typeof primitives === \"string\":", serializerFunctionStr);
         Assert.Contains("break", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
