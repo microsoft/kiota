@@ -37,13 +37,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition)
+            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
             {
                 writer.DecreaseIndent();
             }
             else if (isConstructor && parentClass.IsErrorDefinition)
             {
-                writer.CloseBlock("});");
+                if (parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+                {
+                    writer.CloseBlock("}) {additionalData = {};}");
+                }
+                else
+                {
+                    writer.CloseBlock("});");
+                }
             }
             else
             {
@@ -248,7 +255,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-        else if (parentClass.IsErrorDefinition && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any())
+        else if (parentClass.IsErrorDefinition && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
             writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(additionalData: {{}});");
         }
@@ -278,7 +285,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterLowerCase()}['baseurl'] = {requestAdapterPropertyName}.baseUrl;");
         }
         if (backingStoreParameter != null)
-            writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
+        {
+            writer.StartBlock($"if ({backingStoreParameter.Name} != null) {{");
+            writer.WriteLine($"{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
+            writer.CloseBlock();
+        }
     }
     private static void WriteSerializationRegistration(HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)
     {
@@ -296,7 +307,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var separator = ',';
             var propWithDefaults = parentClass.Properties
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.BackingStore))
                                         // do not apply the default value if the type is composed as the default value may not necessarily which type to use
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
@@ -356,13 +367,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             writer.WriteLine($"super.{prop},");
         }
-        foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
+        if (!parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
-            var required = prop.Type.IsNullable ? "" : "required ";
-
-            if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
+            foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
             {
-                writer.WriteLine($"{required}this.{prop.Name.ToFirstCharacterLowerCase()},");
+                var required = prop.Type.IsNullable ? "" : "required ";
+
+                if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
+                {
+                    writer.WriteLine($"{required}this.{prop.Name.ToFirstCharacterLowerCase()},");
+                }
             }
         }
     }
@@ -685,7 +699,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition)
+        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
             return " : ";
         }
@@ -823,7 +837,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.Name.Equals("clone", StringComparison.OrdinalIgnoreCase))
         {
             var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
-            String? argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer())
+            var argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer())
             .Select(static x => x.Type.Parent is CodeParameter param && param.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)
                     ? x.Name :
                     x.Optional ? "null" : x.DefaultValue)
@@ -832,20 +846,44 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         if (codeElement.Name.Equals("copyWith", StringComparison.Ordinal))
         {
-            writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(");
+            var hasBackingStore = parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any();
+            var resultName = hasBackingStore ? "result" : string.Empty;
+
+            if (hasBackingStore)
+            {
+                writer.WriteLine($"var {resultName} = {parentClass.Name.ToFirstCharacterUpperCase()}(");
+            }
+            else
+            {
+                writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(");
+            }
             foreach (string prop in DartConventionService.ErrorClassProperties)
             {
                 writer.WriteLine($"{prop} : {prop} ?? this.{prop}, ");
             }
+            if (hasBackingStore)
+            {
+                writer.WriteLine(");");
+            }
             foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
             {
                 var propertyname = prop.Name.ToFirstCharacterLowerCase();
+                var separator = hasBackingStore ? "=" : ":";
+                var ending = hasBackingStore ? ";" : ",";
+                var resultPropertyName = string.IsNullOrEmpty(resultName) ? propertyname : $"{resultName}.{propertyname}";
                 if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
                 {
-                    writer.WriteLine($"{propertyname} : {propertyname} ?? this.{propertyname}, ");
+                    writer.WriteLine($"{resultPropertyName} {separator} {propertyname} ?? this.{propertyname}{ending} ");
                 }
             }
-            writer.WriteLine($");");
+            if (hasBackingStore)
+            {
+                writer.WriteLine($"return {resultName}; ");
+            }
+            else
+            {
+                writer.WriteLine($");");
+            }
         }
     }
 }

@@ -222,9 +222,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.ReturnType.Name = "Map<String, void Function(ParseNode)>";
             currentMethod.Name = "getFieldDeserializers";
         }
-        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor, CodeMethodKind.ClientConstructor))
         {
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                 .Where(x => x.Type.Name.StartsWith('I'))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
@@ -279,7 +279,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase) || "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
     public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
     {

@@ -37,7 +37,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             throw new InvalidOperationException("The parent of a property should be a class");
 
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
-        var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "_" : string.Empty;
         var defaultValue = string.Empty;
         var getterModifier = string.Empty;
 
@@ -64,13 +63,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 var backingStoreKey = codeElement.WireName;
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\");");
+                writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterLowerCase()}.get<{propertyType}>('{backingStoreKey}')!;");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 writer.WriteLine();
-                writer.WriteLine($"set {setterAccessModifier}{codeElement.Name.ToCamelCase()}({propertyType} value) {{");
+                writer.WriteLine($"set {codeElement.Name.ToCamelCase()}({propertyType} value) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(\"{backingStoreKey}\", value);");
+                writer.WriteLine($"{backingStoreProperty.Name.ToFirstCharacterLowerCase()}.set('{backingStoreKey}', value);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
@@ -86,6 +85,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.AdditionalData:
                 if (parentClass.StartBlock.Implements.Where(static x => x.Name.Equals("AdditionalDataHolder", StringComparison.Ordinal)).Any())
                     writer.WriteLine("@override");
+                goto default;
+            case CodePropertyKind.BackingStore:
+                defaultValue = " = BackingStoreFactorySingleton.instance.createBackingStore()";
                 goto default;
             default:
                 writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
