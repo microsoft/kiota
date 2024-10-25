@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.13.0" />
+    <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.13.1" />
     <PackageReference Include="Microsoft.Kiota.Authentication.Azure" Version="1.13.1" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.13.1" />
