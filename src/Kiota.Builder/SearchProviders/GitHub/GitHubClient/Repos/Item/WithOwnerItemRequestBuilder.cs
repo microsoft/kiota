@@ -12,7 +12,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item
     /// <summary>
     /// Builds and executes requests for operations under \repos\{owner}
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class WithOwnerItemRequestBuilder : BaseRequestBuilder
     {
         /// <summary>Gets an item from the Kiota.Builder.SearchProviders.GitHub.GitHubClient.repos.item.item collection</summary>
