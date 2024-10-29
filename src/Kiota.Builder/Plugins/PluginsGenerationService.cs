@@ -10,10 +10,12 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
+using Microsoft.Plugins.Manifest.OpenApiRules;
 
 namespace Kiota.Builder.Plugins;
 
@@ -42,10 +44,27 @@ public partial class PluginsGenerationService
     private const string DescriptionPathSuffix = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        // 1. cleanup any namings to be used later on.
+
+        //1. validate openapi file
+        var ruleSet = new Microsoft.OpenApi.Validations.ValidationRuleSet
+        {
+            OpenApiServerUrlRule.ServerUrlMustBeHttps,
+            OpenApiCombinedAuthFlowRule.PathsCanOnlyHaveOneSecuritySchemePerOperation(OAIDocument.SecurityRequirements),
+            OpenApiRequestBodySchemaRule.RequestBodySchemaObjectsMustNeverBeNested,
+            OpenApiApiKeyBearerRule.ApiKeyNotSupportedOnlyBearerPlusHttp(OAIDocument.SecurityRequirements)
+        };
+        var errors = OAIDocument.Validate(ruleSet)?.ToArray();
+        if (errors != null && errors.Length != 0)
+        {
+            var message = string.Join(Environment.NewLine, errors.Select(e => $"{e.Pointer}: {e.Message}"));
+            throw new InvalidOperationException($"OpenApi document validation failed with errors: {message}");
+        }
+
+        // 2. cleanup any namings to be used later on.
         Configuration.ClientClassName =
             PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty); //drop any special characters
-        // 2. write the OpenApi description
+
+        // 3. write the OpenApi description
         var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         var directory = Path.GetDirectoryName(descriptionFullPath);
@@ -61,7 +80,7 @@ public partial class PluginsGenerationService
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
-        // 3. write the plugins
+        // 4. write the plugins
 
         foreach (var pluginType in Configuration.PluginTypes)
         {
