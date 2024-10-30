@@ -8,7 +8,7 @@ public class DartWriter : LanguageWriter
         PathSegmenter = new DartPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new DartConventionService();
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName, (DartPathSegmenter)PathSegmenter));
-        AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
