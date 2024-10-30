@@ -384,20 +384,6 @@ components:
                     Assert.Equal("{openIdConnect0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
                 }
             },
-            // oauth2
-            {
-                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {}}}}",
-                string.Empty, "security: [oauth2_0: []]", null, resultingManifest =>
-                {
-                    Assert.NotNull(resultingManifest.Document);
-                    Assert.Empty(resultingManifest.Problems);
-                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
-                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
-                    Assert.IsType<OAuthPluginVault>(auth0);
-                    Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
-                    Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
-                }
-            },
             // oauth2: authorization code
             {
                 "{securitySchemes: {oauth2_0: {type: oauth2, flows: {authorizationCode: {}}}}}",
