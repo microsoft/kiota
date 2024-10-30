@@ -120,10 +120,8 @@ paths:
     }
 
     [Theory]
-    [InlineData("client", "client")]
-    [InlineData("Budget Tracker", "BudgetTracker")]//drop the space
-    [InlineData("My-Super complex() %@#$& Name", "MySupercomplexName")]//drop the space and special characters
-    public async Task GenerateManifestAsyncFailsOnInvalidOpenApiFile(string inputPluginName, string expectedPluginName)
+    [InlineData("client")]
+    public async Task GenerateManifestAsyncFailsOnInvalidOpenApiFile(string inputPluginName)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
 info:
