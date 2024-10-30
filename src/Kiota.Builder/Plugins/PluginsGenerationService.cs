@@ -414,12 +414,13 @@ public partial class PluginsGenerationService
             {
                 ReferenceId = $"{{{name}_REGISTRATION_ID}}"
             },
-            SecuritySchemeType.OAuth2 when securityScheme.Flows.AuthorizationCode != null => new OAuthPluginVault
+            // Only AuthorizationCode flow is supported
+            SecuritySchemeType.OAuth2 when securityScheme.Flows?.AuthorizationCode != null => new OAuthPluginVault
             {
                 ReferenceId = $"{{{name}_CONFIGURATION_ID}}"
             },
             _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
-                $"Unsupported security scheme type '{securityScheme.Type}'.")
+                  $"Unsupported security scheme type '{securityScheme.Type}'.")
         };
     }
 
