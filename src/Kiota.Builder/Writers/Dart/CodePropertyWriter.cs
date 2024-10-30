@@ -63,13 +63,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 var backingStoreKey = codeElement.WireName;
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterLowerCase()}.get<{propertyType}>('{backingStoreKey}')!;");
+                writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}')!;");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 writer.WriteLine();
                 writer.WriteLine($"set {codeElement.Name.ToCamelCase()}({propertyType} value) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{backingStoreProperty.Name.ToFirstCharacterLowerCase()}.set('{backingStoreKey}', value);");
+                writer.WriteLine($"{backingStoreProperty.Name}.set('{backingStoreKey}', value);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
@@ -90,7 +90,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 defaultValue = " = BackingStoreFactorySingleton.instance.createBackingStore()";
                 goto default;
             default:
-                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name}{defaultValue};");
                 break;
         }
     }

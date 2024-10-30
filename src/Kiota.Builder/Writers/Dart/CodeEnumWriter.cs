@@ -18,7 +18,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any())
             return;
-        var enumName = codeElement.Name.ToFirstCharacterUpperCase();
+        var enumName = codeElement.Name;
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"enum {enumName} {{");
