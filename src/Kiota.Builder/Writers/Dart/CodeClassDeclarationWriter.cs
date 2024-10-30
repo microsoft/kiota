@@ -57,7 +57,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
 
         conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
-        writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}{implements} {{");
+        writer.StartBlock($"class {codeElement.Name}{derivation}{implements} {{");
     }
 
     private String getAlias(string alias)

@@ -53,7 +53,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             var defaultConfiguration = new GenerationConfiguration();
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
-                static s => s,
+                static s => s.ToFirstCharacterLowerCase(),
                 false);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
@@ -242,7 +242,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "List<RequestOption>()";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterLowerCase()}()";
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
             currentProperty.Type.Name = "RequestAdapter";
@@ -261,6 +261,8 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.Type.Name = "Map<String, Object?>";
             currentProperty.DefaultValue = "{}";
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
+
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
         {
@@ -272,6 +274,10 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.Custom)) 
+        {
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
