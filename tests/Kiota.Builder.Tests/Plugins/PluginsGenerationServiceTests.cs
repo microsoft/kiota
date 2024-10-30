@@ -398,6 +398,21 @@ components:
                     Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
+            // oauth2: implicit
+            {
+                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {implicit: {}}}}}",
+                string.Empty, "security: [oauth2_0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<OAuthPluginVault>(auth0);
+                    Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
+                    Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
+                }
+            },
+
             // should be anonymous
             {
                 "{}", string.Empty, "security: [invalid: []]", null, resultingManifest =>
