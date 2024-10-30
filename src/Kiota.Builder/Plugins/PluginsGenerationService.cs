@@ -68,9 +68,10 @@ public partial class PluginsGenerationService
         var ruleSet = new Microsoft.OpenApi.Validations.ValidationRuleSet
         {
             OpenApiServerUrlRule.ServerUrlMustBeHttps,
+            OpenApiAuthFlowRule.OnlyAuthorizationCodeFlowAllowed(OAIDocument.SecurityRequirements),
             OpenApiCombinedAuthFlowRule.PathsCanOnlyHaveOneSecuritySchemePerOperation(OAIDocument.SecurityRequirements),
             OpenApiRequestBodySchemaRule.RequestBodySchemaObjectsMustNeverBeNested,
-            OpenApiApiKeyBearerRule.ApiKeyNotSupportedOnlyBearerPlusHttp(OAIDocument.SecurityRequirements)
+
         };
         var errors = OAIDocument.Validate(ruleSet)?.ToArray();
         if (errors != null && errors.Length != 0)

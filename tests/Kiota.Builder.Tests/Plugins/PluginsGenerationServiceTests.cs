@@ -46,7 +46,7 @@ info:
   version: 1.0
   description: test description we've created
 servers:
-  - url: http://localhost/
+  - url: https://localhost/
     description: There's no place like home
 paths:
   /test:
@@ -118,6 +118,105 @@ paths:
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
         Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);// description is pulled from info   
     }
+
+    [Theory]
+    [InlineData("client", "client")]
+    [InlineData("Budget Tracker", "BudgetTracker")]//drop the space
+    [InlineData("My-Super complex() %@#$& Name", "MySupercomplexName")]//drop the space and special characters
+    public async Task GenerateManifestAsyncFailsOnInvalidOpenApiFile(string inputPluginName, string expectedPluginName)
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+  description: test description we've created
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      summary: summary for test path
+      description: description for test path
+      security:
+        - OAuth2: [read]
+          OpenID: []
+      responses:
+        '200':
+          description: test
+  /test/{id}:
+    get:
+      summary: Summary for test path with id that is longer than 50 characters 
+      description: description for test path with id
+      operationId: test.WithId
+      security:
+        - BasicAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: test
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+    OpenID:
+      type: openIdConnect
+      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+
+    OAuth2:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://example.com/api/oauth/dialog
+          scopes:
+            write: modify pets in your account
+            read: read your pets";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
+            ClientClassName = inputPluginName,
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await pluginsGenerationService.GenerateManifestAsync());
+        Assert.Contains("OpenApi document validation failed", exception.Message);
+        Assert.Contains("Server URL must use HTTPS protocol", exception.Message);
+        Assert.Contains("Only Authorization Code flow is allowed for OAuth2", exception.Message);
+        Assert.Contains("Operation cannot have more than one security scheme", exception.Message);
+    }
+
     private const string ManifestFileName = "client-apiplugin.json";
     private const string OpenAIPluginFileName = "openai-plugins.json";
     private const string OpenApiFileName = "client-openapi.yml";
@@ -130,7 +229,7 @@ info:
   title: test
   version: 1.0
 servers:
-  - url: http://localhost/
+  - url: https://localhost/
     description: There's no place like home
 paths:
   /test:
@@ -165,7 +264,7 @@ info:
   version: 1.0
 x-test-root-extension: test
 servers:
-  - url: http://localhost/
+  - url: https://localhost/
     description: There's no place like home
 paths:
   /test:
