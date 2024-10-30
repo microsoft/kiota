@@ -398,9 +398,9 @@ components:
                     Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
-            // oauth2: implicit
+            // oauth2: authorization code
             {
-                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {implicit: {}}}}}",
+                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {authorizationCode: {}}}}}",
                 string.Empty, "security: [oauth2_0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
