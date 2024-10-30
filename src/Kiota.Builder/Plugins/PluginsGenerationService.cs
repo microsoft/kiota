@@ -414,7 +414,7 @@ public partial class PluginsGenerationService
             {
                 ReferenceId = $"{{{name}_REGISTRATION_ID}}"
             },
-            SecuritySchemeType.OAuth2 => new OAuthPluginVault
+            SecuritySchemeType.OAuth2 when securityScheme.Flows.AuthorizationCode != null => new OAuthPluginVault
             {
                 ReferenceId = $"{{{name}_CONFIGURATION_ID}}"
             },
