@@ -433,7 +433,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
         this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' : (this.documentationUrl ? 'documentationUrl' : '');
-        this.iconPath = selected ? OpenApiTreeNode.selectedSet : undefined;
+        this.iconPath = selected ? OpenApiTreeNode.selectedSet : ' ';
         if (clientNameOrPluginName) {
             this.label = clientNameOrPluginName;
             this.contextValue = 'clientNameOrPluginName';
