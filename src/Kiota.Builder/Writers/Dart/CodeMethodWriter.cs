@@ -330,15 +330,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     }
                     defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
                 }
-                else if (propWithDefault.Type is CodeType propertyType2 && propertyType2.Name.Equals("String", StringComparison.Ordinal))
+                else if (propWithDefault.Type is CodeType propertyType2)
                 {
                     defaultValue = defaultValue.Trim('"');
-                    defaultValue = $"'{defaultValue}'";
-                }
-                else if (propWithDefault.Type is CodeType propertyType3 && propertyType3.Name.Equals("Boolean", StringComparison.Ordinal))
-                {
-                    defaultValue = defaultValue.Trim('"');
-                    defaultValue = $"{defaultValue}";
+                    if (propertyType2.Name.Equals("String", StringComparison.Ordinal))
+                    {
+                        defaultValue = $"'{defaultValue}'";
+                    }
                 }
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue}{separator}");
             }
@@ -519,7 +517,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate)?.Name} : {GetPropertyCall(urlTemplateProperty, "string.Empty")}, {currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters)?.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+        writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {urlTemplateProperty.Name} : {urlTemplateValue}, {urlTemplateParamsProperty.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null && requestParams.requestConfiguration.Type is CodeType paramType)
         {
@@ -629,10 +628,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 writer.IncreaseIndent();
             }
             var firstPropertyName = complexProperties.First().Name.ToFirstCharacterLowerCase();
-            var propertiesNames = complexProperties.Skip(0)
+            var propertiesNames = complexProperties.Skip(1).Any() ? complexProperties.Skip(1)
                                 .Select(static x => x.Name.ToFirstCharacterLowerCase())
                                 .OrderBy(static x => x)
-                                .Aggregate(static (x, y) => $"{x}, {y}");
+                                .Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
             var propertiesList = string.IsNullOrEmpty(propertiesNames) ? "" : $", [{propertiesNames}]";
             writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.First().Type, method)}(null, {firstPropertyName}{propertiesList});");
             if (includeElse)
@@ -745,7 +744,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                                                                         $"[{GetParameterSignatureWithNullableRefType(p, code)}]" :
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix}{async} {{");
+            writer.WriteLine($"{staticModifier}{completeReturnTypeWithNullable}{conventions.GetAccessModifier(code.Access)}{methodName}({nullableParameters}){baseSuffix}{async} {{");
         }
         else if (parentClass.IsOfKind(CodeClassKind.Model) && code.IsOfKind(CodeMethodKind.Custom) && code.Name.EqualsIgnoreCase("copyWith"))
         {
@@ -753,11 +752,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             var ownParameters = string.Join(", ", parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)
                                 .Where(p => !conventions.ErrorClassPropertyExistsInSuperClass(p))
                                 .Select(p => $"{GetPrefix(p)}{conventions.TranslateType(p.Type)}{getSuffix(p)}? {p.Name.ToFirstCharacterLowerCase()}"));
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({openingBracket}{parentParameters}{ownParameters} }}){{");
+            writer.WriteLine($"{staticModifier}{completeReturnType}{conventions.GetAccessModifier(code.Access)}{methodName}({openingBracket}{parentParameters}{ownParameters} }}){{");
         }
         else
         {
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{completeReturnType}{methodName}({parameters}{closingparenthesis}{baseSuffix}{async} {openingBracket}");
+            writer.WriteLine($"{staticModifier}{completeReturnType}{conventions.GetAccessModifier(code.Access)}{methodName}({parameters}{closingparenthesis}{baseSuffix}{async} {openingBracket}");
         }
     }
 
