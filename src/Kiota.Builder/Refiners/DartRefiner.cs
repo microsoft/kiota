@@ -100,7 +100,14 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 else
                     return s;
             });
-
+            ReplacePropertyNames(generatedCode,
+                [
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
+                ],
+                static s => s.ToCamelCase(UnderscoreArray));
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
