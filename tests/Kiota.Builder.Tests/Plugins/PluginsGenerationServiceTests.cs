@@ -508,6 +508,17 @@ components:
                     });
                 }
             },
+            // oauth2: Implicit flow
+            {
+                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {implicit: {}}}}}",
+                string.Empty, "security: [oauth2_0: []]", null, async (action) =>
+                {
+                    await Assert.ThrowsAsync<Kiota.Builder.Plugins.UnsupportedSecuritySchemeException>(async () =>
+                    {
+                        await action();
+                    });
+                }
+            },
         };
     }
 
