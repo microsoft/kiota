@@ -417,7 +417,6 @@ function createKiotaOpenApiNode(
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
-    private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
 
     constructor(
         public readonly path: string,
@@ -434,7 +433,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         super(label, collapsibleState);
         this.id = `${path}_${filterTokens.join('_')}`; // so the collapsed state is NOT persisted between filter changes
         this.contextValue = label === pathSeparator + " (" + apiTitle + ")" ? 'apiTitle' : (this.documentationUrl ? 'documentationUrl' : '');
-        this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
+        this.iconPath = selected ? OpenApiTreeNode.selectedSet : ' ';
         if (clientNameOrPluginName) {
             this.label = clientNameOrPluginName;
             this.contextValue = 'clientNameOrPluginName';

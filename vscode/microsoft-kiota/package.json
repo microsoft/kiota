@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "4c6357e0-daf9-42b5-bdfb-67878f8957b5",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.94.0"
+    "vscode": "^1.95.0"
   },
   "license": "MIT",
   "categories": [
@@ -466,17 +466,17 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.9.0",
-    "@types/adm-zip": "^0.5.5",
+    "@stylistic/eslint-plugin-ts": "^2.10.0",
+    "@types/adm-zip": "^0.5.6",
     "@types/mocha": "^10.0.9",
     "@types/node": "22.x",
-    "@types/vscode": "^1.94.0",
-    "@typescript-eslint/eslint-plugin": "^8.11.0",
-    "@typescript-eslint/parser": "^8.11.0",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.12.2",
+    "@typescript-eslint/parser": "^8.12.2",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.13.0",
     "glob": "^11.0.0",
-    "mocha": "^10.7.3",
+    "mocha": "^10.8.2",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.3",
     "webpack": "^5.95.0",
