@@ -19,8 +19,8 @@
   "prettier": "./.prettierrc.json",
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
-    "@stylistic/eslint-plugin-ts": "^2.9.0",
-    "@types/node": "^22.8.4",
+    "@stylistic/eslint-plugin-ts": "^2.10.0",
+    "@types/node": "^22.8.5",
     "@typescript-eslint/eslint-plugin": "^8.12.2",
     "@typescript-eslint/parser": "^8.12.2",
     "esbuild": "^0.24.0",
