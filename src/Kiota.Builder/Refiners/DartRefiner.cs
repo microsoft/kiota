@@ -199,6 +199,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentElement.Parent is CodeClass parentClass)
         {
             parentClass.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase());
+            parentClass.Name = parentClass.Name.ToFirstCharacterUpperCase();
         }
         else if (currentElement is CodeIndexer i)
         {
@@ -233,6 +234,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+        currentMethod.Parameters.ToList().ForEach(static x => x.Name = x.Name.ToFirstCharacterLowerCase());
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
@@ -274,9 +276,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        }
-        else if (currentProperty.IsOfKind(CodePropertyKind.Custom)) 
-        {
+        } else {
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
