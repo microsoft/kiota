@@ -466,7 +466,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.9.0",
+    "@stylistic/eslint-plugin-ts": "^2.10.0",
     "@types/adm-zip": "^0.5.6",
     "@types/mocha": "^10.0.9",
     "@types/node": "22.x",
