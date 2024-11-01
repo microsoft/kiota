@@ -226,9 +226,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         option.Name =  option.Name.ToLowerInvariant();
                     }
-                    Console.Write(e.Name + ':');
                     option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
-                    Console.WriteLine(option.Name);
                 }
             }
         }
