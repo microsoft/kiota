@@ -61,7 +61,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
-                var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : $" ?? {codeElement.DefaultValue}";
+                var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? {}" : $" ?? {codeElement.DefaultValue}";
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterLowerCase()}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
