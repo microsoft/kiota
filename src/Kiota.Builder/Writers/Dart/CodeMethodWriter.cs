@@ -786,7 +786,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var nullablesegment = signatureSegments[0];
         if (!"void".Equals(nullablesegment, StringComparison.Ordinal))
         {
-            nullablesegment = nullablesegment + "?";
+            nullablesegment += "?";
         }
         return $"{nullablesegment} {string.Join(" ", signatureSegments[1..])}";
     }
