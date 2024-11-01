@@ -24,17 +24,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         writer.StartBlock($"enum {enumName} {{");
         var lastOption = codeElement.Options.Last();
 
-        HashSet<String> usedNames = new HashSet<string>();
+        HashSet<String> usedNames = [];
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);
-            var correctedName = conventions.getCorrectedEnumName(option.Name);
-            if (!usedNames.Add(correctedName))
-            {
-                correctedName = option.Name;
-                usedNames.Add(correctedName);
-            }
-            writer.WriteLine($"{correctedName}(\"{option.SerializationName}\"){(option == lastOption ? ";" : ",")}");
+            writer.WriteLine($"{option.Name}('{option.SerializationName}'){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
