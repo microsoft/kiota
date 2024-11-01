@@ -51,6 +51,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
+            CorrectCommonNames(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 static s => s.ToFirstCharacterLowerCase(),
@@ -60,7 +61,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Dart);
-            CorrectCommonNames(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
 
             AddQueryParameterExtractorMethod(generatedCode);
@@ -212,6 +212,27 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
         }
+        else if (currentElement is CodeEnum e)
+        {
+            foreach (var option in e.Options)
+            {
+                if (!string.IsNullOrEmpty(option.Name))
+                {
+                    if (option.Name.Contains('_', StringComparison.Ordinal))
+                    {
+                        option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
+                    }
+                    else if (option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)))
+                    {
+                        option.Name =  option.Name.ToLowerInvariant();
+                    }
+                    Console.Write(e.Name + ':');
+                    option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
+                    Console.WriteLine(option.Name);
+                }
+            }
+        }
+
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 
@@ -283,7 +304,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        } else {
+        }
+        else
+        {
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
