@@ -20,8 +20,6 @@
     // other options
 
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
 
 	}
