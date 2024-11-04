@@ -14,7 +14,7 @@ docutils==0.21.2 ; python_version >= '3.7'
 
 exceptiongroup==1.1.1 ; python_version < '3.11'
 
-flit==3.9.0
+flit==3.10.1
 
 flit-core==3.10.1 ; python_version >= '3.6'
 
