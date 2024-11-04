@@ -16,7 +16,7 @@ exceptiongroup==1.1.1 ; python_version < '3.11'
 
 flit==3.9.0
 
-flit-core==3.9.0 ; python_version >= '3.6'
+flit-core==3.10.1 ; python_version >= '3.6'
 
 idna==3.10
 
