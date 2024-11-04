@@ -60,7 +60,7 @@ public class DartConventionService : CommonLanguageConventionService
                     writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
+                writer.WriteLine($"{DocCommentPrefix} [{documentation.DocumentationLabel}]({documentation.DocumentationLink})");
         }
     }
 
@@ -87,7 +87,7 @@ public class DartConventionService : CommonLanguageConventionService
     public override string GetAccessModifier(AccessModifier access)
     {
         // Dart does not support access modifiers
-        return "";
+        return access == AccessModifier.Private ? "_" : string.Empty;
     }
 
 #pragma warning disable CA1822 // Method should be static

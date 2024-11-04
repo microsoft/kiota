@@ -462,6 +462,10 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
             }
         }
+        else if (currentElement is CodeMethod method && method.HasUrlTemplateOverride)
+        {
+            method.UrlTemplateOverride = method.UrlTemplateOverride.Replace("$", "\\$", StringComparison.Ordinal);
+        }
         CrawlTree(currentElement, EscapeStringValues);
     }
 
