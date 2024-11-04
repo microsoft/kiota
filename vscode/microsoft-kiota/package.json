@@ -466,7 +466,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.10.0",
+    "@stylistic/eslint-plugin-ts": "^2.10.1",
     "@types/adm-zip": "^0.5.6",
     "@types/mocha": "^10.0.9",
     "@types/node": "22.x",
@@ -474,7 +474,7 @@
     "@typescript-eslint/eslint-plugin": "^8.12.2",
     "@typescript-eslint/parser": "^8.12.2",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.13.0",
+    "eslint": "^9.14.0",
     "glob": "^11.0.0",
     "mocha": "^10.8.2",
     "ts-loader": "^9.5.1",
