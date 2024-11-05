@@ -1,4 +1,5 @@
 import TelemetryReporter from "@vscode/extension-telemetry";
+import * as path from "path";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
@@ -113,5 +114,53 @@ export class RegenerateService {
       return result;
     });
     this._openApiTreeProvider.resetInitialState();
+  }
+
+  async regenerateTeamsApp(workspaceJson: vscode.TextDocument, clientOrPluginKey: string) {
+    const workspaceDirectory = path.dirname(workspaceJson.fileName);
+    const workspaceParentDirectory = path.dirname(workspaceDirectory);
+    const shouldMakeTTKFunctionCall = await this.followsTTKFolderStructure(workspaceParentDirectory);
+
+    if (shouldMakeTTKFunctionCall) {
+      const workspaceJsonContent = workspaceJson.getText();
+      const workspaceJsonData = JSON.parse(workspaceJsonContent);
+
+      const outputPath = workspaceJsonData.plugins[clientOrPluginKey].outputPath;
+      const pathOfSpec = path.join(workspaceParentDirectory, outputPath, `${clientOrPluginKey.toLowerCase()}-openapi.yml`);
+      const pathPluginManifest = path.join(workspaceParentDirectory, outputPath, `${clientOrPluginKey.toLowerCase()}-apiplugin.json`);
+
+      await vscode.commands.executeCommand(
+        'fx-extension.createprojectfromkiota',
+        [
+          pathOfSpec,
+          pathPluginManifest,
+          {
+            lastCommand: "regenerate"
+          }
+        ]
+      );
+    }
+  }
+
+  private async followsTTKFolderStructure(workspaceParentDirectory: string): Promise<boolean> {
+    const filesAndFolders = await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspaceParentDirectory));
+
+    let hasAppPackage = false;
+    let hasReadme = false;
+    let hasTeamsAppYml = false;
+
+    filesAndFolders.forEach(([name, type]) => {
+      if (type === vscode.FileType.Directory && name === 'appPackage') {
+        hasAppPackage = true;
+      }
+      if (type === vscode.FileType.File && name.toLowerCase() === 'readme.md') {
+        hasReadme = true;
+      }
+      if (type === vscode.FileType.File && name === 'teamsapp.yml') {
+        hasTeamsAppYml = true;
+      }
+    });
+
+    return hasAppPackage && hasReadme && hasTeamsAppYml;
   }
 }
