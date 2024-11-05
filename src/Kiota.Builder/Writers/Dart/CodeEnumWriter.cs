@@ -22,9 +22,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"enum {enumName} {{");
-        var lastOption = codeElement.Options.Last();
 
-        foreach (var option in codeElement.Options)
+        var options = deduplicateOptions(codeElement.Options);
+        var lastOption = options.Last();
+
+        foreach (var option in options)
         {
             conventions.WriteShortDescription(option, writer);
             writer.WriteLine($"{option.Name}('{option.SerializationName}'){(option == lastOption ? ";" : ",")}");
@@ -32,4 +34,26 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
     }
+
+    /// <summary>
+    /// Prevents duplicate options by making sure the option names are unique
+    /// </summary>
+    /// <param name="options">All options for a single enum</param>
+    /// <returns>A unique set of options</returns>
+    private static HashSet<CodeEnumOption> deduplicateOptions(IEnumerable<CodeEnumOption> options)
+    {
+        HashSet<string> uniqueOptionNames = [];
+        HashSet<CodeEnumOption> uniqueOptions = [];
+        foreach (var option in options)
+        {
+            if (uniqueOptionNames.Add(option.Name))
+            {
+                uniqueOptions.Add(option);
+            }
+        }
+
+        return uniqueOptions;
+    }
 }
+
+
