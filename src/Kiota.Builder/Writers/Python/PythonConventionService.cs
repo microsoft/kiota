@@ -95,7 +95,7 @@ public class PythonConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
 #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("\"\"\"", "\\\"\\\"\\\"", StringComparison.OrdinalIgnoreCase);
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);

@@ -1592,6 +1592,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
+    public void EscapesCommentCharactersInDescription()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        parentClass.Kind = CodeClassKind.Custom;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop_without_default_value",
+            Kind = CodePropertyKind.Custom,
+            Documentation = new()
+            {
+                DescriptionTemplate = "This property has a description with comments \"\"\".",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This property has a description with comments \\\"\\\"\\\".", result);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
