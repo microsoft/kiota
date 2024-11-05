@@ -24,7 +24,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         writer.StartBlock($"enum {enumName} {{");
         var lastOption = codeElement.Options.Last();
 
-        HashSet<String> usedNames = [];
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option, writer);

@@ -218,19 +218,17 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 if (!string.IsNullOrEmpty(option.Name))
                 {
-                    if (option.Name.Contains('_', StringComparison.Ordinal))
+                    if (option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)))
                     {
-                        option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
+                        option.Name = option.Name.ToLowerInvariant();
                     }
-                    else if (option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)))
+                    else
                     {
-                        option.Name =  option.Name.ToLowerInvariant();
+                        option.Name = option.Name.ToCamelCase('_');
                     }
-                    option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
                 }
             }
         }
-
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 
