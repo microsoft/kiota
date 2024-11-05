@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId, treeViewId } from "../../constants";
+import { extensionId, KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
 import { getGenerationConfiguration, setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
@@ -57,6 +57,11 @@ export class RegenerateButtonCommand extends Command {
 
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings, selectedPaths);
+
+      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
+      if (workspaceJson && !workspaceJson.isDirty) {
+        await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
+      }
     }
     if (isPluginType(generationType)) {
       await regenerateService.regeneratePlugin(settings, selectedPaths);
