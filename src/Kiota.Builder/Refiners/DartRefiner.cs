@@ -224,7 +224,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     }
                     else
                     {
-                        option.Name = option.Name.ToCamelCase('_');
+                        option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
                     }
                 }
             }
