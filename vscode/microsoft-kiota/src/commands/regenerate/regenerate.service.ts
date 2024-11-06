@@ -144,23 +144,6 @@ export class RegenerateService {
 
   private async followsTTKFolderStructure(workspaceParentDirectory: string): Promise<boolean> {
     const filesAndFolders = await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspaceParentDirectory));
-
-    let hasAppPackage = false;
-    let hasReadme = false;
-    let hasTeamsAppYml = false;
-
-    filesAndFolders.forEach(([name, type]) => {
-      if (type === vscode.FileType.Directory && name === 'appPackage') {
-        hasAppPackage = true;
-      }
-      if (type === vscode.FileType.File && name.toLowerCase() === 'readme.md') {
-        hasReadme = true;
-      }
-      if (type === vscode.FileType.File && name === 'teamsapp.yml') {
-        hasTeamsAppYml = true;
-      }
-    });
-
-    return hasAppPackage && hasReadme && hasTeamsAppYml;
+    return !!filesAndFolders.find(([name, type]) => type === vscode.FileType.File && name === 'teamsapp.yml');
   }
 }
