@@ -76,7 +76,7 @@ public partial class PluginsGenerationService
         var errors = OAIDocument.Validate(ruleSet)?.ToArray();
         if (errors != null && errors.Length != 0)
         {
-            var message = string.Join(Environment.NewLine, errors.Select(e => $"{e.Pointer}: {e.Message}"));
+            var message = string.Join(Environment.NewLine, errors.Select(static e => $"{e.Pointer}: {e.Message}"));
             throw new InvalidOperationException($"OpenApi document validation failed with errors: {message}");
         }
 
