@@ -692,7 +692,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
-    private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
     // A helper method to check if a parameter is a multipart body
     private static bool IsMultipartBody(CodeParameter p) =>
@@ -840,7 +839,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {"Guid", (string.Empty, new CodeUsing {
                             Name = "Guid",
                             Declaration = new CodeType {
-                                Name = GuidPackageName,
+                                Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
                             IsErasable = true, // the import is used only for the type, not for the value
