@@ -216,17 +216,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             foreach (var option in e.Options)
             {
-                if (!string.IsNullOrEmpty(option.Name))
-                {
-                    if (option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)))
-                    {
-                        option.Name = option.Name.ToLowerInvariant();
-                    }
-                    else
-                    {
-                        option.Name = option.Name.ToLowerInvariant().ToCamelCase('_');
-                    }
-                }
+                option.Name = DartConventionService.getCorrectedEnumName(option.Name);
             }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));

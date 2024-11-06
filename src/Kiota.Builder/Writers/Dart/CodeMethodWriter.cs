@@ -321,7 +321,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 {
                     separator = ';';
                 }
-                if (propWithDefault.Type is CodeType propertyType2 && propertyType2.Name.Equals("String", StringComparison.Ordinal))
+                if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
+                {
+                    defaultValue = DartConventionService.getCorrectedEnumName(defaultValue.Trim('"')).CleanupSymbolName();
+                    if (new DartReservedNamesProvider().ReservedNames.Contains(defaultValue))
+                    {
+                        defaultValue += "Escaped";
+                    }
+                    defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
+                }
+                else if (propWithDefault.Type is CodeType propertyType2)
                 {
                     defaultValue = defaultValue.Trim('"');
                     if (propertyType2.Name.Equals("String", StringComparison.Ordinal))
@@ -329,7 +338,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                         defaultValue = $"'{defaultValue}'";
                     }
                 }
-                writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterLowerCase()} = {defaultValue}{separator}");
+                writer.WriteLine($"{propWithDefault.Name} = {defaultValue}{separator}");
             }
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
