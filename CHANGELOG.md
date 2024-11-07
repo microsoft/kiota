@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the type name for inherited inline models would be incorrect. [#5610](https://github.com/microsoft/kiota/issues/5610)
 - Fixes typing inconsistencies in generated code and libraries in Python [kiota-python#333](https://github.com/microsoft/kiota-python/issues/333)
 - Fixes generation of superfluous fields for Models with discriminator due to refiners adding the same properties to the same model [#4178](https://github.com/microsoft/kiota/issues/4178).
+- Fixes unsigned shim binary when installed as dotnet tool [#5650](https://github.com/microsoft/kiota/issues/5650).
 - Fixed python generation in scenarios with opening/closing tags for code comments. [#5636](https://github.com/microsoft/kiota/issues/5636)
 
 ## [1.19.1] - 2024-10-11
