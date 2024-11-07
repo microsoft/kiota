@@ -130,13 +130,10 @@ export class RegenerateService {
       const pathPluginManifest = path.join(workspaceParentDirectory, outputPath, `${clientOrPluginKey.toLowerCase()}-apiplugin.json`);
 
       await vscode.commands.executeCommand(
-        'fx-extension.createprojectfromkiota',
+        'fx-extension.kiotaregenerate',
         [
           pathOfSpec,
-          pathPluginManifest,
-          {
-            lastCommand: "regenerate"
-          }
+          pathPluginManifest
         ]
       );
     }
