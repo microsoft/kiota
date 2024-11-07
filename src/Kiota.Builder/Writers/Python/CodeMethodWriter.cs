@@ -384,10 +384,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes();
+                    break;
             }
             conventions.WriteInLineDescription(propWithDefault, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
@@ -412,10 +417,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes();
+                    break;
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault, writer);
