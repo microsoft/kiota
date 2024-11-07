@@ -391,7 +391,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     defaultValue = $"{enumDefinition.Name}({defaultValue})";
                     break;
                 case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
-                    defaultValue = defaultValue.TrimQuotes();
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
                     break;
             }
             conventions.WriteInLineDescription(propWithDefault, writer);
@@ -424,7 +424,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     defaultValue = $"{enumDefinition.Name}({defaultValue})";
                     break;
                 case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
-                    defaultValue = defaultValue.TrimQuotes();
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
                     break;
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
