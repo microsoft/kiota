@@ -130,7 +130,7 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         return typeName switch
         {
-            "int" or "float" or "str" or "bool" or "None" => true,
+            "int" or "float" or "str" or "bool" or "None" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => true,
             _ => false,
         };
     }

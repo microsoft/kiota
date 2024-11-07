@@ -820,12 +820,13 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return {}", result);
     }
     [Theory]
-    [InlineData(true, false, false, "string", "")]
-    [InlineData(false, true, false, "Stream", " \"Stream\",")]
-    [InlineData(false, false, true, "SomeEnum", " \"SomeEnum\",")]
-    [InlineData(false, false, false, "int", " int,")]
-    [InlineData(false, false, false, "CustomType", " CustomType,")]
-    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, string returnType, string expected)
+    [InlineData(true, false, false, false, "string", "")]
+    [InlineData(false, true, false, false, "Stream", " \"Stream\",")]
+    [InlineData(false, false, true, false, "SomeEnum", " \"SomeEnum\",")]
+    [InlineData(false, false, false, true, "int", " int,")]
+    [InlineData(false, false, false, false, "int", " \"int\",")]
+    [InlineData(false, false, false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, bool isCollection, string returnType, string expected)
     {
         var mockConventionService = new Mock<PythonConventionService>();
 
@@ -835,9 +836,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             false // usesBackingStore
         );
 
-        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType);
-
-
+        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType, isCollection);
         Assert.Equal(expected, result);
     }
     [Fact]

@@ -593,7 +593,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
         var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol, isEnum);
-        var newFactoryParameter = GetTypeFactory(isVoid, isStream, isEnum, returnTypeWithoutCollectionSymbol);
+        var newFactoryParameter = GetTypeFactory(isVoid, isStream, isEnum, returnTypeWithoutCollectionSymbol, codeElement.ReturnType.IsCollection);
         var errorMappingVarName = NoneKeyword;
         if (codeElement.ErrorMappings.Any())
         {
@@ -819,11 +819,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => "write_object_value",
         };
     }
-    internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType)
+    internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType, bool isCollection)
     {
         if (isVoid) return string.Empty;
         if (isStream || isEnum) return $" \"{returnType}\",";
-        if (conventions.IsPrimitiveType(returnType)) return $" {returnType},";
+        if (conventions.IsPrimitiveType(returnType)) return isCollection ? $" {returnType}," : $" \"{returnType}\",";
         return $" {returnType},";
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType,
