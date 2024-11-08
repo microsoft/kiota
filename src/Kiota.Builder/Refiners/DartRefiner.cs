@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Dart;
+
 
 namespace Kiota.Builder.Refiners;
 public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -51,11 +51,12 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
-            CorrectCommonNames(generatedCode);
+
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 static s => s.ToFirstCharacterLowerCase(),
                 false);
+            CorrectCommonNames(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
@@ -216,7 +217,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             foreach (var option in e.Options)
             {
-                option.Name = DartConventionService.getCorrectedEnumName(option.Name);
+                option.Name = getCorrectedEnumOptionName(option);
             }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
@@ -496,4 +497,24 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);
     }
+
+    private static string getCorrectedEnumOptionName(CodeEnumOption option)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        var correctedName = "";
+        if (option.Name.Contains('_', StringComparison.Ordinal))
+        {
+            correctedName = option.Name.ToUpperInvariant().ToCamelCase('_');
+        }
+        else
+        {
+            correctedName = option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? option.Name.ToUpperInvariant() : option.Name.ToFirstCharacterUpperCase();
+        }
+        if (option.SerializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
+        {
+            option.SerializationName = option.SerializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
+        }
+        return correctedName;
+    }
+
 }
