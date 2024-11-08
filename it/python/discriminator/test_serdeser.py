@@ -3,7 +3,7 @@
 from kiota_serialization_json.json_parse_node_factory import JsonParseNodeFactory
 from kiota_serialization_json.json_serialization_writer_factory import JsonSerializationWriterFactory
 
-from client.models.component import Component
+from client.discriminateme.component import Component
 from client.models.component1 import Component1
 from client.models.component2 import Component2
 
