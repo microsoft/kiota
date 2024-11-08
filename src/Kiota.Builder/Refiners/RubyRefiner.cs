@@ -63,7 +63,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
+            RemoveUntypedNodeTypeValues(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplacePropertyNames(generatedCode,
