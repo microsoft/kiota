@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Dart;
 
 
 namespace Kiota.Builder.Refiners;
@@ -57,12 +58,33 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static s => s.ToFirstCharacterLowerCase(),
                 false);
             CorrectCommonNames(generatedCode);
+            var reservedNamesProvider = new DartReservedNamesProvider();
+            cancellationToken.ThrowIfCancellationRequested();
+            CorrectNames(generatedCode, s =>
+            {
+                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            });
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            ReplacePropertyNames(generatedCode,
+                [
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
+                ],
+                static s => s.ToCamelCase(UnderscoreArray));
+
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"by{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase(),
+                static x => $"by{x.ToPascalCase('_')}",
+                static x => x.ToCamelCase('_'),
                 GenerationLanguage.Dart);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
 
             AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
@@ -77,38 +99,19 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     }
                 }, addCurrentTypeAsGenericTypeParameter: true);
             RemoveRequestConfigurationClasses(generatedCode,
-                        new CodeUsing
-                        {
-                            Name = "RequestConfiguration",
-                            Declaration = new CodeType
-                            {
-                                Name = AbstractionsNamespaceName,
-                                IsExternal = true
-                            }
-                        }, new CodeType
-                        {
-                            Name = "DefaultQueryParameters",
-                            IsExternal = true,
-                        });
-            var reservedNamesProvider = new DartReservedNamesProvider();
-            CorrectNames(generatedCode, s =>
-            {
-                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
-                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
-                    !reservedNamesProvider.ReservedNames.Contains(s) &&
-                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
-                    return refinedName;
-                else
-                    return s;
-            });
-            ReplacePropertyNames(generatedCode,
-                [
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                    CodePropertyKind.QueryParameter,
-                    CodePropertyKind.RequestBuilder,
-                ],
-                static s => s.ToCamelCase(UnderscoreArray));
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = AbstractionsNamespaceName,
+                        IsExternal = true
+                    }
+                }, new CodeType
+                {
+                    Name = "DefaultQueryParameters",
+                    IsExternal = true,
+                });
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
@@ -215,6 +218,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeEnum e)
         {
+            e.Name = DartConventionService.getCorrectedEnumName(e.Name);
             foreach (var option in e.Options)
             {
                 option.Name = getCorrectedEnumOptionName(option);
@@ -504,11 +508,11 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         var correctedName = "";
         if (option.Name.Contains('_', StringComparison.Ordinal))
         {
-            correctedName = option.Name.ToUpperInvariant().ToCamelCase('_');
+            correctedName = option.Name.ToLowerInvariant().ToCamelCase('_');
         }
         else
         {
-            correctedName = option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? option.Name.ToUpperInvariant() : option.Name.ToFirstCharacterUpperCase();
+            correctedName = option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? option.Name.ToLowerInvariant() : option.Name.ToFirstCharacterLowerCase();
         }
         if (option.SerializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
         {
