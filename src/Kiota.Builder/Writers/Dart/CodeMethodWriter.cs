@@ -323,7 +323,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 }
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
                 {
-                    defaultValue = DartConventionService.getCorrectedEnumName(defaultValue.Trim('"')).CleanupSymbolName();
+                    defaultValue = DartConventionService.getCorrectedEnumName(defaultValue.Trim('"').CleanupSymbolName());
                     if (new DartReservedNamesProvider().ReservedNames.Contains(defaultValue))
                     {
                         defaultValue += "Escaped";
@@ -379,7 +379,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private string DefaultDeserializerValue => $"Map<String, Function({conventions.ParseNodeInterfaceName})>";
+    private string DefaultDeserializerReturnType => $"Map<String, Function({conventions.ParseNodeInterfaceName})>";
+    private string DefaultDeserializerReturnInstance => $"<String, Function({conventions.ParseNodeInterfaceName})>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
@@ -406,7 +407,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             if (!includeElse)
                 includeElse = true;
         }
-        writer.WriteLine($"return {DefaultDeserializerValue}();");
+        writer.WriteLine($"return {DefaultDeserializerReturnInstance}{{}};");
     }
     private const string DeserializerReturnType = "Map<String, Function(ParseNode)>";
     private const string DeserializerName = "deserializers";
@@ -414,7 +415,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
 
-        writer.WriteLine($"{DefaultDeserializerValue} {DeserializerName} = {{}};");
+        writer.WriteLine($"{DefaultDeserializerReturnType} {DeserializerName} = {{}};");
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
                                             .ToArray();
