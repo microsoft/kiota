@@ -514,10 +514,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             correctedName = option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? option.Name.ToLowerInvariant() : option.Name.ToFirstCharacterLowerCase();
         }
-        if (option.SerializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
-        {
-            option.SerializationName = option.SerializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
-        }
         return correctedName;
     }
 
