@@ -103,6 +103,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
             var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol);
+            var isPrimitiveAlias = GetPrimitiveAlias(returnTypeWithoutCollectionSymbol) is not null;
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
@@ -118,7 +119,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 }
                 writer.CloseBlock("},");
             }
-            writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, isPrimitive, isEnum)}\",");
+            writer.WriteLine($"adapterMethodName: \"{GetSendRequestMethodName(isVoid, isStream, executorMethod.ReturnType.IsCollection, isPrimitive || isPrimitiveAlias, isEnum)}\",");
             if (isEnum)
             {
                 string enumObjectName = string.Empty;
@@ -169,6 +170,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
         if (isStream || IsPrimitiveType(typeName)) return $" \"{typeName}\"";
+        if (GetPrimitiveAlias(typeName) is { } alias && !string.IsNullOrEmpty(alias))
+            return $" \"{alias}\"";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
