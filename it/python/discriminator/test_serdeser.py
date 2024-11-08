@@ -13,7 +13,9 @@ async def test_component1_deser():
     root = factory.get_root_parse_node('application/json', '{"objectType": "obj1", "one": "foo"}'.encode('utf-8'))
     result = root.get_object_value(Component)
     assert hasattr(result, "component1")
-    assert not hasattr(result, "component2")
+    assert hasattr(result, "component2")
+    assert result.component2 is None
+    assert result.component1 is not None 
     assert isinstance(result.component1, Component1)
     assert result.component1.object_type == "obj1"
     assert result.component1.one == "foo"
@@ -24,7 +26,9 @@ async def test_component2_deser():
     root = factory.get_root_parse_node('application/json', '{"objectType": "obj2", "two": "bar"}'.encode('utf-8'))
     result = root.get_object_value(Component)
     assert hasattr(result, "component2")
-    assert not hasattr(result, "component1")
+    assert hasattr(result, "component1")
+    assert result.component1 is None 
+    assert result.component2 is not None 
     assert isinstance(result.component2, Component2)
     assert result.component2.object_type == "obj2"
     assert result.component2.two == "bar"
