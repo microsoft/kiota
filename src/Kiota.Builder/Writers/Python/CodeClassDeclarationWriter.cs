@@ -41,7 +41,19 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                         !string.IsNullOrEmpty(inheritSymbol) ?
                             inheritSymbol :
                             string.Empty;
-        var derivation = string.IsNullOrEmpty(baseClass) ? abcClass : string.IsNullOrEmpty(abcClass) ? baseClass : $"{baseClass}, {abcClass}";
+        var derivation = string.Empty;
+        if (string.IsNullOrEmpty(baseClass))
+        {
+            derivation = abcClass;
+        }
+        else if (string.IsNullOrEmpty(abcClass))
+        {
+            derivation = baseClass;
+        }
+        else
+        {
+            derivation = $"{baseClass}, {abcClass}";
+        }
         writer.WriteLine($"class {codeElement.Name}({derivation}):");
         writer.IncreaseIndent();
         if (codeElement.Parent is CodeClass parent)
