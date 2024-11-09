@@ -809,10 +809,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => "write_object_value",
         };
     }
+
     internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType)
     {
         if (isVoid) return string.Empty;
-        if (isStream || isEnum) return $" \"{returnType}\",";
+        if (isStream || isEnum) return $" {returnType},";
         if (conventions.IsPrimitiveType(returnType)) return $" {returnType},";
         return $" {returnType},";
     }
