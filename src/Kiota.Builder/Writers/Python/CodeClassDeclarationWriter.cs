@@ -22,7 +22,16 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
             _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
         }
 
+        WriteParentClassImportsAndDecorators(codeElement, writer);
 
+        var derivation = GetDerivation(codeElement);
+        writer.WriteLine($"class {codeElement.Name}({derivation}):");
+        writer.IncreaseIndent();
+        WriteInnerClassImportsAndDescriptions(codeElement, writer, parentNamespace);
+    }
+
+    private void WriteParentClassImportsAndDecorators(ClassDeclaration codeElement, LanguageWriter writer)
+    {
         if (codeElement.Parent is CodeClass parentClass)
         {
             if (codeElement.Inherits != null)
@@ -34,28 +43,32 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                 writer.WriteLine("@dataclass");
             }
         }
+    }
 
+    private string GetDerivation(ClassDeclaration codeElement)
+    {
         var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(static x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         var baseClass = codeElement.Inherits is CodeType inheritType &&
                         conventions.GetTypeString(inheritType, codeElement) is string inheritSymbol &&
                         !string.IsNullOrEmpty(inheritSymbol) ?
                             inheritSymbol :
                             string.Empty;
-        var derivation = string.Empty;
         if (string.IsNullOrEmpty(baseClass))
         {
-            derivation = abcClass;
+            return abcClass;
         }
         else if (string.IsNullOrEmpty(abcClass))
         {
-            derivation = baseClass;
+            return baseClass;
         }
         else
         {
-            derivation = $"{baseClass}, {abcClass}";
+            return $"{baseClass}, {abcClass}";
         }
-        writer.WriteLine($"class {codeElement.Name}({derivation}):");
-        writer.IncreaseIndent();
+    }
+
+    private void WriteInnerClassImportsAndDescriptions(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNamespace)
+    {
         if (codeElement.Parent is CodeClass parent)
         {
             if (parent.Parent is CodeClass) // write imports for inner classes
