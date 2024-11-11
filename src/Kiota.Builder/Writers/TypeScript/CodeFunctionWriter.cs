@@ -54,7 +54,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
     }
 
-    private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFunction codeElement, CodeFile codeFile, bool nodeParameterCanBeNull = true)
+    private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFile codeFile, bool nodeParameterCanBeNull = true)
     {
         var optionalChainingSymbol = nodeParameterCanBeNull ? "?" : string.Empty;
         return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile)));
@@ -240,7 +240,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         switch (composedType)
         {
             case CodeComposedTypeBase type when type.IsComposedOfPrimitives(IsPrimitiveType):
-                string primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, parseNodeParameter!.Name.ToFirstCharacterLowerCase(), codeElement, codeFile);
+                string primitiveValuesUnionString = GetSerializationMethodsForPrimitiveUnionTypes(composedType, parseNodeParameter!.Name.ToFirstCharacterLowerCase(), codeFile);
                 writer.WriteLine($"return {primitiveValuesUnionString};");
                 break;
             case CodeUnionType _ when parseNodeParameter != null:
