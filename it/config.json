@@ -254,7 +254,7 @@
       },
       {
         "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5637"
+        "Rationale": "https://github.com/microsoft/kiota/issues/5744"
       }
     ]
   },
