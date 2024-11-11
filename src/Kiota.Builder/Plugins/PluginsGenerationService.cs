@@ -348,10 +348,20 @@ public partial class PluginsGenerationService
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
+                var auth = configAuth;
+                try
+                {
+                    auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements);
+                }
+                catch (UnsupportedSecuritySchemeException)
+                {
+                    throw;
+                }
+
                 runtimes.Add(new OpenApiRuntime
                 {
                     // Configuration overrides document information
-                    Auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements),
+                    Auth = auth,
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath },
                     RunForFunctions = [operation.OperationId]
                 });
@@ -391,7 +401,7 @@ public partial class PluginsGenerationService
         const string tooManySchemesError = "Multiple security requirements are not supported. Operations can only list one security requirement.";
         if (securityRequirements.Count > 1 || securityRequirements.FirstOrDefault()?.Keys.Count > 1)
         {
-            throw new InvalidOperationException(tooManySchemesError);
+            throw new UnsupportedSecuritySchemeException(tooManySchemesError);
         }
         var security = securityRequirements.FirstOrDefault();
         var opSecurity = security?.Keys.FirstOrDefault();
@@ -453,5 +463,33 @@ public partial class PluginsGenerationService
         }
 
         return null;
+    }
+
+    private void ValidateAuthentication(OpenApiOperation operation, IList<OpenApiSecurityRequirement> securityRequirements)
+    {
+        if (operation is null) return;
+        if (securityRequirements != null )
+        {
+            if (securityRequirements.Count > 1 || securityRequirements.FirstOrDefault()?.Keys.Count > 1)
+            {
+                Console.WriteLine($"{operation.OperationId}: \"There appear to be no compatible security schemes for Copilot usage.\"");
+            }
+
+            var securityScheme = securityRequirements.FirstOrDefault()?.Keys.FirstOrDefault();
+            if (securityScheme != null && !IsSupportedAuthScheme(securityScheme))
+            {
+                Console.WriteLine($"{operation.OperationId}: \"There appear to be no compatible security schemes for Copilot usage.\"");
+            }
+        }
+    }
+
+    private bool IsSupportedAuthScheme(OpenApiSecurityScheme securityScheme)
+    {
+        return securityScheme.Type switch
+        {
+            SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) => true,
+            SecuritySchemeType.OAuth2 => true,
+            _ => false,
+        };
     }
 }
