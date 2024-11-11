@@ -490,7 +490,7 @@ components:
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header}, apiKey1: {type: apiKey, name: x-api-key1, in: header}}}",
                 string.Empty, "security: [apiKey0: [], apiKey1: []]", null, async (action) =>
                 {
-                    await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                    await Assert.ThrowsAsync<UnsupportedSecuritySchemeException>(async () =>
                     {
                         await action();
                     });
