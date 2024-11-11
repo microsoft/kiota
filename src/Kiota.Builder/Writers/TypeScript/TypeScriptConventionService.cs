@@ -323,12 +323,12 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return definitionClass.GetImmediateParentOfType<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method, bool? IsCollection = null)
+    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeElement targetElement, bool? IsCollection = null)
     {
         ArgumentNullException.ThrowIfNull(codeType);
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentNullException.ThrowIfNull(targetElement);
         var isCollection = IsCollection == true || codeType.IsCollection;
-        var propertyType = GetTypescriptTypeString(codeType, method, false);
+        var propertyType = GetTypescriptTypeString(codeType, targetElement, false);
 
         CodeTypeBase _codeType = GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : codeType;
 
@@ -339,19 +339,19 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
                 (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
-                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
-                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method)
+                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
+                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
             };
         }
-        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method);
+        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement);
     }
 
-    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeMethod method)
+    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement)
     {
         return propertyTypeName switch
         {
             TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, method)})"
+            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, targetElement)})"
         };
     }
 }
