@@ -22,7 +22,16 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
             _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
         }
 
+        WriteParentClassImportsAndDecorators(codeElement, writer);
 
+        var derivation = GetDerivation(codeElement);
+        writer.WriteLine($"class {codeElement.Name}({derivation}):");
+        writer.IncreaseIndent();
+        WriteInnerClassImportsAndDescriptions(codeElement, writer, parentNamespace);
+    }
+
+    private void WriteParentClassImportsAndDecorators(ClassDeclaration codeElement, LanguageWriter writer)
+    {
         if (codeElement.Parent is CodeClass parentClass)
         {
             if (codeElement.Inherits != null)
@@ -34,15 +43,32 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                 writer.WriteLine("@dataclass");
             }
         }
+    }
 
+    private string GetDerivation(ClassDeclaration codeElement)
+    {
         var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(static x => x.Name).Aggregate((x, y) => x + ", " + y)}";
-        var derivation = codeElement.Inherits is CodeType inheritType &&
+        var baseClass = codeElement.Inherits is CodeType inheritType &&
                         conventions.GetTypeString(inheritType, codeElement) is string inheritSymbol &&
                         !string.IsNullOrEmpty(inheritSymbol) ?
                             inheritSymbol :
-                            abcClass;
-        writer.WriteLine($"class {codeElement.Name}({derivation}):");
-        writer.IncreaseIndent();
+                            string.Empty;
+        if (string.IsNullOrEmpty(baseClass))
+        {
+            return abcClass;
+        }
+        else if (string.IsNullOrEmpty(abcClass))
+        {
+            return baseClass;
+        }
+        else
+        {
+            return $"{baseClass}, {abcClass}";
+        }
+    }
+
+    private void WriteInnerClassImportsAndDescriptions(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNamespace)
+    {
         if (codeElement.Parent is CodeClass parent)
         {
             if (parent.Parent is CodeClass) // write imports for inner classes
