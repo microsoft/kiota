@@ -93,7 +93,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             var newType = (CodeComposedTypeBase)composedType.Clone();
             var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
             newType.SetTypes(nonPrimitiveTypes);
-            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: false, inlineComposedTypeString: true);
         }
         var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
 
