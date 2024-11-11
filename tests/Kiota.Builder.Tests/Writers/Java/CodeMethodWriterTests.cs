@@ -1800,6 +1800,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueBool = "\"true\"";
+        var boolPropName = "propWithDefaultBoolValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = boolPropName,
+            DefaultValue = defaultValueBool,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "boolean",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1815,6 +1828,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name, result);
         Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains($"this.set{nullPropName.ToFirstCharacterUpperCase()}({defaultValueNull.TrimQuotes()})", result);
+        Assert.Contains($"this.set{boolPropName.ToFirstCharacterUpperCase()}({defaultValueBool.TrimQuotes()})", result);
         Assert.Contains("super", result);
     }
     [Fact]

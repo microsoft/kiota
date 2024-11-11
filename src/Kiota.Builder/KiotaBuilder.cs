@@ -1154,6 +1154,7 @@ public partial class KiotaBuilder
                 ("number" or "integer", "int8") => "sbyte",
                 ("number" or "integer", "uint8") => "byte",
                 ("number" or "integer", "int64") => "int64",
+                ("number", "int16") => "integer",
                 ("number", "int32") => "integer",
                 ("number", _) => "double",
                 ("integer", _) => "integer",
@@ -1666,7 +1667,10 @@ public partial class KiotaBuilder
         var inlineSchemas = Array.FindAll(flattenedAllOfs, static x => !x.IsReferencedSchema());
         var referencedSchemas = Array.FindAll(flattenedAllOfs, static x => x.IsReferencedSchema());
         var rootSchemaHasProperties = schema.HasAnyProperty();
-        var className = (schema.GetSchemaName(schema.IsSemanticallyMeaningful()) is string cName && !string.IsNullOrEmpty(cName) ?
+        // if the schema is meaningful, we only want to consider the root schema for naming to avoid "grabbing" the name of the parent
+        // if the schema has no reference id we're either at the beginning of an inline schema, or expanding the inheritance tree
+        var shouldNameLookupConsiderSubSchemas = schema.IsSemanticallyMeaningful() || string.IsNullOrEmpty(referenceId);
+        var className = (schema.GetSchemaName(shouldNameLookupConsiderSubSchemas) is string cName && !string.IsNullOrEmpty(cName) ?
                 cName :
                 (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
                     typeNameForInlineSchema :
