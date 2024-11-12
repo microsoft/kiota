@@ -27,19 +27,19 @@ export class GenerateClientCommand extends Command {
   private _openApiTreeProvider: OpenApiTreeProvider;
   private _context: vscode.ExtensionContext;
   private _dependenciesViewProvider: DependenciesViewProvider;
-  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void; 
+  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void;
 
   constructor(
     openApiTreeProvider: OpenApiTreeProvider,
     context: vscode.ExtensionContext,
     dependenciesViewProvider: DependenciesViewProvider,
-    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void 
+    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void
   ) {
     super();
     this._openApiTreeProvider = openApiTreeProvider;
     this._context = context;
     this._dependenciesViewProvider = dependenciesViewProvider;
-    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext; 
+    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext;
   }
 
   public getName(): string {
@@ -80,9 +80,16 @@ export class GenerateClientCommand extends Command {
     );
     setGenerationConfiguration(config);
     const generationType = parseGenerationType(config.generationType);
-    const outputPath = typeof config.outputPath === "string"
-      ? config.outputPath
-      : "./output";
+
+    let outputPath = "./output";
+    if (typeof config.outputPath === "string") {
+      if (deepLinkParams.source?.toLowerCase() === 'ttk') {
+        outputPath = path.join(config.outputPath, "appPackage");
+      } else {
+        outputPath = config.outputPath;
+      }
+    }
+
     let manifestKey = null;
     switch (config.generationType) {
       case "client":
