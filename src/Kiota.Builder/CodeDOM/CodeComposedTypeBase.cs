@@ -87,5 +87,6 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         // Count the number of primitives in Types
         return Types.Any(x => checkIfPrimitive(x, this)) && Types.Any(x => !checkIfPrimitive(x, this));
     }
+    public bool IsComposedOfObjects(Func<CodeType, CodeComposedTypeBase, bool> checkIfPrimitive) => Types.All(x => !checkIfPrimitive(x, this));
 
 }
