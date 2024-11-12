@@ -22,7 +22,6 @@ jobs:
           echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
   build_extension:
     needs: [checksecret]
-    if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,14 +43,15 @@ jobs:
       - run: npm run lint
         working-directory: vscode/microsoft-kiota
       - name: run tests(linux)
-        if: runner.os == 'Linux'
+        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true' and runner.os == 'Linux'
         run: xvfb-run -a npm run test-with-coverage
         working-directory: vscode/microsoft-kiota
       - name: run tests
-        if: runner.os != 'Linux'
+        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true' and runner.os != 'Linux'
         run: npm run test-with-coverage
         working-directory: vscode/microsoft-kiota
       - name: Run sonar cloud analysis
+        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
