@@ -43,6 +43,7 @@ jobs:
           - ruby
           - php
           - python
+          - dart
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml"
