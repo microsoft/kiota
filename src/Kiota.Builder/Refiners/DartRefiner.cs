@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -151,7 +151,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             AddSerializationModulesImport(generatedCode,
                 [$"{AbstractionsNamespaceName}.ApiClientBuilder",
-                 $"{AbstractionsNamespaceName}.SerializationWriterFactoryRegistry"],
+                    $"{AbstractionsNamespaceName}.SerializationWriterFactoryRegistry"],
                 [$"{AbstractionsNamespaceName}.ParseNodeFactoryRegistry"]);
             cancellationToken.ThrowIfCancellationRequested();
 
