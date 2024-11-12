@@ -14,7 +14,7 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
     {
         var idx = new ConcurrentDictionary<string, ConcurrentDictionary<string, bool>>(StringComparer.OrdinalIgnoreCase);
         document.InitializeInheritanceIndex(idx);
-        if (document.Components != null)
+        if (document.Components is { Schemas.Count: > 0 })
             Parallel.ForEach(document.Components.Schemas, entry =>
             {
                 ValidateSchema(entry.Value, context, idx, entry.Key);

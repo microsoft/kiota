@@ -7,9 +7,9 @@ namespace Kiota.Builder.Validation;
 
 public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
 {
-    private static readonly Dictionary<string, HashSet<string>> validPairs = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<JsonSchemaType, HashSet<string>> validPairs = new()
     {
-        ["string"] = new(StringComparer.OrdinalIgnoreCase) {
+        [JsonSchemaType.String] = new(StringComparer.OrdinalIgnoreCase) {
             "commonmark",
             "html",
             "date",
@@ -21,7 +21,7 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "binary",
             "byte",
         },
-        ["integer"] = new(StringComparer.OrdinalIgnoreCase) {
+        [JsonSchemaType.Integer] = new(StringComparer.OrdinalIgnoreCase) {
             "int32",
             "int64",
             "int8",
@@ -29,7 +29,7 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "int16",
             "uint16",
         },
-        ["number"] = new(StringComparer.OrdinalIgnoreCase) {
+        [JsonSchemaType.Number] = new(StringComparer.OrdinalIgnoreCase) {
             "float",
             "double",
             "decimal",
@@ -41,19 +41,17 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "uint16",
         },
     };
-    private static readonly HashSet<string> escapedTypes = new(StringComparer.OrdinalIgnoreCase) {
-        "array",
-        "boolean",
-        "const",
-        "enum",
-        "null",
-        "object",
-    };
+    private static readonly HashSet<JsonSchemaType> escapedTypes = [
+        JsonSchemaType.Array,
+        JsonSchemaType.Boolean,
+        JsonSchemaType.Null,
+        JsonSchemaType.Object,
+    ];
     public InconsistentTypeFormatPair() : base(nameof(InconsistentTypeFormatPair), static (context, schema) =>
     {
-        if (schema is null || string.IsNullOrEmpty(schema.Type) || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type))
+        if (schema is null || !schema.Type.HasValue || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type.Value))
             return;
-        if (!validPairs.TryGetValue(schema.Type, out var validFormats) || !validFormats.Contains(schema.Format))
+        if (!validPairs.TryGetValue(schema.Type.Value, out var validFormats) || !validFormats.Contains(schema.Format))
             context.CreateWarning(nameof(InconsistentTypeFormatPair), $"The format {schema.Format} is not supported by Kiota for the type {schema.Type} and the string type will be used.");
     })
     {

@@ -34,6 +34,7 @@ using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
@@ -2389,7 +2390,7 @@ public partial class KiotaBuilder
     }
     private CodeClass? CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(static p => p.In == ParameterLocation.Query).ToArray();
+        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters ?? Enumerable.Empty<OpenApiParameter>()).Where(static p => p.In == ParameterLocation.Query).ToArray();
         if (parameters.Length != 0)
         {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
@@ -2499,7 +2500,7 @@ public partial class KiotaBuilder
         var paramType = GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
-            Name = schema.Items?.Type ?? schema.Type,
+            Name = schema.Items is not null && schema.Items.Type.HasValue ? schema.Items.Type.ToIdentifier() : schema.Type.ToIdentifier(),
         };
 
         paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
