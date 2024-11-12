@@ -24,7 +24,8 @@ public static class ValidationRuleSetExtensions
     }
     private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule
     {
-        if (!configuration.DisabledValidationRules.Contains(instance.GetType().Name))
-            ruleSet.Add(instance);
+        var ruleType = instance.GetType();
+        if (!configuration.DisabledValidationRules.Contains(ruleType.Name))
+            ruleSet.Add(ruleType, instance);
     }
 }

@@ -13,6 +13,8 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
     };
     public UrlFormEncodedComplex() : base(nameof(UrlFormEncodedComplex), static (context, operation) =>
     {
+        if (string.IsNullOrEmpty(operation.OperationId))
+            return;
         if (operation.GetRequestSchema(validContentTypes) is OpenApiSchema requestSchema)
             ValidateSchema(requestSchema, context, operation.OperationId, "request body");
         if (operation.GetResponseSchema(validContentTypes) is OpenApiSchema responseSchema)

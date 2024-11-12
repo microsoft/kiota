@@ -68,7 +68,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
             GetHashCodeInternal(schema, visitedSchemas, ref hash);
         }
         hash.Add(obj.Format, StringComparer.OrdinalIgnoreCase);
-        hash.Add(obj.Type, StringComparer.OrdinalIgnoreCase);
+        hash.Add(obj.Type);
         hash.Add(obj.Title, StringComparer.Ordinal);
         /**
          ignored properties since they don't impact generation:
