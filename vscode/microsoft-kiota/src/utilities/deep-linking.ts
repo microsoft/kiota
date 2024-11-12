@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+
 import { GenerateState } from "../modules/steps/generateSteps";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
 import { allGenerationLanguagesToString, getSanitizedString, parseGenerationLanguage, parsePluginType } from "../util";
@@ -34,7 +36,7 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
     }
     generationConfig.outputPath =
       (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
-        ? createTemporaryFolder()
+      ? determineOutputPath(deepLinkParams)
         : undefined;
   }
   return generationConfig;
@@ -49,7 +51,8 @@ export interface IntegrationParams {
   source: string;
   ttkContext: {
     lastCommand: string;
-  }
+  },
+  projectPath: string;
 };
 
 export function validateDeepLinkQueryParams(queryParameters: Partial<IntegrationParams>):
@@ -59,6 +62,8 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   const descriptionurl = queryParameters["descriptionurl"];
   const name = getSanitizedString(queryParameters["name"]);
   const source = getSanitizedString(queryParameters["source"]);
+  const projectPath = queryParameters["projectPath"];
+
   let lowercasedKind: string = queryParameters["kind"]?.toLowerCase() ?? "";
   let validKind: string | undefined = ["plugin", "client"].indexOf(lowercasedKind) > -1 ? lowercasedKind : undefined;
   if (!validKind) {
@@ -105,12 +110,20 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
 
   validQueryParams = {
     descriptionurl: descriptionurl,
-    name: name,
+    name,
     kind: validKind,
     type: providedType,
     language: givenLanguage,
-    source: source,
-    ttkContext: queryParameters.ttkContext ? queryParameters.ttkContext : undefined
+    source,
+    ttkContext: queryParameters.ttkContext ? queryParameters.ttkContext : undefined,
+    projectPath: projectPath ? projectPath : undefined
   };
   return [validQueryParams, errormsg];
+}
+
+function determineOutputPath(deepLinkParams: Partial<IntegrationParams>): string | undefined {
+  if (deepLinkParams.projectPath && fs.existsSync(deepLinkParams.projectPath)) {
+    return deepLinkParams.projectPath;
+  }
+  return createTemporaryFolder();
 }
