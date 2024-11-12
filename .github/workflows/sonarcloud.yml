@@ -13,18 +13,20 @@ on:
         "**.md",
         ".vscode/**",
         "**.svg",
+        "vscode/**",
       ]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths-ignore:
+    paths:
       [
-        "abstractions/**",
-        "authentication/**",
-        "serialization/**",
-        "http/**",
-        "**.md",
-        ".vscode/**",
-        "**.svg",
+        "!abstractions/**",
+        "!authentication/**",
+        "!serialization/**",
+        "!http/**",
+        "!**.md",
+        "!.vscode/**",
+        "!**.svg",
+        "!vscode/**",
       ]
 
 permissions:
