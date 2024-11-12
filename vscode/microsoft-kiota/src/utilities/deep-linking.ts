@@ -122,8 +122,19 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
 }
 
 function determineOutputPath(deepLinkParams: Partial<IntegrationParams>): string | undefined {
-  if (deepLinkParams.projectPath && fs.existsSync(deepLinkParams.projectPath)) {
-    return deepLinkParams.projectPath;
+  if (deepLinkParams.projectPath) {
+    try {
+      if (!fs.existsSync(deepLinkParams.projectPath)) {
+        try {
+          fs.mkdirSync(deepLinkParams.projectPath);
+        } catch (err: unknown) {
+          throw new Error(`Error creating directory: ${(err as Error).message}`);
+        }
+      }
+      return deepLinkParams.projectPath;
+    } catch (error) {
+      return createTemporaryFolder();
+    }
   }
   return createTemporaryFolder();
 }
