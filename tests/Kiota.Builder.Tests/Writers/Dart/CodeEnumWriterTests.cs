@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 
 using Xunit;

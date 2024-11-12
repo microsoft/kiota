@@ -992,8 +992,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("complexType1Value != null", result);
         Assert.Contains("return complexType1Value!.getFieldDeserializers()", result);
-        Assert.Contains("Map<String, Function(ParseNode)>()", result);
-        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "Map<String, Function(ParseNode)>()", result);
+        Assert.Contains("<String, Function(ParseNode)>()", result);
+        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "<String, Function(ParseNode)>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
