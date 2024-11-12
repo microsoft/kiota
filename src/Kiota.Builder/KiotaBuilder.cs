@@ -1082,7 +1082,7 @@ public partial class KiotaBuilder
             result.Add(backCompatibleValue);
         }
 
-        return result.ToArray();
+        return [.. result];
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
@@ -1091,7 +1091,9 @@ public partial class KiotaBuilder
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
             propertyName += "Property";
-        var resultType = existingType ?? GetPrimitiveType(propertySchema, childType);
+        var resultType = existingType ?? GetPrimitiveType(propertySchema);
+        if ((propertySchema?.Items?.IsEnum() ?? false) && resultType is CodeType codeType)
+            codeType.Name = childType;
         if (resultType == null) return null;
         var prop = new CodeProperty
         {
@@ -1128,57 +1130,55 @@ public partial class KiotaBuilder
         }
         return prop;
     }
-    private static readonly HashSet<string> typeNamesToSkip = new(StringComparer.OrdinalIgnoreCase) { "object", "array" };
-    private static CodeType? GetPrimitiveType(OpenApiSchema? typeSchema, string? childType = default)
+    private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array];
+    private static CodeType? GetPrimitiveType(OpenApiSchema? typeSchema)
     {
-        var typeNames = new List<string?> { typeSchema?.Items?.Type, childType, typeSchema?.Type };
+        var typeNames = new List<JsonSchemaType?> { typeSchema?.Items?.Type, typeSchema?.Type };
         if (typeSchema?.AnyOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
         if (typeSchema?.OneOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.OneOf.Select(x => x.Type)); // double is sometimes an oneof string, number and enum
                                                                       // first value that's not null, and not "object" for primitive collections, the items type matters
-        var typeName = typeNames.Find(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
+        var typeName = typeNames.Find(static x => x is not null && !typeNamesToSkip.Contains(x.Value));
 
         var isExternal = false;
-        if (typeSchema?.Items?.IsEnum() ?? false)
-            typeName = childType;
-        else
+        var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
+        var primitiveTypeName = (typeName, format?.ToLowerInvariant()) switch
         {
-            var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
-            var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch
+            (JsonSchemaType.String, "base64url") => "base64url",
+            (JsonSchemaType.String, "duration") => "TimeSpan",
+            (JsonSchemaType.String, "time") => "TimeOnly",
+            (JsonSchemaType.String, "date") => "DateOnly",
+            (JsonSchemaType.String, "date-time") => "DateTimeOffset",
+            (JsonSchemaType.String, "uuid") => "Guid",
+            (JsonSchemaType.String, _) => "string", // covers commonmark and html
+            (JsonSchemaType.Number, "double" or "float" or "decimal") => format.ToLowerInvariant(),
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "int8") => "sbyte",
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "uint8") => "byte",
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "int64") => "int64",
+            (JsonSchemaType.Number, "int16") => "integer",
+            (JsonSchemaType.Number, "int32") => "integer",
+            (JsonSchemaType.Number, _) => "double",
+            (JsonSchemaType.Integer, _) => "integer",
+            (JsonSchemaType.Boolean, _) => "boolean",
+            (_, "byte") => "base64",
+            (_, "binary") => "binary",
+            //TODO handle the case where we have multiple entries
+            (_, _) => string.Empty,
+        };
+        if (!string.IsNullOrEmpty(primitiveTypeName))
+        {
+            return new CodeType
             {
-                ("string", "base64url") => "base64url",
-                ("file", _) => "binary",
-                ("string", "duration") => "TimeSpan",
-                ("string", "time") => "TimeOnly",
-                ("string", "date") => "DateOnly",
-                ("string", "date-time") => "DateTimeOffset",
-                ("string", "uuid") => "Guid",
-                ("string", _) => "string", // covers commonmark and html
-                ("number", "double" or "float" or "decimal") => format.ToLowerInvariant(),
-                ("number" or "integer", "int8") => "sbyte",
-                ("number" or "integer", "uint8") => "byte",
-                ("number" or "integer", "int64") => "int64",
-                ("number", "int16") => "integer",
-                ("number", "int32") => "integer",
-                ("number", _) => "double",
-                ("integer", _) => "integer",
-                ("boolean", _) => "boolean",
-                (_, "byte") => "base64",
-                (_, "binary") => "binary",
-                (_, _) => string.Empty,
+                Name = primitiveTypeName,
+                IsExternal = true,
             };
-            if (!string.IsNullOrEmpty(primitiveTypeName))
-            {
-                typeName = primitiveTypeName;
-                isExternal = true;
-            }
         }
-        if (string.IsNullOrEmpty(typeName))
+        if (typeName is null || typeName.ToIdentifier() is not string normalizedTypeName || string.IsNullOrEmpty(normalizedTypeName))
             return null;
         return new CodeType
         {
-            Name = typeName,
+            Name = normalizedTypeName,
             IsExternal = isExternal,
         };
     }
@@ -1842,7 +1842,7 @@ public partial class KiotaBuilder
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
-        if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type))
+        if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
             return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody);
@@ -1855,8 +1855,8 @@ public partial class KiotaBuilder
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, typeNameForInlineSchema, isRequestBody);
         }
 
-        if (!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
-            return GetPrimitiveType(schema, string.Empty) ?? new CodeType { Name = UntypedNodeName, IsExternal = true };
+        if (schema.Type is not null || !string.IsNullOrEmpty(schema.Format))
+            return GetPrimitiveType(schema) ?? new CodeType { Name = UntypedNodeName, IsExternal = true };
         if ((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) &&
            (schema.AnyOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
@@ -1864,7 +1864,7 @@ public partial class KiotaBuilder
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
-        CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
+        CodeTypeBase? type = GetPrimitiveType(schema.Items);
         var isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
                                     || schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format);//the collection could be a composed type with an enum type so override with strong type instead of string type.
         if ((string.IsNullOrEmpty(type?.Name)

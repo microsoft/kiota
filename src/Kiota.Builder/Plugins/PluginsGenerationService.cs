@@ -144,9 +144,9 @@ public partial class PluginsGenerationService
             foreach (var apiSchema in schema.AllOf)
             {
                 if (apiSchema.Title is not null) newSchema.Title = apiSchema.Title;
-                if (!string.IsNullOrEmpty(apiSchema.Type))
+                if (apiSchema.Type is not null)
                 {
-                    if (!string.IsNullOrEmpty(newSchema.Type) && newSchema.Type != apiSchema.Type)
+                    if (newSchema.Type is not null && newSchema.Type.Value != apiSchema.Type.Value)
                     {
                         throw new InvalidOperationException(
                             $"The schemas in allOf cannot have different types: '{newSchema.Type}' and '{apiSchema.Type}'.");

@@ -16,7 +16,7 @@ using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
@@ -135,8 +135,8 @@ internal class OpenApiDocumentDownloadService
         {
             // couldn't parse the URL, it's probably a local file
         }
-        var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input, cancellationToken).ConfigureAwait(false);
+        //TODO update to remove the unknown format when the overload is available
+        var readResult = await OpenApiDocument.LoadAsync(input, "unknown", settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
         if (generating)
             foreach (var warning in readResult.OpenApiDiagnostic.Warnings)

@@ -69,7 +69,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static IEnumerable<OpenApiParameter> GetParametersForPathItem(OpenApiPathItem pathItem, string nodeSegment)
     {
         return pathItem.Parameters
-                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters))
+                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>()))
                     .Where(static x => x.In == ParameterLocation.Path)
                     .Where(x => nodeSegment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
     }
@@ -193,7 +193,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (!currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
             return false;
 
-        var operationQueryParameters = pathItem.Operations.SelectMany(static x => x.Value.Parameters);
+        var operationQueryParameters = pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>());
         return operationQueryParameters.Union(pathItem.Parameters).Where(static x => x.In == ParameterLocation.Query)
             .Any(static x => x.Required);
     }
@@ -207,9 +207,9 @@ public static partial class OpenApiUrlTreeNodeExtensions
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
             var operationQueryParameters = (operationType, pathItem.Operations.Any()) switch
             {
-                (OperationType ot, _) when pathItem.Operations.TryGetValue(ot, out var operation) => operation.Parameters,
-                (null, true) => pathItem.Operations.SelectMany(static x => x.Value.Parameters).Where(static x => x.In == ParameterLocation.Query),
-                _ => Enumerable.Empty<OpenApiParameter>(),
+                (OperationType ot, _) when pathItem.Operations.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
+                (null, true) => pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
+                _ => [],
             };
             var parameters = pathItem.Parameters
                                     .Union(operationQueryParameters)
@@ -234,7 +234,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         }
         var pathReservedPathParametersIds = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pItem) ?
                                                 pItem.Parameters
-                                                        .Union(pItem.Operations.SelectMany(static x => x.Value.Parameters))
+                                                        .Union(pItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>()))
                                                         .Where(static x => x.In == ParameterLocation.Path && x.Extensions.TryGetValue(OpenApiReservedParameterExtension.Name, out var ext) && ext is OpenApiReservedParameterExtension reserved && reserved.IsReserved.HasValue && reserved.IsReserved.Value)
                                                         .Select(static x => x.Name)
                                                         .ToHashSet(StringComparer.OrdinalIgnoreCase) :
@@ -356,7 +356,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
                 {
                     foreach (var pathParameter in pathItem.Parameters
-                                                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters))
+                                                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>()))
                                                     .Where(x => x.In == ParameterLocation.Path && oldName.Equals(x.Name, StringComparison.Ordinal)))
                     {
                         pathParameter.Name = newParameterName;
@@ -386,7 +386,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                             pathItem
                                                 .Value
                                                 .Operations
-                                                .SelectMany(static x => x.Value.Parameters)
+                                                .SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<OpenApiParameter>())
                                                 .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
                                         ))
             {
