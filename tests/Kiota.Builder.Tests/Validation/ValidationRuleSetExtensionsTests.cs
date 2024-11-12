@@ -19,7 +19,7 @@ public class ValidationRuleSetExtensionsTests
         var ruleSet = new ValidationRuleSet();
         var configuration = new GenerationConfiguration { DisabledValidationRules = new() { "all" } };
         ruleSet.AddKiotaValidationRules(configuration);
-        Assert.Empty(ruleSet);
+        Assert.Empty(ruleSet.Rules);
     }
     [Fact]
     public void DisablesNoRule()
@@ -27,7 +27,7 @@ public class ValidationRuleSetExtensionsTests
         var ruleSet = new ValidationRuleSet();
         var configuration = new GenerationConfiguration { DisabledValidationRules = new() };
         ruleSet.AddKiotaValidationRules(configuration);
-        Assert.NotEmpty(ruleSet);
+        Assert.NotEmpty(ruleSet.Rules);
     }
     [Fact]
     public void DisablesOneRule()
@@ -35,7 +35,7 @@ public class ValidationRuleSetExtensionsTests
         var ruleSet = new ValidationRuleSet();
         var configuration = new GenerationConfiguration { DisabledValidationRules = new() { nameof(NoServerEntry) } };
         ruleSet.AddKiotaValidationRules(configuration);
-        Assert.NotEmpty(ruleSet);
-        Assert.DoesNotContain(ruleSet, static x => x.GetType() == typeof(NoServerEntry));
+        Assert.NotEmpty(ruleSet.Rules);
+        Assert.DoesNotContain(ruleSet.Rules, static x => x.GetType() == typeof(NoServerEntry));
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Kiota.Builder.Validation;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Validations;
 using Xunit;
@@ -10,9 +13,8 @@ namespace Kiota.Builder.Tests.Validation;
 public class GetWithBodyTests
 {
     [Fact]
-    public void AddsAWarningWhenGetWithBody()
+    public async Task AddsAWarningWhenGetWithBody()
     {
-        var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -29,18 +31,12 @@ paths:
         '200':
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Single(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenGetWithNoBody()
+    public async Task DoesntAddAWarningWhenGetWithNoBody()
     {
-        var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -55,18 +51,12 @@ paths:
         '200':
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenPostWithBody()
+    public async Task DoesntAddAWarningWhenPostWithBody()
     {
-        var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -83,12 +73,16 @@ paths:
         '200':
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+    {
+        var rule = new GetWithBody();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+        var settings = new OpenApiReaderSettings();
+        settings.RuleSet.Add(typeof(GetWithBody), [rule]);
+        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+        return result.OpenApiDiagnostic;
     }
 }
