@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed Python error when a class inherits from a base class and implements an interface. [5637](https://github.com/microsoft/kiota/issues/5637)
+- Fix anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
 
 ## [1.20.0] - 2024-11-07
 

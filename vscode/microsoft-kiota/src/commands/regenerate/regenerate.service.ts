@@ -1,4 +1,5 @@
 import TelemetryReporter from "@vscode/extension-telemetry";
+import * as path from "path";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
@@ -113,5 +114,33 @@ export class RegenerateService {
       return result;
     });
     this._openApiTreeProvider.resetInitialState();
+  }
+
+  async regenerateTeamsApp(workspaceJson: vscode.TextDocument, clientOrPluginKey: string) {
+    const workspaceDirectory = path.dirname(workspaceJson.fileName);
+    const workspaceParentDirectory = path.dirname(workspaceDirectory);
+    const shouldMakeTTKFunctionCall = await this.followsTTKFolderStructure(workspaceParentDirectory);
+
+    if (shouldMakeTTKFunctionCall) {
+      const workspaceJsonContent = workspaceJson.getText();
+      const workspaceJsonData = JSON.parse(workspaceJsonContent);
+
+      const outputPath = workspaceJsonData.plugins[clientOrPluginKey].outputPath;
+      const pathOfSpec = path.join(workspaceParentDirectory, outputPath, `${clientOrPluginKey.toLowerCase()}-openapi.yml`);
+      const pathPluginManifest = path.join(workspaceParentDirectory, outputPath, `${clientOrPluginKey.toLowerCase()}-apiplugin.json`);
+
+      await vscode.commands.executeCommand(
+        'fx-extension.kiotaregenerate',
+        [
+          pathOfSpec,
+          pathPluginManifest
+        ]
+      );
+    }
+  }
+
+  private async followsTTKFolderStructure(workspaceParentDirectory: string): Promise<boolean> {
+    const filesAndFolders = await vscode.workspace.fs.readDirectory(vscode.Uri.file(workspaceParentDirectory));
+    return !!filesAndFolders.find(([name, type]) => type === vscode.FileType.File && name === 'teamsapp.yml');
   }
 }
