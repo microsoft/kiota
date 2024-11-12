@@ -57,6 +57,11 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s.ToFirstCharacterLowerCase(),
                 false);
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"by{x.ToPascalCase('_')}",
+                static x => x.ToCamelCase('_'),
+                GenerationLanguage.Dart);
             CorrectCommonNames(generatedCode);
             var reservedNamesProvider = new DartReservedNamesProvider();
             cancellationToken.ThrowIfCancellationRequested();
@@ -79,12 +84,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.RequestBuilder,
                 ],
                 static s => s.ToCamelCase(UnderscoreArray));
-
-            ReplaceIndexersByMethodsWithParameter(generatedCode,
-                false,
-                static x => $"by{x.ToPascalCase('_')}",
-                static x => x.ToCamelCase('_'),
-                GenerationLanguage.Dart);
 
             AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
@@ -218,10 +217,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeEnum e)
         {
-            e.Name = DartConventionService.getCorrectedEnumName(e.Name);
             foreach (var option in e.Options)
             {
-                option.Name = getCorrectedEnumOptionName(option);
+                option.Name = DartConventionService.getCorrectedEnumName(option.Name);
             }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
@@ -501,20 +499,4 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);
     }
-
-    private static string getCorrectedEnumOptionName(CodeEnumOption option)
-    {
-        ArgumentNullException.ThrowIfNull(option);
-        var correctedName = "";
-        if (option.Name.Contains('_', StringComparison.Ordinal))
-        {
-            correctedName = option.Name.ToLowerInvariant().ToCamelCase('_');
-        }
-        else
-        {
-            correctedName = option.Name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? option.Name.ToLowerInvariant() : option.Name.ToFirstCharacterLowerCase();
-        }
-        return correctedName;
-    }
-
 }

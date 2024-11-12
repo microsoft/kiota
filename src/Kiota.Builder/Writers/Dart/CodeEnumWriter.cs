@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         foreach (var option in options)
         {
             conventions.WriteShortDescription(option, writer);
-            
+
             var serializationName = option.SerializationName;
             if (serializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
             {
