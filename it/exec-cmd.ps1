@@ -221,6 +221,7 @@ elseif ($language -eq "dart") {
     }
     else {
         Invoke-Call -ScriptBlock {
+            dart pub get
             dart analyze src/
         } -ErrorAction Stop
     }
