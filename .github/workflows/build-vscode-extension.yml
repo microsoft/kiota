@@ -43,11 +43,11 @@ jobs:
       - run: npm run lint
         working-directory: vscode/microsoft-kiota
       - name: run tests(linux)
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true' and runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: xvfb-run -a npm run test-with-coverage
         working-directory: vscode/microsoft-kiota
       - name: run tests
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true' and runner.os != 'Linux'
+        if: runner.os != 'Linux'
         run: npm run test-with-coverage
         working-directory: vscode/microsoft-kiota
       - name: Run sonar cloud analysis
