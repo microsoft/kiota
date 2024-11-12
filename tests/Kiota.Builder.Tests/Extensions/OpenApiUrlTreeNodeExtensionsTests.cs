@@ -145,7 +145,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 In = ParameterLocation.Path,
                                 Required = true,
                                 Schema = new() {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -153,7 +153,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -168,7 +168,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 In = ParameterLocation.Path,
                                 Required = true,
                                 Schema = new() {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -176,7 +176,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -206,7 +206,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                     Required = true,
                     Schema = new()
                     {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     },
                     Style = ParameterStyle.Simple,
                 },
@@ -219,7 +219,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -256,7 +256,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                     Required = true,
                     Schema = new()
                     {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     },
                     Style = ParameterStyle.Simple,
                 },
@@ -269,7 +269,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -283,7 +283,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$expand",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -300,7 +300,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "id",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                                 Required = true
@@ -335,7 +335,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
@@ -343,7 +343,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Query,
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
@@ -351,7 +351,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Query,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     },
@@ -381,7 +381,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Path,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
@@ -389,7 +389,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Query,
                                     Required = false,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
@@ -397,7 +397,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Query,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 }
                             },
@@ -423,7 +423,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
@@ -431,14 +431,14 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Query,
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
                             Name = "apikey",
                             In = ParameterLocation.Query,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     },
@@ -468,21 +468,21 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Path,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
                                     Name = "filter",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
                                     Name = "apikey",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 }
                             },
@@ -508,7 +508,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
@@ -516,7 +516,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Query,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter {
@@ -524,7 +524,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             Required = true,
                             In = ParameterLocation.Query,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     },
@@ -554,7 +554,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Path,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
@@ -562,7 +562,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Required = true,
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                                 new OpenApiParameter {
@@ -570,7 +570,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Required = true,
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 }
                             },
@@ -599,7 +599,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 In = ParameterLocation.Path,
                                 Required = true,
                                 Schema = new() {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -607,7 +607,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -615,7 +615,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "api-version",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -623,7 +623,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "api~topic",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
@@ -631,7 +631,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Name = "api.encoding",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -669,7 +669,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 In = ParameterLocation.Path,
                                 Required = true,
                                 Schema = new() {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -679,7 +679,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 Content = new Dictionary<string, OpenApiMediaType>() {
                                     {"application/json", new() {
                                         Schema = new () {
-                                            Type = "string"
+                                            Type = JsonSchemaType.String
                                         }
                                     }}
                                 }
@@ -711,7 +711,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                 In = ParameterLocation.Path,
                                 Required = true,
                                 Schema = new() {
-                                    Type = "string"
+                                    Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
@@ -728,7 +728,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                             {
                                                 Schema = new ()
                                                 {
-                                                    Type = "object",
+                                                    Type = JsonSchemaType.Object,
                                                     Title = "json",
                                                     Reference = new OpenApiReference()
                                                     {
@@ -763,16 +763,16 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     {
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "displayName", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -794,7 +794,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                     },
@@ -823,7 +823,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                     },
@@ -855,7 +855,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     In = ParameterLocation.Path,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 },
                             },
@@ -912,11 +912,11 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     {
         var ownerSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -928,11 +928,11 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         };
         var repoSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -1023,7 +1023,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "string"
+                                                Type = JsonSchemaType.String
                                             }
                                         }
                                     }
@@ -1044,7 +1044,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "string"
+                                                Type = JsonSchemaType.String
                                             }
                                         }
                                     }

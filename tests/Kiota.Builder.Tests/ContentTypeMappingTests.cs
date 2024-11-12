@@ -83,11 +83,11 @@ public sealed class ContentTypeMappingTests : IDisposable
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -177,11 +177,11 @@ public sealed class ContentTypeMappingTests : IDisposable
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -269,11 +269,11 @@ public sealed class ContentTypeMappingTests : IDisposable
                                 ["200"] = new OpenApiResponse {
                                     Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "id", new OpenApiSchema {
-                                                            Type = "string",
+                                                            Type = JsonSchemaType.String,
                                                         }
                                                     }
                                                 },
@@ -297,11 +297,11 @@ public sealed class ContentTypeMappingTests : IDisposable
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", new OpenApiSchema {
-                            Type = "object",
+                            Type = JsonSchemaType.Object,
                             Properties = new Dictionary<string, OpenApiSchema> {
                                 {
                                     "id", new OpenApiSchema {
-                                        Type = "string",
+                                        Type = JsonSchemaType.String,
                                     }
                                 }
                             },
@@ -360,11 +360,11 @@ public sealed class ContentTypeMappingTests : IDisposable
                             {
                                 Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
                                         Schema = new OpenApiSchema {
-                                            Type = "object",
+                                            Type = JsonSchemaType.Object,
                                             Properties = new Dictionary<string, OpenApiSchema> {
                                                 {
                                                     "id", new OpenApiSchema {
-                                                        Type = "string",
+                                                        Type = JsonSchemaType.String,
                                                     }
                                                 }
                                             },
@@ -387,11 +387,11 @@ public sealed class ContentTypeMappingTests : IDisposable
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", new OpenApiSchema {
-                            Type = "object",
+                            Type = JsonSchemaType.Object,
                             Properties = new Dictionary<string, OpenApiSchema> {
                                 {
                                     "id", new OpenApiSchema {
-                                        Type = "string",
+                                        Type = JsonSchemaType.String,
                                     }
                                 }
                             },

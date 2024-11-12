@@ -9,7 +9,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Services;
 using Microsoft.Plugins.Manifest;
 using Moq;
@@ -242,38 +242,36 @@ components:
         Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
-        var openApiReader = new OpenApiStreamReader();
-
         // Validate the original file.
-        var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
-        var originalDocument = openApiReader.Read(originalOpenApiFile, out var originalDiagnostic);
-        Assert.Empty(originalDiagnostic.Errors);
+        using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
+        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        Assert.Empty(originalResult.OpenApiDiagnostic.Errors);
 
-        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
-        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
-        Assert.Single(originalDocument.Components.Schemas);// one schema originally
-        Assert.Single(originalDocument.Extensions); // single unsupported extension at root
-        Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
-        Assert.Equal(2, originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
-        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
+        Assert.Equal(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
+        Assert.Equal(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
+        Assert.Single(originalResult.OpenApiDocument.Components.Schemas);// one schema originally
+        Assert.Single(originalResult.OpenApiDocument.Extensions); // single unsupported extension at root
+        Assert.Equal(2, originalResult.OpenApiDocument.Paths.Count); // document has only two paths
+        Assert.Equal(2, originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
+        Assert.Equal(2, originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
 
         // Validate the output open api file
-        var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultDocument = openApiReader.Read(resultOpenApiFile, out var diagnostic);
-        Assert.Empty(diagnostic.Errors);
+        using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
+        var resultResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        Assert.Empty(resultResult.OpenApiDiagnostic.Errors);
 
         // Assertions / validations
-        Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
-        Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
-        Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
-        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
-        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
-        Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
-        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
-        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
-        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
+        Assert.Empty(resultResult.OpenApiDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
+        Assert.Empty(resultResult.OpenApiDocument.Extensions); // no extension at root (unsupported extension is removed)
+        Assert.Equal(2, resultResult.OpenApiDocument.Paths.Count); // document has only two paths
+        Assert.Equal(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count, resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
+        Assert.Empty(resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
+        Assert.Equal(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count, resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
+        Assert.Single(resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
     }
 
     #region Security
@@ -686,7 +684,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("string", schema.Type);
+                    Assert.Equal(JsonSchemaType.String, schema.Type.Value);
                     Assert.Equal(5, schema.MaxLength);
                 }
             },
@@ -706,7 +704,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(3, schema.Properties.Count);
                 }
             },
@@ -726,7 +724,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
                 }
             },
@@ -746,7 +744,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
                 }
             },
@@ -766,7 +764,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
                 }
             },
@@ -782,7 +780,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
                 }
             },
@@ -839,9 +837,8 @@ components:
         {
             // Validate the sliced openapi
             var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
-            var r = new OpenApiStringReader();
-            var slicedDocument = r.Read(slicedApiContent, out var diagnostic);
-            assertions(slicedDocument, diagnostic);
+            var readResult = await OpenApiDocument.LoadAsync(slicedApiContent);
+            assertions(readResult.OpenApiDocument, readResult.OpenApiDiagnostic);
         }
         finally
         {

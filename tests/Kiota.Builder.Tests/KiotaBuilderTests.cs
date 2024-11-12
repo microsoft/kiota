@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1354,10 +1355,10 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "array",
+                                        Type = JsonSchemaType.Array,
                                         Items = new OpenApiSchema
                                         {
-                                            Type = "int"
+                                            Type = JsonSchemaType.Integer
                                         }
                                     }
                                 }
@@ -1399,19 +1400,19 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
                                                     OneOf = new List<OpenApiSchema>{
                                                         new OpenApiSchema{
-                                                            Type = "number"
+                                                            Type = JsonSchemaType.Number
                                                         },
                                                         new OpenApiSchema{
-                                                            Type = "string"
+                                                            Type = JsonSchemaType.String
                                                         },
                                                         new OpenApiSchema {
-                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                            Enum = new List<JsonNode> { "-INF", "INF", "NaN" }
                                                         }
                                                     },
                                                     Format = "double"
@@ -1451,20 +1452,20 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
                                                     OneOf = new List<OpenApiSchema>{
                                                         new OpenApiSchema{
-                                                            Type = "number",
+                                                            Type = JsonSchemaType.Number,
                                                             Format = "double"
                                                         },
                                                         new OpenApiSchema{
-                                                            Type = "string"
+                                                            Type = JsonSchemaType.String
                                                         },
                                                         new OpenApiSchema {
-                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                            Enum = new List<JsonNode> { "-INF", "INF", "NaN" }
                                                         }
                                                     },
                                                 }
@@ -1503,19 +1504,19 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
                                                     AnyOf = new List<OpenApiSchema>{
                                                         new OpenApiSchema{
-                                                            Type = "number"
+                                                            Type = JsonSchemaType.Number
                                                         },
                                                         new OpenApiSchema{
-                                                            Type = "string"
+                                                            Type = JsonSchemaType.String
                                                         },
                                                         new OpenApiSchema {
-                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                            Enum = new List<JsonNode> { "-INF", "INF", "NaN" }
                                                         }
                                                     },
                                                     Format = "double"
@@ -1541,15 +1542,15 @@ paths:
     {
         var fooSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "sortBy", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
-                            Type = "array",
+                            Type = JsonSchemaType.Array,
                             Items = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     }
@@ -1609,16 +1610,16 @@ paths:
     {
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "displayName", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -1644,17 +1645,17 @@ paths:
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "value", new OpenApiSchema {
-                                                            Type = "array",
+                                                            Type = JsonSchemaType.Array,
                                                             Items = userSchema
                                                         }
                                                     },
                                                     {
                                                         "unknown", new OpenApiSchema {
-                                                            Type = "array",
+                                                            Type = JsonSchemaType.Array,
                                                             Items = new OpenApiSchema {
                                                             }
                                                         }
@@ -1711,7 +1712,7 @@ paths:
                                         ["text/plain"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "number",
+                                                Type = JsonSchemaType.Number,
                                                 Format = "int32",
                                             }
                                         }
@@ -1740,22 +1741,22 @@ paths:
     {
         var resourceActionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Title = "resourceAction",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "allowedResourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
-                            Type = "string"
+                            Type = JsonSchemaType.String
                         }
                     }
                 },
                 {
                     "notAllowedResourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
-                            Type = "string"
+                            Type = JsonSchemaType.String
                         }
                     }
                 }
@@ -1768,11 +1769,11 @@ paths:
         };
         var permissionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "resourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
                             AnyOf = new List<OpenApiSchema> {
                                 resourceActionSchema,
@@ -1800,7 +1801,7 @@ paths:
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     },
@@ -1814,7 +1815,7 @@ paths:
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "array",
+                                                Type = JsonSchemaType.Array,
                                                 Items = new OpenApiSchema {
                                                     AnyOf = new List<OpenApiSchema> {
                                                         permissionSchema,
@@ -1861,22 +1862,22 @@ paths:
     {
         var resourceActionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Title = "resourceAction",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "allowedResourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
-                            Type = "string"
+                            Type = JsonSchemaType.String
                         }
                     }
                 },
                 {
                     "notAllowedResourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
-                            Type = "string"
+                            Type = JsonSchemaType.String
                         }
                     }
                 }
@@ -1889,11 +1890,11 @@ paths:
         };
         var permissionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "resourceActions", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
                             AnyOf = new List<OpenApiSchema> {
                                 resourceActionSchema,
@@ -1921,7 +1922,7 @@ paths:
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter
@@ -1930,7 +1931,7 @@ paths:
                             In = ParameterLocation.Query,
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                         },
                         new OpenApiParameter
@@ -1940,7 +1941,7 @@ paths:
                             Description = "ETag",
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                         },
                         new OpenApiParameter
@@ -1950,7 +1951,7 @@ paths:
                             Description = "Consistency level",
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                         }
                     },
@@ -1964,7 +1965,7 @@ paths:
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "array",
+                                                Type = JsonSchemaType.Array,
                                                 Items = new OpenApiSchema {
                                                     AnyOf = new List<OpenApiSchema> {
                                                         permissionSchema,
@@ -2031,7 +2032,7 @@ paths:
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         new OpenApiParameter
@@ -2040,7 +2041,7 @@ paths:
                             In = ParameterLocation.Query,
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                         },
                         new OpenApiParameter
@@ -2049,7 +2050,7 @@ paths:
                             In = ParameterLocation.Header,
                             Required = false,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                         },
                     },
@@ -2063,10 +2064,10 @@ paths:
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema>() {
                                                     { "foo", new() {
-                                                            Type = "string"
+                                                            Type = JsonSchemaType.String
                                                         }
                                                     }
                                                 },
@@ -2105,11 +2106,11 @@ paths:
     {
         var resourceSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "info", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -2135,19 +2136,19 @@ paths:
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "derivedResource", new OpenApiSchema {
-                                                            Type = "object",
+                                                            Type = JsonSchemaType.Object,
                                                             Properties = new Dictionary<string, OpenApiSchema> {
                                                                 {
                                                                     "info2", new OpenApiSchema {
-                                                                        Type = "object",
+                                                                        Type = JsonSchemaType.Object,
                                                                         Properties = new Dictionary<string, OpenApiSchema> {
                                                                             {
                                                                                 "title", new OpenApiSchema {
-                                                                                    Type = "string",
+                                                                                    Type = JsonSchemaType.String,
                                                                                 }
                                                                             }
                                                                         }
@@ -2203,7 +2204,7 @@ paths:
     {
         var resourceSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Reference = new OpenApiReference
             {
                 Id = "resource"
@@ -2213,7 +2214,7 @@ paths:
 
         var properties = new Dictionary<string, OpenApiSchema>
         {
-            { "info", new OpenApiSchema { Type = "string", } },
+            { "info", new OpenApiSchema { Type = JsonSchemaType.String, } },
             { "derivedResource", new OpenApiSchema { AllOf = new List<OpenApiSchema> { resourceSchema, } } },
         };
 
@@ -2289,11 +2290,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Format = "time"
                                                 }
                                             }
@@ -2331,11 +2332,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Format = "date"
                                                 }
                                             }
@@ -2373,11 +2374,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Format = "duration"
                                                 }
                                             }
@@ -2415,11 +2416,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                 }
                                             }
                                         }
@@ -2435,11 +2436,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "errorId", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Extensions = new Dictionary<string, IOpenApiExtension>
                                                     {
                                                         { OpenApiPrimaryErrorMessageExtension.Name,
@@ -2463,11 +2464,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "serviceErrorId", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Extensions = new Dictionary<string, IOpenApiExtension>
                                                     {
                                                         { OpenApiPrimaryErrorMessageExtension.Name,
@@ -2491,7 +2492,7 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 }
                             }
@@ -2504,11 +2505,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "authenticationRealm", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                     Extensions = new Dictionary<string, IOpenApiExtension>
                                                     {
                                                         { OpenApiPrimaryErrorMessageExtension.Name,
@@ -2521,7 +2522,7 @@ paths:
                                             },
                                             {
                                                 "authenticationCode", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                 }
                                             }
                                         }
@@ -2585,11 +2586,11 @@ paths:
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Type = "object",
+                                        Type = JsonSchemaType.Object,
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "progress", new OpenApiSchema{
-                                                    Type = "string",
+                                                    Type = JsonSchemaType.String,
                                                 }
                                             }
                                         }
@@ -2634,11 +2635,11 @@ paths:
     {
         var errorSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "errorId", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -2684,11 +2685,11 @@ paths:
                                         {
                                             Schema = new OpenApiSchema
                                             {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "progress", new OpenApiSchema{
-                                                            Type = "string",
+                                                            Type = JsonSchemaType.String,
                                                         }
                                                     }
                                                 }
@@ -2744,11 +2745,11 @@ paths:
     {
         var errorSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "errorId", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -2794,11 +2795,11 @@ paths:
                                         {
                                             Schema = new OpenApiSchema
                                             {
-                                                Type = "object",
+                                                Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "progress", new OpenApiSchema{
-                                                            Type = "string",
+                                                            Type = JsonSchemaType.String,
                                                         }
                                                     }
                                                 }
@@ -2853,18 +2854,18 @@ paths:
     {
         var weatherForecastSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "date", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                         Format = "date-time"
                     }
                 },
                 {
                     "temperature", new OpenApiSchema {
-                        Type = "integer",
+                        Type = JsonSchemaType.Integer,
                         Format = "int32"
                     }
                 }
@@ -2938,18 +2939,18 @@ paths:
     {
         var uploadSessionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "date", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                         Format = "date-time"
                     }
                 },
                 {
                     "temperature", new OpenApiSchema {
-                        Type = "integer",
+                        Type = JsonSchemaType.Integer,
                         Format = "int32"
                     }
                 }
@@ -3022,18 +3023,18 @@ paths:
     {
         var uploadSessionSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "date", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                         Format = "date-time"
                     }
                 },
                 {
                     "temperature", new OpenApiSchema {
-                        Type = "integer",
+                        Type = JsonSchemaType.Integer,
                         Format = "int32"
                     }
                 }
@@ -3108,19 +3109,19 @@ paths:
     {
         var anyOfSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "date", new OpenApiSchema {
                         AnyOf = [
                             new OpenApiSchema {
-                                Type = "string",
+                                Type = JsonSchemaType.String,
                             },
                             new OpenApiSchema {
-                                Type = "array",
+                                Type = JsonSchemaType.Array,
                                 Items = new OpenApiSchema {
-                                    Type = "string",
+                                    Type = JsonSchemaType.String,
                                 },
                             },
                         ]
@@ -3191,18 +3192,18 @@ paths:
     {
         var anyOfSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "date", new OpenApiSchema {
                         AnyOf = [
                             new OpenApiSchema {
-                                Type = "string",
+                                Type = JsonSchemaType.String,
                                 Nullable = true
                             },
                             new OpenApiSchema {
-                                Type = "number",
+                                Type = JsonSchemaType.Number,
                                 Format = "int64",
                                 Nullable = true,
                             }
@@ -3275,17 +3276,17 @@ paths:
     {
         var entitySchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.entity")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.entity"
                     }
                 }
             },
@@ -3310,16 +3311,16 @@ paths:
         };
         var directoryObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "tenant", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {   "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.directoryObject")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.directoryObject"
                     }
                 }
             },
@@ -3410,17 +3411,17 @@ paths:
     {
         var entitySchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.entity")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.entity"
                     }
                 }
             },
@@ -3448,16 +3449,16 @@ paths:
         };
         var directoryObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "tenant", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {   "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.directoryObject")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.directoryObject"
                     }
                 }
             },
@@ -3473,16 +3474,16 @@ paths:
         };
         var fileSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "tenant", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {   "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.file")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.file"
                     }
                 }
             },
@@ -3562,17 +3563,17 @@ paths:
     {
         var entitySchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("microsoft.graph.entity")
+                        Type = JsonSchemaType.String,
+                        Default = "microsoft.graph.entity"
                     }
                 }
             },
@@ -3592,16 +3593,16 @@ paths:
         };
         var directoryObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "tenant", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {   "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("microsoft.graph.directoryObject")
+                        Type = JsonSchemaType.String,
+                        Default = "microsoft.graph.directoryObject"
                     }
                 }
             },
@@ -3617,7 +3618,7 @@ paths:
         };
         var directoryObjectsResponse = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             OneOf = new List<OpenApiSchema> {
                 entitySchema,
                 directoryObjectSchema
@@ -3705,17 +3706,17 @@ paths:
     {
         var entitySchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.entity")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.entity"
                     }
                 }
             },
@@ -3735,19 +3736,19 @@ paths:
         };
         var directoryObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = new List<OpenApiSchema> {
                 entitySchema,
                 new OpenApiSchema {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "tenant", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         {   "@odata.type", new OpenApiSchema {
-                                Type = "string",
-                                Default = new OpenApiString("microsoft.graph.directoryObject")
+                                Type = JsonSchemaType.String,
+                                Default = "microsoft.graph.directoryObject"
                             }
                         }
                     },
@@ -3765,19 +3766,19 @@ paths:
         };
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = new List<OpenApiSchema> {
                 directoryObjectSchema,
                 new OpenApiSchema {
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "firstName", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         {   "@odata.type", new OpenApiSchema {
-                                Type = "string",
-                                Default = new OpenApiString("microsoft.graph.firstName")
+                                Type = JsonSchemaType.String,
+                                Default = "microsoft.graph.firstName"
                             }
                         }
                     },
@@ -3883,17 +3884,17 @@ paths:
     {
         var entitySchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.entity")
+                        Type = JsonSchemaType.String,
+                        Default = "#microsoft.graph.entity"
                     }
                 }
             },
@@ -3922,7 +3923,7 @@ paths:
         };
         var directoryObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = [
                 entitySchema,
                 new OpenApiSchema
@@ -3930,12 +3931,12 @@ paths:
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "tenant", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         {   "@odata.type", new OpenApiSchema {
-                                Type = "string",
-                                Default = new OpenApiString("microsoft.graph.directoryObject")
+                                Type = JsonSchemaType.String,
+                                Default = "microsoft.graph.directoryObject"
                             }
                         }
                     },
@@ -3953,7 +3954,7 @@ paths:
         };
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = [
                 directoryObjectSchema,
                 new OpenApiSchema
@@ -3961,12 +3962,12 @@ paths:
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "firstName", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         },
                         {   "@odata.type", new OpenApiSchema {
-                                Type = "string",
-                                Default = new OpenApiString("microsoft.graph.firstName")
+                                Type = JsonSchemaType.String,
+                                Default = "microsoft.graph.firstName"
                             }
                         }
                     },
@@ -4064,11 +4065,11 @@ paths:
     {
         var simpleObjet = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -4097,7 +4098,7 @@ paths:
                                                 OneOf = new List<OpenApiSchema> {
                                                     simpleObjet,
                                                     new OpenApiSchema {
-                                                        Type = "number"
+                                                        Type = JsonSchemaType.Number
                                                     }
                                                 }
                                             }
@@ -4182,11 +4183,11 @@ components:
     {
         var simpleObjet = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -4215,11 +4216,11 @@ components:
                                                 OneOf = new List<OpenApiSchema> {
                                                     simpleObjet,
                                                     new OpenApiSchema {
-                                                        Type = "object",
+                                                        Type = JsonSchemaType.Object,
                                                         Properties = new Dictionary<string, OpenApiSchema> {
                                                             {
                                                                 "name", new OpenApiSchema {
-                                                                    Type = "string"
+                                                                    Type = JsonSchemaType.String
                                                                 }
                                                             }
                                                         }
@@ -4265,11 +4266,11 @@ components:
     {
         var simpleObjet = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -4298,7 +4299,7 @@ components:
                                                 AnyOf = new List<OpenApiSchema> {
                                                     simpleObjet,
                                                     new OpenApiSchema {
-                                                        Type = "number"
+                                                        Type = JsonSchemaType.Number
                                                     }
                                                 }
                                             }
@@ -4341,11 +4342,11 @@ components:
     {
         var simpleObjet = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -4374,11 +4375,11 @@ components:
                                                 AnyOf = new List<OpenApiSchema> {
                                                     simpleObjet,
                                                     new OpenApiSchema {
-                                                        Type = "object",
+                                                        Type = JsonSchemaType.Object,
                                                         Properties = new Dictionary<string, OpenApiSchema> {
                                                             {
                                                                 "name", new OpenApiSchema {
-                                                                    Type = "string"
+                                                                    Type = JsonSchemaType.String
                                                                 }
                                                             }
                                                         }
@@ -4424,16 +4425,16 @@ components:
     {
         var baseObject = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "kind", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -4455,16 +4456,16 @@ components:
         };
         var derivedObject = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = [
                 baseObject,
                 new OpenApiSchema
                 {
-                    Type = "object",
+                    Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "special", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     },
@@ -4488,16 +4489,16 @@ components:
         };
         var secondLevelDerivedObject = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             AllOf = [
                 derivedObject,
                 new OpenApiSchema
                 {
-                    Type = "object",
+                    Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, OpenApiSchema> {
                         {
                             "moreSpecial", new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             }
                         }
                     }
@@ -4568,38 +4569,37 @@ components:
         Assert.Equal("kind", derivedObjectClass.DiscriminatorInformation.DiscriminatorPropertyName);
         Assert.NotEmpty(derivedObjectClass.DiscriminatorInformation.DiscriminatorMappings);
     }
-    [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
-    [InlineData("string", "commonmark", "string")]
-    [InlineData("string", "html", "string")]
-    [InlineData("string", "date-time", "DateTimeOffset")]
-    [InlineData("string", "duration", "TimeSpan")]
-    [InlineData("string", "date", "DateOnly")]
-    [InlineData("string", "time", "TimeOnly")]
-    [InlineData("string", "base64url", "base64url")]
-    [InlineData("string", "uuid", "Guid")]
+    [InlineData(JsonSchemaType.String, "", "string")]// https://spec.openapis.org/registry/format/
+    [InlineData(JsonSchemaType.String, "commonmark", "string")]
+    [InlineData(JsonSchemaType.String, "html", "string")]
+    [InlineData(JsonSchemaType.String, "date-time", "DateTimeOffset")]
+    [InlineData(JsonSchemaType.String, "duration", "TimeSpan")]
+    [InlineData(JsonSchemaType.String, "date", "DateOnly")]
+    [InlineData(JsonSchemaType.String, "time", "TimeOnly")]
+    [InlineData(JsonSchemaType.String, "base64url", "base64url")]
+    [InlineData(JsonSchemaType.String, "uuid", "Guid")]
     // floating points can only be declared as numbers
-    [InlineData("number", "double", "double")]
-    [InlineData("number", "float", "float")]
-    [InlineData("number", "decimal", "decimal")]
+    [InlineData(JsonSchemaType.Number, "double", "double")]
+    [InlineData(JsonSchemaType.Number, "float", "float")]
+    [InlineData(JsonSchemaType.Number, "decimal", "decimal")]
     // integers can only be declared as numbers or integers
-    [InlineData("number", "int32", "integer")]
-    [InlineData("integer", "int32", "integer")]
-    [InlineData("number", "int64", "int64")]
-    [InlineData("integer", "int64", "int64")]
-    [InlineData("number", "int8", "sbyte")]
-    [InlineData("integer", "int8", "sbyte")]
-    [InlineData("number", "int16", "integer")]
-    [InlineData("integer", "int16", "integer")]
-    [InlineData("number", "uint8", "byte")]
-    [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "double")]
-    [InlineData("integer", "", "integer")]
-    [InlineData("boolean", "", "boolean")]
-    [InlineData("", "byte", "base64")]
-    [InlineData("", "binary", "binary")]
-    [InlineData("file", null, "binary")]
+    [InlineData(JsonSchemaType.Number, "int32", "integer")]
+    [InlineData(JsonSchemaType.Integer, "int32", "integer")]
+    [InlineData(JsonSchemaType.Number, "int64", "int64")]
+    [InlineData(JsonSchemaType.Integer, "int64", "int64")]
+    [InlineData(JsonSchemaType.Number, "int8", "sbyte")]
+    [InlineData(JsonSchemaType.Integer, "int8", "sbyte")]
+    [InlineData(JsonSchemaType.Number, "int16", "integer")]
+    [InlineData(JsonSchemaType.Integer, "int16", "integer")]
+    [InlineData(JsonSchemaType.Number, "uint8", "byte")]
+    [InlineData(JsonSchemaType.Integer, "uint8", "byte")]
+    [InlineData(JsonSchemaType.Number, "", "double")]
+    [InlineData(JsonSchemaType.Integer, "", "integer")]
+    [InlineData(JsonSchemaType.Boolean, "", "boolean")]
+    [InlineData(JsonSchemaType.String, "byte", "base64")]
+    [InlineData(JsonSchemaType.String, "binary", "binary")]
     [Theory]
-    public void MapsPrimitiveFormats(string type, string format, string expected)
+    public void MapsPrimitiveFormats(JsonSchemaType type, string format, string expected)
     {
         var document = new OpenApiDocument
         {
@@ -4639,35 +4639,34 @@ components:
         Assert.Equal(expected, method.ReturnType.Name);
         Assert.True(method.ReturnType.AllTypes.First().IsExternal);
     }
-    [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
-    [InlineData("string", "commonmark", "string")]
-    [InlineData("string", "html", "string")]
-    [InlineData("string", "date-time", "DateTimeOffset")]
-    [InlineData("string", "duration", "TimeSpan")]
-    [InlineData("string", "date", "DateOnly")]
-    [InlineData("string", "time", "TimeOnly")]
-    [InlineData("string", "base64url", "base64url")]
+    [InlineData(JsonSchemaType.String, "", "string")]// https://spec.openapis.org/registry/format/
+    [InlineData(JsonSchemaType.String, "commonmark", "string")]
+    [InlineData(JsonSchemaType.String, "html", "string")]
+    [InlineData(JsonSchemaType.String, "date-time", "DateTimeOffset")]
+    [InlineData(JsonSchemaType.String, "duration", "TimeSpan")]
+    [InlineData(JsonSchemaType.String, "date", "DateOnly")]
+    [InlineData(JsonSchemaType.String, "time", "TimeOnly")]
+    [InlineData(JsonSchemaType.String, "base64url", "base64url")]
     // floating points can only be declared as numbers
-    [InlineData("number", "double", "double")]
-    [InlineData("number", "float", "float")]
-    [InlineData("number", "decimal", "decimal")]
+    [InlineData(JsonSchemaType.Number, "double", "double")]
+    [InlineData(JsonSchemaType.Number, "float", "float")]
+    [InlineData(JsonSchemaType.Number, "decimal", "decimal")]
     // integers can only be declared as numbers or integers
-    [InlineData("number", "int32", "integer")]
-    [InlineData("integer", "int32", "integer")]
-    [InlineData("number", "int64", "int64")]
-    [InlineData("integer", "int64", "int64")]
-    [InlineData("number", "int8", "sbyte")]
-    [InlineData("integer", "int8", "sbyte")]
-    [InlineData("number", "uint8", "byte")]
-    [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "double")]
-    [InlineData("integer", "", "integer")]
-    [InlineData("boolean", "", "boolean")]
-    [InlineData("", "byte", "base64")]
-    [InlineData("", "binary", "binary")]
-    [InlineData("file", null, "binary")]
+    [InlineData(JsonSchemaType.Number, "int32", "integer")]
+    [InlineData(JsonSchemaType.Integer, "int32", "integer")]
+    [InlineData(JsonSchemaType.Number, "int64", "int64")]
+    [InlineData(JsonSchemaType.Integer, "int64", "int64")]
+    [InlineData(JsonSchemaType.Number, "int8", "sbyte")]
+    [InlineData(JsonSchemaType.Integer, "int8", "sbyte")]
+    [InlineData(JsonSchemaType.Number, "uint8", "byte")]
+    [InlineData(JsonSchemaType.Integer, "uint8", "byte")]
+    [InlineData(JsonSchemaType.Number, "", "double")]
+    [InlineData(JsonSchemaType.Integer, "", "integer")]
+    [InlineData(JsonSchemaType.Boolean, "", "boolean")]
+    [InlineData(JsonSchemaType.String, "byte", "base64")]
+    [InlineData(JsonSchemaType.String, "binary", "binary")]
     [Theory]
-    public void MapsQueryParameterTypes(string type, string format, string expected)
+    public void MapsQueryParameterTypes(JsonSchemaType type, string format, string expected)
     {
         var document = new OpenApiDocument
         {
@@ -4725,9 +4724,9 @@ components:
                                     Name = "query",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "array",
+                                        Type = JsonSchemaType.Array,
                                         Items = new OpenApiSchema {
-                                            Type = "integer",
+                                            Type = JsonSchemaType.Integer,
                                             Format = "int64"
                                         }
                                     }
@@ -4773,10 +4772,10 @@ components:
                                     Name = "query",
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
-                                        Type = "string",
-                                        Enum = new List<IOpenApiAny> {
-                                            new OpenApiString("value1"),
-                                            new OpenApiString("value2")
+                                        Type = JsonSchemaType.String,
+                                        Enum = new List<JsonNode> {
+                                            "value1",
+                                            "value2"
                                         }
                                     }
                                 }
@@ -4883,12 +4882,12 @@ components:
     {
         var baseSchema = new OpenApiSchema
         {
-            Type = "number",
+            Type = JsonSchemaType.Number,
             Format = "int64"
         };
         var arraySchema = new OpenApiSchema
         {
-            Type = "array",
+            Type = JsonSchemaType.Array,
             Items = baseSchema
         };
         var document = new OpenApiDocument
@@ -4971,11 +4970,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -5034,11 +5033,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -5097,11 +5096,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5164,25 +5163,25 @@ components:
         var enumSchema = new OpenApiSchema
         {
             Title = "riskLevel",
-            Enum = new List<IOpenApiAny>
+            Enum = new List<JsonNode>
             {
-                new OpenApiString("low"),
-                new OpenApiString("medium"),
-                new OpenApiString("high"),
-                new OpenApiString("hidden"),
-                new OpenApiString("none"),
-                new OpenApiString("unknownFutureValue")
+                "low",
+                "medium",
+                "high",
+                "hidden",
+                "none",
+                "unknownFutureValue"
             },
-            Type = "string"
+            Type = JsonSchemaType.String
         };
         var myObjectSchema = new OpenApiSchema
         {
             Title = "conditionalAccessConditionSet",
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "signInRiskLevels", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema
                         {
                             AnyOf = new List<OpenApiSchema>
@@ -5190,7 +5189,7 @@ components:
                                 enumSchema,
                                 new OpenApiSchema
                                 {
-                                    Type = "object",
+                                    Type = JsonSchemaType.Object,
                                     Nullable = true
                                 }
                             }
@@ -5264,25 +5263,25 @@ components:
         var enumSchema = new OpenApiSchema
         {
             Title = "riskLevel",
-            Enum = new List<IOpenApiAny>
+            Enum = new List<JsonNode>
             {
-                new OpenApiString("low"),
-                new OpenApiString("medium"),
-                new OpenApiString("high"),
-                new OpenApiString("hidden"),
-                new OpenApiString("none"),
-                new OpenApiString("unknownFutureValue")
+                "low",
+                "medium",
+                "high",
+                "hidden",
+                "none",
+                "unknownFutureValue"
             },
-            Type = "string"
+            Type = JsonSchemaType.String
         };
         var myObjectSchema = new OpenApiSchema
         {
             Title = "conditionalAccessConditionSet",
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "signInRiskLevels", new OpenApiSchema {
-                        Type = "array",
+                        Type = JsonSchemaType.Array,
                         Items = enumSchema
                     }
                 }
@@ -5352,13 +5351,13 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "tilleggsinformasjon", new OpenApiSchema {
-                        Type = "object",
+                        Type = JsonSchemaType.Object,
                         AdditionalProperties = new OpenApiSchema {
-                            Type = "string"
+                            Type = JsonSchemaType.String
                         }
                     }
                 }
@@ -5419,11 +5418,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -5485,11 +5484,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5553,11 +5552,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -5640,7 +5639,7 @@ components:
                                                 Properties = new Dictionary<string, OpenApiSchema> {
                                                     {
                                                         "name", new OpenApiSchema {
-                                                            Type = "string"
+                                                            Type = JsonSchemaType.String
                                                         }
                                                     }
                                                 }
@@ -5693,11 +5692,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5710,11 +5709,11 @@ components:
         };
         var myOtherObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5788,11 +5787,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5861,11 +5860,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -5934,11 +5933,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6006,11 +6005,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6081,11 +6080,11 @@ components:
         {
             var myObjectSchema = new OpenApiSchema
             {
-                Type = "object",
+                Type = JsonSchemaType.Object,
                 Properties = new Dictionary<string, OpenApiSchema> {
                     {
                         "id", new OpenApiSchema {
-                            Type = "string",
+                            Type = JsonSchemaType.String,
                         }
                     }
                 },
@@ -6129,11 +6128,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6162,9 +6161,9 @@ components:
                                         { "application/json",
                                         new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
-                                                                Type = "array",
+                                                                Type = JsonSchemaType.Array,
                                                                 Items = new OpenApiSchema {
-                                                                    Type = "string",
+                                                                    Type = JsonSchemaType.String,
                                                                 }
                                                             }
                                             }
@@ -6216,11 +6215,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6285,11 +6284,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                         ReadOnly = isReadonly,
                     }
                 }
@@ -6349,11 +6348,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6414,11 +6413,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6499,11 +6498,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6584,11 +6583,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6739,11 +6738,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -6769,7 +6768,7 @@ components:
                                     In = ParameterLocation.Path,
                                     Required = true,
                                     Schema = new OpenApiSchema {
-                                        Type = "string"
+                                        Type = JsonSchemaType.String
                                     }
                                 }
                             },
@@ -7210,16 +7209,16 @@ paths:
     {
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "displayName", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -7241,7 +7240,7 @@ paths:
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                             Extensions = {
                                 ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
@@ -7292,16 +7291,16 @@ paths:
     {
         var userSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 },
                 {
                     "displayName", new OpenApiSchema {
-                        Type = "string"
+                        Type = JsonSchemaType.String
                     }
                 }
             },
@@ -7323,7 +7322,7 @@ paths:
                             In = ParameterLocation.Path,
                             Required = true,
                             Schema = new OpenApiSchema {
-                                Type = "string"
+                                Type = JsonSchemaType.String
                             },
                             Extensions = {
                                 ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
@@ -9265,11 +9264,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -9410,11 +9409,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -9555,11 +9554,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
@@ -9657,11 +9656,11 @@ components:
     {
         var myObjectSchema = new OpenApiSchema
         {
-            Type = "object",
+            Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
                     "name", new OpenApiSchema {
-                        Type = "string",
+                        Type = JsonSchemaType.String,
                     }
                 }
             },
