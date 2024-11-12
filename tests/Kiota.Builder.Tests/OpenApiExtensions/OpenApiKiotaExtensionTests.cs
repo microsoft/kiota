@@ -1,7 +1,8 @@
 ﻿using System.IO;
+using System.Text;
+using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
 using Xunit;
 
@@ -48,29 +49,32 @@ public class OpenApiKiotaExtensionTests
     [Fact]
     public void Parses()
     {
-        var oaiValue = new OpenApiObject
+        var oaiValueRepresentation =
+        """
         {
-            { "languagesInformation", new OpenApiObject {
-                {"CSharp", new OpenApiObject {
-                        {"dependencies", new OpenApiArray {
-                            new OpenApiObject {
-                                {"name", new OpenApiString("Microsoft.Graph.Core")},
-                                {"version", new OpenApiString("1.0.0") },
-                                {"type", new OpenApiString("bundle")}
-                            }
-                        }},
-                        {"dependencyInstallCommand", new OpenApiString("dotnet add package") },
-                        {"maturityLevel", new OpenApiString("Preview")},
-                        {"clientClassName", new OpenApiString("GraphServiceClient")},
-                        {"clientNamespaceName", new OpenApiString("Microsoft.Graph")},
-                        {"structuredMimeTypes", new OpenApiArray {
-                            new OpenApiString("application/json"),
-                            new OpenApiString("application/xml")}
-                        },
-                    }
+            "languagesInformation": {
+                "CSharp": {
+                    "dependencies": [
+                        {
+                            "name": "Microsoft.Graph.Core",
+                            "version": "1.0.0",
+                            "type": "bundle"
+                        }
+                    ],
+                    "dependencyInstallCommand": "dotnet add package",
+                    "maturityLevel": "Preview",
+                    "clientClassName": "GraphServiceClient",
+                    "clientNamespaceName": "Microsoft.Graph",
+                    "structuredMimeTypes": [
+                        "application/json",
+                        "application/xml"
+                    ]
                 }
-            }}
-        };
+            }
+        }
+        """;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(oaiValueRepresentation));
+        var oaiValue = JsonNode.Parse(stream);
         var value = OpenApiKiotaExtension.Parse(oaiValue);
         Assert.NotNull(value);
         Assert.True(value.LanguagesInformation.TryGetValue("CSharp", out var CSEntry));

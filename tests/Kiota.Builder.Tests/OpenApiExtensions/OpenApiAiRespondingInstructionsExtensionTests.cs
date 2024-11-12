@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
@@ -22,10 +23,15 @@ public sealed class OpenApiAiRespondingInstructionsExtensionTests : IDisposable
     [Fact]
     public void Parses()
     {
-        var oaiValue = new OpenApiArray {
-            new OpenApiString("This is a description"),
-            new OpenApiString("This is a description 2"),
-        };
+        var oaiValueRepresentation =
+        """
+        [
+            "This is a description",
+            "This is a description 2",
+        ]
+        """;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(oaiValueRepresentation));
+        var oaiValue = JsonNode.Parse(stream);
         var value = OpenApiAiRespondingInstructionsExtension.Parse(oaiValue);
         Assert.NotNull(value);
         Assert.Equal("This is a description", value.RespondingInstructions[0]);
