@@ -109,6 +109,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Setup Dart
+        if: matrix.language == 'dart'
+        uses: dart-lang/setup-dart@v1.6.5
+        with:
+          sdk: "3.5"
 
       - name: Check if test is suppressed
         id: check-suppressed
