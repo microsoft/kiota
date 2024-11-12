@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.OpenApi.Any;
+using System.Text.Json;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
@@ -53,7 +53,7 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsArray(this OpenApiSchema? schema)
     {
-        return schema is not null && "array".Equals(schema.Type, StringComparison.OrdinalIgnoreCase) && schema.Items is not null &&
+        return schema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && schema.Items is not null &&
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
@@ -62,7 +62,7 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsObjectType(this OpenApiSchema? schema)
     {
-        return schema is not null && "object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase);
+        return schema is { Type: JsonSchemaType.Object or (JsonSchemaType.Object | JsonSchemaType.Null) };
     }
     public static bool HasAnyProperty(this OpenApiSchema? schema)
     {
@@ -128,45 +128,48 @@ public static class OpenApiSchemaExtensions
         return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
         // so we don't consider one of object/nullable as a union type
     }
-    private static readonly HashSet<string> oDataTypes = new(StringComparer.OrdinalIgnoreCase) {
-        "number",
-        "integer",
-    };
+    private static readonly HashSet<JsonSchemaType> oDataTypes = [
+        JsonSchemaType.Number,
+        JsonSchemaType.Integer,
+    ];
+    private static readonly Func<OpenApiSchema, bool> isODataType = static x => x.Type is not null && oDataTypes.Contains(x.Type.Value);
+    private static readonly Func<OpenApiSchema, bool> isStringType = static x => x is { Type: JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null) };
     private static bool IsODataPrimitiveTypeBackwardCompatible(this OpenApiSchema schema)
     {
         return schema.IsExclusiveUnion() &&
                 schema.OneOf.Count == 3 &&
                 schema.OneOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
-                schema.OneOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
-                schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1
+                schema.OneOf.Count(isODataType) == 1 &&
+                schema.OneOf.Count(isStringType) == 1
                 ||
             schema.IsInclusiveUnion() &&
                 schema.AnyOf.Count == 3 &&
                 schema.AnyOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
-                schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
-                schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1;
+                schema.AnyOf.Count(isODataType) == 1 &&
+                schema.AnyOf.Count(isStringType) == 1;
     }
     public static bool IsODataPrimitiveType(this OpenApiSchema schema)
     {
         return schema.IsExclusiveUnion() &&
                schema.OneOf.Count == 3 &&
-               schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase) && (x.Enum?.Any() ?? false)) == 1 &&
-               schema.OneOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
-               schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 2
+               schema.OneOf.Count(static x => isStringType(x) && (x.Enum?.Any() ?? false)) == 1 &&
+               schema.OneOf.Count(isODataType) == 1 &&
+               schema.OneOf.Count(isStringType) == 2
                ||
                schema.IsInclusiveUnion() &&
                schema.AnyOf.Count == 3 &&
-               schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase) && (x.Enum?.Any() ?? false)) == 1 &&
-               schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
-               schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 2
+               schema.AnyOf.Count(static x => isStringType(x) && (x.Enum?.Any() ?? false)) == 1 &&
+               schema.AnyOf.Count(isODataType) == 1 &&
+               schema.AnyOf.Count(isStringType) == 2
                ||
                schema.IsODataPrimitiveTypeBackwardCompatible();
     }
     public static bool IsEnum(this OpenApiSchema schema)
     {
         if (schema is null) return false;
-        return schema.Enum.OfType<OpenApiString>().Any(static x => !string.IsNullOrEmpty(x.Value)) &&
-                (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)); // number and boolean enums are not supported
+        return schema.Enum.Any(static x => x.GetValueKind() is JsonValueKind.String &&
+                                    x.GetValue<string>() is string value &&
+                                    !string.IsNullOrEmpty(value)); // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
@@ -180,8 +183,8 @@ public static class OpenApiSchemaExtensions
         return schema.HasAnyProperty() ||
                 (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
                 (!ignoreArrays && schema.Items != null) ||
-                (!ignoreType && !string.IsNullOrEmpty(schema.Type) &&
-                    ((ignoreNullableObjects && !"object".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)) ||
+                (!ignoreType && schema.Type is not null &&
+                    ((ignoreNullableObjects && !schema.IsObjectType()) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
                 !string.IsNullOrEmpty(schema.Reference?.Id);
