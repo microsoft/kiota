@@ -44,7 +44,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         if (!string.IsNullOrEmpty(accessModifierAttribute))
             writer.WriteLine(accessModifierAttribute);
 
-        var propertyName = codeElement.Name.ToCamelCase();
+        var propertyName = codeElement.Name;
         if (reservedNamesProvider.ReservedNames.Contains(propertyName))
         {
             propertyName += "Escaped";
@@ -68,7 +68,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 writer.WriteLine();
-                writer.WriteLine($"set {codeElement.Name.ToCamelCase()}({propertyType} value) {{");
+                writer.WriteLine($"set {codeElement.Name}({propertyType} value) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{backingStoreProperty.Name}.set('{backingStoreKey}', value);");
                 writer.DecreaseIndent();
