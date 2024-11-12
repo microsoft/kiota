@@ -171,6 +171,27 @@
       "stopAtEntry": false
     },
     {
+      "name": "Launch Dart",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": [
+        "generate",
+        "--openapi",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "--language",
+        "dart",
+        "-o",
+        "${workspaceFolder}/samples/msgraph-mail/java/utilities/src/main/java/graphjavav4/utilities",
+        "-n",
+        "graphjavav4.utilities"
+      ],
+      "cwd": "${workspaceFolder}/src/kiota",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
       "name": "Launch CLI (CSharp)",
       "type": "coreclr",
       "request": "launch",
