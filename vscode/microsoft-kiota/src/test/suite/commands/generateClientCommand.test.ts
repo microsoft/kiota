@@ -217,7 +217,7 @@ suite('GenerateClientCommand Test Suite', () => {
 
         //stub and call generateCommand
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
-        var outputPath = "path/to/temp/folder";
+        var outputPath = "path/to/temp/folder/appPackage";
         const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generateManifestAndRefreshUI").twice().withArgs(
                 config, extensionSettings, outputPath, ["repairs"]
