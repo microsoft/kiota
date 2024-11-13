@@ -21,7 +21,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                             const rangeBeforeObj = new vscode.Range(positionBeforeObj, positionBeforeObj);
 
                             const editPathsCommand = {
-                                title: l10n.t("Edit Paths"),
+                                title: l10n.t("Select"),
                                 command: "kiota.editPaths",
                                 arguments: [key, obj, objectKey]
                             };
