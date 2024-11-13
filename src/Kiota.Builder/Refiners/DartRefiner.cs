@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Dart;
 
+
 namespace Kiota.Builder.Refiners;
 public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
@@ -51,17 +52,38 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var defaultConfiguration = new GenerationConfiguration();
+
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
-                static s => s,
+                static s => s.ToFirstCharacterLowerCase(),
                 false);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"by{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase(),
+                static x => $"by{x.ToPascalCase('_')}",
+                static x => x.ToCamelCase('_'),
                 GenerationLanguage.Dart);
             CorrectCommonNames(generatedCode);
+            var reservedNamesProvider = new DartReservedNamesProvider();
+            cancellationToken.ThrowIfCancellationRequested();
+            CorrectNames(generatedCode, s =>
+            {
+                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            });
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            ReplacePropertyNames(generatedCode,
+                [
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
+                ],
+                static s => s.ToCamelCase(UnderscoreArray));
 
             AddQueryParameterExtractorMethod(generatedCode);
             // This adds the BaseRequestBuilder class as a superclass
@@ -76,31 +98,19 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                     }
                 }, addCurrentTypeAsGenericTypeParameter: true);
             RemoveRequestConfigurationClasses(generatedCode,
-                        new CodeUsing
-                        {
-                            Name = "RequestConfiguration",
-                            Declaration = new CodeType
-                            {
-                                Name = AbstractionsNamespaceName,
-                                IsExternal = true
-                            }
-                        }, new CodeType
-                        {
-                            Name = "DefaultQueryParameters",
-                            IsExternal = true,
-                        });
-            var reservedNamesProvider = new DartReservedNamesProvider();
-            CorrectNames(generatedCode, s =>
-            {
-                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
-                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
-                    !reservedNamesProvider.ReservedNames.Contains(s) &&
-                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
-                    return refinedName;
-                else
-                    return s;
-            });
-
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = AbstractionsNamespaceName,
+                        IsExternal = true
+                    }
+                }, new CodeType
+                {
+                    Name = "DefaultQueryParameters",
+                    IsExternal = true,
+                });
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
@@ -199,10 +209,18 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentElement.Parent is CodeClass parentClass)
         {
             parentClass.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase());
+            parentClass.Name = parentClass.Name.ToFirstCharacterUpperCase();
         }
         else if (currentElement is CodeIndexer i)
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentElement is CodeEnum e)
+        {
+            foreach (var option in e.Options)
+            {
+                option.Name = DartConventionService.getCorrectedEnumName(option.Name);
+            }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
@@ -233,6 +251,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+        currentMethod.Parameters.ToList().ForEach(static x => x.Name = x.Name.ToFirstCharacterLowerCase());
     }
 
     private static void CorrectPropertyType(CodeProperty currentProperty)
@@ -242,7 +261,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "List<RequestOption>()";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterLowerCase()}()";
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
             currentProperty.Type.Name = "RequestAdapter";
@@ -261,6 +280,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.Type.Name = "Map<String, Object?>";
             currentProperty.DefaultValue = "{}";
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
         {
@@ -272,6 +292,10 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Map<String, dynamic>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
+        }
+        else
+        {
+            currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);

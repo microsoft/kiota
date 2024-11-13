@@ -289,7 +289,7 @@ public class DartConventionService : CommonLanguageConventionService
         return codeElement?.Parent is CodeClass parentClass && parentClass.IsErrorDefinition && ErrorClassProperties.Contains(codeElement.Name);
     }
 
-    public string getCorrectedEnumName(string name)
+    public static string getCorrectedEnumName(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
         var correctedName = "";
@@ -299,8 +299,8 @@ public class DartConventionService : CommonLanguageConventionService
         }
         else
         {
-            correctedName = name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name;
+            correctedName = name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name.ToFirstCharacterLowerCase();
         }
-        return correctedName.Equals("index", StringComparison.Ordinal) ? correctedName + "Escaped" : correctedName;
+        return correctedName;
     }
 }

@@ -44,7 +44,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         if (!string.IsNullOrEmpty(accessModifierAttribute))
             writer.WriteLine(accessModifierAttribute);
 
-        var propertyName = codeElement.Name.ToCamelCase();
+        var propertyName = codeElement.Name;
         if (reservedNamesProvider.ReservedNames.Contains(propertyName))
         {
             propertyName += "Escaped";
@@ -64,13 +64,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? {}" : $" ?? {codeElement.DefaultValue}";
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return {backingStoreProperty.Name.ToFirstCharacterLowerCase()}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
+                writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 writer.WriteLine();
-                writer.WriteLine($"set {codeElement.Name.ToCamelCase()}({propertyType} value) {{");
+                writer.WriteLine($"set {codeElement.Name}({propertyType} value) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{backingStoreProperty.Name.ToFirstCharacterLowerCase()}.set('{backingStoreKey}', value);");
+                writer.WriteLine($"{backingStoreProperty.Name}.set('{backingStoreKey}', value);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
@@ -91,7 +91,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 defaultValue = " = BackingStoreFactorySingleton.instance.createBackingStore()";
                 goto default;
             default:
-                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                writer.WriteLine($"{propertyType} {getterModifier}{conventions.GetAccessModifierPrefix(codeElement.Access)}{codeElement.Name}{defaultValue};");
                 break;
         }
     }

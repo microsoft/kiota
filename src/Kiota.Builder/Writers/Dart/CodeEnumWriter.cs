@@ -18,25 +18,46 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any())
             return;
-        var enumName = codeElement.Name.ToFirstCharacterUpperCase();
+        var enumName = codeElement.Name;
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"enum {enumName} {{");
-        var lastOption = codeElement.Options.Last();
 
-        HashSet<String> usedNames = new HashSet<string>();
-        foreach (var option in codeElement.Options)
+        var options = deduplicateOptions(codeElement.Options);
+        var lastOption = options.Last();
+
+        foreach (var option in options)
         {
             conventions.WriteShortDescription(option, writer);
-            var correctedName = conventions.getCorrectedEnumName(option.Name);
-            if (!usedNames.Add(correctedName))
+
+            var serializationName = option.SerializationName;
+            if (serializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
             {
-                correctedName = option.Name;
-                usedNames.Add(correctedName);
+                serializationName = serializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
             }
-            writer.WriteLine($"{correctedName}(\"{option.SerializationName}\"){(option == lastOption ? ";" : ",")}");
+            writer.WriteLine($"{option.Name}('{serializationName}'){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");
         writer.WriteLine("final String value;");
+    }
+
+    /// <summary>
+    /// Prevents duplicate options by making sure the option names are unique
+    /// </summary>
+    /// <param name="options">All options for a single enum</param>
+    /// <returns>A unique set of options</returns>
+    private static HashSet<CodeEnumOption> deduplicateOptions(IEnumerable<CodeEnumOption> options)
+    {
+        HashSet<string> uniqueOptionNames = [];
+        HashSet<CodeEnumOption> uniqueOptions = [];
+        foreach (var option in options)
+        {
+            if (uniqueOptionNames.Add(option.Name))
+            {
+                uniqueOptions.Add(option);
+            }
+        }
+
+        return uniqueOptions;
     }
 }

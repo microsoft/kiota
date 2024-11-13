@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 
 using Xunit;
@@ -42,7 +41,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("enum", result);
         Assert.Contains(EnumName, result);
-        Assert.Contains($"{optionName}(\"{optionName}\")", result);
+        Assert.Contains($"{optionName}('{optionName}')", result);
         Assert.Contains($"const {EnumName}(this.value);", result);
         Assert.Contains("final String value;", result);
     }
@@ -83,6 +82,6 @@ public sealed class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(option);
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains($"{OptionName}(\"{SerializationValue}\")", result);
+        Assert.Contains($"{OptionName}('{SerializationValue}')", result);
     }
 }
