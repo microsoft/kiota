@@ -820,12 +820,13 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return {}", result);
     }
     [Theory]
-    [InlineData(true, false, false, "string", "")]
-    [InlineData(false, true, false, "Stream", " \"Stream\",")]
-    [InlineData(false, false, true, "SomeEnum", " \"SomeEnum\",")]
-    [InlineData(false, false, false, "int", " int,")]
-    [InlineData(false, false, false, "CustomType", " CustomType,")]
-    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, string returnType, string expected)
+    [InlineData(true, false, false, false, "string", "")]
+    [InlineData(false, true, false, false, "Stream", " \"Stream\",")]
+    [InlineData(false, false, true, false, "SomeEnum", " \"SomeEnum\",")]
+    [InlineData(false, false, false, true, "int", " int,")]
+    [InlineData(false, false, false, false, "int", " \"int\",")]
+    [InlineData(false, false, false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, bool isCollection, string returnType, string expected)
     {
         var mockConventionService = new Mock<PythonConventionService>();
 
@@ -835,9 +836,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             false // usesBackingStore
         );
 
-        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType);
-
-
+        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType, isCollection);
         Assert.Equal(expected, result);
     }
     [Fact]
@@ -1590,6 +1589,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("This property has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = None", result);
         Assert.DoesNotContain("get_path_parameters(", result);
+    }
+    [Fact]
+    public void EscapesCommentCharactersInDescription()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        parentClass.Kind = CodeClassKind.Custom;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop_without_default_value",
+            Kind = CodePropertyKind.Custom,
+            Documentation = new()
+            {
+                DescriptionTemplate = "This property has a description with comments \"\"\".",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This property has a description with comments \\\"\\\"\\\".", result);
     }
     [Fact]
     public void WritesWithUrl()
