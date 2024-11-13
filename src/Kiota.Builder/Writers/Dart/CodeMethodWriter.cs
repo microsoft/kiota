@@ -798,7 +798,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.IncreaseIndent();
         foreach (CodeProperty property in parentClass.Properties)
         {
-            writer.WriteLine($"'{property.Name}' : {property.Name},");
+            var key = property.IsNameEscaped ? property.SerializationName : property.Name;
+            writer.WriteLine($"'{key}' : {property.Name},");
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");
