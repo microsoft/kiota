@@ -384,10 +384,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
+                    break;
             }
             conventions.WriteInLineDescription(propWithDefault, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
@@ -412,10 +417,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
+                    break;
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault, writer);
@@ -583,7 +593,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
         var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol, isEnum);
-        var newFactoryParameter = GetTypeFactory(isVoid, isStream, isEnum, returnTypeWithoutCollectionSymbol);
+        var newFactoryParameter = GetTypeFactory(isVoid, isStream, isEnum, returnTypeWithoutCollectionSymbol, codeElement.ReturnType.IsCollection);
         var errorMappingVarName = NoneKeyword;
         if (codeElement.ErrorMappings.Any())
         {
@@ -809,11 +819,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => "write_object_value",
         };
     }
-    internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType)
+    internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType, bool isCollection)
     {
         if (isVoid) return string.Empty;
         if (isStream || isEnum) return $" \"{returnType}\",";
-        if (conventions.IsPrimitiveType(returnType)) return $" {returnType},";
+        if (conventions.IsPrimitiveType(returnType)) return isCollection ? $" {returnType}," : $" \"{returnType}\",";
         return $" {returnType},";
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType,
