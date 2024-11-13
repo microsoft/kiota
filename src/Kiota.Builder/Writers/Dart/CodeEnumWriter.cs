@@ -61,5 +61,3 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         return uniqueOptions;
     }
 }
-
-

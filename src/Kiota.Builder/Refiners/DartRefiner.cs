@@ -281,7 +281,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Map<String, Object?>";
             currentProperty.DefaultValue = "{}";
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
-
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
         {
