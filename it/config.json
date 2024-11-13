@@ -34,10 +34,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/5634"
       },
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5635"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       },
