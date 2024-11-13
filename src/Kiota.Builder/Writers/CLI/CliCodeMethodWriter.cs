@@ -641,7 +641,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             if (requestBodyParamType?.TypeDefinition is CodeClass)
             {
                 writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
-                writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType.SanitizeDoubleQuote()}\", stream);");
+                writer.WriteLine($"var parseNode = await ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNodeAsync(\"{generatorMethod.RequestBodyContentType.SanitizeDoubleQuote()}\", stream, {CancellationTokenParamName});");
 
                 var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
 
