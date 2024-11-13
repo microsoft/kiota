@@ -355,7 +355,8 @@ public partial class PluginsGenerationService
                 }
                 catch (UnsupportedSecuritySchemeException)
                 {
-                    throw;
+                    // log a warning here that the operation security is not supported
+                    auth = new AnonymousAuth();
                 }
 
                 runtimes.Add(new OpenApiRuntime
