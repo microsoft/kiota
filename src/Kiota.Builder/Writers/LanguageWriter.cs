@@ -3,19 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.Cli;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
+using Kiota.Builder.Writers.http;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.Swift;
 using Kiota.Builder.Writers.TypeScript;
-using Kiota.Builder.Writers.http;
 
 namespace Kiota.Builder.Writers;
 

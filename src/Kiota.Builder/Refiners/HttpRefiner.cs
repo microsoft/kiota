@@ -46,6 +46,9 @@ public class HttpRefiner : CommonLanguageRefiner
                 defaultUsingEvaluators);
             RemoveUntypedNodePropertyValues(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
+            SetBaseUrlForRequestBuilderMethods(generatedCode, GetBaseUrl(generatedCode));
+            // Remove unused code from the DOM e.g Models
+            RemoveUnusedCodeElements(generatedCode);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -75,6 +78,18 @@ public class HttpRefiner : CommonLanguageRefiner
     {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
     }
+
+    private string? GetBaseUrl(CodeElement element)
+    {
+        return element.GetImmediateParentOfType<CodeNamespace>()
+                      .GetRootNamespace()?
+                      .FindChildrenByName<CodeClass>(_configuration.ClientClassName)?
+                      .FirstOrDefault()?
+                      .Methods?
+                      .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.ClientConstructor))?
+                      .BaseUrl;
+    }
+
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
         var parentClass = currentMethod.Parent as CodeClass;
@@ -194,6 +209,25 @@ public class HttpRefiner : CommonLanguageRefiner
             currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
         CrawlTree(current, CapitalizeNamespacesFirstLetters);
     }
+
+    private static void SetBaseUrlForRequestBuilderMethods(CodeElement current, string? baseUrl)
+    {
+        if (baseUrl is not null && current is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            // Add a new property named BaseUrl and set its value to the baseUrl string
+            var baseUrlProperty = new CodeProperty
+            {
+                Name = "BaseUrl",
+                Kind = CodePropertyKind.Custom,
+                Access = AccessModifier.Private,
+                DefaultValue = baseUrl,
+                Type = new CodeType { Name = "string", IsExternal = true }
+            };
+            codeClass.AddProperty(baseUrlProperty);
+        }
+        CrawlTree(current, (element) => SetBaseUrlForRequestBuilderMethods(element, baseUrl));
+    }
+
     private void AddRootClassForExtensions(CodeElement current)
     {
         if (current is CodeNamespace currentNamespace &&
@@ -209,5 +243,25 @@ public class HttpRefiner : CommonLanguageRefiner
                 },
             });
         }
+    }
+
+    private static void RemoveUnusedCodeElements(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass)
+        {
+            if (currentClass.IsOfKind(CodeClassKind.Model) || currentClass.IsOfKind(CodeClassKind.BarrelInitializer) || IsBaseRequestBuilder(currentClass))
+            {
+                var parentNameSpace = currentElement.GetImmediateParentOfType<CodeNamespace>();
+                parentNameSpace?.RemoveChildElement(currentElement);
+            }
+        }
+
+        CrawlTree(currentElement, RemoveUnusedCodeElements);
+    }
+
+    private static bool IsBaseRequestBuilder(CodeClass codeClass)
+    {
+        return codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+            codeClass.Properties.Any(property => property.IsOfKind(CodePropertyKind.UrlTemplate) && string.Equals(property.DefaultValue, "\"{+baseurl}\"", StringComparison.Ordinal));
     }
 }
