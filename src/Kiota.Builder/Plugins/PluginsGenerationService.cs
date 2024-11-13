@@ -465,32 +465,4 @@ public partial class PluginsGenerationService
 
         return null;
     }
-
-    private void ValidateAuthentication(OpenApiOperation operation, IList<OpenApiSecurityRequirement> securityRequirements)
-    {
-        if (operation is null) return;
-        if (securityRequirements != null )
-        {
-            if (securityRequirements.Count > 1 || securityRequirements.FirstOrDefault()?.Keys.Count > 1)
-            {
-                Console.WriteLine($"{operation.OperationId}: \"There appear to be no compatible security schemes for Copilot usage.\"");
-            }
-
-            var securityScheme = securityRequirements.FirstOrDefault()?.Keys.FirstOrDefault();
-            if (securityScheme != null && !IsSupportedAuthScheme(securityScheme))
-            {
-                Console.WriteLine($"{operation.OperationId}: \"There appear to be no compatible security schemes for Copilot usage.\"");
-            }
-        }
-    }
-
-    private bool IsSupportedAuthScheme(OpenApiSecurityScheme securityScheme)
-    {
-        return securityScheme.Type switch
-        {
-            SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) => true,
-            SecuritySchemeType.OAuth2 => true,
-            _ => false,
-        };
-    }
 }
