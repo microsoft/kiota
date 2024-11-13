@@ -42,6 +42,7 @@ public class DartReservedNamesProvider : IReservedNamesProvider
         "implements",
         "import",
         "in",
+        "index",
         "int",
         "interface",
         "is",

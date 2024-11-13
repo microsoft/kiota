@@ -43,12 +43,14 @@ jobs:
           - ruby
           - php
           - python
+          - dart
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml"
           - "oas::petstore"
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"
@@ -108,6 +110,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Setup Dart
+        if: matrix.language == 'dart'
+        uses: dart-lang/setup-dart@v1.6.5
+        with:
+          sdk: "3.5"
 
       - name: Check if test is suppressed
         id: check-suppressed

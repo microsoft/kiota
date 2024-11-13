@@ -16,19 +16,20 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is CodeFunction) return;
 
-        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeElement, inlineComposedTypeString: true);
+        var codeFile = codeElement.GetImmediateParentOfType<CodeFile>();
+        var returnType = GetTypescriptTypeString(codeElement.ReturnType, codeFile, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
-        WriteMethodDocumentation(codeElement, writer, isVoid);
+        WriteMethodDocumentation(codeFile, codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
         if (codeElement.Parent is CodeClass)
             throw new InvalidOperationException("No method implementations are generated in typescript: either functions or constants.");
     }
 
-    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid)
+    private void WriteMethodDocumentation(CodeFile codeFile, CodeMethod code, LanguageWriter writer, bool isVoid)
     {
-        WriteMethodDocumentationInternal(code, writer, isVoid, conventions);
+        WriteMethodDocumentationInternal(codeFile, code, writer, isVoid, conventions);
     }
-    internal static void WriteMethodDocumentationInternal(CodeMethod code, LanguageWriter writer, bool isVoid, TypeScriptConventionService typeScriptConventionService)
+    internal static void WriteMethodDocumentationInternal(CodeFile codeFile, CodeMethod code, LanguageWriter writer, bool isVoid, TypeScriptConventionService typeScriptConventionService)
     {
         var returnRemark = (isVoid, code.IsAsync) switch
         {
@@ -41,7 +42,7 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
                                             .OrderBy(static x => x.Name)
-                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, code, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
+                                            .Select(x => $"@param {x.Name} {x.Documentation.GetDescription(type => GetTypescriptTypeString(type, codeFile, inlineComposedTypeString: true), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters)}")
                                             .Union([returnRemark])
                                             .Union(GetThrownExceptionsRemarks(code)));
     }

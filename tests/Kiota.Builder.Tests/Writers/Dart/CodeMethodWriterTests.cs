@@ -315,7 +315,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         unionType.OriginalComposedType.AddType(sType);
         unionType.AddProperty(new CodeProperty
         {
-            Name = "ComplexType1Value",
+            Name = "complexType1Value",
             Type = cType1,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -336,7 +336,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         unionType.AddProperty(new CodeProperty
         {
-            Name = "ComplexType2Value",
+            Name = "complexType2Value",
             Type = cType2,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -357,7 +357,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         unionType.AddProperty(new CodeProperty
         {
-            Name = "StringValue",
+            Name = "stringValue",
             Type = sType,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -449,7 +449,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         intersectionType.OriginalComposedType.AddType(sType);
         intersectionType.AddProperty(new CodeProperty
         {
-            Name = "ComplexType1Value",
+            Name = "complexType1Value",
             Type = cType1,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -470,7 +470,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         intersectionType.AddProperty(new CodeProperty
         {
-            Name = "ComplexType2Value",
+            Name = "complexType2Value",
             Type = cType2,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -491,7 +491,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         intersectionType.AddProperty(new CodeProperty
         {
-            Name = "ComplexType3Value",
+            Name = "complexType3Value",
             Type = cType3,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -512,7 +512,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         intersectionType.AddProperty(new CodeProperty
         {
-            Name = "StringValue",
+            Name = "stringValue",
             Type = sType,
             Kind = CodePropertyKind.Custom,
             Setter = new CodeMethod
@@ -992,8 +992,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("complexType1Value != null", result);
         Assert.Contains("return complexType1Value!.getFieldDeserializers()", result);
-        Assert.Contains("Map<String, Function(ParseNode)>()", result);
-        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "Map<String, Function(ParseNode)>()", result);
+        Assert.Contains("<String, Function(ParseNode)>{}", result);
+        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "<String, Function(ParseNode)>{}", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1247,7 +1247,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "\"someVal\"";
+        var defaultValue = "'someVal'";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
@@ -1260,7 +1260,7 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Name = "String"
             }
         });
-        var defaultValueNull = "\"null\"";
+        var defaultValueNull = "'null'";
         var nullPropName = "propWithDefaultNullValue";
         parentClass.AddProperty(new CodeProperty
         {
@@ -1299,9 +1299,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name, result);
-        Assert.Contains($"{propName} = '{defaultValue.TrimQuotes()}'", result);
-        Assert.Contains($"{nullPropName} = {defaultValueNull.TrimQuotes()}", result);
-        Assert.Contains($"{boolPropName} = {defaultValueBool.TrimQuotes()}", result);
+        Assert.Contains($"{propName} = '{defaultValue}'", result);
+        Assert.Contains($"{nullPropName} = {defaultValueNull}", result);
+        Assert.Contains($"{boolPropName} = {defaultValueBool}", result);
         Assert.Contains("super", result);
     }
     [Fact]
