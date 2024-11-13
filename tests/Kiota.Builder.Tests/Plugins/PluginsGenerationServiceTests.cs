@@ -408,7 +408,33 @@ components:
                     var auth0 = resultingManifest.Document.Runtimes[0].Auth;
                     Assert.IsType<AnonymousAuth>(auth0);
                 }
+            },
+            // multiple security schemes in operation object
+            {
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header}, apiKey1: {type: apiKey, name: x-api-key1, in: header}}}",
+                string.Empty, "security: [apiKey0: [], apiKey1: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<AnonymousAuth>(auth0);
+                }
+            },
+            // Unsupported security scheme (http basic)
+            {
+                "{securitySchemes: {httpBasic0: {type: http, scheme: basic}}}",
+                string.Empty, "security: [httpBasic0: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<AnonymousAuth>(auth0);
+                }
             }
+
+
         };
     }
 
@@ -470,98 +496,6 @@ components:
 
         assertions(resultingManifest);
         // Cleanup
-        try
-        {
-            Directory.Delete(outputDirectory);
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-    }
-
-    public static TheoryData<string, string, string, PluginAuthConfiguration, Func<Func<Task>, Task>>
-        SecurityInformationFail()
-    {
-        return new TheoryData<string, string, string, PluginAuthConfiguration, Func<Func<Task>, Task>>
-        {
-            // multiple security schemes in operation object
-            {
-                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header}, apiKey1: {type: apiKey, name: x-api-key1, in: header}}}",
-                string.Empty, "security: [apiKey0: [], apiKey1: []]", null, async (action) =>
-                {
-                    await Assert.ThrowsAsync<UnsupportedSecuritySchemeException>(async () =>
-                    {
-                        await action();
-                    });
-                }
-            },
-            // Unsupported security scheme (http basic)
-            {
-                "{securitySchemes: {httpBasic0: {type: http, scheme: basic}}}",
-                string.Empty, "security: [httpBasic0: []]", null, async (action) =>
-                {
-                    await Assert.ThrowsAsync<UnsupportedSecuritySchemeException>(async () =>
-                    {
-                        await action();
-                    });
-                }
-            },
-        };
-    }
-
-    [Theory]
-    [MemberData(nameof(SecurityInformationFail))]
-    public async Task FailsToGeneratesManifestWithInvalidAuthAsync(string securitySchemesComponent, string rootSecurity,
-        string operationSecurity, PluginAuthConfiguration pluginAuthConfiguration, Func<Func<Task>, Task> assertions)
-    {
-        var apiDescription = $"""
-                              openapi: 3.0.0
-                              info:
-                                title: test
-                                version: "1.0"
-                              paths:
-                                /test:
-                                  get:
-                                    description: description for test path
-                                    responses:
-                                      '200':
-                                        description: test
-                                    {operationSecurity}
-                              {rootSecurity}
-                              components: {securitySchemesComponent}
-                              """;
-        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
-        var outputDirectory = Path.Combine(workingDirectory, "output");
-        var generationConfiguration = new GenerationConfiguration
-        {
-            OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
-            PluginTypes = [PluginType.APIPlugin],
-            ClientClassName = "client",
-            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
-            PluginAuthInformation = pluginAuthConfiguration,
-        };
-        var (openApiDocumentStream, _) =
-            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument =
-            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
-        Assert.NotNull(openApiDocument);
-        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
-        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
-
-        var pluginsGenerationService =
-            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
-
-        await assertions(async () =>
-        {
-            await pluginsGenerationService.GenerateManifestAsync();
-        });
-        // cleanup
         try
         {
             Directory.Delete(outputDirectory);
