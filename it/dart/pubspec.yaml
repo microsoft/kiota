@@ -33,6 +33,11 @@ dependencies:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: json
       path: packages/kiota_serialization_json
+  kiota_serialization_multipart:
+    git:
+      url: https://github.com/kiota-community/dart_kiota.git
+      ref: json
+      path: packages/kiota_serialization_multipart
   http: ^1.2.2
   uuid: ^4.5.1
 
