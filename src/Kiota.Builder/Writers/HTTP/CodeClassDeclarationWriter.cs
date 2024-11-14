@@ -125,12 +125,24 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         {
             writer.WriteLine("{");
             writer.IncreaseIndent();
-            foreach (var prop in requestBodyClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)))
-            {
-                writer.WriteLine($"{prop.Name}: {GetDefaultValueForProperty(prop)}");
-            }
+            WriteProperties(requestBodyClass, writer);
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+    }
+
+    private static void WriteProperties(CodeClass codeClass, LanguageWriter writer)
+    {
+        // Write properties of the current class
+        foreach (var prop in codeClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)))
+        {
+            writer.WriteLine($"{prop.Name}: {GetDefaultValueForProperty(prop)}");
+        }
+
+        // If the class extends another class, write properties of the base class
+        if (codeClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
+        {
+            WriteProperties(baseClass, writer);
         }
     }
 
