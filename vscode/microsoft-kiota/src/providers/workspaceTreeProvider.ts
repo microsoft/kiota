@@ -82,6 +82,15 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
           arguments: [vscode.Uri.file(getWorkspaceJsonPath())]
         };
         element.contextValue = 'folder';
+      } else if (element.type === 'item') {
+        element.contextValue = 'item';
+        element.iconPath = new vscode.ThemeIcon('check');
+        element.command = {
+          command: 'kiota.workspace.playItem',
+          title: vscode.l10n.t("Play Item"),
+          arguments: [element.label]
+        };
+        element.contextValue = 'item';
       }
     }
     return element;
