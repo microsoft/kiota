@@ -1,5 +1,5 @@
 import { treeViewId } from "../constants";
-import { OpenApiTreeProvider } from "../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { updateTreeViewIcons } from "../util";
 import { openTreeViewWithProgress } from "./progress";
 

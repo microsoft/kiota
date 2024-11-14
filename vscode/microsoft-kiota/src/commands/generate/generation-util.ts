@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { treeViewId } from "../../constants";
 import { KiotaLogEntry } from "../../kiotaInterop";
-import { OpenApiTreeProvider } from "../../openApiTreeProvider";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
 import { loadWorkspaceFile } from "../../utilities/file";
 

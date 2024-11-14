@@ -41,10 +41,10 @@ public class SwiftRefiner : CommonLanguageRefiner
                 true,
                 false,
                 true);
+            RemoveUntypedNodeTypeValues(generatedCode);
             AddDefaultImports(
                 generatedCode,
                 defaultUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreType(
                 generatedCode,

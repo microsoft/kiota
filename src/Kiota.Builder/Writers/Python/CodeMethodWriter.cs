@@ -22,6 +22,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
+        var returnTypeIsEnum = codeElement.ReturnType is CodeType { TypeDefinition: CodeEnum };
         var isVoid = NoneKeyword.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         if (parentClass.IsOfKind(CodeClassKind.Model) && (codeElement.IsOfKind(CodeMethodKind.Setter) || codeElement.IsOfKind(CodeMethodKind.Getter) || codeElement.IsOfKind(CodeMethodKind.Constructor)))
         {
@@ -79,7 +80,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer, returnTypeIsEnum);
                 writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Getter:
@@ -212,9 +213,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
         {
             writer.StartBlock("try:");
-            writer.WriteLine($"{DiscriminatorMappingVarName} = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\").get_str_value()");
+            writer.WriteLine($"child_node = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"{DiscriminatorMappingVarName} = child_node.get_str_value() if child_node else {NoneKeyword}");
             writer.DecreaseIndent();
-            writer.StartBlock($"except AttributeError:");
+            writer.StartBlock("except AttributeError:");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NoneKeyword}");
             writer.DecreaseIndent();
         }
@@ -382,10 +384,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
+                    break;
             }
             conventions.WriteInLineDescription(propWithDefault, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
@@ -410,10 +417,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            switch (propWithDefault.Type)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
+                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                    break;
+                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
+                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
+                    break;
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault, writer);
@@ -527,11 +539,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                 .OrderBy(static x => x)
                                 .ToArray();
             var propertiesNamesAsConditions = propertiesNames
-                                .Select(static x => $"{x}")
-                                .Aggregate(static (x, y) => $"self.{x} or self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x} or {y}");
             writer.StartBlock($"if {propertiesNamesAsConditions}:");
             var propertiesNamesAsArgument = propertiesNames
-                                .Aggregate(static (x, y) => $"self.{x}, self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"return ParseNodeHelper.merge_deserializers_for_intersection_wrapper({propertiesNamesAsArgument})");
             writer.DecreaseIndent();
         }
@@ -556,7 +569,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         writer.WriteLine("return fields");
     }
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnType, LanguageWriter writer)
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass,
+        bool isVoid, string returnType, LanguageWriter writer, bool isEnum)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
@@ -578,8 +592,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine(")");
         var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
-        var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
-        var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol);
+        var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol, isEnum);
+        var newFactoryParameter = GetTypeFactory(isVoid, isStream, isEnum, returnTypeWithoutCollectionSymbol, codeElement.ReturnType.IsCollection);
         var errorMappingVarName = NoneKeyword;
         if (codeElement.ErrorMappings.Any())
         {
@@ -642,6 +656,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         if (inherits)
             writer.WriteLine("super().serialize(writer)");
+        _codeUsingWriter.WriteInternalImports(parentClass, writer);
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
@@ -695,7 +710,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var propertiesNames = complexProperties
                                 .Select(static x => x.Name)
                                 .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)
-                                .Aggregate(static (x, y) => $"self.{x}, self.{y}");
+                                .Select(static x => $"self.{x}")
+                                .Aggregate(static (x, y) => $"{x}, {y}");
             writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties[0].Type)}({NoneKeyword}, {propertiesNames})");
             if (includeElse)
             {
@@ -803,22 +819,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => "write_object_value",
         };
     }
-    private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
+    internal string GetTypeFactory(bool isVoid, bool isStream, bool isEnum, string returnType, bool isCollection)
     {
         if (isVoid) return string.Empty;
-        if (isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+        if (isStream || isEnum) return $" \"{returnType}\",";
+        if (conventions.IsPrimitiveType(returnType)) return isCollection ? $" {returnType}," : $" \"{returnType}\",";
         return $" {returnType},";
     }
-    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType,
+        bool isEnum)
     {
         if (isVoid) return "send_no_response_content_async";
         if (isCollection)
         {
-            if (conventions.IsPrimitiveType(returnType)) return "send_collection_of_primitive_async";
-            return $"send_collection_async";
+            if (conventions.IsPrimitiveType(returnType) || isEnum) return "send_collection_of_primitive_async";
+            return "send_collection_async";
         }
 
-        if (isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
+        if (isStream || conventions.IsPrimitiveType(returnType) || isEnum) return "send_primitive_async";
         return "send_async";
     }
     private void UpdateRequestInformationFromRequestBody(CodeMethod codeElement, RequestParams requestParams, CodeProperty requestAdapterProperty, LanguageWriter writer)

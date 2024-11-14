@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
@@ -25,12 +25,15 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string MethodDescription = "some description";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "param_name";
+
+
     public CodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+
     }
     private void setup(bool withInheritance = false)
     {
@@ -791,6 +794,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return fields", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
+
     [Fact]
     public void WritesUnionDeSerializerBody()
     {
@@ -814,6 +818,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if self.complex_type1_value:", result);
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
+    }
+    [Theory]
+    [InlineData(true, false, false, false, "string", "")]
+    [InlineData(false, true, false, false, "Stream", " \"Stream\",")]
+    [InlineData(false, false, true, false, "SomeEnum", " \"SomeEnum\",")]
+    [InlineData(false, false, false, true, "int", " int,")]
+    [InlineData(false, false, false, false, "int", " \"int\",")]
+    [InlineData(false, false, false, false, "CustomType", " CustomType,")]
+    public void GetTypeFactory_ReturnsCorrectString(bool isVoid, bool isStream, bool isEnum, bool isCollection, string returnType, string expected)
+    {
+        var mockConventionService = new Mock<PythonConventionService>();
+
+        var codeMethodWriter = new CodeMethodWriter(
+            mockConventionService.Object,
+            "TestNamespace",
+            false // usesBackingStore
+        );
+
+        var result = codeMethodWriter.GetTypeFactory(isVoid, isStream, isEnum, returnType, isCollection);
+        Assert.Equal(expected, result);
     }
     [Fact]
     public void WritesIntersectionDeSerializerBody()
@@ -1159,7 +1183,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("try:", result);
-        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("mapping_value = child_node.get_str_value() if child_node else None", result);
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.childclass\".casefold()", result);
@@ -1194,7 +1219,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("try:", result);
-        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("mapping_value = child_node.get_str_value() if child_node else None", result);
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("result = UnionTypeWrapper()", result);
@@ -1563,6 +1589,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("This property has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = None", result);
         Assert.DoesNotContain("get_path_parameters(", result);
+    }
+    [Fact]
+    public void EscapesCommentCharactersInDescription()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        parentClass.Kind = CodeClassKind.Custom;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop_without_default_value",
+            Kind = CodePropertyKind.Custom,
+            Documentation = new()
+            {
+                DescriptionTemplate = "This property has a description with comments \"\"\".",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This property has a description with comments \\\"\\\"\\\".", result);
     }
     [Fact]
     public void WritesWithUrl()

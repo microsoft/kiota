@@ -141,7 +141,8 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
                 else
                 {
                     DisplaySuccess("Generation skipped as no changes were detected");
-                    DisplayCleanHint("generate");
+                    if (!cleanOutput)
+                        DisplayCleanHint("generate");
                 }
                 var manifestResult = await builder.GetApiManifestDetailsAsync(true, cancellationToken).ConfigureAwait(false);
                 var manifestPath = manifestResult is null ? string.Empty : Configuration.Generation.ApiManifestPath;

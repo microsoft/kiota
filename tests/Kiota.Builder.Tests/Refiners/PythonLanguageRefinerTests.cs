@@ -584,5 +584,34 @@ public class PythonLanguageRefinerTests
         Assert.Single(requestBuilder.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.DoesNotContain("QueryParameters", declaration.Usings.Select(x => x.Name));
     }
+    [Fact]
+    public async Task ReplacesUntypedNodeInMethodParameterAndReturnTypeAsync()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var method = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName,//Returns untyped node
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.RequestExecutor
+        };
+        method.AddParameter(new CodeParameter()
+        {
+            Name = "jsonData",
+            Type = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName, //Has untyped node parameter
+                IsExternal = true
+            },
+            Kind = CodeParameterKind.RequestBody
+        });
+        requestBuilderClass.AddMethod(method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        Assert.Equal("bytes", method.Parameters.First().Type.Name);// type is renamed to use the stream type
+        Assert.Equal("bytes", method.ReturnType.Name);// return type is renamed to use the stream type
+    }
     #endregion
 }

@@ -163,6 +163,9 @@ extends:
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }} -excludeHeadingDash
                 displayName: "Set version suffix"
 
+              - pwsh: $(Build.SourcesDirectory)/scripts/enable-shims-for-packaging.ps1
+                displayName: "Add PackAsToolShimRuntimeIdentifiers attributes for tool packaging"
+
               - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
                 displayName: "Set version suffix in csproj for generators"
 

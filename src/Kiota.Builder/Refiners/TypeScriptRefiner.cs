@@ -169,29 +169,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
-            CorrectSerializerParameters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
-    }
-
-    private static void CorrectSerializerParameters(CodeElement currentElement)
-    {
-        if (currentElement is CodeFunction currentFunction &&
-            currentFunction.OriginalLocalMethod.Kind is CodeMethodKind.Serializer)
-        {
-            foreach (var parameter in currentFunction.OriginalLocalMethod.Parameters
-                         .Where(p => GetOriginalComposedType(p.Type) is CodeComposedTypeBase composedType &&
-                                     composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
-            {
-                var composedType = GetOriginalComposedType(parameter.Type)!;
-                var newType = (CodeComposedTypeBase)composedType.Clone();
-                var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
-                newType.SetTypes(nonPrimitiveTypes);
-                parameter.Type = newType;
-            }
-        }
-
-        CrawlTree(currentElement, CorrectSerializerParameters);
     }
 
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
@@ -692,7 +671,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
-    private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
     // A helper method to check if a parameter is a multipart body
     private static bool IsMultipartBody(CodeParameter p) =>
@@ -840,7 +818,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {"Guid", (string.Empty, new CodeUsing {
                             Name = "Guid",
                             Declaration = new CodeType {
-                                Name = GuidPackageName,
+                                Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
                             IsErasable = true, // the import is used only for the type, not for the value
@@ -1483,7 +1461,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             function.AddUsing(new CodeUsing
             {
-                Name = modelDeserializerFunction.Parent.Name,
+                Name = modelDeserializerFunction.Name,
                 Declaration = new CodeType
                 {
                     Name = modelDeserializerFunction.Name,

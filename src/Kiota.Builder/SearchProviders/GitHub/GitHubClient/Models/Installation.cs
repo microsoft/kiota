@@ -10,7 +10,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
     /// <summary>
     /// Installation
     /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class Installation : IAdditionalDataHolder, IParsable
     {
         /// <summary>The access_tokens_url property</summary>
@@ -206,7 +206,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>
         /// Composed type wrapper for classes <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise"/>, <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser"/>
         /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.18.0")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         public partial class Installation_account : IComposedTypeWrapper, IParsable
         {
             /// <summary>Composed type representation for type <see cref="global::Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise"/></summary>
