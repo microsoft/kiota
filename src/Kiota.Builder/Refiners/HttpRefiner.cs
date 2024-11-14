@@ -245,18 +245,15 @@ public class HttpRefiner : CommonLanguageRefiner
         }
     }
 
-    private static void RemoveUnusedCodeElements(CodeElement currentElement)
+    private static void RemoveUnusedCodeElements(CodeElement element)
     {
-        if (currentElement is CodeClass currentClass)
+        if (element is CodeClass code && (code.IsOfKind(CodeClassKind.Model) || code.IsOfKind(CodeClassKind.BarrelInitializer) || IsBaseRequestBuilder(code)))
         {
-            if (currentClass.IsOfKind(CodeClassKind.Model) || currentClass.IsOfKind(CodeClassKind.BarrelInitializer) || IsBaseRequestBuilder(currentClass))
-            {
-                var parentNameSpace = currentElement.GetImmediateParentOfType<CodeNamespace>();
-                parentNameSpace?.RemoveChildElement(currentElement);
-            }
+            var parentNameSpace = element.GetImmediateParentOfType<CodeNamespace>();
+            parentNameSpace?.RemoveChildElement(element);
         }
 
-        CrawlTree(currentElement, RemoveUnusedCodeElements);
+        CrawlTree(element, RemoveUnusedCodeElements);
     }
 
     private static bool IsBaseRequestBuilder(CodeClass codeClass)
