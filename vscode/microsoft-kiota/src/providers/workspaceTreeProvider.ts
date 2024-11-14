@@ -4,11 +4,12 @@ import * as fs from 'fs';
 
 import { KIOTA_WORKSPACE_FILE } from '../constants';
 import { getWorkspaceJsonPath } from '../util';
+import { ClientOrPluginProperties } from '../kiotaInterop';
 
 interface WorkspaceContent {
   version: string;
-  clients: Record<string, any>;
-  plugins: Record<string, any>;
+  clients: Record<string, ClientOrPluginProperties>;
+  plugins: Record<string, ClientOrPluginProperties>;
 }
 
 class WorkspaceTreeItem extends vscode.TreeItem {
@@ -83,8 +84,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         };
         element.contextValue = 'folder';
       } else if (element.type === 'item') {
-        element.contextValue = 'item';
-        element.iconPath = new vscode.ThemeIcon('check');
+        element.iconPath = new vscode.ThemeIcon('folder');
         element.command = {
           command: 'kiota.workspace.playItem',
           title: vscode.l10n.t("Play Item"),

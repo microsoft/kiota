@@ -125,6 +125,21 @@ export async function activate(
       await regenerateCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
+
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('kiota.workspace.regenerate', (item) => {
+      // Implement edit item logic here
+      vscode.window.showInformationMessage(`Edit item: ${item.label}`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('kiota.workspace.delete', (item) => {
+      // Implement delete item logic here
+      vscode.window.showInformationMessage(`Delete item: ${item.label}`);
+    })
   );
 
   // create a new status bar item that we can now manage
