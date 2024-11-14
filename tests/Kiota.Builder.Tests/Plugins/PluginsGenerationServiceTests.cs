@@ -19,14 +19,14 @@ namespace Kiota.Builder.Tests.Plugins;
 public sealed class PluginsGenerationServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();
-
+    private readonly ILogger<KiotaBuilder> _logger = new Mock<ILogger<KiotaBuilder>>().Object;
     [Fact]
     public void Defensive()
     {
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(null, OpenApiUrlTreeNode.Create(), new(), "foo"));
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), null, new(), "foo"));
-        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), null, "foo"));
-        Assert.Throws<ArgumentException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), new(), string.Empty));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(null, OpenApiUrlTreeNode.Create(), new(), "foo", _logger));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), null, new(), "foo", _logger));
+        Assert.Throws<ArgumentNullException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), null, "foo", _logger));
+        Assert.Throws<ArgumentException>(() => new PluginsGenerationService(new(), OpenApiUrlTreeNode.Create(), new(), string.Empty, _logger));
     }
 
     public void Dispose()
@@ -76,7 +76,7 @@ paths:
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -91,7 +91,7 @@ paths:
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
-        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json")));
@@ -211,7 +211,7 @@ components:
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -226,7 +226,7 @@ components:
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
-        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
@@ -463,7 +463,7 @@ components:
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -483,7 +483,7 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService =
-            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
@@ -542,7 +542,7 @@ components:
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -561,7 +561,7 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService =
-            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+            new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
@@ -748,7 +748,7 @@ components:
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
         var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
-        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -763,7 +763,7 @@ components:
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
-        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory);
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         await pluginsGenerationService.GenerateManifestAsync();
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));

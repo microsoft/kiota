@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
@@ -23,9 +24,10 @@ public partial class PluginsGenerationService
     private readonly OpenApiUrlTreeNode TreeNode;
     private readonly GenerationConfiguration Configuration;
     private readonly string WorkingDirectory;
+    private readonly ILogger<KiotaBuilder> Logger;
 
     public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode,
-        GenerationConfiguration configuration, string workingDirectory)
+        GenerationConfiguration configuration, string workingDirectory, ILogger<KiotaBuilder> logger)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(openApiUrlTreeNode);
@@ -35,6 +37,7 @@ public partial class PluginsGenerationService
         TreeNode = openApiUrlTreeNode;
         Configuration = configuration;
         WorkingDirectory = workingDirectory;
+        Logger = logger;
     }
 
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
@@ -258,7 +261,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath);
+        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath, Logger);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
@@ -338,7 +341,7 @@ public partial class PluginsGenerationService
         string ContactEmail = DefaultContactEmail);
 
     private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
-        string openApiDocumentPath)
+        string openApiDocumentPath, ILogger<KiotaBuilder> logger)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
@@ -355,7 +358,7 @@ public partial class PluginsGenerationService
                 }
                 catch (UnsupportedSecuritySchemeException)
                 {
-                    // log a warning here that the operation security is not supported
+                    logger.LogWarning("Unsupported security scheme found in operation '{OperationId}'. Using anonymous auth.", operation.OperationId);
                     auth = new AnonymousAuth();
                 }
 
@@ -387,7 +390,7 @@ public partial class PluginsGenerationService
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath);
+            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath, logger);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
             conversationStarters.AddRange(childConversationStarters);
