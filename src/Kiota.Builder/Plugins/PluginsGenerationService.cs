@@ -356,10 +356,10 @@ public partial class PluginsGenerationService
                 {
                     auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements);
                 }
-                catch (UnsupportedSecuritySchemeException)
+                catch (UnsupportedSecuritySchemeException e)
                 {
-                    logger.LogWarning("Unsupported security scheme found in operation '{OperationId}'. Using anonymous auth.", operation.OperationId);
                     auth = new AnonymousAuth();
+                    logger.LogWarning("{OperationId}: {Message}. Using anonymous auth.", operation.OperationId, e.Message);
                 }
 
                 runtimes.Add(new OpenApiRuntime
