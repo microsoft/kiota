@@ -17,7 +17,6 @@ public class HttpRefiner : CommonLanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             CapitalizeNamespacesFirstLetters(generatedCode);
-            AddRootClassForExtensions(generatedCode);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 false,
@@ -44,10 +43,9 @@ public class HttpRefiner : CommonLanguageRefiner
             AddDefaultImports(
                 generatedCode,
                 defaultUsingEvaluators);
-            RemoveUntypedNodePropertyValues(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             SetBaseUrlForRequestBuilderMethods(generatedCode, GetBaseUrl(generatedCode));
-            // Remove unused code from the DOM e.g Models
+            // Remove unused code from the DOM e.g Models, BarrelInitializers, e.t.c
             RemoveUnusedCodeElements(generatedCode);
             CorrectCoreType(
                 generatedCode,
@@ -226,23 +224,6 @@ public class HttpRefiner : CommonLanguageRefiner
             codeClass.AddProperty(baseUrlProperty);
         }
         CrawlTree(current, (element) => SetBaseUrlForRequestBuilderMethods(element, baseUrl));
-    }
-
-    private void AddRootClassForExtensions(CodeElement current)
-    {
-        if (current is CodeNamespace currentNamespace &&
-            currentNamespace.FindNamespaceByName(_configuration.ClientNamespaceName) is CodeNamespace clientNamespace)
-        {
-            clientNamespace.AddClass(new CodeClass
-            {
-                Name = clientNamespace.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Last().ToFirstCharacterUpperCase(),
-                Kind = CodeClassKind.BarrelInitializer,
-                Documentation = new()
-                {
-                    DescriptionTemplate = "Root class for extensions",
-                },
-            });
-        }
     }
 
     private static void RemoveUnusedCodeElements(CodeElement element)
