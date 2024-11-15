@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { GenerateState } from "../modules/steps/generateSteps";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
@@ -62,7 +63,7 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   const descriptionurl = queryParameters["descriptionurl"];
   const name = getSanitizedString(queryParameters["name"]);
   const source = getSanitizedString(queryParameters["source"]);
-  const projectPath = queryParameters["projectPath"];
+  let projectPath = queryParameters["projectPath"];
 
   let lowercasedKind: string = queryParameters["kind"]?.toLowerCase() ?? "";
   let validKind: string | undefined = ["plugin", "client"].indexOf(lowercasedKind) > -1 ? lowercasedKind : undefined;
@@ -106,6 +107,11 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   if (!providedType && validKind === "plugin") {
     let acceptedPluginTypes: string[] = Object.keys(KiotaPluginType).filter(x => !Number(x) && x !== '0').map(x => x.toString().toLowerCase());
     errormsg.push("Invalid parameter 'type' deeplinked. Expected values: " + acceptedPluginTypes.join(","));
+  }
+
+  if (projectPath && !path.isAbsolute(projectPath)) {
+    projectPath = undefined;
+    errormsg.push(`The projectPath should be an absolute path. Provided value: ${queryParameters["projectPath"]}`);
   }
 
   validQueryParams = {
