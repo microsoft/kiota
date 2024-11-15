@@ -82,7 +82,7 @@ export async function activate(
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
 
-  await loadTreeView(context, workspaceTreeProvider);
+  await loadTreeView(context, workspaceTreeProvider, regenerateCommand);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
@@ -130,13 +130,6 @@ export async function activate(
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
 
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('kiota.workspace.regenerate', (workspaceTreeItem: WorkspaceTreeItem) => {
-      // Implement edit item logic here
-      vscode.window.showInformationMessage(`Regenerate item: ${workspaceTreeItem.label}`);
-    })
   );
 
   context.subscriptions.push(

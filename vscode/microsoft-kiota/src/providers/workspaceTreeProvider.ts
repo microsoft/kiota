@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 
-import { KIOTA_WORKSPACE_FILE } from '../constants';
+import { RegenerateCommand } from '../commands/regenerate/regenerateCommand';
+import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from '../constants';
 import { ClientOrPluginProperties } from '../kiotaInterop';
-import { getWorkspaceJsonPath, isKiotaWorkspaceFilePresent } from '../util';
+import { getWorkspaceJsonPath, isClientType, isKiotaWorkspaceFilePresent, isPluginType } from '../util';
 import { SharedService } from './sharedService';
 
 interface WorkspaceContent {
@@ -60,23 +61,23 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
       if (element.label === KIOTA_WORKSPACE_FILE) {
         const children: WorkspaceTreeItem[] = [];
         if (Object.keys(this.workspaceContent.clients).length > 0) {
-          children.push(new WorkspaceTreeItem('Clients', vscode.TreeItemCollapsibleState.Expanded, 'category'));
+          children.push(new WorkspaceTreeItem(CLIENTS, vscode.TreeItemCollapsibleState.Expanded, 'category'));
         }
         if (Object.keys(this.workspaceContent.plugins).length > 0) {
-          children.push(new WorkspaceTreeItem('Plugins', vscode.TreeItemCollapsibleState.Expanded, 'category'));
+          children.push(new WorkspaceTreeItem(PLUGINS, vscode.TreeItemCollapsibleState.Expanded, 'category'));
         }
         return children;
       }
 
-      if (element.label === 'Clients') {
+      if (isClientType(element.label)) {
         return Object.keys(this.workspaceContent.clients).map(clientName =>
-          new WorkspaceTreeItem(clientName, vscode.TreeItemCollapsibleState.None, 'item', 'Clients', this.getProperties(clientName, 'Clients'))
+          new WorkspaceTreeItem(clientName, vscode.TreeItemCollapsibleState.None, 'item', CLIENTS, this.getProperties(clientName, CLIENTS))
         );
       }
 
-      if (element.label === 'Plugins') {
+      if (isPluginType(element.label)) {
         return Object.keys(this.workspaceContent.plugins).map(pluginName =>
-          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', 'Plugins', this.getProperties(pluginName, 'Plugins'))
+          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', PLUGINS, this.getProperties(pluginName, CLIENTS))
         );
       }
     }
@@ -84,7 +85,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
   }
 
   getProperties(name: string, category: string): ClientOrPluginProperties | undefined {
-    if (category && category === 'Plugins') {
+    if (category && category === CLIENTS) {
       return this.workspaceContent?.plugins[name];
     }
     return this.workspaceContent?.clients[name];
@@ -147,7 +148,7 @@ async function openResource(resource: vscode.Uri): Promise<void> {
   await vscode.window.showTextDocument(resource);
 }
 
-export async function loadTreeView(context: vscode.ExtensionContext, treeDataProvider: WorkspaceTreeProvider): Promise<void> {
+export async function loadTreeView(context: vscode.ExtensionContext, treeDataProvider: WorkspaceTreeProvider, regenerateCommand: RegenerateCommand): Promise<void> {
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
     treeDataProvider.isWorkspacePresent = await isKiotaWorkspaceFilePresent();
     await vscode.commands.executeCommand('kiota.workspace.refresh'); // Refresh the tree view when workspace folders change
@@ -158,4 +159,11 @@ export async function loadTreeView(context: vscode.ExtensionContext, treeDataPro
     treeDataProvider.isWorkspacePresent = await isKiotaWorkspaceFilePresent();
     await treeDataProvider.refreshView();
   }));
+  context.subscriptions.push(
+    vscode.commands.registerCommand('kiota.workspace.regenerate', async (workspaceTreeItem: WorkspaceTreeItem) => {
+      const { label, properties, category } = workspaceTreeItem;
+      await regenerateCommand.execute({ clientOrPluginKey: label, clientOrPluginObject: properties!, generationType: category! });
+    })
+  );
+
 }
