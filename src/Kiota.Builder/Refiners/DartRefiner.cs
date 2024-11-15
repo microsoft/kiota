@@ -217,10 +217,20 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeEnum e)
         {
-            foreach (var option in e.Options)
+            var options = e.Options.ToList();
+            foreach (var option in options)
             {
                 option.Name = DartConventionService.getCorrectedEnumName(option.Name);
                 option.SerializationName = option.SerializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
+            }
+            ///ensure enum options with the same corrected name get a unique name
+            var nameGroups = options.Select((Option, index) => new { Option, index }).GroupBy(s => s.Option.Name).ToList();
+            foreach (var group in nameGroups.Where(g => g.Count() > 1))
+            {
+                foreach (var entry in group.Skip(1).Select((g, i) => new { g, i }))
+                {
+                    options[entry.g.index].Name = options[entry.g.index].Name + entry.i;
+                }
             }
         }
         else if (currentElement is CodeProperty p && p.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum && !string.IsNullOrEmpty(p.DefaultValue))
