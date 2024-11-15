@@ -217,12 +217,14 @@
     "views": {
       "kiota-openapi-explorer": [
         {
-          "id": "kiota.openApiExplorer",
-          "name": "%kiota.openApiExplorer.name%"
+          "id": "kiota.workspace",
+          "name": "%kiota.workspace.name%",
+          "order": 1
         },
         {
-          "id": "kiota.workspace",
-          "name": "%kiota.workspace.name%"
+          "id": "kiota.openApiExplorer",
+          "name": "%kiota.openApiExplorer.name%",
+          "order": 2
         }
       ],
       "kiota-dependencies-info": [
