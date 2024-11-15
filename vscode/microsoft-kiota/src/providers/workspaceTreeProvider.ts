@@ -17,6 +17,8 @@ class WorkspaceTreeItem extends vscode.TreeItem {
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly type: 'root' | 'category' | 'item',
+    public readonly category?: string,
+    public readonly properties?: ClientOrPluginProperties,
     public command?: vscode.Command
   ) {
     super(label, collapsibleState);
@@ -61,37 +63,53 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 
       if (element.label === 'Clients') {
         return Object.keys(this.workspaceContent.clients).map(clientName =>
-          new WorkspaceTreeItem(clientName, vscode.TreeItemCollapsibleState.None, 'item')
+          new WorkspaceTreeItem(clientName, vscode.TreeItemCollapsibleState.None, 'item', 'Clients', this.getProperties(clientName, 'Clients'))
         );
       }
 
       if (element.label === 'Plugins') {
         return Object.keys(this.workspaceContent.plugins).map(pluginName =>
-          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item')
+          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', 'Plugins', this.getProperties(pluginName, 'Plugins'))
         );
       }
     }
     return [];
   }
 
+  getProperties(name: string, category: string): ClientOrPluginProperties | undefined {
+    if (category && category === 'Plugins') {
+      return this.workspaceContent?.plugins[name];
+    }
+    return this.workspaceContent?.clients[name];
+  }
+
   getTreeItem(element: WorkspaceTreeItem): WorkspaceTreeItem {
-    if (element) {
-      if (element.type === 'root') {
+    if (!element) {
+      return element;
+    }
+
+    switch (element.type) {
+      case 'root':
         element.command = {
           command: 'kiota.workspace.openWorkspaceFile',
           title: vscode.l10n.t("Open File"),
           arguments: [vscode.Uri.file(getWorkspaceJsonPath())]
         };
         element.contextValue = 'folder';
-      } else if (element.type === 'item') {
+        break;
+
+      case 'item':
+        const key = element.label;
+        const properties = element.properties;
+        const generationType = element.category;
+
         element.iconPath = new vscode.ThemeIcon('folder');
         element.command = {
-          command: 'kiota.workspace.playItem',
-          title: vscode.l10n.t("Play Item"),
-          arguments: [element.label]
+          command: 'kiota.editPaths',
+          title: vscode.l10n.t("Select"),
+          arguments: [key, properties, generationType]
         };
-        element.contextValue = 'item';
-      }
+        break;
     }
     return element;
   }
