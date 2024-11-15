@@ -58,10 +58,14 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 
     if (this.workspaceContent) {
       if (element.label === KIOTA_WORKSPACE_FILE) {
-        return [
-          new WorkspaceTreeItem('Clients', Object.keys(this.workspaceContent.clients).length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed, 'category'),
-          new WorkspaceTreeItem('Plugins', Object.keys(this.workspaceContent.plugins).length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed, 'category')
-        ];
+        const children: WorkspaceTreeItem[] = [];
+        if (Object.keys(this.workspaceContent.clients).length > 0) {
+          children.push(new WorkspaceTreeItem('Clients', vscode.TreeItemCollapsibleState.Expanded, 'category'));
+        }
+        if (Object.keys(this.workspaceContent.plugins).length > 0) {
+          children.push(new WorkspaceTreeItem('Plugins', vscode.TreeItemCollapsibleState.Expanded, 'category'));
+        }
+        return children;
       }
 
       if (element.label === 'Clients') {
