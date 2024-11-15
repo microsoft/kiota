@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 
 import { KIOTA_WORKSPACE_FILE } from '../constants';
-import { getWorkspaceJsonPath } from '../util';
 import { ClientOrPluginProperties } from '../kiotaInterop';
+import { getWorkspaceJsonPath, isKiotaWorkspaceFilePresent } from '../util';
+import { SharedService } from './sharedService';
 
 interface WorkspaceContent {
   version: string;
@@ -26,19 +25,20 @@ export class WorkspaceTreeItem extends vscode.TreeItem {
   }
 }
 
-export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceTreeItem> {
   public isWorkspacePresent: boolean;
-  private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<WorkspaceTreeItem | undefined | null | void> = new vscode.EventEmitter<WorkspaceTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<WorkspaceTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
   private workspaceContent: WorkspaceContent | null = null;
+  private sharedService: SharedService;
 
-  constructor(isWSPresent: boolean) {
+  constructor(isWSPresent: boolean, _sharedService: SharedService) {
     this.isWorkspacePresent = isWSPresent;
+    this.sharedService = _sharedService;
     void this.loadWorkspaceContent();
   }
 
   async refreshView(): Promise<void> {
-    this.loadWorkspaceContent();
     this._onDidChangeTreeData.fire();
   }
 
@@ -110,7 +110,11 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         const properties = element.properties;
         const generationType = element.category;
 
-        element.iconPath = new vscode.ThemeIcon('folder');
+        const clientOrPluginKey = this.sharedService.get('clientOrPluginKey');
+        element.iconPath = (clientOrPluginKey && clientOrPluginKey === key) ?
+          new vscode.ThemeIcon('folder-opened') :
+          new vscode.ThemeIcon('folder');
+
         element.command = {
           command: 'kiota.editPaths',
           title: vscode.l10n.t("Select"),
@@ -143,21 +147,7 @@ async function openResource(resource: vscode.Uri): Promise<void> {
   await vscode.window.showTextDocument(resource);
 }
 
-async function isKiotaWorkspaceFilePresent(): Promise<boolean> {
-  if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-    return false;
-  }
-  const workspaceFileDir = path.resolve(getWorkspaceJsonPath());
-  try {
-    await fs.promises.access(workspaceFileDir);
-  } catch (error) {
-    return false;
-  }
-  return true;
-}
-
-export async function loadTreeView(context: vscode.ExtensionContext): Promise<void> {
-  const treeDataProvider = new WorkspaceTreeProvider(await isKiotaWorkspaceFilePresent());
+export async function loadTreeView(context: vscode.ExtensionContext, treeDataProvider: WorkspaceTreeProvider): Promise<void> {
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
     treeDataProvider.isWorkspacePresent = await isKiotaWorkspaceFilePresent();
     await vscode.commands.executeCommand('kiota.workspace.refresh'); // Refresh the tree view when workspace folders change

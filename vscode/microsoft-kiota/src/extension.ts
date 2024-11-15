@@ -30,10 +30,12 @@ import {
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
-import { loadTreeView, WorkspaceTreeItem } from './providers/workspaceTreeProvider';
+import { SharedService } from './providers/sharedService';
+import { loadTreeView, WorkspaceTreeItem, WorkspaceTreeProvider } from './providers/workspaceTreeProvider';
 import { getExtensionSettings } from "./types/extensionSettings";
 import { GeneratedOutputState } from './types/GeneratedOutputState';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
+import { isKiotaWorkspaceFilePresent } from './util';
 import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
 import { updateStatusBarItem } from './utilities/status';
@@ -50,11 +52,13 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
+  const sharedService = SharedService.getInstance();
+  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId), sharedService);
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  const workspaceTreeProvider = new WorkspaceTreeProvider(await isKiotaWorkspaceFilePresent(), sharedService);
 
   const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>) => {
     workspaceGenerationContext = { ...workspaceGenerationContext, ...params };
@@ -68,7 +72,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
-  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, workspaceTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
@@ -78,7 +82,7 @@ export async function activate(
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
 
-  await loadTreeView(context);
+  await loadTreeView(context, workspaceTreeProvider);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
