@@ -52,7 +52,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("use Microsoft\\Kiota\\Abstractions\\Enum", result);
         Assert.Contains("class", result);
         Assert.Contains("extends Enum", result);
-        Assert.Contains($"public const {optionName.ToUpperInvariant()} = '{optionName}'", result);
+        Assert.Contains($"public const {optionName.ToUpperInvariant()} = \"{optionName}\"", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(optionName, result);
     }
