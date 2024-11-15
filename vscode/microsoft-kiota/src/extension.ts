@@ -30,7 +30,7 @@ import {
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
-import { loadTreeView } from './providers/workspaceTreeProvider';
+import { loadTreeView, WorkspaceTreeItem } from './providers/workspaceTreeProvider';
 import { getExtensionSettings } from "./types/extensionSettings";
 import { GeneratedOutputState } from './types/GeneratedOutputState';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
@@ -129,16 +129,15 @@ export async function activate(
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('kiota.workspace.regenerate', (item) => {
+    vscode.commands.registerCommand('kiota.workspace.regenerate', (workspaceTreeItem: WorkspaceTreeItem) => {
       // Implement edit item logic here
-      vscode.window.showInformationMessage(`Edit item: ${item.label}`);
+      vscode.window.showInformationMessage(`Regenerate item: ${workspaceTreeItem.label}`);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('kiota.workspace.delete', (item) => {
-      // Implement delete item logic here
-      vscode.window.showInformationMessage(`Delete item: ${item.label}`);
+    vscode.commands.registerCommand('kiota.workspace.delete', (workspaceTreeItem: WorkspaceTreeItem) => {
+      vscode.window.showInformationMessage(`Delete item: ${workspaceTreeItem.label}`);
     })
   );
 

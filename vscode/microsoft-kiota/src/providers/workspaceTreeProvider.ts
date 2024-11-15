@@ -12,7 +12,7 @@ interface WorkspaceContent {
   plugins: Record<string, ClientOrPluginProperties>;
 }
 
-class WorkspaceTreeItem extends vscode.TreeItem {
+export class WorkspaceTreeItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
