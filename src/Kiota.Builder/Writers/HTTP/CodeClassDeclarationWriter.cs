@@ -69,8 +69,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             queryParams.ForEach(prop =>
             {
-                var documentation = prop.Documentation.DescriptionTemplate;
-                writer.WriteLine($"# {documentation}");
+                writer.WriteLine($"# {prop.Documentation.DescriptionTemplate}");
                 writer.WriteLine($"@{prop.Name} = ");
                 writer.WriteLine();
             });
@@ -87,8 +86,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
         httpMethods?.ForEach(method =>
         {
-            var documentation = method.Documentation.DescriptionTemplate;
-            writer.WriteLine($"# {documentation}");
+            writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
             writer.WriteLine($"{method.Name.ToUpperInvariant()} {GetUrlTemplate(codeElement)}");
 
             WriteRequestBody(method, writer);
@@ -115,10 +113,9 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         var requestBody = method.Parameters.FirstOrDefault(param => param.IsOfKind(CodeParameterKind.RequestBody));
         if (requestBody is null) return;
 
-        var contentType = method.RequestBodyContentType;
         // Empty line before content type
         writer.WriteLine();
-        writer.WriteLine($"Content-Type: {contentType}");
+        writer.WriteLine($"Content-Type: {method.RequestBodyContentType}");
 
         // loop through the properties of the request body and write a JSON object
         if (requestBody.Type is CodeType ct && ct.TypeDefinition is CodeClass requestBodyClass)
@@ -130,13 +127,37 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             writer.WriteLine("}");
         }
     }
-
     private static void WriteProperties(CodeClass codeClass, LanguageWriter writer)
     {
-        // Write properties of the current class
-        foreach (var prop in codeClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)))
+        var properties = codeClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)).ToList();
+        for (int i = 0; i < properties.Count; i++)
         {
-            writer.WriteLine($"{prop.Name}: {GetDefaultValueForProperty(prop)}");
+            var prop = properties[i];
+            var propName = $"\"{prop.Name}\"";
+            writer.Write($"{propName}: ");
+            if (prop.Type is CodeType propType && propType.TypeDefinition is CodeClass propClass)
+            {
+                // If the property is an object, write a JSON representation recursively
+                writer.WriteLine("{", includeIndent: false);
+                writer.IncreaseIndent();
+                WriteProperties(propClass, writer);
+                writer.DecreaseIndent();
+                writer.Write("}");
+            }
+            else
+            {
+                writer.Write(GetDefaultValueForProperty(prop), includeIndent: false);
+            }
+
+            // Add a trailing comma if there are more properties to be written
+            if (i < properties.Count - 1)
+            {
+                writer.WriteLine(",", includeIndent: false);
+            }
+            else
+            {
+                writer.WriteLine();
+            }
         }
 
         // If the class extends another class, write properties of the base class
@@ -154,8 +175,9 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             "string" => "\"string\"",
             "bool" or "boolean" => "false",
             _ when prop.Type is CodeType enumType && enumType.TypeDefinition is CodeEnum enumDefinition =>
-                enumDefinition.Options.FirstOrDefault()?.Name ?? "null",
+                enumDefinition.Options.FirstOrDefault()?.Name is string enumName ? $"\"{enumName}\"" : "null",
             _ => "null"
         };
     }
+
 }

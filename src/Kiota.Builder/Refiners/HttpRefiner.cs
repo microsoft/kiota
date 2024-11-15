@@ -35,15 +35,6 @@ public class HttpRefiner : CommonLanguageRefiner
                 static s => s
             );
             cancellationToken.ThrowIfCancellationRequested();
-            AddPropertiesAndMethodTypesImports(
-                generatedCode,
-                true,
-                false,
-                true);
-            AddDefaultImports(
-                generatedCode,
-                defaultUsingEvaluators);
-            cancellationToken.ThrowIfCancellationRequested();
             SetBaseUrlForRequestBuilderMethods(generatedCode, GetBaseUrl(generatedCode));
             // Remove unused code from the DOM e.g Models, BarrelInitializers, e.t.c
             RemoveUnusedCodeElements(generatedCode);
@@ -54,24 +45,6 @@ public class HttpRefiner : CommonLanguageRefiner
                 CorrectImplements);
         }, cancellationToken);
     }
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "MicrosoftKiotaAbstractions", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "MicrosoftKiotaAbstractions", "RequestInformation", "HttpMethod", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "MicrosoftKiotaAbstractions", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            "MicrosoftKiotaAbstractions", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
-            "MicrosoftKiotaAbstractions", "ParseNode", "Parsable"),
-        new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
-            "MicrosoftKiotaAbstractions", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) &&
-                                            (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
-                                            @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
-            "MicrosoftKiotaAbstractions", "AdditionalDataHolder"),
-    };
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -228,18 +201,28 @@ public class HttpRefiner : CommonLanguageRefiner
 
     private static void RemoveUnusedCodeElements(CodeElement element)
     {
-        if (element is CodeClass code && (code.IsOfKind(CodeClassKind.Model) || code.IsOfKind(CodeClassKind.BarrelInitializer) || IsBaseRequestBuilder(code)))
+        if (!IsRequestBuilderClass(element) || IsBaseRequestBuilder(element) || IsRequestBuilderClassWithoutAnyHttpOperations(element))
         {
             var parentNameSpace = element.GetImmediateParentOfType<CodeNamespace>();
             parentNameSpace?.RemoveChildElement(element);
         }
-
         CrawlTree(element, RemoveUnusedCodeElements);
     }
 
-    private static bool IsBaseRequestBuilder(CodeClass codeClass)
+    private static bool IsRequestBuilderClass(CodeElement element)
     {
-        return codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+        return element is CodeClass code && code.IsOfKind(CodeClassKind.RequestBuilder);
+    }
+
+    private static bool IsBaseRequestBuilder(CodeElement element)
+    {
+        return element is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             codeClass.Properties.Any(property => property.IsOfKind(CodePropertyKind.UrlTemplate) && string.Equals(property.DefaultValue, "\"{+baseurl}\"", StringComparison.Ordinal));
+    }
+
+    private static bool IsRequestBuilderClassWithoutAnyHttpOperations(CodeElement element)
+    {
+        return element is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+               !codeClass.Methods.Any(method => method.IsOfKind(CodeMethodKind.RequestExecutor));
     }
 }
