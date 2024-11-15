@@ -323,11 +323,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 }
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
                 {
-                    defaultValue = DartConventionService.getCorrectedEnumName(defaultValue.Trim('"').CleanupSymbolName());
-                    if (new DartReservedNamesProvider().ReservedNames.Contains(defaultValue))
-                    {
-                        defaultValue += "Escaped";
-                    }
                     defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
                 }
                 else if (propWithDefault.Type is CodeType propertyType2)

@@ -220,6 +220,15 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             foreach (var option in e.Options)
             {
                 option.Name = DartConventionService.getCorrectedEnumName(option.Name);
+                option.SerializationName = option.SerializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        else if (currentElement is CodeProperty p && p.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum && !string.IsNullOrEmpty(p.DefaultValue))
+        {
+            p.DefaultValue = DartConventionService.getCorrectedEnumName(p.DefaultValue.Trim('"').CleanupSymbolName());
+            if (new DartReservedNamesProvider().ReservedNames.Contains(p.DefaultValue))
+            {
+                p.DefaultValue += "Escaped";
             }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));

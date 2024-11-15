@@ -31,10 +31,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
             conventions.WriteShortDescription(option, writer);
 
             var serializationName = option.SerializationName;
-            if (serializationName.Contains('\'', StringComparison.OrdinalIgnoreCase))
-            {
-                serializationName = serializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
-            }
             writer.WriteLine($"{option.Name}('{serializationName}'){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");
