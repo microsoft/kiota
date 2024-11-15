@@ -48,8 +48,11 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     }
 
     if (!element) {
+      const hasClients = this.workspaceContent?.clients && Object.keys(this.workspaceContent.clients).length > 0;
+      const hasPlugins = this.workspaceContent?.plugins && Object.keys(this.workspaceContent.plugins).length > 0;
+      const collapsibleState = (hasClients || hasPlugins) ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
       return [
-        new WorkspaceTreeItem(KIOTA_WORKSPACE_FILE, vscode.TreeItemCollapsibleState.Expanded, 'root')
+        new WorkspaceTreeItem(KIOTA_WORKSPACE_FILE, collapsibleState, 'root')
       ];
     }
 
