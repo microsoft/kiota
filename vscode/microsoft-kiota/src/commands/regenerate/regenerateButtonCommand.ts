@@ -57,14 +57,13 @@ export class RegenerateButtonCommand extends Command {
 
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings, selectedPaths);
-
+    }
+    if (isPluginType(generationType)) {
+      await regenerateService.regeneratePlugin(settings, selectedPaths);
       const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
       if (workspaceJson && !workspaceJson.isDirty) {
         await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
       }
-    }
-    if (isPluginType(generationType)) {
-      await regenerateService.regeneratePlugin(settings, selectedPaths);
     }
   }
 
