@@ -37,7 +37,7 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
     }
     generationConfig.outputPath =
       (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
-      ? determineOutputPath(deepLinkParams)
+        ? determineOutputPath(deepLinkParams)
         : undefined;
   }
   return generationConfig;
@@ -111,7 +111,7 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
 
   if (projectPath && !path.isAbsolute(projectPath)) {
     projectPath = undefined;
-    errormsg.push(`The projectPath should be an absolute path. Provided value: ${queryParameters["projectPath"]}`);
+    errormsg.push(`A relative paths is not supported for the projectPath parameter`);
   }
 
   validQueryParams = {
