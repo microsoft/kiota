@@ -4,6 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
 import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
+import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItemCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
@@ -81,6 +82,7 @@ export async function activate(
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
+  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context);
 
   await loadTreeView(context, workspaceTreeProvider, regenerateCommand);
   await checkForLockFileAndPrompt(context);
@@ -129,13 +131,8 @@ export async function activate(
       await regenerateCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
+    registerCommandWithTelemetry(reporter, deleteWorkspaceItemCommand.getName(), async (workspaceTreeItem: WorkspaceTreeItem) => await deleteWorkspaceItemCommand.execute(workspaceTreeItem)),
 
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('kiota.workspace.delete', (workspaceTreeItem: WorkspaceTreeItem) => {
-      vscode.window.showInformationMessage(`Delete item: ${workspaceTreeItem.label}`);
-    })
   );
 
   // create a new status bar item that we can now manage
