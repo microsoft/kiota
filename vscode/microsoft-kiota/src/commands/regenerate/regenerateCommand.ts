@@ -43,12 +43,12 @@ export class RegenerateCommand extends Command {
     const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings);
-      if (workspaceJson) {
-        await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
-      }
     }
     if (isPluginType(generationType)) {
       await regenerateService.regeneratePlugin(settings);
+      if (workspaceJson) {
+        await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
+      }
     }
   }
 }
