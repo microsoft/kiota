@@ -120,7 +120,7 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
     type: providedType,
     language: givenLanguage,
     source,
-    ttkContext: queryParameters.ttkContext ? queryParameters.ttkContext : undefined,
+    ttkContext: queryParameters.ttkContext,
     projectPath
   };
   return [validQueryParams, errormsg];
