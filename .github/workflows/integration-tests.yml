@@ -112,7 +112,7 @@ jobs:
           python-version: "3.11"
       - name: Setup Dart
         if: matrix.language == 'dart'
-        uses: dart-lang/setup-dart@v1.6.5
+        uses: dart-lang/setup-dart@v1
         with:
           sdk: "3.5"
 
