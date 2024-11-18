@@ -26,7 +26,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             CorrectCommonNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
-            RemoveUntypedNodePropertyValues(generatedCode);
+            RemoveUntypedNodeTypeValues(generatedCode);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -255,7 +255,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         option.SerializationName = option.Name;
                     }
-                    option.Name = option.Name.ToCamelCase().ToFirstCharacterUpperCase();
+                    option.Name = option.Name.ToPascalCase();
                 }
             }
         }

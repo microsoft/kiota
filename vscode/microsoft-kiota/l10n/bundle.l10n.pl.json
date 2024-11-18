@@ -69,6 +69,7 @@
   "OK": "OK",
   "Generating manifest...": "Generowanie manifestu...",
   "Generating plugin...": "Generowanie wtyczki",
+  "Plugin generated successfully.": "Plugin wygenerowany pomyślnie.",
   "Re-generating client...": "Ponowne generowanie klienta...",
   "Re-generating plugin...": "Ponowne generowanie wtyczki...",
   "Please migrate your API clients to Kiota workspace.":"Proszę przenieść swoich klientów API do przestrzeni roboczej Kiota.",
@@ -77,5 +78,10 @@
   "Migration completed, but no changes were detected.":"Migracja zakończona, ale nie wykryto żadnych zmian.",
   "Migration failed":"Migracja nie powiodła się.",
   "API clients migrated successfully!":"Klienci API zostali pomyślnie przeniesieni!",
-  "Could not determine the workspace folder.": "Nie można określić folderu przestrzeni roboczej."
+  "Could not determine the workspace folder.": "Nie można określić folderu przestrzeni roboczej.",
+  "Client": "Klient",
+  "Copilot plugin": "Plugin Copilot",
+  "Other": "Inne",
+  "Create a new OpenAI plugin": "Utwórz nowy plugin OpenAI",
+  "Choose a name for the OpenAI plugin": "Wybierz nazwę dla pluginu OpenAI"
 }

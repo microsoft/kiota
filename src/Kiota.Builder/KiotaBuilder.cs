@@ -618,7 +618,7 @@ public partial class KiotaBuilder
             var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
-                Name = className.CleanupSymbolName(),
+                Name = currentNamespace.Name.EndsWith(OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
                 Kind = CodeClassKind.RequestBuilder,
                 Documentation = new()
                 {
@@ -630,21 +630,23 @@ public partial class KiotaBuilder
         logger.LogTrace("Creating class {Class}", codeClass.Name);
 
         // Add properties for children
-        foreach (var child in currentNode.Children)
+        foreach (var child in currentNode.Children.Select(static x => x.Value))
         {
-            var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
+            var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            if (child.Segment.Equals(OpenApiUrlTreeNodeExtensions.ReservedItemName, StringComparison.OrdinalIgnoreCase) && !child.DoesNodeBelongToItemSubnamespace())
+                propType = propType.Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase);
 
-            if (child.Value.IsPathSegmentWithSingleSimpleParameter())
+            if (child.IsPathSegmentWithSingleSimpleParameter())
             {
-                var indexerParameterType = GetIndexerParameter(child.Value, currentNode);
-                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
+                var indexerParameterType = GetIndexerParameter(child, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child, currentNode));
             }
-            else if (child.Value.IsComplexPathMultipleParameters())
-                CreateMethod(propIdentifier, propType, codeClass, child.Value);
+            else if (child.IsComplexPathMultipleParameters())
+                CreateMethod(propIdentifier, propType, codeClass, child);
             else
             {
-                var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
+                var description = child.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                 if (prop is null)
                 {
@@ -954,7 +956,10 @@ public partial class KiotaBuilder
         Parallel.ForEach(unmappedRequestBuilderTypes, parallelOptions, x =>
         {
             var parentNS = x.Parent?.Parent?.Parent as CodeNamespace;
-            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name).MinBy(shortestNamespaceOrder);
+            CodeClass[] exceptions = x.Parent?.Parent is CodeClass parentClass ? [parentClass] : [];
+            x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name)
+                .Except(exceptions)// the property method should not reference itself as a return type. 
+                .MinBy(shortestNamespaceOrder);
             // searching down first because most request builder properties on a request builder are just sub paths on the API
             if (x.TypeDefinition == null)
             {
@@ -1149,6 +1154,7 @@ public partial class KiotaBuilder
                 ("number" or "integer", "int8") => "sbyte",
                 ("number" or "integer", "uint8") => "byte",
                 ("number" or "integer", "int64") => "int64",
+                ("number", "int16") => "integer",
                 ("number", "int32") => "integer",
                 ("number", _) => "double",
                 ("integer", _) => "integer",
@@ -1485,6 +1491,23 @@ public partial class KiotaBuilder
     }
 
     private readonly ConcurrentDictionary<CodeElement, bool> multipartPropertiesModels = new();
+
+    private static bool IsSupportedMultipartDefault(OpenApiSchema openApiSchema,
+        StructuredMimeTypesCollection structuredMimeTypes)
+    {
+        // https://spec.openapis.org/oas/v3.0.3.html#special-considerations-for-multipart-content
+        if (openApiSchema.IsObjectType() && structuredMimeTypes.Contains("application/json"))
+            return true;
+
+        if (GetPrimitiveType(openApiSchema) is { IsExternal: true } primitiveType &&     // it s a primitive
+               (primitiveType.Name.Equals("binary", StringComparison.OrdinalIgnoreCase)
+                || primitiveType.Name.Equals("base64", StringComparison.OrdinalIgnoreCase) // streams are handled irrespective of configs
+                || structuredMimeTypes.Contains("text/plain")))                             // other primitives need text/plain
+            return true;
+
+        return false;
+    }
+
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
@@ -1505,6 +1528,18 @@ public partial class KiotaBuilder
                                 operation, method, $"{operationType}RequestBody",
                                 isRequestBody: true) is CodeType propertyType &&
                             propertyType.TypeDefinition is not null)
+                            multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                    }
+                }
+                else if (requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
+                         && operation.RequestBody.Content.Count == 1)// it's the only content type.
+                {
+                    requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
+                    foreach (var property in requestBodySchema.Properties.Values.Where(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes)))
+                    {
+                        if (CreateModelDeclarations(currentNode, property,
+                                operation, method, $"{operationType}RequestBody",
+                                isRequestBody: true) is CodeType { TypeDefinition: not null } propertyType)
                             multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                     }
                 }
@@ -1632,7 +1667,10 @@ public partial class KiotaBuilder
         var inlineSchemas = Array.FindAll(flattenedAllOfs, static x => !x.IsReferencedSchema());
         var referencedSchemas = Array.FindAll(flattenedAllOfs, static x => x.IsReferencedSchema());
         var rootSchemaHasProperties = schema.HasAnyProperty();
-        var className = (schema.GetSchemaName(schema.IsSemanticallyMeaningful()) is string cName && !string.IsNullOrEmpty(cName) ?
+        // if the schema is meaningful, we only want to consider the root schema for naming to avoid "grabbing" the name of the parent
+        // if the schema has no reference id we're either at the beginning of an inline schema, or expanding the inheritance tree
+        var shouldNameLookupConsiderSubSchemas = schema.IsSemanticallyMeaningful() || string.IsNullOrEmpty(referenceId);
+        var className = (schema.GetSchemaName(shouldNameLookupConsiderSubSchemas) is string cName && !string.IsNullOrEmpty(cName) ?
                 cName :
                 (!string.IsNullOrEmpty(typeNameForInlineSchema) ?
                     typeNameForInlineSchema :
@@ -1698,7 +1736,7 @@ public partial class KiotaBuilder
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
+        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
                                                         !x.HasAnyProperty() &&
@@ -1707,19 +1745,16 @@ public partial class KiotaBuilder
                                                         !x.IsInherited() &&
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
-                                                        !x.IsReferencedSchema()) ?? false))
-        { // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
-            var targetSchema = schema.AnyOf?.First(static x => !string.IsNullOrEmpty(x.GetSchemaName()));
-            if (targetSchema is not null)
+                                                        !x.IsReferencedSchema()) ?? false)) &&
+            schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+        {// once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
+            var className = targetSchema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            return new CodeType
             {
-                var className = targetSchema.GetSchemaName().CleanupSymbolName();
-                var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
-                return new CodeType
-                {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
-                    CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
-                };// so we don't create unnecessary union types when anyOf was used only for nullable.
-            }
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
+                CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
+            };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
         var (unionType, schemas) = (schema.IsExclusiveUnion(), schema.IsInclusiveUnion()) switch
         {
@@ -1747,6 +1782,8 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(className))
                 if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                 {
+                    if (currentSchema.IsArray())
+                        primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                     if (!unionType.ContainsType(primitiveType))
                         unionType.AddType(primitiveType);
                     continue;

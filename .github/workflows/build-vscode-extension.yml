@@ -10,7 +10,18 @@ permissions:
   contents: read
 
 jobs:
+  checksecret:
+    name: check if SONAR_TOKEN is set in github secrets
+    runs-on: ubuntu-latest
+    outputs:
+      is_SONAR_TOKEN_set: ${{ steps.checksecret_job.outputs.is_SONAR_TOKEN_set }}
+    steps:
+      - name: Check whether unity activation requests should be done
+        id: checksecret_job
+        run: |
+          echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
   build_extension:
+    needs: [checksecret]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +42,22 @@ jobs:
         working-directory: vscode/microsoft-kiota
       - run: npm run lint
         working-directory: vscode/microsoft-kiota
+      - name: run tests(linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test-with-coverage
+        working-directory: vscode/microsoft-kiota
+      - name: run tests
+        if: runner.os != 'Linux'
+        run: npm run test-with-coverage
+        working-directory: vscode/microsoft-kiota
+      - name: Run sonar cloud analysis
+        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: vscode/microsoft-kiota
       - run: npm run package
         working-directory: vscode/microsoft-kiota
       - run: npm i -g @vscode/vsce

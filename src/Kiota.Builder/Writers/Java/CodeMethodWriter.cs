@@ -358,11 +358,14 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {
                 defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
             }
-            // avoid setting null as a string.
-            if (propWithDefault.Type.IsNullable &&
+            else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {
+            {// avoid setting null as a string.
                 defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = defaultValue.TrimQuotes();
             }
             writer.WriteLine($"this.{setterName}({defaultValue});");
         }
@@ -573,7 +576,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                             .ToList();
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "null"));
-        var paramsCall = requestInfoParameters.Count != 0 ? requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
+        var paramsCall = string.Join(", ", requestInfoParameters);
         writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)

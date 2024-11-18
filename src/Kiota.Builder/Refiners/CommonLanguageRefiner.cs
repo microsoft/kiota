@@ -485,8 +485,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            if (@namespace.FindChildByName<CodeClass>(codeComposedType.Name, false) is CodeClass { OriginalComposedType: null })
+            if (@namespace.FindChildByName<CodeClass>(codeComposedType.Name, false) is { OriginalComposedType: null })
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
+            if (GetAlreadyExistingComposedCodeType(@namespace, codeComposedType) is { } existingCodeType)
+                return existingCodeType;
             newClass = @namespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
@@ -499,8 +501,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Deprecation = codeComposedType.Deprecation,
             }).Last();
         }
-        else if (codeComposedType.TargetNamespace is CodeNamespace targetNamespace)
+        else if (codeComposedType.TargetNamespace is { } targetNamespace)
         {
+            if (GetAlreadyExistingComposedCodeType(targetNamespace, codeComposedType) is { } existingCodeType)
+                return existingCodeType;
             newClass = targetNamespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
@@ -523,6 +527,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase) || codeClass.FindChildByName<CodeProperty>(codeComposedType.Name, false) is not null)
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
+            if (GetAlreadyExistingComposedCodeType(codeClass, codeComposedType) is { } existingCodeType)
+                return existingCodeType;
             newClass = codeClass.AddInnerClass(new CodeClass
             {
                 Name = codeComposedType.Name,
@@ -602,6 +608,24 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             ActionOf = codeComposedType.ActionOf,
         };
     }
+
+    private static CodeType? GetAlreadyExistingComposedCodeType(IBlock targetNamespace, CodeComposedTypeBase codeComposedType)
+    {
+        if (targetNamespace.FindChildByName<CodeClass>(codeComposedType.Name, false) is { OriginalComposedType: not null } existingClass && existingClass.OriginalComposedType.Name.Equals(codeComposedType.Name, StringComparison.OrdinalIgnoreCase))
+        { // the composed type was already added/created and the typeDefinition(codeclass) is already present in the namespace/class.
+            return new CodeType
+            {
+                Name = codeComposedType.Name,
+                TypeDefinition = existingClass,
+                CollectionKind = codeComposedType.CollectionKind,
+                IsNullable = codeComposedType.IsNullable,
+                ActionOf = codeComposedType.ActionOf,
+            };
+        }
+
+        return null;
+    }
+
     protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass &&
@@ -1451,15 +1475,28 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
-    protected static void RemoveUntypedNodePropertyValues(CodeElement currentElement)
+    protected static void RemoveUntypedNodeTypeValues(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProperty
-            && currentElement.Parent is CodeClass parentClass
-            && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+        switch (currentElement)
         {
-            parentClass.RemoveChildElement(currentProperty);
+            case CodeProperty currentProperty when currentElement.Parent is CodeClass parentClass && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase):
+                parentClass.RemoveChildElement(currentProperty);
+                break;
+            case CodeMethod currentMethod when currentMethod.IsOfKind(CodeMethodKind.RequestExecutor):
+                if (currentMethod.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    currentMethod.ReturnType = new CodeType { Name = "binary", IsExternal = true };
+                }
+                if (currentMethod.Parameters.Where(x => x.Kind is CodeParameterKind.RequestBody && x.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToList() is { Count: > 0 } parameters)
+                {
+                    foreach (var parameter in parameters)
+                    {
+                        parameter.Type = new CodeType { Name = "binary", IsExternal = true };
+                    }
+                }
+                break;
         }
-        CrawlTree(currentElement, RemoveUntypedNodePropertyValues);
+        CrawlTree(currentElement, RemoveUntypedNodeTypeValues);
     }
     protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {

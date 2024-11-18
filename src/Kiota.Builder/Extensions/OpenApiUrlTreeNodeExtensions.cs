@@ -13,9 +13,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
-    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
+    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : (ReservedItemName.Equals(x, StringComparison.OrdinalIgnoreCase) ? ReservedItemNameEscaped : x);
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
     private const string EscapedSuffix = "Escaped";
+    internal const string ReservedItemName = "Item";
+    internal const string ReservedItemNameEscaped = $"{ReservedItemName}_{EscapedSuffix}";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
@@ -259,15 +261,18 @@ public static partial class OpenApiUrlTreeNodeExtensions
             yield return new KeyValuePair<string, HashSet<string>>(currentNode.GetUrlTemplate(null, false, false).TrimStart('/'), operations.Select(static x => x.Key.ToString().ToUpperInvariant()).ToHashSet(StringComparer.OrdinalIgnoreCase));
         }
     }
-    [GeneratedRegex(@"{(?<paramname>[^}]+)}", RegexOptions.Singleline, 500)]
+    [GeneratedRegex(@"{[^}]+}", RegexOptions.Singleline, 500)]
     private static partial Regex pathParamMatcher();
     private static string SanitizePathParameterNamesForUrlTemplate(string original, HashSet<string> reservedParameterNames)
     {
         if (string.IsNullOrEmpty(original) || !original.Contains('{', StringComparison.OrdinalIgnoreCase)) return original;
-        var parameters = pathParamMatcher().Matches(original);
-        foreach (var value in parameters.Select(x => x.Groups["paramname"].Value))
-            original = original.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
-        return original;
+        var updated = original;
+        foreach (var match in pathParamMatcher().EnumerateMatches(original))
+        {
+            var value = original[(match.Index + 1)..(match.Index + match.Length - 1)];// ignore the { and }
+            updated = updated.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
+        }
+        return updated;
     }
     public static string SanitizeParameterNameForUrlTemplate(this string original)
     {
@@ -292,7 +297,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "")
     {
         if (string.IsNullOrEmpty(original)) return original;
-        return removePctEncodedCharacters().Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
+        return removePctEncodedCharacters().Replace(original.ToOriginalCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
     }
     private const string DeduplicatedSegmentKey = "x-ms-kiota-deduplicatedSegment";
     public static string DeduplicatedSegment(this OpenApiUrlTreeNode currentNode)

@@ -13,3 +13,6 @@ vsc-extension-quickstart.md
 **/*.ts
 .kiotabin/
 .vsix
+images/samples/
+.vscode-test
+coverage/

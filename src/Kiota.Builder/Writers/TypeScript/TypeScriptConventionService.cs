@@ -81,19 +81,32 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    private static bool ShouldIncludeCollectionInformationForParameter(CodeParameter parameter)
-    {
-        return !(GetOriginalComposedType(parameter) is not null
-            && parameter.Parent is CodeMethod codeMethod
-            && (codeMethod.IsOfKind(CodeMethodKind.Serializer) || codeMethod.IsOfKind(CodeMethodKind.Deserializer)));
-    }
-
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
-        var includeCollectionInformation = ShouldIncludeCollectionInformationForParameter(parameter);
-        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: includeCollectionInformation, inlineComposedTypeString: true);
-        var isComposedOfPrimitives = GetOriginalComposedType(parameter.Type) is CodeComposedTypeBase composedType && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+        var composedType = GetOriginalComposedType(parameter.Type);
+        var paramType = GetTypescriptTypeString(parameter.Type, targetElement, includeCollectionInformation: true, inlineComposedTypeString: true);
+
+        if (composedType != null && parameter.Parent is CodeMethod cm && cm.IsOfKind(CodeMethodKind.Serializer))
+        {
+            // eliminate primitive types from serializers with composed type signature
+            var newType = (CodeComposedTypeBase)composedType.Clone();
+            var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
+            newType.SetTypes(nonPrimitiveTypes);
+            paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: false, inlineComposedTypeString: true);
+        }
+        var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+
+        // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
+        var parsableTypes = (
+            composedType != null && !composedType.IsComposedOfObjects(IsPrimitiveType),
+            parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+            ) switch
+        {
+            (true, true) => "Parsable | ",
+            _ => string.Empty,
+        };
+
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
@@ -107,7 +120,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             (false, CodeParameterKind.DeserializationTarget) => ("Partial<", ">"),
             _ => (string.Empty, string.Empty),
         };
-        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
+        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {partialPrefix}{parsableTypes}{paramType}{partialSuffix}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
     }
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
@@ -193,7 +206,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             TYPE_INTEGER or TYPE_INT or TYPE_INT64 or TYPE_FLOAT or TYPE_DOUBLE or TYPE_BYTE or TYPE_SBYTE or TYPE_DECIMAL => TYPE_NUMBER,
             TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => TYPE_STRING,
-            TYPE_GUID => TYPE_GUID,
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),
             null => TYPE_OBJECT,
             _ when type is CodeComposedTypeBase composedType => composedType.Name.ToFirstCharacterUpperCase(),
@@ -225,7 +237,20 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase));
+    public static string? GetPrimitiveAlias(string typeName)
+    {
+        return typeName switch
+        {
+            TYPE_GUID => TYPE_LOWERCASE_STRING,
+            _ => null
+        };
+    }
+
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, true);
+
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
+
+    private static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
@@ -293,17 +318,17 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
-    private static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
+    internal static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
     {
-        return definitionClass.GetImmediateParentOfType<CodeNamespace>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
+        return definitionClass.GetImmediateParentOfType<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeMethod method, bool? IsCollection = null)
+    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeElement targetElement, bool? IsCollection = null)
     {
         ArgumentNullException.ThrowIfNull(codeType);
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentNullException.ThrowIfNull(targetElement);
         var isCollection = IsCollection == true || codeType.IsCollection;
-        var propertyType = GetTypescriptTypeString(codeType, method, false);
+        var propertyType = GetTypescriptTypeString(codeType, targetElement, false);
 
         CodeTypeBase _codeType = GetOriginalComposedType(codeType) is CodeComposedTypeBase composedType ? new CodeType() { Name = composedType.Name, TypeDefinition = composedType } : codeType;
 
@@ -314,19 +339,19 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
                 (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
-                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, method)})",
-                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method)
+                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
+                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
             };
         }
-        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, method);
+        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement);
     }
 
-    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeMethod method)
+    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement)
     {
         return propertyTypeName switch
         {
             TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, method)})"
+            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, targetElement)})"
         };
     }
 }

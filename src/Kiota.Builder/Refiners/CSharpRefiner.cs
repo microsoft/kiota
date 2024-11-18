@@ -56,7 +56,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 static s => s,
                 true,
-                AbstractionsNamespaceName,
+                SerializationNamespaceName,
                 "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
@@ -110,6 +110,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 "IParseNode"
             );
+            SetTypeAccessModifiers(generatedCode);
         }, cancellationToken);
     }
     protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
@@ -260,4 +261,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 })
         },
     };
+
+    private void SetTypeAccessModifiers(CodeElement currentElement)
+    {
+        if (currentElement is IAccessibleElement accessibleElement and (CodeEnum or CodeClass))
+        {
+            accessibleElement.Access = _configuration.TypeAccessModifier;
+        }
+
+        CrawlTree(currentElement, SetTypeAccessModifiers);
+    }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Microsoft.OpenApi.ApiManifest;
@@ -38,6 +39,7 @@ public class GenerationConfiguration : ICloneable
     public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
+    public AccessModifier TypeAccessModifier { get; set; } = AccessModifier.Public;
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
     public bool ExportPublicApi
@@ -181,6 +183,7 @@ public class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
     }
     public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
+    public const string KiotaVersionManifestExtensionKey = "x-ms-kiota-version";
     public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations, string targetDirectory)
     {
         var dependency = new ApiDependency()
@@ -195,6 +198,7 @@ public class GenerationConfiguration : ICloneable
         {
             dependency.Extensions.Add(KiotaHashManifestExtensionKey, JsonValue.Create(configurationHash));// only include non empty value.
         }
+        dependency.Extensions.Add(KiotaVersionManifestExtensionKey, Kiota.Generated.KiotaVersion.Current());
         return dependency;
     }
     private string NormalizeDescriptionLocation(string targetDirectory)

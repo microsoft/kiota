@@ -433,7 +433,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.NotNull(codeFile);
         var modelInterface = codeFile.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
-        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(static x => x.Name.Equals("Guid", StringComparison.Ordinal)));
+        Assert.Contains(modelInterface.StartBlock.Usings, static x => x.Name.Equals("Guid", StringComparison.Ordinal));
         Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name.Equals(codeProperty.Name, StringComparison.OrdinalIgnoreCase)).Type.Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
@@ -594,6 +594,82 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.DoesNotContain(modelInterface.Usings, x => x.Declaration?.TypeDefinition == source2Interface);
         Assert.DoesNotContain(modelInterface.Usings, x => x.Declaration?.TypeDefinition == source1Interface);
     }
+
+    [Fact]
+    public async Task AliasesDuplicateUsingSymbolsAsyncWithAliasedReferencesToParentNamespaceAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var source1 = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "source");
+        var modelsNS = root.FindNamespaceByName(generationConfiguration.ModelsNamespaceName);
+        Assert.NotNull(modelsNS);
+        var submodelsNS = modelsNS.AddNamespace($"{generationConfiguration.ModelsNamespaceName}.submodels");
+        var source2 = TestHelper.CreateModelClass(submodelsNS, "source");
+        var model = TestHelper.CreateModelClass(submodelsNS, "model");
+
+        var source1Factory = new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsAsync = false,
+            IsStatic = true,
+            ReturnType = new CodeType { Name = "source", TypeDefinition = source2, },
+        };
+        source1.AddMethod(source1Factory);
+
+        var using1 = new CodeUsing
+        {
+            Name = modelsNS.Name,
+            Declaration = new CodeType
+            {
+                Name = source1.Name,
+                TypeDefinition = source1,
+                IsExternal = false,
+            }
+        };
+
+        var source2Factory = new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsAsync = false,
+            IsStatic = true,
+            ReturnType = new CodeType { Name = "source", TypeDefinition = source2 },
+        };
+
+        source2.AddMethod(source2Factory);
+        var using2 = new CodeUsing
+        {
+            Name = submodelsNS.Name,
+            Declaration = new CodeType
+            {
+                Name = source2.Name,
+                TypeDefinition = source2,
+                IsExternal = false,
+            }
+        };
+        model.AddUsing(using1);
+        var property1 = new CodeProperty { Name = "source1", Type = new CodeType { TypeDefinition = source1, } };
+        model.AddProperty(property1);
+        var property2 = new CodeProperty { Name = "source2", Type = new CodeType { TypeDefinition = source2, } };
+        model.AddProperty(property2);
+        model.AddUsing(using2);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var sourceCodeFile = modelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(sourceCodeFile);
+        var source1Interface = sourceCodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
+
+        var modelCodeFile = submodelsNS.FindChildByName<CodeFile>(IndexFileName, false);
+        Assert.NotNull(modelCodeFile);
+        var source2Interface = modelCodeFile.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
+
+        var result1 = Kiota.Builder.Writers.TypeScript.TypeScriptConventionService.GetFactoryMethod(source1Interface, "createSourceFromDiscriminatorValue");
+        Assert.NotNull(result1);
+        var result2 = Kiota.Builder.Writers.TypeScript.TypeScriptConventionService.GetFactoryMethod(source2Interface, "createSourceFromDiscriminatorValue");
+        Assert.NotNull(result2);
+        Assert.NotEqual(result1, result2);// they should be different discriminators despite having the same name
+    }
+
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
@@ -713,7 +789,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Empty(requestBuilder.InnerClasses);
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("requestConfig", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(testNS.Classes, static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(testNS.Constants.Where(static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper)));
+        Assert.Single(testNS.Constants, static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper));
     }
 
     [Fact]

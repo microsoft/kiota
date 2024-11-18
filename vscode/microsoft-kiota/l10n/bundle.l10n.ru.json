@@ -76,5 +76,10 @@
   "Migration completed, but no changes were detected.":"Миграция завершена, но изменения не обнаружены.",
   "Migration failed":"Миграция не удалась",
   "API clients migrated successfully!" : "Клиенты API успешно перенесены!",
-  "Could not determine the workspace folder.": "Не удалось определить папку рабочего пространства."
+  "Could not determine the workspace folder.": "Не удалось определить папку рабочего пространства.",
+  "Client": "Клиент",
+  "Copilot plugin": "Плагин Copilot",
+  "Other": "Другое",
+  "Create a new OpenAI plugin": "Создать новый плагин OpenAI",
+  "Choose a name for the OpenAI plugin": "Выберите название для плагина OpenA"
 }

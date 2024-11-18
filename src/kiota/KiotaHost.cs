@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
@@ -108,6 +109,7 @@ public static partial class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
+        var dependencyTypesOption = GetDependencyTypesOption();
         var jsonOption = new Option<bool>("--json", "Generate a plain and machine-parsable json output.");
         languageOption.AddAlias("-l");
         AddEnumValidator(languageOption, "language");
@@ -120,6 +122,7 @@ public static partial class KiotaHost
             searchTermOption,
             languageOption,
             jsonOption,
+            dependencyTypesOption,
         };
         infoCommand.Handler = new KiotaInfoCommandHandler
         {
@@ -131,8 +134,21 @@ public static partial class KiotaHost
             SearchTermOption = searchTermOption,
             GenerationLanguage = languageOption,
             JsonOption = jsonOption,
+            DependencyTypesOption = dependencyTypesOption,
         };
         return infoCommand;
+    }
+    private static Option<DependencyType[]> GetDependencyTypesOption()
+    {
+        var dependencyTypesOption = new Option<DependencyType[]>("--dependency-type", "The type of dependency to display instructions for.")
+        {
+            IsRequired = false,
+            Arity = ArgumentArity.ZeroOrMore,
+        };
+        dependencyTypesOption.AddAlias("--dt");
+        dependencyTypesOption.SetDefaultValue(Array.Empty<DependencyType>());
+        dependencyTypesOption.AddCompletions(Enum.GetNames<DependencyType>());
+        return dependencyTypesOption;
     }
     private static Option<string> GetSearchKeyOption()
     {
@@ -349,6 +365,21 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<AccessModifier> GetTypeAccessModifierOption()
+    {
+        var accessOption = new Option<AccessModifier>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        accessOption.SetDefaultValue(AccessModifier.Public);
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
+    }
+    internal static Option<AccessModifier?> GetOptionalTypeAccessModifierOption()
+    {
+        var accessOption = new Option<AccessModifier?>("--type-access-modifier", "The type access modifier to use for the client types.");
+        accessOption.AddAlias("--tam");
+        AddEnumValidator(accessOption, "type-access-modifier");
+        return accessOption;
+    }
     internal static Option<string> GetNamespaceOption(string defaultNamespaceName)
     {
         var namespaceOption = new Option<string>("--namespace-name", () => defaultNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
@@ -417,6 +448,8 @@ public static partial class KiotaHost
         classOption.ArgumentHelpName = "name";
         AddStringRegexValidator(classOption, classNameRegex(), "class name");
 
+        var typeAccessModifierOption = GetTypeAccessModifierOption();
+
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
         var logLevelOption = GetLogLevelOption();
@@ -459,6 +492,7 @@ public static partial class KiotaHost
             outputOption,
             languageOption,
             classOption,
+            typeAccessModifierOption,
             namespaceOption,
             logLevelOption,
             backingStoreOption,
@@ -481,6 +515,7 @@ public static partial class KiotaHost
             OutputOption = outputOption,
             LanguageOption = languageOption,
             ClassOption = classOption,
+            TypeAccessModifierOption = typeAccessModifierOption,
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,

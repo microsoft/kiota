@@ -11,6 +11,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed python generation in scenarios with opening/closing tags for code comments. [#5636](https://github.com/microsoft/kiota/issues/5636)
+- Fixed Python error when a class inherits from a base class and implements an interface. [5637](https://github.com/microsoft/kiota/issues/5637)
+- Fix anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
+- Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
+
+## [1.20.0] - 2024-11-07
+
+### Added
+
+### Changed
+
+- Fixed python generation client serailization failure str being quoted as "str"
+- Fixed Issue with primitive values being stringified in python python. [#5417](https://github.com/microsoft/kiota/issues/5417)
+- Fixed an issue where multipart request content would be ignored if other unstructured content was present in the description. [#5638](https://github.com/microsoft/kiota/issues/5638)
+- Fixed an issue where when generating Go code the deserializer for unions was using `CodeClass` as a filter and not `CodeInterface`. [#4844](https://github.com/microsoft/kiota/issues/4844)
+- Fixes mapping of `int16` format to the `integer` type rather than `double` when the type is `integer` or `number` [#5611](https://github.com/microsoft/kiota/issues/5611)
+- Fixed a bug where default boolean values with quotes would fail in Java/PHP/CSharp/Go.
+- Fixed a bug where composed types wrappers would not build in CSharp.
+- Fixed a bug where the type name for inherited inline models would be incorrect. [#5610](https://github.com/microsoft/kiota/issues/5610)
+- Fixes typing inconsistencies in generated code and libraries in Python [kiota-python#333](https://github.com/microsoft/kiota-python/issues/333)
+- Fixes generation of superfluous fields for Models with discriminator due to refiners adding the same properties to the same model [#4178](https://github.com/microsoft/kiota/issues/4178).
+- Fixes unsigned shim binary when installed as dotnet tool [#5650](https://github.com/microsoft/kiota/issues/5650).
+
+## [1.19.1] - 2024-10-11
+
+### Added
+
+### Changed
+
+- Fixed incompatibility with detecting odata primitives after conversion library updates at [OpenAPI.NET.OData#581](https://github.com/microsoft/OpenAPI.NET.OData/issues/581);
+- Fixed cyclic dependencies in generated Go code. [#2834](https://github.com/microsoft/kiota/issues/2834)
+- Fixed a bug where default output folder is created on plugin edit and generate commands. [#5510](https://github.com/microsoft/kiota/issues/5429)
+- Changed GeneratedCode attribute applied when generating CSharp to only include the major version of Kiota. [#5489](https://github.com/microsoft/kiota/issues/5489)
+
+- Fixed generating CSharp client displays clean hint regardless of whether --clean-output is already passed [#5576](https://github.com/microsoft/kiota/issues/5576)
+
+## [1.19.0] - 2024-10-03
+
+### Added
+
+- Control generated type access modifier for C# via `--type-access-modifier` flag. [#4788](https://github.com/microsoft/kiota/issues/4788)
+
+### Changed
+
+- 📢📢📢 The Visual Studio Code extension is now generally available!. [#5368](https://github.com/microsoft/kiota/issues/5368)
+- Fixed a stack overflow in the core generator caused by circular comparisons. [#5369](https://github.com/microsoft/kiota/issues/5369)
+- Fixed a bug where a path segment named "item" after a single parameter path segment would derail generation. [#4814](https://github.com/microsoft/kiota/issues/4814)
+- Fixed a bug where collection/array of primitive types members for union/intersection types would be ignored. [#5283](https://github.com/microsoft/kiota/issues/5283)
+- Updated dependencies command and view to reflect the availability of bundles. [#5317](https://github.com/microsoft/kiota/issues/5317)
+- Fixed a bug when generating a plugin when only an operation is selected in the root node in the extension. [#5300](https://github.com/microsoft/kiota/issues/5300)
+- Fixed a bug where function descriptions in plugin manifest defaults to path summary instead of description. [#5301](https://github.com/microsoft/kiota/issues/5301)
+- Fixed a bug where TypeScript would not properly build URIs with uppercase first characters query parameter names.[#5382](https://github.com/microsoft/kiota/issues/5382)
+- Fixed a bug where the description special characters are encoded. [#5286](https://github.com/microsoft/kiota/issues/5286)
+- Fixed a bug where python constructor parameters are being cast to strings leading to bugs as the types is unknown on graph call. [microsoftgraph/msgraph-sdk-python#165](https://github.com/microsoftgraph/msgraph-sdk-python/issues/165)
+- Fixed a bug where child path segment from single parameter path segment would be incorrectly escaped. [#5433](https://github.com/microsoft/kiota/issues/5433)
+- Fixed inconsistent typing information generated for `ParsableFactory` and stream return types in python [kiota-abstractions-python#533](https://github.com/microsoft/kiota-abstractions-python/issues/333)
+- Fixed a bug where untyped not imports in TypeScripts would not be erasable. [microsoft/kiota-typescript#1381](https://github.com/microsoft/kiota-typescript/issues/1381)
+- Updated schema link in plugin manifest to the correct url. [#5441](https://github.com/microsoft/kiota/issues/5441)
+- Removed registration of default serialization and deserialization classes in client constructor. [#5478](https://github.com/microsoft/kiota/pull/5478)
+- Fixed incorrect type name generation in aliased scenario in TS due to broad searching of types in root namespaces. [#5404](https://github.com/microsoft/kiota/issues/5404)
+- Fixed incorrect type mapping in request builders with subsequent paths with the same name. [#5462](https://github.com/microsoft/kiota/issues/5462)
+- Fixed multipart generation to default Content-Types are defined for multipart [#5504](https://github.com/microsoft/kiota/issues/5504)
+
+## [1.18.0] - 2024-09-05
+
+### Added
+
 - Added the ability to export the CodeDom to a file showing the public APIs to be generated in a given language [#4627](https://github.com/microsoft/kiota/issues/4627)
 - Added composed type serialization in Typescript [2462](https://github.com/microsoft/kiota/issues/2462)
 - Use authentication information available in the source OpenAPI document when generating a plugin manifest. [#5070](https://github.com/microsoft/kiota/issues/5070)
@@ -21,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where untyped node imports would be missing CSharp/Go/TypeScript/Java. [#5326](https://github.com/microsoft/kiota/issues/5326)
 - Fixed missing type options in help for plugin commands. [#5230](https://github.com/microsoft/kiota/issues/5230)
 - Removed OpenAI plugins generation since the service does not support them anymore.
+- Fixed a bug where a nullable union type would lead to an exception at generation. [#5276](https://github.com/microsoft/kiota/issues/5276)
 - Fixed a bug where the error message would not be deserialized if the property name matched a reserved property. [#5311](https://github.com/microsoft/kiota/issues/5311)
 - Fixed an issue where TypeScript clients would be missing path parameters. [#5247](https://github.com/microsoft/kiota/issues/5247)
 - Fixed a bug where names normalization could lead to collisions in Ruby and other languages. [#5310](https://github.com/microsoft/kiota/issues/5310)
@@ -1435,3 +1505,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

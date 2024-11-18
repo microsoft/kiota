@@ -23,6 +23,7 @@ using Microsoft.OpenApi.Services;
 using Moq;
 
 using Xunit;
+using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 
 namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests : IDisposable
@@ -229,6 +230,171 @@ components:
         Assert.Null(modelsNS.FindNamespaceByName("ApiSdk.models.Specialized-Complex"));
         Assert.NotNull(specializedNS.FindChildByName<CodeClass>("StorageAccount", false));
     }
+    [Fact]
+    public async Task HandlesPathWithRepeatedSegment()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://api.funtranslations.com
+paths:
+  /media/response/response/{{id}}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponseModel'
+components:
+  schemas:
+    MediaResponseModel:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        mediaType:
+          type: string
+        url:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "Graph",
+            OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
+        }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var responseBuilderNs = codeModel.FindNamespaceByName("ApiSdk.media.response");
+        Assert.NotNull(responseBuilderNs);
+        var responseRequestBuilder = responseBuilderNs.FindChildByName<CodeClass>("ResponseRequestBuilder", false);
+        Assert.NotNull(responseRequestBuilder);
+        var navigationProperty = responseRequestBuilder.Properties.FirstOrDefault(prop =>
+            prop.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            prop.Name.Equals("Response", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(navigationProperty);
+        var navigationPropertyType = navigationProperty.Type as CodeType;
+        Assert.NotNull(navigationPropertyType);
+        Assert.NotEqual(responseRequestBuilder, navigationPropertyType.TypeDefinition);// the request builder should not be the same as the class it is in.
+        var nestedResponseBuilderNs = codeModel.FindNamespaceByName("ApiSdk.media.response.response");
+        var nestedResponseRequestBuilder = nestedResponseBuilderNs.FindChildByName<CodeClass>("ResponseRequestBuilder", false);
+        Assert.Equal(nestedResponseRequestBuilder, navigationPropertyType.TypeDefinition);// the request builder should not be the same as the class it is in.
+    }
+    [Fact]
+    public async Task HandlesPathWithItemInNameSegment()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://api.funtranslations.com
+paths:
+  /media/item/{{id}}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponseModel'
+  /media/item/{{id}}/nestedItem:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponseModel'
+components:
+  schemas:
+    MediaResponseModel:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        mediaType:
+          type: string
+        url:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "Graph",
+            OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
+        }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var mediaBuilderNs = codeModel.FindNamespaceByName("ApiSdk.media");
+        Assert.NotNull(mediaBuilderNs);
+        var mediaRequestBuilder = mediaBuilderNs.FindChildByName<CodeClass>("MediaRequestBuilder", false);
+        Assert.NotNull(mediaRequestBuilder);
+        var navigationProperty = mediaRequestBuilder.Properties.FirstOrDefault(prop =>
+            prop.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            prop.Name.Equals("Item", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(navigationProperty);
+        Assert.Equal("Item_EscapedRequestBuilder", navigationProperty.Type.Name);
+        var itemBuilderNs = mediaBuilderNs.FindNamespaceByName("ApiSdk.media.item_escaped");
+        Assert.NotNull(itemBuilderNs);
+        var itemRequestBuilder = itemBuilderNs.FindChildByName<CodeClass>("Item_escapedRequestBuilder", false);
+        Assert.NotNull(itemRequestBuilder.Indexer);
+        Assert.Equal("ItemItemRequestBuilder", itemRequestBuilder.Indexer.ReturnType.Name);
+        var nestedItemBuilderNs = itemBuilderNs.FindNamespaceByName("ApiSdk.media.item_escaped.item");
+        Assert.NotNull(nestedItemBuilderNs);
+        var nestedItemRequestBuilder = nestedItemBuilderNs.FindChildByName<CodeClass>("ItemItemRequestBuilder", false);
+        Assert.NotNull(nestedItemRequestBuilder);
+        Assert.NotNull(nestedItemRequestBuilder.Methods.FirstOrDefault(m =>
+            m.HttpMethod == HttpMethod.Get &&
+            m.IsAsync &&
+            m.Name.Equals("Get", StringComparison.OrdinalIgnoreCase)));
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MediaResponseModel", false));
+        var nestedNestedItemProperty =
+            nestedItemRequestBuilder.FindChildByName<CodeProperty>("NestedItem", false);
+        Assert.NotNull(nestedNestedItemProperty);
+        Assert.Equal("NestedItemRequestBuilder", nestedNestedItemProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
     private readonly HttpClient _httpClient = new();
     [Fact]
     public async Task ParsesEnumDescriptionsAsync()
@@ -305,7 +471,7 @@ components:
         Assert.Equal("Standard_LRS", thirdOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.DescriptionTemplate);
-        Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(enumDef.Options, static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -414,6 +580,103 @@ components:
         Assert.NotNull(innerRequestBuilderNS);
         Assert.NotNull(innerRequestBuilderNS.FindChildByName<CodeClass>("InnerRequestBuilder", false));
 
+    }
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Ruby)]
+    public async Task DoesNotAddSuperflousFieldsToModelsAsync(GenerationLanguage language)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+servers:
+  - url: ""https://localhost:8080""
+paths:
+  ""/api/all"":
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ""#/components/schemas/AorB""
+        required: true
+      responses:
+        ""200"":
+          $ref: ""#/components/responses/AorBResponse""
+components:
+  schemas:
+    A:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""a""
+    B:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          default: ""b""
+    AorB:
+      oneOf:
+        - $ref: ""#/components/schemas/A""
+        - $ref: ""#/components/schemas/B""
+      discriminator:
+        propertyName: type
+        mapping:
+          a: ""#/components/schemas/A""
+          b: ""#/components/schemas/B""
+  responses:
+    AorBResponse:
+      description: mandatory
+      content:
+        application/json:
+          schema:
+            $ref: ""#/components/schemas/AorB""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var generationConfiguration = new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = language }; // we can use any language that creates wrapper types for composed types in different ways
+        var builder = new KiotaBuilder(mockLogger.Object, generationConfiguration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
+        Assert.NotNull(requestBuilderNamespace);
+        if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
+        {// these languages use CodeFiles
+            var requestExecutorMethod = codeModel.FindChildByName<CodeMethod>("post");
+            Assert.NotNull(requestExecutorMethod);
+            var returnType = requestExecutorMethod.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeInterface;
+            if (language == GenerationLanguage.TypeScript)
+            {
+                Assert.Equal(2, returnTypeDefinition.Properties.Count());
+            }
+            if (language == GenerationLanguage.Go)
+            {
+                Assert.Equal(4, returnTypeDefinition.Methods.Count());// a getter and a setter for each property in Go.
+            }
+        }
+        else
+        {
+            var allRequestBuilderClass = requestBuilderNamespace.FindChildByName<CodeClass>("allRequestBuilder", false);
+            var executor = allRequestBuilderClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.RequestExecutor));
+            Assert.NotNull(executor);
+            var returnType = executor.ReturnType as CodeType;
+            var returnTypeDefinition = returnType.TypeDefinition as CodeClass;
+            Assert.Equal(2, returnTypeDefinition.Properties.Count());
+        }
     }
     [Fact]
     public async Task NamesComponentsInlineSchemasProperlyAsync()
@@ -1591,7 +1854,7 @@ paths:
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters, static x => x.IsOfKind(CodeParameterKind.Path));
     }
     [Fact]
     public void Supports_Path_Query_And_Header_Parameters()
@@ -1741,16 +2004,16 @@ paths:
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters, static x => x.IsOfKind(CodeParameterKind.Path));
         var parameters = getEffectivePermissionsRequestBuilder
             .Methods
             .SingleOrDefault(static cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "ConsistencyLevel" && p.Kind == CodeParameterKind.Headers));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "select" && p.Kind == CodeParameterKind.QueryParameter));
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));
+        Assert.Single(parameters, p => "IfMatch".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers);
+        Assert.Single(parameters, p => "ConsistencyLevel".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Headers);
+        Assert.Single(parameters, p => "select".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.QueryParameter);
+        Assert.Single(parameters, p => "scope".Equals(p.Name, StringComparison.Ordinal) && p.Kind == CodeParameterKind.Path);
     }
     [Fact]
     public void DeduplicatesConflictingParameterNamesForCLI()
@@ -2840,6 +3103,172 @@ paths:
         Assert.True(executorMethod.ReturnType is CodeType); // not union
         Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
     }
+    [Fact]
+    public void SupportsArraysInComposedTypes()
+    {
+        var anyOfSchema = new OpenApiSchema
+        {
+            Type = "object",
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        AnyOf = [
+                            new OpenApiSchema {
+                                Type = "string",
+                            },
+                            new OpenApiSchema {
+                                Type = "array",
+                                Items = new OpenApiSchema {
+                                    Type = "string",
+                                },
+                            },
+                        ]
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "anyOfNullable",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = anyOfSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "anyOfNullable", anyOfSchema
+                    }
+                },
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var anyOfClass = codeModel.FindChildByName<CodeClass>("anyOfNullable");
+        Assert.NotNull(anyOfClass);
+        var dateProperty = anyOfClass.FindChildByName<CodeProperty>("date", false);
+        Assert.NotNull(dateProperty);
+        if (dateProperty.Type is not CodeIntersectionType unionType)
+            Assert.Fail("Date property type is not a union type");
+        else
+        {
+            Assert.Equal(2, unionType.Types.Count());
+            Assert.Contains(unionType.Types, x => x.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && x.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.None);
+            Assert.Contains(unionType.Types, x => x.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && x.CollectionKind is CodeTypeBase.CodeTypeCollectionKind.Complex);
+        }
+    }
+    [Fact]
+    public void SupportsNullableAnyOf()
+    {
+        var anyOfSchema = new OpenApiSchema
+        {
+            Type = "object",
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        AnyOf = [
+                            new OpenApiSchema {
+                                Type = "string",
+                                Nullable = true
+                            },
+                            new OpenApiSchema {
+                                Type = "number",
+                                Format = "int64",
+                                Nullable = true,
+                            }
+                        ]
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "anyOfNullable",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = anyOfSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "anyOfNullable", anyOfSchema
+                    }
+                },
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var anyOfClass = codeModel.FindChildByName<CodeClass>("anyOfNullable");
+        Assert.NotNull(anyOfClass);
+        var dateProperty = anyOfClass.FindChildByName<CodeProperty>("date", false);
+        Assert.NotNull(dateProperty);
+        if (dateProperty.Type is not CodeIntersectionType unionType)
+            Assert.Fail("Date property type is not a union type");
+        else
+        {
+            Assert.Equal(2, unionType.Types.Count());
+            Assert.Contains(unionType.Types, x => x.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(unionType.Types, x => x.Name.Equals("int64", StringComparison.OrdinalIgnoreCase));
+        }
+    }
 
     [Fact]
     public void AddsDiscriminatorMappings()
@@ -3746,7 +4175,7 @@ components:
         var unionType = response.ReturnType as CodeIntersectionType;
 
         Assert.Equal(2, unionType.Types.Count());
-        Assert.Single(unionType.Types.Where(x => x.Name == "FooResponseObject" && x.IsCollection));
+        Assert.Single(unionType.Types, x => x.Name == "FooResponseObject" && x.IsCollection);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks()
@@ -4159,6 +4588,8 @@ components:
     [InlineData("integer", "int64", "int64")]
     [InlineData("number", "int8", "sbyte")]
     [InlineData("integer", "int8", "sbyte")]
+    [InlineData("number", "int16", "integer")]
+    [InlineData("integer", "int16", "integer")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
     [InlineData("number", "", "double")]
@@ -5248,7 +5679,7 @@ components:
         Assert.Equal("some path item description", requestBuilderClass.Documentation.DescriptionTemplate);
 
         if (excludeBackwardCompatible)
-            Assert.Single(requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor));
+            Assert.Single(requestBuilderClass.Methods, static x => x.Kind is CodeMethodKind.RequestExecutor);
         else
             Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
 
@@ -5559,7 +5990,7 @@ components:
         Assert.NotNull(rbNS);
         var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        Assert.Single(rbClass.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
+        Assert.Single(rbClass.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
@@ -5630,7 +6061,7 @@ components:
         Assert.NotNull(rbNS);
         var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        Assert.Single(rbClass.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
+        Assert.Single(rbClass.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.Equal("void", executor.ReturnType.Name);
@@ -5910,6 +6341,73 @@ components:
         Assert.NotNull(objectClass);
         var nameProperty = objectClass.Properties.First(static x => "name".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Equal(isReadonly, nameProperty.ReadOnly);
+    }
+    [Theory]
+    [InlineData("#GET", 0)]
+    [InlineData("/#GET", 1)]
+    public void SupportsIncludeFilterOnRootPath(string inputPattern, int expectedPathsCount)
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            ClientNamespaceName = "TestSdk",
+            ApiRootUrl = "https://localhost",
+            IncludePatterns = new() {
+                inputPattern
+            }
+        }, _httpClient);
+        builder.FilterPathsByPatterns(document);
+        Assert.Equal(expectedPathsCount, document.Paths.Count);
     }
     [Fact]
     public void SupportsIncludeFilter()
@@ -6229,8 +6727,8 @@ components:
         Assert.NotNull(messagesNS);
         var messagesRS = messagesNS.FindChildByName<CodeClass>("MessagesRequestBuilder");
         Assert.NotNull(messagesRS);
-        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(messagesRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var studentsNS = codeModel.FindNamespaceByName("TestSdk.students");
         var studentsRS = studentsNS.FindChildByName<CodeClass>("StudentsRequestBuilder");
@@ -6927,7 +7425,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
-        Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
+        Assert.Equal(4, resultClass.Properties.Count(static x => x.IsOfKind(CodePropertyKind.Custom)));
     }
     [Fact]
     public async Task SkipsInvalidItemsPropertiesAsync()
@@ -6972,7 +7470,62 @@ paths:
         Assert.NotNull(propertiesToValidate);
         Assert.NotEmpty(propertiesToValidate);
         Assert.Equal(keysToCheck.Count, propertiesToValidate.Length);// all the properties are present
-        Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
+    public async Task GetsCorrectInheritedInlineSchemaNameAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+servers:
+- url: https://api.github.com
+info:
+  title: GitHub API
+  version: 1.0.0
+paths:
+  '/app-manifests/{code}/conversions':
+    post:
+      operationId: apps/create-from-manifest
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                allOf:
+                - '$ref': '#/components/schemas/integration'
+                - additionalProperties: true
+                  properties:
+                    client_id:
+                      type: string
+                    client_secret:
+                      type: string
+                    pem:
+                      type: string
+                    webhook_secret:
+                      nullable: true
+                      type: string
+                  type: object
+          description: Response
+components:
+  schemas:
+    integration:
+      properties:
+        client_id:
+          type: string
+      title: GitHub app
+      type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel.FindChildByName<CodeClass>("ConversionsPostResponse"));
     }
     [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
@@ -7202,6 +7755,16 @@ paths:
     post:
       requestBody:
         content:
+          text/csv:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string,
+                  format: binary
+            encoding:
+              file:
+                style: form
           multipart/form-data:
             schema:
               type: object
@@ -7307,7 +7870,66 @@ components:
         Assert.NotNull(postMethod);
         var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
         Assert.NotNull(bodyParameter);
-        Assert.Equal("directoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
+    }
+    [Fact]
+    public async Task SupportsMultiPartFormAsRequestBodyWithoutEncodingWithDefaultMimeTypesAsyncWithNonDefaultMimeTypesAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1" } }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("DirectoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase); //generate the model type as we do not have the serializer for the schema registered.
         var addressClass = codeModel.FindChildByName<CodeClass>("Address");
         Assert.NotNull(addressClass);
     }
@@ -7628,11 +8250,11 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Linkable"));
         var classificationClass = codeModel.FindChildByName<CodeClass>("GroupClassification");
-        Assert.Single(classificationClass.Properties.Where(static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationClass.Properties, static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(classificationClass);
         var classificationPrimerClass = codeModel.FindChildByName<CodeClass>("GroupClassificationPrimer");
         Assert.NotNull(classificationPrimerClass);
-        Assert.Single(classificationPrimerClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationPrimerClass.Properties, static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfInBaseTypeAsync()
@@ -7835,10 +8457,10 @@ components:
         Assert.NotNull(groupClass);
         Assert.Equal(4, groupClass.Properties.Count());
         Assert.Null(groupClass.StartBlock.Inherits);
-        Assert.Single(groupClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -8007,9 +8629,9 @@ components:
         var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
         Assert.Null(registeredModelClass.StartBlock.Inherits);
         Assert.NotNull(registeredModelClass);
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(registeredModelClass.Properties.Where(static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(registeredModelClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaParentClassAsync()
@@ -8076,10 +8698,10 @@ components:
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
         Assert.NotNull(directoryObjectClass);
         Assert.Null(directoryObjectClass.StartBlock.Inherits);
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(directoryObjectClass.Properties.Where(static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(directoryObjectClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
         var groupClass = codeModel.FindChildByName<CodeClass>("Group");
         Assert.NotNull(groupClass);
         Assert.Single(groupClass.Properties);
@@ -8088,7 +8710,7 @@ components:
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("facetprop1", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(groupClass.Properties, static x => x.Name.Equals("facetprop2", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(groupClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(groupClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith2Parts1Schema1InlineNoDiscriminatorAsync()
@@ -8138,7 +8760,7 @@ components:
         Assert.NotNull(resultClass);
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(resultClass.Properties);
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith1Part1SchemaAndPropertiesNoDiscriminatorAsync()
@@ -8186,7 +8808,7 @@ components:
         Assert.NotNull(resultClass);
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(resultClass.Properties);
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
     }
     [InlineData(true)]
     [InlineData(false)]
@@ -8243,8 +8865,8 @@ components:
         Assert.Equal("directoryObject", resultClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(2, resultClass.Properties.Count());
         Assert.DoesNotContain(resultClass.Properties, static x => x.Name.Equals("oDataType", StringComparison.OrdinalIgnoreCase));
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(resultClass.Properties.Where(static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop1", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(resultClass.Properties, static x => x.Name.Equals("groupprop2", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithoutObjectTypeHasAllPropertiesAsync()
@@ -8293,7 +8915,7 @@ components:
         Assert.NotNull(outerPayloadClass);
         Assert.Equal("innerPayload", outerPayloadClass.StartBlock.Inherits?.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Single(outerPayloadClass.Properties);
-        Assert.Single(outerPayloadClass.Properties.Where(static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(outerPayloadClass.Properties, static x => x.Name.Equals("someField", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineTypeAsync()
@@ -8772,15 +9394,15 @@ components:
         Assert.NotNull(administrativeUnitsNS);
         var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
         Assert.NotNull(administrativeUnitsRS);
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
         Assert.NotNull(administrativeUnitsItemsNS);
         var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
         Assert.NotNull(administrativeUnitItemsRS);
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.DoesNotContain(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
     }
     [Fact]
@@ -8917,15 +9539,15 @@ components:
         Assert.NotNull(administrativeUnitsNS);
         var administrativeUnitsRS = administrativeUnitsNS.FindChildByName<CodeClass>("AdministrativeUnitsRequestBuilder");
         Assert.NotNull(administrativeUnitsRS);
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
-        Assert.Single(administrativeUnitsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.Single(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.DoesNotContain(administrativeUnitsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put);
         var administrativeUnitsItemsNS = codeModel.FindNamespaceByName("TestSdk.directory.administrativeUnits.item");
         Assert.NotNull(administrativeUnitsItemsNS);
         var administrativeUnitItemsRS = administrativeUnitsItemsNS.FindChildByName<CodeClass>("AdministrativeUnitsItemRequestBuilder");
         Assert.NotNull(administrativeUnitItemsRS);
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
-        Assert.Single(administrativeUnitItemsRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch));
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.Single(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.DoesNotContain(administrativeUnitItemsRS.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
     }
     [Fact]
