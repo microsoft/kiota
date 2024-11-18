@@ -7,7 +7,6 @@ using Kiota.Builder.Refiners;
 namespace Kiota.Builder.Writers.Dart;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConventionService>
 {
-    private DartReservedNamesProvider reservedNamesProvider = new DartReservedNamesProvider();
     public CodePropertyWriter(DartConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
@@ -45,18 +44,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             writer.WriteLine(accessModifierAttribute);
 
         var propertyName = codeElement.Name;
-        if (reservedNamesProvider.ReservedNames.Contains(propertyName))
-        {
-            propertyName += "Escaped";
-        }
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer, prefix: "return ");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
@@ -65,14 +59,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
                 writer.WriteLine();
                 writer.WriteLine($"set {codeElement.Name}({propertyType} value) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{backingStoreProperty.Name}.set('{backingStoreKey}', value);");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 writer.WriteLine("@override");

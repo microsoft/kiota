@@ -11,7 +11,6 @@ public class DartWriterTests
     public void Instantiates()
     {
         var writer = new DartWriter("./", "graph");
-        Assert.NotNull(writer);
         Assert.NotNull(writer.PathSegmenter);
         Assert.Throws<ArgumentNullException>(() => new DartWriter(null, "graph"));
         Assert.Throws<ArgumentNullException>(() => new DartWriter("./", null));
