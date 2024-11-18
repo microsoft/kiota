@@ -23,6 +23,9 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             // Extract and write the URL template
             WriteUrlTemplate(codeElement, writer);
 
+            // Write path parameters
+            WritePathParameters(codeElement, writer);
+
             // Write all query parameter variables
             WriteQueryParameters(codeElement, writer);
 
@@ -52,6 +55,20 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         writer.WriteLine();
     }
 
+    private static void WritePathParameters(CodeElement codeElement, LanguageWriter writer)
+    {
+        var pathParameters = codeElement.Parent?
+            .GetChildElements(true)
+            .OfType<CodeProperty>()
+            .Where(property => property.IsOfKind(CodePropertyKind.PathParameters))
+            .ToList();
+
+        pathParameters?.ForEach(prop =>
+        {
+            WriteHttpParameterProperty(prop, writer);
+        });
+    }
+
     private static void WriteQueryParameters(CodeElement codeElement, LanguageWriter writer)
     {
         var queryParameterClasses = codeElement.Parent?
@@ -69,12 +86,19 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             queryParams.ForEach(prop =>
             {
-                writer.WriteLine($"# {prop.Documentation.DescriptionTemplate}");
-                var decodedParameterName = DecodeUrlComponent(prop.WireName);
-                writer.WriteLine($"@{decodedParameterName} = ");
-                writer.WriteLine();
+                WriteHttpParameterProperty(prop, writer);
             });
         });
+    }
+
+    private static void WriteHttpParameterProperty(CodeProperty property, LanguageWriter writer)
+    {
+        if (!string.IsNullOrEmpty(property.Name))
+        {
+            writer.WriteLine($"# {property.Documentation.DescriptionTemplate}");
+            writer.WriteLine($"@{property.Name} = ");
+            writer.WriteLine();
+        }
     }
 
     private static void WriteHttpMethods(CodeElement codeElement, LanguageWriter writer)
@@ -180,15 +204,4 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             _ => "null"
         };
     }
-
-    /// <summary>
-    /// Decodes a URL string component, replacing percent-encoded characters with their decoded equivalents.
-    /// </summary>
-    /// <param name="urlComponent">The URL string component to decode.</param>
-    /// <returns>The decoded URL string component.</returns>
-    private static string DecodeUrlComponent(string urlComponent)
-    {
-        return HttpUtility.UrlDecode(urlComponent);
-    }
-
 }

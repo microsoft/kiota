@@ -206,7 +206,56 @@ public class HttpRefiner : CommonLanguageRefiner
             var parentNameSpace = element.GetImmediateParentOfType<CodeNamespace>();
             parentNameSpace?.RemoveChildElement(element);
         }
+        else
+        {
+            // Add path variables
+            AddPathParameters(element);
+        }
         CrawlTree(element, RemoveUnusedCodeElements);
+    }
+
+    private static void AddPathParameters(CodeElement element)
+    {
+        // Target RequestBuilder Classes only
+        if (element is not CodeClass codeClass) return;
+
+        var parent = element.GetImmediateParentOfType<CodeNamespace>().Parent;
+        while (parent is not null)
+        {
+            var codeIndexer = parent.GetChildElements(false)
+                .OfType<CodeClass>()
+                .FirstOrDefault()?
+                .GetChildElements(false)
+                .OfType<CodeMethod>()
+                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
+
+            if (codeIndexer is not null)
+            {
+                // Retrieve all the parameters of kind CodeParameterKind.Custom
+                var customParameters = codeIndexer.Parameters
+                    .Where(param => param.IsOfKind(CodeParameterKind.Custom))
+                    .ToList();
+
+                // For each parameter:
+                foreach (var param in customParameters)
+                {
+                    // Create a new property of kind CodePropertyKind.PathParameters using the parameter and add it to the codeClass
+                    var pathParameterProperty = new CodeProperty
+                    {
+                        Name = param.Name,
+                        Kind = CodePropertyKind.PathParameters,
+                        Type = param.Type,
+                        Access = AccessModifier.Public,
+                        DefaultValue = param.DefaultValue,
+                        SerializationName = param.SerializationName,
+                        Documentation = param.Documentation
+                    };
+                    codeClass.AddProperty(pathParameterProperty);
+                }
+            }
+
+            parent = parent.Parent?.GetImmediateParentOfType<CodeNamespace>();
+        }
     }
 
     private static bool IsRequestBuilderClass(CodeElement element)
