@@ -37,7 +37,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            if (isConstructor && !inherits && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+            if (isConstructor && !inherits && parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.BackingStore).Any())
             {
                 writer.DecreaseIndent();
             }
