@@ -185,7 +185,7 @@
         "-o",
         "${workspaceFolder}/samples/msgraph-mail/java/utilities/src/main/java/graphjavav4/utilities",
         "-n",
-        "graphjavav4.utilities"
+        "graphdart4.utilities"
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
