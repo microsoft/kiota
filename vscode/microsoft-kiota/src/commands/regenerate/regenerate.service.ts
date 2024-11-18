@@ -9,10 +9,9 @@ import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { parseGenerationLanguage, parsePluginType } from "../../util";
-import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
 import { generateClient } from "../generate/generateClient";
 import { generatePlugin } from "../generate/generatePlugin";
-import { checkForSuccess } from "../generate/generation-util";
 
 export class RegenerateService {
   private _context: ExtensionContext;

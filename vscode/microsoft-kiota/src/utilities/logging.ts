@@ -21,7 +21,7 @@ export async function exportLogsAndShowErrors(result: KiotaLogEntry[]): Promise<
   }
 }
 
-function logFromLogLevel(entry: KiotaLogEntry): void {
+export function logFromLogLevel(entry: KiotaLogEntry): void {
   switch (entry.level) {
     case LogLevel.critical:
     case LogLevel.error:
@@ -40,4 +40,15 @@ function logFromLogLevel(entry: KiotaLogEntry): void {
       kiotaOutputChannel.info(entry.message);
       break;
   }
+}
+
+export async function checkForSuccess(results: KiotaLogEntry[]) {
+  for (const result of results) {
+    if (result && result.message) {
+      if (result.message.includes("Generation completed successfully")) {
+        return true;
+      }
+    }
+  }
+  return false;
 }

@@ -15,12 +15,12 @@ import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
-import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
 import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
-import { checkForSuccess, displayGenerationResults } from "./generation-util";
+import { displayGenerationResults } from "./generation-util";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 
 export class GenerateClientCommand extends Command {
@@ -127,6 +127,10 @@ export class GenerateClientCommand extends Command {
         );
         return;
     }
+
+    const authenticationWarnings = getLogEntriesForLevel(result ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
+    authenticationWarnings?.forEach(logFromLogLevel);
+
     if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
       // Save state before opening the new window
       const outputState = {
