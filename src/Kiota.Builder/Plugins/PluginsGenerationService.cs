@@ -339,7 +339,7 @@ public partial class PluginsGenerationService
         string? LogoUrl = null,
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
-
+    
     private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath, ILogger<KiotaBuilder> logger)
     {
@@ -359,7 +359,7 @@ public partial class PluginsGenerationService
                 catch (UnsupportedSecuritySchemeException e)
                 {
                     auth = new AnonymousAuth();
-                    logger.LogWarning("{OperationId}: {Message}. Using anonymous auth.", operation.OperationId, e.Message);
+                    logger.LogWarning("Authentication warning. {OperationId} - {Message}. Using anonymous auth.", operation.OperationId, e.Message);
                 }
 
                 runtimes.Add(new OpenApiRuntime
