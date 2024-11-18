@@ -62,7 +62,7 @@ export class GenerateClientCommand extends Command {
       if (!deepLinkParams.name && this._openApiTreeProvider.apiTitle) {
         deepLinkParams.name = getSanitizedString(this._openApiTreeProvider.apiTitle);
       }
-      availableStateInfo = transformToGenerationConfig(deepLinkParams);
+      availableStateInfo = await transformToGenerationConfig(deepLinkParams);
     } else {
       const pluginName = getSanitizedString(this._openApiTreeProvider.apiTitle);
       availableStateInfo = {

@@ -1,5 +1,5 @@
-import * as fs from 'fs';
 import * as path from 'path';
+import { promises as fs } from 'fs';
 
 import { GenerateState } from "../modules/steps/generateSteps";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
@@ -11,8 +11,8 @@ export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): b
   return Object.values(deepLinkParams).filter(property => property).length >= minimumNumberOfParams;
 }
 
-export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
-  : Partial<GenerateState> {
+export async function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
+  : Promise<Partial<GenerateState>> {
   const generationConfig: Partial<GenerateState> = {};
   if (deepLinkParams.kind === "client") {
     generationConfig.generationType = "client";
@@ -37,7 +37,7 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
     }
     generationConfig.outputPath =
       (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
-        ? determineOutputPath(deepLinkParams)
+      ? await determineOutputPath(deepLinkParams)
         : undefined;
   }
   return generationConfig;
@@ -113,7 +113,6 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
     projectPath = undefined;
     errormsg.push(`A relative paths is not supported for the projectPath parameter`);
   }
-
   validQueryParams = {
     descriptionurl,
     name,
@@ -127,12 +126,13 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   return [validQueryParams, errormsg];
 }
 
-function determineOutputPath(deepLinkParams: Partial<IntegrationParams>): string | undefined {
+async function determineOutputPath(deepLinkParams: Partial<IntegrationParams>): Promise<string | undefined> {
   if (deepLinkParams.projectPath) {
     try {
-      if (!fs.existsSync(deepLinkParams.projectPath)) {
+      const exists = await fs.access(deepLinkParams.projectPath).then(() => true).catch(() => false);
+      if (!exists) {
         try {
-          fs.mkdirSync(deepLinkParams.projectPath);
+          await fs.mkdir(deepLinkParams.projectPath);
         } catch (err: unknown) {
           throw new Error(`Error creating directory: ${(err as Error).message}`);
         }

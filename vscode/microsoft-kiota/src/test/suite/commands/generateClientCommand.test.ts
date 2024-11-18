@@ -173,7 +173,7 @@ suite('GenerateClientCommand Test Suite', () => {
         assert.strictEqual(!treeProvider.descriptionUrl, false);
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
-        let stateInfo = transformToGenerationConfig(pluginParams);
+        let stateInfo = await transformToGenerationConfig(pluginParams);
         sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , pluginParams);
         sinon.assert.calledOnce(showUpgradeWarningMessageStub);
         sinon.assert.calledOnceWithMatch(getExtensionSettingsStub, "kiota");
