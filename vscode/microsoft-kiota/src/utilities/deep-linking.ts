@@ -1,3 +1,6 @@
+import * as path from 'path';
+import { promises as fs } from 'fs';
+
 import { GenerateState } from "../modules/steps/generateSteps";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
 import { allGenerationLanguagesToString, getSanitizedString, parseGenerationLanguage, parsePluginType } from "../util";
@@ -8,8 +11,8 @@ export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): b
   return Object.values(deepLinkParams).filter(property => property).length >= minimumNumberOfParams;
 }
 
-export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
-  : Partial<GenerateState> {
+export async function transformToGenerationConfig(deepLinkParams: Partial<IntegrationParams>)
+  : Promise<Partial<GenerateState>> {
   const generationConfig: Partial<GenerateState> = {};
   if (deepLinkParams.kind === "client") {
     generationConfig.generationType = "client";
@@ -34,7 +37,7 @@ export function transformToGenerationConfig(deepLinkParams: Partial<IntegrationP
     }
     generationConfig.outputPath =
       (deepLinkParams.source && deepLinkParams.source?.toLowerCase() === 'ttk')
-        ? createTemporaryFolder()
+      ? await determineOutputPath(deepLinkParams)
         : undefined;
   }
   return generationConfig;
@@ -49,7 +52,8 @@ export interface IntegrationParams {
   source: string;
   ttkContext: {
     lastCommand: string;
-  }
+  },
+  projectPath: string;
 };
 
 export function validateDeepLinkQueryParams(queryParameters: Partial<IntegrationParams>):
@@ -59,6 +63,8 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
   const descriptionurl = queryParameters["descriptionurl"];
   const name = getSanitizedString(queryParameters["name"]);
   const source = getSanitizedString(queryParameters["source"]);
+  let projectPath = queryParameters["projectPath"];
+
   let lowercasedKind: string = queryParameters["kind"]?.toLowerCase() ?? "";
   let validKind: string | undefined = ["plugin", "client"].indexOf(lowercasedKind) > -1 ? lowercasedKind : undefined;
   if (!validKind) {
@@ -103,14 +109,38 @@ export function validateDeepLinkQueryParams(queryParameters: Partial<Integration
     errormsg.push("Invalid parameter 'type' deeplinked. Expected values: " + acceptedPluginTypes.join(","));
   }
 
+  if (projectPath && !path.isAbsolute(projectPath)) {
+    projectPath = undefined;
+    errormsg.push(`A relative paths is not supported for the projectPath parameter`);
+  }
   validQueryParams = {
-    descriptionurl: descriptionurl,
-    name: name,
+    descriptionurl,
+    name,
     kind: validKind,
     type: providedType,
     language: givenLanguage,
-    source: source,
-    ttkContext: queryParameters.ttkContext ? queryParameters.ttkContext : undefined
+    source,
+    ttkContext: queryParameters.ttkContext,
+    projectPath
   };
   return [validQueryParams, errormsg];
+}
+
+async function determineOutputPath(deepLinkParams: Partial<IntegrationParams>): Promise<string | undefined> {
+  if (deepLinkParams.projectPath) {
+    try {
+      const exists = await fs.access(deepLinkParams.projectPath).then(() => true).catch(() => false);
+      if (!exists) {
+        try {
+          await fs.mkdir(deepLinkParams.projectPath);
+        } catch (err: unknown) {
+          throw new Error(`Error creating directory: ${(err as Error).message}`);
+        }
+      }
+      return deepLinkParams.projectPath;
+    } catch (error) {
+      return createTemporaryFolder();
+    }
+  }
+  return createTemporaryFolder();
 }
