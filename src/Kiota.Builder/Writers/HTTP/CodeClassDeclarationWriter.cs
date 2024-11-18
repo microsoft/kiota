@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Web;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
@@ -57,10 +58,11 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
     private static void WritePathParameters(CodeElement codeElement, LanguageWriter writer)
     {
+        // Retrieve all the path variables except the generic path parameter named "pathParameters"
         var pathParameters = codeElement.Parent?
             .GetChildElements(true)
             .OfType<CodeProperty>()
-            .Where(property => property.IsOfKind(CodePropertyKind.PathParameters))
+            .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals("pathParameters", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         pathParameters?.ForEach(prop =>
@@ -96,7 +98,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         if (!string.IsNullOrEmpty(property.Name))
         {
             writer.WriteLine($"# {property.Documentation.DescriptionTemplate}");
-            writer.WriteLine($"@{property.Name} = ");
+            writer.WriteLine($"@{property.Name.ToFirstCharacterLowerCase()} = ");
             writer.WriteLine();
         }
     }
