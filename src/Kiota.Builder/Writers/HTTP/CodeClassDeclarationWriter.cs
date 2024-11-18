@@ -12,40 +12,49 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
 
-        if (codeElement.Parent is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (codeElement.Parent is CodeClass requestBuilderClass && requestBuilderClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             // Write short description
-            conventions.WriteShortDescription(codeClass, writer);
+            conventions.WriteShortDescription(requestBuilderClass, writer);
             writer.WriteLine();
 
             // Write the baseUrl variable
-            WriteBaseUrl(codeClass, writer);
+            WriteBaseUrl(requestBuilderClass, writer);
 
             // Extract and write the URL template
-            WriteUrlTemplate(codeElement, writer);
+            WriteUrlTemplate(requestBuilderClass, writer);
 
             // Write path parameters
-            WritePathParameters(codeElement, writer);
+            WritePathParameters(requestBuilderClass, writer);
 
             // Write all query parameter variables
-            WriteQueryParameters(codeElement, writer);
+            WriteQueryParameters(requestBuilderClass, writer);
 
             // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
-            WriteHttpMethods(codeElement, writer);
+            WriteHttpMethods(requestBuilderClass, writer);
         }
     }
 
-    private static void WriteBaseUrl(CodeClass codeClass, LanguageWriter writer)
+    /// <summary>
+    /// Writes the base URL for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the base URL property.</param>
+    /// <param name="writer">The language writer to write the base URL to.</param>
+    private static void WriteBaseUrl(CodeClass requestBuilderClass, LanguageWriter writer)
     {
-        var baseUrl = codeClass.Properties.FirstOrDefault(property => property.Name.Equals("BaseUrl", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
+        // Retrieve the base URL property from the request builder class
+        var baseUrl = requestBuilderClass.Properties
+            .FirstOrDefault(property => property.Name.Equals("BaseUrl", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
+
+        // Write the base URL variable to the writer
         writer.WriteLine($"# baseUrl");
         writer.WriteLine($"@baseUrl = {baseUrl}");
         writer.WriteLine();
     }
 
-    private static void WriteUrlTemplate(CodeElement codeElement, LanguageWriter writer)
+    private static void WriteUrlTemplate(CodeClass requestBuilderClass, LanguageWriter writer)
     {
-        var urlTemplateProperty = codeElement.Parent?
+        var urlTemplateProperty = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
             .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
@@ -56,29 +65,42 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         writer.WriteLine();
     }
 
-    private static void WritePathParameters(CodeElement codeElement, LanguageWriter writer)
+    /// <summary>
+    /// Writes the path parameters for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the path parameters.</param>
+    /// <param name="writer">The language writer to write the path parameters to.</param>
+    private static void WritePathParameters(CodeClass requestBuilderClass, LanguageWriter writer)
     {
         // Retrieve all the path variables except the generic path parameter named "pathParameters"
-        var pathParameters = codeElement.Parent?
+        var pathParameters = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
             .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals("pathParameters", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        // Write each path parameter property
         pathParameters?.ForEach(prop =>
         {
             WriteHttpParameterProperty(prop, writer);
         });
     }
 
-    private static void WriteQueryParameters(CodeElement codeElement, LanguageWriter writer)
+    /// <summary>
+    /// Writes the query parameters for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the query parameters.</param>
+    /// <param name="writer">The language writer to write the query parameters to.</param>
+    private static void WriteQueryParameters(CodeClass requestBuilderClass, LanguageWriter writer)
     {
-        var queryParameterClasses = codeElement.Parent?
+        // Retrieve all the query parameter classes
+        var queryParameterClasses = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeClass>()
             .Where(element => element.IsOfKind(CodeClassKind.QueryParameters))
             .ToList();
 
+        // Write each query parameter property
         queryParameterClasses?.ForEach(paramCodeClass =>
         {
             var queryParams = paramCodeClass
@@ -93,47 +115,81 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         });
     }
 
+    /// <summary>
+    /// Writes the HTTP parameter property to the writer.
+    /// </summary>
+    /// <param name="property">The property to write.</param>
+    /// <param name="writer">The language writer to write the property to.</param>
     private static void WriteHttpParameterProperty(CodeProperty property, LanguageWriter writer)
     {
         if (!string.IsNullOrEmpty(property.Name))
         {
+            // Write the property documentation as a comment
             writer.WriteLine($"# {property.Documentation.DescriptionTemplate}");
+
+            // Write the property name and an assignment placeholder
             writer.WriteLine($"@{property.Name.ToFirstCharacterLowerCase()} = ");
+
+            // Write an empty line for separation
             writer.WriteLine();
         }
     }
 
-    private static void WriteHttpMethods(CodeElement codeElement, LanguageWriter writer)
+    /// <summary>
+    /// Writes the HTTP methods (GET, POST, PATCH, DELETE, e.t.c) for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
+    /// <param name="writer">The language writer to write the HTTP methods to.</param>
+    private static void WriteHttpMethods(CodeClass requestBuilderClass, LanguageWriter writer)
     {
-        var httpMethods = codeElement.Parent?
+        // Retrieve all the HTTP methods of kind RequestExecutor
+        var httpMethods = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeMethod>()
             .Where(element => element.IsOfKind(CodeMethodKind.RequestExecutor))
             .ToList();
 
+        // Write each HTTP method
         httpMethods?.ForEach(method =>
         {
+            // Write the method documentation as a comment
             writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
-            writer.WriteLine($"{method.Name.ToUpperInvariant()} {GetUrlTemplate(codeElement)}");
 
+            // Write the method name and URL template
+            writer.WriteLine($"{method.Name.ToUpperInvariant()} {GetUrlTemplate(requestBuilderClass)}");
+
+            // Write the request body if present
             WriteRequestBody(method, writer);
 
+            // Write an empty line for separation
             writer.WriteLine();
             writer.WriteLine("###");
             writer.WriteLine();
         });
     }
 
-    private static string GetUrlTemplate(CodeElement codeElement)
+    /// <summary>
+    /// Retrieves the URL template for the given request builder class.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the URL template property.</param>
+    /// <returns>The URL template as a string, or an empty string if not found.</returns>
+    private static string GetUrlTemplate(CodeClass requestBuilderClass)
     {
-        var urlTemplateProperty = codeElement.Parent?
+        // Retrieve the URL template property from the request builder class
+        var urlTemplateProperty = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
             .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
 
+        // Return the URL template or an empty string if not found
         return urlTemplateProperty?.DefaultValue ?? string.Empty;
     }
 
+    /// <summary>
+    /// Writes the request body for the given method to the writer.
+    /// </summary>
+    /// <param name="method">The method containing the request body.</param>
+    /// <param name="writer">The language writer to write the request body to.</param>
     private static void WriteRequestBody(CodeMethod method, LanguageWriter writer)
     {
         // If there is a request body, write it
@@ -144,7 +200,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         writer.WriteLine();
         writer.WriteLine($"Content-Type: {method.RequestBodyContentType}");
 
-        // loop through the properties of the request body and write a JSON object
+        // Loop through the properties of the request body and write a JSON object
         if (requestBody.Type is CodeType ct && ct.TypeDefinition is CodeClass requestBodyClass)
         {
             writer.WriteLine("{");
@@ -154,9 +210,15 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             writer.WriteLine("}");
         }
     }
-    private static void WriteProperties(CodeClass codeClass, LanguageWriter writer)
+
+    /// <summary>
+    /// Writes the properties of the given request body class to the writer.
+    /// </summary>
+    /// <param name="requestBodyClass">The request body class containing the properties.</param>
+    /// <param name="writer">The language writer to write the properties to.</param>
+    private static void WriteProperties(CodeClass requestBodyClass, LanguageWriter writer)
     {
-        var properties = codeClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)).ToList();
+        var properties = requestBodyClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)).ToList();
         for (int i = 0; i < properties.Count; i++)
         {
             var prop = properties[i];
@@ -188,20 +250,25 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         }
 
         // If the class extends another class, write properties of the base class
-        if (codeClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
+        if (requestBodyClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             WriteProperties(baseClass, writer);
         }
     }
 
-    private static string GetDefaultValueForProperty(CodeProperty prop)
+    /// <summary>
+    /// Gets the default value for the given property.
+    /// </summary>
+    /// <param name="codeProperty">The property to get the default value for.</param>
+    /// <returns>The default value as a string.</returns>
+    private static string GetDefaultValueForProperty(CodeProperty codeProperty)
     {
-        return prop.Type.Name switch
+        return codeProperty.Type.Name switch
         {
             "int" or "integer" => "0",
             "string" => "\"string\"",
             "bool" or "boolean" => "false",
-            _ when prop.Type is CodeType enumType && enumType.TypeDefinition is CodeEnum enumDefinition =>
+            _ when codeProperty.Type is CodeType enumType && enumType.TypeDefinition is CodeEnum enumDefinition =>
                 enumDefinition.Options.FirstOrDefault()?.Name is string enumName ? $"\"{enumName}\"" : "null",
             _ => "null"
         };
