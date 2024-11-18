@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-
+using System.Web;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.http;
@@ -70,7 +70,8 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             queryParams.ForEach(prop =>
             {
                 writer.WriteLine($"# {prop.Documentation.DescriptionTemplate}");
-                writer.WriteLine($"@{prop.Name} = ");
+                var decodedParameterName = DecodeUrlComponent(prop.WireName);
+                writer.WriteLine($"@{decodedParameterName} = ");
                 writer.WriteLine();
             });
         });
@@ -178,6 +179,16 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 enumDefinition.Options.FirstOrDefault()?.Name is string enumName ? $"\"{enumName}\"" : "null",
             _ => "null"
         };
+    }
+
+    /// <summary>
+    /// Decodes a URL string component, replacing percent-encoded characters with their decoded equivalents.
+    /// </summary>
+    /// <param name="urlComponent">The URL string component to decode.</param>
+    /// <returns>The decoded URL string component.</returns>
+    private static string DecodeUrlComponent(string urlComponent)
+    {
+        return HttpUtility.UrlDecode(urlComponent);
     }
 
 }
