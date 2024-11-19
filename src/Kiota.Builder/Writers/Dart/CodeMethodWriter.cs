@@ -784,12 +784,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
     {
         var signatureSegments = conventions.GetParameterSignature(parameter, targetElement).Split(" ", StringSplitOptions.RemoveEmptyEntries);
-        var nullablesegment = signatureSegments[0];
-        if (!"void".Equals(nullablesegment, StringComparison.Ordinal))
-        {
-            nullablesegment += "?";
-        }
-        return $"{nullablesegment} {string.Join(" ", signatureSegments[1..])}";
+        signatureSegments[1] += "?";
+        return $"{string.Join(" ", signatureSegments)}";
     }
 
 

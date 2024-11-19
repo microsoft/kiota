@@ -192,7 +192,7 @@ public class DartConventionService : CommonLanguageConventionService
                 string.Empty;
             if (currentType.ActionOf && includeActionInformation)
             {
-                return $"Function({collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix})";
+                return $"void Function({collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix})";
             }
 
             return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}{nullableSuffix}";
