@@ -15,7 +15,7 @@ import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
-import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel, showLogs } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
 import { generateClient } from "./generateClient";
@@ -24,22 +24,15 @@ import { displayGenerationResults } from "./generation-util";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 
 export class GenerateClientCommand extends Command {
-  private _openApiTreeProvider: OpenApiTreeProvider;
-  private _context: vscode.ExtensionContext;
-  private _dependenciesViewProvider: DependenciesViewProvider;
-  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void;
 
   constructor(
-    openApiTreeProvider: OpenApiTreeProvider,
-    context: vscode.ExtensionContext,
-    dependenciesViewProvider: DependenciesViewProvider,
-    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void
+    private _openApiTreeProvider: OpenApiTreeProvider,
+    private _context: vscode.ExtensionContext,
+    private _dependenciesViewProvider: DependenciesViewProvider,
+    private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void,
+    private _kiotaOutputChannel: vscode.LogOutputChannel
   ) {
     super();
-    this._openApiTreeProvider = openApiTreeProvider;
-    this._context = context;
-    this._dependenciesViewProvider = dependenciesViewProvider;
-    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext;
   }
 
   public getName(): string {
@@ -129,7 +122,8 @@ export class GenerateClientCommand extends Command {
     }
 
     const authenticationWarnings = getLogEntriesForLevel(result ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
-    authenticationWarnings?.forEach(logFromLogLevel);
+    authenticationWarnings?.forEach(entry => logFromLogLevel(entry, this._kiotaOutputChannel));
+    this._kiotaOutputChannel.show();
 
     if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
       // Save state before opening the new window
@@ -210,7 +204,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
@@ -254,7 +248,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       const deepLinkParams = getDeepLinkParams();
       const isttkIntegration = deepLinkParams.source?.toLowerCase() === 'ttk';
@@ -324,7 +318,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
