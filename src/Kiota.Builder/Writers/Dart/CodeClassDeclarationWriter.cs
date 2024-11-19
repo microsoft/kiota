@@ -26,14 +26,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
 
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
-            codeElement.Usings
+            foreach (var externalPath in codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Where(static x => x.IsExternal)
-                    .Select(x => $"import 'package:{x.Declaration!.Name}.dart';")
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(static x => x, StringComparer.Ordinal)
-                    .ToList()
-                    .ForEach(x => writer.WriteLine(x));
+                    .DistinctBy(static x => x.Declaration!.Name, StringComparer.Ordinal)
+                    .OrderBy(static x => x.Declaration!.Name, StringComparer.Ordinal))
+                writer.WriteLine($"import 'package:{externalPath.Declaration!.Name}.dart';");
 
             foreach (var relativePath in codeElement.Usings
                     .Where(static x => !x.IsExternal)
