@@ -53,6 +53,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="StreamJsonRpc" Version="2.20.17" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4qm4-8hg2-g2xm" />
+    <PackageReference Include="MessagePack" Version="2.5.187" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="System.CommandLine.Rendering" Version="0.4.0-alpha.22272.1" />
