@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Microsoft.Kiota.Abstractions;
 
 namespace Kiota.Builder.Writers.http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
@@ -12,65 +13,73 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
 
-        if (codeElement.Parent is CodeClass requestBuilderClass && requestBuilderClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (codeElement.Parent is CodeClass requestBuilderClass && requestBuilderClass.IsOfKind(CodeClassKind.RequestBuilder) && GetUrlTemplateProperty(requestBuilderClass) is CodeProperty urlTemplateProperty)
         {
             // Write short description
             conventions.WriteShortDescription(requestBuilderClass, writer);
             writer.WriteLine();
 
+            // Retrieve all query parameters
+            var queryParameters = GetAllQueryParameters(requestBuilderClass);
+
+            // Retrieve all path parameters
+            var pathParameters = GetPathParameters(requestBuilderClass);
+
+            var baseUrl = GetBaseUrl(requestBuilderClass);
+
             // Write the baseUrl variable
-            WriteBaseUrl(requestBuilderClass, writer);
+            WriteBaseUrl(baseUrl, writer);
 
             // Extract and write the URL template
-            WriteUrlTemplate(requestBuilderClass, writer);
+            WriteUrlTemplate(urlTemplateProperty, writer);
 
             // Write path parameters
-            WritePathParameters(requestBuilderClass, writer);
+            WritePathParameters(pathParameters, writer);
 
             // Write all query parameter variables
-            WriteQueryParameters(requestBuilderClass, writer);
+            WriteQueryParameters(queryParameters, writer);
 
             // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
-            WriteHttpMethods(requestBuilderClass, writer);
+            WriteHttpMethods(requestBuilderClass, writer, queryParameters, pathParameters, urlTemplateProperty, baseUrl);
         }
     }
 
     /// <summary>
-    /// Writes the base URL for the given request builder class to the writer.
+    /// Retrieves all the query parameters for the given request builder class.
     /// </summary>
-    /// <param name="requestBuilderClass">The request builder class containing the base URL property.</param>
-    /// <param name="writer">The language writer to write the base URL to.</param>
-    private static void WriteBaseUrl(CodeClass requestBuilderClass, LanguageWriter writer)
+    /// <param name="requestBuilderClass">The request builder class containing the query parameters.</param>
+    /// <returns>A list of all query parameters.</returns>
+    private static List<CodeProperty> GetAllQueryParameters(CodeClass requestBuilderClass)
     {
-        // Retrieve the base URL property from the request builder class
-        var baseUrl = requestBuilderClass.Properties
-            .FirstOrDefault(property => property.Name.Equals("BaseUrl", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
+        var queryParameters = new List<CodeProperty>();
 
-        // Write the base URL variable to the writer
-        writer.WriteLine($"# baseUrl");
-        writer.WriteLine($"@baseUrl = {baseUrl}");
-        writer.WriteLine();
-    }
-
-    private static void WriteUrlTemplate(CodeClass requestBuilderClass, LanguageWriter writer)
-    {
-        var urlTemplateProperty = requestBuilderClass
+        // Retrieve all the query parameter classes
+        var queryParameterClasses = requestBuilderClass
             .GetChildElements(true)
-            .OfType<CodeProperty>()
-            .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
+            .OfType<CodeClass>()
+            .Where(element => element.IsOfKind(CodeClassKind.QueryParameters))
+            .ToList();
 
-        var urlTemplate = urlTemplateProperty?.DefaultValue;
-        writer.WriteLine($"# {urlTemplateProperty?.Documentation?.DescriptionTemplate}");
-        writer.WriteLine($"# {urlTemplate}");
-        writer.WriteLine();
+        // Collect all query parameter properties into the aggregated list
+        queryParameterClasses?.ForEach(paramCodeClass =>
+        {
+            var queryParams = paramCodeClass
+                .Properties
+                .Where(property => property.IsOfKind(CodePropertyKind.QueryParameter))
+                .ToList();
+
+            queryParameters.AddRange(queryParams);
+        });
+
+        return queryParameters;
     }
 
     /// <summary>
-    /// Writes the path parameters for the given request builder class to the writer.
+    /// Retrieves all the path parameters for the given request builder class.
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the path parameters.</param>
-    /// <param name="writer">The language writer to write the path parameters to.</param>
-    private static void WritePathParameters(CodeClass requestBuilderClass, LanguageWriter writer)
+    /// <returns>A list of all path parameters, or an empty list if none are found.</returns>
+    private static List<CodeProperty> GetPathParameters(CodeClass requestBuilderClass)
     {
         // Retrieve all the path variables except the generic path parameter named "pathParameters"
         var pathParameters = requestBuilderClass
@@ -79,40 +88,85 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals("pathParameters", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        return pathParameters ?? [];
+    }
+
+    /// <summary>
+    /// Writes the base URL for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the base URL property.</param>
+    /// <param name="writer">The language writer to write the base URL to.</param>
+    private static void WriteBaseUrl(string? baseUrl, LanguageWriter writer)
+    {
+        // Write the base URL variable to the writer
+        writer.WriteLine($"# baseUrl");
+        writer.WriteLine($"@baseUrl = {baseUrl}");
+        writer.WriteLine();
+    }
+
+    /// <summary>
+    /// Retrieves the base URL for the given request builder class.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the base URL property.</param>
+    /// <returns>The base URL as a string, or null if not found.</returns>
+    private static string? GetBaseUrl(CodeClass requestBuilderClass)
+    {
+        // Retrieve the base URL property from the request builder class
+        return requestBuilderClass.Properties
+            .FirstOrDefault(property => property.Name.Equals("BaseUrl", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
+    }
+
+    /// <summary>
+    /// Retrieves the URL template property for the given request builder class.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the URL template property.</param>
+    /// <returns>The URL template property, or null if not found.</returns>
+    private static CodeProperty? GetUrlTemplateProperty(CodeClass requestBuilderClass)
+    {
+        // Retrieve the URL template property from the request builder class
+        return requestBuilderClass
+            .GetChildElements(true)
+            .OfType<CodeProperty>()
+            .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
+    }
+
+    /// <summary>
+    /// Writes the URL template for the given URL template property to the writer.
+    /// </summary>
+    /// <param name="urlTemplateProperty">The URL template property containing the URL template.</param>
+    /// <param name="writer">The language writer to write the URL template to.</param>
+    private static void WriteUrlTemplate(CodeProperty urlTemplateProperty, LanguageWriter writer)
+    {
+        // Write the URL template documentation as a comment
+        writer.WriteLine($"# {urlTemplateProperty.Documentation?.DescriptionTemplate}");
+
+        // Write the URL template value
+        writer.WriteLine($"# {urlTemplateProperty.DefaultValue}");
+
+        // Write an empty line for separation
+        writer.WriteLine();
+    }
+
+    /// <summary>
+    /// Writes the path parameters for the given request builder class to the writer.
+    /// </summary>
+    /// <param name="pathParameters">The list of path parameters to write.</param>
+    /// <param name="writer">The language writer to write the path parameters to.</param>
+    private static void WritePathParameters(List<CodeProperty> pathParameters, LanguageWriter writer)
+    {
         // Write each path parameter property
-        pathParameters?.ForEach(prop =>
-        {
-            WriteHttpParameterProperty(prop, writer);
-        });
+        pathParameters?.ForEach(prop => WriteHttpParameterProperty(prop, writer));
     }
 
     /// <summary>
     /// Writes the query parameters for the given request builder class to the writer.
     /// </summary>
-    /// <param name="requestBuilderClass">The request builder class containing the query parameters.</param>
+    /// <param name="queryParameters">The list of query parameters to write.</param>
     /// <param name="writer">The language writer to write the query parameters to.</param>
-    private static void WriteQueryParameters(CodeClass requestBuilderClass, LanguageWriter writer)
+    private static void WriteQueryParameters(List<CodeProperty> queryParameters, LanguageWriter writer)
     {
-        // Retrieve all the query parameter classes
-        var queryParameterClasses = requestBuilderClass
-            .GetChildElements(true)
-            .OfType<CodeClass>()
-            .Where(element => element.IsOfKind(CodeClassKind.QueryParameters))
-            .ToList();
-
         // Write each query parameter property
-        queryParameterClasses?.ForEach(paramCodeClass =>
-        {
-            var queryParams = paramCodeClass
-                .Properties
-                .Where(property => property.IsOfKind(CodePropertyKind.QueryParameter))
-                .ToList();
-
-            queryParams.ForEach(prop =>
-            {
-                WriteHttpParameterProperty(prop, writer);
-            });
-        });
+        queryParameters.ForEach(prop => WriteHttpParameterProperty(prop, writer));
     }
 
     /// <summary>
@@ -140,7 +194,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
     /// <param name="writer">The language writer to write the HTTP methods to.</param>
-    private static void WriteHttpMethods(CodeClass requestBuilderClass, LanguageWriter writer)
+    private static void WriteHttpMethods(CodeClass requestBuilderClass, LanguageWriter writer, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, CodeProperty urlTemplateProperty, string? baseUrl)
     {
         // Retrieve all the HTTP methods of kind RequestExecutor
         var httpMethods = requestBuilderClass
@@ -155,8 +209,11 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             // Write the method documentation as a comment
             writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
 
-            // Write the method name and URL template
-            writer.WriteLine($"{method.Name.ToUpperInvariant()} {GetUrlTemplate(requestBuilderClass)}");
+            // Build the actual URL string and replace all required fields(path and query) with placeholder variables
+            var url = BuildUrlStringFromTemplate(urlTemplateProperty.DefaultValue, queryParameters, pathParameters, baseUrl);
+
+            // Write the http operation e.g GET, POST, PATCH, e.t.c
+            writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} HTTP/1.1");
 
             // Write the request body if present
             WriteRequestBody(method, writer);
@@ -196,9 +253,10 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         var requestBody = method.Parameters.FirstOrDefault(param => param.IsOfKind(CodeParameterKind.RequestBody));
         if (requestBody is null) return;
 
-        // Empty line before content type
-        writer.WriteLine();
         writer.WriteLine($"Content-Type: {method.RequestBodyContentType}");
+
+        // Empty line before body content
+        writer.WriteLine();
 
         // Loop through the properties of the request body and write a JSON object
         if (requestBody.Type is CodeType ct && ct.TypeDefinition is CodeClass requestBodyClass)
@@ -272,5 +330,34 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 enumDefinition.Options.FirstOrDefault()?.Name is string enumName ? $"\"{enumName}\"" : "null",
             _ => "null"
         };
+    }
+
+    private static string BuildUrlStringFromTemplate(string urlTemplateString, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, string? baseUrl)
+    {
+        // Use the provided baseUrl or default to "http://localhost/"
+        baseUrl ??= "http://localhost/";
+
+        // unquote the urlTemplate string and replace the {+baseurl} with the actual base url string
+        urlTemplateString = urlTemplateString.Trim('"').Replace("{+baseurl}", baseUrl, StringComparison.InvariantCultureIgnoreCase);
+
+        // Build RequestInformation using the URL
+        var requestInformation = new RequestInformation()
+        {
+            UrlTemplate = urlTemplateString
+        };
+
+        queryParameters?.ForEach(param =>
+        {
+            // Check if its a required parameter then add it
+            requestInformation.QueryParameters.Add(param.WireName, $"{{{param.Name.ToFirstCharacterLowerCase()}}}");
+        });
+
+        pathParameters?.ForEach(param =>
+        {
+            requestInformation.PathParameters.Add(param.WireName, $"{{{param.Name.ToFirstCharacterLowerCase()}}}");
+        });
+
+        // Erase baseUrl and use the placeholder variable {baseUrl} already defined in the snippet
+        return requestInformation.URI.ToString().Replace(baseUrl, "{baseUrl}", StringComparison.InvariantCultureIgnoreCase);
     }
 }
