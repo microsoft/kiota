@@ -1,14 +1,14 @@
 import * as vscode from "vscode";
-import * as rpc from "vscode-jsonrpc/node";
 
 import TelemetryReporter from "@vscode/extension-telemetry";
-import { extensionId } from "../constants";
-import { connectToKiota, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../kiotaInterop";
-import { WorkspaceTreeItem, WorkspaceTreeProvider } from "../providers/workspaceTreeProvider";
-import { isPluginType } from "../util";
-import { exportLogsAndShowErrors } from "../utilities/logging";
-import { Command } from "./Command";
-import { checkForSuccess } from "./generate/generation-util";
+import { extensionId } from "../../constants";
+import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { WorkspaceTreeItem, WorkspaceTreeProvider } from "../../providers/workspaceTreeProvider";
+import { isPluginType } from "../../util";
+import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { Command } from "../Command";
+import { checkForSuccess } from "../generate/generation-util";
+import { removeClient, removePlugin } from "./removeItem";
 
 export class DeleteWorkspaceItemCommand extends Command {
   constructor(private _context: vscode.ExtensionContext, private _workspaceTreeProvider: WorkspaceTreeProvider) {
@@ -92,30 +92,3 @@ export class DeleteWorkspaceItemCommand extends Command {
   }
 }
 
-export function removePlugin(context: vscode.ExtensionContext, pluginName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(context, async (connection) => {
-    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
-      "RemovePlugin"
-    );
-    const result = await connection.sendRequest(
-      request,
-      pluginName,
-      cleanOutput
-    );
-    return result;
-  });
-};
-
-export function removeClient(context: vscode.ExtensionContext, clientName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(context, async (connection) => {
-    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
-      "RemoveClient"
-    );
-    const result = await connection.sendRequest(
-      request,
-      clientName,
-      cleanOutput
-    );
-    return result;
-  });
-};

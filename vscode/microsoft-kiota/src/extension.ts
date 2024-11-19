@@ -4,7 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
 import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
-import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItemCommand';
+import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItem/deleteWorkspaceItemCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
