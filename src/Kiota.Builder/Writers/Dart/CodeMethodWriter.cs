@@ -374,8 +374,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private string DefaultDeserializerReturnType => $"Map<String, Function({conventions.ParseNodeInterfaceName})>";
-    private string DefaultDeserializerReturnInstance => $"<String, Function({conventions.ParseNodeInterfaceName})>";
+    private string DefaultDeserializerReturnType => $"Map<String, void Function({conventions.ParseNodeInterfaceName})>";
+    private string DefaultDeserializerReturnInstance => $"<String, void Function({conventions.ParseNodeInterfaceName})>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
@@ -409,7 +409,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
 
-        writer.WriteLine($"{DefaultDeserializerReturnType} {DeserializerName} = {{}};");
+        writer.WriteLine($"var {DeserializerName} = {DefaultDeserializerReturnInstance}{{}};");
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
                                             .ToArray();

@@ -992,8 +992,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("complexType1Value != null", result);
         Assert.Contains("return complexType1Value!.getFieldDeserializers()", result);
-        Assert.Contains("<String, Function(ParseNode)>{}", result);
-        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "<String, Function(ParseNode)>{}", result);
+        Assert.Contains("<String, void Function(ParseNode)>{}", result);
+        AssertExtensions.Before("return complexType1Value!.getFieldDeserializers()", "<String, void Function(ParseNode)>{}", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1013,7 +1013,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         }).First();
         writer.Write(deserializationMethod);
         var result = tw.ToString();
-        Assert.Contains("Map<String, Function(ParseNode)> deserializers = {};", result);
+        Assert.Contains("var deserializers = <String, void Function(ParseNode)>{};", result);
         Assert.Contains("if(complexType1Value != null){complexType1Value!.getFieldDeserializers().forEach((k,v) => deserializers.putIfAbsent(k, ()=>v));}", result);
         Assert.Contains("if(complexType3Value != null){complexType3Value!.getFieldDeserializers().forEach((k,v) => deserializers.putIfAbsent(k, ()=>v));}", result);
         Assert.Contains("return deserializers", result);
