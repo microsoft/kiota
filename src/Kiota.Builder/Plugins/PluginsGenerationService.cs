@@ -359,7 +359,7 @@ public partial class PluginsGenerationService
                 catch (UnsupportedSecuritySchemeException e)
                 {
                     auth = new AnonymousAuth();
-                    logger.LogWarning("Authentication warning: {OperationId} - {Message}. Using anonymous auth.", operation.OperationId, e.Message);
+                    logger.LogWarning("Authentication warning: {OperationId} - {Message}", operation.OperationId, e.Message);
                 }
 
                 runtimes.Add(new OpenApiRuntime
