@@ -38,6 +38,13 @@ public class DartConventionService : CommonLanguageConventionService
 
         return true;
     }
+    public void WriteParameterDescription(CodeParameter element, LanguageWriter writer, string prefix = "", string suffix = "")
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(element);
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix);
+        writer.WriteLine($"{DocCommentPrefix} {ReferenceTypePrefix}{element.Name}{ReferenceTypeSuffix} {description}");
+    }
 
     public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
