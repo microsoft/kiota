@@ -339,7 +339,7 @@ public partial class PluginsGenerationService
         string? LogoUrl = null,
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
-    
+
     private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath, ILogger<KiotaBuilder> logger)
     {
