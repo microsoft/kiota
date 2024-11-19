@@ -122,8 +122,20 @@ export class GenerateClientCommand extends Command {
     }
 
     const authenticationWarnings = getLogEntriesForLevel(result ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
-    authenticationWarnings?.forEach(entry => logFromLogLevel(entry, this._kiotaOutputChannel));
-    this._kiotaOutputChannel.show();
+    if (authenticationWarnings.length > 0) {
+      authenticationWarnings.forEach(entry => logFromLogLevel(entry, this._kiotaOutputChannel));
+
+      const showLogs = vscode.l10n.t("Show logs");
+      const response = await vscode.window.showWarningMessage(
+        vscode.l10n.t(
+          "Incompatible security schemes for Copilot usage detected in the selected endpoints."),
+        showLogs,
+        vscode.l10n.t("Cancel")
+      );
+      if (response === showLogs) {
+        this._kiotaOutputChannel.show();
+      }
+    }
 
     if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
       // Save state before opening the new window
