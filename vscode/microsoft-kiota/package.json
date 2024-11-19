@@ -305,7 +305,7 @@
           "group": "inline@5"
         },
         {
-          "command": "kiota.workspace.regenerate",
+          "command": "kiota.workspace.selectItem",
           "when": "viewItem == item",
           "group": "inline@1"
         },
@@ -451,10 +451,10 @@
         "title": "%kiota.migrateClients.title%"
       },
       {
-        "command": "kiota.workspace.regenerate",
-        "title": "Regenerate",
+        "command": "kiota.workspace.selectItem",
+        "title": "Select",
         "category": "Kiota",
-        "icon": "$(debug-rerun)"
+        "icon": "$(bracket)"
       },
       {
         "command": "kiota.workspace.deleteItem",

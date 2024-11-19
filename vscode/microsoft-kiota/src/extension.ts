@@ -84,7 +84,7 @@ export async function activate(
   const updateClientsCommand = new UpdateClientsCommand(context);
   const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider);
 
-  await loadTreeView(context, workspaceTreeProvider, regenerateCommand);
+  await loadTreeView(context, workspaceTreeProvider);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(

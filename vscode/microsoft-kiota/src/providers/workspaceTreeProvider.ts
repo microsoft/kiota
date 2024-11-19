@@ -108,19 +108,10 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
 
       case 'item':
         const key = element.label;
-        const properties = element.properties;
-        const generationType = element.category;
-
         const clientOrPluginKey = this.sharedService.get('clientOrPluginKey');
         element.iconPath = (clientOrPluginKey && clientOrPluginKey === key) ?
           new vscode.ThemeIcon('folder-opened') :
           new vscode.ThemeIcon('folder');
-
-        element.command = {
-          command: 'kiota.editPaths',
-          title: vscode.l10n.t("Select"),
-          arguments: [key, properties, generationType]
-        };
         break;
     }
     return element;
@@ -148,7 +139,7 @@ async function openResource(resource: vscode.Uri): Promise<void> {
   await vscode.window.showTextDocument(resource);
 }
 
-export async function loadTreeView(context: vscode.ExtensionContext, treeDataProvider: WorkspaceTreeProvider, regenerateCommand: RegenerateCommand): Promise<void> {
+export async function loadTreeView(context: vscode.ExtensionContext, treeDataProvider: WorkspaceTreeProvider): Promise<void> {
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
     treeDataProvider.isWorkspacePresent = await isKiotaWorkspaceFilePresent();
     await vscode.commands.executeCommand('kiota.workspace.refresh'); // Refresh the tree view when workspace folders change
@@ -160,10 +151,11 @@ export async function loadTreeView(context: vscode.ExtensionContext, treeDataPro
     await treeDataProvider.refreshView();
   }));
   context.subscriptions.push(
-    vscode.commands.registerCommand('kiota.workspace.regenerate', async (workspaceTreeItem: WorkspaceTreeItem) => {
+    vscode.commands.registerCommand('kiota.workspace.selectItem', async (workspaceTreeItem: WorkspaceTreeItem) => {
       const { label, properties, category } = workspaceTreeItem;
-      await regenerateCommand.execute({ clientOrPluginKey: label, clientOrPluginObject: properties!, generationType: category! });
+      await vscode.commands.executeCommand('kiota.editPaths', label, properties, category);
     })
   );
 
 }
+;
