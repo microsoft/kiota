@@ -241,10 +241,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 p.DefaultValue += "Escaped";
             }
         }
-        else if (currentElement is CodeProperty property && property.IsOfKind(CodePropertyKind.UrlTemplate) && !string.IsNullOrEmpty(property.DefaultValue))
-        {
-            property.DefaultValue = $"'{property.DefaultValue.Trim('"')}'";
-        }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 

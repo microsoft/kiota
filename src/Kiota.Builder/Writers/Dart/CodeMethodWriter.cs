@@ -404,7 +404,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         writer.WriteLine($"return {DefaultDeserializerReturnInstance}{{}};");
     }
-    private const string DeserializerReturnType = "Map<String, Function(ParseNode)>";
     private const string DeserializerName = "deserializers";
 
     private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
@@ -424,7 +423,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.ErrorMessageOverride).ToArray();
-        writer.WriteLine($"{DeserializerReturnType} {DeserializerVarName} = " + (shouldHide ? "super.getFieldDeserializers();" : "{};"));
+        if (shouldHide)
+        {
+            writer.WriteLine($"var {DeserializerVarName} = " + "super.getFieldDeserializers();");
+        }
+        else
+        {
+            writer.WriteLine($"var {DeserializerVarName} = {DefaultDeserializerReturnInstance}{{}};");
+        }
 
         if (fieldToSerialize.Length != 0)
         {
