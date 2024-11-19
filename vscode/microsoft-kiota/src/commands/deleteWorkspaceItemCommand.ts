@@ -75,7 +75,7 @@ export class DeleteWorkspaceItemCommand extends Command {
         [],
         config.pluginName!,
         true,
-        true,
+        false,
         [],
         ConsumerOperation.Remove,
         config.workingDirectory
@@ -115,7 +115,7 @@ export class DeleteWorkspaceItemCommand extends Command {
         config.clientNamespaceName! as string,
         false,
         true,
-        true,
+        false,
         false,
         [],
         [],
