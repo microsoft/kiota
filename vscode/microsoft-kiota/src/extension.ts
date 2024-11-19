@@ -82,7 +82,7 @@ export async function activate(
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
   const updateClientsCommand = new UpdateClientsCommand(context);
-  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context);
+  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider);
 
   await loadTreeView(context, workspaceTreeProvider, regenerateCommand);
   await checkForLockFileAndPrompt(context);
