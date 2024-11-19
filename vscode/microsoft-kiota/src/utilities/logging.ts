@@ -1,18 +1,14 @@
 import * as vscode from 'vscode';
+import { LogOutputChannel } from 'vscode';
 import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from '../kiotaInterop';
 
-let kiotaOutputChannel: vscode.LogOutputChannel;
-kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
-  log: true,
-});
-
-export async function exportLogsAndShowErrors(result: KiotaLogEntry[]): Promise<void> {
+export async function exportLogsAndShowErrors(result: KiotaLogEntry[], kiotaOutputChannel: LogOutputChannel): Promise<void> {
   const errorMessages = result
     ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error)
     : [];
 
   result.forEach((element) => {
-    logFromLogLevel(element);
+    logFromLogLevel(element, kiotaOutputChannel);
   });
   if (errorMessages.length > 0) {
     await Promise.all(errorMessages.map((element) => {
@@ -21,7 +17,7 @@ export async function exportLogsAndShowErrors(result: KiotaLogEntry[]): Promise<
   }
 }
 
-export function logFromLogLevel(entry: KiotaLogEntry): void {
+export function logFromLogLevel(entry: KiotaLogEntry, kiotaOutputChannel: LogOutputChannel): void {
   switch (entry.level) {
     case LogLevel.critical:
     case LogLevel.error:
@@ -51,4 +47,8 @@ export async function checkForSuccess(results: KiotaLogEntry[]) {
     }
   }
   return false;
+}
+
+export function showLogs(kiotaOutputChannel: LogOutputChannel): void {
+  kiotaOutputChannel.show();
 }

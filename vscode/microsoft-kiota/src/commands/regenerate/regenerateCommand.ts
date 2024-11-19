@@ -11,13 +11,9 @@ import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
 export class RegenerateCommand extends Command {
-  private _context: ExtensionContext;
-  private _openApiTreeProvider: OpenApiTreeProvider;
 
-  constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider) {
+  constructor(private _context: ExtensionContext, private _openApiTreeProvider: OpenApiTreeProvider, private _kiotaOutputChannel: vscode.LogOutputChannel) {
     super();
-    this._context = context;
-    this._openApiTreeProvider = openApiTreeProvider;
   }
 
   public getName(): string {
@@ -40,7 +36,7 @@ export class RegenerateCommand extends Command {
       return;
     }
 
-    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, clientOrPluginObject);
+    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, clientOrPluginObject, this._kiotaOutputChannel);
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings);
     }
