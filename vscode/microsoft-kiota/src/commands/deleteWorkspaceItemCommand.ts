@@ -1,17 +1,13 @@
-import * as path from 'path';
 import * as vscode from "vscode";
+import * as rpc from "vscode-jsonrpc/node";
 
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { extensionId } from "../constants";
-import { ClientObjectProperties, ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel, PluginObjectProperties } from "../kiotaInterop";
-import { GenerateState } from "../modules/steps/generateSteps";
+import { connectToKiota, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../kiotaInterop";
 import { WorkspaceTreeItem, WorkspaceTreeProvider } from "../providers/workspaceTreeProvider";
-import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
-import { getWorkspaceJsonDirectory, isPluginType, parseGenerationLanguage, parsePluginType } from "../util";
+import { isPluginType } from "../util";
 import { exportLogsAndShowErrors } from "../utilities/logging";
 import { Command } from "./Command";
-import { generateClient } from "./generate/generateClient";
-import { generatePlugin } from "./generate/generatePlugin";
 import { checkForSuccess } from "./generate/generation-util";
 
 export class DeleteWorkspaceItemCommand extends Command {
@@ -37,54 +33,30 @@ export class DeleteWorkspaceItemCommand extends Command {
   }
 
   private async deleteItem(type: string, workspaceTreeItem: WorkspaceTreeItem): Promise<KiotaLogEntry[] | undefined> {
-    const outputPath = workspaceTreeItem.properties?.outputPath!;
-    const descriptionUrl = workspaceTreeItem.properties?.descriptionLocation!;
-
-    const config: Partial<GenerateState> = {
-      workingDirectory: getWorkspaceJsonDirectory(),
-    };
-    const absoluteOutputPath = path.join(config.workingDirectory!, outputPath);
-
     if (type === "plugin") {
-      const properties = workspaceTreeItem.properties as PluginObjectProperties;
-      config.pluginTypes = properties.types;
-      config.pluginName = workspaceTreeItem.label;
-      return await this.removePlugin(config, absoluteOutputPath, descriptionUrl);
+      return await this.deletePlugin(workspaceTreeItem.label);
     } else {
-      const properties = workspaceTreeItem.properties as ClientObjectProperties;
-      config.clientClassName = workspaceTreeItem.label;
-      config.clientNamespaceName = properties.clientNamespaceName;
-      return await this.removeClient(config, absoluteOutputPath, descriptionUrl);
+      return await this.deleteClient(workspaceTreeItem.label);
     }
   }
 
-  private async removePlugin(config: Partial<GenerateState>, outputPath: string, descriptionLocation: string): Promise<KiotaLogEntry[] | undefined> {
-    const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
+  private async deletePlugin(pluginName: string): Promise<KiotaLogEntry[] | undefined> {
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
       title: vscode.l10n.t("Removing plugin...")
     }, async (progress, _) => {
       const start = performance.now();
-      const result = await generatePlugin(
+      const result = await removePlugin(
         this._context,
-        descriptionLocation,
-        outputPath,
-        pluginTypes,
-        [],
-        [],
-        config.pluginName!,
-        true,
+        pluginName!,
         false,
-        [],
-        ConsumerOperation.Remove,
-        config.workingDirectory
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.removePlugin.completed`, {
-        "pluginType": pluginTypes.toString(),
+        "pluginType": pluginName,
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
@@ -93,43 +65,23 @@ export class DeleteWorkspaceItemCommand extends Command {
     });
     return result;
   }
-  private async removeClient(config: Partial<GenerateState>, outputPath: string, descriptionLocation: string): Promise<KiotaLogEntry[] | undefined> {
-    const language =
-      typeof config.language === "string"
-        ? parseGenerationLanguage(config.language)
-        : KiotaGenerationLanguage.CSharp;
+  private async deleteClient(clientName: string): Promise<KiotaLogEntry[] | undefined> {
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
       title: vscode.l10n.t("Removing client...")
     }, async (progress, _) => {
       const start = performance.now();
-      const result = await generateClient(
+      const result = await removeClient(
         this._context,
-        descriptionLocation,
-        outputPath,
-        language,
-        [],
-        [],
-        config.clientClassName!,
-        config.clientNamespaceName! as string,
+        clientName,
         false,
-        true,
-        false,
-        false,
-        [],
-        [],
-        [],
-        [],
-        false,
-        ConsumerOperation.Remove,
-        config.workingDirectory
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.removeClient.completed`, {
-        "language": generationLanguageToString(language),
+        "client": clientName,
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
@@ -139,3 +91,31 @@ export class DeleteWorkspaceItemCommand extends Command {
     return result;
   }
 }
+
+export function removePlugin(context: vscode.ExtensionContext, pluginName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
+  return connectToKiota(context, async (connection) => {
+    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
+      "RemovePlugin"
+    );
+    const result = await connection.sendRequest(
+      request,
+      pluginName,
+      cleanOutput
+    );
+    return result;
+  });
+};
+
+export function removeClient(context: vscode.ExtensionContext, clientName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
+  return connectToKiota(context, async (connection) => {
+    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
+      "RemoveClient"
+    );
+    const result = await connection.sendRequest(
+      request,
+      clientName,
+      cleanOutput
+    );
+    return result;
+  });
+};
