@@ -299,4 +299,38 @@ internal partial class Server : IServer
             return path.Replace('/', '\\');
         return path.Replace('\\', '/');
     }
+
+    public async Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(clientName);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        try
+        {
+            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+            await workspaceManagementService.RemoveClientAsync(clientName, cleanOutput, cancellationToken).ConfigureAwait(false);
+            logger.LogInformation($"Client {clientName} removed successfully!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "error removing the plugin: {exceptionMessage}", ex.Message);
+        }
+        return logger.LogEntries;
+    }
+
+    public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(pluginName);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        try
+        {
+            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+            await workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken).ConfigureAwait(false);
+            logger.LogInformation($"Plugin {pluginName} removed successfully!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "error removing the plugin: {exceptionMessage}", ex.Message);
+        }
+        return logger.LogEntries;
+    }
 }
