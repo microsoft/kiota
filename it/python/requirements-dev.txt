@@ -112,7 +112,7 @@ microsoft-kiota-serialization-form==1.6.2
 
 microsoft-kiota-serialization-multipart==1.6.2
 
-msal==1.31.0
+msal==1.31.1
 
 msal-extensions==1.2.0
 
