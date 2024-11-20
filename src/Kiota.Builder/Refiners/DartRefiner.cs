@@ -121,12 +121,12 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddAsyncSuffix(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
-            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped");
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_");
             ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
                 new DartExceptionsReservedNamesProvider(),
-                static x => $"{x.ToFirstCharacterLowerCase()}Escaped"
+                static x => $"{x.ToFirstCharacterLowerCase()}_"
             );
 
             ReplaceDefaultSerializationModules(
@@ -238,7 +238,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             p.DefaultValue = DartConventionService.getCorrectedEnumName(p.DefaultValue.Trim('"').CleanupSymbolName());
             if (new DartReservedNamesProvider().ReservedNames.Contains(p.DefaultValue))
             {
-                p.DefaultValue += "Escaped";
+                p.DefaultValue += "_";
             }
         }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
