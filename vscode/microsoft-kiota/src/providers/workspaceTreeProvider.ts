@@ -15,7 +15,7 @@ export class WorkspaceTreeItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly type: 'root' | 'category' | 'item',
+    public readonly type: 'root' | 'category' | 'item' | 'info',
     public readonly category?: string,
     public readonly properties?: ClientOrPluginProperties,
     public command?: vscode.Command
@@ -65,6 +65,9 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         }
         if (Object.keys(this.workspaceContent.plugins).length > 0) {
           children.push(new WorkspaceTreeItem(PLUGINS, vscode.TreeItemCollapsibleState.Expanded, 'category'));
+        }
+        if (children.length === 0) {
+          children.push(new WorkspaceTreeItem(vscode.l10n.t("No clients or plugins are available"), vscode.TreeItemCollapsibleState.None, 'info'));
         }
         return children;
       }
