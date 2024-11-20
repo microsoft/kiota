@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-import { RegenerateCommand } from '../commands/regenerate/regenerateCommand';
 import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from '../constants';
 import { ClientOrPluginProperties } from '../kiotaInterop';
 import { getWorkspaceJsonPath, isClientType, isKiotaWorkspaceFilePresent, isPluginType } from '../util';
@@ -36,11 +35,12 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
   constructor(isWSPresent: boolean, _sharedService: SharedService) {
     this.isWorkspacePresent = isWSPresent;
     this.sharedService = _sharedService;
-    void this.loadWorkspaceContent();
+    this.loadWorkspaceContent();
   }
 
   async refreshView(): Promise<void> {
-    this._onDidChangeTreeData.fire();
+    this.loadWorkspaceContent();
+    this._onDidChangeTreeData.fire(); 
   }
 
   async getChildren(element?: WorkspaceTreeItem): Promise<WorkspaceTreeItem[]> {
