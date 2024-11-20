@@ -312,7 +312,7 @@ internal partial class Server : IServer
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "error removing the plugin: {exceptionMessage}", ex.Message);
+            logger.LogCritical(ex, "error removing the client: {exceptionMessage}", ex.Message);
         }
         return logger.LogEntries;
     }
