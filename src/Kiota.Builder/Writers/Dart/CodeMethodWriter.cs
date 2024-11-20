@@ -295,7 +295,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         if (serializationClassNames != null)
             foreach (var serializationClassName in serializationClassNames)
-                writer.WriteLine($"ApiClientBuilder.{methodName}(() => {serializationClassName}());");
+                writer.WriteLine($"ApiClientBuilder.{methodName}({serializationClassName}.new);");
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
