@@ -7,6 +7,7 @@ namespace Kiota.Builder.Writers.Dart;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
 {
     private readonly RelativeImportManager relativeImportManager;
+    private static string AutoGenerationHeader => "/// auto generated";
 
     public CodeClassDeclarationWriter(DartConventionService conventionService, string clientNamespaceName, DartPathSegmenter pathSegmenter) : base(conventionService)
     {
@@ -21,6 +22,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
 
         if (codeElement.Parent is not CodeClass parentClass)
             throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
+        writer.WriteLine("// ignore_for_file: type=lint");
+        writer.WriteLine(AutoGenerationHeader);
 
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
 

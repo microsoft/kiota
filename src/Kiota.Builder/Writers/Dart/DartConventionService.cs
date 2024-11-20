@@ -12,9 +12,7 @@ using static Kiota.Builder.CodeDOM.CodeTypeBase;
 namespace Kiota.Builder.Writers.Dart;
 public class DartConventionService : CommonLanguageConventionService
 {
-    internal static string AutoGenerationHeader => "// auto generated";
     internal static readonly HashSet<string> ErrorClassProperties = new(StringComparer.OrdinalIgnoreCase) { "message", "statusCode", "responseHeaders", "innerExceptions" };
-
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";

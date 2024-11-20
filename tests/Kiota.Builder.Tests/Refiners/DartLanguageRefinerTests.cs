@@ -84,7 +84,7 @@ public class DartLanguageRefinerTests
         model.AddUsing(nUsing);
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
         Assert.NotEqual("break", nUsing.Declaration.Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Contains("Escaped", nUsing.Declaration.Name);
+        Assert.Contains("_", nUsing.Declaration.Name);
     }
     [Fact]
     public async Task EscapesReservedKeywords()
@@ -96,7 +96,7 @@ public class DartLanguageRefinerTests
         }).First();
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
         Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Contains("Escaped", model.Name);
+        Assert.Contains("_", model.Name);
     }
     [Fact]
     public async Task AddsDefaultImports()
