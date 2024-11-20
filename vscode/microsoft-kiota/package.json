@@ -452,13 +452,13 @@
       },
       {
         "command": "kiota.workspace.selectItem",
-        "title": "Select",
+        "title": "%kiota.openApiExplorer.editPaths.title%",
         "category": "Kiota",
         "icon": "$(bracket)"
       },
       {
         "command": "kiota.workspace.deleteItem",
-        "title": "Delete",
+        "title": "%kiota.openApiExplorer.removeFromSelectedEndpoints.title%",
         "category": "Kiota",
         "icon": "$(trash)"
       }
