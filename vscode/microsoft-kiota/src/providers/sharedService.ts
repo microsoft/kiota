@@ -21,7 +21,6 @@ export class SharedService {
   }
 
   public set<K extends keyof SharedState>(key: K, value: SharedState[K]): void {
-    console.log(`Setting ${key} to ${value}`);
     this.state.set(key, value);
   }
 
