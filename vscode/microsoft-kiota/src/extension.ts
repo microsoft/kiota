@@ -81,7 +81,7 @@ export async function activate(
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
-  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider);
+  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider, kiotaOutputChannel);
   const updateClientsCommand = new UpdateClientsCommand(context, kiotaOutputChannel);
 
   await loadTreeView(context, workspaceTreeProvider);

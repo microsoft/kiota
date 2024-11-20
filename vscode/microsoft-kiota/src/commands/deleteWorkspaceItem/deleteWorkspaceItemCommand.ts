@@ -1,17 +1,20 @@
+import TelemetryReporter from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
-import TelemetryReporter from "@vscode/extension-telemetry";
 import { extensionId } from "../../constants";
 import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
 import { WorkspaceTreeItem, WorkspaceTreeProvider } from "../../providers/workspaceTreeProvider";
 import { isPluginType } from "../../util";
-import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
 import { Command } from "../Command";
-import { checkForSuccess } from "../generate/generation-util";
 import { removeClient, removePlugin } from "./removeItem";
 
 export class DeleteWorkspaceItemCommand extends Command {
-  constructor(private _context: vscode.ExtensionContext, private _workspaceTreeProvider: WorkspaceTreeProvider) {
+  constructor(
+    private _context: vscode.ExtensionContext, 
+    private _workspaceTreeProvider: WorkspaceTreeProvider,
+    private _kiotaOutputChannel: vscode.LogOutputChannel
+  ) {
     super();
   }
 
@@ -27,7 +30,7 @@ export class DeleteWorkspaceItemCommand extends Command {
         await this._workspaceTreeProvider.refreshView();
         void vscode.window.showInformationMessage(vscode.l10n.t(`${workspaceTreeItem.label} removed successfully.`));
       } else {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
     }
   }
