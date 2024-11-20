@@ -75,14 +75,14 @@ export async function activate(
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider, workspaceTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
-  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext);
-  const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
-  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
+  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext, kiotaOutputChannel);
+  const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, kiotaOutputChannel);
+  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, kiotaOutputChannel);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
-  const updateClientsCommand = new UpdateClientsCommand(context);
   const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider);
+  const updateClientsCommand = new UpdateClientsCommand(context, kiotaOutputChannel);
 
   await loadTreeView(context, workspaceTreeProvider);
   await checkForLockFileAndPrompt(context);
@@ -145,7 +145,7 @@ export async function activate(
 
   // update status bar item once at start
   await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
-  context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaOutputChannel, kiotaStatusBarItem })));
+  context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaStatusBarItem })));
 }
 
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
