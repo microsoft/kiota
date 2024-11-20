@@ -3,16 +3,15 @@ import * as vscode from "vscode";
 
 import { extensionId } from "../../constants";
 import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
-import { WorkspaceTreeItem, WorkspaceTreeProvider } from "../../providers/workspaceTreeProvider";
+import { WorkspaceTreeItem } from "../../providers/workspaceTreeProvider";
 import { isPluginType } from "../../util";
-import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
+import { exportLogsAndShowErrors } from "../../utilities/logging";
 import { Command } from "../Command";
 import { removeClient, removePlugin } from "./removeItem";
 
 export class DeleteWorkspaceItemCommand extends Command {
   constructor(
-    private _context: vscode.ExtensionContext, 
-    private _workspaceTreeProvider: WorkspaceTreeProvider,
+    private _context: vscode.ExtensionContext,
     private _kiotaOutputChannel: vscode.LogOutputChannel
   ) {
     super();
@@ -25,10 +24,10 @@ export class DeleteWorkspaceItemCommand extends Command {
   public async execute(workspaceTreeItem: WorkspaceTreeItem): Promise<void> {
     const result = await this.deleteItem(isPluginType(workspaceTreeItem.category!) ? "plugin" : "client", workspaceTreeItem);
     if (result) {
-      const isSuccess = await checkForSuccess(result);
+      const isSuccess = result.some(k => k.message.includes('removed successfully'));
       if (isSuccess) {
-        await this._workspaceTreeProvider.refreshView();
         void vscode.window.showInformationMessage(vscode.l10n.t(`${workspaceTreeItem.label} removed successfully.`));
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
       } else {
         await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }

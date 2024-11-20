@@ -73,7 +73,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
-  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, workspaceTreeProvider);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext, kiotaOutputChannel);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, kiotaOutputChannel);
@@ -81,7 +81,7 @@ export async function activate(
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
-  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, workspaceTreeProvider, kiotaOutputChannel);
+  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, kiotaOutputChannel);
   const updateClientsCommand = new UpdateClientsCommand(context, kiotaOutputChannel);
 
   await loadTreeView(context, workspaceTreeProvider);
