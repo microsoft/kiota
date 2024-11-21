@@ -252,7 +252,20 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
+    private static Dictionary<string, string> InvalidCharactersReplacements = new() {
+        { "\\", "/"},
+        { "/*", "//*"}
+    };
+
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription)
+    {
+        if (string.IsNullOrEmpty(originalDescription)) return string.Empty;
+        foreach (var replacement in InvalidCharactersReplacements)
+        {
+            originalDescription = originalDescription.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase);
+        }
+        return originalDescription;
+    }
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);
