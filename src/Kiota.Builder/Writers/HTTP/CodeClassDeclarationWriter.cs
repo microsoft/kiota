@@ -8,6 +8,8 @@ using Microsoft.Kiota.Abstractions;
 namespace Kiota.Builder.Writers.http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
 {
+    private const string BaseUrlPropertyName = "url";
+
     protected override void WriteTypeDeclaration(ClassDeclaration codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -99,8 +101,8 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     private static void WriteBaseUrl(string? baseUrl, LanguageWriter writer)
     {
         // Write the base URL variable to the writer
-        writer.WriteLine($"# baseUrl");
-        writer.WriteLine($"@baseUrl = {baseUrl}");
+        writer.WriteLine($"# Base url for the server/host");
+        writer.WriteLine($"@{BaseUrlPropertyName} = {baseUrl}");
         writer.WriteLine();
     }
 
@@ -190,39 +192,57 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     }
 
     /// <summary>
-    /// Writes the HTTP methods (GET, POST, PATCH, DELETE, e.t.c) for the given request builder class to the writer.
+    /// Writes the HTTP methods (GET, POST, PATCH, DELETE, etc.) for the given request builder class to the writer.
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
     /// <param name="writer">The language writer to write the HTTP methods to.</param>
+    /// <param name="queryParameters">The list of query parameters.</param>
+    /// <param name="pathParameters">The list of path parameters.</param>
+    /// <param name="urlTemplateProperty">The URL template property containing the URL template.</param>
+    /// <param name="baseUrl">The base URL.</param>
     private static void WriteHttpMethods(CodeClass requestBuilderClass, LanguageWriter writer, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, CodeProperty urlTemplateProperty, string? baseUrl)
     {
         // Retrieve all the HTTP methods of kind RequestExecutor
-        var httpMethods = requestBuilderClass
-            .GetChildElements(true)
-            .OfType<CodeMethod>()
-            .Where(element => element.IsOfKind(CodeMethodKind.RequestExecutor))
-            .ToList();
+        var httpMethods = GetHttpMethods(requestBuilderClass);
 
-        // Write each HTTP method
-        httpMethods?.ForEach(method =>
+        for (int i = 0; i < httpMethods.Count; i++)
         {
+            var method = httpMethods[i];
+
             // Write the method documentation as a comment
             writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
 
-            // Build the actual URL string and replace all required fields(path and query) with placeholder variables
+            // Build the actual URL string and replace all required fields (path and query) with placeholder variables
             var url = BuildUrlStringFromTemplate(urlTemplateProperty.DefaultValue, queryParameters, pathParameters, baseUrl);
 
-            // Write the http operation e.g GET, POST, PATCH, e.t.c
+            // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
             writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} HTTP/1.1");
 
             // Write the request body if present
             WriteRequestBody(method, writer);
 
-            // Write an empty line for separation
-            writer.WriteLine();
-            writer.WriteLine("###");
-            writer.WriteLine();
-        });
+            // Write an empty line for separation if there are more items that follow
+            if (i < httpMethods.Count - 1)
+            {
+                writer.WriteLine();
+                writer.WriteLine("###");
+                writer.WriteLine();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Retrieves all the HTTP methods of kind RequestExecutor for the given request builder class.
+    /// </summary>
+    /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
+    /// <returns>A list of HTTP methods of kind RequestExecutor.</returns>
+    private static List<CodeMethod> GetHttpMethods(CodeClass requestBuilderClass)
+    {
+        return requestBuilderClass
+            .GetChildElements(true)
+            .OfType<CodeMethod>()
+            .Where(element => element.IsOfKind(CodeMethodKind.RequestExecutor))
+            .ToList();
     }
 
     /// <summary>
@@ -348,16 +368,15 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
         queryParameters?.ForEach(param =>
         {
-            // Check if its a required parameter then add it
-            requestInformation.QueryParameters.Add(param.WireName, $"{{{param.Name.ToFirstCharacterLowerCase()}}}");
+            requestInformation.QueryParameters.Add(param.WireName, $"{{{{{param.Name.ToFirstCharacterLowerCase()}}}}}");
         });
 
         pathParameters?.ForEach(param =>
         {
-            requestInformation.PathParameters.Add(param.WireName, $"{{{param.Name.ToFirstCharacterLowerCase()}}}");
+            requestInformation.PathParameters.Add(param.WireName, $"{{{{{param.Name.ToFirstCharacterLowerCase()}}}}}");
         });
 
         // Erase baseUrl and use the placeholder variable {baseUrl} already defined in the snippet
-        return requestInformation.URI.ToString().Replace(baseUrl, "{baseUrl}", StringComparison.InvariantCultureIgnoreCase);
+        return requestInformation.URI.ToString().Replace(baseUrl, $"{{{{{BaseUrlPropertyName}}}}}", StringComparison.InvariantCultureIgnoreCase);
     }
 }

@@ -27,7 +27,7 @@ public class HttpConventionService : CommonLanguageConventionService
         if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
-        writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{prefix}");
+        writer.WriteLine($"{DocCommentPrefix} {prefix}{description}{prefix}");
 
         return true;
     }
@@ -62,7 +62,7 @@ public class HttpConventionService : CommonLanguageConventionService
         {
             NamespaceDifferentialTrackerState.Same => string.Empty,
             NamespaceDifferentialTrackerState.Downwards => $"{string.Join('.', diffResult.DownwardsSegments)}.",
-            NamespaceDifferentialTrackerState.Upwards => string.Empty, //TODO
+            NamespaceDifferentialTrackerState.Upwards => string.Empty,
             NamespaceDifferentialTrackerState.UpwardsAndThenDownwards => $"{typeNS.Name}.",
             _ => throw new NotImplementedException(),
         };
