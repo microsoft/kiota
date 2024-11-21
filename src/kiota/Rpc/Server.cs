@@ -300,37 +300,28 @@ internal partial class Server : IServer
         return path.Replace('\\', '/');
     }
 
-    public async Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken)
+    public Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken)
+    => RemoveClientOrPluginAsync(clientName, cleanOutput, "Client", (workspaceManagementService, clientName, cleanOutput, cancellationToken) => workspaceManagementService.RemoveClientAsync(clientName, cleanOutput, cancellationToken), cancellationToken);
+
+    private static async Task<List<LogEntry>> RemoveClientOrPluginAsync(string clientName, bool cleanOutput, string typeName, Func<WorkspaceManagementService, string, bool, CancellationToken, Task> removal, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(clientName);
+        ArgumentException.ThrowIfNullOrEmpty(typeName);
+        ArgumentNullException.ThrowIfNull(removal);
         var logger = new ForwardedLogger<KiotaBuilder>();
         try
         {
             var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
-            await workspaceManagementService.RemoveClientAsync(clientName, cleanOutput, cancellationToken).ConfigureAwait(false);
-            logger.LogInformation($"Client {clientName} removed successfully!");
+            await removal(workspaceManagementService, clientName, cleanOutput, cancellationToken).ConfigureAwait(false);
+            logger.LogInformation("{TypeName} {ClientName} removed successfully!", typeName, clientName);
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "error removing the client: {exceptionMessage}", ex.Message);
+            logger.LogCritical(ex, "error removing the {TypeName}: {ExceptionMessage}", typeName.ToLowerInvariant(), ex.Message);
         }
         return logger.LogEntries;
     }
 
     public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(pluginName);
-        var logger = new ForwardedLogger<KiotaBuilder>();
-        try
-        {
-            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
-            await workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken).ConfigureAwait(false);
-            logger.LogInformation($"Plugin {pluginName} removed successfully!");
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "error removing the plugin: {exceptionMessage}", ex.Message);
-        }
-        return logger.LogEntries;
-    }
+    => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
 }
