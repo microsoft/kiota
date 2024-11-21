@@ -243,7 +243,7 @@ public partial class KiotaBuilder
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
             sw.Start();
-            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
             await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
