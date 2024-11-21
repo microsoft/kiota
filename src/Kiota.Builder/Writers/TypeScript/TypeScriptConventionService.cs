@@ -99,7 +99,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
-            composedType != null && !composedType.IsComposedOfObjects(IsPrimitiveType),
+            composedType != null && (!composedType.IsComposedOfObjects(IsPrimitiveType) || composedType.Types.Any(x => x.IsCollection)),
             parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
             ) switch
         {
