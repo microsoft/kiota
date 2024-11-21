@@ -117,7 +117,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteSerializationFunctionForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
-        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType)))
+        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType) && x.TypeDefinition != null))
         {
             var functionName = GetSerializerFunctionName(method, mappedType);
             var variableName = composedParam.Name.ToFirstCharacterLowerCase();
