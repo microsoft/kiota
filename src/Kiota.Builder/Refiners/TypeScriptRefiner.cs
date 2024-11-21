@@ -1494,10 +1494,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 if (mappedType.Value is not
-                        { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
+                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
                     || codeNamespace.FindChildByName<CodeFunction>(
                             $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is not
-                        { } deserializer)
+                            { } deserializer)
                 {
                     continue;
                 }
