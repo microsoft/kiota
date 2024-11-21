@@ -260,10 +260,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription)
     {
         if (string.IsNullOrEmpty(originalDescription)) return string.Empty;
-        foreach (var replacement in InvalidCharactersReplacements)
-        {
-            originalDescription = originalDescription.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase);
-        }
+        originalDescription = InvalidCharactersReplacements
+            .Aggregate(originalDescription, (current, replacement) => current.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase));
         return originalDescription;
     }
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")

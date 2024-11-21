@@ -1495,19 +1495,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass)
                 {
-                    var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
-
-                    if (deserializer.Parent is not null)
+                    try
                     {
-                        parsableFactoryFunction.AddUsing(new CodeUsing
+                        var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
+
+                        if (deserializer.Parent is not null)
                         {
-                            Name = deserializer.Parent.Name,
-                            Declaration = new CodeType
+                            parsableFactoryFunction.AddUsing(new CodeUsing
                             {
-                                Name = deserializer.Name,
-                                TypeDefinition = deserializer
-                            },
-                        });
+                                Name = deserializer.Parent.Name,
+                                Declaration = new CodeType
+                                {
+                                    Name = deserializer.Name,
+                                    TypeDefinition = deserializer
+                                },
+                            });
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // The deserializer function for the mapped class does not exist.
                     }
                 }
             }
