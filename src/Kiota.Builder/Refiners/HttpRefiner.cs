@@ -8,9 +8,8 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
-public class HttpRefiner : CommonLanguageRefiner
+public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration)
 {
-    public HttpRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -38,16 +37,7 @@ public class HttpRefiner : CommonLanguageRefiner
             SetBaseUrlForRequestBuilderMethods(generatedCode, GetBaseUrl(generatedCode));
             // Remove unused code from the DOM e.g Models, BarrelInitializers, e.t.c
             RemoveUnusedCodeElements(generatedCode);
-            CorrectCoreType(
-                generatedCode,
-                CorrectMethodType,
-                CorrectPropertyType,
-                CorrectImplements);
         }, cancellationToken);
-    }
-    private static void CorrectImplements(ProprietableBlockDeclaration block)
-    {
-        block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
     }
 
     private string? GetBaseUrl(CodeElement element)
@@ -59,119 +49,6 @@ public class HttpRefiner : CommonLanguageRefiner
                       .Methods?
                       .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.ClientConstructor))?
                       .BaseUrl;
-    }
-
-    private static void CorrectMethodType(CodeMethod currentMethod)
-    {
-        var parentClass = currentMethod.Parent as CodeClass;
-        if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler", StringComparison.Ordinal)).ToList().ForEach(x =>
-                {
-                    x.Type.Name = "ResponseHandler";
-                    x.Type.IsNullable = false; //no pointers
-                });
-            else if (currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
-                currentMethod.ReturnType.IsNullable = true;
-        }
-        else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
-            currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter", StringComparison.Ordinal)).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-        else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-        {
-            currentMethod.ReturnType.Name = "[String:FieldDeserializer<T>][String:FieldDeserializer<T>]";
-            currentMethod.Name = "getFieldDeserializers";
-        }
-        else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
-        {
-            var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
-            if (rawUrlParam != null)
-                rawUrlParam.Type.IsNullable = false;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
-                .Where(x => x.Type.Name.StartsWith('I'))
-                .ToList()
-                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-        }
-        else if (currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.Factory))
-        {
-            currentMethod.ReturnType.IsNullable = true;
-            if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
-            {
-                parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-                parseNodeParam.Type.IsNullable = false;
-            }
-            if (currentMethod.IsOfKind(CodeMethodKind.Factory))
-                currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
-        }
-        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
-                                                .Select(x => x.Type)
-                                                .Union(new[] { currentMethod.ReturnType })
-                                                .ToArray());
-    }
-    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
-        {"DateTimeOffset", ("Date", new CodeUsing {
-                                        Name = "Date",
-                                        Declaration = new CodeType {
-                                            Name = "Foundation",
-                                            IsExternal = true,
-                                        },
-                                    })},
-        {"TimeSpan", ("Date", new CodeUsing {
-                                        Name = "Date",
-                                        Declaration = new CodeType {
-                                            Name = "Foundation",
-                                            IsExternal = true,
-                                        },
-                                    })},
-        {"DateOnly", ("Date", new CodeUsing {
-                                Name = "Date",
-                                Declaration = new CodeType {
-                                    Name = "Foundation",
-                                    IsExternal = true,
-                                },
-                            })},
-        {"TimeOnly", ("Date", new CodeUsing {
-                                Name = "Date",
-                                Declaration = new CodeType {
-                                    Name = "Foundation",
-                                    IsExternal = true,
-                                },
-                            })},
-    };
-    private static void CorrectPropertyType(CodeProperty currentProperty)
-    {
-        if (currentProperty.Type != null)
-        {
-            if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
-            {
-                currentProperty.Type.IsNullable = true;
-                currentProperty.Type.Name = "RequestAdapter";
-            }
-            else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-            else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
-            {
-                currentProperty.Type.IsNullable = false;
-                currentProperty.Type.Name = "[String:Any]";
-                currentProperty.DefaultValue = $"{currentProperty.Type.Name}()";
-            }
-            else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
-            {
-                currentProperty.Type.IsNullable = true;
-                currentProperty.Type.Name = "[String:String]";
-                if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                    currentProperty.DefaultValue = $"{currentProperty.Type.Name}()";
-            }
-            else if (currentProperty.IsOfKind(CodePropertyKind.Options))
-            {
-                currentProperty.Type.IsNullable = false;
-                currentProperty.Type.Name = "RequestOption";
-                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            }
-            else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
-                currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
-            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
-        }
     }
 
     private static void CapitalizeNamespacesFirstLetters(CodeElement current)
