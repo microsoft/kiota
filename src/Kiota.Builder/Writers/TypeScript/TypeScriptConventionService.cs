@@ -232,7 +232,10 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_LOWERCASE_STRING or
             TYPE_BYTE_ARRAY or
             TYPE_LOWERCASE_BOOLEAN or
-            TYPE_LOWERCASE_VOID => true,
+            TYPE_LOWERCASE_VOID or
+            TYPE_DATE_ONLY or
+            TYPE_TIME_ONLY or
+            TYPE_DURATION => true,
             _ => false,
         };
     }
