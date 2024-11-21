@@ -611,17 +611,17 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
     {
         if (string.IsNullOrEmpty(codeProperty.DefaultValue)) return string.Empty;
-        if (codeProperty.Type is not CodeType propertyType ||
-            propertyType.TypeDefinition is not CodeEnum enumDefinition ||
-            enumDefinition.CodeEnumObject is null)
+        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition &&
+            enumDefinition.CodeEnumObject is not null)
         {
-            return codeProperty.DefaultValue.Trim('"').CleanupSymbolName();
+            var codeEnumOption = enumDefinition.Options.First(x =>
+                x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
+                    StringComparison.OrdinalIgnoreCase));
+            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
         }
 
-        var codeEnumOption = enumDefinition.Options.First(x =>
-            x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
-                StringComparison.OrdinalIgnoreCase));
-        return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+        // only string primitive should keep quotes
+        return codeProperty.Type.Name.Equals("string", StringComparison.Ordinal) ? codeProperty.DefaultValue : codeProperty.DefaultValue.Trim('"');
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {
