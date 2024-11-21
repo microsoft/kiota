@@ -15,31 +15,24 @@ import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
-import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel, showLogs } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
 import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
-import { checkForSuccess, displayGenerationResults } from "./generation-util";
+import { displayGenerationResults } from "./generation-util";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 
 export class GenerateClientCommand extends Command {
-  private _openApiTreeProvider: OpenApiTreeProvider;
-  private _context: vscode.ExtensionContext;
-  private _dependenciesViewProvider: DependenciesViewProvider;
-  private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void; 
 
   constructor(
-    openApiTreeProvider: OpenApiTreeProvider,
-    context: vscode.ExtensionContext,
-    dependenciesViewProvider: DependenciesViewProvider,
-    setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void 
+    private _openApiTreeProvider: OpenApiTreeProvider,
+    private _context: vscode.ExtensionContext,
+    private _dependenciesViewProvider: DependenciesViewProvider,
+    private _setWorkspaceGenerationContext: (params: Partial<WorkspaceGenerationContext>) => void,
+    private _kiotaOutputChannel: vscode.LogOutputChannel
   ) {
     super();
-    this._openApiTreeProvider = openApiTreeProvider;
-    this._context = context;
-    this._dependenciesViewProvider = dependenciesViewProvider;
-    this._setWorkspaceGenerationContext = setWorkspaceGenerationContext; 
   }
 
   public getName(): string {
@@ -62,7 +55,7 @@ export class GenerateClientCommand extends Command {
       if (!deepLinkParams.name && this._openApiTreeProvider.apiTitle) {
         deepLinkParams.name = getSanitizedString(this._openApiTreeProvider.apiTitle);
       }
-      availableStateInfo = transformToGenerationConfig(deepLinkParams);
+      availableStateInfo = await transformToGenerationConfig(deepLinkParams);
     } else {
       const pluginName = getSanitizedString(this._openApiTreeProvider.apiTitle);
       availableStateInfo = {
@@ -80,9 +73,16 @@ export class GenerateClientCommand extends Command {
     );
     setGenerationConfiguration(config);
     const generationType = parseGenerationType(config.generationType);
-    const outputPath = typeof config.outputPath === "string"
-      ? config.outputPath
-      : "./output";
+
+    let outputPath = "./output";
+    if (typeof config.outputPath === "string") {
+      if (deepLinkParams.source?.toLowerCase() === 'ttk') {
+        outputPath = path.join(config.outputPath, "appPackage");
+      } else {
+        outputPath = config.outputPath;
+      }
+    }
+
     let manifestKey = null;
     switch (config.generationType) {
       case "client":
@@ -120,6 +120,23 @@ export class GenerateClientCommand extends Command {
         );
         return;
     }
+
+    const authenticationWarnings = getLogEntriesForLevel(result ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
+    if (authenticationWarnings.length > 0) {
+      authenticationWarnings.forEach(entry => logFromLogLevel(entry, this._kiotaOutputChannel));
+
+      const showLogs = vscode.l10n.t("Show logs");
+      const response = await vscode.window.showWarningMessage(
+        vscode.l10n.t(
+          "Incompatible security schemes for Copilot usage detected in the selected endpoints."),
+        showLogs,
+        vscode.l10n.t("Cancel")
+      );
+      if (response === showLogs) {
+        this._kiotaOutputChannel.show();
+      }
+    }
+
     if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
       // Save state before opening the new window
       const outputState = {
@@ -157,7 +174,7 @@ export class GenerateClientCommand extends Command {
         }
       }
 
-      clearDeepLinkParams();  // Clear the state after the generation
+      clearDeepLinkParams();  // Clear the state after successful generation
     }
   }
 
@@ -199,7 +216,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
@@ -243,7 +260,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       const deepLinkParams = getDeepLinkParams();
       const isttkIntegration = deepLinkParams.source?.toLowerCase() === 'ttk';
@@ -313,7 +330,7 @@ export class GenerateClientCommand extends Command {
     if (result) {
       const isSuccess = await checkForSuccess(result);
       if (!isSuccess) {
-        await exportLogsAndShowErrors(result);
+        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }

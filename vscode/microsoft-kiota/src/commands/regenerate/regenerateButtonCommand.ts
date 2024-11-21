@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
-import { extensionId, treeViewId } from "../../constants";
+import { extensionId, KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
 import { getGenerationConfiguration, setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
@@ -12,13 +12,9 @@ import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
 export class RegenerateButtonCommand extends Command {
-  private _context: ExtensionContext;
-  private _openApiTreeProvider: OpenApiTreeProvider;
 
-  constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider) {
+  constructor(private _context: ExtensionContext, private _openApiTreeProvider: OpenApiTreeProvider, private _kiotaOutputChannel: vscode.LogOutputChannel) {
     super();
-    this._context = context;
-    this._openApiTreeProvider = openApiTreeProvider;
   }
 
   public getName(): string {
@@ -53,13 +49,17 @@ export class RegenerateButtonCommand extends Command {
     }
 
     const configObject = clientOrPluginObject || configuration;
-    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, configObject);
+    const regenerateService = new RegenerateService(this._context, this._openApiTreeProvider, clientOrPluginKey, configObject, this._kiotaOutputChannel);
 
     if (isClientType(generationType)) {
       await regenerateService.regenerateClient(settings, selectedPaths);
     }
     if (isPluginType(generationType)) {
       await regenerateService.regeneratePlugin(settings, selectedPaths);
+      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
+      if (workspaceJson && !workspaceJson.isDirty) {
+        await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
+      }
     }
   }
 

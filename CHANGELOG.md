@@ -12,9 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
+- Fixed python generation in scenarios with opening/closing tags for code comments. [#5636](https://github.com/microsoft/kiota/issues/5636)
+- Fixed Python error when a class inherits from a base class and implements an interface. [5637](https://github.com/microsoft/kiota/issues/5637)
+- Fix anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
+- Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
+
+## [1.20.0] - 2024-11-07
+
+### Added
+
+### Changed
+
 - Fixed python generation client serailization failure str being quoted as "str"
 - Fixed Issue with primitive values being stringified in python python. [#5417](https://github.com/microsoft/kiota/issues/5417)
-
 - Fixed an issue where multipart request content would be ignored if other unstructured content was present in the description. [#5638](https://github.com/microsoft/kiota/issues/5638)
 - Fixed an issue where when generating Go code the deserializer for unions was using `CodeClass` as a filter and not `CodeInterface`. [#4844](https://github.com/microsoft/kiota/issues/4844)
 - Fixes mapping of `int16` format to the `integer` type rather than `double` when the type is `integer` or `number` [#5611](https://github.com/microsoft/kiota/issues/5611)
@@ -23,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the type name for inherited inline models would be incorrect. [#5610](https://github.com/microsoft/kiota/issues/5610)
 - Fixes typing inconsistencies in generated code and libraries in Python [kiota-python#333](https://github.com/microsoft/kiota-python/issues/333)
 - Fixes generation of superfluous fields for Models with discriminator due to refiners adding the same properties to the same model [#4178](https://github.com/microsoft/kiota/issues/4178).
+- Fixes unsigned shim binary when installed as dotnet tool [#5650](https://github.com/microsoft/kiota/issues/5650).
 
 ## [1.19.1] - 2024-10-11
 
@@ -1493,3 +1505,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
