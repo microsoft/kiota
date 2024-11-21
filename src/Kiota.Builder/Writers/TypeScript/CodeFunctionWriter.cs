@@ -615,13 +615,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             propertyType.TypeDefinition is not CodeEnum enumDefinition ||
             enumDefinition.CodeEnumObject is null)
         {
-            return codeProperty.DefaultValue;
+            return codeProperty.DefaultValue.Trim('"').CleanupSymbolName();
         }
 
         var codeEnumOption = enumDefinition.Options.First(x =>
             x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
                 StringComparison.OrdinalIgnoreCase));
-        return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}";
+        return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {
