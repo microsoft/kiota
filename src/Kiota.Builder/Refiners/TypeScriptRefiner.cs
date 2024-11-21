@@ -1493,28 +1493,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass)
+                // check if the model was trimmed
+                if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass && mappedClass.Parent is CodeNamespace codeNamespace && codeNamespace.FindChildByName<CodeClass>(mappedClass.Name) != null)
                 {
-                    try
-                    {
-                        var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
+                    var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
 
-                        if (deserializer.Parent is not null)
-                        {
-                            parsableFactoryFunction.AddUsing(new CodeUsing
-                            {
-                                Name = deserializer.Parent.Name,
-                                Declaration = new CodeType
-                                {
-                                    Name = deserializer.Name,
-                                    TypeDefinition = deserializer
-                                },
-                            });
-                        }
-                    }
-                    catch (InvalidOperationException)
+                    if (deserializer.Parent is not null)
                     {
-                        // The deserializer function for the mapped class does not exist.
+                        parsableFactoryFunction.AddUsing(new CodeUsing
+                        {
+                            Name = deserializer.Parent.Name,
+                            Declaration = new CodeType
+                            {
+                                Name = deserializer.Name,
+                                TypeDefinition = deserializer
+                            },
+                        });
                     }
                 }
             }
