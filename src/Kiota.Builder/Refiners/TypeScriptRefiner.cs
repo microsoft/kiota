@@ -1493,23 +1493,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                // check if the model was trimmed
-                if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass && mappedClass.Parent is CodeNamespace codeNamespace && codeNamespace.FindChildByName<CodeClass>(mappedClass.Name) != null)
+                if (mappedType.Value is not
+                        { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
+                    || codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is not
+                        { } deserializer)
                 {
-                    var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
+                    continue;
+                }
 
-                    if (deserializer.Parent is not null)
+                if (deserializer.Parent is not null)
+                {
+                    parsableFactoryFunction.AddUsing(new CodeUsing
                     {
-                        parsableFactoryFunction.AddUsing(new CodeUsing
+                        Name = deserializer.Parent.Name,
+                        Declaration = new CodeType
                         {
-                            Name = deserializer.Parent.Name,
-                            Declaration = new CodeType
-                            {
-                                Name = deserializer.Name,
-                                TypeDefinition = deserializer
-                            },
-                        });
-                    }
+                            Name = deserializer.Name,
+                            TypeDefinition = deserializer
+                        },
+                    });
                 }
             }
         }
