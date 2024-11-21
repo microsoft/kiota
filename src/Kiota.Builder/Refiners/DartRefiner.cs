@@ -13,8 +13,8 @@ namespace Kiota.Builder.Refiners;
 public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     private const string MultipartBodyClassName = "MultipartBody";
-    private const string AbstractionsNamespaceName = "kiota_abstractions/kiota_abstractions";
-    private const string SerializationNamespaceName = "kiota_serialization";
+    private const string AbstractionsNamespaceName = "microsoft_kiota_abstractions/microsoft_kiota_abstractions";
+    private const string SerializationNamespaceName = "microsoft_kiota_serialization";
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
 
     protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {

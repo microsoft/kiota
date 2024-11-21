@@ -8,36 +8,36 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  kiota_abstractions:
+  microsoft_kiota_abstractions:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_abstractions
-  kiota_http:
+      path: packages/microsoft_kiota_abstractions
+  microsoft_kiota_http:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_http
-  kiota_serialization_form:
+      path: packages/microsoft_kiota_http
+  microsoft_kiota_serialization_form:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_serialization_form
-  kiota_serialization_text:
+      path: packages/microsoft_kiota_serialization_form
+  microsoft_kiota_serialization_text:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_serialization_text
-  kiota_serialization_json:
+      path: packages/microsoft_kiota_serialization_text
+  microsoft_kiota_serialization_json:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_serialization_json
-  kiota_serialization_multipart:
+      path: packages/microsoft_kiota_serialization_json
+  microsoft_kiota_serialization_multipart:
     git:
       url: https://github.com/kiota-community/dart_kiota.git
       ref: main
-      path: packages/kiota_serialization_multipart
+      path: packages/microsoft_kiota_serialization_multipart
   http: ^1.2.2
   uuid: ^4.5.1
 

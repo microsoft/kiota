@@ -1,5 +1,5 @@
-import 'package:kiota_abstractions/kiota_abstractions.dart';
-import 'package:kiota_http/kiota_http.dart';
+import 'package:microsoft_kiota_abstractions/microsoft_kiota_abstractions.dart';
+import 'package:microsoft_kiota_http/microsoft_kiota_http.dart';
 import 'package:test/test.dart';
 import '../src/api_client.dart';
 import '../src/models/error.dart';
