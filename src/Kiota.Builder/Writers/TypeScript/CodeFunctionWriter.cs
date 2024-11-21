@@ -611,9 +611,17 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
     {
         if (string.IsNullOrEmpty(codeProperty.DefaultValue)) return string.Empty;
-        if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition && enumDefinition.CodeEnumObject is not null)
-            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeProperty.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
-        return codeProperty.DefaultValue;
+        if (codeProperty.Type is not CodeType propertyType ||
+            propertyType.TypeDefinition is not CodeEnum enumDefinition ||
+            enumDefinition.CodeEnumObject is null)
+        {
+            return codeProperty.DefaultValue;
+        }
+
+        var codeEnumOption = enumDefinition.Options.First(x =>
+            x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
+                StringComparison.OrdinalIgnoreCase));
+        return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}";
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {
