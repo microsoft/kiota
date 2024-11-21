@@ -408,7 +408,7 @@ public class DartLanguageRefinerTests
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Single(nodeUsing);
-        Assert.Equal("kiota_abstractions/kiota_abstractions", nodeUsing[0].Declaration.Name);
+        Assert.Equal("microsoft_kiota_abstractions/microsoft_kiota_abstractions", nodeUsing[0].Declaration.Name);
     }
     [Fact]
     public async Task AddsCustomMethods()
