@@ -102,7 +102,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
-            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol);
+            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol) || IsKiotaPrimitive(returnTypeWithoutCollectionSymbol);
             var isPrimitiveAlias = GetPrimitiveAlias(returnTypeWithoutCollectionSymbol) is not null;
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();

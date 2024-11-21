@@ -232,7 +232,16 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_LOWERCASE_STRING or
             TYPE_BYTE_ARRAY or
             TYPE_LOWERCASE_BOOLEAN or
-            TYPE_LOWERCASE_VOID or
+            TYPE_LOWERCASE_VOID => true,
+            _ => false,
+        };
+    }
+
+    // Types that are imported from kiota-abstractions and considered as primitive types
+    public static bool IsKiotaPrimitive(string typeName)
+    {
+        return typeName switch
+        {
             TYPE_DATE_ONLY or
             TYPE_TIME_ONLY or
             TYPE_DURATION => true,
