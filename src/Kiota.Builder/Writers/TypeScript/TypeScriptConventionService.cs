@@ -264,7 +264,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
-    private static Dictionary<string, string> InvalidCharactersReplacements = new() {
+    private static Dictionary<string, string> InvalidCharactersReplacements = new(StringComparer.OrdinalIgnoreCase) {
         { "\\", "/"},
         { "/*", "//*"}
     };
