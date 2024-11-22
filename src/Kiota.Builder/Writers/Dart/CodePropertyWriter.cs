@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
-using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Dart;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConventionService>
@@ -39,16 +37,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
         var defaultValue = string.Empty;
         var getterModifier = string.Empty;
 
-        var accessModifierAttribute = conventions.GetAccessModifierAttribute(codeElement.Access);
-        if (!string.IsNullOrEmpty(accessModifierAttribute))
-            writer.WriteLine(accessModifierAttribute);
-
         var propertyName = codeElement.Name;
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer, prefix: "return ");
                 writer.CloseBlock();
                 break;
@@ -56,8 +49,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = codeElement.WireName;
                 var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? {}" : $" ?? {codeElement.DefaultValue}";
-                writer.WriteLine($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
                 writer.CloseBlock();
                 writer.WriteLine();

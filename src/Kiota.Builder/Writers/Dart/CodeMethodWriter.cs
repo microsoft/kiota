@@ -4,7 +4,6 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
-using Kiota.Builder.Refiners;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Dart;
@@ -111,7 +110,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 WriteRequestBuilderBody(parentClass, codeElement, writer);
                 break;
             case CodeMethodKind.QueryParametersMapper:
-                WriteQueryparametersBody(parentClass, codeElement, writer);
+                WriteQueryparametersBody(parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
             case CodeMethodKind.Setter:
@@ -187,8 +186,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 {
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                     var check = propertyType.IsCollection ? ".isNotEmpty" : $" is {typeName}";
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
-                    writer.IncreaseIndent();
+                    writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)};");
                     writer.CloseBlock();
                 }
@@ -225,8 +223,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (includeElse)
             {
-                writer.WriteLine("else {");
-                writer.IncreaseIndent();
+                writer.StartBlock("else {");
             }
             foreach (var property in complexProperties)
                 writer.WriteLine($"{ResultVarName}.{property.Item1.Name} = {conventions.GetTypeString(property.Item2, codeElement)}();");
@@ -300,7 +297,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         if (parentClass.IsErrorDefinition)
         {
-            WriteErrorClassConstructor(parentClass, currentMethod, writer);
+            WriteErrorClassConstructor(parentClass, writer);
         }
         else
         {
@@ -353,7 +350,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private void WriteErrorClassConstructor(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    private void WriteErrorClassConstructor(CodeClass parentClass, LanguageWriter writer)
     {
         foreach (string prop in DartConventionService.ErrorClassProperties)
         {
@@ -496,8 +493,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.ErrorMappings.Any())
         {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"Map<String, ParsableFactory<Parsable>> {errorMappingVarName} = {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"Map<String, ParsableFactory<Parsable>> {errorMappingVarName} = {{");
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
                 writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.createFromDiscriminatorValue,");
@@ -591,8 +587,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
-            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name});");
             writer.CloseBlock();
             if (!includeElse)
@@ -611,8 +606,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
-            writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name});");
             writer.CloseBlock();
             if (!includeElse)
@@ -625,8 +619,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (includeElse)
             {
-                writer.WriteLine("else {");
-                writer.IncreaseIndent();
+                writer.StartBlock("else {");
             }
             var firstPropertyName = complexProperties.First().Name;
             var propertiesNames = complexProperties.Skip(1).Any() ? complexProperties.Skip(1)
@@ -709,7 +702,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
-        if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || (code.IsOfKind(CodeMethodKind.Custom)))
+        if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || code.IsOfKind(CodeMethodKind.Custom))
         {
             writer.WriteLine("@override");
         }
@@ -789,17 +782,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     }
 
 
-    private void WriteQueryparametersBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    private void WriteQueryparametersBody(CodeClass parentClass, LanguageWriter writer)
     {
-        writer.WriteLine("return {");
-        writer.IncreaseIndent();
+        writer.StartBlock("return {");
         foreach (CodeProperty property in parentClass.Properties)
         {
             var key = property.IsNameEscaped ? property.SerializationName : property.Name;
             writer.WriteLine($"'{key}' : {property.Name},");
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("};");
+        writer.CloseBlock("};");
     }
 
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)

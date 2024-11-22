@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.Globalization;
 using System.Linq;
 
@@ -37,7 +36,7 @@ public class DartConventionService : CommonLanguageConventionService
 
         return true;
     }
-    public void WriteParameterDescription(CodeParameter element, LanguageWriter writer, string prefix = "", string suffix = "")
+    public void WriteParameterDescription(CodeParameter element, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
@@ -117,11 +116,6 @@ public class DartConventionService : CommonLanguageConventionService
             AccessModifier.Private => "_",
             _ => string.Empty,
         };
-    }
-
-    public string GetAccessModifierAttribute(AccessModifier access)
-    {
-        return string.Empty;
     }
 
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default, IEnumerable<CodeParameter>? customParameters = default)
