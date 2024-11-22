@@ -61,8 +61,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
                 writer.CloseBlock();
                 writer.WriteLine();
-                writer.WriteLine($"set {codeElement.Name}({propertyType} value) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"set {codeElement.Name}({propertyType} value) {{");
                 writer.WriteLine($"{backingStoreProperty.Name}.set('{backingStoreKey}', value);");
                 writer.CloseBlock();
                 break;
