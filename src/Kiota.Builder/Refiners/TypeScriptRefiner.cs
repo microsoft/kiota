@@ -1493,22 +1493,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass)
+                if (mappedType.Value is not
+                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
+                    || codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is not
+                            { } deserializer)
                 {
-                    var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
+                    continue;
+                }
 
-                    if (deserializer.Parent is not null)
+                if (deserializer.Parent is not null)
+                {
+                    parsableFactoryFunction.AddUsing(new CodeUsing
                     {
-                        parsableFactoryFunction.AddUsing(new CodeUsing
+                        Name = deserializer.Parent.Name,
+                        Declaration = new CodeType
                         {
-                            Name = deserializer.Parent.Name,
-                            Declaration = new CodeType
-                            {
-                                Name = deserializer.Name,
-                                TypeDefinition = deserializer
-                            },
-                        });
-                    }
+                            Name = deserializer.Name,
+                            TypeDefinition = deserializer
+                        },
+                    });
                 }
             }
         }
