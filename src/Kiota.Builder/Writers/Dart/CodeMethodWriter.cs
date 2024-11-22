@@ -179,8 +179,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if('{mappedType.Key}' == {DiscriminatorMappingVarName}) {{");
-                    writer.IncreaseIndent();
+                    writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if('{mappedType.Key}' == {DiscriminatorMappingVarName}) {{");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {conventions.GetTypeString(propertyType, codeElement)}();");
                     writer.CloseBlock();
                 }
