@@ -494,7 +494,7 @@
     "@stylistic/eslint-plugin-ts": "^2.11.0",
     "@types/adm-zip": "^0.5.6",
     "@types/chai": "^5.0.1",
-    "@types/mocha": "^10.0.9",
+    "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.95.0",
@@ -514,7 +514,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.7",
+    "@vscode/extension-telemetry": "^0.9.8",
     "@vscode/l10n": "^0.0.18",
     "adm-zip": "^0.5.16",
     "is-online": "^11.0.0",
