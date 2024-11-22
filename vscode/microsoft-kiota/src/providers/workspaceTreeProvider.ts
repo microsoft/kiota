@@ -33,7 +33,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
   }
 
   async refreshView(): Promise<void> {
-    this.workspaceContent = await this.workspaceContentService.load();
+    await this.loadContent();
     this._onDidChangeTreeData.fire();
   }
 
