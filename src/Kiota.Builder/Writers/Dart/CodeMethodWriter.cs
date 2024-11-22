@@ -43,7 +43,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             else if (isConstructor && parentClass.IsErrorDefinition)
             {
-                if (parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+                if (parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
                 {
                     writer.CloseBlock("}) {additionalData = {};}");
                 }
@@ -360,7 +360,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             writer.WriteLine($"super.{prop},");
         }
-        if (!parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+        if (!parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
             foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
             {
@@ -700,7 +700,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor && parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+        else if (isConstructor && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
             return " : ";
         }
@@ -727,7 +727,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var completeReturnType = isConstructor ?
             string.Empty : voidCorrectedTaskReturnType + " ";
         var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
-        var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
+        var parameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
@@ -836,7 +836,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.Name.Equals("clone", StringComparison.OrdinalIgnoreCase))
         {
             var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
-            var argumentList = constructor?.Parameters.OrderBy(x => x, new BaseCodeParameterOrderComparer())
+            var argumentList = constructor?.Parameters.OrderBy(static x => x, new BaseCodeParameterOrderComparer())
             .Select(static x => x.Type.Parent is CodeParameter param && param.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)
                     ? x.Name :
                     x.Optional ? "null" : x.DefaultValue)

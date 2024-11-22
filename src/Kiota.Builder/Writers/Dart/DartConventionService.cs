@@ -14,7 +14,7 @@ public class DartConventionService : CommonLanguageConventionService
 {
     private static string AutoGenerationHeader => "/// auto generated";
     internal static readonly HashSet<string> ErrorClassProperties = new(StringComparer.OrdinalIgnoreCase) { "message", "statusCode", "responseHeaders", "innerExceptions" };
-    public override string StreamTypeName => "stream";
+    public override string StreamTypeName => "Stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
     private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "double", "string", "datetime", "dateonly", "timeonly", "backingstorefactory" };
