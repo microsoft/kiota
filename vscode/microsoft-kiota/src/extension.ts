@@ -28,6 +28,7 @@ import { UriHandler } from './handlers/uriHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
+import { WorkspaceContentService } from './modules/workspace';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
@@ -36,7 +37,6 @@ import { loadTreeView, WorkspaceTreeItem, WorkspaceTreeProvider } from './provid
 import { getExtensionSettings } from "./types/extensionSettings";
 import { GeneratedOutputState } from './types/GeneratedOutputState';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
-import { isKiotaWorkspaceFilePresent } from './util';
 import { IntegrationParams } from './utilities/deep-linking';
 import { loadWorkspaceFile } from './utilities/file';
 import { updateStatusBarItem } from './utilities/status';
@@ -54,12 +54,13 @@ export async function activate(
     log: true,
   });
   const sharedService = SharedService.getInstance();
+  const workspaceContentService = new WorkspaceContentService();
   const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId), sharedService);
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
-  const workspaceTreeProvider = new WorkspaceTreeProvider(await isKiotaWorkspaceFilePresent(), sharedService);
+  const workspaceTreeProvider = new WorkspaceTreeProvider(workspaceContentService, sharedService);
 
   const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>) => {
     workspaceGenerationContext = { ...workspaceGenerationContext, ...params };

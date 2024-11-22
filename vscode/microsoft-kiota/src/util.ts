@@ -172,15 +172,4 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
-export async function isKiotaWorkspaceFilePresent(): Promise<boolean> {
-  if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-    return false;
-  }
-  const workspaceFileDir = path.resolve(getWorkspaceJsonPath());
-  try {
-    await fs.promises.access(workspaceFileDir);
-  } catch (error) {
-    return false;
-  }
-  return true;
-}
+
