@@ -35,55 +35,30 @@ export class DeleteWorkspaceItemCommand extends Command {
   }
 
   private async deleteItem(type: string, workspaceTreeItem: WorkspaceTreeItem): Promise<KiotaLogEntry[] | undefined> {
-    if (type === "plugin") {
-      return await this.deletePlugin(workspaceTreeItem.label);
-    } else {
-      return await this.deleteClient(workspaceTreeItem.label);
-    }
+    return await this.removeWorkspaceItem(workspaceTreeItem.label, type);
   }
 
-  private async deletePlugin(pluginName: string): Promise<KiotaLogEntry[] | undefined> {
+  private async removeWorkspaceItem(itemName: string, type: string): Promise<KiotaLogEntry[] | undefined> {
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
-      title: vscode.l10n.t("Removing plugin...")
+      title: vscode.l10n.t(`Removing ${type}...`)
     }, async (progress, _) => {
       const start = performance.now();
-      const result = await removePlugin(
+      const result = type === "plugin" ? await removePlugin(
         this._context,
-        pluginName!,
+        itemName,
+        false,
+      ) : await removeClient(
+        this._context,
+        itemName,
         false,
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
-      reporter.sendRawTelemetryEvent(`${extensionId}.removePlugin.completed`, {
-        "pluginType": pluginName,
-        "errorsCount": errorsCount.toString(),
-      }, {
-        "duration": duration,
-      });
-      return result;
-    });
-    return result;
-  }
-  private async deleteClient(clientName: string): Promise<KiotaLogEntry[] | undefined> {
-    const result = await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      cancellable: false,
-      title: vscode.l10n.t("Removing client...")
-    }, async (progress, _) => {
-      const start = performance.now();
-      const result = await removeClient(
-        this._context,
-        clientName,
-        false,
-      );
-      const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
-      const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
-      reporter.sendRawTelemetryEvent(`${extensionId}.removeClient.completed`, {
-        "client": clientName,
+      reporter.sendRawTelemetryEvent(`${extensionId}.remove${type}.completed`, {
+        "pluginType": itemName,
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
