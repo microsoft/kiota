@@ -1,4 +1,4 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 using Xunit;
 
