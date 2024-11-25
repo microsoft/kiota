@@ -102,7 +102,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var isEnum = executorMethod.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(executorMethod, returnType);
-            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol);
+            var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol) || IsKiotaPrimitive(returnTypeWithoutCollectionSymbol);
             var isPrimitiveAlias = GetPrimitiveAlias(returnTypeWithoutCollectionSymbol) is not null;
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
@@ -169,7 +169,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
-        if (isStream || IsPrimitiveType(typeName)) return $" \"{typeName}\"";
+        if (isStream || IsPrimitiveType(typeName) || IsKiotaPrimitive(typeName)) return $" \"{typeName}\"";
         if (GetPrimitiveAlias(typeName) is { } alias && !string.IsNullOrEmpty(alias))
             return $" \"{alias}\"";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
