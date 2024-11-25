@@ -1895,6 +1895,16 @@ public partial class KiotaBuilder
                 // multiple allOf entries that do not translate to inheritance
                 return createdClass;
             }
+            else if (schema.MergeInclusiveUnionSchemaEntries() is { } iUMergedSchema &&
+                AddModelClass(currentNode, iUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uICreatedClass)
+            {
+                return uICreatedClass;
+            }
+            else if (schema.MergeExclusiveUnionSchemaEntries() is { } eUMergedSchema &&
+                AddModelClass(currentNode, eUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uECreatedClass)
+            {
+                return uECreatedClass;
+            }
             return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom);
         }
         return existingDeclaration;

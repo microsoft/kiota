@@ -68,9 +68,9 @@ public static class OpenApiSchemaExtensions
     {
         return schema?.Properties is { Count: > 0 };
     }
-    public static bool IsInclusiveUnion(this OpenApiSchema? schema)
+    public static bool IsInclusiveUnion(this OpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
-        return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
+        return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries;
         // so we don't consider any of object/nullable as a union type
     }
 
@@ -87,6 +87,36 @@ public static class OpenApiSchemaExtensions
     internal static OpenApiSchema? MergeAllOfSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, Func<OpenApiSchema, bool>? filter = default)
     {
         return schema.MergeIntersectionSchemaEntries(schemasToExclude, true, filter);
+    }
+
+    internal static OpenApiSchema? MergeInclusiveUnionSchemaEntries(this OpenApiSchema? schema)
+    {
+        if (schema is null || !schema.IsInclusiveUnion(0)) return null;
+        var result = new OpenApiSchema(schema);
+        result.AnyOf.Clear();
+        foreach (var subSchema in schema.AnyOf)
+        {
+            foreach (var property in subSchema.Properties)
+            {
+                result.Properties.TryAdd(property.Key, property.Value);
+            }
+        }
+        return result;
+    }
+
+    internal static OpenApiSchema? MergeExclusiveUnionSchemaEntries(this OpenApiSchema? schema)
+    {
+        if (schema is null || !schema.IsExclusiveUnion(0)) return null;
+        var result = new OpenApiSchema(schema);
+        result.OneOf.Clear();
+        foreach (var subSchema in schema.OneOf)
+        {
+            foreach (var property in subSchema.Properties)
+            {
+                result.Properties.TryAdd(property.Key, property.Value);
+            }
+        }
+        return result;
     }
 
     internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<OpenApiSchema, bool>? filter = default)
@@ -123,9 +153,9 @@ public static class OpenApiSchemaExtensions
         return meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
     }
 
-    public static bool IsExclusiveUnion(this OpenApiSchema? schema)
+    public static bool IsExclusiveUnion(this OpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
-        return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > 1;
+        return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries;
         // so we don't consider one of object/nullable as a union type
     }
     private static readonly HashSet<string> oDataTypes = new(StringComparer.OrdinalIgnoreCase) {

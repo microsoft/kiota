@@ -8537,6 +8537,182 @@ components:
     }
 
     [Fact]
+    public async Task ExclusiveUnionSingleEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating oneOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      type: object
+      oneOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+    ExampleWithSingleOneOfWithoutTypeObject:
+      oneOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    Component1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        one:
+          type: string
+
+    Component2:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        two:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify that all three classes referenced by the discriminator inherit from baseDirectoryObject
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        var oneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(oneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withObjectClass);
+        var twoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(twoProperty);
+    }
+
+    [Fact]
+    public async Task InclusiveUnionSingleEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating anyOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+    ExampleWithSingleOneOfWithoutTypeObject:
+      anyOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    Component1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        one:
+          type: string
+
+    Component2:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        two:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify that all three classes referenced by the discriminator inherit from baseDirectoryObject
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        var oneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(oneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withObjectClass);
+        var twoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(twoProperty);
+    }
+
+    [Fact]
     public async Task NestedIntersectionTypeAllOfAsync()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
