@@ -63,7 +63,15 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
 
     if (config.descriptionPath) {
       await openTreeViewWithProgress(() => this._openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
-      await vscode.window.showInformationMessage(vscode.l10n.t('You can now select the required endpoints from {0}', this._openApiTreeProvider.apiTitle!));
+
+      const generateAnswer = vscode.l10n.t("Generate");
+      const response = await vscode.window.showInformationMessage(
+        vscode.l10n.t('Click on Generate after selecting the paths in the API Explorer'),
+        generateAnswer
+      );
+      if (response === generateAnswer) {
+        await vscode.commands.executeCommand(`${treeViewId}.generateClient`);
+      }
     }
   }
 }
