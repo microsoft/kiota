@@ -54,8 +54,9 @@ public record LanguageInformation : IOpenApiSerializable
         var extension = new LanguageInformation();
         if (rawObject.TryGetPropertyValue(nameof(Dependencies).ToFirstCharacterLowerCase(), out var dependencies) && dependencies is JsonArray arrayValue)
         {
-            foreach (var entry in arrayValue.OfType<JsonValue>())
-                extension.Dependencies.Add(LanguageDependency.Parse(entry));
+            foreach (var entry in arrayValue)
+                if (entry is not null)
+                    extension.Dependencies.Add(LanguageDependency.Parse(entry));
         }
         if (rawObject.TryGetPropertyValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is JsonValue stringValue)
         {
@@ -75,11 +76,11 @@ public record LanguageInformation : IOpenApiSerializable
             foreach (var entry in structuredMimeTypesValue.OfType<JsonValue>())
                 extension.StructuredMimeTypes.Add(entry.GetValue<string>());
         }
-        if (rawObject.TryGetValue(nameof(MaturityLevel).ToFirstCharacterLowerCase(), out var maturityLevel) && maturityLevel is OpenApiString maturityLevelValue && Enum.TryParse<LanguageMaturityLevel>(maturityLevelValue.Value, true, out var parsedMaturityLevelValue))
+        if (rawObject.TryGetPropertyValue(nameof(MaturityLevel).ToFirstCharacterLowerCase(), out var maturityLevel) && maturityLevel is JsonValue maturityLevelValue && maturityLevelValue.GetValueKind() is JsonValueKind.String && Enum.TryParse<LanguageMaturityLevel>(maturityLevelValue.GetValue<string>(), true, out var parsedMaturityLevelValue))
         {
             extension.MaturityLevel = parsedMaturityLevelValue;
         }
-        if (rawObject.TryGetValue(nameof(SupportExperience).ToFirstCharacterLowerCase(), out var supportExperience) && supportExperience is OpenApiString supportExperienceValue && Enum.TryParse<SupportExperience>(supportExperienceValue.Value, true, out var parsedSupportExperienceValue))
+        if (rawObject.TryGetPropertyValue(nameof(SupportExperience).ToFirstCharacterLowerCase(), out var supportExperience) && supportExperience is JsonValue supportExperienceValue && supportExperienceValue.GetValueKind() is JsonValueKind.String && Enum.TryParse<SupportExperience>(supportExperienceValue.GetValue<string>(), true, out var parsedSupportExperienceValue))
         {
             extension.SupportExperience = parsedSupportExperienceValue;
         }

@@ -64,7 +64,7 @@ public class OpenApiKiotaExtensionTests
                     ],
                     "dependencyInstallCommand": "dotnet add package",
                     "maturityLevel": "Preview",
-                    "supportExperience", "Microsoft",
+                    "supportExperience": "Microsoft",
                     "clientClassName": "GraphServiceClient",
                     "clientNamespaceName": "Microsoft.Graph",
                     "structuredMimeTypes": [
