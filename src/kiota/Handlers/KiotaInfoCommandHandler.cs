@@ -113,6 +113,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         };
         view.AddColumn(static x => x.Key, "Language");
         view.AddColumn(static x => x.Value.MaturityLevel.ToString(), "Maturity Level");
+        view.AddColumn(static x => x.Value.SupportExperience.ToString(), "Support Experience");
         var console = new SystemConsole();
         using var terminal = new SystemConsoleTerminal(console);
         var layout = new StackLayoutView { view };
@@ -125,6 +126,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
             if (!json)
             {
                 DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
+                            $"The support experience is provided by {languageInformation.SupportExperience}.",
                             "After generating code for this language, you need to install the following packages:");
                 var orderedDependencies = languageInformation.Dependencies.OrderBy(static x => x.Name).Select(static x => x).ToList();
                 var filteredDependencies = (dependencyTypes.ToHashSet(), orderedDependencies.Any(static x => x.DependencyType is DependencyType.Bundle)) switch

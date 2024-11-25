@@ -1116,6 +1116,23 @@ public sealed class CodeFunctionWriterTests : IDisposable
         {
             Name = "pictureSize"
         }).First();
+
+        codeEnum.AddOption(
+            new CodeEnumOption
+            {
+                Name = "256x256",
+                SerializationName = "256x256"
+            },
+            new CodeEnumOption
+            {
+                Name = "512x512",
+                SerializationName = "512x512"
+            },
+            new CodeEnumOption
+            {
+                Name = "1024x1024",
+                SerializationName = "1024x1024"
+            });
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,

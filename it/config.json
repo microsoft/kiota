@@ -30,10 +30,6 @@
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5634"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       },
