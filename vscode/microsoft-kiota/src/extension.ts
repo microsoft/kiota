@@ -68,7 +68,7 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
-  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, context);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext, kiotaOutputChannel);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, kiotaOutputChannel);
