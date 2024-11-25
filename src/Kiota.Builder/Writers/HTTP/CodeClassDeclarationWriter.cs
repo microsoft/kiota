@@ -5,7 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.Kiota.Abstractions;
 
-namespace Kiota.Builder.Writers.http;
+namespace Kiota.Builder.Writers.Http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
 {
     private const string BaseUrlPropertyName = "url";

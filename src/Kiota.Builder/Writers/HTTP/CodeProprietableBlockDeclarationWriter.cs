@@ -3,7 +3,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder.Writers.http;
+namespace Kiota.Builder.Writers.Http;
 
 public abstract class CodeProprietableBlockDeclarationWriter<T>(HttpConventionService conventionService) : BaseElementWriter<T, HttpConventionService>(conventionService)
     where T : ProprietableBlockDeclaration

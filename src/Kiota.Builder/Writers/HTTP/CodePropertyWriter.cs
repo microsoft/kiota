@@ -2,7 +2,7 @@
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Writers.http;
+namespace Kiota.Builder.Writers.Http;
 public class CodePropertyWriter(HttpConventionService conventionService) : BaseElementWriter<CodeProperty, HttpConventionService>(conventionService)
 {
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)

@@ -4,7 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
-using Kiota.Builder.Writers.http;
+using Kiota.Builder.Writers.Http;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Http;

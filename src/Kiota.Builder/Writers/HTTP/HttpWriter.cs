@@ -1,6 +1,6 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
-namespace Kiota.Builder.Writers.http;
+namespace Kiota.Builder.Writers.Http;
 
 public class HttpWriter : LanguageWriter
 {

@@ -8,7 +8,7 @@ using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.Cli;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
-using Kiota.Builder.Writers.http;
+using Kiota.Builder.Writers.Http;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
