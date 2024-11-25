@@ -30,20 +30,12 @@
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5634"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5635"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       },
       {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5636"
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/5779"
       }
     ],
     "ExcludePatterns": [
@@ -247,10 +239,6 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
-      },
-      {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/5744"
       }
     ]
   },

@@ -16,9 +16,13 @@ public record LanguageInformation : IOpenApiSerializable
     {
         get; set;
     }
+    public SupportExperience SupportExperience
+    {
+        get; set;
+    }
 #pragma warning disable CA2227
 #pragma warning disable CA1002
-    public List<LanguageDependency> Dependencies { get; set; } = new();
+    public List<LanguageDependency> Dependencies { get; set; } = [];
 #pragma warning restore CA1002
 #pragma warning restore CA2227
     public string DependencyInstallCommand { get; set; } = string.Empty;
@@ -34,11 +38,12 @@ public record LanguageInformation : IOpenApiSerializable
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel.ToString());
+        writer.WriteProperty(nameof(SupportExperience).ToFirstCharacterLowerCase(), SupportExperience.ToString());
         writer.WriteProperty(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), DependencyInstallCommand);
-        writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, (w, x) => x.SerializeAsV3(w));
+        writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, static (w, x) => x.SerializeAsV3(w));
         writer.WriteProperty(nameof(ClientClassName).ToFirstCharacterLowerCase(), ClientClassName);
         writer.WriteProperty(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), ClientNamespaceName);
-        writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, (w, x) => w.WriteValue(x));
+        writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, static (w, x) => w.WriteValue(x));
         writer.WriteEndObject();
     }
     public static LanguageInformation Parse(JsonNode source)
@@ -69,6 +74,14 @@ public record LanguageInformation : IOpenApiSerializable
         {
             foreach (var entry in structuredMimeTypesValue.OfType<JsonValue>())
                 extension.StructuredMimeTypes.Add(entry.GetValue<string>());
+        }
+        if (rawObject.TryGetValue(nameof(MaturityLevel).ToFirstCharacterLowerCase(), out var maturityLevel) && maturityLevel is OpenApiString maturityLevelValue && Enum.TryParse<LanguageMaturityLevel>(maturityLevelValue.Value, true, out var parsedMaturityLevelValue))
+        {
+            extension.MaturityLevel = parsedMaturityLevelValue;
+        }
+        if (rawObject.TryGetValue(nameof(SupportExperience).ToFirstCharacterLowerCase(), out var supportExperience) && supportExperience is OpenApiString supportExperienceValue && Enum.TryParse<SupportExperience>(supportExperienceValue.Value, true, out var parsedSupportExperienceValue))
+        {
+            extension.SupportExperience = parsedSupportExperienceValue;
         }
         return extension;
     }
@@ -123,7 +136,14 @@ public enum LanguageMaturityLevel
 {
     Experimental,
     Preview,
-    Stable
+    Stable,
+    Abandoned
+}
+
+public enum SupportExperience
+{
+    Microsoft,
+    Community
 }
 
 public enum DependencyType

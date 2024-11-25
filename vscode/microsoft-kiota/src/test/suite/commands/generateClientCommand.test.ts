@@ -75,7 +75,9 @@ const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContex
 
 suite('GenerateClientCommand Test Suite', () => {
     const sanbox = sinon.createSandbox();
-
+    let myOutputChannel = vscode.window.createOutputChannel("Kiota", {
+        log: true,
+    });
     teardown(() => {
         sanbox.restore();
     });
@@ -83,7 +85,7 @@ suite('GenerateClientCommand Test Suite', () => {
     test('test function getName of GenerateClientCommand', () => {
         var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         assert.strictEqual("kiota.openApiExplorer.generateClient", generateClientCommand.getName());
     });
 
@@ -92,7 +94,7 @@ suite('GenerateClientCommand Test Suite', () => {
         treeProvider.getSelectedPaths.returns([]);
         var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
         const vscodeWindowSpy = sinon.stub(vscode.window, "showErrorMessage");
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 0);
         sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
@@ -114,7 +116,7 @@ suite('GenerateClientCommand Test Suite', () => {
         const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
         generateStepsFn.resolves(config);
         const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
         vscodeWindowSpy.verify();
@@ -162,7 +164,7 @@ suite('GenerateClientCommand Test Suite', () => {
         deepLinkParamsHandler.setDeepLinkParams(pluginParams);
 
         //stub and call generateCommand
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generatePluginAndRefreshUI").once().withArgs(
                 config, extensionSettings, "path/to/temp/folder", ["repairs"]
@@ -173,7 +175,7 @@ suite('GenerateClientCommand Test Suite', () => {
         assert.strictEqual(!treeProvider.descriptionUrl, false);
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
-        let stateInfo = transformToGenerationConfig(pluginParams);
+        let stateInfo = await transformToGenerationConfig(pluginParams);
         sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , pluginParams);
         sinon.assert.calledOnce(showUpgradeWarningMessageStub);
         sinon.assert.calledOnceWithMatch(getExtensionSettingsStub, "kiota");
@@ -216,8 +218,8 @@ suite('GenerateClientCommand Test Suite', () => {
         deepLinkParamsHandler.setDeepLinkParams(pluginParams);
 
         //stub and call generateCommand
-        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext);
-        var outputPath = "path/to/temp/folder/appPackage";
+        const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
+        var outputPath = path.join("path", "to", "temp", "folder", "appPackage"); //make it os agnostic
         const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
             "generateManifestAndRefreshUI").twice().withArgs(
                 config, extensionSettings, outputPath, ["repairs"]

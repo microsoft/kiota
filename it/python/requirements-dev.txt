@@ -62,11 +62,11 @@ urllib3==2.2.3 ; python_version >= '3.7'
 
 wrapt==1.15.0 ; python_version < '3.11'
 
-yapf==0.40.2
+yapf==0.43.0
 
 zipp==3.21.0 ; python_version >= '3.7'
 
-aiohttp==3.10.10 ; python_version >= '3.6'
+aiohttp==3.11.7 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
@@ -92,37 +92,37 @@ h2==4.1.0
 
 hpack==4.0.0 ; python_full_version >= '3.6.1'
 
-httpcore==1.0.6 ; python_version >= '3.7'
+httpcore==1.0.7 ; python_version >= '3.7'
 
 httpx[http2]==0.27.2
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.6.1
+microsoft-kiota-abstractions==1.6.2
 
-microsoft-kiota-authentication-azure==1.6.1
+microsoft-kiota-authentication-azure==1.6.2
 
-microsoft-kiota-http==1.6.1
+microsoft-kiota-http==1.6.2
 
-microsoft-kiota-serialization-json==1.6.1
+microsoft-kiota-serialization-json==1.6.2
 
-microsoft-kiota-serialization-text==1.6.1
+microsoft-kiota-serialization-text==1.6.2
 
-microsoft-kiota-serialization-form==1.6.1
+microsoft-kiota-serialization-form==1.6.2
 
-microsoft-kiota-serialization-multipart==1.6.1
+microsoft-kiota-serialization-multipart==1.6.2
 
-msal==1.31.0
+msal==1.31.1
 
 msal-extensions==1.2.0
 
 multidict==6.1.0 ; python_version >= '3.7'
 
-portalocker==2.10.1 ; python_version >= '3.5' and platform_system == 'Windows'
+portalocker==3.0.0 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.22
 
-pyjwt[crypto]==2.9.0 ; python_version >= '3.7'
+pyjwt[crypto]==2.10.0 ; python_version >= '3.7'
 
 python-dateutil==2.9.0.post0 ; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'
 
@@ -136,5 +136,5 @@ sniffio==1.3.1 ; python_version >= '3.7'
 
 uritemplate==4.1.1 ; python_version >= '3.6'
 
-yarl==1.17.1 ; python_version >= '3.7'
+yarl==1.18.0 ; python_version >= '3.7'
 
