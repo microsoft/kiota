@@ -246,23 +246,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     }
 
     /// <summary>
-    /// Retrieves the URL template for the given request builder class.
-    /// </summary>
-    /// <param name="requestBuilderClass">The request builder class containing the URL template property.</param>
-    /// <returns>The URL template as a string, or an empty string if not found.</returns>
-    private static string GetUrlTemplate(CodeClass requestBuilderClass)
-    {
-        // Retrieve the URL template property from the request builder class
-        var urlTemplateProperty = requestBuilderClass
-            .GetChildElements(true)
-            .OfType<CodeProperty>()
-            .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
-
-        // Return the URL template or an empty string if not found
-        return urlTemplateProperty?.DefaultValue ?? string.Empty;
-    }
-
-    /// <summary>
     /// Writes the request body for the given method to the writer.
     /// </summary>
     /// <param name="method">The method containing the request body.</param>
