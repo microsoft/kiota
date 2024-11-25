@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 import { extensionId, treeViewId } from "../constants";
 import { ClientOrPluginProperties } from "../kiotaInterop";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
@@ -27,5 +29,14 @@ export class EditPathsCommand extends Command {
 
   private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {
     await openTreeViewWithProgress(() => this._openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject));
+
+    const regenerateAnswer = vscode.l10n.t("Regenerate");
+    const response = await vscode.window.showInformationMessage(
+      vscode.l10n.t('Click on Regenerate after selecting the paths in the API Explorer'),
+      regenerateAnswer
+    );
+    if (response === regenerateAnswer) {
+      await vscode.commands.executeCommand(`kiota.regenerate`);
+    }
   }
 }
