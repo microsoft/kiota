@@ -20,7 +20,7 @@ public sealed class CodeEnumWriterTests : IDisposable
     public CodeEnumWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.HTTP, DefaultPath, DefaultName);
-        codeEnumWriter = new CodeEnumWriter(new HttpConventionService("foo"));
+        codeEnumWriter = new CodeEnumWriter(new HttpConventionService());
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();

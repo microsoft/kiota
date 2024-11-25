@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -8,10 +6,8 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.http;
 public class HttpConventionService : CommonLanguageConventionService
 {
-    public HttpConventionService(string clientNamespaceName)
+    public HttpConventionService()
     {
-        ArgumentException.ThrowIfNullOrEmpty(clientNamespaceName);
-        this.clientNamespaceName = clientNamespaceName;
     }
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
@@ -40,38 +36,12 @@ public class HttpConventionService : CommonLanguageConventionService
             _ => "private",
         };
     }
-#pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
-    {
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
-        {
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => x.Name.ToFirstCharacterLowerCase()))}";
-            var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
-        }
-    }
     public override string TempDictionaryVarName => "urlTplParams";
-#pragma warning restore CA1822 // Method should be static
-    private readonly string clientNamespaceName;
-    private string GetNamesInUseByNamespaceSegments(CodeNamespace typeNS, CodeElement currentElement)
-    {
-        var currentNS = currentElement.GetImmediateParentOfType<CodeNamespace>();
-        var diffResult = currentNS.GetDifferential(typeNS, clientNamespaceName);
-        return diffResult.State switch
-        {
-            NamespaceDifferentialTrackerState.Same => string.Empty,
-            NamespaceDifferentialTrackerState.Downwards => $"{string.Join('.', diffResult.DownwardsSegments)}.",
-            NamespaceDifferentialTrackerState.Upwards => string.Empty,
-            NamespaceDifferentialTrackerState.UpwardsAndThenDownwards => $"{typeNS.Name}.",
-            _ => throw new NotImplementedException(),
-        };
-    }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
         if (code is CodeType currentType)
         {
-            var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
+            var typeName = TranslateType(currentType);
             var nullableSuffix = code.IsNullable ? NullableMarkerAsString : string.Empty;
             var collectionPrefix = currentType.IsCollection && includeCollectionInformation ? "[" : string.Empty;
             var collectionSuffix = currentType.IsCollection && includeCollectionInformation ? $"]{nullableSuffix}" : string.Empty;
@@ -84,13 +54,6 @@ public class HttpConventionService : CommonLanguageConventionService
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
-    }
-    private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
-    {
-        var typeName = TranslateType(currentType);
-        if (currentType.TypeDefinition != null)
-            return $"{GetNamesInUseByNamespaceSegments(currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>(), targetElement)}{typeName}";
-        return typeName;
     }
     public override string TranslateType(CodeType type)
     {
