@@ -201,7 +201,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     valueVarName = "cast";
                 }
                 writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({valueVarName})");
-                if (!propertyType.IsCollection && (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface))
+                if (!propertyType.IsCollection && (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface || propertyType.TypeDefinition is CodeEnum))
                     writer.CloseBlock();
                 writer.DecreaseIndent();
             }
