@@ -876,11 +876,15 @@ public class OpenApiSchemaExtensionsTests
             OneOf =
             [
                 entitySchema,
-                new OpenApiSchema {
+                new OpenApiSchema
+                {
                     Type = "object",
-                    Properties = new Dictionary<string, OpenApiSchema> {
-                        ["firstName"] = new OpenApiSchema {
-                            Reference = new OpenApiReference {
+                    Properties = new Dictionary<string, OpenApiSchema>
+                    {
+                        ["firstName"] = new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
                                 Id = "microsoft.graph.entity"
                             }
                         }
