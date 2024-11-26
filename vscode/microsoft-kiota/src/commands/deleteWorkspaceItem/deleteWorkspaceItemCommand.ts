@@ -22,23 +22,29 @@ export class DeleteWorkspaceItemCommand extends Command {
   }
 
   public async execute(workspaceTreeItem: WorkspaceTreeItem): Promise<void> {
-    const result = await this.deleteItem(isPluginType(workspaceTreeItem.category!) ? "plugin" : "client", workspaceTreeItem);
-    if (result) {
-      const isSuccess = result.some(k => k.message.includes('removed successfully'));
-      if (isSuccess) {
-        void vscode.window.showInformationMessage(vscode.l10n.t('{0} removed successfully.', workspaceTreeItem.label));
-        await vscode.commands.executeCommand('kiota.workspace.refresh');
-      } else {
-        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+    const type = workspaceTreeItem.category && isPluginType(workspaceTreeItem.category) ? "plugin" : "client";
+    const yesAnswer = vscode.l10n.t("Yes");
+    const response = await vscode.window.showInformationMessage(
+      vscode.l10n.t("Do you want to delete this item?"),
+      yesAnswer,
+      vscode.l10n.t("No")
+    );
+    if (response === yesAnswer) {
+      const result = await this.deleteItem(type, workspaceTreeItem);
+      if (result) {
+        const isSuccess = result.some(k => k.message.includes('removed successfully'));
+        if (isSuccess) {
+          void vscode.window.showInformationMessage(vscode.l10n.t('{0} removed successfully.', workspaceTreeItem.label));
+          await vscode.commands.executeCommand('kiota.workspace.refresh');
+        } else {
+          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+        }
       }
     }
   }
 
   private async deleteItem(type: string, workspaceTreeItem: WorkspaceTreeItem): Promise<KiotaLogEntry[] | undefined> {
-    return await this.removeWorkspaceItem(workspaceTreeItem.label, type);
-  }
-
-  private async removeWorkspaceItem(itemName: string, type: string): Promise<KiotaLogEntry[] | undefined> {
+    const itemName = workspaceTreeItem.label;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
