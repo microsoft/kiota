@@ -197,6 +197,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 }
                 else if (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface || propertyType.TypeDefinition is CodeEnum)
                 {
+                    if (propertyType.TypeDefinition is CodeEnum)
+                    {
+                        propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, true);
+                    }
                     writer.StartBlock($"if {GetTypeAssertion(valueVarName, propertyTypeImportName, "cast", "ok")}; ok {{");
                     valueVarName = "cast";
                 }
