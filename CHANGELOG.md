@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Python error when a class inherits from a base class and implements an interface. [5637](https://github.com/microsoft/kiota/issues/5637)
 - Fix anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
 - Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
+- Fixed a bug where discriminator property name lookup could end up in an infinite loop. [#5771](https://github.com/microsoft/kiota/issues/5771)
 - Fixed TypeScript generation error when generating usings from shaken serializers. [#5634](https://github.com/microsoft/kiota/issues/5634)
 
 ## [1.20.0] - 2024-11-07
