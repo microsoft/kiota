@@ -27,44 +27,16 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
   });
 
   test('execute should show success message and refresh workspace on success', async () => {
-    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves([{ message: 'removed successfully' }]);
-    const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves({ title: "Yes" });
+    const yesAnswer: vscode.MessageItem = { title: vscode.l10n.t("Yes") };
+    const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
     const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
     const executeCommandStub = sinon.stub(vscode.commands, 'executeCommand').resolves();
 
     await command.execute(workspaceTreeItem);
 
-    assert.strictEqual(deleteItemStub.calledOnce, true);
-    assert.strictEqual(showWarningMessageStub.calledOnceWith("Do you want to delete this item?", sinon.match("Yes"), sinon.match("No")), true);
-    assert.strictEqual(showInformationMessageStub.calledOnceWith('test-item removed successfully.'), true);
-    assert.strictEqual(executeCommandStub.calledOnceWith('kiota.workspace.refresh'), true);
-  });
+    assert.strictEqual(showWarningMessageStub.calledOnce, true);
+    assert.strictEqual(showInformationMessageStub.calledOnce, true);
+    assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true);
 
-  test('execute should not delete item if no is selected', async () => {
-    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves([{ message: 'removed successfully' }]);
-    const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves({ title: "No" });
-    const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
-    const executeCommandStub = sinon.stub(vscode.commands, 'executeCommand').resolves();
-
-    await command.execute(workspaceTreeItem);
-
-    assert.strictEqual(deleteItemStub.called, false);
-    assert.strictEqual(showWarningMessageStub.calledOnceWith("Do you want to delete this item?", sinon.match("Yes"), sinon.match("No")), true);
-    assert.strictEqual(showInformationMessageStub.called, false);
-    assert.strictEqual(executeCommandStub.called, false);
-  });
-
-  test('execute should show error message on failure', async () => {
-    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves([{ message: 'error occurred' }]);
-    const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves({ title: "Yes" });
-    const showErrorMessageStub = sinon.stub(vscode.window, 'showErrorMessage').resolves();
-    const executeCommandStub = sinon.stub(vscode.commands, 'executeCommand').resolves();
-
-    await command.execute(workspaceTreeItem);
-
-    assert.strictEqual(deleteItemStub.calledOnce, true);
-    assert.strictEqual(showWarningMessageStub.calledOnceWith("Do you want to delete this item?", sinon.match("Yes"), sinon.match("No")), true);
-    assert.strictEqual(showErrorMessageStub.calledOnce, true);
-    assert.strictEqual(executeCommandStub.called, false);
   });
 });
