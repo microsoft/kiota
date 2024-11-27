@@ -246,19 +246,25 @@ public static class OpenApiSchemaExtensions
         }
         return result;
     }
-    internal static string GetDiscriminatorPropertyName(this OpenApiSchema schema)
+    internal static string GetDiscriminatorPropertyName(this OpenApiSchema schema, HashSet<OpenApiSchema>? visitedSchemas = default)
     {
+
         if (schema == null)
             return string.Empty;
+
+        visitedSchemas ??= [];
+        if (visitedSchemas.Contains(schema))
+            return string.Empty;
+        visitedSchemas.Add(schema);
 
         if (!string.IsNullOrEmpty(schema.Discriminator?.PropertyName))
             return schema.Discriminator.PropertyName;
 
-        if (schema.OneOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string oneOfDiscriminatorPropertyName)
+        if (schema.OneOf.Select(x => x.GetDiscriminatorPropertyName(visitedSchemas)).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string oneOfDiscriminatorPropertyName)
             return oneOfDiscriminatorPropertyName;
-        if (schema.AnyOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
+        if (schema.AnyOf.Select(x => x.GetDiscriminatorPropertyName(visitedSchemas)).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
             return anyOfDiscriminatorPropertyName;
-        if (schema.AllOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string allOfDiscriminatorPropertyName)
+        if (schema.AllOf.Select(x => x.GetDiscriminatorPropertyName(visitedSchemas)).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string allOfDiscriminatorPropertyName)
             return allOfDiscriminatorPropertyName;
 
         return string.Empty;
