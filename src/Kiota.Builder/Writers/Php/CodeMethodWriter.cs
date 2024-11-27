@@ -485,6 +485,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (isCollection)
                 parseNodeMethod = currentType.TypeDefinition switch
                 {
+                    CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
                     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
                     CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
                     _ => $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
