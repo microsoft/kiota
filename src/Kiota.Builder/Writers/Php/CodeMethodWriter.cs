@@ -498,6 +498,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 {
                     parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
                 }
+                else if (currentType.TypeDefinition is CodeEnum)
+                {
+                    parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
+                }
                 else
                 {
                     parseNodeMethod = $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
