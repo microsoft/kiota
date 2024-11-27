@@ -1,3 +1,5 @@
+import * as vscode from "vscode";
+
 import { extensionId, treeViewId } from "../constants";
 import { ClientOrPluginProperties } from "../kiotaInterop";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
@@ -8,11 +10,8 @@ import { Command } from "./Command";
 
 export class EditPathsCommand extends Command {
 
-  private _openApiTreeProvider: OpenApiTreeProvider;
-
-  public constructor(openApiTreeProvider: OpenApiTreeProvider) {
+  public constructor(private _openApiTreeProvider: OpenApiTreeProvider) {
     super();
-    this._openApiTreeProvider = openApiTreeProvider;
   }
 
   public getName(): string {
@@ -23,6 +22,7 @@ export class EditPathsCommand extends Command {
     await this.loadEditPaths(clientOrPluginKey!, clientOrPluginObject!);
     this._openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 
   private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {

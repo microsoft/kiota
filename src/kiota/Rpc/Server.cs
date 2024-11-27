@@ -299,4 +299,29 @@ internal partial class Server : IServer
             return path.Replace('/', '\\');
         return path.Replace('\\', '/');
     }
+
+    public Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken)
+    => RemoveClientOrPluginAsync(clientName, cleanOutput, "Client", (workspaceManagementService, clientName, cleanOutput, cancellationToken) => workspaceManagementService.RemoveClientAsync(clientName, cleanOutput, cancellationToken), cancellationToken);
+
+    private static async Task<List<LogEntry>> RemoveClientOrPluginAsync(string clientName, bool cleanOutput, string typeName, Func<WorkspaceManagementService, string, bool, CancellationToken, Task> removal, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(clientName);
+        ArgumentException.ThrowIfNullOrEmpty(typeName);
+        ArgumentNullException.ThrowIfNull(removal);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        try
+        {
+            var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, IsConfigPreviewEnabled.Value);
+            await removal(workspaceManagementService, clientName, cleanOutput, cancellationToken).ConfigureAwait(false);
+            logger.LogInformation("{TypeName} {ClientName} removed successfully!", typeName, clientName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "error removing the {TypeName}: {ExceptionMessage}", typeName.ToLowerInvariant(), ex.Message);
+        }
+        return logger.LogEntries;
+    }
+
+    public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
+    => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
 }

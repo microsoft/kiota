@@ -14,4 +14,6 @@ internal interface IServer
     Task<LanguagesInformation> InfoForDescriptionAsync(string descriptionPath, bool clearCache, CancellationToken cancellationToken);
     Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, ConsumerOperation operation, CancellationToken cancellationToken);
     Task<List<LogEntry>> MigrateFromLockFileAsync(string lockDirectoryPath, CancellationToken cancellationToken);
+    Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken);
+    Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken);
 }
