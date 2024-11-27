@@ -211,7 +211,9 @@ components:
       type: object
       properties:
         id:
-          type: string
+          anyOf:
+          - type: string
+          - type: integer
         '@odata.type':
           type: string
     microsoft.graph.message:
@@ -275,6 +277,7 @@ components:
         Assert.Single(originalDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
         Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
         Assert.Single(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
+        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
 
         // Validate the output open api file
         var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
@@ -293,6 +296,8 @@ components:
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
         Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
+        Assert.Equal("string", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type);
     }
 
     #region Security
