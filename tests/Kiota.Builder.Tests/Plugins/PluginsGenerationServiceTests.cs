@@ -298,6 +298,7 @@ components:
         Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
         Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
         Assert.Equal("string", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type);
+        Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
     }
 
     #region Security
