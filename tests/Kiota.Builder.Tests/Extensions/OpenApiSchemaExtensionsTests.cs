@@ -878,7 +878,7 @@ public class OpenApiSchemaExtensionsTests
                 entitySchema,
                 new OpenApiSchema
                 {
-                    Type = "object",
+                    Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, OpenApiSchema>
                     {
                         ["firstName"] = new OpenApiSchema
