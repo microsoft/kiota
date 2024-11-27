@@ -27,16 +27,22 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
   });
 
   test('execute should show success message and refresh workspace on success', async () => {
+    // Create MessageItem objects
     const yesAnswer: vscode.MessageItem = { title: vscode.l10n.t("Yes") };
+
+    // Mock the showWarningMessage method
     const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
     const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
     const executeCommandStub = sinon.stub(vscode.commands, 'executeCommand').resolves();
 
     await command.execute(workspaceTreeItem);
 
+    console.log('showWarningMessageStub.calledOnce:', showWarningMessageStub.calledOnce);
+    console.log('showInformationMessageStub.calledOnce:', showInformationMessageStub.calledOnce);
+    console.log('executeCommandStub.calledWith("kiota.workspace.refresh"):', executeCommandStub.calledWith('kiota.workspace.refresh'));
+
     assert.strictEqual(showWarningMessageStub.calledOnce, true);
     assert.strictEqual(showInformationMessageStub.calledOnce, true);
     assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true);
-
   });
 });
