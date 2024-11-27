@@ -243,8 +243,40 @@ public partial class PluginsGenerationService
         }
     }
 
+    private sealed class ExternalDocumentationCleanupVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiDocument doc)
+        {
+            if (doc.ExternalDocs is not null)
+                doc.ExternalDocs = null;
+            base.Visit(doc);
+        }
+        public override void Visit(OpenApiOperation operation)
+        {
+            if (operation.ExternalDocs is not null)
+                operation.ExternalDocs = null;
+            base.Visit(operation);
+        }
+        public override void Visit(OpenApiSchema schema)
+        {
+            if (schema.ExternalDocs is not null)
+                schema.ExternalDocs = null;
+            base.Visit(schema);
+        }
+        public override void Visit(OpenApiTag tag)
+        {
+            if (tag.ExternalDocs is not null)
+                tag.ExternalDocs = null;
+            base.Visit(tag);
+        }
+    }
+
     private static void PrepareDescriptionForCopilot(OpenApiDocument document)
     {
+        var externalDocumentationCleanupVisitor = new ExternalDocumentationCleanupVisitor();
+        var externalDocumentationCleanupWalker = new OpenApiWalker(externalDocumentationCleanupVisitor);
+        externalDocumentationCleanupWalker.Walk(document);
+
         var errorResponsesCleanupVisitor = new ErrorResponsesCleanupVisitor();
         var errorResponsesCleanupWalker = new OpenApiWalker(errorResponsesCleanupVisitor);
         errorResponsesCleanupWalker.Walk(document);
