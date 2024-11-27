@@ -230,8 +230,25 @@ public partial class PluginsGenerationService
         }
     }
 
+    private sealed class ErrorResponsesCleanupVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiOperation operation)
+        {
+            if (operation.Responses is null)
+                return;
+            var errorResponses = operation.Responses.Where(static x => x.Key.StartsWith('4') || x.Key.StartsWith('5')).ToArray();
+            foreach (var (key, value) in errorResponses)
+                operation.Responses.Remove(key);
+            base.Visit(operation);
+        }
+    }
+
     private static void PrepareDescriptionForCopilot(OpenApiDocument document)
     {
+        var errorResponsesCleanupVisitor = new ErrorResponsesCleanupVisitor();
+        var errorResponsesCleanupWalker = new OpenApiWalker(errorResponsesCleanupVisitor);
+        errorResponsesCleanupWalker.Walk(document);
+
         var selectFirstAnyOneOfVisitor = new SelectFirstAnyOneOfVisitor();
         var selectFirstAnyOneOfWalker = new OpenApiWalker(selectFirstAnyOneOfVisitor);
         selectFirstAnyOneOfWalker.Walk(document);
