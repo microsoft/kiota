@@ -131,6 +131,8 @@ public partial class PluginsGenerationService
             if (schema.AllOf is not { Count: > 0 })
                 return;
             var allPropertiesToAdd = GetAllProperties(schema).ToArray();
+            foreach (var allOfEntry in schema.AllOf)
+                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, schema, false, false, false);
             foreach (var (key, value) in allPropertiesToAdd)
                 schema.Properties.TryAdd(key, value);
             schema.AllOf.Clear();
@@ -161,7 +163,7 @@ public partial class PluginsGenerationService
             }
             base.Visit(schema);
         }
-        private static void CopyRelevantInformation(OpenApiSchema source, OpenApiSchema target)
+        internal static void CopyRelevantInformation(OpenApiSchema source, OpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
         {
             if (!string.IsNullOrEmpty(source.Type))
                 target.Type = source.Type;
@@ -169,7 +171,7 @@ public partial class PluginsGenerationService
                 target.Format = source.Format;
             if (source.Items is not null)
                 target.Items = source.Items;
-            if (source.Properties is not null)
+            if (source.Properties is not null && includeProperties)
                 target.Properties = new Dictionary<string, OpenApiSchema>(source.Properties);
             if (source.Required is not null)
                 target.Required = new HashSet<string>(source.Required);
@@ -217,7 +219,7 @@ public partial class PluginsGenerationService
                 target.Example = source.Example;
             if (source.Extensions is not null)
                 target.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
-            if (source.Discriminator is not null)
+            if (source.Discriminator is not null && includeDiscriminator)
                 target.Discriminator = source.Discriminator;
             if (!string.IsNullOrEmpty(source.Description))
                 target.Description = source.Description;
@@ -225,7 +227,7 @@ public partial class PluginsGenerationService
                 target.Title = source.Title;
             if (source.Default is not null)
                 target.Default = source.Default;
-            if (source.Reference is not null)
+            if (source.Reference is not null && includeReference)
                 target.Reference = source.Reference;
         }
     }
