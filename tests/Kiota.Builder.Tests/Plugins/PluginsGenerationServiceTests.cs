@@ -747,7 +747,6 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
