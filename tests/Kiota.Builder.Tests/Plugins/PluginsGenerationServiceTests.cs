@@ -193,6 +193,10 @@ paths:
       responses:
         '200':
           description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.message'
         '500':
           description: api error response
 components:
@@ -206,7 +210,17 @@ components:
         id:
           type: string
         '@odata.type':
-          type: string";
+          type: string
+    microsoft.graph.message:
+      allOf:
+      - $ref: '#/components/schemas/microsoft.graph.entity'
+      - type: object
+        title: message
+        properties:
+          subject:
+            type: string
+          body:
+            type: string";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
@@ -250,7 +264,7 @@ components:
 
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
-        Assert.Single(originalDocument.Components.Schemas);// one schema originally
+        Assert.Equal(2, originalDocument.Components.Schemas.Count);// one schema originally
         Assert.Single(originalDocument.Extensions); // single unsupported extension at root
         Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
         Assert.Equal(2, originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
@@ -264,7 +278,7 @@ components:
         Assert.Empty(diagnostic.Errors);
 
         // Assertions / validations
-        Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
+        Assert.Single(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
         Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // We removed the error response
@@ -273,6 +287,7 @@ components:
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
     }
 
     #region Security
