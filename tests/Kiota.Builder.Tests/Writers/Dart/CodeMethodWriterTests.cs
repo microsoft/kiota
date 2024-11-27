@@ -652,7 +652,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
-        Assert.Contains("Map<String, ParsableFactory<Parsable>> errorMapping = {", result);
+        Assert.Contains("final errorMapping = <String, ParsableFactory<Parsable>>{", result);
         Assert.Contains("'401' :  Error401.createFromDiscriminatorValue,", result);
         Assert.Contains("'4XX' :  Error4XX.createFromDiscriminatorValue,", result);
         Assert.Contains("'5XX' :  Error5XX.createFromDiscriminatorValue,", result);
