@@ -52,7 +52,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="StreamJsonRpc" Version="2.20.17" />
+    <PackageReference Include="StreamJsonRpc" Version="2.20.20" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4qm4-8hg2-g2xm" />
     <PackageReference Include="MessagePack" Version="2.5.192" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
