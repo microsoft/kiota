@@ -36,14 +36,9 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
 
     await command.execute(workspaceTreeItem);
 
-    console.log('showWarningMessageStub.calledOnce:', showWarningMessageStub.calledOnce);
-    console.log('showInformationMessageStub.calledOnce:', showInformationMessageStub.calledOnce);
-    console.log('executeCommandStub.calledWith("kiota.workspace.refresh"):', executeCommandStub.calledWith('kiota.workspace.refresh'));
-    console.log('deleteItemStub.calledOnce:', deleteItemStub.calledOnce);
-
-    assert.strictEqual(showWarningMessageStub.calledOnce, true, 'showWarningMessage was not called once');
-    assert.strictEqual(showInformationMessageStub.calledOnce, true, 'showInformationMessage was not called once');
-    assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true, 'executeCommand was not called with "kiota.workspace.refresh"');
-    assert.strictEqual(deleteItemStub.calledOnce, true, 'deleteItem was not called once');
+    assert.strictEqual(showWarningMessageStub.calledOnce, true);
+    assert.strictEqual(showInformationMessageStub.calledOnce, true);
+    assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true);
+    assert.strictEqual(deleteItemStub.calledOnce, true);
   });
 });
