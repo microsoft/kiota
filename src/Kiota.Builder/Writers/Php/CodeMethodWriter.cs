@@ -483,13 +483,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (propType is CodeType currentType)
         {
             if (isCollection)
-                parseNodeMethod = currentType.TypeDefinition switch
+                // parseNodeMethod = currentType.TypeDefinition switch
+                // {
+                //     //CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
+                //     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
+                //     //CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
+                //     _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
+                // };
+                if (currentType.TypeDefinition == null)
                 {
-                    //CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
-                    CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                    //CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
-                    _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
-                };
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                }
+                else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+                {
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                }
+                else
+                {
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                }
             else if (currentType.TypeDefinition is CodeEnum)
                 parseNodeMethod = $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
         }
@@ -503,6 +515,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             "decimal" or "double" => "getFloatValue()",
             "streaminterface" => "getBinaryContent()",
             "byte" => "getByteValue()",
+            "string" => "getStringValue()",
             _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
         } : parseNodeMethod;
