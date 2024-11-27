@@ -23,15 +23,17 @@ export class DeleteWorkspaceItemCommand extends Command {
 
   public async execute(workspaceTreeItem: WorkspaceTreeItem): Promise<void> {
     const type = workspaceTreeItem.category && isPluginType(workspaceTreeItem.category) ? "plugin" : "client";
-    console.log('Type:', type);
-    const yesAnswer = vscode.l10n.t("Yes");
+    const yesAnswer: vscode.MessageItem = { title: vscode.l10n.t("Yes") };
+    const noAnswer: vscode.MessageItem = { title: vscode.l10n.t("No") };
+
     const response = await vscode.window.showWarningMessage(
       vscode.l10n.t("Do you want to delete this item?"),
       yesAnswer,
-      vscode.l10n.t("No")
+      noAnswer
     );
+
     console.log('Response from showWarningMessage:', response);
-    if (response === yesAnswer) {
+    if (response?.title === yesAnswer.title) {
       const result = await this.deleteItem(type, workspaceTreeItem);
       console.log('Result from deleteItem:', result);
       if (result) {
