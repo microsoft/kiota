@@ -2,27 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch HTTP",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
-      "args": [
-        "generate",
-        "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
-        "--language",
-        "HTTP",
-        "-o",
-        "${workspaceFolder}/samples/msgraph-mail/HTTP/src",
-        "-n",
-        "graphtypescriptv4.utilities"
-      ],
-      "cwd": "${workspaceFolder}/src/kiota",
-      "console": "internalConsole",
-      "stopAtEntry": false
-    },
-    {
       "name": "Launch TypeScript",
       "type": "coreclr",
       "request": "launch",
