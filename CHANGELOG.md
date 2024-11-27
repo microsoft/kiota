@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
 - Fixed a bug where discriminator property name lookup could end up in an infinite loop. [#5771](https://github.com/microsoft/kiota/issues/5771)
 - Fixed TypeScript generation error when generating usings from shaken serializers. [#5634](https://github.com/microsoft/kiota/issues/5634)
+- Multiple fixed and improvements in OpenAPI description generation for plugins. [#5806](https://github.com/microsoft/kiota/issues/5806)
 
 ## [1.20.0] - 2024-11-07
 
