@@ -171,6 +171,9 @@ paths:
   /test:
     get:
       description: description for test path
+      externalDocs:
+        description: external docs for test path
+        url: http://localhost/test
       x-random-extension: true
       responses:
         '200':
@@ -264,6 +267,7 @@ components:
 
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
+        Assert.NotNull(originalDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // existing external docs
         Assert.Equal(2, originalDocument.Components.Schemas.Count);// one schema originally
         Assert.Single(originalDocument.Extensions); // single unsupported extension at root
         Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
@@ -283,6 +287,7 @@ components:
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // We removed the error response
         Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
+        Assert.Null(resultDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // external docs are removed
         Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
