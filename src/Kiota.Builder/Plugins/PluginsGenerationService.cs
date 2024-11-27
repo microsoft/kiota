@@ -61,6 +61,7 @@ public partial class PluginsGenerationService
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
         trimmedPluginDocument = InlineRequestBodyAllOf(trimmedPluginDocument);
+        RemoveDiscriminatorMappingEntriesReferencingAbsentSchemas(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
@@ -103,6 +104,28 @@ public partial class PluginsGenerationService
 
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private sealed class MappingCleanupVisitor(OpenApiDocument openApiDocument) : OpenApiVisitorBase
+    {
+        private readonly OpenApiDocument _document = openApiDocument;
+
+        public override void Visit(OpenApiSchema schema)
+        {
+            if (schema.Discriminator?.Mapping is null)
+                return;
+            var keysToRemove = schema.Discriminator.Mapping.Where(x => !_document.Components.Schemas.ContainsKey(x.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1])).Select(static x => x.Key).ToArray();
+            foreach (var key in keysToRemove)
+                schema.Discriminator.Mapping.Remove(key);
+            base.Visit(schema);
+        }
+    }
+
+    private static void RemoveDiscriminatorMappingEntriesReferencingAbsentSchemas(OpenApiDocument document)
+    {
+        var visitor = new MappingCleanupVisitor(document);
+        var walker = new OpenApiWalker(visitor);
+        walker.Walk(document);
     }
 
     private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
