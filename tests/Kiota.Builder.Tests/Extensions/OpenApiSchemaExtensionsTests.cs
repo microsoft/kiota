@@ -847,4 +847,63 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.True(schema.IsODataPrimitiveType());
     }
+    [Fact]
+    public void ReturnsEmptyPropertyNameOnCircularReferences()
+    {
+        var entitySchema = new OpenApiSchema
+        {
+            Reference = new OpenApiReference
+            {
+                Id = "microsoft.graph.entity"
+            },
+            Properties = new Dictionary<string, OpenApiSchema>
+            {
+                ["id"] = new OpenApiSchema
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Id = "microsoft.graph.entity"
+                    }
+                }
+            }
+        };
+        var userSchema = new OpenApiSchema
+        {
+            Reference = new OpenApiReference
+            {
+                Id = "microsoft.graph.user"
+            },
+            OneOf =
+            [
+                entitySchema,
+                new OpenApiSchema
+                {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>
+                    {
+                        ["firstName"] = new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Id = "microsoft.graph.entity"
+                            }
+                        }
+                    }
+                }
+            ],
+            Discriminator = new OpenApiDiscriminator
+            {
+                Mapping = new Dictionary<string, string>
+                {
+                    ["microsoft.graph.entity"] = "entity",
+                    ["microsoft.graph.user"] = "user"
+                }
+            }
+        };
+        entitySchema.AllOf =
+        [
+            userSchema
+        ];
+        Assert.Empty(userSchema.GetDiscriminatorPropertyName());
+    }
 }

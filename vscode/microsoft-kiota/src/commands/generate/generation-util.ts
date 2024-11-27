@@ -1,16 +1,19 @@
 import * as vscode from "vscode";
 
-import { treeViewId } from "../../constants";
+import { KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
-import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
-import { loadWorkspaceFile } from "../../utilities/file";
+import { updateTreeViewIcons } from "../../util";
 
 export async function displayGenerationResults(openApiTreeProvider: OpenApiTreeProvider, config: any) {
   const clientNameOrPluginName = config.clientClassName || config.pluginName;
-  openApiTreeProvider.refreshView();
-  const workspaceJsonPath = getWorkspaceJsonPath();
-  await loadWorkspaceFile({ fsPath: workspaceJsonPath }, openApiTreeProvider, clientNameOrPluginName);
-  await vscode.commands.executeCommand('kiota.workspace.refresh');
+  const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
+  if (workspaceJson) {
+    const content = workspaceJson.getText();
+    const workspace = JSON.parse(content);
+    const clientOrPluginObject = workspace.plugins[clientNameOrPluginName] || workspace.clients[clientNameOrPluginName];
+    await openApiTreeProvider.loadEditPaths(clientNameOrPluginName, clientOrPluginObject);
+  }
   openApiTreeProvider.resetInitialState();
   await updateTreeViewIcons(treeViewId, false, true);
+  await vscode.commands.executeCommand('kiota.workspace.refresh');
 }
