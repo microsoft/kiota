@@ -1,0 +1,32 @@
+name: Check Translations
+
+on: 
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+
+    - name: Run translation check
+      run: ./scripts/check-translations.ps1
+      shell: pwsh
+
+    - name: Upload untranslated strings
+      uses: actions/upload-artifact@v4
+      with:
+        name: untranslated-strings
+        path: ./untranslated_strings.html
