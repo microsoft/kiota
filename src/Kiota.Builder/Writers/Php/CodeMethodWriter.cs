@@ -492,11 +492,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 // };
                 if (currentType.TypeDefinition == null)
                 {
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues('{CreateDiscriminatorMethodName}')";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues('{CreateDiscriminatorMethodName}')";
                 }
                 else if (currentType.TypeDefinition is CodeEnum)
                 {
