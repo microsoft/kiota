@@ -29,7 +29,7 @@
   "kiota.openApiExplorer.openFile.title": "Open file",
   "kiota.workspace.name": "My Workspace",
   "kiota.openApiExplorer.regenerateButton.title": "Re-generate",
-  "kiota.openApiExplorer.editPaths.title": "Edit paths",
+  "kiota.openApiExplorer.editPaths.title": "Select",
   "kiota.openApiExplorer.refresh.title": "Refresh",
   "kiota.migrateClients.title": "Migrate API clients"
 }

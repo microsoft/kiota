@@ -25,6 +25,7 @@ export class EditPathsCommand extends Command {
     await this.loadEditPaths(clientOrPluginKey!, clientOrPluginObject!);
     this.openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 
   private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {
