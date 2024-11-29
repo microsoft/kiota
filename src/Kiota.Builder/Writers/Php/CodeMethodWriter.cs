@@ -493,7 +493,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 // };
                 if (currentType.TypeDefinition is null)
                 {
-                    parseNodeMethod = "getStringValue()";
+                    //Set the parseNodeMethod to the appropriate method for the collection of primitive values
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
