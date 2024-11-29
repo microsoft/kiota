@@ -693,10 +693,10 @@ extends:
               inputs:
                 - input: pipelineArtifact
                   artifactName: VSCode
-                  targetPath: $(Build.ArtifactStagingDirectory)/VSCode
+                  targetPath: $(Pipeline.Workspace)/VSCode
                 - input: pipelineArtifact
                   artifactName: scripts
-                  targetPath: "$(Pipeline.Workspace)"
+                  targetPath: "$(Pipeline.Workspace)/scripts"
             dependsOn:
               - github_release
             steps:
@@ -713,7 +713,7 @@ extends:
                   scriptLocation: "inlineScript"
                   inlineScript: |
                     $aadToken = az account get-access-token --query accessToken --resource 499b84ac-1321-427f-aa17-267ca6975798 -o tsv
-                    Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
+                    Get-ChildItem -Path $(Pipeline.Workspace)/VSCode -Filter *.vsix -Recurse | ForEach-Object {
                       $packagePath = $_.FullName
                       $manifestPath = $packagePath.Replace("vsix", "manifest")
                       $signaturePath = $packagePath.Replace("vsix", "signature.p7s")
