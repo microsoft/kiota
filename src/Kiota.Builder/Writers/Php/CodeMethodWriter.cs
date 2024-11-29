@@ -493,7 +493,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 // };
                 if (currentType.TypeDefinition is null)
                 {
-                    parseNodeMethod = "string";
+                    parseNodeMethod = "getStringValue()";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
