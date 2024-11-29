@@ -932,12 +932,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}";
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
-                if(deserializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
+                if (deserializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
                 {
                     writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(getStringValue());");
                 }
                 else
-                {   
+                {
                     writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
                 }
 
@@ -1011,7 +1011,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(property.Type, currentElement)}";
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
-            writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
+            if (serializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
+            {
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(getStringValue());");
+            }
+            else
+            {
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
+            }
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;
