@@ -166,16 +166,14 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: AppSettings
+                  targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
             steps:
               - checkout: self
                 clean: true
                 submodules: true
-
-              - task: 1ES.DownloadPipelineArtifact@1
-                inputs:
-                  artifact: AppSettings
-                  source: current
-                  targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
               - pwsh: |
                   Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -379,6 +377,10 @@ extends:
                       baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                     suppression:
                       suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+                  inputs:
+                    - input: pipelineArtifact
+                      artifactName: AppSettings
+                      targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
                 steps:
                   - checkout: self
@@ -392,12 +394,6 @@ extends:
                     displayName: "Use .NET 8"
                     inputs:
                       version: 8.x
-
-                  - task: 1ES.DownloadPipelineArtifact@1
-                    inputs:
-                      artifact: AppSettings
-                      source: current
-                      targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
                   - pwsh: |
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -592,6 +588,11 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
               - checkout: self
                 clean: true
@@ -599,13 +600,6 @@ extends:
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
-              - ${{ each distribution in parameters.distributions }}:
-                  - task: 1ES.DownloadPipelineArtifact@1
-                    displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
-                    inputs:
-                      artifact: Binaries_${{ distribution.jobPrefix }}
-                      source: current
-                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -687,6 +681,11 @@ extends:
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
         dependsOn: build
+        templateContext:
+          inputs:
+            - input: pipelineArtifact
+              artifactName: VSCode
+              targetPath: $(Build.ArtifactStagingDirectory)/VSCode
         jobs:
           - job: vs_marketplace
             pool:
@@ -706,10 +705,6 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: 1ES.DownloadPipelineArtifact@1
-                inputs:
-                  artifact: VSCode
-                  source: current
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
@@ -763,6 +758,9 @@ extends:
                 - input: pipelineArtifact
                   artifactName: changelog
                   targetPath: "$(Pipeline.Workspace)"
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
             dependsOn: []
             environment: kiota-github-releases
             strategy:
@@ -770,12 +768,6 @@ extends:
                 deploy:
                   steps:
                     - download: none
-                    - ${{ each distribution in parameters.distributions }}:
-                        - task: 1ES.DownloadPipelineArtifact@1
-                          displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
-                          inputs:
-                            artifact: Binaries_${{ distribution.jobPrefix }}
-                            source: current
                     - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                       displayName: "Set version suffix"
                     - pwsh: $(Pipeline.Workspace)/scripts/get-version-from-csproj.ps1 -csprojPath "$(Pipeline.Workspace)/csproj/kiota.csproj"
