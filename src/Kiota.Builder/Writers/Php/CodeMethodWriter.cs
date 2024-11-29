@@ -496,14 +496,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                     //Set the parseNodeMethod to the appropriate method for the collection of primitive values
                     parseNodeMethod = $"getCollectionOfPrimitiveValues()";
                 }
-                else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
-                {
-                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
-                }
-                else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()))
-                {
-                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
-                }
+                // else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+                // {
+                //     parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
+                // }
+                // else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()))
+                // {
+                //     parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
+                // }
                 else if (currentType.TypeDefinition is CodeEnum)
                 {
                     parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
@@ -525,9 +525,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             "decimal" or "double" => "getFloatValue()",
             "streaminterface" => "getBinaryContent()",
             "byte" => "getByteValue()",
-            "string" => "getStringValue()",
-            "date" => "getDateValue()",
-            "datetime" => "getDateTimeValue()",
+            // "string" => "getStringValue()",
+            // "date" => "getDateValue()",
+            // "datetime" => "getDateTimeValue()",
             _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
         } : parseNodeMethod;
