@@ -780,7 +780,7 @@ extends:
                         tag: "v$(artifactVersion)"
                         title: "v$(artifactVersion)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
@@ -795,7 +795,7 @@ extends:
                         tag: "v$(artifactVersion)$(versionSuffix)"
                         title: "v$(artifactVersion)$(versionSuffix)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
