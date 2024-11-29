@@ -116,6 +116,44 @@ extends:
                   artifactName: AppSettings
                   targetPath: "$(Build.ArtifactStagingDirectory)/AppSettings"
 
+              # upload the scripts directory as scripts artifact
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: scripts"
+                inputs:
+                  artifactName: scripts
+                  targetPath: $(Build.SourcesDirectory)/scripts
+
+              # upload the csproj file as csproj artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/csproj
+                  sourceFolder: $(Build.SourcesDirectory)/src/kiota
+                  Contents: "*.csproj"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: csproj"
+                inputs:
+                  artifactName: csproj
+                  targetPath: "$(Build.ArtifactStagingDirectory)/csproj"
+
+              # upload the changelog file as changelog artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/changelog
+                  sourceFolder: $(Build.SourcesDirectory)
+                  Contents: "CHANGELOG.md"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: changelog"
+                inputs:
+                  artifactName: changelog
+                  targetPath: "$(Build.ArtifactStagingDirectory)/changelog"
+
           - job: build
             dependsOn: [update_appsettings]
             pool:
@@ -128,16 +166,14 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: AppSettings
+                  targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
             steps:
               - checkout: self
                 clean: true
                 submodules: true
-
-              - task: DownloadPipelineArtifact@2
-                inputs:
-                  artifact: AppSettings
-                  source: current
-                  targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
               - pwsh: |
                   Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -318,7 +354,7 @@ extends:
                 inputs:
                   targetFolder: $(Build.ArtifactStagingDirectory)/Nugets
                   sourceFolder: $(Build.ArtifactStagingDirectory)
-                  content: "*.nupkg"
+                  Contents: "*.*nupkg"
 
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: Nugets"
@@ -341,6 +377,10 @@ extends:
                       baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                     suppression:
                       suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+                  inputs:
+                    - input: pipelineArtifact
+                      artifactName: AppSettings
+                      targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
                 steps:
                   - checkout: self
@@ -354,12 +394,6 @@ extends:
                     displayName: "Use .NET 8"
                     inputs:
                       version: 8.x
-
-                  - task: DownloadPipelineArtifact@2
-                    inputs:
-                      artifact: AppSettings
-                      source: current
-                      targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
                   - pwsh: |
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -554,6 +588,11 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
               - checkout: self
                 clean: true
@@ -561,13 +600,6 @@ extends:
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
-              - ${{ each distribution in parameters.distributions }}:
-                  - task: DownloadPipelineArtifact@2
-                    displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
-                    inputs:
-                      artifact: Binaries_${{ distribution.jobPrefix }}
-                      source: current
-                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -656,27 +688,24 @@ extends:
               os: linux
               image: ubuntu-latest
             templateContext:
-              sdl:
-                baseline:
-                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
-                suppression:
-                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: VSCode
+                  targetPath: $(Build.ArtifactStagingDirectory)/VSCode
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)"
             dependsOn:
               - github_release
             steps:
               - download: none
-              - checkout: self
-                clean: true
-                submodules: true
-              - task: DownloadPipelineArtifact@2
-                inputs:
-                  artifact: VSCode
-                  source: current
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
               - pwsh: npm i -g @vscode/vsce
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+              - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - task: AzureCLI@2
                 inputs:
@@ -716,11 +745,18 @@ extends:
                 - input: pipelineArtifact
                   artifactName: Nugets
                   targetPath: "$(Pipeline.Workspace)"
-              sdl:
-                baseline:
-                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
-                suppression:
-                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+                - input: pipelineArtifact
+                  artifactName: csproj
+                  targetPath: "$(Pipeline.Workspace)/csproj"
+                - input: pipelineArtifact
+                  artifactName: changelog
+                  targetPath: "$(Pipeline.Workspace)/changelog"
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
             dependsOn: []
             environment: kiota-github-releases
             strategy:
@@ -728,23 +764,14 @@ extends:
                 deploy:
                   steps:
                     - download: none
-                    - checkout: self
-                      clean: true
-                      submodules: true
-                    - ${{ each distribution in parameters.distributions }}:
-                        - task: DownloadPipelineArtifact@2
-                          displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
-                          inputs:
-                            artifact: Binaries_${{ distribution.jobPrefix }}
-                            source: current
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                       displayName: "Set version suffix"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-version-from-csproj.ps1 -csprojPath "$(Pipeline.Workspace)/csproj/kiota.csproj"
                       displayName: "Get Kiota's version-number from .csproj"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'false')
                       displayName: "Get release notes from CHANGELOG.md"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -createNotes
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version Unreleased -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'true')
                       displayName: "Get release notes from CHANGELOG.md"
                     - task: GitHubRelease@1
@@ -755,7 +782,7 @@ extends:
                         tag: "v$(artifactVersion)"
                         title: "v$(artifactVersion)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
@@ -770,7 +797,7 @@ extends:
                         tag: "v$(artifactVersion)$(versionSuffix)"
                         title: "v$(artifactVersion)$(versionSuffix)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
