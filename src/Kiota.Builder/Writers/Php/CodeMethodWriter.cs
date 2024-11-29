@@ -493,7 +493,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 // };
                 if (currentType.TypeDefinition is null)
                 {
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues()";
+                    parseNodeMethod = "string";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
@@ -501,7 +501,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 }
                 else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()))
                 {
-                    parseNodeMethod = currentType.TypeDefinition.Name.ToFirstCharacterUpperCase();
+                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
                 }
                 else if (currentType.TypeDefinition is CodeEnum)
                 {
@@ -525,6 +525,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             "streaminterface" => "getBinaryContent()",
             "byte" => "getByteValue()",
             "string" => "getStringValue()",
+            "date" => "getDateValue()",
+            "datetime" => "getDateTimeValue()",
             _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
             _ => $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
         } : parseNodeMethod;
