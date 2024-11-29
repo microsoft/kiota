@@ -116,6 +116,44 @@ extends:
                   artifactName: AppSettings
                   targetPath: "$(Build.ArtifactStagingDirectory)/AppSettings"
 
+              # upload the scripts directory as scripts artifact
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: scripts"
+                inputs:
+                  artifactName: scripts
+                  targetPath: $(Build.SourcesDirectory)/scripts
+
+              # upload the csproj file as csproj artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/csproj
+                  sourceFolder: $(Build.SourcesDirectory)/src/kiota
+                  Contents: "*.csproj"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: csproj"
+                inputs:
+                  artifactName: csproj
+                  targetPath: "$(Build.ArtifactStagingDirectory)/csproj"
+
+              # upload the changelog file as changelog artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/changelog
+                  sourceFolder: $(Build.SourcesDirectory)
+                  Contents: "CHANGELOG.md"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: changelog"
+                inputs:
+                  artifactName: changelog
+                  targetPath: "$(Build.ArtifactStagingDirectory)/changelog"
+
           - job: build
             dependsOn: [update_appsettings]
             pool:
@@ -318,7 +356,7 @@ extends:
                 inputs:
                   targetFolder: $(Build.ArtifactStagingDirectory)/Nugets
                   sourceFolder: $(Build.ArtifactStagingDirectory)
-                  content: "*.nupkg"
+                  Contents: "*.*nupkg"
 
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: Nugets"
@@ -716,11 +754,15 @@ extends:
                 - input: pipelineArtifact
                   artifactName: Nugets
                   targetPath: "$(Pipeline.Workspace)"
-              sdl:
-                baseline:
-                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
-                suppression:
-                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: csproj
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: changelog
+                  targetPath: "$(Pipeline.Workspace)"
             dependsOn: []
             environment: kiota-github-releases
             strategy:
@@ -728,23 +770,20 @@ extends:
                 deploy:
                   steps:
                     - download: none
-                    - checkout: self
-                      clean: true
-                      submodules: true
                     - ${{ each distribution in parameters.distributions }}:
                         - task: DownloadPipelineArtifact@2
                           displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
                           inputs:
                             artifact: Binaries_${{ distribution.jobPrefix }}
                             source: current
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                       displayName: "Set version suffix"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-version-from-csproj.ps1 -csprojPath "$(Pipeline.Workspace)/csproj/kiota.csproj"
                       displayName: "Get Kiota's version-number from .csproj"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'false')
                       displayName: "Get release notes from CHANGELOG.md"
-                    - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -createNotes
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version Unreleased -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'true')
                       displayName: "Get release notes from CHANGELOG.md"
                     - task: GitHubRelease@1
@@ -755,7 +794,7 @@ extends:
                         tag: "v$(artifactVersion)"
                         title: "v$(artifactVersion)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
@@ -770,7 +809,7 @@ extends:
                         tag: "v$(artifactVersion)$(versionSuffix)"
                         title: "v$(artifactVersion)$(versionSuffix)"
                         releaseNotesSource: filePath
-                        releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
+                        releaseNotesFilePath: $(Pipeline.Workspace)/release-notes.txt
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
