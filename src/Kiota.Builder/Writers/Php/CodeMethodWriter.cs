@@ -494,7 +494,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 if (currentType.TypeDefinition is null)
                 {
                     //Set the parseNodeMethod to the appropriate method for the collection of primitive values
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues()";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
@@ -932,7 +932,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}";
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
-                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
+                if(deserializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
+                {
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(getStringValue());");
+                }
+                else
+                {   
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
+                }
+
                 writer.DecreaseIndent();
             }
             if (!includeElse)
