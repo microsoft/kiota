@@ -393,7 +393,7 @@ extends:
                     inputs:
                       version: 8.x
 
-                  - task: DownloadPipelineArtifact@2
+                  - task: 1ES.DownloadPipelineArtifact@1
                     inputs:
                       artifact: AppSettings
                       source: current
@@ -600,7 +600,7 @@ extends:
                 inputs:
                   versionSpec: "18.x"
               - ${{ each distribution in parameters.distributions }}:
-                  - task: DownloadPipelineArtifact@2
+                  - task: 1ES.DownloadPipelineArtifact@1
                     displayName: Download ${{ distribution.jobPrefix }} binaries from artifacts
                     inputs:
                       artifact: Binaries_${{ distribution.jobPrefix }}
@@ -706,7 +706,7 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: DownloadPipelineArtifact@2
+              - task: 1ES.DownloadPipelineArtifact@1
                 inputs:
                   artifact: VSCode
                   source: current
