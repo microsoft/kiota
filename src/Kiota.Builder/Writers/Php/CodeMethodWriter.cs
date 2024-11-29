@@ -934,7 +934,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
                 if (deserializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
                 {
-                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(getStringValue());");
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({ParseNodeVarName}->getStringValue());");
                 }
                 else
                 {
@@ -1013,7 +1013,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
             if (serializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
             {
-                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(getStringValue());");
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({ParseNodeVarName}->getStringValue());");
             }
             else
             {
