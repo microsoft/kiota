@@ -493,15 +493,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 // };
                 if (currentType.TypeDefinition is null)
                 {
-                    parseNodeMethod = "object";
+                    parseNodeMethod = $"getCollectionOfPrimitiveValues()";
                 }
                 else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
                     parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
                 }
-                else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+                else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()))
                 {
-                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
+                    parseNodeMethod = currentType.TypeDefinition.Name.ToFirstCharacterUpperCase();
                 }
                 else if (currentType.TypeDefinition is CodeEnum)
                 {
