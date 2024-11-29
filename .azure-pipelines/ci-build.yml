@@ -681,11 +681,6 @@ extends:
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
         dependsOn: build
-        templateContext:
-          inputs:
-            - input: pipelineArtifact
-              artifactName: VSCode
-              targetPath: $(Build.ArtifactStagingDirectory)/VSCode
         jobs:
           - job: vs_marketplace
             pool:
@@ -693,23 +688,24 @@ extends:
               os: linux
               image: ubuntu-latest
             templateContext:
-              sdl:
-                baseline:
-                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
-                suppression:
-                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: VSCode
+                  targetPath: $(Build.ArtifactStagingDirectory)/VSCode
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)"
             dependsOn:
               - github_release
             steps:
               - download: none
-              - checkout: self
-                clean: true
-                submodules: true
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
               - pwsh: npm i -g @vscode/vsce
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+              - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - task: AzureCLI@2
                 inputs:
@@ -751,13 +747,13 @@ extends:
                   targetPath: "$(Pipeline.Workspace)"
                 - input: pipelineArtifact
                   artifactName: scripts
-                  targetPath: "$(Pipeline.Workspace)"
+                  targetPath: "$(Pipeline.Workspace)/scripts"
                 - input: pipelineArtifact
                   artifactName: csproj
-                  targetPath: "$(Pipeline.Workspace)"
+                  targetPath: "$(Pipeline.Workspace)/csproj"
                 - input: pipelineArtifact
                   artifactName: changelog
-                  targetPath: "$(Pipeline.Workspace)"
+                  targetPath: "$(Pipeline.Workspace)/changelog"
                 - ${{ each distribution in parameters.distributions }}:
                     - input: pipelineArtifact
                       artifactName: Binaries_${{ distribution.jobPrefix }}
