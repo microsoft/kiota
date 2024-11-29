@@ -491,7 +491,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 //     //CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
                 //     _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
                 // };
-                if (currentType.TypeDefinition != null && conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+                if (currentType.TypeDefinition is null)
+                {
+                    parseNodeMethod = "object";
+                }
+                else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+                {
+                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
+                }
+                else if (conventions.CustomTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
                     parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
                 }
