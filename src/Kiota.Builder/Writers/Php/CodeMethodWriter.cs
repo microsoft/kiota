@@ -484,29 +484,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var collectionMethod = propType.IsArray ? "Array" : "Collection";
             if (isCollection)
-                parseNodeMethod = currentType.TypeDefinition switch
+                // parseNodeMethod = currentType.TypeDefinition switch
+                // {
+                //     //CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
+                //     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
+                //     //CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
+                //     _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
+                // };
+                if (currentType.TypeDefinition != null && conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 {
-                    CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues()",
-                    CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                    // CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues('{currentType.TypeDefinition.Name}')",
-                    _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
-                };
-            // if (currentType.TypeDefinition == null)
-            // {
-            //     parseNodeMethod = $"getCollectionOfPrimitiveValues()";
-            // }
-            // else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
-            // {
-            //     parseNodeMethod = $"getCollectionOfPrimitiveValues('{currentType.TypeDefinition.Name}')";
-            // }
-            // else if (currentType.TypeDefinition is CodeEnum)
-            // {
-            //     parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
-            // }
-            // else
-            // {
-            //     parseNodeMethod = $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
-            // }
+                    parseNodeMethod = currentType.TypeDefinition.Name.ToLowerInvariant();
+                }
+                else if (currentType.TypeDefinition is CodeEnum)
+                {
+                    parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
+                }
+                else
+                {
+                    parseNodeMethod = $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+                }
             else if (currentType.TypeDefinition is CodeEnum)
                 parseNodeMethod = $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
         }
