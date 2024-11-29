@@ -482,30 +482,31 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var parseNodeMethod = string.Empty;
         if (propType is CodeType currentType)
         {
+            var collectionMethod = propType.IsArray ? "Array" : "Collection";
             if (isCollection)
-                // parseNodeMethod = currentType.TypeDefinition switch
-                // {
-                //     //CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
-                //     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                //     //CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])",
-                //     _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
-                // };
-                if (currentType.TypeDefinition == null)
+                parseNodeMethod = currentType.TypeDefinition switch
                 {
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues('{CreateDiscriminatorMethodName}')";
-                }
-                else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
-                {
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues('{CreateDiscriminatorMethodName}')";
-                }
-                else if (currentType.TypeDefinition is CodeEnum)
-                {
-                    parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
-                }
-                else
-                {
-                    parseNodeMethod = $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
-                }
+                    CodeType codeType when codeType.TypeDefinition == null => $"getCollectionOfPrimitiveValues()",
+                    CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
+                    // CodeType codeType when conventions.PrimitiveTypes.Contains(codeType.Name.ToLowerInvariant()) => $"getCollectionOfPrimitiveValues('{currentType.TypeDefinition.Name}')",
+                    _ => $"getCollectionOfPrimitiveValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
+                };
+            // if (currentType.TypeDefinition == null)
+            // {
+            //     parseNodeMethod = $"getCollectionOfPrimitiveValues()";
+            // }
+            // else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
+            // {
+            //     parseNodeMethod = $"getCollectionOfPrimitiveValues('{currentType.TypeDefinition.Name}')";
+            // }
+            // else if (currentType.TypeDefinition is CodeEnum)
+            // {
+            //     parseNodeMethod = $"getCollectionOfEnumValues({currentType.TypeDefinition.Name.ToFirstCharacterUpperCase()}::class)";
+            // }
+            // else
+            // {
+            //     parseNodeMethod = $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])";
+            // }
             else if (currentType.TypeDefinition is CodeEnum)
                 parseNodeMethod = $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
         }
@@ -947,6 +948,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         else if (otherProps.Length != 0)
             writer.CloseBlock(decreaseIndent: false);
     }
+
 
     private void WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
