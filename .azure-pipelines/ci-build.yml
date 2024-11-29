@@ -700,7 +700,6 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - download: none
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
@@ -763,7 +762,6 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - download: none
                     - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                       displayName: "Set version suffix"
                     - pwsh: $(Pipeline.Workspace)/scripts/get-version-from-csproj.ps1 -csprojPath "$(Pipeline.Workspace)/csproj/kiota.csproj"
@@ -824,7 +822,6 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - download: none
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
@@ -854,7 +851,6 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - download: none
                     - powershell: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
