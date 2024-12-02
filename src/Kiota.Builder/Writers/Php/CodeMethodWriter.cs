@@ -494,7 +494,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 if (currentType.TypeDefinition is null)
                 {
                     //Set the parseNodeMethod to the appropriate method for the collection of primitive values
-                    parseNodeMethod = $"getCollectionOfPrimitiveValues()";
+                    parseNodeMethod = $"getStringValue()";
                 }
                 // else if (conventions.PrimitiveTypes.Contains(currentType.TypeDefinition.Name.ToLowerInvariant()))
                 // {
@@ -932,15 +932,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}";
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
-                if (deserializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
-                {
-                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({ParseNodeVarName}->getStringValue());");
-                }
-                else
-                {
-                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
-                }
-
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
                 writer.DecreaseIndent();
             }
             if (!includeElse)
@@ -1011,14 +1003,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(property.Type, currentElement)}";
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
-            if (serializationMethodName.Contains("getCollectionOfPrimitiveValues", StringComparison.Ordinal))
-            {
-                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({ParseNodeVarName}->getStringValue());");
-            }
-            else
-            {
-                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
-            }
+            writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;
