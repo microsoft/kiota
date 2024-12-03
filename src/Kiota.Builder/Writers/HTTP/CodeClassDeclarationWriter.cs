@@ -310,7 +310,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             }
             else
             {
-                writer.Write(GetDefaultValueForProperty(prop), includeIndent: false);
+                writer.Write(HttpConventionService.GetDefaultValueForProperty(prop), includeIndent: false);
             }
 
             // Add a trailing comma if there are more properties to be written
@@ -329,25 +329,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         {
             WriteProperties(baseClass, writer);
         }
-    }
-
-
-    /// <summary>
-    /// Gets the default value for the given property.
-    /// </summary>
-    /// <param name="codeProperty">The property to get the default value for.</param>
-    /// <returns>The default value as a string.</returns>
-    private static string GetDefaultValueForProperty(CodeProperty codeProperty)
-    {
-        return codeProperty.Type.Name switch
-        {
-            "int" or "integer" => "0",
-            "string" => "\"string\"",
-            "bool" or "boolean" => "false",
-            _ when codeProperty.Type is CodeType enumType && enumType.TypeDefinition is CodeEnum enumDefinition =>
-                enumDefinition.Options.FirstOrDefault()?.Name is string enumName ? $"\"{enumName}\"" : "null",
-            _ => "null"
-        };
     }
 
     private static string BuildUrlStringFromTemplate(string urlTemplateString, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, string? baseUrl)
