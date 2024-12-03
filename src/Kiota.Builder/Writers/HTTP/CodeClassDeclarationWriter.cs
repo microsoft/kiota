@@ -361,18 +361,10 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         // Build RequestInformation using the URL
         var requestInformation = new RequestInformation()
         {
-            UrlTemplate = urlTemplateString
+            UrlTemplate = urlTemplateString,
+            QueryParameters = queryParameters.ToDictionary(item => item.WireName, item => $"{{{{{item.Name.ToFirstCharacterLowerCase()}}}}}" as object),
+            PathParameters = pathParameters.ToDictionary(item => item.WireName, item => $"{{{{{item.Name.ToFirstCharacterLowerCase()}}}}}" as object),
         };
-
-        queryParameters?.ForEach(param =>
-        {
-            requestInformation.QueryParameters.Add(param.WireName, $"{{{{{param.Name.ToFirstCharacterLowerCase()}}}}}");
-        });
-
-        pathParameters?.ForEach(param =>
-        {
-            requestInformation.PathParameters.Add(param.WireName, $"{{{{{param.Name.ToFirstCharacterLowerCase()}}}}}");
-        });
 
         // Erase baseUrl and use the placeholder variable {baseUrl} already defined in the snippet
         return requestInformation.URI.ToString().Replace(baseUrl, $"{{{{{BaseUrlPropertyName}}}}}", StringComparison.InvariantCultureIgnoreCase);

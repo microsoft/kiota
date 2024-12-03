@@ -12,7 +12,6 @@ public class HttpConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "###";
-    public static readonly char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "ParseNode";
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")

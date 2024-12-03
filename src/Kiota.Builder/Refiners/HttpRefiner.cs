@@ -47,7 +47,7 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
                       .FindChildrenByName<CodeClass>(_configuration.ClientClassName)?
                       .FirstOrDefault()?
                       .Methods?
-                      .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.ClientConstructor))?
+                      .FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor))?
                       .BaseUrl;
     }
 
@@ -76,7 +76,7 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
         CrawlTree(current, (element) => SetBaseUrlForRequestBuilderMethods(element, baseUrl));
     }
 
-    private static void RemoveUnusedCodeElements(CodeElement element)
+    private void RemoveUnusedCodeElements(CodeElement element)
     {
         if (!IsRequestBuilderClass(element) || IsBaseRequestBuilder(element) || IsRequestBuilderClassWithoutAnyHttpOperations(element))
         {
@@ -104,13 +104,13 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
                 .FirstOrDefault()?
                 .GetChildElements(false)
                 .OfType<CodeMethod>()
-                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
+                .FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
 
             if (codeIndexer is not null)
             {
                 // Retrieve all the parameters of kind CodeParameterKind.Custom
                 var customParameters = codeIndexer.Parameters
-                    .Where(param => param.IsOfKind(CodeParameterKind.Custom))
+                    .Where(static param => param.IsOfKind(CodeParameterKind.Custom))
                     .ToList();
 
                 // For each parameter:
@@ -140,15 +140,15 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
         return element is CodeClass code && code.IsOfKind(CodeClassKind.RequestBuilder);
     }
 
-    private static bool IsBaseRequestBuilder(CodeElement element)
+    private bool IsBaseRequestBuilder(CodeElement element)
     {
-        return element is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            codeClass.Properties.Any(property => property.IsOfKind(CodePropertyKind.UrlTemplate) && string.Equals(property.DefaultValue, "\"{+baseurl}\"", StringComparison.Ordinal));
+        return element is CodeClass codeClass &&
+            codeClass.Name.Equals(_configuration.ClientClassName, StringComparison.Ordinal);
     }
 
     private static bool IsRequestBuilderClassWithoutAnyHttpOperations(CodeElement element)
     {
         return element is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-               !codeClass.Methods.Any(method => method.IsOfKind(CodeMethodKind.RequestExecutor));
+               !codeClass.Methods.Any(static method => method.IsOfKind(CodeMethodKind.RequestExecutor));
     }
 }
