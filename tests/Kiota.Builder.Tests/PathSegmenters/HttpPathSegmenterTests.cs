@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System.IO;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 using Xunit;
 
@@ -10,7 +11,8 @@ namespace Kiota.Builder.Tests.PathSegmenters
 
         public HttpPathSegmenterTests()
         {
-            segmenter = new HttpPathSegmenter("D:\\source\\repos\\kiota-sample", "client");
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+            segmenter = new HttpPathSegmenter(tempFilePath, "client");
         }
 
         [Fact]

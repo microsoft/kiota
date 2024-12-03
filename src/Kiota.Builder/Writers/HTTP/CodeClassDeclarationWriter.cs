@@ -59,7 +59,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         var queryParameterClasses = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeClass>()
-            .Where(element => element.IsOfKind(CodeClassKind.QueryParameters))
+            .Where(static element => element.IsOfKind(CodeClassKind.QueryParameters))
             .ToList();
 
         // Collect all query parameter properties into the aggregated list
@@ -67,7 +67,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         {
             var queryParams = paramCodeClass
                 .Properties
-                .Where(property => property.IsOfKind(CodePropertyKind.QueryParameter))
+                .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter))
                 .ToList();
 
             queryParameters.AddRange(queryParams);
@@ -90,7 +90,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals("pathParameters", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        return pathParameters ?? [];
+        return pathParameters;
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         return requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
-            .FirstOrDefault(property => property.IsOfKind(CodePropertyKind.UrlTemplate));
+            .FirstOrDefault(static property => property.IsOfKind(CodePropertyKind.UrlTemplate));
     }
 
     /// <summary>
@@ -200,20 +200,32 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="pathParameters">The list of path parameters.</param>
     /// <param name="urlTemplateProperty">The URL template property containing the URL template.</param>
     /// <param name="baseUrl">The base URL.</param>
-    private static void WriteHttpMethods(CodeClass requestBuilderClass, LanguageWriter writer, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, CodeProperty urlTemplateProperty, string? baseUrl)
+    private static void WriteHttpMethods(
+        CodeClass requestBuilderClass,
+        LanguageWriter writer,
+        List<CodeProperty> queryParameters,
+        List<CodeProperty> pathParameters,
+        CodeProperty urlTemplateProperty,
+        string? baseUrl)
     {
         // Retrieve all the HTTP methods of kind RequestExecutor
         var httpMethods = GetHttpMethods(requestBuilderClass);
 
-        for (int i = 0; i < httpMethods.Count; i++)
-        {
-            var method = httpMethods[i];
+        var methodCount = httpMethods.Count;
+        var currentIndex = 0;
 
+        foreach (var method in httpMethods)
+        {
             // Write the method documentation as a comment
             writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
 
             // Build the actual URL string and replace all required fields (path and query) with placeholder variables
-            var url = BuildUrlStringFromTemplate(urlTemplateProperty.DefaultValue, queryParameters, pathParameters, baseUrl);
+            var url = BuildUrlStringFromTemplate(
+                urlTemplateProperty.DefaultValue,
+                queryParameters,
+                pathParameters,
+                baseUrl
+            );
 
             // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
             writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} HTTP/1.1");
@@ -221,8 +233,8 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             // Write the request body if present
             WriteRequestBody(method, writer);
 
-            // Write an empty line for separation if there are more items that follow
-            if (i < httpMethods.Count - 1)
+            // Write a separator if there are more items that follow
+            if (++currentIndex < methodCount)
             {
                 writer.WriteLine();
                 writer.WriteLine("###");
@@ -241,7 +253,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         return requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeMethod>()
-            .Where(element => element.IsOfKind(CodeMethodKind.RequestExecutor))
+            .Where(static element => element.IsOfKind(CodeMethodKind.RequestExecutor))
             .ToList();
     }
 
@@ -253,7 +265,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     private static void WriteRequestBody(CodeMethod method, LanguageWriter writer)
     {
         // If there is a request body, write it
-        var requestBody = method.Parameters.FirstOrDefault(param => param.IsOfKind(CodeParameterKind.RequestBody));
+        var requestBody = method.Parameters.FirstOrDefault(static param => param.IsOfKind(CodeParameterKind.RequestBody));
         if (requestBody is null) return;
 
         writer.WriteLine($"Content-Type: {method.RequestBodyContentType}");
@@ -264,11 +276,9 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         // Loop through the properties of the request body and write a JSON object
         if (requestBody.Type is CodeType ct && ct.TypeDefinition is CodeClass requestBodyClass)
         {
-            writer.WriteLine("{");
-            writer.IncreaseIndent();
+            writer.StartBlock();
             WriteProperties(requestBodyClass, writer);
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
     }
 
@@ -279,20 +289,24 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the properties to.</param>
     private static void WriteProperties(CodeClass requestBodyClass, LanguageWriter writer)
     {
-        var properties = requestBodyClass.Properties.Where(prop => prop.IsOfKind(CodePropertyKind.Custom)).ToList();
-        for (int i = 0; i < properties.Count; i++)
+        var properties = requestBodyClass.Properties
+            .Where(static prop => prop.IsOfKind(CodePropertyKind.Custom))
+            .ToArray();
+
+        var propertyCount = properties.Length;
+        var currentIndex = 0;
+
+        foreach (var prop in properties)
         {
-            var prop = properties[i];
             var propName = $"\"{prop.Name}\"";
             writer.Write($"{propName}: ");
+
             if (prop.Type is CodeType propType && propType.TypeDefinition is CodeClass propClass)
             {
                 // If the property is an object, write a JSON representation recursively
-                writer.WriteLine("{", includeIndent: false);
-                writer.IncreaseIndent();
+                writer.StartBlock("{", increaseIndent: false);
                 WriteProperties(propClass, writer);
-                writer.DecreaseIndent();
-                writer.Write("}");
+                writer.CloseBlock();
             }
             else
             {
@@ -300,7 +314,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             }
 
             // Add a trailing comma if there are more properties to be written
-            if (i < properties.Count - 1)
+            if (++currentIndex < propertyCount)
             {
                 writer.WriteLine(",", includeIndent: false);
             }
@@ -316,6 +330,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             WriteProperties(baseClass, writer);
         }
     }
+
 
     /// <summary>
     /// Gets the default value for the given property.
