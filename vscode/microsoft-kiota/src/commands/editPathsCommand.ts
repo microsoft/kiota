@@ -1,4 +1,6 @@
-import { extensionId, treeViewId } from "../constants";
+import * as vscode from 'vscode';
+
+import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../constants";
 import { ClientOrPluginProperties } from "../kiotaInterop";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { WorkspaceGenerationContext } from "../types/WorkspaceGenerationContext";
@@ -8,11 +10,11 @@ import { Command } from "./Command";
 
 export class EditPathsCommand extends Command {
 
-  private _openApiTreeProvider: OpenApiTreeProvider;
-
-  public constructor(openApiTreeProvider: OpenApiTreeProvider) {
+  constructor(
+    private openApiTreeProvider: OpenApiTreeProvider,
+    private context: vscode.ExtensionContext
+  ) {
     super();
-    this._openApiTreeProvider = openApiTreeProvider;
   }
 
   public getName(): string {
@@ -21,11 +23,29 @@ export class EditPathsCommand extends Command {
 
   public async execute({ clientOrPluginKey, clientOrPluginObject }: Partial<WorkspaceGenerationContext>): Promise<void> {
     await this.loadEditPaths(clientOrPluginKey!, clientOrPluginObject!);
-    this._openApiTreeProvider.resetInitialState();
+    this.openApiTreeProvider.resetInitialState();
     await updateTreeViewIcons(treeViewId, false, true);
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 
   private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {
-    await openTreeViewWithProgress(() => this._openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject));
+    await openTreeViewWithProgress(() => this.openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject));
+
+    const regenerateAnswer = vscode.l10n.t("Regenerate");
+    const showGenerateMessage = this.context.globalState.get<boolean>(SHOW_MESSAGE_AFTER_API_LOAD, true);
+
+    if (showGenerateMessage) {
+      const doNotShowAgainOption = vscode.l10n.t("Do not show this again");
+      const response = await vscode.window.showInformationMessage(
+        vscode.l10n.t('Click on Regenerate after selecting the paths in the API Explorer'),
+        regenerateAnswer,
+        doNotShowAgainOption
+      );
+      if (response === regenerateAnswer) {
+        await vscode.commands.executeCommand(`kiota.regenerate`);
+      } else if (response === doNotShowAgainOption) {
+        await this.context.globalState.update(SHOW_MESSAGE_AFTER_API_LOAD, false);
+      }
+    }
   }
 }

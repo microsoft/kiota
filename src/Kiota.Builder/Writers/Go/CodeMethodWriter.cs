@@ -195,13 +195,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
                     valueVarName = "cast";
                 }
-                else if (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface)
+                else if (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface || propertyType.TypeDefinition is CodeEnum)
                 {
+                    if (propertyType.TypeDefinition is CodeEnum)
+                    {
+                        propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, true);
+                    }
                     writer.StartBlock($"if {GetTypeAssertion(valueVarName, propertyTypeImportName, "cast", "ok")}; ok {{");
                     valueVarName = "cast";
                 }
                 writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({valueVarName})");
-                if (!propertyType.IsCollection && (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface))
+                if (!propertyType.IsCollection && (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface || propertyType.TypeDefinition is CodeEnum))
                     writer.CloseBlock();
                 writer.DecreaseIndent();
             }
