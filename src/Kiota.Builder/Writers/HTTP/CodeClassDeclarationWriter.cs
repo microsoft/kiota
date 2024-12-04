@@ -298,29 +298,22 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
         foreach (var prop in properties)
         {
+            // Add a trailing comma if there are more properties to be written
+            var separator = currentIndex < propertyCount - 1 ? "," : string.Empty;
             var propName = $"\"{prop.Name}\"";
             writer.Write($"{propName}: ");
 
             if (prop.Type is CodeType propType && propType.TypeDefinition is CodeClass propClass)
             {
                 // If the property is an object, write a JSON representation recursively
-                writer.StartBlock("{", increaseIndent: false);
+                writer.WriteLine("{", includeIndent: false);
+                writer.IncreaseIndent();
                 WriteProperties(propClass, writer);
-                writer.CloseBlock();
+                writer.CloseBlock($"}}{separator}");
             }
             else
             {
-                writer.Write(HttpConventionService.GetDefaultValueForProperty(prop), includeIndent: false);
-            }
-
-            // Add a trailing comma if there are more properties to be written
-            if (++currentIndex < propertyCount)
-            {
-                writer.WriteLine(",", includeIndent: false);
-            }
-            else
-            {
-                writer.WriteLine();
+                writer.WriteLine($"{HttpConventionService.GetDefaultValueForProperty(prop)}{separator}", includeIndent: false);
             }
         }
 
