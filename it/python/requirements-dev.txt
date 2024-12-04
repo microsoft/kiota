@@ -40,9 +40,9 @@ platformdirs==4.3.6 ; python_version >= '3.7'
 
 pluggy==1.5.0 ; python_version >= '3.7'
 
-pylint==3.3.1
+pylint==3.3.2
 
-pytest==8.3.3
+pytest==8.3.4
 
 pytest-asyncio==0.24.0
 
@@ -66,7 +66,7 @@ yapf==0.43.0
 
 zipp==3.21.0 ; python_version >= '3.7'
 
-aiohttp==3.11.8 ; python_version >= '3.6'
+aiohttp==3.11.9 ; python_version >= '3.6'
 
 aiosignal==1.3.1 ; python_version >= '3.7'
 
@@ -98,19 +98,19 @@ httpx[http2]==0.27.2
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.6.2
+microsoft-kiota-abstractions==1.6.3
 
-microsoft-kiota-authentication-azure==1.6.2
+microsoft-kiota-authentication-azure==1.6.3
 
-microsoft-kiota-http==1.6.2
+microsoft-kiota-http==1.6.3
 
-microsoft-kiota-serialization-json==1.6.2
+microsoft-kiota-serialization-json==1.6.3
 
-microsoft-kiota-serialization-text==1.6.2
+microsoft-kiota-serialization-text==1.6.3
 
-microsoft-kiota-serialization-form==1.6.2
+microsoft-kiota-serialization-form==1.6.3
 
-microsoft-kiota-serialization-multipart==1.6.2
+microsoft-kiota-serialization-multipart==1.6.3
 
 msal==1.31.1
 
@@ -136,5 +136,5 @@ sniffio==1.3.1 ; python_version >= '3.7'
 
 uritemplate==4.1.1 ; python_version >= '3.6'
 
-yarl==1.18.0 ; python_version >= '3.7'
+yarl==1.18.3 ; python_version >= '3.7'
 
