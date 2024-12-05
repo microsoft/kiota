@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.21.0] - 2024-12-05
+
+### Added
+
 - Added a notion of support experience for languages in preparation for new community implemented languages.
 
 ### Changed
@@ -1511,3 +1517,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
