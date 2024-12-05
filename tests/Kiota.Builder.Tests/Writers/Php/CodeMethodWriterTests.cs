@@ -1474,8 +1474,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if ('#kiota.complexType1' === $mappingValue) {", result);
         Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
         Assert.Contains("if ($parseNode->getStringValue() !== null) {", result);
+        Assert.Contains("$finalValue = $parseNode->getStringValue()", result);
         Assert.Contains("$result->setStringValue($finalValue)", result);
         Assert.Contains("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) !== null) {", result);
+        Assert.Contains("$finalValue = $parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue'])", result);
         Assert.Contains("$result->setComplexType2Value($finalValue)", result);
         Assert.Contains("return $result", result);
         Assert.DoesNotContain("return new UnionTypeWrapper()", result);
