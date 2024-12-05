@@ -78,7 +78,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
 
       if (isPluginType(element.label)) {
         return Object.keys(this.workspaceContent.plugins).map(pluginName =>
-          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', PLUGINS, this.getProperties(pluginName, CLIENTS))
+          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', PLUGINS, this.getProperties(pluginName, PLUGINS))
         );
       }
     }
@@ -137,6 +137,14 @@ export async function loadTreeView(context: vscode.ExtensionContext, treeDataPro
     vscode.commands.registerCommand('kiota.workspace.selectItem', async (workspaceTreeItem: WorkspaceTreeItem) => {
       const { label, properties, category } = workspaceTreeItem;
       await vscode.commands.executeCommand('kiota.editPaths', label, properties, category);
+    })
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
+      const document = event.document;
+      if (document.fileName.endsWith(KIOTA_WORKSPACE_FILE)) {
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
+      }
     })
   );
 };

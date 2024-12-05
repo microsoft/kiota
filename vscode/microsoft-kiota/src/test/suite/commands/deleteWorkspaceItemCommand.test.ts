@@ -31,14 +31,13 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
 
     const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
     const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
-    const executeCommandStub = sinon.stub(vscode.commands, 'executeCommand').resolves();
     const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves([{ message: 'removed successfully' }]);
 
     await command.execute(workspaceTreeItem);
 
     assert.strictEqual(showWarningMessageStub.calledOnce, true);
     assert.strictEqual(showInformationMessageStub.calledOnce, true);
-    assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true);
     assert.strictEqual(deleteItemStub.calledOnce, true);
   });
+
 });
