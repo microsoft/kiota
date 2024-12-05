@@ -139,4 +139,12 @@ export async function loadTreeView(context: vscode.ExtensionContext, treeDataPro
       await vscode.commands.executeCommand('kiota.editPaths', label, properties, category);
     })
   );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
+      const document = event.document;
+      if (document.fileName.endsWith(KIOTA_WORKSPACE_FILE)) {
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
+      }
+    })
+  );
 };
