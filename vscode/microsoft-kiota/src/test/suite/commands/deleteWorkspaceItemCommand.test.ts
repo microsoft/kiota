@@ -40,6 +40,6 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
     assert.strictEqual(showInformationMessageStub.calledOnce, true);
     assert.strictEqual(executeCommandStub.calledWith('kiota.workspace.refresh'), true);
     assert.strictEqual(deleteItemStub.calledOnce, true);
-  }).timeout(5000);
+  });
 
 });
