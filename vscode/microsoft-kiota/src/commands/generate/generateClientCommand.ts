@@ -170,7 +170,6 @@ export class GenerateClientCommand extends Command {
         if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
           await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(config.workingDirectory ?? getWorkspaceJsonDirectory()), true);
         } else {
-          await vscode.commands.executeCommand('kiota.workspace.refresh');
           await displayGenerationResults(this._openApiTreeProvider, config);
         }
       }
