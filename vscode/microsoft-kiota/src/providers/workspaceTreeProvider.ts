@@ -78,7 +78,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
 
       if (isPluginType(element.label)) {
         return Object.keys(this.workspaceContent.plugins).map(pluginName =>
-          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', PLUGINS, this.getProperties(pluginName, CLIENTS))
+          new WorkspaceTreeItem(pluginName, vscode.TreeItemCollapsibleState.None, 'item', PLUGINS, this.getProperties(pluginName, PLUGINS))
         );
       }
     }
