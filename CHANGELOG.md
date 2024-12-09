@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed a bug in generation when a referenced schema in an allOf was a primitive [#5701](https://github.com/microsoft/kiota/issues/5701).
+
+## [1.21.0] - 2024-12-05
+
+### Added
+
 - Added a notion of support experience for languages in preparation for new community implemented languages.
 
 ### Changed
@@ -1511,3 +1519,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
