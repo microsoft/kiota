@@ -682,7 +682,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
         m.Parameters.Any(IsMultipartBody);
     // for Kiota abstraction library if the code is not required for runtime purposes e.g. interfaces then the IsErasable flag is set to true
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = [
         new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.ClientConstructor,
             AbstractionsPackageName, true, "RequestAdapter"),
         new (static x => x is CodeMethod method && method.Kind is CodeMethodKind.RequestGenerator,
@@ -710,7 +710,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => (x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
                          || (x is CodeMethod method && (method.Parameters.Any(param => param.Kind is CodeParameterKind.RequestBody && param.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)) || method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
             AbstractionsPackageName, true, KiotaBuilder.UntypedNodeName),
-    };
+    ];
     private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
