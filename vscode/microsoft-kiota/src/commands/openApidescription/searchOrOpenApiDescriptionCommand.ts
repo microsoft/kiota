@@ -6,7 +6,6 @@ import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { searchSteps } from "../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
-import { updateTreeViewIcons } from "../../util";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../utilities/deep-linking";
 import { openTreeViewWithProgress } from "../../utilities/progress";
 import { Command } from "../Command";
@@ -61,10 +60,7 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
     }));
 
     if (config.descriptionPath) {
-      await openTreeViewWithProgress(async () => {
-        await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
-        await updateTreeViewIcons(treeViewId, true, false);
-      });
+      await openTreeViewWithProgress(() => this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
 
       const generateAnswer = vscode.l10n.t("Generate");
       const showGenerateMessage = this.context.globalState.get<boolean>(SHOW_MESSAGE_AFTER_API_LOAD, true);
