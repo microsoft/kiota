@@ -44,6 +44,7 @@ export class DeleteWorkspaceItemCommand extends Command {
       const result = await this.deleteItem(type, workspaceTreeItem);
       if (result) {
         const isSuccess = result.some(k => k.message.includes('removed successfully'));
+        await vscode.commands.executeCommand('kiota.workspace.refresh'); 
         if (isSuccess) {
           void vscode.window.showInformationMessage(vscode.l10n.t('{0} removed successfully.', workspaceTreeItem.label));
         } else {

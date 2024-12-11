@@ -172,6 +172,7 @@ export class GenerateClientCommand extends Command {
         } else {
           await displayGenerationResults(this._openApiTreeProvider, config);
         }
+        await vscode.commands.executeCommand('kiota.workspace.refresh'); 
       }
 
       clearDeepLinkParams();  // Clear the state after successful generation

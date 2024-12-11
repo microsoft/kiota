@@ -61,6 +61,7 @@ export class RegenerateButtonCommand extends Command {
         await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
       }
     }
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 
 }
