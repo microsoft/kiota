@@ -3,6 +3,8 @@ import * as vscode from "vscode";
 
 import { extensionId } from "../../constants";
 import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
+import { SharedService } from "../../providers/sharedService";
 import { WorkspaceTreeItem } from "../../providers/workspaceTreeProvider";
 import { isPluginType } from "../../util";
 import { exportLogsAndShowErrors } from "../../utilities/logging";
@@ -12,7 +14,9 @@ import { removeClient, removePlugin } from "./removeItem";
 export class DeleteWorkspaceItemCommand extends Command {
   constructor(
     private _context: vscode.ExtensionContext,
-    private _kiotaOutputChannel: vscode.LogOutputChannel
+    private _openApiTreeProvider: OpenApiTreeProvider,
+    private _kiotaOutputChannel: vscode.LogOutputChannel,
+    private sharedService: SharedService
   ) {
     super();
   }
@@ -33,6 +37,10 @@ export class DeleteWorkspaceItemCommand extends Command {
     );
 
     if (response?.title === yesAnswer.title) {
+      if (this.sharedService.get('clientOrPluginKey') === workspaceTreeItem.label) {
+        this._openApiTreeProvider.closeDescription();
+      }
+
       const result = await this.deleteItem(type, workspaceTreeItem);
       if (result) {
         const isSuccess = result.some(k => k.message.includes('removed successfully'));
