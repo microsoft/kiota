@@ -3,6 +3,8 @@ import * as sinon from "sinon";
 import * as vscode from 'vscode';
 
 import { DeleteWorkspaceItemCommand } from '../../../commands/deleteWorkspaceItem/deleteWorkspaceItemCommand';
+import * as treeModule from "../../../providers/openApiTreeProvider";
+import * as sharedServiceModule from '../../../providers/sharedService';
 import { WorkspaceTreeItem } from '../../../providers/workspaceTreeProvider';
 
 suite('DeleteWorkspaceItemCommand Tests', () => {
@@ -14,7 +16,9 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
   setup(() => {
     context = { extension: { packageJSON: { telemetryInstrumentationKey: 'test-key' } } } as any;
     outputChannel = { appendLine: sinon.stub() } as any;
-    command = new DeleteWorkspaceItemCommand(context, outputChannel);
+    var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
+    var stubbedSharedService = sinon.createStubInstance(sharedServiceModule.SharedService);
+    command = new DeleteWorkspaceItemCommand(context, treeProvider, outputChannel, stubbedSharedService,);
     workspaceTreeItem = { label: 'test-item', category: 'plugin' } as any;
   });
 
