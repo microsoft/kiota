@@ -353,7 +353,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                         clientNameOrPluginName
                     );
                 }
-                await updateTreeViewIcons(treeViewId, true, false);
             }
         }
     }
