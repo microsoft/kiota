@@ -77,7 +77,7 @@ public partial class KiotaBuilder
                 Directory.Delete(subDir, true);
             await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
-                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
+                                            .Where(static x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
     }
