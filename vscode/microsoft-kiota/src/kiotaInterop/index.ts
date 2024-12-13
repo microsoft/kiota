@@ -24,6 +24,7 @@ export async function connectToKiota<T>(context: vscode.ExtensionContext, callba
     try {
         return await callback(connection);
     } catch (error) {
+        console.warn(error);
         const errorMessage = (error as { data?: { message: string } })?.data?.message
             || 'An unknown error occurred';
         vscode.window.showErrorMessage(errorMessage);
@@ -248,6 +249,17 @@ export interface GenerationConfiguration {
     usesBackingStore: boolean;
     pluginTypes: KiotaPluginType[];
     operation: ConsumerOperation;
+    pluginAuthConfiguration?: PluginAuthConfiguration;
+}
+
+export interface PluginAuthConfiguration {
+    referenceId: string;
+    authType: PluginAuthType;
+}
+
+enum PluginAuthType {
+    oAuthPluginVault = "OAuthPluginVault",
+    apiKeyPluginVault = "ApiKeyPluginVault"
 }
 
 interface WorkspaceObjectProperties {
@@ -269,6 +281,8 @@ export interface ClientObjectProperties extends WorkspaceObjectProperties {
 
 export interface PluginObjectProperties extends WorkspaceObjectProperties {
     types: string[];
+    authType?: PluginAuthType,
+    authReferenceId?: string;
 }
 
 export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;
