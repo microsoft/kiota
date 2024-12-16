@@ -74,7 +74,7 @@ anyio==4.7.0 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
-attrs==24.2.0 ; python_version >= '3.7'
+attrs==24.3.0 ; python_version >= '3.7'
 
 azure-core==1.32.0 ; python_version >= '3.7'
 
