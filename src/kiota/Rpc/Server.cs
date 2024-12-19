@@ -184,7 +184,9 @@ internal partial class Server : IServer
         }
         return logger.LogEntries;
     }
-    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns, string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules, ConsumerOperation operation, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns,
+        string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules,
+        PluginAuthConfiguration? pluginAuthInformation, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var globalLogger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -206,6 +208,7 @@ internal partial class Server : IServer
             configuration.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
         configuration.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.OutputPath));
+        configuration.PluginAuthInformation ??= pluginAuthInformation;
         try
         {
             using var fileLogger = new FileLogLogger<KiotaBuilder>(configuration.OutputPath, LogLevel.Warning);
