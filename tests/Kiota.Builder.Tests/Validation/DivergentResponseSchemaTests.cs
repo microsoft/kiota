@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Reader;
+using Microsoft.OpenApi.Readers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
@@ -23,6 +24,7 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
@@ -44,12 +46,14 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 type: string
                 format: int32
         '201':
+          description: some description
           content:
             application/json:
               schema:
@@ -71,12 +75,14 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 type: string
                 format: int32
         '2XX':
+          description: some description
           content:
             application/json:
               schema:
@@ -91,6 +97,8 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
         settings.RuleSet.Add(typeof(DivergentResponseSchema), [rule]);
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
         return result.Diagnostic;
     }
