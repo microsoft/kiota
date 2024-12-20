@@ -96,7 +96,7 @@ paths:
         var rule = new DivergentResponseSchema(new());
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(DivergentResponseSchema), [rule]);
+        settings.RuleSet.Add(typeof(OpenApiOperation), [rule]);
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);

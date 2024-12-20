@@ -175,7 +175,7 @@ paths:
         var rule = new MissingDiscriminator(new());
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(MissingDiscriminator), [rule]);
+        settings.RuleSet.Add(typeof(OpenApiDocument), [rule]);
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);

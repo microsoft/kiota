@@ -54,7 +54,7 @@ paths:
         var rule = new NoServerEntry();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(NoServerEntry), [rule]);
+        settings.RuleSet.Add(typeof(OpenApiDocument), [rule]);
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
