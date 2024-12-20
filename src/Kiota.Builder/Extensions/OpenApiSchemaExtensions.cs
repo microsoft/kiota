@@ -80,7 +80,7 @@ public static class OpenApiSchemaExtensions
         var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf)
                                                                 .Where(static x => x.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true))
                                                                 // the next line ensures the meaningful schema are objects as it won't make sense inheriting from a primitive despite it being meaningful.
-                                                                .Where(static x => string.IsNullOrEmpty(x.Reference?.Id) || x.Type is null || !x.Type.HasValue || (x.Type.Value ^ JsonSchemaType.Object) is JsonSchemaType.Object)
+                                                                .Where(static x => string.IsNullOrEmpty(x.Reference?.Id) || x.Type is null || !x.Type.HasValue || (x.Type.Value & JsonSchemaType.Object) is JsonSchemaType.Object)
                                                                 .ToArray();
         var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true);
         return meaningfulMemberSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
