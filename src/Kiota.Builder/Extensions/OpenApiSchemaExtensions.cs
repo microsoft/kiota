@@ -309,7 +309,7 @@ public static class OpenApiSchemaExtensions
     internal static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(this OpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
     {
         if (schema == null)
-            return Enumerable.Empty<KeyValuePair<string, string>>();
+            return [];
         if (!(schema.Discriminator?.Mapping?.Any() ?? false))
             if (schema.OneOf.Any())
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
@@ -322,9 +322,9 @@ public static class OpenApiSchemaExtensions
                 return GetAllInheritanceSchemaReferences(schema.Reference.Id, inheritanceIndex)
                            .Where(static x => !string.IsNullOrEmpty(x))
                            .Select(x => KeyValuePair.Create(x, x))
-                           .Union(new[] { KeyValuePair.Create(schema.Reference.Id, schema.Reference.Id) });
+                           .Union([KeyValuePair.Create(schema.Reference.Id, schema.Reference.Id)]);
             else
-                return Enumerable.Empty<KeyValuePair<string, string>>();
+                return [];
 
         return schema.Discriminator
                 .Mapping;
