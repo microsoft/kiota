@@ -2242,7 +2242,7 @@ public partial class KiotaBuilder
         }
         // the new version of OAI.net does not mutate the source schema anymore when resolving references which is a positive thing but is challenging for naming.
         var schemaClone = new OpenApiSchema(discriminatorSchema);
-        schemaClone.Reference ??= new OpenApiReference { Id = referenceId };
+        schemaClone.Reference ??= new OpenApiReference { Id = componentKey, Type = ReferenceType.Schema };
         // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator. 
         if (CreateModelDeclarations(currentNode, schemaClone, currentOperation, GetShortestNamespace(currentNamespace, schemaClone), string.Empty, null, string.Empty, false, true) is not CodeType result)
         {
