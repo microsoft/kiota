@@ -796,8 +796,8 @@ components:
         try
         {
             // Validate the sliced openapi
-            var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
-            var readResult = await OpenApiDocument.LoadAsync(slicedApiContent);
+            using var stream = File.Open(Path.Combine(outputDirectory, OpenApiFileName), FileMode.Open);
+            var readResult = await OpenApiDocument.LoadAsync(stream);
             assertions(readResult.Document, readResult.Diagnostic);
         }
         finally
