@@ -92,6 +92,6 @@ paths:
         var settings = new OpenApiReaderSettings();
         settings.RuleSet.Add(typeof(DivergentResponseSchema), [rule]);
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
-        return result.OpenApiDiagnostic;
+        return result.Diagnostic;
     }
 }

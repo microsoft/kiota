@@ -10,10 +10,10 @@ namespace Kiota.Builder.Tests.Validation;
 
 public class NoContentWithBodyTests
 {
-    [Fact]
-    public async Task AddsAWarningWhen204WithBody()
-    {
-        var documentTxt = @"openapi: 3.0.1
+  [Fact]
+  public async Task AddsAWarningWhen204WithBody()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -25,13 +25,13 @@ paths:
         '204':
           content:
             application/json:";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Single(diagnostic.Warnings);
-    }
-    [Fact]
-    public async Task DoesntAddAWarningWhen204WithNoBody()
-    {
-        var documentTxt = @"openapi: 3.0.1
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Single(diagnostic.Warnings);
+  }
+  [Fact]
+  public async Task DoesntAddAWarningWhen204WithNoBody()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -43,13 +43,13 @@ paths:
     get:
       responses:
         '204':";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Empty(diagnostic.Warnings);
-    }
-    [Fact]
-    public async Task DoesntAddAWarningWhen200WithBody()
-    {
-        var documentTxt = @"openapi: 3.0.1
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Empty(diagnostic.Warnings);
+  }
+  [Fact]
+  public async Task DoesntAddAWarningWhen200WithBody()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -65,16 +65,16 @@ paths:
         '200':
           content:
             application/json:";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Empty(diagnostic.Warnings);
-    }
-    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
-    {
-        var rule = new NoContentWithBody();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
-        var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(NoContentWithBody), [rule]);
-        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
-        return result.OpenApiDiagnostic;
-    }
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Empty(diagnostic.Warnings);
+  }
+  private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+  {
+    var rule = new NoContentWithBody();
+    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+    var settings = new OpenApiReaderSettings();
+    settings.RuleSet.Add(typeof(NoContentWithBody), [rule]);
+    var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+    return result.Diagnostic;
+  }
 }

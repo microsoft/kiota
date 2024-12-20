@@ -10,10 +10,10 @@ namespace Kiota.Builder.Tests.Validation;
 
 public class KnownAndNotSupportedFormatsTests
 {
-    [Fact]
-    public async Task AddsAWarningWhenKnownUnsupportedFormat()
-    {
-        var documentTxt = @"openapi: 3.0.1
+  [Fact]
+  public async Task AddsAWarningWhenKnownUnsupportedFormat()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -28,13 +28,13 @@ paths:
               schema:
                 type: string
                 format: email";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Single(diagnostic.Warnings);
-    }
-    [Fact]
-    public async Task DoesntAddAWarningWhenSupportedFormat()
-    {
-        var documentTxt = @"openapi: 3.0.1
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Single(diagnostic.Warnings);
+  }
+  [Fact]
+  public async Task DoesntAddAWarningWhenSupportedFormat()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -49,13 +49,13 @@ paths:
               schema:
                 type: string
                 format: uuid";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Empty(diagnostic.Warnings);
-    }
-    [Fact]
-    public async Task DoesntFailWhenNoFormat()
-    {
-        var documentTxt = @"openapi: 3.0.1
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Empty(diagnostic.Warnings);
+  }
+  [Fact]
+  public async Task DoesntFailWhenNoFormat()
+  {
+    var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -69,16 +69,16 @@ paths:
             application/json:
               schema:
                 type: string";
-        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Empty(diagnostic.Warnings);
-    }
-    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
-    {
-        var rule = new KnownAndNotSupportedFormats();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
-        var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(KnownAndNotSupportedFormats), [rule]);
-        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
-        return result.OpenApiDiagnostic;
-    }
+    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+    Assert.Empty(diagnostic.Warnings);
+  }
+  private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+  {
+    var rule = new KnownAndNotSupportedFormats();
+    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+    var settings = new OpenApiReaderSettings();
+    settings.RuleSet.Add(typeof(KnownAndNotSupportedFormats), [rule]);
+    var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+    return result.Diagnostic;
+  }
 }

@@ -135,25 +135,24 @@ internal class OpenApiDocumentDownloadService
         {
             // couldn't parse the URL, it's probably a local file
         }
-        //TODO update to remove the unknown format when the overload is available
-        var readResult = await OpenApiDocument.LoadAsync(input, "unknown", settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
         if (generating)
-            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
+            foreach (var warning in readResult.Diagnostic.Warnings)
                 Logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.OpenApiDiagnostic.Errors.Any())
+        if (readResult.Diagnostic.Errors.Any())
         {
-            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
-            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
+            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
+            foreach (var parsingError in readResult.Diagnostic.Errors)
             {
                 Logger.LogError("OpenAPI error: {Pointer} - {Message}", parsingError.Pointer, parsingError.Message);
             }
         }
         else
         {
-            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
+            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
         }
 
-        return readResult.OpenApiDocument;
+        return readResult.Document;
     }
 }

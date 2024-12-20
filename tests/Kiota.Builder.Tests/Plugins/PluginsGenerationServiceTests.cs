@@ -263,8 +263,8 @@ components:
         // Validate the original file.
         using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
         var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
-        var originalDocument = originalResult.OpenApiDocument;
-        Assert.Empty(originalResult.OpenApiDiagnostic.Errors);
+        var originalDocument = originalResult.Document;
+        Assert.Empty(originalResult.Diagnostic.Errors);
 
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
@@ -281,8 +281,8 @@ components:
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
         var resultResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
-        var resultDocument = resultResult.OpenApiDocument;
-        Assert.Empty(resultResult.OpenApiDiagnostic.Errors);
+        var resultDocument = resultResult.Document;
+        Assert.Empty(resultResult.Diagnostic.Errors);
 
         // Assertions / validations
         Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
@@ -798,7 +798,7 @@ components:
             // Validate the sliced openapi
             var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
             var readResult = await OpenApiDocument.LoadAsync(slicedApiContent);
-            assertions(readResult.OpenApiDocument, readResult.OpenApiDiagnostic);
+            assertions(readResult.Document, readResult.Diagnostic);
         }
         finally
         {
