@@ -113,7 +113,7 @@ export class MultiStepInput {
                 input.title = title;
                 input.step = step;
                 input.totalSteps = totalSteps;
-                input.ignoreFocusOut = ignoreFocusOut ?? false;
+                input.ignoreFocusOut = ignoreFocusOut ?? true;
                 input.placeholder = placeholder;
                 input.items = items;
                 input.buttons = [
@@ -160,7 +160,7 @@ export class MultiStepInput {
                 input.totalSteps = totalSteps;
                 input.value = value || '';
                 input.prompt = prompt;
-                input.ignoreFocusOut = ignoreFocusOut ?? false;
+                input.ignoreFocusOut = ignoreFocusOut ?? true;
                 input.placeholder = placeholder;
                 input.buttons = [
                     ...(this.steps.length > 1 ? [QuickInputButtons.Back] : []),

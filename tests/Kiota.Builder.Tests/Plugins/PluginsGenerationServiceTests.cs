@@ -171,6 +171,9 @@ paths:
   /test:
     get:
       description: description for test path
+      externalDocs:
+        description: external docs for test path
+        url: http://localhost/test
       x-random-extension: true
       responses:
         '200':
@@ -193,6 +196,10 @@ paths:
       responses:
         '200':
           description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.message'
         '500':
           description: api error response
 components:
@@ -204,13 +211,24 @@ components:
       type: object
       properties:
         id:
-          type: string
+          anyOf:
+          - type: string
+          - type: integer
         '@odata.type':
-          type: string";
+          type: string
+    microsoft.graph.message:
+      allOf:
+      - $ref: '#/components/schemas/microsoft.graph.entity'
+      - type: object
+        title: message
+        properties:
+          subject:
+            type: string
+          body:
+            type: string";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -245,33 +263,42 @@ components:
         // Validate the original file.
         using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
         var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var originalDocument = originalResult.OpenApiDocument;
         Assert.Empty(originalResult.OpenApiDiagnostic.Errors);
 
-        Assert.Equal(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
-        Assert.Equal(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
-        Assert.Single(originalResult.OpenApiDocument.Components.Schemas);// one schema originally
-        Assert.Single(originalResult.OpenApiDocument.Extensions); // single unsupported extension at root
-        Assert.Equal(2, originalResult.OpenApiDocument.Paths.Count); // document has only two paths
-        Assert.Equal(2, originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
-        Assert.Equal(2, originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
+        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
+        Assert.NotNull(originalDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // existing external docs
+        Assert.Equal(2, originalDocument.Components.Schemas.Count);// one schema originally
+        Assert.Single(originalDocument.Extensions); // single unsupported extension at root
+        Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
+        Assert.Equal(2, originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
+        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
+        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
         var resultResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var resultDocument = resultResult.OpenApiDocument;
         Assert.Empty(resultResult.OpenApiDiagnostic.Errors);
 
         // Assertions / validations
-        Assert.Empty(resultResult.OpenApiDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
-        Assert.Empty(resultResult.OpenApiDocument.Extensions); // no extension at root (unsupported extension is removed)
-        Assert.Equal(2, resultResult.OpenApiDocument.Paths.Count); // document has only two paths
-        Assert.Equal(originalResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count, resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
-        Assert.NotEmpty(resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
-        Assert.Empty(resultResult.OpenApiDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
-        Assert.Equal(originalResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count, resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
-        Assert.NotEmpty(resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
-        Assert.Single(resultResult.OpenApiDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
+        Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
+        Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
+        Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
+        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // We removed the error response
+        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
+        Assert.Null(resultDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // external docs are removed
+        Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
+        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
+        Assert.Equal(JsonSchemaType.String, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type.Value);
+        Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
     }
 
     #region Security
@@ -745,7 +772,6 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration

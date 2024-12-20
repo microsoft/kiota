@@ -567,6 +567,32 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.False(schema.IsInherited());
         Assert.False(schema.IsIntersection());
+
+        schema = new OpenApiSchema
+        {
+            Title = "Trader Id",
+            AllOf = new List<OpenApiSchema> {
+                new ()
+                {
+                    Title = "UserId",
+                    Description = "unique identifier",
+                    Type = JsonSchemaType.String,
+                    Pattern = "^[1-9][0-9]*$",
+                    Example = "1323232",
+                    Reference = new OpenApiReference
+                    {
+                        Id = "UserId" // This property makes the schema "meaningful"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "TraderId" // This property makes the schema "meaningful"
+            }
+        };
+
+        Assert.False(schema.IsInherited());
+        Assert.False(schema.IsIntersection());
     }
     [Fact]
     public void MergesIntersection()

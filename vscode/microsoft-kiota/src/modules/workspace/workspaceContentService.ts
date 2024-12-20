@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { WorkspaceContent } from ".";
-import { KIOTA_WORKSPACE_FILE } from "../../constants";
 import { getWorkspaceJsonPath } from '../../util';
 
 class WorkspaceContentService {
@@ -15,11 +14,7 @@ class WorkspaceContentService {
       return;
     }
     try {
-      const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
-      if (!workspaceJson) {
-        throw new Error('Workspace file not found');
-      }
-      const content = workspaceJson.getText();
+      const content = await fs.promises.readFile(getWorkspaceJsonPath(), 'utf-8');
       return JSON.parse(content);
     } catch (error) {
       console.error('Error loading workspace.json:', error);

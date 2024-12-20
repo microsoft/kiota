@@ -11,6 +11,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
@@ -60,7 +61,10 @@ public partial class PluginsGenerationService
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
         var descriptionWriter = new OpenApiYamlWriter(fileWriter);
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
-        trimmedPluginDocument = InlineRequestBodyAllOf(trimmedPluginDocument);
+        PrepareDescriptionForCopilot(trimmedPluginDocument);
+        // trimming a second time to remove any components that are no longer used after the inlining
+        trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
+        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title[..^9]; // removing the second ` - Subset` suffix from the title
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         descriptionWriter.Flush();
 
@@ -105,124 +109,191 @@ public partial class PluginsGenerationService
         }
     }
 
-    private static OpenApiDocument InlineRequestBodyAllOf(OpenApiDocument openApiDocument)
+    private sealed class MappingCleanupVisitor(OpenApiDocument openApiDocument) : OpenApiVisitorBase
     {
-        if (openApiDocument.Paths is null) return openApiDocument;
-        var contentItems = openApiDocument.Paths.Values.Where(static x => x?.Operations is not null)
-            .SelectMany(static x => x.Operations.Values.Where(static x => x?.RequestBody?.Content is not null)
-                .SelectMany(static x => x.RequestBody!.Content.Values));
-        foreach (var contentItem in contentItems)
+        private readonly OpenApiDocument _document = openApiDocument;
+
+        public override void Visit(OpenApiSchema schema)
         {
-            var schema = contentItem.Schema;
-            // Merge all schemas in allOf `schema.MergeAllOfSchemaEntries()` doesn't seem to do the right thing.
-            schema = MergeAllOfInSchema(schema);
-            schema = SelectFirstAnyOfOrOneOf(schema);
-            contentItem.Schema = schema;
+            if (schema.Discriminator?.Mapping is null)
+                return;
+            var keysToRemove = schema.Discriminator.Mapping.Where(x => _document.Components?.Schemas is null || !_document.Components.Schemas.ContainsKey(x.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1])).Select(static x => x.Key).ToArray();
+            foreach (var key in keysToRemove)
+                schema.Discriminator.Mapping.Remove(key);
+            base.Visit(schema);
+        }
+    }
+
+    private sealed class AllOfPropertiesRetrievalVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiSchema schema)
+        {
+            if (schema.AllOf is not { Count: > 0 })
+                return;
+            var allPropertiesToAdd = GetAllProperties(schema).ToArray();
+            foreach (var allOfEntry in schema.AllOf)
+                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, schema, false, false, false);
+            foreach (var (key, value) in allPropertiesToAdd)
+                schema.Properties.TryAdd(key, value);
+            schema.AllOf.Clear();
+            base.Visit(schema);
         }
 
-        return openApiDocument;
-
-        static OpenApiSchema? SelectFirstAnyOfOrOneOf(OpenApiSchema? schema)
+        private static IEnumerable<KeyValuePair<string, OpenApiSchema>> GetAllProperties(OpenApiSchema schema)
         {
-            if (schema?.AnyOf is not { Count: > 0 } && schema?.OneOf is not { Count: > 0 }) return schema;
-            OpenApiSchema newSchema;
+            return schema.AllOf is not null ?
+                schema.AllOf.SelectMany(static x => GetAllProperties(x)).Union(schema.Properties) :
+                schema.Properties;
+        }
+    }
+
+    private sealed class SelectFirstAnyOneOfVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiSchema schema)
+        {
             if (schema.AnyOf is { Count: > 0 })
             {
-                newSchema = schema.AnyOf[0];
+                CopyRelevantInformation(schema.AnyOf[0], schema);
+                schema.AnyOf.Clear();
             }
-            else if (schema.OneOf is { Count: > 0 })
+            if (schema.OneOf is { Count: > 0 })
             {
-                newSchema = schema.OneOf[0];
+                CopyRelevantInformation(schema.OneOf[0], schema);
+                schema.OneOf.Clear();
             }
-            else
-            {
-                newSchema = schema;
-            }
-            return newSchema;
+            base.Visit(schema);
         }
-        static OpenApiSchema? MergeAllOfInSchema(OpenApiSchema? schema)
+        internal static void CopyRelevantInformation(OpenApiSchema source, OpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
         {
-            if (schema?.AllOf is not { Count: > 0 }) return schema;
-            var newSchema = new OpenApiSchema();
-            foreach (var apiSchema in schema.AllOf)
-            {
-                if (apiSchema.Title is not null) newSchema.Title = apiSchema.Title;
-                if (apiSchema.Type is not null)
-                {
-                    if (newSchema.Type is not null && newSchema.Type.Value != apiSchema.Type.Value)
-                    {
-                        throw new InvalidOperationException(
-                            $"The schemas in allOf cannot have different types: '{newSchema.Type}' and '{apiSchema.Type}'.");
-                    }
-                    newSchema.Type = apiSchema.Type;
-                }
-                if (apiSchema.Format is not null) newSchema.Format = apiSchema.Format;
-                if (!string.IsNullOrEmpty(apiSchema.Description)) newSchema.Description = apiSchema.Description;
-                if (apiSchema.Maximum is not null) newSchema.Maximum = apiSchema.Maximum;
-                if (apiSchema.ExclusiveMaximum is not null) newSchema.ExclusiveMaximum = apiSchema.ExclusiveMaximum;
-                if (apiSchema.Minimum is not null) newSchema.Minimum = apiSchema.Minimum;
-                if (apiSchema.ExclusiveMinimum is not null) newSchema.ExclusiveMinimum = apiSchema.ExclusiveMinimum;
-                if (apiSchema.MaxLength is not null) newSchema.MaxLength = apiSchema.MaxLength;
-                if (apiSchema.MinLength is not null) newSchema.MinLength = apiSchema.MinLength;
-                if (!string.IsNullOrEmpty(apiSchema.Pattern)) newSchema.Pattern = apiSchema.Pattern;
-                if (apiSchema.MultipleOf is not null) newSchema.MultipleOf = apiSchema.MultipleOf;
-                if (apiSchema.Default is not null) newSchema.Default = apiSchema.Default;
-                if (apiSchema.ReadOnly) newSchema.ReadOnly = apiSchema.ReadOnly;
-                if (apiSchema.WriteOnly) newSchema.WriteOnly = apiSchema.WriteOnly;
-                if (apiSchema.Not is not null) newSchema.Not = apiSchema.Not;
-                if (apiSchema.Required is { Count: > 0 })
-                {
-                    foreach (var r in apiSchema.Required.Where(static r => !string.IsNullOrEmpty(r)))
-                    {
-                        newSchema.Required.Add(r);
-                    }
-                }
-                if (apiSchema.Items is not null) newSchema.Items = apiSchema.Items;
-                if (apiSchema.MaxItems is not null) newSchema.MaxItems = apiSchema.MaxItems;
-                if (apiSchema.MinItems is not null) newSchema.MinItems = apiSchema.MinItems;
-                if (apiSchema.UniqueItems is not null) newSchema.UniqueItems = apiSchema.UniqueItems;
-                if (apiSchema.Properties is not null)
-                {
-                    foreach (var property in apiSchema.Properties)
-                    {
-                        newSchema.Properties.TryAdd(property.Key, property.Value);
-                    }
-                }
-                if (apiSchema.MaxProperties is not null) newSchema.MaxProperties = apiSchema.MaxProperties;
-                if (apiSchema.MinProperties is not null) newSchema.MinProperties = apiSchema.MinProperties;
-                if (apiSchema.AdditionalPropertiesAllowed) newSchema.AdditionalPropertiesAllowed = true;
-                if (apiSchema.AdditionalProperties is not null) newSchema.AdditionalProperties = apiSchema.AdditionalProperties;
-                if (apiSchema.Discriminator is not null) newSchema.Discriminator = apiSchema.Discriminator;
-                if (apiSchema.Example is not null) newSchema.Example = apiSchema.Example;
-                if (apiSchema.Enum is not null)
-                {
-                    foreach (var enumValue in apiSchema.Enum)
-                    {
-                        newSchema.Enum.Add(enumValue);
-                    }
-                }
-                if (apiSchema.Nullable) newSchema.Nullable = apiSchema.Nullable;
-                if (apiSchema.ExternalDocs is not null) newSchema.ExternalDocs = apiSchema.ExternalDocs;
-                if (apiSchema.Deprecated) newSchema.Deprecated = apiSchema.Deprecated;
-                if (apiSchema.Xml is not null) newSchema.Xml = apiSchema.Xml;
-                if (apiSchema.Extensions is not null)
-                {
-                    foreach (var extension in apiSchema.Extensions)
-                    {
-                        newSchema.Extensions.Add(extension.Key, extension.Value);
-                    }
-                }
-                if (apiSchema.Reference is not null) newSchema.Reference = apiSchema.Reference;
-                if (apiSchema.Annotations is not null)
-                {
-                    foreach (var annotation in apiSchema.Annotations)
-                    {
-                        newSchema.Annotations.Add(annotation.Key, annotation.Value);
-                    }
-                }
-            }
-            return newSchema;
+            if (source.Type is not null && source.Type.HasValue)
+                target.Type = source.Type;
+            if (!string.IsNullOrEmpty(source.Format))
+                target.Format = source.Format;
+            if (source.Items is not null)
+                target.Items = source.Items;
+            if (source.Properties is not null && includeProperties)
+                target.Properties = new Dictionary<string, OpenApiSchema>(source.Properties);
+            if (source.Required is not null)
+                target.Required = new HashSet<string>(source.Required);
+            if (source.AdditionalProperties is not null)
+                target.AdditionalProperties = source.AdditionalProperties;
+            if (source.Enum is not null)
+                target.Enum = [.. source.Enum];
+            if (source.ExclusiveMaximum is not null)
+                target.ExclusiveMaximum = source.ExclusiveMaximum;
+            if (source.ExclusiveMinimum is not null)
+                target.ExclusiveMinimum = source.ExclusiveMinimum;
+            if (source.Maximum is not null)
+                target.Maximum = source.Maximum;
+            if (source.Minimum is not null)
+                target.Minimum = source.Minimum;
+            if (source.MaxItems is not null)
+                target.MaxItems = source.MaxItems;
+            if (source.MinItems is not null)
+                target.MinItems = source.MinItems;
+            if (source.MaxLength is not null)
+                target.MaxLength = source.MaxLength;
+            if (source.MinLength is not null)
+                target.MinLength = source.MinLength;
+            if (source.Pattern is not null)
+                target.Pattern = source.Pattern;
+            if (source.MaxProperties is not null)
+                target.MaxProperties = source.MaxProperties;
+            if (source.MinProperties is not null)
+                target.MinProperties = source.MinProperties;
+            if (source.UniqueItems is not null)
+                target.UniqueItems = source.UniqueItems;
+            if (source.Nullable)
+                target.Nullable = true;
+            if (source.ReadOnly)
+                target.ReadOnly = true;
+            if (source.WriteOnly)
+                target.WriteOnly = true;
+            if (source.Deprecated)
+                target.Deprecated = true;
+            if (source.Xml is not null)
+                target.Xml = source.Xml;
+            if (source.ExternalDocs is not null)
+                target.ExternalDocs = source.ExternalDocs;
+            if (source.Example is not null)
+                target.Example = source.Example;
+            if (source.Extensions is not null)
+                target.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
+            if (source.Discriminator is not null && includeDiscriminator)
+                target.Discriminator = source.Discriminator;
+            if (!string.IsNullOrEmpty(source.Description))
+                target.Description = source.Description;
+            if (!string.IsNullOrEmpty(source.Title))
+                target.Title = source.Title;
+            if (source.Default is not null)
+                target.Default = source.Default;
+            if (source.Reference is not null && includeReference)
+                target.Reference = source.Reference;
         }
+    }
+
+    private sealed class ErrorResponsesCleanupVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiOperation operation)
+        {
+            if (operation.Responses is null)
+                return;
+            var errorResponses = operation.Responses.Where(static x => x.Key.StartsWith('4') || x.Key.StartsWith('5')).ToArray();
+            foreach (var (key, value) in errorResponses)
+                operation.Responses.Remove(key);
+            base.Visit(operation);
+        }
+    }
+
+    private sealed class ExternalDocumentationCleanupVisitor : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiDocument doc)
+        {
+            if (doc.ExternalDocs is not null)
+                doc.ExternalDocs = null;
+            base.Visit(doc);
+        }
+        public override void Visit(OpenApiOperation operation)
+        {
+            if (operation.ExternalDocs is not null)
+                operation.ExternalDocs = null;
+            base.Visit(operation);
+        }
+        public override void Visit(OpenApiSchema schema)
+        {
+            if (schema.ExternalDocs is not null)
+                schema.ExternalDocs = null;
+            base.Visit(schema);
+        }
+        public override void Visit(OpenApiTag tag)
+        {
+            if (tag.ExternalDocs is not null)
+                tag.ExternalDocs = null;
+            base.Visit(tag);
+        }
+    }
+
+    private static void PrepareDescriptionForCopilot(OpenApiDocument document)
+    {
+        var externalDocumentationCleanupVisitor = new ExternalDocumentationCleanupVisitor();
+        var externalDocumentationCleanupWalker = new OpenApiWalker(externalDocumentationCleanupVisitor);
+        externalDocumentationCleanupWalker.Walk(document);
+
+        var errorResponsesCleanupVisitor = new ErrorResponsesCleanupVisitor();
+        var errorResponsesCleanupWalker = new OpenApiWalker(errorResponsesCleanupVisitor);
+        errorResponsesCleanupWalker.Walk(document);
+
+        var selectFirstAnyOneOfVisitor = new SelectFirstAnyOneOfVisitor();
+        var selectFirstAnyOneOfWalker = new OpenApiWalker(selectFirstAnyOneOfVisitor);
+        selectFirstAnyOneOfWalker.Walk(document);
+
+        var allOfPropertiesRetrievalVisitor = new AllOfPropertiesRetrievalVisitor();
+        var allOfPropertiesRetrievalWalker = new OpenApiWalker(allOfPropertiesRetrievalVisitor);
+        allOfPropertiesRetrievalWalker.Walk(document);
+
+        var mappingCleanupVisitor = new MappingCleanupVisitor(document);
+        var mappingCleanupWalker = new OpenApiWalker(mappingCleanupVisitor);
+        mappingCleanupWalker.Walk(document);
     }
 
     [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]

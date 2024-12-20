@@ -81,7 +81,7 @@ public partial class KiotaBuilder
                 Directory.Delete(subDir, true);
             await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
-                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
+                                            .Where(static x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
     }
@@ -1903,6 +1903,16 @@ public partial class KiotaBuilder
             {
                 // multiple allOf entries that do not translate to inheritance
                 return createdClass;
+            }
+            else if (schema.MergeInclusiveUnionSchemaEntries() is { } iUMergedSchema &&
+                AddModelClass(currentNode, iUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uICreatedClass)
+            {
+                return uICreatedClass;
+            }
+            else if (schema.MergeExclusiveUnionSchemaEntries() is { } eUMergedSchema &&
+                AddModelClass(currentNode, eUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uECreatedClass)
+            {
+                return uECreatedClass;
             }
             return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom);
         }

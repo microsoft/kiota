@@ -4,12 +4,16 @@ param (
     $version,
     [switch]
     [bool]
-    $createNotes
+    $createNotes,
+    [string]
+    $changelogPath = ""
 )
 
 $version = $version.TrimStart("v")
 
-$changelogPath = Join-Path -Path $PSScriptRoot -ChildPath "../CHANGELOG.md"
+if ($changelogPath -eq "") {
+    $changelogPath = Join-Path -Path $PSScriptRoot -ChildPath "../CHANGELOG.md"
+}
 
 $changeLogContent = Get-Content $changelogPath -Raw
 $headerLine = "## [$version]"
