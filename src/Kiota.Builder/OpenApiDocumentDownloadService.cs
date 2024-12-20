@@ -17,6 +17,7 @@ using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Reader;
+using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
@@ -30,6 +31,8 @@ internal class OpenApiDocumentDownloadService
         ArgumentNullException.ThrowIfNull(logger);
         HttpClient = httpClient;
         Logger = logger;
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
     }
     private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
     {
