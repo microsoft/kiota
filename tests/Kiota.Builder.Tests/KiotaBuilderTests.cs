@@ -8619,9 +8619,264 @@ components:
         Assert.NotNull(oneProperty);
 
         var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
-        Assert.NotNull(withObjectClass);
+        Assert.NotNull(withoutObjectClass);
         var twoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
         Assert.NotNull(twoProperty);
+    }
+
+    [Fact]
+    public async Task ExclusiveUnionInheritanceEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating oneOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      description: "ExampleWithSingleOneOfWithTypeObject"
+      type: object
+      oneOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+
+    ExampleWithSingleOneOfWithoutTypeObject:
+      description: "ExampleWithSingleOneOfWithoutTypeObject"
+      oneOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    ComponentCommon:
+      description: "ComponentCommon"
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        common:
+          type: string
+
+    Component1:
+      description: "Component1"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - type: object
+          description: "Component1Inner"
+          properties:
+            one:
+              type: string
+      properties:
+        anotherOne:
+          type: string
+
+    Component2:
+      description: "Component2"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - type: object
+          description: "Component2Inner"
+          properties:
+            two:
+              type: string
+      properties:
+        anotherTwo:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify that all three classes referenced by the discriminator inherit from baseDirectoryObject
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        // ExampleWithSingleOneOfWithTypeObject inherits from ComponentCommon
+        Assert.Equal("ComponentCommon", withObjectClass.BaseClass?.Name);
+        var withObjectClassOneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(withObjectClassOneProperty);
+        var withObjectClassAnotherOneProperty = withObjectClass.FindChildByName<CodeProperty>("anotherOne", false);
+        Assert.NotNull(withObjectClassAnotherOneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withoutObjectClass);
+        // Component2 inherits from ComponentCommon
+        Assert.Equal("ComponentCommon", withoutObjectClass.BaseClass?.Name);
+        var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(withoutObjectClassTwoProperty);
+        var withoutObjectClassClassAnotherTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("anotherTwo", false);
+        Assert.NotNull(withoutObjectClassClassAnotherTwoProperty);
+    }
+
+    [Fact]
+    public async Task ExclusiveUnionIntersectionEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating oneOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      description: "ExampleWithSingleOneOfWithTypeObject"
+      type: object
+      oneOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+
+    ExampleWithSingleOneOfWithoutTypeObject:
+      description: "ExampleWithSingleOneOfWithoutTypeObject"
+      oneOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    ComponentCommon:
+      description: "ComponentCommon"
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        common:
+          type: string
+
+    ComponentCommon2:
+      description: "ComponentCommon2"
+      type: object
+      properties:
+        common2:
+          type: string
+
+    Component1:
+      description: "Component1"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - $ref: "#/components/schemas/ComponentCommon2"
+        - type: object
+          description: "Component1Self"
+          properties:
+            one:
+              type: string
+      properties:
+        anotherOne:
+          type: string
+
+    Component2:
+      description: "Component2"
+      type: object
+      required:
+        - objectType
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - $ref: "#/components/schemas/ComponentCommon2"
+        - type: object
+          description: "Component2Self"
+          properties:
+            two:
+              type: string
+      properties:
+        anotherTwo:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify both scenarios have all the properties available from all schemas
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        var withObjectClassOneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(withObjectClassOneProperty);
+        var withObjectClassCommonProperty = withObjectClass.FindChildByName<CodeProperty>("common", false);
+        Assert.NotNull(withObjectClassCommonProperty);
+        var withObjectClassCommon2Property = withObjectClass.FindChildByName<CodeProperty>("common2", false);
+        Assert.NotNull(withObjectClassCommon2Property);
+        var withObjectClassObjectTypeProperty = withObjectClass.FindChildByName<CodeProperty>("objectType", false);
+        Assert.NotNull(withObjectClassObjectTypeProperty);
+        var withObjectClassAnotherOneProperty = withObjectClass.FindChildByName<CodeProperty>("anotherOne", false);
+        Assert.NotNull(withObjectClassAnotherOneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withoutObjectClass);
+        var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(withoutObjectClassTwoProperty);
+        var withoutObjectClassCommonProperty = withoutObjectClass.FindChildByName<CodeProperty>("common", false);
+        Assert.NotNull(withoutObjectClassCommonProperty );
+        var withoutObjectClassCommon2Property = withoutObjectClass.FindChildByName<CodeProperty>("common2", false);
+        Assert.NotNull(withoutObjectClassCommon2Property);
+        var withoutObjectClassObjectTypeProperty = withoutObjectClass.FindChildByName<CodeProperty>("objectType", false);
+        Assert.NotNull(withoutObjectClassObjectTypeProperty);
+        var withoutObjectClassClassAnotherTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("anotherTwo", false);
+        Assert.NotNull(withoutObjectClassClassAnotherTwoProperty);
     }
 
     [Fact]
@@ -8710,6 +8965,261 @@ components:
         Assert.NotNull(withObjectClass);
         var twoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
         Assert.NotNull(twoProperty);
+    }
+
+    [Fact]
+    public async Task InclusiveUnionInheritanceEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating oneOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      description: "ExampleWithSingleOneOfWithTypeObject"
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+
+    ExampleWithSingleOneOfWithoutTypeObject:
+      description: "ExampleWithSingleOneOfWithoutTypeObject"
+      anyOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    ComponentCommon:
+      description: "ComponentCommon"
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        common:
+          type: string
+
+    Component1:
+      description: "Component1"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - type: object
+          description: "Component1Inner"
+          properties:
+            one:
+              type: string
+      properties:
+        anotherOne:
+          type: string
+
+    Component2:
+      description: "Component2"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - type: object
+          description: "Component2Inner"
+          properties:
+            two:
+              type: string
+      properties:
+        anotherTwo:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify that all three classes referenced by the discriminator inherit from baseDirectoryObject
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        // ExampleWithSingleOneOfWithTypeObject inherits from ComponentCommon
+        Assert.Equal("ComponentCommon", withObjectClass.BaseClass?.Name);
+        var withObjectClassOneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(withObjectClassOneProperty);
+        var withObjectClassAnotherOneProperty = withObjectClass.FindChildByName<CodeProperty>("anotherOne", false);
+        Assert.NotNull(withObjectClassAnotherOneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withoutObjectClass);
+        // Component2 inherits from ComponentCommon
+        Assert.Equal("ComponentCommon", withoutObjectClass.BaseClass?.Name);
+        var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(withoutObjectClassTwoProperty);
+        var withoutObjectClassClassAnotherTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("anotherTwo", false);
+        Assert.NotNull(withoutObjectClassClassAnotherTwoProperty);
+    }
+
+    [Fact]
+    public async Task InclusiveUnionIntersectionEntriesMergingAsync()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.0
+info:
+  title: "Generator not generating oneOf if the containing schema has type: object"
+  version: "1.0.0"
+servers:
+  - url: https://mytodos.doesnotexist/
+paths:
+  /uses-components:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesComponents"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsesComponents"
+components:
+  schemas:
+    ExampleWithSingleOneOfWithTypeObject:
+      description: "ExampleWithSingleOneOfWithTypeObject"
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+
+    ExampleWithSingleOneOfWithoutTypeObject:
+      description: "ExampleWithSingleOneOfWithoutTypeObject"
+      anyOf:
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+
+    UsesComponents:
+      type: object
+      properties:
+        component_with_single_oneof_with_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithTypeObject"
+        component_with_single_oneof_without_type_object:
+          $ref: "#/components/schemas/ExampleWithSingleOneOfWithoutTypeObject"
+
+    ComponentCommon:
+      description: "ComponentCommon"
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        common:
+          type: string
+
+    ComponentCommon2:
+      description: "ComponentCommon2"
+      type: object
+      properties:
+        common2:
+          type: string
+
+    Component1:
+      description: "Component1"
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - $ref: "#/components/schemas/ComponentCommon2"
+        - type: object
+          description: "Component1Self"
+          properties:
+            one:
+              type: string
+      properties:
+        anotherOne:
+          type: string
+
+    Component2:
+      description: "Component2"
+      type: object
+      required:
+        - objectType
+      allOf:
+        - $ref: "#/components/schemas/ComponentCommon"
+        - $ref: "#/components/schemas/ComponentCommon2"
+        - type: object
+          description: "Component2Self"
+          properties:
+            two:
+              type: string
+      properties:
+        anotherTwo:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Verify both scenarios have all the properties available from all schemas
+        var withObjectClass = codeModel.FindChildByName<CodeClass>("ExampleWithSingleOneOfWithTypeObject");
+        Assert.NotNull(withObjectClass);
+        var withObjectClassOneProperty = withObjectClass.FindChildByName<CodeProperty>("one", false);
+        Assert.NotNull(withObjectClassOneProperty);
+        var withObjectClassCommonProperty = withObjectClass.FindChildByName<CodeProperty>("common", false);
+        Assert.NotNull(withObjectClassCommonProperty);
+        var withObjectClassCommon2Property = withObjectClass.FindChildByName<CodeProperty>("common2", false);
+        Assert.NotNull(withObjectClassCommon2Property);
+        var withObjectClassObjectTypeProperty = withObjectClass.FindChildByName<CodeProperty>("objectType", false);
+        Assert.NotNull(withObjectClassObjectTypeProperty);
+        var withObjectClassAnotherOneProperty = withObjectClass.FindChildByName<CodeProperty>("anotherOne", false);
+        Assert.NotNull(withObjectClassAnotherOneProperty);
+
+        var withoutObjectClass = codeModel.FindChildByName<CodeClass>("Component2");
+        Assert.NotNull(withoutObjectClass);
+        var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
+        Assert.NotNull(withoutObjectClassTwoProperty);
+        var withoutObjectClassCommonProperty = withoutObjectClass.FindChildByName<CodeProperty>("common", false);
+        Assert.NotNull(withoutObjectClassCommonProperty );
+        var withoutObjectClassCommon2Property = withoutObjectClass.FindChildByName<CodeProperty>("common2", false);
+        Assert.NotNull(withoutObjectClassCommon2Property);
+        var withoutObjectClassObjectTypeProperty = withoutObjectClass.FindChildByName<CodeProperty>("objectType", false);
+        Assert.NotNull(withoutObjectClassObjectTypeProperty);
+        var withoutObjectClassClassAnotherTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("anotherTwo", false);
+        Assert.NotNull(withoutObjectClassClassAnotherTwoProperty);
     }
 
     [Fact]
@@ -9022,14 +9532,14 @@ components:
           '#microsoft.graph.group': '#/components/schemas/microsoft.graph.group'
     microsoft.graph.group:
       allOf:"
-       + (reverseOrder ? "" : @" 
+       + (reverseOrder ? "" : @"
         - '$ref': '#/components/schemas/microsoft.graph.directoryObject'") + @"
         - properties:
             groupprop1:
               type: 'string'
         - properties:
             groupprop2:
-              type: 'string'" + (!reverseOrder ? "" : @" 
+              type: 'string'" + (!reverseOrder ? "" : @"
         - '$ref': '#/components/schemas/microsoft.graph.directoryObject'"));
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
