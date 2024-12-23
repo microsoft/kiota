@@ -1144,6 +1144,8 @@ public partial class KiotaBuilder
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
         return (typeName, format?.ToLowerInvariant()) switch
         {
+            (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
+            (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
             (JsonSchemaType.String, "base64url") => new CodeType { Name = "base64url", IsExternal = true },
             (JsonSchemaType.String, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
             (JsonSchemaType.String, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
@@ -1160,8 +1162,6 @@ public partial class KiotaBuilder
             (JsonSchemaType.Number, _) => new CodeType { Name = "double", IsExternal = true },
             (JsonSchemaType.Integer, _) => new CodeType { Name = "integer", IsExternal = true },
             (JsonSchemaType.Boolean, _) => new CodeType { Name = "boolean", IsExternal = true },
-            (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
-            (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
             //TODO handle the case where we have multiple entries
             (_, _) when !string.IsNullOrEmpty(childType) => new CodeType { Name = childType, IsExternal = false, },
             (_, _) => null,

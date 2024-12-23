@@ -7871,7 +7871,7 @@ components:
         var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
         Assert.NotNull(bodyParameter);
         Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
-        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address"); // json is structured, we generated a model
         Assert.NotNull(addressClass);
     }
     [Fact]
@@ -7929,9 +7929,8 @@ components:
         Assert.NotNull(postMethod);
         var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
         Assert.NotNull(bodyParameter);
-        Assert.Equal("DirectoryObjectPostRequestBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase); //generate the model type as we do not have the serializer for the schema registered.
-        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
-        Assert.NotNull(addressClass);
+        Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("Address")); // json is not structured so we didn't generate a model for the address
     }
     [Fact]
     public async Task SupportsMultipleContentTypesAsRequestBodyWithDefaultMimeTypesAsync()
