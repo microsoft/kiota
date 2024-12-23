@@ -427,7 +427,7 @@ components:
     StorageAccountType:
       type: string
       enum:
-        - +1
+        - '+1'
         - -1
         - Standard_LRS
         - Standard_ZRS
@@ -439,7 +439,7 @@ components:
         name: AccountType
         modelAsString: false
         values:
-          - value: +1
+          - value: '+1'
           - value: -1
           - value: Standard_LRS
             description: Locally redundant storage.
