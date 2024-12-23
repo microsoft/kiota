@@ -539,18 +539,18 @@ public partial class KiotaBuilder
         var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
         modelsNamespace = rootNamespace.AddNamespace(config.ModelsNamespaceName);
         InitializeInheritanceIndex();
-        StopLogAndReset(stopwatch, $"{nameof(InitializeInheritanceIndex)}");
+        StopLogAndReset(stopwatch, nameof(InitializeInheritanceIndex));
         if (root != null)
         {
             CreateRequestBuilderClass(codeNamespace, root, root);
-            StopLogAndReset(stopwatch, $"{nameof(CreateRequestBuilderClass)}");
+            StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
-            StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
+            StopLogAndReset(stopwatch, nameof(MapTypeDefinitions));
             TrimInheritedModels();
-            StopLogAndReset(stopwatch, $"{nameof(TrimInheritedModels)}");
+            StopLogAndReset(stopwatch, nameof(TrimInheritedModels));
             CleanUpInternalState();
-            StopLogAndReset(stopwatch, $"{nameof(CleanUpInternalState)}");
+            StopLogAndReset(stopwatch, nameof(CleanUpInternalState));
 
             logger.LogTrace("{Timestamp}ms: Created source model with {Count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
         }
