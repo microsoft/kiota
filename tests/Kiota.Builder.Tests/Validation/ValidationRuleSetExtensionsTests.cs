@@ -33,7 +33,7 @@ public class ValidationRuleSetExtensionsTests
     public void DisablesOneRule()
     {
         var ruleSet = new ValidationRuleSet();
-        var configuration = new GenerationConfiguration { DisabledValidationRules = new() { nameof(NoServerEntry) } };
+        var configuration = new GenerationConfiguration { DisabledValidationRules = [nameof(NoServerEntry)] };
         ruleSet.AddKiotaValidationRules(configuration);
         Assert.NotEmpty(ruleSet.Rules);
         Assert.DoesNotContain(ruleSet.Rules, static x => x.GetType() == typeof(NoServerEntry));
