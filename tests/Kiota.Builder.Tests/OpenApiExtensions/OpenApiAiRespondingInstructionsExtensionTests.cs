@@ -27,7 +27,7 @@ public sealed class OpenApiAiRespondingInstructionsExtensionTests : IDisposable
         """
         [
             "This is a description",
-            "This is a description 2",
+            "This is a description 2"
         ]
         """;
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(oaiValueRepresentation));
