@@ -73,7 +73,7 @@ components:
         Assert.Throws<ArgumentNullException>(() => new PublicApiExportService(null));
     }
 
-    private static readonly Dictionary<GenerationLanguage, Action<string[]>> Validators = new()
+    private static readonly Dictionary<GenerationLanguage, Action<HashSet<string>>> Validators = new()
     {
         { GenerationLanguage.CSharp, ValidateExportCSharp },
         { GenerationLanguage.Go, ValidateExportGo },
@@ -122,7 +122,7 @@ components:
         Assert.NotEqual(0, outputStream.Length); // output is not empty
 
         using var streamReader = new StreamReader(outputStream);
-        var contents = (await streamReader.ReadToEndAsync()).Split(Environment.NewLine);
+        var contents = new HashSet<string>((await streamReader.ReadToEndAsync()).Split(Environment.NewLine), StringComparer.Ordinal);
 
         if (!Validators.TryGetValue(generationLanguage, out var validator))
         {
@@ -132,7 +132,7 @@ components:
         validator.Invoke(contents);
     }
 
-    private static void ValidateExportCSharp(string[] exportContents)
+    private static void ValidateExportCSharp(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("ExportNamespace.Graph-->BaseRequestBuilder", exportContents); // captures class inheritance
@@ -145,7 +145,7 @@ components:
         Assert.Contains("ExportNamespace.Models.Microsoft.Graph.user::|public|OtherNames:List<string>", exportContents);// captures collection info in language specific format    
     }
 
-    private static void ValidateExportJava(string[] exportContents)
+    private static void ValidateExportJava(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("exportnamespace.Graph-->BaseRequestBuilder", exportContents); // captures class inheritance
@@ -160,7 +160,7 @@ components:
         Assert.Contains("exportnamespace.models.microsoft.graph.User::|public|setOtherNames(value?:java.util.List<String>):void", exportContents);// captures collection info in language specific format
     }
 
-    private static void ValidateExportGo(string[] exportContents)
+    private static void ValidateExportGo(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("exportNamespace.Graph-->*i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f.BaseRequestBuilder", exportContents); // captures class inheritance
@@ -178,7 +178,7 @@ components:
         Assert.Contains("exportNamespace.models.microsoft.graph.user::|public|SetOtherNames(value:[]string):void", exportContents);// captures collection info in language specific format
     }
 
-    private static void ValidateExportPython(string[] exportContents)
+    private static void ValidateExportPython(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("exportNamespace.Graph-->BaseRequestBuilder", exportContents); // captures class inheritance
@@ -193,7 +193,7 @@ components:
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|other_names(value:List[str]):None", exportContents);// captures collection info in language specific format
     }
 
-    private static void ValidateExportTypeScript(string[] exportContents)
+    private static void ValidateExportTypeScript(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("exportNamespace.Graph~~>BaseRequestBuilder<Graph>", exportContents); // captures class inheritance. TS does not do inheritance due to interfaces.
@@ -210,7 +210,7 @@ components:
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|otherNames:string[]", exportContents);// captures collection info in language specific format
     }
 
-    private static void ValidateExportPhp(string[] exportContents)
+    private static void ValidateExportPhp(HashSet<string> exportContents)
     {
         Assert.NotEmpty(exportContents);
         Assert.Contains("exportNamespace.Graph-->BaseRequestBuilder", exportContents); // captures class inheritance
