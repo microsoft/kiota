@@ -1091,7 +1091,7 @@ public partial class KiotaBuilder
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
             propertyName += "Property";
-        var resultType = existingType ?? GetPrimitiveType(propertySchema);
+        var resultType = existingType ?? GetPrimitiveType(propertySchema, childType);
         if ((propertySchema?.Items?.IsEnum() ?? false) && resultType is CodeType codeType)
             codeType.Name = childType;
         if (resultType == null) return null;
@@ -1131,7 +1131,7 @@ public partial class KiotaBuilder
         return prop;
     }
     private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array];
-    private static CodeType? GetPrimitiveType(OpenApiSchema? typeSchema)
+    private static CodeType? GetPrimitiveType(OpenApiSchema? typeSchema, string? childType = default)
     {
         var typeNames = new List<JsonSchemaType?> { typeSchema?.Items?.Type, typeSchema?.Type };
         if (typeSchema?.AnyOf?.Any() ?? false)
@@ -1141,45 +1141,30 @@ public partial class KiotaBuilder
                                                                       // first value that's not null, and not "object" for primitive collections, the items type matters
         var typeName = typeNames.Find(static x => x is not null && !typeNamesToSkip.Contains(x.Value));
 
-        var isExternal = false;
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
-        var primitiveTypeName = (typeName, format?.ToLowerInvariant()) switch
+        return (typeName, format?.ToLowerInvariant()) switch
         {
-            (JsonSchemaType.String, "base64url") => "base64url",
-            (JsonSchemaType.String, "duration") => "TimeSpan",
-            (JsonSchemaType.String, "time") => "TimeOnly",
-            (JsonSchemaType.String, "date") => "DateOnly",
-            (JsonSchemaType.String, "date-time") => "DateTimeOffset",
-            (JsonSchemaType.String, "uuid") => "Guid",
-            (JsonSchemaType.String, _) => "string", // covers commonmark and html
-            (JsonSchemaType.Number, "double" or "float" or "decimal") => format.ToLowerInvariant(),
-            (JsonSchemaType.Number or JsonSchemaType.Integer, "int8") => "sbyte",
-            (JsonSchemaType.Number or JsonSchemaType.Integer, "uint8") => "byte",
-            (JsonSchemaType.Number or JsonSchemaType.Integer, "int64") => "int64",
-            (JsonSchemaType.Number, "int16") => "integer",
-            (JsonSchemaType.Number, "int32") => "integer",
-            (JsonSchemaType.Number, _) => "double",
-            (JsonSchemaType.Integer, _) => "integer",
-            (JsonSchemaType.Boolean, _) => "boolean",
-            (_, "byte") => "base64",
-            (_, "binary") => "binary",
+            (JsonSchemaType.String, "base64url") => new CodeType { Name = "base64url", IsExternal = true },
+            (JsonSchemaType.String, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
+            (JsonSchemaType.String, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
+            (JsonSchemaType.String, "date") => new CodeType { Name = "DateOnly", IsExternal = true },
+            (JsonSchemaType.String, "date-time") => new CodeType { Name = "DateTimeOffset", IsExternal = true },
+            (JsonSchemaType.String, "uuid") => new CodeType { Name = "Guid", IsExternal = true },
+            (JsonSchemaType.String, _) => new CodeType { Name = "string", IsExternal = true }, // covers commonmark and html
+            (JsonSchemaType.Number, "double" or "float" or "decimal") => new CodeType { Name = format.ToLowerInvariant(), IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "int8") => new CodeType { Name = "sbyte", IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "uint8") => new CodeType { Name = "byte", IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer, "int64") => new CodeType { Name = "int64", IsExternal = true },
+            (JsonSchemaType.Number, "int16") => new CodeType { Name = "integer", IsExternal = true },
+            (JsonSchemaType.Number, "int32") => new CodeType { Name = "integer", IsExternal = true },
+            (JsonSchemaType.Number, _) => new CodeType { Name = "double", IsExternal = true },
+            (JsonSchemaType.Integer, _) => new CodeType { Name = "integer", IsExternal = true },
+            (JsonSchemaType.Boolean, _) => new CodeType { Name = "boolean", IsExternal = true },
+            (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
+            (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
             //TODO handle the case where we have multiple entries
-            (_, _) => string.Empty,
-        };
-        if (!string.IsNullOrEmpty(primitiveTypeName))
-        {
-            return new CodeType
-            {
-                Name = primitiveTypeName,
-                IsExternal = true,
-            };
-        }
-        if (typeName is null || typeName.ToIdentifier() is not string normalizedTypeName || string.IsNullOrEmpty(normalizedTypeName))
-            return null;
-        return new CodeType
-        {
-            Name = normalizedTypeName,
-            IsExternal = isExternal,
+            (_, _) when !string.IsNullOrEmpty(childType) => new CodeType { Name = childType, IsExternal = false, },
+            (_, _) => null,
         };
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
