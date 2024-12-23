@@ -75,13 +75,12 @@ paths:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
             ClientClassName = inputPluginName,
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -234,7 +233,7 @@ components:
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -487,13 +486,12 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -566,13 +564,12 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -777,7 +774,7 @@ components:
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
