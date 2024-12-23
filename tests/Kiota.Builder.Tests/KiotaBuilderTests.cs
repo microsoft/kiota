@@ -7717,7 +7717,8 @@ paths:
         - name: select
           in: query
           schema:
-            type: int64
+            type: number
+            format: int64
       responses:
         '200':
           content:
