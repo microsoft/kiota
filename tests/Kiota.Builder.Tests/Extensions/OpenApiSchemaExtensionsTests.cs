@@ -682,20 +682,28 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                AnyOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
-                                Reference = new() {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
                                     Id = "BaseClass"
                                 },
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
@@ -719,27 +727,37 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                AnyOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
+                        AllOf =
+                        [
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["first"] = new OpenApiSchema(),
                                 }
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["second"] = new OpenApiSchema(),
                                 }
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["third"] = new OpenApiSchema(),
                                 }
                             },
@@ -762,20 +780,28 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                AnyOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
-                                Reference = new() {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
                                     Id = "BaseClass"
                                 },
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
@@ -795,12 +821,17 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                AnyOf = [
-                    new() {
-                        AllOf = [
-                            new() {
+                AnyOf =
+                [
+                    new()
+                    {
+                        AllOf =
+                        [
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
@@ -823,20 +854,28 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                OneOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
-                                Reference = new() {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
                                     Id = "BaseClass"
                                 },
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
@@ -860,27 +899,37 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                OneOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
+                        AllOf =
+                        [
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["first"] = new OpenApiSchema(),
                                 }
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["second"] = new OpenApiSchema(),
                                 }
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["third"] = new OpenApiSchema(),
                                 }
                             },
@@ -903,20 +952,28 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                OneOf = [
-                    new() {
-                        Properties = new Dictionary<string, OpenApiSchema>() {
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
                             ["one"] = new OpenApiSchema(),
                         },
-                        AllOf = [
-                            new() {
-                                Reference = new() {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
                                     Id = "BaseClass"
                                 },
                             },
-                            new() {
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
@@ -936,12 +993,17 @@ public class OpenApiSchemaExtensionsTests
             var schema = new OpenApiSchema()
             {
                 Type = "object",
-                OneOf = [
-                    new() {
-                        AllOf = [
-                            new() {
+                OneOf =
+                [
+                    new()
+                    {
+                        AllOf =
+                        [
+                            new()
+                            {
                                 Type = "object",
-                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
                                     ["firstName"] = new OpenApiSchema(),
                                     ["lastName"] = new OpenApiSchema()
                                 }
