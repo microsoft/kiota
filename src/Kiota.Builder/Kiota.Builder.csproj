@@ -44,9 +44,9 @@
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.16.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.16.1" />
     <PackageReference Include="Microsoft.kiota.Serialization.Multipart" Version="1.16.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.0.0-preview3" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.0.0-preview4" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="0.5.6-preview" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="2.0.0-preview3" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="2.0.0-preview4" />
     <PackageReference Include="Microsoft.Plugins.Manifest" Version="1.0.0-rc3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.12.19">
