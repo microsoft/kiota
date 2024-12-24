@@ -8870,7 +8870,7 @@ components:
         var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
         Assert.NotNull(withoutObjectClassTwoProperty);
         var withoutObjectClassCommonProperty = withoutObjectClass.FindChildByName<CodeProperty>("common", false);
-        Assert.NotNull(withoutObjectClassCommonProperty );
+        Assert.NotNull(withoutObjectClassCommonProperty);
         var withoutObjectClassCommon2Property = withoutObjectClass.FindChildByName<CodeProperty>("common2", false);
         Assert.NotNull(withoutObjectClassCommon2Property);
         var withoutObjectClassObjectTypeProperty = withoutObjectClass.FindChildByName<CodeProperty>("objectType", false);
@@ -9213,7 +9213,7 @@ components:
         var withoutObjectClassTwoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
         Assert.NotNull(withoutObjectClassTwoProperty);
         var withoutObjectClassCommonProperty = withoutObjectClass.FindChildByName<CodeProperty>("common", false);
-        Assert.NotNull(withoutObjectClassCommonProperty );
+        Assert.NotNull(withoutObjectClassCommonProperty);
         var withoutObjectClassCommon2Property = withoutObjectClass.FindChildByName<CodeProperty>("common2", false);
         Assert.NotNull(withoutObjectClassCommon2Property);
         var withoutObjectClassObjectTypeProperty = withoutObjectClass.FindChildByName<CodeProperty>("objectType", false);
