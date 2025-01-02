@@ -4,7 +4,7 @@ astroid==3.3.8 ; python_full_version >= '3.7.2'
 
 certifi==2024.12.14 ; python_version >= '3.6'
 
-charset-normalizer==3.4.0 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.1 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
@@ -30,7 +30,7 @@ lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.14.0
+mypy==1.14.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -44,7 +44,7 @@ pylint==3.3.3
 
 pytest==8.3.4
 
-pytest-asyncio==0.25.0
+pytest-asyncio==0.25.1
 
 requests==2.32.3 ; python_version >= '3.7'
 
@@ -118,7 +118,7 @@ msal-extensions==1.2.0
 
 multidict==6.1.0 ; python_version >= '3.7'
 
-portalocker==3.0.0 ; python_version >= '3.5' and platform_system == 'Windows'
+portalocker==3.1.1 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.22
 
