@@ -37,6 +37,9 @@ public interface ILanguageRefiner
             case GenerationLanguage.Swift:
                 await new SwiftRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
+            case GenerationLanguage.HTTP:
+                await new HttpRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                break;
             case GenerationLanguage.Python:
                 await new PythonRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
