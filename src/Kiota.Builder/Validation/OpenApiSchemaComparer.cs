@@ -151,7 +151,7 @@ internal class JsonNodeComparer : IEqualityComparer<JsonNode>
     {
         if (x is null || y is null) return object.Equals(x, y);
         // TODO: Can we use the OpenAPI.NET implementation of Equals?
-        return x.GetValueKind() == y.GetValueKind() && string.Equals(x.GetValue<string>(), y.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        return x.GetValueKind() == y.GetValueKind() && string.Equals(x.ToJsonString(), y.ToJsonString(), StringComparison.OrdinalIgnoreCase);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] JsonNode obj)
