@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Any;
+﻿using System.Text.Json.Nodes;
 
 namespace Kiota.Builder.OpenApiExtensions;
 
@@ -10,7 +10,7 @@ public class OpenApiDescriptionForModelExtension : OpenApiSimpleStringExtension
         get; set;
     }
     protected override string? ValueSelector => Description;
-    public static OpenApiDescriptionForModelExtension Parse(IOpenApiAny source)
+    public static OpenApiDescriptionForModelExtension Parse(JsonNode source)
     {
         return new OpenApiDescriptionForModelExtension
         {

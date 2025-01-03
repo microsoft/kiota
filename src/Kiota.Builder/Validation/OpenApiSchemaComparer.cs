@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
@@ -11,16 +12,16 @@ namespace Kiota.Builder.Validation;
 internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 {
     private readonly OpenApiDiscriminatorComparer discriminatorComparer;
-    private readonly OpenApiAnyComparer openApiAnyComparer;
+    private readonly JsonNodeComparer jsonNodeComparer;
     private readonly KeyValueComparer<string, OpenApiSchema> schemaMapComparer;
 
     public OpenApiSchemaComparer(
         OpenApiDiscriminatorComparer? discriminatorComparer = null,
-        OpenApiAnyComparer? openApiAnyComparer = null,
+        JsonNodeComparer? jsonNodeComparer = null,
         KeyValueComparer<string, OpenApiSchema>? schemaMapComparer = null)
     {
         this.discriminatorComparer = discriminatorComparer ?? new OpenApiDiscriminatorComparer();
-        this.openApiAnyComparer = openApiAnyComparer ?? new OpenApiAnyComparer();
+        this.jsonNodeComparer = jsonNodeComparer ?? new JsonNodeComparer();
         this.schemaMapComparer = schemaMapComparer ?? new KeyValueComparer<string, OpenApiSchema>(StringComparer.Ordinal, this);
     }
 
@@ -53,7 +54,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
             hash.Add(prop.Key, StringComparer.Ordinal);
             GetHashCodeInternal(prop.Value, visitedSchemas, ref hash);
         }
-        hash.Add(obj.Default, openApiAnyComparer);
+        hash.Add(obj.Default, jsonNodeComparer);
         GetHashCodeInternal(obj.Items, visitedSchemas, ref hash);
         foreach (var schema in obj.OneOf)
         {
@@ -68,7 +69,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
             GetHashCodeInternal(schema, visitedSchemas, ref hash);
         }
         hash.Add(obj.Format, StringComparer.OrdinalIgnoreCase);
-        hash.Add(obj.Type, StringComparer.OrdinalIgnoreCase);
+        hash.Add(obj.Type);
         hash.Add(obj.Title, StringComparer.Ordinal);
         /**
          ignored properties since they don't impact generation:
@@ -143,17 +144,17 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
         return hash.ToHashCode();
     }
 }
-internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
+internal class JsonNodeComparer : IEqualityComparer<JsonNode>
 {
     /// <inheritdoc/>
-    public bool Equals(IOpenApiAny? x, IOpenApiAny? y)
+    public bool Equals(JsonNode? x, JsonNode? y)
     {
         if (x is null || y is null) return object.Equals(x, y);
         // TODO: Can we use the OpenAPI.NET implementation of Equals?
-        return x.AnyType == y.AnyType && string.Equals(x.ToString(), y.ToString(), StringComparison.OrdinalIgnoreCase);
+        return x.GetValueKind() == y.GetValueKind() && string.Equals(x.ToJsonString(), y.ToJsonString(), StringComparison.OrdinalIgnoreCase);
     }
     /// <inheritdoc/>
-    public int GetHashCode([DisallowNull] IOpenApiAny obj)
+    public int GetHashCode([DisallowNull] JsonNode obj)
     {
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();

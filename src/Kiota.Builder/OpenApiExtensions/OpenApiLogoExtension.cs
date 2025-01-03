@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
 
@@ -16,13 +17,13 @@ public class OpenApiLogoExtension : IOpenApiExtension
     {
         get; set;
     }
-    public static OpenApiLogoExtension Parse(IOpenApiAny source)
+    public static OpenApiLogoExtension Parse(JsonNode source)
     {
-        if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        if (source is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiLogoExtension();
-        if (rawObject.TryGetValue(nameof(Url).ToFirstCharacterLowerCase(), out var url) && url is OpenApiString urlValue)
+        if (rawObject.TryGetPropertyValue(nameof(Url).ToFirstCharacterLowerCase(), out var url) && url is JsonValue urlValue && urlValue.GetValueKind() is JsonValueKind.String && urlValue.TryGetValue<string>(out var urlStrValue))
         {
-            extension.Url = urlValue.Value;
+            extension.Url = urlStrValue;
         }
         return extension;
     }

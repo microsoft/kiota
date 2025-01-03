@@ -117,7 +117,7 @@ public partial class PluginsGenerationService
         {
             if (schema.Discriminator?.Mapping is null)
                 return;
-            var keysToRemove = schema.Discriminator.Mapping.Where(x => !_document.Components.Schemas.ContainsKey(x.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1])).Select(static x => x.Key).ToArray();
+            var keysToRemove = schema.Discriminator.Mapping.Where(x => _document.Components?.Schemas is null || !_document.Components.Schemas.ContainsKey(x.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1])).Select(static x => x.Key).ToArray();
             foreach (var key in keysToRemove)
                 schema.Discriminator.Mapping.Remove(key);
             base.Visit(schema);
@@ -165,7 +165,7 @@ public partial class PluginsGenerationService
         }
         internal static void CopyRelevantInformation(OpenApiSchema source, OpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
         {
-            if (!string.IsNullOrEmpty(source.Type))
+            if (source.Type is not null && source.Type.HasValue)
                 target.Type = source.Type;
             if (!string.IsNullOrEmpty(source.Format))
                 target.Format = source.Format;
@@ -425,7 +425,7 @@ public partial class PluginsGenerationService
                 var auth = configAuth;
                 try
                 {
-                    auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements);
+                    auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements ?? []);
                 }
                 catch (UnsupportedSecuritySchemeException e)
                 {
@@ -438,7 +438,7 @@ public partial class PluginsGenerationService
                     // Configuration overrides document information
                     Auth = auth,
                     Spec = new OpenApiRuntimeSpec { Url = openApiDocumentPath },
-                    RunForFunctions = [operation.OperationId]
+                    RunForFunctions = [operation.OperationId!]
                 });
 
                 var summary = operation.Summary.CleanupXMLString();
@@ -446,7 +446,7 @@ public partial class PluginsGenerationService
 
                 functions.Add(new Function
                 {
-                    Name = operation.OperationId,
+                    Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
 
@@ -526,7 +526,8 @@ public partial class PluginsGenerationService
     private static State? GetStateFromExtension<T>(OpenApiOperation openApiOperation, string extensionName,
         Func<T, List<string>> instructionsExtractor)
     {
-        if (openApiOperation.Extensions.TryGetValue(extensionName, out var rExtRaw) &&
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var rExtRaw) &&
             rExtRaw is T rExt &&
             instructionsExtractor(rExt).Exists(static x => !string.IsNullOrEmpty(x)))
         {

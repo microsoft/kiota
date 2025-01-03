@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
 
@@ -28,11 +29,11 @@ public class OpenApiAiRespondingInstructionsExtension : IOpenApiExtension
             writer.WriteEndArray();
         }
     }
-    public static OpenApiAiRespondingInstructionsExtension Parse(IOpenApiAny source)
+    public static OpenApiAiRespondingInstructionsExtension Parse(JsonNode source)
     {
-        if (source is not OpenApiArray rawArray) throw new ArgumentOutOfRangeException(nameof(source));
+        if (source is not JsonArray rawArray) throw new ArgumentOutOfRangeException(nameof(source));
         var result = new OpenApiAiRespondingInstructionsExtension();
-        result.RespondingInstructions.AddRange(rawArray.OfType<OpenApiString>().Select(x => x.Value));
+        result.RespondingInstructions.AddRange(rawArray.OfType<JsonValue>().Where(static x => x.GetValueKind() is JsonValueKind.String).Select(static x => x.GetValue<string>()));
         return result;
     }
 }
