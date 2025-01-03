@@ -418,7 +418,7 @@ function createKiotaOpenApiNode(
         clientNameOrPluginName
     };
 }
-type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
+type IconSet = string | vscode.Uri | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
 
