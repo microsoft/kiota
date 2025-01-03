@@ -1,6 +1,6 @@
 module integrationtest
 
-go 1.20
+go 1.23
 
 require (
 	github.com/microsoft/kiota-abstractions-go v1.5.0
