@@ -497,7 +497,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.3",
-    "@types/vscode": "^1.95.0",
+    "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
     "@vscode/test-cli": "^0.0.10",
