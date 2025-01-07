@@ -249,15 +249,11 @@ export interface GenerationConfiguration {
     usesBackingStore: boolean;
     pluginTypes: KiotaPluginType[];
     operation: ConsumerOperation;
-    pluginAuthConfiguration?: PluginAuthConfiguration;
+    pluginAuthRefid?: string;
+    pluginAuthType?: PluginAuthType | null;
 }
 
-export interface PluginAuthConfiguration {
-    referenceId: string;
-    authType: PluginAuthType;
-}
-
-enum PluginAuthType {
+export enum PluginAuthType {
     oAuthPluginVault = "OAuthPluginVault",
     apiKeyPluginVault = "ApiKeyPluginVault"
 }

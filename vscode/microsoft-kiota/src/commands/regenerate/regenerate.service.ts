@@ -66,10 +66,6 @@ export class RegenerateService {
   async regeneratePlugin(settings: ExtensionSettings, selectedPaths?: string[]) {
     const pluginObjectItem = this._clientObject as PluginObjectProperties;
     const pluginTypes = Array.isArray(pluginObjectItem.types) ? parsePluginType(pluginObjectItem.types) : [KiotaPluginType.ApiPlugin];
-    const pluginAuthConfiguration = pluginObjectItem.authReferenceId && pluginObjectItem.authType ? {
-      referenceId: pluginObjectItem.authReferenceId,
-      authType: pluginObjectItem.authType
-    } : undefined;
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -88,7 +84,8 @@ export class RegenerateService {
         false,
         settings.disableValidationRules,
         ConsumerOperation.Edit,
-        pluginAuthConfiguration
+        pluginObjectItem.authType ? pluginObjectItem.authType : null,
+        pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
