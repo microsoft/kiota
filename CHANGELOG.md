@@ -13,8 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed Python error when a class inherits from a base class and implements an interface. [5637](https://github.com/microsoft/kiota/issues/5637)
-- Fix anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
+- Fixed a bug in generation when a referenced schema in an allOf was a primitive [#5701](https://github.com/microsoft/kiota/issues/5701).
+- Fixed a bug where inherited error models would be missing interface declarations. [#5888](https://github.com/microsoft/kiota/issues/5888)
+- Fixed a bug where oneOf/anyOf schemas with single references to inheritance or intersections would be missing properties. [#5921](https://github.com/microsoft/kiota/issues/5921)
+
+## [1.21.0] - 2024-12-05
+
+### Added
+
+- Added a notion of support experience for languages in preparation for new community implemented languages.
+
+### Changed
+
+- Fixed python generation in scenarios with opening/closing tags for code comments. [#5636](https://github.com/microsoft/kiota/issues/5636)
+- Fixed Python error when a class inherits from a base class and implements an interface. [#5637](https://github.com/microsoft/kiota/issues/5637)
+- Fixed a bug where one/any schemas with single schema entries would be missing properties. [#5808](https://github.com/microsoft/kiota/issues/5808)
+- Fixed anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
+- Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
+- Fixed a bug where discriminator property name lookup could end up in an infinite loop. [#5771](https://github.com/microsoft/kiota/issues/5771)
+- Fixed TypeScript generation error when generating usings from shaken serializers. [#5634](https://github.com/microsoft/kiota/issues/5634)
+- Multiple fixed and improvements in OpenAPI description generation for plugins. [#5806](https://github.com/microsoft/kiota/issues/5806)
 
 ## [1.20.0] - 2024-11-07
 
@@ -152,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
 - Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
 - Added optional parameter --disable-ssl-validation for generate, show, and download commands. [#4176](https://github.com/microsoft/kiota/issues/4176)
-- For _Debug_ builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for _Debug_ builds and `Warning` for _Release_ builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
+- For *Debug* builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for *Debug* builds and `Warning` for *Release* builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
 
 ### Changed
 
@@ -754,7 +772,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unused generated import for PHP Generation.
 - Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
-- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
+- Changed signature of escaped reserved names from {x}*escaped to {x}* in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
@@ -1503,4 +1521,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-

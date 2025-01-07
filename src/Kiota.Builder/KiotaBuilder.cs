@@ -77,7 +77,7 @@ public partial class KiotaBuilder
                 Directory.Delete(subDir, true);
             await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
-                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
+                                            .Where(static x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
     }
@@ -243,7 +243,7 @@ public partial class KiotaBuilder
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
             sw.Start();
-            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory());
+            var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
             await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
@@ -958,7 +958,7 @@ public partial class KiotaBuilder
             var parentNS = x.Parent?.Parent?.Parent as CodeNamespace;
             CodeClass[] exceptions = x.Parent?.Parent is CodeClass parentClass ? [parentClass] : [];
             x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name)
-                .Except(exceptions)// the property method should not reference itself as a return type. 
+                .Except(exceptions)// the property method should not reference itself as a return type.
                 .MinBy(shortestNamespaceOrder);
             // searching down first because most request builder properties on a request builder are just sub paths on the API
             if (x.TypeDefinition == null)
@@ -1833,6 +1833,18 @@ public partial class KiotaBuilder
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
+        // type: object with single oneOf referring to inheritance or intersection
+        if (schema.IsObjectType() && schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries() is OpenApiSchema mergedExclusiveUnionSchema)
+        {
+            return CreateModelDeclarations(currentNode, mergedExclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+        }
+
+        // type: object with single anyOf referring to inheritance or intersection
+        if (schema.IsObjectType() && schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries() is OpenApiSchema mergedInclusiveUnionSchema)
+        {
+            return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+        }
+
         if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type))
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
@@ -1840,7 +1852,7 @@ public partial class KiotaBuilder
         }
 
         if (schema.IsArray() &&
-            !schema.Items.IsArray()) // Only handle collections of primitives and complex types. Otherwise, multi-dimensional arrays would be recursively unwrapped undesirably to lead to incorrect serialization types. 
+            !schema.Items.IsArray()) // Only handle collections of primitives and complex types. Otherwise, multi-dimensional arrays would be recursively unwrapped undesirably to lead to incorrect serialization types.
         {
             // collections at root
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, typeNameForInlineSchema, isRequestBody);
@@ -1894,6 +1906,16 @@ public partial class KiotaBuilder
             {
                 // multiple allOf entries that do not translate to inheritance
                 return createdClass;
+            }
+            else if (schema.MergeInclusiveUnionSchemaEntries() is { } iUMergedSchema &&
+                AddModelClass(currentNode, iUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uICreatedClass)
+            {
+                return uICreatedClass;
+            }
+            else if (schema.MergeExclusiveUnionSchemaEntries() is { } eUMergedSchema &&
+                AddModelClass(currentNode, eUMergedSchema, declarationName, currentNamespace, currentOperation, inheritsFrom) is CodeClass uECreatedClass)
+            {
+                return uECreatedClass;
             }
             return AddModelClass(currentNode, schema, declarationName, currentNamespace, currentOperation, inheritsFrom);
         }
@@ -2220,7 +2242,7 @@ public partial class KiotaBuilder
             logger.LogWarning("Discriminator {ComponentKey} not found in the OpenAPI document.", componentKey);
             return null;
         }
-        // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator. 
+        // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator.
         if (CreateModelDeclarations(currentNode, discriminatorSchema, currentOperation, GetShortestNamespace(currentNamespace, discriminatorSchema), string.Empty, null, string.Empty, false, true) is not CodeType result)
         {
             logger.LogWarning("Discriminator {ComponentKey} is not a valid model and points to a union type.", componentKey);
@@ -2228,7 +2250,7 @@ public partial class KiotaBuilder
         }
         if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
         {
-            if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case. 
+            if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case.
                 logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
             return null;
         }

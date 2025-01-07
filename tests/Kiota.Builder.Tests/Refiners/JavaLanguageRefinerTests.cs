@@ -84,6 +84,11 @@ public class JavaLanguageRefinerTests
         {
             Name = "otherNs",
         });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "IAdditionalDataHolder",
+            IsExternal = true
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
@@ -95,6 +100,7 @@ public class JavaLanguageRefinerTests
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
         Assert.Equal("ApiException", model.StartBlock.Inherits.Name);
+        Assert.Contains(model.StartBlock.Implements, x => x.Name.Equals("AdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()

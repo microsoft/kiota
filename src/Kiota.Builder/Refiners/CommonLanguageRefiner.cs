@@ -946,7 +946,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 foreach (var implement in currentParent
                              .StartBlock
                              .Implements
-                             .Where(pi => !currentClass.Usings.Any(ci => ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
+                             .Where(pi => !currentClass.Usings.Any(ci => !ci.IsExternal && ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
                 {
                     currentClass.StartBlock.AddImplements((CodeType)implement.Clone());
                 }
@@ -1475,15 +1475,28 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
     }
-    protected static void RemoveUntypedNodePropertyValues(CodeElement currentElement)
+    protected static void RemoveUntypedNodeTypeValues(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProperty
-            && currentElement.Parent is CodeClass parentClass
-            && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+        switch (currentElement)
         {
-            parentClass.RemoveChildElement(currentProperty);
+            case CodeProperty currentProperty when currentElement.Parent is CodeClass parentClass && currentProperty.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase):
+                parentClass.RemoveChildElement(currentProperty);
+                break;
+            case CodeMethod currentMethod when currentMethod.IsOfKind(CodeMethodKind.RequestExecutor):
+                if (currentMethod.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    currentMethod.ReturnType = new CodeType { Name = "binary", IsExternal = true };
+                }
+                if (currentMethod.Parameters.Where(x => x.Kind is CodeParameterKind.RequestBody && x.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToList() is { Count: > 0 } parameters)
+                {
+                    foreach (var parameter in parameters)
+                    {
+                        parameter.Type = new CodeType { Name = "binary", IsExternal = true };
+                    }
+                }
+                break;
         }
-        CrawlTree(currentElement, RemoveUntypedNodePropertyValues);
+        CrawlTree(currentElement, RemoveUntypedNodeTypeValues);
     }
     protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null, bool keepRequestConfigurationClass = false, bool addDeprecation = false, CodeUsing? usingForDefaultGenericParameter = null)
     {

@@ -135,7 +135,7 @@ public class PhpConventionService : CommonLanguageConventionService
         return codeParameter.Optional ? $"{doc}|null" : doc;
     }
 
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase);
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);

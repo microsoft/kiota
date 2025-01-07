@@ -4,6 +4,7 @@ import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
 import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
+import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItem/deleteWorkspaceItemCommand';
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
@@ -27,10 +28,12 @@ import { UriHandler } from './handlers/uriHandler';
 import {
   ClientOrPluginProperties
 } from "./kiotaInterop";
+import { WorkspaceContentService } from './modules/workspace';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./providers/openApiTreeProvider";
-import { loadTreeView } from './providers/workspaceTreeProvider';
+import { SharedService } from './providers/sharedService';
+import { loadTreeView, WorkspaceTreeItem, WorkspaceTreeProvider } from './providers/workspaceTreeProvider';
 import { getExtensionSettings } from "./types/extensionSettings";
 import { GeneratedOutputState } from './types/GeneratedOutputState';
 import { WorkspaceGenerationContext } from "./types/WorkspaceGenerationContext";
@@ -50,11 +53,14 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId));
+  const sharedService = SharedService.getInstance();
+  const workspaceContentService = new WorkspaceContentService();
+  const openApiTreeProvider = new OpenApiTreeProvider(context, () => getExtensionSettings(extensionId), sharedService);
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
+  const workspaceTreeProvider = new WorkspaceTreeProvider(workspaceContentService, sharedService);
 
   const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>) => {
     workspaceGenerationContext = { ...workspaceGenerationContext, ...params };
@@ -68,17 +74,18 @@ export async function activate(
   const removeFromSelectedEndpointsCommand = new RemoveFromSelectedEndpointsCommand(openApiTreeProvider);
   const filterDescriptionCommand = new FilterDescriptionCommand(openApiTreeProvider);
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
-  const editPathsCommand = new EditPathsCommand(openApiTreeProvider);
+  const editPathsCommand = new EditPathsCommand(openApiTreeProvider, context);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
-  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext);
-  const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider);
-  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider);
+  const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext, kiotaOutputChannel);
+  const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, kiotaOutputChannel);
+  const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, kiotaOutputChannel);
   const closeDescriptionCommand = new CloseDescriptionCommand(openApiTreeProvider);
   const statusCommand = new StatusCommand();
   const selectLockCommand = new SelectLockCommand(openApiTreeProvider);
-  const updateClientsCommand = new UpdateClientsCommand(context);
+  const deleteWorkspaceItemCommand = new DeleteWorkspaceItemCommand(context, openApiTreeProvider, kiotaOutputChannel, sharedService);
+  const updateClientsCommand = new UpdateClientsCommand(context, kiotaOutputChannel);
 
-  await loadTreeView(context);
+  await loadTreeView(context, workspaceTreeProvider);
   await checkForLockFileAndPrompt(context);
   let codeLensProvider = new CodeLensProvider();
   context.subscriptions.push(
@@ -125,6 +132,8 @@ export async function activate(
       await regenerateCommand.execute({ clientOrPluginKey, clientOrPluginObject, generationType });
     }),
     registerCommandWithTelemetry(reporter, migrateFromLockFileCommand.getName(), async (uri: vscode.Uri) => await migrateFromLockFileCommand.execute(uri)),
+    registerCommandWithTelemetry(reporter, deleteWorkspaceItemCommand.getName(), async (workspaceTreeItem: WorkspaceTreeItem) => await deleteWorkspaceItemCommand.execute(workspaceTreeItem)),
+
   );
 
   // create a new status bar item that we can now manage
@@ -137,7 +146,7 @@ export async function activate(
 
   // update status bar item once at start
   await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
-  context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaOutputChannel, kiotaStatusBarItem })));
+  context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaStatusBarItem })));
 }
 
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {

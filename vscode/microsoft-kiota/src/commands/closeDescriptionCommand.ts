@@ -18,7 +18,7 @@ export class CloseDescriptionCommand extends Command {
   public async execute(): Promise<void> {
     const yesAnswer = vscode.l10n.t("Yes");
     const response = await vscode.window.showInformationMessage(
-      vscode.l10n.t("Do you want to remove this API description?"),
+      vscode.l10n.t("Do you want to close this API description?"),
       yesAnswer,
       vscode.l10n.t("No")
     );

@@ -9,23 +9,14 @@ import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { parseGenerationLanguage, parsePluginType } from "../../util";
-import { exportLogsAndShowErrors } from "../../utilities/logging";
+import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
 import { generateClient } from "../generate/generateClient";
 import { generatePlugin } from "../generate/generatePlugin";
-import { checkForSuccess } from "../generate/generation-util";
 
 export class RegenerateService {
-  private _context: ExtensionContext;
-  private _openApiTreeProvider: OpenApiTreeProvider;
-  private _clientKey: string;
-  private _clientObject: ClientOrPluginProperties;
 
-  public constructor(context: ExtensionContext, openApiTreeProvider: OpenApiTreeProvider,
-    clientKey: string, clientObject: ClientOrPluginProperties) {
-    this._context = context;
-    this._openApiTreeProvider = openApiTreeProvider;
-    this._clientKey = clientKey;
-    this._clientObject = clientObject;
+  public constructor(private _context: ExtensionContext, private _openApiTreeProvider: OpenApiTreeProvider,
+    private _clientKey: string, private _clientObject: ClientOrPluginProperties, private _kiotaOutputChannel: vscode.LogOutputChannel) {
   }
 
   async regenerateClient(settings: ExtensionSettings, selectedPaths?: string[]): Promise<void> {
@@ -62,7 +53,7 @@ export class RegenerateService {
       if (result) {
         const isSuccess = await checkForSuccess(result);
         if (!isSuccess) {
-          await exportLogsAndShowErrors(result);
+          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(`Client ${this._clientKey} re-generated successfully.`);
       }
@@ -92,7 +83,9 @@ export class RegenerateService {
         settings.clearCache,
         false,
         settings.disableValidationRules,
-        ConsumerOperation.Edit
+        ConsumerOperation.Edit,
+        pluginObjectItem.authType ? pluginObjectItem.authType : null,
+        pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
@@ -107,7 +100,7 @@ export class RegenerateService {
       if (result) {
         const isSuccess = await checkForSuccess(result);
         if (!isSuccess) {
-          await exportLogsAndShowErrors(result);
+          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(vscode.l10n.t(`Plugin ${this._clientKey} re-generated successfully.`));
       }

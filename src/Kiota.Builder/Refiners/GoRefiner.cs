@@ -148,7 +148,7 @@ public class GoRefiner : CommonLanguageRefiner
             AddConstructorsForDefaultValues(
                 generatedCode,
                 true,
-                true,  //forcing add as constructors are required for by factories 
+                true,  //forcing add as constructors are required for by factories
                 new[] { CodeClassKind.RequestConfiguration });
             cancellationToken.ThrowIfCancellationRequested();
             MakeModelPropertiesNullable(
@@ -744,6 +744,9 @@ public class GoRefiner : CommonLanguageRefiner
         "Duration",
         "TimeOnly",
         "DateOnly",
+        "TimeSpan",
+        "Time",
+        "ISODuration",
         "string",
         "UUID",
         "Guid"

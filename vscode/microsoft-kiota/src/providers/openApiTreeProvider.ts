@@ -21,20 +21,24 @@ import {
 } from '../kiotaInterop';
 import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
+import { SharedService } from './sharedService';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
     public apiTitle?: string;
     private initialStateHash: string = '';
+
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly settingsGetter: () => ExtensionSettings,
+        private readonly sharedService: SharedService,
         private _descriptionUrl?: string,
         public includeFilters: string[] = [],
-        public excludeFilters: string[] = []) {
-
+        public excludeFilters: string[] = [],
+    ) {
     }
+
     private _workspaceFilePath?: string;
     private _workspaceFile?: ConfigurationFile | Partial<ConfigurationFile> = {};
     public get isWorkspaceFileLoaded(): boolean {
@@ -332,6 +336,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         });
         if (result) {
             this.apiTitle = result.apiTitle;
+            this.sharedService.set('clientOrPluginKey', clientNameOrPluginName);
             if (result.rootNode) {
                 if (this.includeFilters.length === 0) {
                     this.setAllSelected(result.rootNode, false);
@@ -348,7 +353,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                         clientNameOrPluginName
                     );
                 }
-                await updateTreeViewIcons(treeViewId, true, false);
             }
         }
     }
@@ -414,7 +418,7 @@ function createKiotaOpenApiNode(
         clientNameOrPluginName
     };
 }
-type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
+type IconSet = string | vscode.Uri | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
 

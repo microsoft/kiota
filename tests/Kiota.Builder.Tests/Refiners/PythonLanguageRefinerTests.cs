@@ -160,6 +160,11 @@ public class PythonLanguageRefinerTests
         {
             Name = "otherNs",
         });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "IAdditionalDataHolder",
+            IsExternal = true
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
@@ -170,6 +175,7 @@ public class PythonLanguageRefinerTests
         Assert.Contains(model.Properties, x => x.Name.Equals("other_prop"));
         Assert.Contains(model.Methods, x => x.Name.Equals("other_method"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+        Assert.Contains(model.StartBlock.Implements, x => x.Name.Equals("AdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()
@@ -583,6 +589,35 @@ public class PythonLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
         Assert.Single(requestBuilder.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.DoesNotContain("QueryParameters", declaration.Usings.Select(x => x.Name));
+    }
+    [Fact]
+    public async Task ReplacesUntypedNodeInMethodParameterAndReturnTypeAsync()
+    {
+        var requestBuilderClass = root.AddClass(new CodeClass() { Name = "NodeRequestBuilder" }).First();
+        var method = new CodeMethod
+        {
+            Name = "getAsync",
+            ReturnType = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName,//Returns untyped node
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.RequestExecutor
+        };
+        method.AddParameter(new CodeParameter()
+        {
+            Name = "jsonData",
+            Type = new CodeType()
+            {
+                Name = KiotaBuilder.UntypedNodeName, //Has untyped node parameter
+                IsExternal = true
+            },
+            Kind = CodeParameterKind.RequestBody
+        });
+        requestBuilderClass.AddMethod(method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        Assert.Equal("bytes", method.Parameters.First().Type.Name);// type is renamed to use the stream type
+        Assert.Equal("bytes", method.ReturnType.Name);// return type is renamed to use the stream type
     }
     #endregion
 }

@@ -177,16 +177,32 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
             new CodeUsing
             {
                 Name = "otherNs",
+            },
+            new CodeUsing
+            {
+                Name = "AdditionalDataHolder",
             });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "AdditionalDataHolder",
+            IsExternal = true
+        });
         model.StartBlock.Inherits = new CodeType
         {
             TypeDefinition = otherModel
         };
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        Assert.DoesNotContain("otherProp", model.Properties.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase); // we're not inlining since base error for TS is an interface
-        Assert.DoesNotContain("otherMethod", model.Methods.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
-        Assert.DoesNotContain("otherNs", model.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        var interfaceModel = root.FindChildByName<CodeInterface>("somemodel");
+        Assert.NotNull(interfaceModel);
+
+        Assert.DoesNotContain("otherProp", interfaceModel.Properties.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase); // we're not inlining since base error for TS is an interface
+        Assert.DoesNotContain("otherMethod", interfaceModel.Methods.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain("otherNs", interfaceModel.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+
+        var interfaceOtherModel = root.FindChildByName<CodeInterface>("otherModel");
+        Assert.NotNull(interfaceOtherModel);
+        Assert.Contains(interfaceOtherModel.StartBlock.Implements, x => x.Name.Equals("AdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()
