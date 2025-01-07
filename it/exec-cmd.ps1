@@ -206,8 +206,8 @@ elseif ($language -eq "dart") {
     if ($mockServerTest) {
         Push-Location $itTestPath
 
-        $itTestPathSources = Join-Path -Path $testPath -ChildPath "src"
-        $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "src"
+        $itTestPathSources = Join-Path -Path $testPath -ChildPath "lib"
+        $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "lib"
         if (Test-Path $itTestPathDest) {
             Remove-Item $itTestPathDest -Force -Recurse
         }
@@ -222,7 +222,7 @@ elseif ($language -eq "dart") {
     else {
         Invoke-Call -ScriptBlock {
             dart pub get
-            dart analyze src/
+            dart analyze lib/
         } -ErrorAction Stop
     }
 }
