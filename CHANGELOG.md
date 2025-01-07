@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug in generation when a referenced schema in an allOf was a primitive [#5701](https://github.com/microsoft/kiota/issues/5701).
 - Fixed a bug where inherited error models would be missing interface declarations. [#5888](https://github.com/microsoft/kiota/issues/5888)
+- Fixed a bug where oneOf/anyOf schemas with single references to inheritance or intersections would be missing properties. [#5921](https://github.com/microsoft/kiota/issues/5921)
 
 ## [1.21.0] - 2024-12-05
 

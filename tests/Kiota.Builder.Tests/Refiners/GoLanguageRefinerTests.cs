@@ -1303,5 +1303,46 @@ components:
         Assert.Single(nodeUsing);
         Assert.Equal("github.com/microsoft/kiota-abstractions-go/serialization", nodeUsing[0].Declaration.Name);
     }
+    [Theory]
+    [InlineData("ISODuration", false)]
+    [InlineData("DateOnly", false)]
+    [InlineData("TimeOnly", false)]
+    [InlineData("Time", false)]
+    [InlineData("DateTimeOffset", false)]
+    [InlineData("Guid", false)]
+    [InlineData("string", false)]
+    [InlineData("boolean", true)]
+    [InlineData("int64", true)]
+    [InlineData("integer", true)]
+    [InlineData("long", true)]
+    [InlineData("float", true)]
+    public async Task ImportsStrConvForRelevantTypesOnly(string pathParameterType, bool isImported)
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = model.AddMethod(new CodeMethod
+        {
+            Name = "NewRequestBuilder",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType
+            {
+                Name = "void"
+            }
+        }).First();
+        constructor.AddParameter(new CodeParameter
+        {
+            Name = "daysInPast",
+            Kind = CodeParameterKind.Path,
+            Type = new CodeType
+            {
+                Name = pathParameterType
+            }
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(isImported, model.StartBlock.Usings.Any(static x => x.Declaration.Name.Equals("strconv", StringComparison.OrdinalIgnoreCase)));
+    }
     #endregion
 }

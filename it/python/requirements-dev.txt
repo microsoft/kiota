@@ -1,18 +1,18 @@
 -i https://pypi.org/simple
 
-astroid==3.3.5 ; python_full_version >= '3.7.2'
+astroid==3.3.8 ; python_full_version >= '3.7.2'
 
 certifi==2024.12.14 ; python_version >= '3.6'
 
-charset-normalizer==3.4.0 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.1 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
-dill==0.3.6 ; python_version < '3.11'
+dill==0.3.9 ; python_version < '3.11'
 
 docutils==0.21.2 ; python_version >= '3.7'
 
-exceptiongroup==1.1.1 ; python_version < '3.11'
+exceptiongroup==1.2.2 ; python_version < '3.11'
 
 flit==3.10.1
 
@@ -30,7 +30,7 @@ lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.13.0
+mypy==1.14.1
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -40,17 +40,17 @@ platformdirs==4.3.6 ; python_version >= '3.7'
 
 pluggy==1.5.0 ; python_version >= '3.7'
 
-pylint==3.3.2
+pylint==3.3.3
 
 pytest==8.3.4
 
-pytest-asyncio==0.25.0
+pytest-asyncio==0.25.1
 
 requests==2.32.3 ; python_version >= '3.7'
 
 toml==0.10.2
 
-tomli==2.0.1 ; python_version < '3.11'
+tomli==2.2.1 ; python_version < '3.11'
 
 tomli-w==1.1.0 ; python_version >= '3.7'
 
@@ -58,19 +58,19 @@ tomlkit==0.13.2 ; python_version >= '3.7'
 
 typing-extensions==4.12.2 ; python_version >= '3.7'
 
-urllib3==2.2.3 ; python_version >= '3.7'
+urllib3==2.3.0 ; python_version >= '3.7'
 
-wrapt==1.15.0 ; python_version < '3.11'
+wrapt==1.17.0 ; python_version < '3.11'
 
 yapf==0.43.0
 
 zipp==3.21.0 ; python_version >= '3.7'
 
-aiohttp==3.11.10 ; python_version >= '3.6'
+aiohttp==3.11.11 ; python_version >= '3.6'
 
 aiosignal==1.3.2 ; python_version >= '3.7'
 
-anyio==4.7.0 ; python_version >= '3.7'
+anyio==4.8.0 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
@@ -98,19 +98,19 @@ httpx[http2]==0.28.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.6.6
+microsoft-kiota-abstractions==1.6.8
 
-microsoft-kiota-authentication-azure==1.6.6
+microsoft-kiota-authentication-azure==1.6.8
 
-microsoft-kiota-http==1.6.6
+microsoft-kiota-http==1.6.8
 
-microsoft-kiota-serialization-json==1.6.6
+microsoft-kiota-serialization-json==1.6.8
 
-microsoft-kiota-serialization-text==1.6.6
+microsoft-kiota-serialization-text==1.6.8
 
-microsoft-kiota-serialization-form==1.6.6
+microsoft-kiota-serialization-form==1.6.8
 
-microsoft-kiota-serialization-multipart==1.6.6
+microsoft-kiota-serialization-multipart==1.6.8
 
 msal==1.31.1
 
@@ -118,7 +118,7 @@ msal-extensions==1.2.0
 
 multidict==6.1.0 ; python_version >= '3.7'
 
-portalocker==3.0.0 ; python_version >= '3.5' and platform_system == 'Windows'
+portalocker==3.1.1 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.22
 
