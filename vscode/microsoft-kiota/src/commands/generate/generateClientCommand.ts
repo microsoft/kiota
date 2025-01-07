@@ -201,6 +201,8 @@ export class GenerateClientCommand extends Command {
         settings.cleanOutput,
         settings.disableValidationRules,
         ConsumerOperation.Add,
+        undefined,
+        '',
         config.workingDirectory
       );
       const duration = performance.now() - start;
@@ -245,6 +247,8 @@ export class GenerateClientCommand extends Command {
         settings.cleanOutput,
         settings.disableValidationRules,
         ConsumerOperation.Add,
+        undefined,
+        '',
         config.workingDirectory
       );
       const duration = performance.now() - start;
