@@ -131,7 +131,7 @@ public class DartConventionService : CommonLanguageConventionService
                 urlTplRef = TempDictionaryVarName;
                 writer.WriteLine($"var {urlTplRef} = Map.of({pathParametersProp.Name.ToFirstCharacterLowerCase()});");
                 foreach (var param in customParameters)
-                    writer.WriteLine($"{urlTplRef}.putIfAbsent('{param.Name.ToFirstCharacterLowerCase()}', ()=> {param.Name.ToFirstCharacterLowerCase()});");
+                    writer.WriteLine($"{urlTplRef}.putIfAbsent('{param.SerializationName}', () => {param.Name.ToFirstCharacterLowerCase()});");
             }
             writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterLowerCase()}{pathParametersSuffix});");
         }
