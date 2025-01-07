@@ -12,7 +12,7 @@ dill==0.3.6 ; python_version < '3.11'
 
 docutils==0.21.2 ; python_version >= '3.7'
 
-exceptiongroup==1.1.1 ; python_version < '3.11'
+exceptiongroup==1.2.2 ; python_version < '3.11'
 
 flit==3.10.1
 
