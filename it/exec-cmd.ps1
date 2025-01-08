@@ -203,6 +203,11 @@ elseif ($language -eq "python") {
     }
 }
 elseif ($language -eq "dart") {
+    Invoke-Call -ScriptBlock {
+        dart pub get
+        dart analyze lib/
+    } -ErrorAction Stop
+
     if ($mockServerTest) {
         Push-Location $itTestPath
 
@@ -218,12 +223,6 @@ elseif ($language -eq "dart") {
         } -ErrorAction Stop
 
         Pop-Location
-    }
-    else {
-        Invoke-Call -ScriptBlock {
-            dart pub get
-            dart analyze lib/
-        } -ErrorAction Stop
     }
 }
 Pop-Location
