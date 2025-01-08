@@ -190,7 +190,8 @@ public partial class KiotaBuilder
 
             // Should Generate
             sw.Start();
-            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, openApiDocument.HashCode, cancellationToken).ConfigureAwait(false);
+            var hashCode = await openApiDocument.GetHashCodeAsync(cancellationToken).ConfigureAwait(false);
+            shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, hashCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
             if (shouldGenerate && generating)
@@ -343,7 +344,12 @@ public partial class KiotaBuilder
         // Write lock file
         sw.Start();
         using var descriptionStream = !isDescriptionFromWorkspaceCopy ? await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false) : Stream.Null;
-        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, openApiDocument?.HashCode ?? string.Empty, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
+        var hashCode = openApiDocument switch
+        {
+            null => string.Empty,
+            _ => await openApiDocument.GetHashCodeAsync(cancellationToken).ConfigureAwait(false),
+        };
+        await workspaceManagementService.UpdateStateFromConfigurationAsync(config, hashCode, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
     private readonly WorkspaceManagementService workspaceManagementService;

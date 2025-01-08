@@ -66,7 +66,7 @@ public partial class PluginsGenerationService
         trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
         trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title[..^9]; // removing the second ` - Subset` suffix from the title
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
-        descriptionWriter.Flush();
+        await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
 
         // 3. write the plugins
 
