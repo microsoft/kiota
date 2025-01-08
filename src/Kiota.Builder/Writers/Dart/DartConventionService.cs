@@ -167,15 +167,7 @@ public class DartConventionService : CommonLanguageConventionService
     {
         return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
     }
-    private static IEnumerable<CodeNamespace> GetAllNamespaces(CodeNamespace ns)
-    {
-        foreach (var childNs in ns.Namespaces)
-        {
-            yield return childNs;
-            foreach (var childNsSegment in GetAllNamespaces(childNs))
-                yield return childNsSegment;
-        }
-    }
+
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
         return GetTypeString(code, targetElement, includeCollectionInformation, true);
@@ -187,7 +179,7 @@ public class DartConventionService : CommonLanguageConventionService
             throw new InvalidOperationException($"Dart does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
         {
-            var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
+            var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType);
             var alias = GetTypeAlias(currentType, targetElement);
             if (!string.IsNullOrEmpty(alias))
             {
@@ -225,18 +217,8 @@ public class DartConventionService : CommonLanguageConventionService
             return aliasedUsing.Alias;
         return string.Empty;
     }
-    private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
-    {
-        var parentElementsHash = targetElement.Parent is CodeClass parentClass ?
-            parentClass.Methods.Select(static x => x.Name)
-                .Union(parentClass.Properties.Select(static x => x.Name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase) :
-            new HashSet<string>(0, StringComparer.OrdinalIgnoreCase);
 
-        var typeName = TranslateType(currentType);
-        return typeName;
-    }
+    private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType) => TranslateType(currentType);
 
     public override string TranslateType(CodeType type)
     {

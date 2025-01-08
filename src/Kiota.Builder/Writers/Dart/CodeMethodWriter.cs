@@ -62,9 +62,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
-            return !parentClass.Properties.Where(prop => !string.IsNullOrEmpty(prop.DefaultValue)).Any();
+            return parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
         }
-        var hasBody = codeElement.Parameters.Where(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters)).Any();
+        var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
     }
 
@@ -120,13 +120,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             case CodeMethodKind.ErrorMessageOverride:
                 throw new InvalidOperationException("ErrorMessageOverride is not supported as the error message is implemented by a property.");
             case CodeMethodKind.CommandBuilder:
-                var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
-                requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                requestConfig = origParams.OfKind(CodeParameterKind.RequestConfiguration);
-                requestContentType = origParams.OfKind(CodeParameterKind.RequestBodyContentType);
-                requestParams = new RequestParams(requestBodyParam, requestConfig, requestContentType);
-                WriteCommandBuilderBody(codeElement, parentClass, requestParams, isVoid, returnType, writer);
-                break;
+                throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
@@ -206,7 +200,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (property.Type is CodeType propertyType)
             {
-                var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
+                conventions.GetTypeString(propertyType, codeElement, true, false);
                 var check = propertyType.IsCollection ? ".isNotEmpty" : " != null";
                 writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
                 writer.WriteLine($"{ResultVarName}.{property.Name} = {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)};");
@@ -370,7 +364,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private string DefaultDeserializerReturnType => $"Map<String, void Function({conventions.ParseNodeInterfaceName})>";
     private string DefaultDeserializerReturnInstance => $"<String, void Function({conventions.ParseNodeInterfaceName})>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -635,11 +628,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    protected virtual void WriteCommandBuilderBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
-    {
-        throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
-    }
-
     protected string GetSendRequestMethodName(bool isVoid, CodeElement currentElement, CodeTypeBase returnType)
     {
         ArgumentNullException.ThrowIfNull(returnType);
@@ -706,7 +694,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             writer.WriteLine("@override");
         }
-        var genericTypePrefix = isVoid ? string.Empty : "<";
+
         var genericTypeSuffix = code.IsAsync && !isVoid ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
         var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? "void" : returnType;

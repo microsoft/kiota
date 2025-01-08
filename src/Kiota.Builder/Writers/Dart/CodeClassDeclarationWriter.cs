@@ -40,7 +40,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                         (string.Empty, x.Alias, x.Declaration.Name) :
                         relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                     .OrderBy(static x => x.Item3, StringComparer.Ordinal))
-                writer.WriteLine($"import '{relativePath.Item3}.dart'{getAlias(relativePath.Item2)};");
+                writer.WriteLine($"import '{relativePath.Item3}.dart'{GetAlias(relativePath.Item2)};");
 
             writer.WriteLine();
 
@@ -56,7 +56,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
         writer.StartBlock($"class {codeElement.Name}{derivation}{implements} {{");
     }
 
-    private String getAlias(string alias)
+    private static String GetAlias(string alias)
     {
         return string.IsNullOrEmpty(alias) ? string.Empty : $" as {alias}";
     }
