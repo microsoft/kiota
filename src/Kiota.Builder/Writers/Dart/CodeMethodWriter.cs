@@ -200,7 +200,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             if (property.Type is CodeType propertyType)
             {
-                conventions.GetTypeString(propertyType, codeElement, true, false);
                 var check = propertyType.IsCollection ? ".isNotEmpty" : " != null";
                 writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
                 writer.WriteLine($"{ResultVarName}.{property.Name} = {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)};");
