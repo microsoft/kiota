@@ -114,7 +114,7 @@ jobs:
         if: matrix.language == 'dart'
         uses: dart-lang/setup-dart@v1
         with:
-          sdk: "3.6"
+          sdk: "stable"
 
       - name: Check if test is suppressed
         id: check-suppressed
