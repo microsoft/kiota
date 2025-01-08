@@ -59,7 +59,7 @@ public partial class PluginsGenerationService
         await using var descriptionStream = File.Create(descriptionFullPath, 4096);
         await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-        var descriptionWriter = new OpenApiYamlWriter(fileWriter);
+        var descriptionWriter = new OpenApiYamlWriter(fileWriter, new() { InlineLocalReferences = true, InlineExternalReferences = true });
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
         PrepareDescriptionForCopilot(trimmedPluginDocument);
         // trimming a second time to remove any components that are no longer used after the inlining
