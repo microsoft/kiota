@@ -279,7 +279,7 @@ components:
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml");
         var resultDocument = resultResult.Document;
         Assert.Empty(resultResult.Diagnostic.Errors);
 
@@ -521,7 +521,7 @@ components:
         // Cleanup
         try
         {
-            Directory.Delete(outputDirectory);
+            Directory.Delete(outputDirectory, true);
         }
         catch (Exception)
         {
