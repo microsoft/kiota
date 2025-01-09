@@ -272,7 +272,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
             currentProperty.Type.Name = "RequestAdapter";
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-            currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Type.Name = currentProperty.Type.Name[1..].ToFirstCharacterUpperCase(); // removing the "I"
         else if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "list[RequestOption]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
@@ -292,8 +292,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.Kind is CodePropertyKind.Custom && currentProperty.Type.IsNullable && string.IsNullOrEmpty(currentProperty.DefaultValue))
         {
             currentProperty.DefaultValue = "None";
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         }
-        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        else
+        {
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
