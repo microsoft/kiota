@@ -24,12 +24,16 @@ export class EditPathsCommand extends Command {
   public async execute({ clientOrPluginKey, clientOrPluginObject }: Partial<WorkspaceGenerationContext>): Promise<void> {
     await this.loadEditPaths(clientOrPluginKey!, clientOrPluginObject!);
     this.openApiTreeProvider.resetInitialState();
-    await updateTreeViewIcons(treeViewId, false, true);
-    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 
   private async loadEditPaths(clientOrPluginKey: string, clientOrPluginObject: ClientOrPluginProperties) {
-    await openTreeViewWithProgress(() => this.openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject));
+    await openTreeViewWithProgress(
+      async () => {
+        await this.openApiTreeProvider.loadEditPaths(clientOrPluginKey, clientOrPluginObject);
+        await updateTreeViewIcons(treeViewId, false, true);
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
+      }
+    );
 
     const regenerateAnswer = vscode.l10n.t("Regenerate");
     const showGenerateMessage = this.context.globalState.get<boolean>(SHOW_MESSAGE_AFTER_API_LOAD, true);

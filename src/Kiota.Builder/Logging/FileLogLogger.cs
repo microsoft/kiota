@@ -71,9 +71,6 @@ public class FileLogLogger : ILogger, IDisposable
     }
 }
 
-public class FileLogLogger<T> : FileLogLogger, ILogger<T>
+public class FileLogLogger<T>(string logFileDirectoryAbsolutePath, LogLevel logLevel) : FileLogLogger(logFileDirectoryAbsolutePath, logLevel, typeof(T).FullName ?? string.Empty), ILogger<T>
 {
-    public FileLogLogger(string logFileDirectoryAbsolutePath, LogLevel logLevel) : base(logFileDirectoryAbsolutePath, logLevel, typeof(T).FullName ?? string.Empty)
-    {
-    }
 }

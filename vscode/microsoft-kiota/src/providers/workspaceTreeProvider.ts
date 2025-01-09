@@ -29,7 +29,6 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
     private workspaceContentService: WorkspaceContentService,
     private sharedService: SharedService
   ) {
-    void this.loadContent();
   }
 
   async refreshView(): Promise<void> {
@@ -47,11 +46,15 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
     }
 
     if (!element) {
-      const hasClients = this.workspaceContent?.clients && Object.keys(this.workspaceContent.clients).length > 0;
-      const hasPlugins = this.workspaceContent?.plugins && Object.keys(this.workspaceContent.plugins).length > 0;
-      const collapsibleState = (hasClients || hasPlugins) ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
-      return [
-        new WorkspaceTreeItem(KIOTA_WORKSPACE_FILE, collapsibleState, 'root')
+      const hasClients = this.workspaceContent.clients && Object.keys(this.workspaceContent.clients).length > 0;
+      const hasPlugins = this.workspaceContent.plugins && Object.keys(this.workspaceContent.plugins).length > 0;
+      const hasWorkspaceContent = hasClients || hasPlugins;
+      return hasWorkspaceContent ? [
+        new WorkspaceTreeItem(KIOTA_WORKSPACE_FILE,
+          vscode.TreeItemCollapsibleState.Expanded, 'root')
+      ] : [
+        new WorkspaceTreeItem(vscode.l10n.t('No clients or plugins are available'),
+          vscode.TreeItemCollapsibleState.None, 'info')
       ];
     }
 
@@ -63,9 +66,6 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         }
         if (Object.keys(this.workspaceContent.plugins).length > 0) {
           children.push(new WorkspaceTreeItem(PLUGINS, vscode.TreeItemCollapsibleState.Expanded, 'category'));
-        }
-        if (children.length === 0) {
-          children.push(new WorkspaceTreeItem(vscode.l10n.t("No clients or plugins are available"), vscode.TreeItemCollapsibleState.None, 'info'));
         }
         return children;
       }
@@ -101,7 +101,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
       case 'root':
         element.command = {
           command: 'kiota.workspace.openWorkspaceFile',
-          title: vscode.l10n.t("Open File"),
+          title: vscode.l10n.t('Open File'),
           arguments: [vscode.Uri.file(getWorkspaceJsonPath())]
         };
         element.contextValue = 'folder';
@@ -139,12 +139,5 @@ export async function loadTreeView(context: vscode.ExtensionContext, treeDataPro
       await vscode.commands.executeCommand('kiota.editPaths', label, properties, category);
     })
   );
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
-      const document = event.document;
-      if (document.fileName.endsWith(KIOTA_WORKSPACE_FILE)) {
-        await vscode.commands.executeCommand('kiota.workspace.refresh');
-      }
-    })
-  );
+  await vscode.commands.executeCommand('kiota.workspace.refresh');
 };
