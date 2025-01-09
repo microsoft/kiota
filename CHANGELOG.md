@@ -11,7 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add new linux arm64 binary builds for Kiota CLI
+### Changed
+
+## [1.22.0] - 2025-01-09
+
+### Added
+
+- Adds code generation for the `Dart` programming language.Credit to @ricardoboss, @joanne-ter-maat, @Kees-Schotanus, @andreaTP, @baywet[#3745](https://github.com/microsoft/kiota/issues/3745)
+- Added new linux arm64 binary builds for Kiota CLI
 
 ### Changed
 
@@ -1523,3 +1530,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
