@@ -55,6 +55,11 @@ parameters:
         os: "linux"
         image: "ubuntu-latest"
         pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "linux-arm64"
+        jobPrefix: "linux_arm64"
+        os: "linux"
+        image: "ubuntu-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
       - architecture: "osx-x64"
         jobPrefix: "osx_x64"
         os: "macOS"
@@ -575,6 +580,7 @@ extends:
                 win_x64_build_binaries,
                 win_x86_build_binaries,
                 linux_x64_build_binaries,
+                linux_arm64_build_binaries,
                 osx_x64_build_binaries,
                 osx_arm64_build_binaries,
               ]

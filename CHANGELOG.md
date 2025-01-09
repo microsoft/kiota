@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add new linux arm64 binary builds for Kiota CLI
+
 ### Changed
 
 - Fixed a bug in generation when a referenced schema in an allOf was a primitive [#5701](https://github.com/microsoft/kiota/issues/5701).
