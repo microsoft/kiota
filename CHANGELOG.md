@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- markdownlint-disable-file MD024 -->
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
 ## [1.22.1] - 2025-01-10
 
 ### Added
 
 ### Changed
-Fixed a bug in the VS Code extension plugin generation [#5978](https://github.com/microsoft/kiota/issues/5978)
+- Fixed a bug in the VS Code extension plugin generation [#5978](https://github.com/microsoft/kiota/issues/5978)
 
 ## [1.22.0] - 2025-01-09
 
