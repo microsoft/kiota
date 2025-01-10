@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <LangVersion>Latest</LangVersion>
@@ -15,7 +15,7 @@
     <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.22.1</VersionPrefix>
+    <VersionPrefix>1.23.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -23,7 +23,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
     <Description>OpenAPI based client generator.</Description>
-    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
+    <Copyright>Â© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>OpenAPI .NET CSharp TypeScript Java Go PHP Python REST API</PackageTags>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
