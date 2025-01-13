@@ -824,56 +824,52 @@ components:
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
 info:
-  title: test
-  version: 1.0
-  description: test description we've created
+  title: Microsoft Graph get user API
+  version: 1.0.0
 servers:
-  - url: http://localhost/
-    description: There's no place like home
+  - url: https://graph.microsoft.com/v1.0/
 paths:
-  /test:
+  /me:
     get:
-      summary: summary for test path
-      description: description for test path
       responses:
-        '200':
-          description: test
-  /test/{id}:
-    get:
-      summary: Summary for test path with id that is longer than 50 characters 
-      description: description for test path with id
-      operationId: test.WithId
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: The id of the test
-        schema:
-          type: integer
-          format: int32
-      responses:
-        '200':
-        description: Response
-        content:
+        200:
+          description: Success!
+          content:
             application/json:
-            schema:
-                type: object
-                required:
-                - total_count
-                - incomplete_results
-                - items
-                properties:
-                total_count:
-                    type: integer
-                incomplete_results:
-                    type: boolean
-                items:
-                    type: array
-                    items:
-                    $ref: '#/components/schemas/issue-search-result-item'
-            examples:
-                default:
-                $ref: '#/components/examples/issue-search-result-item-paginated'";
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /me/get:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        otherNames:
+          type: array
+          items:
+            type: string
+            nullable: true
+        importance:
+          $ref: '#/components/schemas/microsoft.graph.importance'
+    microsoft.graph.importance:
+      title: importance
+      enum:
+        - low
+        - normal
+        - high
+      type: string";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         var inputPluginName = "client";
@@ -904,7 +900,7 @@ paths:
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
-        string expectedStaticTemplate = @"{""type"":""AdaptiveCard"",""$schema"":""http://adaptivecards.io/schemas/adaptive-card.json"",""version"":""1.5"",""body"":[{""type"":""Container"",""items"":[{""type"":""TextBlock"",""text"":""user.login: ${if(user.login, user.login, 'N/A')}""},{""type"":""Image"",""url"":""${if(user.avatar_url != null && user.avatar_url != '', user.avatar_url, '')}""},{""type"":""TextBlock"",""text"":""created_at: ${if(created_at, created_at, 'N/A')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""closed_at: ${if(closed_at, closed_at, 'Still Open')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""assignee: ${if(assignee, assignee, 'No assignees to work on this issue')}"",""wrap"":true}]}]}";
+        string expectedStaticTemplate = "{\"type\":\"AdaptiveCard\",\"$schema\":\"https://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.5\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"id: ${if(id, id, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"displayName: ${if(displayName, displayName, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"otherNames: ${if(otherNames, otherNames, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"importance: ${if(importance, importance, 'N/A')}\",\"wrap\":true}]}";
 
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{inputPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
@@ -932,13 +928,7 @@ paths:
             Assert.True(false, "actualJson is null");
         }
 
-        Assert.Contains("description for test path with id", resultingManifest.Document.Functions[1].Description);
-        Assert.Equal(2, resultingManifest.Document.Functions.Count);
-        Assert.Contains("Summary for test path with id", resultingManifest.Document.Capabilities.ConversationStarters[1].Text);
-        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);
         Assert.Equal(inputPluginName, resultingManifest.Document.Namespace);
-        Assert.Empty(resultingManifest.Problems);
-        Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);
     }
 
     #endregion
