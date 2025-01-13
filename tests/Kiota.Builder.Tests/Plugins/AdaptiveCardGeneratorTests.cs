@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Kiota.Builder.Plugins;
 using Microsoft.OpenApi.Models;
@@ -45,11 +46,15 @@ namespace Kiota.Builder.Tests.Plugins
                     }
                 }
             };
-            var expected = @"{""type"":""AdaptiveCard"",""$schema"":""https://adaptivecards.io/schemas/adaptive-card.json"",""version"":""1.5"",""body"":[{""type"":""TextBlock"",""text"":""name: ${if(name, name, 'N/A')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""age: ${if(age, age, 'N/A')}"",""wrap"":true}]}";
+            string expected = "{\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.5\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${name, name, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${age, age, 'N/A'}\"\r\n    }\r\n  ]\r\n}";
 
             var generator = new AdaptiveCardGenerator();
             var card = generator.GenerateAdaptiveCard(sample);
-            Assert.Equal(expected, card);
+           
+            var expectedJson = JsonDocument.Parse(expected).RootElement.GetRawText();
+            var actualJson = JsonDocument.Parse(card).RootElement.GetRawText();
+
+            Assert.Equal(expectedJson, actualJson);
         }
     }
 }

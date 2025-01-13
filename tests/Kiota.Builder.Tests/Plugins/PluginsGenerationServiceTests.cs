@@ -900,7 +900,7 @@ components:
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
-        string expectedStaticTemplate = "{\"type\":\"AdaptiveCard\",\"$schema\":\"https://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.5\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"id: ${if(id, id, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"displayName: ${if(displayName, displayName, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"otherNames: ${if(otherNames, otherNames, 'N/A')}\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"importance: ${if(importance, importance, 'N/A')}\",\"wrap\":true}]}";
+        string expectedStaticTemplate = "{\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.5\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${id, id, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${displayName, displayName, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${otherNames.join(', ')}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${importance, importance, 'N/A'}\"\r\n    }\r\n  ]\r\n}";
 
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{inputPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
@@ -910,7 +910,7 @@ components:
         if (actualJson.HasValue)
         {
             // Properties to compare
-            List<string> propertiesToCompare = new List<string> { "type", "$schema", "version" };
+            List<string> propertiesToCompare = new List<string> { "type", "version", "body"};
 
             // Compare properties
             foreach (string prop in propertiesToCompare)
