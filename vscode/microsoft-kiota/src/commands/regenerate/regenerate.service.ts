@@ -83,7 +83,9 @@ export class RegenerateService {
         settings.clearCache,
         false,
         settings.disableValidationRules,
-        ConsumerOperation.Edit
+        ConsumerOperation.Edit,
+        pluginObjectItem.authType ? pluginObjectItem.authType : null,
+        pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;

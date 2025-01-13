@@ -115,6 +115,11 @@ public class CSharpLanguageRefinerTests
         {
             Name = "otherNs",
         });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "IAdditionalDataHolder",
+            IsExternal = true
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
@@ -125,6 +130,7 @@ public class CSharpLanguageRefinerTests
         Assert.Contains(model.Properties, x => x.Name.Equals("OtherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+        Assert.Contains(model.StartBlock.Implements, x => x.Name.Equals("IAdditionalDataHolder"));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()

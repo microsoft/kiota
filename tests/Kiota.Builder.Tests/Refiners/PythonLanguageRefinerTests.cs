@@ -160,6 +160,11 @@ public class PythonLanguageRefinerTests
         {
             Name = "otherNs",
         });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "IAdditionalDataHolder",
+            IsExternal = true
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
@@ -170,6 +175,7 @@ public class PythonLanguageRefinerTests
         Assert.Contains(model.Properties, x => x.Name.Equals("other_prop"));
         Assert.Contains(model.Methods, x => x.Name.Equals("other_method"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+        Assert.Contains(model.StartBlock.Implements, x => x.Name.Equals("AdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()

@@ -578,6 +578,11 @@ components:
         {
             Name = "otherNs",
         });
+        otherModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "IAdditionalDataHolder",
+            IsExternal = true
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
@@ -588,6 +593,10 @@ components:
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+
+        var modelInterface = root.FindChildByName<CodeInterface>("somemodelable");
+        Assert.NotNull(modelInterface);
+        Assert.Contains(modelInterface.StartBlock.Implements, x => x.Name.Equals("AdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutorAsync()
@@ -1293,6 +1302,47 @@ components:
         var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Single(nodeUsing);
         Assert.Equal("github.com/microsoft/kiota-abstractions-go/serialization", nodeUsing[0].Declaration.Name);
+    }
+    [Theory]
+    [InlineData("ISODuration", false)]
+    [InlineData("DateOnly", false)]
+    [InlineData("TimeOnly", false)]
+    [InlineData("Time", false)]
+    [InlineData("DateTimeOffset", false)]
+    [InlineData("Guid", false)]
+    [InlineData("string", false)]
+    [InlineData("boolean", true)]
+    [InlineData("int64", true)]
+    [InlineData("integer", true)]
+    [InlineData("long", true)]
+    [InlineData("float", true)]
+    public async Task ImportsStrConvForRelevantTypesOnly(string pathParameterType, bool isImported)
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = model.AddMethod(new CodeMethod
+        {
+            Name = "NewRequestBuilder",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType
+            {
+                Name = "void"
+            }
+        }).First();
+        constructor.AddParameter(new CodeParameter
+        {
+            Name = "daysInPast",
+            Kind = CodeParameterKind.Path,
+            Type = new CodeType
+            {
+                Name = pathParameterType
+            }
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(isImported, model.StartBlock.Usings.Any(static x => x.Declaration.Name.Equals("strconv", StringComparison.OrdinalIgnoreCase)));
     }
     #endregion
 }

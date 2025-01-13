@@ -567,6 +567,32 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.False(schema.IsInherited());
         Assert.False(schema.IsIntersection());
+
+        schema = new OpenApiSchema
+        {
+            Title = "Trader Id",
+            AllOf = new List<OpenApiSchema> {
+                new ()
+                {
+                    Title = "UserId",
+                    Description = "unique identifier",
+                    Type = "string",
+                    Pattern = "^[1-9][0-9]*$",
+                    Example = new OpenApiString("1323232"),
+                    Reference = new OpenApiReference
+                    {
+                        Id = "UserId" // This property makes the schema "meaningful"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "TraderId" // This property makes the schema "meaningful"
+            }
+        };
+
+        Assert.False(schema.IsInherited());
+        Assert.False(schema.IsIntersection());
     }
     [Fact]
     public void MergesIntersection()
@@ -647,6 +673,351 @@ public class OpenApiSchemaExtensionsTests
         Assert.Equal("description", result.Description);
         Assert.True(result.Deprecated);
     }
+
+    public class MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries
+    {
+        [Fact]
+        public void DoesMergeWithInheritance()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
+                                    Id = "BaseClass"
+                                },
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.True(schema.AnyOf[0].IsInherited());
+            Assert.NotNull(result);
+            Assert.True(result.IsInherited());
+            Assert.Contains("one", result.Properties.Keys);
+            Assert.Empty(result.AnyOf);
+            Assert.Equal(2, result.AllOf.Count);
+        }
+        [Fact]
+        public void DoesMergeWithIntersection()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["first"] = new OpenApiSchema(),
+                                }
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["second"] = new OpenApiSchema(),
+                                }
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["third"] = new OpenApiSchema(),
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.NotNull(result);
+            Assert.True(schema.AnyOf[0].IsIntersection());
+            Assert.True(result.IsIntersection());
+            Assert.Contains("one", result.Properties.Keys);
+            Assert.Empty(result.AnyOf);
+            Assert.Equal(3, result.AllOf.Count);
+        }
+        [Fact]
+        public void DoesNotMergeWithMoreThanOneInclusiveEntry()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                AnyOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
+                                    Id = "BaseClass"
+                                },
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                    new() { Type = "object" },
+                ],
+            };
+
+            var result = schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.Null(result);
+        }
+        [Fact]
+        public void DoesNotMergeWithoutInheritanceOrIntersection()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                AnyOf =
+                [
+                    new()
+                    {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.Null(result);
+        }
+    }
+
+    public class MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries
+    {
+        [Fact]
+        public void DoesMergeWithInheritance()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
+                                    Id = "BaseClass"
+                                },
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.True(schema.OneOf[0].IsInherited());
+            Assert.NotNull(result);
+            Assert.True(result.IsInherited());
+            Assert.Contains("one", result.Properties.Keys);
+            Assert.Empty(result.OneOf);
+            Assert.Equal(2, result.AllOf.Count);
+        }
+        [Fact]
+        public void DoesMergeWithIntersection()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["first"] = new OpenApiSchema(),
+                                }
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["second"] = new OpenApiSchema(),
+                                }
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["third"] = new OpenApiSchema(),
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.NotNull(result);
+            Assert.True(schema.OneOf[0].IsIntersection());
+            Assert.True(result.IsIntersection());
+            Assert.Contains("one", result.Properties.Keys);
+            Assert.Empty(result.OneOf);
+            Assert.Equal(3, result.AllOf.Count);
+        }
+        [Fact]
+        public void DoesNotMergeWithMoreThanOneExclusiveEntry()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                OneOf =
+                [
+                    new()
+                    {
+                        Properties = new Dictionary<string, OpenApiSchema>()
+                        {
+                            ["one"] = new OpenApiSchema(),
+                        },
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Reference = new()
+                                {
+                                    Id = "BaseClass"
+                                },
+                            },
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                    new() { Type = "object" },
+                ],
+            };
+
+            var result = schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.Null(result);
+        }
+        [Fact]
+        public void DoesNotMergeWithoutInheritanceOrIntersection()
+        {
+            var schema = new OpenApiSchema()
+            {
+                Type = "object",
+                OneOf =
+                [
+                    new()
+                    {
+                        AllOf =
+                        [
+                            new()
+                            {
+                                Type = "object",
+                                Properties = new Dictionary<string, OpenApiSchema>()
+                                {
+                                    ["firstName"] = new OpenApiSchema(),
+                                    ["lastName"] = new OpenApiSchema()
+                                }
+                            },
+                        ]
+                    },
+                ],
+            };
+
+            var result = schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries();
+            Assert.Null(result);
+        }
+    }
+
     [Fact]
     public void IsArrayFalseOnEmptyItems()
     {

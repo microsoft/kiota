@@ -475,35 +475,42 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     }
 
     private const string ParseNodeVarName = "$parseNode";
-    private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
+    private (string, string) GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, method, false);
-        var parseNodeMethod = string.Empty;
+        var parseNodeMethod = (string.Empty, string.Empty);
         if (propType is CodeType currentType)
         {
             if (isCollection)
                 parseNodeMethod = currentType.TypeDefinition switch
                 {
-                    CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                    _ => $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
+                    CodeEnum enumType => (string.Empty, $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)"),
+                    CodeClass => (string.Empty, $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"),
+                    _ => (conventions.TranslateType(propType), $"getCollectionOfPrimitiveValues('{conventions.TranslateType(propType)}')")
                 };
             else if (currentType.TypeDefinition is CodeEnum)
-                parseNodeMethod = $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
+                parseNodeMethod = (string.Empty, $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)");
         }
 
         var lowerCaseType = propertyType.ToLowerInvariant();
-        return string.IsNullOrEmpty(parseNodeMethod) ? lowerCaseType switch
-        {
-            "int" => "getIntegerValue()",
-            "bool" => "getBooleanValue()",
-            "number" => "getIntegerValue()",
-            "decimal" or "double" => "getFloatValue()",
-            "streaminterface" => "getBinaryContent()",
-            "byte" => "getByteValue()",
-            _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
-        } : parseNodeMethod;
+        var res = parseNodeMethod;
+        if (string.IsNullOrEmpty(parseNodeMethod.Item2))
+            res = (string.Empty, lowerCaseType switch
+            {
+                "int" => "getIntegerValue()",
+                "bool" => "getBooleanValue()",
+                "number" => "getIntegerValue()",
+                "decimal" or "double" => "getFloatValue()",
+                "streaminterface" => "getBinaryContent()",
+                "byte" => "getByteValue()",
+                _ when conventions.PrimitiveTypes.Contains(lowerCaseType) =>
+                    $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
+                _ =>
+                    $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
+            });
+
+        return res;
     }
 
     private void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement, CodeClass parentClass)
@@ -672,7 +679,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("},");
             return;
         }
-        writer.WriteLine($"'{property.WireName}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method)}),");
+        writer.WriteLine($"'{property.WireName}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method).Item2}),");
     }
 
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
@@ -903,7 +910,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             if (property.Type is CodeType propertyType)
             {
-                var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}";
+                var methodName = GetDeserializationMethodName(propertyType, codeElement);
+                var deserializationMethodName = $"{ParseNodeVarName}->{methodName.Item2}";
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
                 writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
                 writer.DecreaseIndent();
@@ -973,9 +981,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .ToArray();
         foreach (var property in otherProps)
         {
-            var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(property.Type, currentElement)}";
+            var methodName = GetDeserializationMethodName(property.Type, currentElement);
+            var serializationMethodName = $"{ParseNodeVarName}->{methodName.Item2}";
+            const string finalValueName = "$finalValue";
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
-            writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
+            if (!string.IsNullOrEmpty(methodName.Item1))
+            {
+                writer.WriteLine($"/** @var array<{methodName.Item1}> {finalValueName} */");
+            }
+            writer.WriteLine($"{finalValueName} = {serializationMethodName};");
+            writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({finalValueName});");
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;

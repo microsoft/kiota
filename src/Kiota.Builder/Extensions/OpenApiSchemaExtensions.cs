@@ -77,7 +77,11 @@ public static class OpenApiSchemaExtensions
     public static bool IsInherited(this OpenApiSchema? schema)
     {
         if (schema is null) return false;
-        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(static x => x.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true)).ToArray();
+        var meaningfulMemberSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf)
+                                                                .Where(static x => x.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true))
+                                                                // the next line ensures the meaningful schema are objects as it won't make sense inheriting from a primitive despite it being meaningful.
+                                                                .Where(static x => string.IsNullOrEmpty(x.Reference?.Id) || string.IsNullOrEmpty(x.Type) || "object".Equals(x.Type, StringComparison.OrdinalIgnoreCase))
+                                                                .ToArray();
         var isRootSchemaMeaningful = schema.IsSemanticallyMeaningful(ignoreEnums: true, ignoreArrays: true, ignoreType: true);
         return meaningfulMemberSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 &&
             (meaningfulMemberSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1 ||
@@ -94,13 +98,7 @@ public static class OpenApiSchemaExtensions
         if (schema is null || !schema.IsInclusiveUnion(0)) return null;
         var result = new OpenApiSchema(schema);
         result.AnyOf.Clear();
-        foreach (var subSchema in schema.AnyOf)
-        {
-            foreach (var property in subSchema.Properties)
-            {
-                result.Properties.TryAdd(property.Key, property.Value);
-            }
-        }
+        result.TryAddProperties(schema.AnyOf.SelectMany(static x => x.Properties));
         return result;
     }
 
@@ -109,14 +107,42 @@ public static class OpenApiSchemaExtensions
         if (schema is null || !schema.IsExclusiveUnion(0)) return null;
         var result = new OpenApiSchema(schema);
         result.OneOf.Clear();
-        foreach (var subSchema in schema.OneOf)
-        {
-            foreach (var property in subSchema.Properties)
-            {
-                result.Properties.TryAdd(property.Key, property.Value);
-            }
-        }
+        result.TryAddProperties(schema.OneOf.SelectMany(static x => x.Properties));
         return result;
+    }
+
+    internal static OpenApiSchema? MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries(this OpenApiSchema? schema)
+    {
+        if (schema is not null
+            && schema.IsInclusiveUnion(0)
+            && schema.AnyOf.OnlyOneOrDefault() is OpenApiSchema subSchema
+            && (subSchema.IsInherited() || subSchema.IsIntersection()))
+        {
+            var result = new OpenApiSchema(schema);
+            result.AnyOf.Clear();
+            result.TryAddProperties(subSchema.Properties);
+            result.AllOf.AddRange(subSchema.AllOf);
+            return result;
+        }
+
+        return null;
+    }
+
+    internal static OpenApiSchema? MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries(this OpenApiSchema? schema)
+    {
+        if (schema is not null
+            && schema.IsExclusiveUnion(0)
+            && schema.OneOf.OnlyOneOrDefault() is OpenApiSchema subSchema
+            && (subSchema.IsInherited() || subSchema.IsIntersection()))
+        {
+            var result = new OpenApiSchema(schema);
+            result.OneOf.Clear();
+            result.TryAddProperties(subSchema.Properties);
+            result.AllOf.AddRange(subSchema.AllOf);
+            return result;
+        }
+
+        return null;
     }
 
     internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema, HashSet<OpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<OpenApiSchema, bool>? filter = default)
@@ -140,11 +166,17 @@ public static class OpenApiSchemaExtensions
             else if (discriminator.Mapping?.Any() ?? false)
                 result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
 
-        foreach (var propertyToMerge in entriesToMerge.SelectMany(static x => x.Properties))
-        {
-            result.Properties.TryAdd(propertyToMerge.Key, propertyToMerge.Value);
-        }
+        result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
+
         return result;
+    }
+
+    internal static void TryAddProperties(this OpenApiSchema schema, IEnumerable<KeyValuePair<string, OpenApiSchema>> properties)
+    {
+        foreach (var property in properties)
+        {
+            schema.Properties.TryAdd(property.Key, property.Value);
+        }
     }
 
     public static bool IsIntersection(this OpenApiSchema? schema)

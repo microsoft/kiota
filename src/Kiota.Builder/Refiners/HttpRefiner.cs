@@ -44,8 +44,7 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
     {
         return element.GetImmediateParentOfType<CodeNamespace>()
                       .GetRootNamespace()?
-                      .FindChildrenByName<CodeClass>(_configuration.ClientClassName)?
-                      .FirstOrDefault()?
+                      .FindChildByName<CodeClass>(_configuration.ClientClassName)?
                       .Methods?
                       .FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor))?
                       .BaseUrl;
