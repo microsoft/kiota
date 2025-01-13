@@ -37,7 +37,40 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
             SetBaseUrlForRequestBuilderMethods(generatedCode, GetBaseUrl(generatedCode));
             // Remove unused code from the DOM e.g Models, BarrelInitializers, e.t.c
             RemoveUnusedCodeElements(generatedCode);
+            AddPathParametersToIndexerMethods(generatedCode);
         }, cancellationToken);
+    }
+
+    private void AddPathParametersToIndexerMethods(CodeElement element)
+    {
+        if (element is CodeMethod codeMethod && codeMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))
+        {
+            var parentClass = element.GetImmediateParentOfType<CodeClass>();
+            if (parentClass is not null)
+            {
+                // Retrieve all the parameters of kind CodeParameterKind.Custom
+                var customParameters = codeMethod.Parameters
+                    .Where(param => param.IsOfKind(CodeParameterKind.Custom))
+                    .ToList();
+
+                customParameters.ForEach(param =>
+                {
+                    // Create a new property of kind CodePropertyKind.PathParameters using the parameter and add it to the parentClass
+                    var pathParameterProperty = new CodeProperty
+                    {
+                        Name = param.Name,
+                        Kind = CodePropertyKind.PathParameters,
+                        Type = param.Type,
+                        Access = AccessModifier.Public,
+                        DefaultValue = param.DefaultValue,
+                        SerializationName = param.SerializationName,
+                        Documentation = param.Documentation
+                    };
+                    parentClass.AddProperty(pathParameterProperty);
+                });
+            }
+        }
+        CrawlTree(element, AddPathParametersToIndexerMethods);
     }
 
     private string? GetBaseUrl(CodeElement element)
@@ -81,11 +114,6 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
         {
             var parentNameSpace = element.GetImmediateParentOfType<CodeNamespace>();
             parentNameSpace?.RemoveChildElement(element);
-        }
-        else
-        {
-            // Add path variables
-            AddPathParameters(element);
         }
         CrawlTree(element, RemoveUnusedCodeElements);
     }
