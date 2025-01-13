@@ -201,7 +201,7 @@ export class GenerateClientCommand extends Command {
         settings.cleanOutput,
         settings.disableValidationRules,
         ConsumerOperation.Add,
-        undefined,
+        null,
         '',
         config.workingDirectory
       );
@@ -247,7 +247,7 @@ export class GenerateClientCommand extends Command {
         settings.cleanOutput,
         settings.disableValidationRules,
         ConsumerOperation.Add,
-        undefined,
+        null,
         '',
         config.workingDirectory
       );
