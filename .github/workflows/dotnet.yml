@@ -27,7 +27,7 @@ on:
       ]
 
 jobs:
-  build:
+  dotnet-build:
     runs-on: ubuntu-latest
 
     steps:
