@@ -44,7 +44,7 @@ pylint==3.3.3
 
 pytest==8.3.4
 
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
 
 requests==2.32.3 ; python_version >= '3.7'
 
@@ -60,7 +60,7 @@ typing-extensions==4.12.2 ; python_version >= '3.7'
 
 urllib3==2.3.0 ; python_version >= '3.7'
 
-wrapt==1.17.0 ; python_version < '3.11'
+wrapt==1.17.1 ; python_version < '3.11'
 
 yapf==0.43.0
 
