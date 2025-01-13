@@ -443,13 +443,19 @@ public partial class PluginsGenerationService
 
                 var summary = operation.Summary.CleanupXMLString();
                 var description = operation.Description.CleanupXMLString();
-
+                string staticTemplate = @"{""type"":""AdaptiveCard"",""$schema"":""http://adaptivecards.io/schemas/adaptive-card.json"",""version"":""1.5"",""body"":[{""type"":""Container"",""items"":[{""type"":""TextBlock"",""text"":""user.login: ${if(user.login, user.login, 'N/A')}""},{""type"":""Image"",""url"":""${if(user.avatar_url != null && user.avatar_url != '', user.avatar_url, '')}""},{""type"":""TextBlock"",""text"":""created_at: ${if(created_at, created_at, 'N/A')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""closed_at: ${if(closed_at, closed_at, 'Still Open')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""assignee: ${if(assignee, assignee, 'No assignees to work on this issue')}"",""wrap"":true}]}]}";
                 functions.Add(new Function
                 {
                     Name = operation.OperationId,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
-
+                    Capabilities = new FunctionCapabilities()
+                    {
+                        ResponseSemantics = new ResponseSemantics()
+                        {
+                            StaticTemplate = JsonDocument.Parse(staticTemplate).RootElement
+                        }
+                    }
                 });
                 conversationStarters.Add(new ConversationStarter
                 {

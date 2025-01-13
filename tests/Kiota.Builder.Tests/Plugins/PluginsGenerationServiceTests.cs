@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -812,6 +813,132 @@ components:
                 // ignored
             }
         }
+    }
+
+    #endregion
+
+
+    #region Adaptive Cards
+    [Fact]
+    public async Task GeneratesManifestWithAdaptiveCardAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+  description: test description we've created
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      summary: summary for test path
+      description: description for test path
+      responses:
+        '200':
+          description: test
+  /test/{id}:
+    get:
+      summary: Summary for test path with id that is longer than 50 characters 
+      description: description for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+        description: Response
+        content:
+            application/json:
+            schema:
+                type: object
+                required:
+                - total_count
+                - incomplete_results
+                - items
+                properties:
+                total_count:
+                    type: integer
+                incomplete_results:
+                    type: boolean
+                items:
+                    type: array
+                    items:
+                    $ref: '#/components/schemas/issue-search-result-item'
+            examples:
+                default:
+                $ref: '#/components/examples/issue-search-result-item-paginated'";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        var inputPluginName = "client";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
+            ClientClassName = inputPluginName,
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apimanifest.json")));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        string expectedStaticTemplate = @"{""type"":""AdaptiveCard"",""$schema"":""http://adaptivecards.io/schemas/adaptive-card.json"",""version"":""1.5"",""body"":[{""type"":""Container"",""items"":[{""type"":""TextBlock"",""text"":""user.login: ${if(user.login, user.login, 'N/A')}""},{""type"":""Image"",""url"":""${if(user.avatar_url != null && user.avatar_url != '', user.avatar_url, '')}""},{""type"":""TextBlock"",""text"":""created_at: ${if(created_at, created_at, 'N/A')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""closed_at: ${if(closed_at, closed_at, 'Still Open')}"",""wrap"":true},{""type"":""TextBlock"",""text"":""assignee: ${if(assignee, assignee, 'No assignees to work on this issue')}"",""wrap"":true}]}]}";
+
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal($"{inputPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.NotNull(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate);
+        var expectedJson = JsonDocument.Parse(expectedStaticTemplate).RootElement;
+        var actualJson = resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate;
+        if (actualJson.HasValue)
+        {
+            // Properties to compare
+            List<string> propertiesToCompare = new List<string> { "type", "$schema", "version" };
+
+            // Compare properties
+            foreach (string prop in propertiesToCompare)
+            {
+                Assert.Equal(expectedJson.GetProperty(prop).ToString(), actualJson.Value.GetProperty(prop).ToString());
+            }
+
+            // Compare the body array separately
+            var expectedBody = expectedJson.GetProperty("body").ToString();
+            var actualBody = actualJson.Value.GetProperty("body").ToString();
+            Assert.Equal(expectedBody, actualBody);
+        }
+        else
+        {
+            Assert.True(false, "actualJson is null");
+        }
+
+        Assert.Contains("description for test path with id", resultingManifest.Document.Functions[1].Description);
+        Assert.Equal(2, resultingManifest.Document.Functions.Count);
+        Assert.Contains("Summary for test path with id", resultingManifest.Document.Capabilities.ConversationStarters[1].Text);
+        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);
+        Assert.Equal(inputPluginName, resultingManifest.Document.Namespace);
+        Assert.Empty(resultingManifest.Problems);
+        Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);
     }
 
     #endregion
