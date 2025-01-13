@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.22.2]
+
+### Added
+
+### Changed
+- Fixed a bug showing an error popup in the VS Code extension after generation [5988](https://github.com/microsoft/kiota/issues/5988)
+
 ## [1.22.1] - 2025-01-10
 
 ### Added
