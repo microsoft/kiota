@@ -507,7 +507,7 @@
     "glob": "^11.0.1",
     "mocha": "^11.0.1",
     "sinon": "^19.0.2",
-    "ts-loader": "^9.5.1",
+    "ts-loader": "^9.5.2",
     "typemoq": "^2.1.0",
     "typescript": "^5.7.3",
     "webpack": "^5.97.1",
