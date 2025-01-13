@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drops Python 3.8 support by removing deprecated type aliases from generated code. [microsoft/kiota-python#349](https://github.com/microsoft/kiota-python/issues/349)
 - Removes superfluous inline imports in serializer methods in Python Generation. 
 
+## [1.22.2]
+
+### Added
+
+### Changed
+
+- Fixed a bug showing an error popup in the VS Code extension after generation [5988](https://github.com/microsoft/kiota/issues/5988)
+
 ## [1.22.1] - 2025-01-10
 
 ### Added
