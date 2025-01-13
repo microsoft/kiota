@@ -185,12 +185,12 @@ components:
         Assert.Contains("exportNamespace.models.microsoft.graph.User~~>AdditionalDataHolder; Parsable", exportContents);// captures implemented interfaces
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|id():str", exportContents);// captures property getter location,type and access inheritance
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|id(value:str):None", exportContents);// captures property setter location,type and access inheritance
-        Assert.Contains("exportNamespace.me.MeRequestBuilder::|public|constructor(path_parameters:Union[str, Dict[str, Any]]; request_adapter:RequestAdapter):None", exportContents); // captures constructors, their parameters(name and types), return and access 
+        Assert.Contains("exportNamespace.me.MeRequestBuilder::|public|constructor(path_parameters:Union[str, dict[str, Any]]; request_adapter:RequestAdapter):None", exportContents); // captures constructors, their parameters(name and types), return and access 
         Assert.Contains("exportNamespace.me.get.GetRequestBuilder::|public|to_get_request_information(request_configuration?:RequestConfiguration[QueryParameters]):RequestInformation", exportContents);// captures methods, their parameters(name and types), return and access
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|static|public|create_from_discriminator_value(parse_node:ParseNode):User", exportContents);// captures static methods too :)
         Assert.Contains("exportNamespace.models.microsoft.graph.Importance::0000-Low", exportContents);// captures enum members
-        Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|other_names():List[str]", exportContents);// captures collection info in language specific format
-        Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|other_names(value:List[str]):None", exportContents);// captures collection info in language specific format
+        Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|other_names():list[str]", exportContents);// captures collection info in language specific format
+        Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|other_names(value:list[str]):None", exportContents);// captures collection info in language specific format
     }
 
     private static void ValidateExportTypeScript(string[] exportContents)

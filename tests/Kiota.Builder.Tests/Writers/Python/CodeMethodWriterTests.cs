@@ -626,7 +626,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("from .error401 import Error401", result);
         Assert.Contains("from .error4_x_x import Error4XX", result);
         Assert.Contains("from .error5_x_x import Error5XX", result);
-        Assert.Contains("error_mapping: Dict[str, type[ParsableFactory]] =", result);
+        Assert.Contains("error_mapping: dict[str, type[ParsableFactory]] =", result);
         Assert.Contains("\"4XX\": Error4XX", result);
         Assert.Contains("\"5XX\": Error5XX", result);
         Assert.Contains("\"401\": Error401", result);
@@ -643,7 +643,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("error_mapping: Dict[str, ParsableFactory]", result);
+        Assert.DoesNotContain("error_mapping: dict[str, ParsableFactory]", result);
         Assert.Contains("cannot be null", result);
     }
     [Fact]
@@ -807,7 +807,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             IsAsync = false,
             ReturnType = new CodeType
             {
-                Name = "Dict[str, Callable[[ParseNode], None]]",
+                Name = "dict[str, Callable[[ParseNode], None]]",
             },
         }).First();
         writer.Write(deserializationMethod);
@@ -851,7 +851,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             IsAsync = false,
             ReturnType = new CodeType
             {
-                Name = "Dict[str, Callable[[ParseNode], None]]",
+                Name = "dict[str, Callable[[ParseNode], None]]",
             },
         }).First();
         writer.Write(deserializationMethod);
@@ -875,7 +875,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("from .somecustomtype import Somecustomtype", result);
-        Assert.Contains("fields: Dict[str, Callable[[Any], None]] =", result);
+        Assert.Contains("fields: dict[str, Callable[[Any], None]] =", result);
         Assert.Contains("get_str_value()", result);
         Assert.Contains("get_int_value()", result);
         Assert.Contains("get_float_value()", result);
@@ -1748,7 +1748,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodeParameterKind.PathParameters,
             Type = new CodeType
             {
-                Name = "Union[Dict[str, Any], str]",
+                Name = "Union[dict[str, Any], str]",
                 IsNullable = true,
             },
         });
@@ -1766,7 +1766,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__(self)", result);
-        Assert.Contains("def __init__(self,request_adapter: RequestAdapter, path_parameters: Union[Dict[str, Any], str],", result);
+        Assert.Contains("def __init__(self,request_adapter: RequestAdapter, path_parameters: Union[dict[str, Any], str],", result);
         Assert.Contains("username: Optional[str] = None", result);
         Assert.Contains("if isinstance(path_parameters, dict):", result);
         Assert.Contains("path_parameters['username'] = username", result);
@@ -1959,7 +1959,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodeParameterKind.PathParameters,
             Type = new CodeType
             {
-                Name = "Union[Dict[str, Any], str]",
+                Name = "Union[dict[str, Any], str]",
                 IsNullable = true,
             }
         });
@@ -1983,7 +1983,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.PathParameters,
             Type = new CodeType
             {
-                Name = "Dict[str, str]",
+                Name = "dict[str, str]",
                 IsExternal = true,
             }
         });
