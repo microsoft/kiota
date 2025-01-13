@@ -9,10 +9,7 @@ public class HttpWriter : LanguageWriter
         PathSegmenter = new HttpPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new HttpConventionService();
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
     }
 }
