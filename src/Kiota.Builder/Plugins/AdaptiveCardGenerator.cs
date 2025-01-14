@@ -15,7 +15,7 @@ namespace Kiota.Builder.Plugins
         {
         }
 
-        public string GenerateAdaptiveCard(OpenApiOperation operation)
+        public AdaptiveCard GenerateAdaptiveCard(OpenApiOperation operation)
         {
             ArgumentNullException.ThrowIfNull(operation);
 
@@ -57,7 +57,7 @@ namespace Kiota.Builder.Plugins
                     });
                 }
             }
-            return card.ToJson();
+            return card;
         }
     }
 }

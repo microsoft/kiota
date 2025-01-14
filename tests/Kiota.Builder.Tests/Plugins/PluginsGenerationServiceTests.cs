@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using AdaptiveCards;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
 using Microsoft.Extensions.Logging;
@@ -901,17 +902,37 @@ components:
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
-        string expectedStaticTemplate = "{\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.5\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${id, id, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${displayName, displayName, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${otherNames.join(', ')}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${importance, importance, 'N/A'}\"\r\n    }\r\n  ]\r\n}";
 
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal($"{inputPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.NotNull(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate);
-        var expectedJson = JsonDocument.Parse(expectedStaticTemplate).RootElement;
+
+        var expectedCard = new AdaptiveCard(new AdaptiveSchemaVersion(1, 5));
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${id, id, 'N/A'}"
+        });
+
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${displayName, displayName, 'N/A'}"
+        });
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${otherNames.join(', ')}"
+        });
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${importance, importance, 'N/A'}"
+        });
+        var expectedJson = JsonDocument.Parse(expectedCard.ToJson()).RootElement;
+
+
         var actualJson = resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate;
         if (actualJson.HasValue)
         {
             // Properties to compare
-            List<string> propertiesToCompare = new List<string> { "type", "version", "body"};
+            List<string> propertiesToCompare = new List<string> { "type", "version", "body" };
 
             // Compare properties
             foreach (string prop in propertiesToCompare)
@@ -1013,7 +1034,6 @@ components:
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
-        string expectedStaticTemplate = "{\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.5\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${id, id, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${displayName, displayName, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${otherNames.join(', ')}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${importance, importance, 'N/A'}\"\r\n    }\r\n  ]\r\n}";
 
         Assert.NotNull(resultingManifest.Document);
         Assert.Null(resultingManifest.Document.Functions[1].Capabilities);

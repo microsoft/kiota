@@ -456,12 +456,12 @@ public partial class PluginsGenerationService
                 if (shouldGenerateAdaptiveCards)
                 {
                     var generator = new AdaptiveCardGenerator();
-                    string staticTemplate = generator.GenerateAdaptiveCard(operation);
+                    var card = generator.GenerateAdaptiveCard(operation);
                     function.Capabilities = new FunctionCapabilities
                     {
                         ResponseSemantics = new ResponseSemantics
                         {
-                            StaticTemplate = JsonDocument.Parse(staticTemplate).RootElement
+                            StaticTemplate = JsonDocument.Parse(card.ToJson()).RootElement
                         }
                     };
                 }

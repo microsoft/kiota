@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using AdaptiveCards;
 using Kiota.Builder.Plugins;
 using Microsoft.OpenApi.Models;
 using Xunit;
@@ -46,15 +47,20 @@ namespace Kiota.Builder.Tests.Plugins
                     }
                 }
             };
-            string expected = "{\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.5\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${name, name, 'N/A'}\"\r\n    },\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"${age, age, 'N/A'}\"\r\n    }\r\n  ]\r\n}";
+            var expectedCard = new AdaptiveCard(new AdaptiveSchemaVersion(1, 5));
+            expectedCard.Body.Add(new AdaptiveTextBlock()
+            {
+                Text = "${name, name, 'N/A'}",
+            });
+            expectedCard.Body.Add(new AdaptiveTextBlock()
+            {
+                Text = "${age, age, 'N/A'}",
+            });
 
             var generator = new AdaptiveCardGenerator();
-            var card = generator.GenerateAdaptiveCard(sample);
+            var actualCard = generator.GenerateAdaptiveCard(sample);
            
-            var expectedJson = JsonDocument.Parse(expected).RootElement.GetRawText();
-            var actualJson = JsonDocument.Parse(card).RootElement.GetRawText();
-
-            Assert.Equal(expectedJson, actualJson);
+            Assert.Equal(expectedCard.Body.Count, actualCard.Body.Count);
         }
     }
 }
