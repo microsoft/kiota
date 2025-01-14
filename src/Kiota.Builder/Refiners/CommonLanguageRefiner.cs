@@ -946,7 +946,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 foreach (var implement in currentParent
                              .StartBlock
                              .Implements
-                             .Where(pi => !currentClass.Usings.Any(ci => ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
+                             .Where(pi => !currentClass.Usings.Any(ci => !ci.IsExternal && ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
                 {
                     currentClass.StartBlock.AddImplements((CodeType)implement.Clone());
                 }

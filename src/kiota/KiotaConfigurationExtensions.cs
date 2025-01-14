@@ -37,6 +37,7 @@ internal static class KiotaConfigurationExtensions
                 ClientNamespaceName = section[nameof(LanguageInformation.ClientNamespaceName)] ?? string.Empty,
                 DependencyInstallCommand = section[nameof(LanguageInformation.DependencyInstallCommand)] ?? string.Empty,
                 MaturityLevel = Enum.TryParse<LanguageMaturityLevel>(section[nameof(LanguageInformation.MaturityLevel)], true, out var ml) ? ml : LanguageMaturityLevel.Experimental,
+                SupportExperience = Enum.TryParse<SupportExperience>(section[nameof(LanguageInformation.SupportExperience)], true, out var se) ? se : SupportExperience.Community,
             };
             section.GetSection(nameof(lngInfo.StructuredMimeTypes)).LoadHashSet(lngInfo.StructuredMimeTypes);
             var dependenciesSection = section.GetSection(nameof(lngInfo.Dependencies));

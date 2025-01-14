@@ -132,7 +132,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayWarning(result);
     }
     public abstract Task<int> InvokeAsync(InvocationContext context);
-    private readonly List<IDisposable> disposables = new();
+    private readonly List<IDisposable> disposables = [];
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")
     {
         LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);

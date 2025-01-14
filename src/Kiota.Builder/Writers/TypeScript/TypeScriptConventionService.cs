@@ -99,7 +99,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
         // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
-            composedType != null && !composedType.IsComposedOfObjects(IsPrimitiveType),
+            composedType != null && (!composedType.IsComposedOfObjects(IsPrimitiveType) || composedType.Types.Any(x => x.IsCollection)),
             parameter.Parent is CodeMethod method && (method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
             ) switch
         {
@@ -237,6 +237,18 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
+    // Types that are imported from kiota-abstractions and considered as primitive types
+    public static bool IsKiotaPrimitive(string typeName)
+    {
+        return typeName switch
+        {
+            TYPE_DATE_ONLY or
+            TYPE_TIME_ONLY or
+            TYPE_DURATION => true,
+            _ => false,
+        };
+    }
+
     public static string? GetPrimitiveAlias(string typeName)
     {
         return typeName switch
@@ -252,7 +264,18 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/", StringComparison.OrdinalIgnoreCase) ?? string.Empty;
+    private static Dictionary<string, string> InvalidCharactersReplacements = new(StringComparer.OrdinalIgnoreCase) {
+        { "\\", "/"},
+        { "/*", "//*"}
+    };
+
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription)
+    {
+        if (string.IsNullOrEmpty(originalDescription)) return string.Empty;
+        originalDescription = InvalidCharactersReplacements
+            .Aggregate(originalDescription, (current, replacement) => current.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase));
+        return originalDescription;
+    }
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
         ArgumentNullException.ThrowIfNull(writer);

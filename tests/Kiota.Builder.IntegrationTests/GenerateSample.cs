@@ -20,11 +20,13 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
+    [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
+    [InlineData(GenerationLanguage.Dart, true)]
     [Theory]
     public async Task GeneratesTodoAsync(GenerationLanguage language, bool backingStore)
     {
@@ -46,11 +48,13 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
+    [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
+    [InlineData(GenerationLanguage.Dart, true)]
     [Theory]
     public async Task GeneratesModelWithDictionaryAsync(GenerationLanguage language, bool backingStore)
     {
@@ -72,11 +76,13 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
+    [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
+    [InlineData(GenerationLanguage.Dart, true)]
     [Theory]
     public async Task GeneratesResponseWithMultipleReturnFormatsAsync(GenerationLanguage language, bool backingStore)
     {
@@ -97,6 +103,7 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Ruby)]
     [InlineData(GenerationLanguage.Python)]
     [InlineData(GenerationLanguage.TypeScript)]
@@ -119,6 +126,7 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Ruby)]
     [InlineData(GenerationLanguage.Python)]
     [InlineData(GenerationLanguage.TypeScript)]
@@ -167,6 +175,7 @@ public sealed class GenerateSample : IDisposable
     }
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.PHP)]
     [InlineData(GenerationLanguage.Python)]
@@ -200,6 +209,9 @@ public sealed class GenerateSample : IDisposable
         {
             case GenerationLanguage.CSharp:
                 Assert.Contains("[QueryParameter(\"startDateTime\")]", fullText);
+                break;
+            case GenerationLanguage.Dart:
+                Assert.Contains("'EndDateTime' : endDateTime", fullText);
                 break;
             case GenerationLanguage.Go:
                 Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
