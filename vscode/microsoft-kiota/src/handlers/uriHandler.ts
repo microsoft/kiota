@@ -1,10 +1,12 @@
-import * as vscode from 'vscode';
 import TelemetryReporter from '@vscode/extension-telemetry';
+import * as vscode from 'vscode';
 
+import { treeViewId } from '../constants';
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
+import { updateTreeViewIcons } from '../util';
 import { validateDeepLinkQueryParams } from '../utilities/deep-linking';
 import { openTreeViewWithProgress } from '../utilities/progress';
-import { setDeepLinkParams, getDeepLinkParams } from './deepLinkParamsHandler';
+import { getDeepLinkParams, setDeepLinkParams } from './deepLinkParamsHandler';
 
 export class UriHandler {
   constructor(private context: vscode.ExtensionContext, private openApiTreeProvider: OpenApiTreeProvider) { }
@@ -26,7 +28,10 @@ export class UriHandler {
 
       let deepLinkParams = getDeepLinkParams();
       if (deepLinkParams.descriptionurl) {
-        await openTreeViewWithProgress(() => this.openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!));
+        await openTreeViewWithProgress(async () => {
+          await this.openApiTreeProvider.setDescriptionUrl(deepLinkParams.descriptionurl!);
+          await updateTreeViewIcons(treeViewId, true, false);
+        });
         return;
       }
     }
