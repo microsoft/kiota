@@ -445,7 +445,6 @@ public partial class PluginsGenerationService
 
                 var summary = operation.Summary.CleanupXMLString();
                 var description = operation.Description.CleanupXMLString();
-         
                 var function = new Function
                 {
                     Name = operation.OperationId,

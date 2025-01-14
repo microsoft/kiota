@@ -59,7 +59,6 @@ namespace Kiota.Builder.Tests.Plugins
 
             var generator = new AdaptiveCardGenerator();
             var actualCard = generator.GenerateAdaptiveCard(sample);
-           
             Assert.Equal(expectedCard.Body.Count, actualCard.Body.Count);
         }
     }

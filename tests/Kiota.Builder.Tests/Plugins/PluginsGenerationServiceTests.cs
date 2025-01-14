@@ -947,7 +947,7 @@ components:
         }
         else
         {
-            Assert.True(false, "actualJson is null");
+            Assert.Fail("actualJson is null");
         }
 
         Assert.Equal(inputPluginName, resultingManifest.Document.Namespace);
