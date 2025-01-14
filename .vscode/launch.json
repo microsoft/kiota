@@ -413,9 +413,9 @@
       "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
       "args": [
           "generate",
-          "--openapi", "C:\\Users\\evansaboge\\Documents\\Tests\\RestClientTests\\openapi.yaml",
+          "--openapi", "C:\\Users\\evansaboge\\Documents\\RestClient\\openapi.yaml",
           "--language", "http",
-          "--output", "C:\\Users\\evansaboge\\Documents\\Tests\\RestClientTests\\HTTP1"
+          "--output", "C:\\Users\\evansaboge\\Documents\\RestClient\\HTTP1"
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "stopAtEntry": false,
