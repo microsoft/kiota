@@ -68,7 +68,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Publish ${{ matrix.os }}
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }}
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net9.0
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

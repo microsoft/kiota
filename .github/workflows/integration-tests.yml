@@ -23,7 +23,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Build
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
       - uses: actions/upload-artifact@v4
         with:
