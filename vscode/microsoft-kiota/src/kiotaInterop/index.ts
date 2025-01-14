@@ -122,6 +122,8 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             return "Ruby";
         case KiotaGenerationLanguage.CLI:
             return "CLI";
+        case KiotaGenerationLanguage.Dart:
+            return "Dart";
         default:
             throw new Error("unknown language");
     }
@@ -137,6 +139,7 @@ export const allGenerationLanguages = [
     KiotaGenerationLanguage.CLI,
     KiotaGenerationLanguage.Swift,
     KiotaGenerationLanguage.TypeScript,
+    KiotaGenerationLanguage.Dart,
 ];
 
 /**

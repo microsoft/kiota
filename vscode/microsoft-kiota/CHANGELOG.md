@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added dart generation to Visual Studio Code extension.
+
 ### Changed
 
 - Fixed a bug in the VS Code extension deeplink with the API Center extension [#6004](https://github.com/microsoft/kiota/issues/6004)

@@ -20,6 +20,7 @@ export function getExtensionSettings(extensionId: string): ExtensionSettings {
             [KiotaGenerationLanguage.Ruby]: getLanguageSerializationConfiguration(extensionId, "Ruby"),
             [KiotaGenerationLanguage.Swift]: getLanguageSerializationConfiguration(extensionId, "Swift"),
             [KiotaGenerationLanguage.TypeScript]: getLanguageSerializationConfiguration(extensionId, "TypeScript"),
+            [KiotaGenerationLanguage.Dart]: getLanguageSerializationConfiguration(extensionId, "Dart"),
         },
     };
 }
