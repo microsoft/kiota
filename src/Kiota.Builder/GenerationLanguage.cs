@@ -10,5 +10,6 @@ public enum GenerationLanguage
     Swift,
     Ruby,
     CLI,
+    Dart,
     HTTP
 }

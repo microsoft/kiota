@@ -491,7 +491,7 @@
     "test-with-coverage": "npm run pretest && vscode-test --coverage"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^2.12.1",
+    "@stylistic/eslint-plugin-ts": "^2.13.0",
     "@types/adm-zip": "^0.5.7",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
@@ -503,13 +503,13 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.1.2",
-    "eslint": "^9.17.0",
-    "glob": "^11.0.0",
+    "eslint": "^9.18.0",
+    "glob": "^11.0.1",
     "mocha": "^11.0.1",
     "sinon": "^19.0.2",
-    "ts-loader": "^9.5.1",
+    "ts-loader": "^9.5.2",
     "typemoq": "^2.1.0",
-    "typescript": "^5.7.2",
+    "typescript": "^5.7.3",
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1"
   },
@@ -533,6 +533,10 @@
     {
       "platformId": "linux-x64",
       "sha256": "730C0A5469D83DBC9CDC206C9A3837DBE5892A7A3F0F09AF5A1EAC4CED4B033E"
+    },
+    {
+      "platformId": "linux-arm64",
+      "sha256": "E26CE40838E9F5D87476D53893332CFA58E5E691622772569B7A526C292958D4"
     },
     {
       "platformId": "osx-x64",

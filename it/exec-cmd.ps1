@@ -202,6 +202,29 @@ elseif ($language -eq "python") {
         Pop-Location
     }
 }
+elseif ($language -eq "dart") {
+    Invoke-Call -ScriptBlock {
+        dart pub get
+        dart analyze lib/
+    } -ErrorAction Stop
+
+    if ($mockServerTest) {
+        Push-Location $itTestPath
+
+        $itTestPathSources = Join-Path -Path $testPath -ChildPath "lib"
+        $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "lib"
+        if (Test-Path $itTestPathDest) {
+            Remove-Item $itTestPathDest -Force -Recurse
+        }
+        Copy-Item -Path $itTestPathSources -Destination $itTestPathDest -Recurse
+
+        Invoke-Call -ScriptBlock {
+            dart test
+        } -ErrorAction Stop
+
+        Pop-Location
+    }
+}
 Pop-Location
 
 if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {

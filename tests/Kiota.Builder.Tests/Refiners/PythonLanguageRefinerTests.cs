@@ -216,7 +216,7 @@ public class PythonLanguageRefinerTests
     #region python
     private const string HttpCoreDefaultName = "IRequestAdapter";
     private const string FactoryDefaultName = "ISerializationWriterFactory";
-    private const string DeserializeDefaultName = "Dict[str, Callable[[ParseNode], None]]";
+    private const string DeserializeDefaultName = "dict[str, Callable[[ParseNode], None]]";
     private const string PathParametersDefaultName = "Dictionary<string, object>";
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";

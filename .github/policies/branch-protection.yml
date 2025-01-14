@@ -1,0 +1,40 @@
+name: kiota-branch-protection
+description: Branch protection policy for the kiota repository
+resource: repository
+configuration:
+  branchProtectionRules:
+    - branchNamePattern: main
+      # Specifies whether this branch can be deleted. boolean
+      allowsDeletions: false
+      # Specifies whether forced pushes are allowed on this branch. boolean
+      allowsForcePushes: false
+      # Specifies whether new commits pushed to the matching branches dismiss pull request review approvals. boolean
+      dismissStaleReviews: true
+      # Specifies whether admins can overwrite branch protection. boolean
+      isAdminEnforced: false
+      # Indicates whether "Require a pull request before merging" is enabled. boolean
+      requiresPullRequestBeforeMerging: true
+      # Specifies the number of pull request reviews before merging. int (0-6). Should be null/empty if PRs are not required
+      requiredApprovingReviewsCount: 2
+      # Require review from Code Owners. Requires requiredApprovingReviewsCount. boolean
+      requireCodeOwnersReview: true
+      # Are commits required to be signed. boolean.
+      requiresCommitSignatures: true
+      # Are conversations required to be resolved before merging? boolean
+      requiresConversationResolution: true
+      # Are merge commits prohibited from being pushed to this branch. boolean
+      requiresLinearHistory: false
+      # Required status checks to pass before merging. Values can be any string, but if the value does not correspond to any existing status check, the status check will be stuck on pending for status since nothing exists to push an actual status
+      requiredStatusChecks:
+        - license/cla
+        - Analyze (csharp)
+        - dotnet-build
+        - check-idempotency-tests
+        - check-integration-tests
+        - build_extension
+      # Require branches to be up to date before merging
+      requiresStrictStatusChecks: true
+      # Indicates whether there are restrictions on who can push. boolean. Should be set with whoCanPush.
+      restrictsPushes: false
+      # Restrict who can dismiss pull request reviews. boolean
+      restrictsReviewDismissals: false

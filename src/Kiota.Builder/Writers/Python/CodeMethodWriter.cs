@@ -553,7 +553,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteDeserializerBodyForInheritedModel(bool inherits, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         _codeUsingWriter.WriteInternalImports(parentClass, writer);
-        writer.StartBlock($"fields: Dict[str, Callable[[Any], {NoneKeyword}]] = {{");
+        writer.StartBlock($"fields: dict[str, Callable[[Any], {NoneKeyword}]] = {{");
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType)
@@ -599,7 +599,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             _codeUsingWriter.WriteInternalErrorMappingImports(parentClass, writer);
             errorMappingVarName = "error_mapping";
-            writer.StartBlock($"{errorMappingVarName}: Dict[str, type[ParsableFactory]] = {{");
+            writer.StartBlock($"{errorMappingVarName}: dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
                 writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
@@ -656,7 +656,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         if (inherits)
             writer.WriteLine("super().serialize(writer)");
-        _codeUsingWriter.WriteInternalImports(parentClass, writer);
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)

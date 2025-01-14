@@ -75,7 +75,7 @@ public class PythonConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(targetElement);
         if (code is null)
             return string.Empty;
-        var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
+        var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "list[";
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if (code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {TranslateAllTypes(y)}]");
