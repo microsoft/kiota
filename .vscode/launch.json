@@ -383,6 +383,22 @@
       "type": "coreclr",
       "request": "attach",
       "processId": "${command:pickProcess}"
+    },
+    {
+      "name": "Launch Http",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": [
+          "generate",
+          "--openapi", "C:\\Users\\evansaboge\\Documents\\Tests\\RestClientTests\\openapi.yaml",
+          "--language", "http",
+          "--output", "C:\\Users\\evansaboge\\Documents\\Tests\\RestClientTests\\HTTP1"
+      ],
+      "cwd": "${workspaceFolder}/src/kiota",
+      "stopAtEntry": false,
+      "console": "internalConsole"
     }
   ]
 }
