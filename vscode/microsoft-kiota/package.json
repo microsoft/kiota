@@ -83,6 +83,25 @@
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
+        "kiota.generate.serializer.Dart": {
+          "type": "array",
+          "default": [
+            "microsoft_kiota_serialization_json/microsoft_kiota_serialization_json.JsonSerializationWriterFactory",
+            "microsoft_kiota_serialization_form/microsoft_kiota_serialization_form.FormSerializationWriterFactory",
+            "microsoft_kiota_serialization_text/microsoft_kiota_serialization_text.TextSerializationWriterFactory",
+            "microsoft_kiota_serialization_multipart/microsoft_kiota_serialization_multipart.MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Dart": {
+          "type": "array",
+          "default": [
+            "microsoft_kiota_serialization_json/microsoft_kiota_serialization_json.JsonParseNodeFactory",
+            "microsoft_kiota_serialization_text/microsoft_kiota_serialization_text.TextParseNodeFactory",
+            "microsoft_kiota_serialization_form/microsoft_kiota_serialization_form.FormParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
         "kiota.generate.serializer.Go": {
           "type": "array",
           "default": [

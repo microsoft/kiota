@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added dart generation to Visual Studio Code extension.
+
 ### Changed
 
 ## [1.22.100000001] - 2025-01-10
