@@ -287,19 +287,34 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// </summary>
     /// <param name="requestBodyClass">The request body class containing the properties.</param>
     /// <param name="writer">The language writer to write the properties to.</param>
-    private static void WriteProperties(CodeClass requestBodyClass, LanguageWriter writer)
+    private static void WriteProperties(CodeClass requestBodyClass, LanguageWriter writer, HashSet<CodeClass>? processedClasses = null, int depth = 0)
     {
+
+        if (processedClasses == null)
+        {
+            processedClasses = new HashSet<CodeClass>();
+        }
+
+        // Add the current class to the set of processed classes
+        if (!processedClasses.Add(requestBodyClass))
+        {
+            // If the class is already processed, write its properties again up to a certain depth
+            if (depth >= 3)
+            {
+                return;
+            }
+        }
+
         var properties = requestBodyClass.Properties
             .Where(static prop => prop.IsOfKind(CodePropertyKind.Custom))
             .ToArray();
 
         var propertyCount = properties.Length;
-        var currentIndex = 0;
 
         foreach (var prop in properties)
         {
             // Add a trailing comma if there are more properties to be written
-            var separator = currentIndex < propertyCount - 1 ? "," : string.Empty;
+            var separator = ",";
             var propName = $"\"{prop.Name}\"";
             writer.Write($"{propName}: ");
 
@@ -308,7 +323,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 // If the property is an object, write a JSON representation recursively
                 writer.WriteLine("{", includeIndent: false);
                 writer.IncreaseIndent();
-                WriteProperties(propClass, writer);
+                WriteProperties(propClass, writer, processedClasses, depth + 1);
                 writer.CloseBlock($"}}{separator}");
             }
             else
@@ -317,10 +332,13 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             }
         }
 
+        // Remove the current class from the set of processed classes after processing
+        processedClasses.Remove(requestBodyClass);
+
         // If the class extends another class, write properties of the base class
         if (requestBodyClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
-            WriteProperties(baseClass, writer);
+            WriteProperties(baseClass, writer, processedClasses, depth + 1);
         }
     }
 
