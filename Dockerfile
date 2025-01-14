@@ -6,7 +6,7 @@ COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; -f net9.0 \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0; \
     else \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
     fi
