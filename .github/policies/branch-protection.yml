@@ -19,7 +19,7 @@ configuration:
       # Require review from Code Owners. Requires requiredApprovingReviewsCount. boolean
       requireCodeOwnersReview: true
       # Are commits required to be signed. boolean.
-      requiresCommitSignatures: true
+      requiresCommitSignatures: false
       # Are conversations required to be resolved before merging? boolean
       requiresConversationResolution: true
       # Are merge commits prohibited from being pushed to this branch. boolean
