@@ -26,6 +26,7 @@ using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Settings;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,7 @@ public partial class KiotaBuilder
     private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
+    private readonly SettingsFileManagementService settingsFileManagementService = new();
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
@@ -285,6 +287,11 @@ public partial class KiotaBuilder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+            if (config.Language == GenerationLanguage.HTTP && openApiDocument is not null)
+            {
+                await settingsFileManagementService.WriteSettingsFileAsync(config.OutputPath, openApiDocument, cancellationToken).ConfigureAwait(false);
+            }
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }

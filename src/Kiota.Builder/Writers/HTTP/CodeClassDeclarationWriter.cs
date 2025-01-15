@@ -8,7 +8,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Kiota.Builder.Writers.Http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
 {
-    private const string BaseUrlPropertyName = "url";
+    private const string BaseUrlPropertyName = "hostAddress";
 
     protected override void WriteTypeDeclaration(ClassDeclaration codeElement, LanguageWriter writer)
     {
@@ -30,7 +30,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             var baseUrl = GetBaseUrl(requestBuilderClass);
 
             // Write the baseUrl variable
-            WriteBaseUrl(baseUrl, writer);
+            //WriteBaseUrl(baseUrl, writer);
 
             // Extract and write the URL template
             WriteUrlTemplate(urlTemplateProperty, writer);
@@ -102,7 +102,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     {
         // Write the base URL variable to the writer
         writer.WriteLine($"# Base url for the server/host");
-        writer.WriteLine($"@{BaseUrlPropertyName} = {baseUrl}");
+        writer.WriteLine($"@{BaseUrlPropertyName} = {{hostAddress}}");
         writer.WriteLine();
     }
 
