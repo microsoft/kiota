@@ -60,7 +60,7 @@ typing-extensions==4.12.2 ; python_version >= '3.7'
 
 urllib3==2.3.0 ; python_version >= '3.7'
 
-wrapt==1.17.1 ; python_version < '3.11'
+wrapt==1.17.2 ; python_version < '3.11'
 
 yapf==0.43.0
 
