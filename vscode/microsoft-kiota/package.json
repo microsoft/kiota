@@ -83,6 +83,25 @@
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
+        "kiota.generate.serializer.Dart": {
+          "type": "array",
+          "default": [
+            "microsoft_kiota_serialization_json/microsoft_kiota_serialization_json.JsonSerializationWriterFactory",
+            "microsoft_kiota_serialization_form/microsoft_kiota_serialization_form.FormSerializationWriterFactory",
+            "microsoft_kiota_serialization_text/microsoft_kiota_serialization_text.TextSerializationWriterFactory",
+            "microsoft_kiota_serialization_multipart/microsoft_kiota_serialization_multipart.MultipartSerializationWriterFactory"
+          ],
+          "description": "%kiota.generate.serializer.description%"
+        },
+        "kiota.generate.deserializer.Dart": {
+          "type": "array",
+          "default": [
+            "microsoft_kiota_serialization_json/microsoft_kiota_serialization_json.JsonParseNodeFactory",
+            "microsoft_kiota_serialization_text/microsoft_kiota_serialization_text.TextParseNodeFactory",
+            "microsoft_kiota_serialization_form/microsoft_kiota_serialization_form.FormParseNodeFactory"
+          ],
+          "description": "%kiota.generate.deserializer.description%"
+        },
         "kiota.generate.serializer.Go": {
           "type": "array",
           "default": [
@@ -125,7 +144,9 @@
           "type": "array",
           "default": [
             "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
-            "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+            "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory",
+            "Microsoft\\Kiota\\Serialization\\Form\\FormSerializationWriterFactory",
+            "Microsoft\\Kiota\\Serialization\\Multipart\\MultipartSerializationWriterFactory"
           ],
           "description": "%kiota.generate.serializer.description%"
         },
@@ -133,7 +154,8 @@
           "type": "array",
           "default": [
             "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
-            "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+            "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory",
+            "Microsoft\\Kiota\\Serialization\\Form\\FormParseNodeFactory"
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
@@ -141,7 +163,9 @@
           "type": "array",
           "default": [
             "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
-            "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
+            "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory",
+            "kiota_serialization_form.form_serialization_writer_factory.FormSerializationWriterFactory",
+            "kiota_serialization_multipart.multipart_serialization_writer_factory.MultipartSerializationWriterFactory"
           ],
           "description": "%kiota.generate.serializer.description%"
         },
@@ -149,7 +173,8 @@
           "type": "array",
           "default": [
             "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
-            "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
+            "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory",
+            "kiota_serialization_form.form_parse_node_factory.FormParseNodeFactory"
           ],
           "description": "%kiota.generate.deserializer.description%"
         },

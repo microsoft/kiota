@@ -39,8 +39,9 @@ if ($version -like "*-preview.*") {
   $updatedPatchVersion += (Get-Date).ToString("yyMMdd") + $sequenceNumber
 }
 else {
-  if ($updatedPatchVersion -eq "1") {
-    $updatedPatchVersion = "100000002"
+  $updatedPatchVersionAsNumber = 0;
+  if ([int]::TryParse($updatedPatchVersion, [ref]$updatedPatchVersionAsNumber)) {
+    $updatedPatchVersion = "10000000$($updatedPatchVersionAsNumber + 1)"
   }
   elseif ([string]::IsNullOrWhiteSpace($updatedPatchVersion)) {
     $updatedPatchVersion = "100000001"
