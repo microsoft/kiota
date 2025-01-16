@@ -58,7 +58,7 @@ public class SettingsFileManagementService : ISettingsManagementService
         var settingsObjectString = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.SettingsFile);
 
         VsCodeSettingsManager settingsManager = new(vscodeDirectoryPath, SettingsFileName);
-        await settingsManager.UpdateSettingAsync(settingsObjectString, EnvironmentVariablesKey, cancellationToken).ConfigureAwait(false);
+        await settingsManager.UpdateFileAsync(settingsObjectString, EnvironmentVariablesKey, cancellationToken).ConfigureAwait(false);
     }
 }
 
@@ -73,7 +73,7 @@ public class VsCodeSettingsManager
         _settingsPath = Path.Combine(_vscodePath, settingKey);
     }
 
-    public async Task UpdateSettingAsync(string setting, string settingKey, CancellationToken cancellationToken)
+    public async Task UpdateFileAsync(string setting, string settingKey, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(setting);
         Dictionary<string, object> settings;
