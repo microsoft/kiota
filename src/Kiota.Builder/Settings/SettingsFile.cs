@@ -24,11 +24,13 @@ public class EnvironmentVariables
         get; set;
     }
 
+    [JsonPropertyName("remote")]
     public AuthenticationSettings Remote
     {
         get; set;
     }
 
+    [JsonPropertyName("development")]
     public AuthenticationSettings Development
     {
         get; set;
@@ -49,21 +51,25 @@ public class SharedAuth
 
 public class AuthenticationSettings
 {
+    [JsonPropertyName("hostAddress")]
     public string HostAddress
     {
         get; set;
     }
 
+    [JsonPropertyName("basicAuth")]
     public string? BasicAuth
     {
         get; set;
     }
 
+    [JsonPropertyName("bearerAuth")]
     public string? BearerAuth
     {
         get; set;
     }
 
+    [JsonPropertyName("apiKeyAuth")]
     public string? ApiKey
     {
         get; set;
