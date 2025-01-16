@@ -33,7 +33,7 @@ public class EnvironmentVariables
     {
         get; set;
     }
-    
+
     public EnvironmentVariables()
     {
         Shared = new SharedAuth();

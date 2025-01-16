@@ -1,5 +1,5 @@
-namespace Kiota.Builder.Writers;
-public enum Authentication 
+﻿namespace Kiota.Builder.Writers;
+public enum Authentication
 {
     Basic,
     Bearer,

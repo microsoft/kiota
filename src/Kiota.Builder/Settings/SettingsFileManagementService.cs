@@ -65,28 +65,28 @@ public class SettingsFileManagementService : ISettingsManagementService
 public class VsCodeSettingsManager
 {
     private readonly string _vscodePath;
-    private readonly string _settingsPath;
+    private readonly string fileUpdatePath;
 
-    public VsCodeSettingsManager(string basePath, string settingKey)
+    public VsCodeSettingsManager(string basePath, string targetFilePath)
     {
         _vscodePath = basePath;
-        _settingsPath = Path.Combine(_vscodePath, settingKey);
+        fileUpdatePath = Path.Combine(_vscodePath, targetFilePath);
     }
 
-    public async Task UpdateFileAsync(string setting, string settingKey, CancellationToken cancellationToken)
+    public async Task UpdateFileAsync(string fileUpdate, string fileUpdateKey, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrEmpty(setting);
+        ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
         Dictionary<string, object> settings;
 
         // Read existing settings or create new if file doesn't exist
-        if (File.Exists(_settingsPath))
+        if (File.Exists(fileUpdatePath))
         {
-            string jsonContent = await File.ReadAllTextAsync(_settingsPath, cancellationToken).ConfigureAwait(false);
+            string jsonContent = await File.ReadAllTextAsync(fileUpdatePath, cancellationToken).ConfigureAwait(false);
             try
             {
                 settings = JsonSerializer.Deserialize(
                     jsonContent,
-                    SettingsFileGenerationContext.Default.DictionaryStringObject) 
+                    SettingsFileGenerationContext.Default.DictionaryStringObject)
                     ?? [];
             }
             catch (JsonException)
@@ -99,11 +99,11 @@ public class VsCodeSettingsManager
             settings = [];
         }
 
-        var settingJsonString = JsonSerializer.Deserialize<Dictionary<string, object>>(setting, SettingsFileGenerationContext.Default.DictionaryStringObject);
-        if(settingJsonString is not null)
-            settings[settingKey] = settingJsonString[settingKey];
+        var fileUpdateDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(fileUpdate, SettingsFileGenerationContext.Default.DictionaryStringObject);
+        if (fileUpdateDictionary is not null)
+            settings[fileUpdateKey] = fileUpdateDictionary[fileUpdateKey];
 
         string updatedJson = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.DictionaryStringObject);
-        await File.WriteAllTextAsync(_settingsPath, updatedJson, cancellationToken).ConfigureAwait(false);
+        await File.WriteAllTextAsync(fileUpdatePath, updatedJson, cancellationToken).ConfigureAwait(false);
     }
 }
