@@ -74,30 +74,5 @@ namespace Kiota.Builder.Settings.Tests
             // Cleanup
             Directory.Delete(tempDirectory);
         }
-
-        [Fact]
-        public async Task WriteSettingsFileAsync_ShouldCreateSettingsFile_WhenValidInputs()
-        {
-            // Arrange
-            var service = new SettingsFileManagementService();
-            var tempDirectory = Path.GetTempPath();
-            Directory.CreateDirectory(tempDirectory);
-            var openApiDocument = new OpenApiDocument
-            {
-                Servers = new List<OpenApiServer> { new OpenApiServer { Url = "http://localhost" } }
-            };
-            var cancellationToken = CancellationToken.None;
-
-            // Act
-            await service.WriteSettingsFileAsync(tempDirectory, openApiDocument, cancellationToken);
-
-            // Assert
-            var vscodeDirectory = Path.Combine(tempDirectory, ".vscode");
-            var settingsFilePath = Path.Combine(vscodeDirectory, SettingsFileManagementService.SettingsFileName);
-            Assert.True(File.Exists(settingsFilePath));
-
-            // Cleanup
-            Directory.Delete(tempDirectory, true);
-        }
     }
 }

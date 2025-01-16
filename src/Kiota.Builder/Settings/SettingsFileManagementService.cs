@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +47,8 @@ public class SettingsFileManagementService : ISettingsManagementService
         var vscodeDirectoryPath = GetDirectoryContainingSettingsFile(parentDirectoryPath!);
         if (!Directory.Exists(vscodeDirectoryPath))
         {
-            Directory.CreateDirectory(vsCodeDirectoryName);
+            var pathToWrite = Path.Combine(parentDirectoryPath!, vsCodeDirectoryName);
+            Directory.CreateDirectory(pathToWrite);
         }
         vscodeDirectoryPath = Path.Combine(parentDirectoryPath!, vsCodeDirectoryName);
         var settingsObjectString = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.SettingsFile);
@@ -71,11 +73,6 @@ public class VsCodeSettingsManager
     {
         ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
         Dictionary<string, object> settings;
-
-        if (!Directory.Exists(fileUpdatePath))
-        {
-            Directory.CreateDirectory(fileUpdatePath);
-        }
 
         // Read existing settings or create new if file doesn't exist
         if (File.Exists(fileUpdatePath))
@@ -102,7 +99,8 @@ public class VsCodeSettingsManager
         if (fileUpdateDictionary is not null)
             settings[fileUpdateKey] = fileUpdateDictionary[fileUpdateKey];
 
-        string updatedJson = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.DictionaryStringObject);
-        await File.WriteAllTextAsync(fileUpdatePath, updatedJson, cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA2007
+        await using var fileStream = File.Open(fileUpdatePath, FileMode.Create);
+        await JsonSerializer.SerializeAsync(fileStream, settings, SettingsFileGenerationContext.Default.DictionaryStringObject, cancellationToken).ConfigureAwait(false);
     }
 }
