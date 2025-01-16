@@ -233,8 +233,8 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             var authenticationMethod = requestBuilderClass
                 .Properties
                 .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
-            
-            if (authenticationMethod != null && authenticationMethod.Name.Equals("authentication-scheme", StringComparison.OrdinalIgnoreCase)) {
+
+            if (authenticationMethod != null && Enum.IsDefined(typeof(Authentication), authenticationMethod.Type.Name)){
                 writer.WriteLine($"Authorization: {{{{{authenticationMethod.DefaultValue}}}}}");
             }
 

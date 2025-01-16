@@ -602,7 +602,6 @@ public partial class KiotaBuilder
         codeClass.AddProperty(
             new CodeProperty
             {
-                Name = "",
                 Type = new CodeType { Name = Authentication.Basic.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
                 DefaultValue = $"{securityScheme.Scheme}Auth"
@@ -615,7 +614,6 @@ public partial class KiotaBuilder
         codeClass.AddProperty(
             new CodeProperty
             {
-                Name = "",
                 Type = new CodeType { Name = Authentication.APIKey.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
                 DefaultValue = $"{securityScheme.Scheme}Auth"
@@ -628,7 +626,6 @@ public partial class KiotaBuilder
         codeClass.AddProperty(
             new CodeProperty
             {
-                Name = "bearer",
                 Type = new CodeType { Name = Authentication.OAuthV2.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
                 DefaultValue = $"{securityScheme.Scheme}Auth"
