@@ -51,7 +51,15 @@ public class SettingsFileManagementService : ISettingsManagementService
 
     private static async Task WriteSettingsFileInternalAsync(string directoryPath, SettingsFile settings, CancellationToken cancellationToken)
     {
-        var filePath = Path.Combine(directoryPath, SettingsFileName);
+        var parentDirectoryPath = Path.GetDirectoryName(directoryPath);
+        var vscodeDirectoryPath = Path.Combine(parentDirectoryPath!, ".vscode");
+        if (!Directory.Exists(vscodeDirectoryPath))
+        {
+            Directory.CreateDirectory(vscodeDirectoryPath);
+        }
+
+        var filePath = Path.Combine(vscodeDirectoryPath, SettingsFileName);
+        // var filePath = Path.Combine(directoryPath, SettingsFileName);
 #pragma warning disable CA2007 // Dispose objects before losing scope
         await using var fileStream = File.Open(filePath, FileMode.Create);
 #pragma warning disable CA2007

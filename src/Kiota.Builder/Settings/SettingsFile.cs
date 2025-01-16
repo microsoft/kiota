@@ -24,13 +24,11 @@ public class EnvironmentVariables
         get; set;
     }
 
-    [JsonPropertyName("remote")]
     public AuthenticationSettings Remote
     {
         get; set;
     }
 
-    [JsonPropertyName("development")]
     public AuthenticationSettings Development
     {
         get; set;
@@ -55,11 +53,18 @@ public class AuthenticationSettings
     {
         get; set;
     }
+
     public string? BasicAuth
     {
         get; set;
     }
-    public string? Bearer
+
+    public string? BearerAuth
+    {
+        get; set;
+    }
+
+    public string? ApiKey
     {
         get; set;
     }

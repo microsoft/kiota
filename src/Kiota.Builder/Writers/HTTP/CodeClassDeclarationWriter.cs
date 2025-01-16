@@ -230,6 +230,14 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
             writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} HTTP/1.1");
 
+            var authenticationMethod = requestBuilderClass
+                .Properties
+                .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
+            
+            if (authenticationMethod != null && authenticationMethod.Name.Equals("authentication-scheme", StringComparison.OrdinalIgnoreCase)) {
+                writer.WriteLine($"Authorization: {{{{{authenticationMethod.DefaultValue}}}}}");
+            }
+
             // Write the request body if present
             WriteRequestBody(method, writer);
 

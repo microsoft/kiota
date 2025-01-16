@@ -561,6 +561,81 @@ public partial class KiotaBuilder
         return rootNamespace;
     }
 
+    private void ProcessSecurityRequirements(OpenApiOperation operation, CodeClass codeClass)
+    {
+        if (openApiDocument is null)
+        {
+            logger.LogWarning("OpenAPI document is null");
+            return;
+        }
+
+        if (operation.Security == null || !operation.Security.Any())
+            return;
+
+        var securitySchemes = openApiDocument.Components.SecuritySchemes;
+        foreach (var securityRequirement in operation.Security)
+        {
+            foreach (var scheme in securityRequirement.Keys)
+            {
+                var securityScheme = securitySchemes[scheme.Reference.Id];
+                switch (securityScheme.Type)
+                {
+                    case SecuritySchemeType.Http:
+                        AddHttpSecurity(codeClass, securityScheme);
+                        break;
+                    case SecuritySchemeType.ApiKey:
+                        AddApiKeySecurity(codeClass, securityScheme);
+                        break;
+                    case SecuritySchemeType.OAuth2:
+                        AddOAuth2Security(codeClass, securityScheme);
+                        break;
+                    default:
+                        logger.LogWarning("Unsupported security scheme type: {Type}", securityScheme.Type);
+                        break;
+                }
+            }
+        }
+    }
+
+    private void AddHttpSecurity(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
+    {
+        codeClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "",
+                Type = new CodeType { Name = Authentication.Basic.ToString(), IsExternal = true },
+                Kind = CodePropertyKind.Headers,
+                DefaultValue = $"{securityScheme.Scheme}Auth"
+            }
+        );
+    }
+
+    private void AddApiKeySecurity(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
+    {
+        codeClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "",
+                Type = new CodeType { Name = Authentication.APIKey.ToString(), IsExternal = true },
+                Kind = CodePropertyKind.Headers,
+                DefaultValue = $"{securityScheme.Scheme}Auth"
+            }
+        );
+    }
+
+    private void AddOAuth2Security(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
+    {
+        codeClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "bearer",
+                Type = new CodeType { Name = Authentication.OAuthV2.ToString(), IsExternal = true },
+                Kind = CodePropertyKind.Headers,
+                DefaultValue = $"{securityScheme.Scheme}Auth"
+            }
+        );
+    }
+
     /// <summary>
     /// Manipulate CodeDOM for language specific issues
     /// </summary>
@@ -678,7 +753,11 @@ public partial class KiotaBuilder
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
+            {
+
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
+                ProcessSecurityRequirements(operation.Value, codeClass);
+            }
         }
 
         if (rootNamespace != null)
