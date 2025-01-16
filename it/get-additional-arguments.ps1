@@ -23,6 +23,9 @@ if ($language -eq "csharp") {
 elseif ($language -eq "java") {
     $command = " --output `"./it/$language/src/apisdk`""
 }
+elseif ($language -eq "dart") {
+    $command = " --output `"./it/$language/lib`""
+}
 elseif ($language -eq "go") {
     $command = " --output `"./it/$language/client`" --namespace-name `"integrationtest/client`""
 }

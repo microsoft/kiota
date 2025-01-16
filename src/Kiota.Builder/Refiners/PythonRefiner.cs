@@ -162,7 +162,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private const string StoreModuleName = $"{AbstractionsPackageName}.store";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
-        new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union"),
+        new (static x => x is CodeClass, "typing", "Any, Optional, TYPE_CHECKING, Union"),
+        new (static x => x is CodeClass, "collections.abc", "Callable"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -271,28 +272,32 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
             currentProperty.Type.Name = "RequestAdapter";
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-            currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.Type.Name = currentProperty.Type.Name[1..].ToFirstCharacterUpperCase(); // removing the "I"
         else if (currentProperty.IsOfKind(CodePropertyKind.Options))
-            currentProperty.Type.Name = "List[RequestOption]";
+            currentProperty.Type.Name = "list[RequestOption]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.Type.Name = "Dict[str, Union[str, List[str]]]";
+            currentProperty.Type.Name = "dict[str, Union[str, list[str]]]";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
-            currentProperty.Type.Name = "Dict[str, Any]";
+            currentProperty.Type.Name = "dict[str, Any]";
             currentProperty.DefaultValue = "field(default_factory=dict)";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
             currentProperty.Type.IsNullable = false;
-            currentProperty.Type.Name = "Union[str, Dict[str, Any]]";
+            currentProperty.Type.Name = "Union[str, dict[str, Any]]";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
         else if (currentProperty.Kind is CodePropertyKind.Custom && currentProperty.Type.IsNullable && string.IsNullOrEmpty(currentProperty.DefaultValue))
         {
             currentProperty.DefaultValue = "None";
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         }
-        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        else
+        {
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
@@ -300,7 +305,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith('I')).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = "Dict[str, Callable[[ParseNode], None]]";
+            currentMethod.ReturnType.Name = "dict[str, Callable[[ParseNode], None]]";
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.Factory))
         {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore, CodeParameterKind.ParseNode))
@@ -311,7 +316,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType)
             {
-                originalType.Name = "Union[str, Dict[str, Any]]";
+                originalType.Name = "Union[str, dict[str, Any]]";
                 urlTplParams.Documentation.DescriptionTemplate = "The raw url or the url-template parameters for the request.";
             }
         }

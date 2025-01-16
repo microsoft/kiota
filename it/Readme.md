@@ -17,5 +17,5 @@ Generate the code:
 And finally run the test:
 
 ```bash
-./it/exec-cmd.ps1 -language ${LANG}
+./it/exec-cmd.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
 ```

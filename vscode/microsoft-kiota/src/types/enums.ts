@@ -26,6 +26,8 @@ export enum KiotaGenerationLanguage {
     Ruby = 7,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     CLI = 8,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Dart = 9,
 };
 
 export enum KiotaPluginType {
