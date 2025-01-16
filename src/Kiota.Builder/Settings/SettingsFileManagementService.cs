@@ -10,19 +10,21 @@ namespace Kiota.Builder.Settings;
 public class SettingsFileManagementService : ISettingsManagementService
 {
     internal const string SettingsFileName = "settings.json";
-    public string GetDirectoryContainingSettingsFile(string searchDirectory)
+    public string? GetDirectoryContainingSettingsFile(string searchDirectory)
     {
-        throw new NotImplementedException();
-    }
+        var currentDirectory = new DirectoryInfo(searchDirectory);
 
-    public Task<SettingsFile> GetSettingsFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
+        while (currentDirectory != null)
+        {
+            var vscodeDirectoryPath = Path.Combine(currentDirectory.FullName, ".vscode");
+            if (Directory.Exists(vscodeDirectoryPath))
+            {
+                return vscodeDirectoryPath;
+            }
+            currentDirectory = currentDirectory.Parent;
+        }
 
-    public Task<SettingsFile> GetSettingsFromStreamAsync(Stream stream)
-    {
-        throw new NotImplementedException();
+        return null;
     }
 
     public Task WriteSettingsFileAsync(string directoryPath, OpenApiDocument openApiDocument, CancellationToken cancellationToken)
@@ -49,18 +51,17 @@ public class SettingsFileManagementService : ISettingsManagementService
 
     private static readonly SettingsFileGenerationContext context = new(options);
 
-    private static async Task WriteSettingsFileInternalAsync(string directoryPath, SettingsFile settings, CancellationToken cancellationToken)
+    private async Task WriteSettingsFileInternalAsync(string directoryPath, SettingsFile settings, CancellationToken cancellationToken)
     {
         var parentDirectoryPath = Path.GetDirectoryName(directoryPath);
-        var vscodeDirectoryPath = Path.Combine(parentDirectoryPath!, ".vscode");
+        var vscodeDirectoryPath = GetDirectoryContainingSettingsFile(parentDirectoryPath!);
         if (!Directory.Exists(vscodeDirectoryPath))
         {
-            Directory.CreateDirectory(vscodeDirectoryPath);
+            Directory.CreateDirectory(".vscode");
         }
 
-        var filePath = Path.Combine(vscodeDirectoryPath, SettingsFileName);
-        // var filePath = Path.Combine(directoryPath, SettingsFileName);
-#pragma warning disable CA2007 // Dispose objects before losing scope
+        var filePath = Path.Combine(vscodeDirectoryPath!, SettingsFileName);
+#pragma warning disable CA2007
         await using var fileStream = File.Open(filePath, FileMode.Create);
 #pragma warning disable CA2007
         await JsonSerializer.SerializeAsync(fileStream, settings, context.SettingsFile, cancellationToken).ConfigureAwait(false);
