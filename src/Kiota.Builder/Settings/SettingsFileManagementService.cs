@@ -15,17 +15,11 @@ public class SettingsFileManagementService : ISettingsManagementService
     public string? GetDirectoryContainingSettingsFile(string searchDirectory)
     {
         var currentDirectory = new DirectoryInfo(searchDirectory);
-
-        while (currentDirectory != null)
+        var vscodeDirectoryPath = Path.Combine(currentDirectory.FullName, ".vscode");
+        if (Directory.Exists(vscodeDirectoryPath))
         {
-            var vscodeDirectoryPath = Path.Combine(currentDirectory.FullName, ".vscode");
-            if (Directory.Exists(vscodeDirectoryPath))
-            {
-                return vscodeDirectoryPath;
-            }
-            currentDirectory = currentDirectory.Parent;
+            return vscodeDirectoryPath;
         }
-
         return null;
     }
 
@@ -77,6 +71,11 @@ public class VsCodeSettingsManager
     {
         ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
         Dictionary<string, object> settings;
+
+        if (!Directory.Exists(fileUpdatePath))
+        {
+            Directory.CreateDirectory(fileUpdatePath);
+        }
 
         // Read existing settings or create new if file doesn't exist
         if (File.Exists(fileUpdatePath))
