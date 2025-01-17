@@ -11,7 +11,7 @@ namespace Kiota.Builder.Settings.Tests
     public class SettingsFileManagementServiceTest
     {
         [Fact]
-        public void GetDirectoryContainingSettingsFile_ShouldReturnNull_WhenNoVscodeDirectoryExists()
+        public void GetDirectoryContainingSettingsFile_ShouldCreateTheDirectory_If_It_Doesnt_Exist()
         {
             // Arrange
             var service = new SettingsFileManagementService();
@@ -22,10 +22,18 @@ namespace Kiota.Builder.Settings.Tests
             var result = service.GetDirectoryContainingSettingsFile(tempDirectory);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(tempDirectory + "\\.vscode", result);
 
             // Cleanup
-            Directory.Delete(tempDirectory);
+            try
+            {
+                Directory.Delete(tempDirectory, true);
+            }
+            catch (IOException)
+            {
+                // Handle the case where the directory is not empty
+                Directory.Delete(tempDirectory, true);
+            }
         }
 
         [Fact]
