@@ -20,9 +20,9 @@ namespace Kiota.Builder.Settings.Tests
 
             // Act
             var result = service.GetDirectoryContainingSettingsFile(tempDirectory);
-
+            tempDirectory = Path.Combine(tempDirectory, ".vscode");
             // Assert
-            Assert.Equal(tempDirectory + "\\.vscode", result);
+            Assert.Equal(tempDirectory, result);
 
             // Cleanup
             try
