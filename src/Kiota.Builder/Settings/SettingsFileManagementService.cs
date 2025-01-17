@@ -13,15 +13,17 @@ public class SettingsFileManagementService : ISettingsManagementService
 {
     internal const string SettingsFileName = "settings.json";
     internal const string EnvironmentVariablesKey = "rest-client.environmentVariables";
-    public string? GetDirectoryContainingSettingsFile(string searchDirectory)
+    internal const string VsCodeDirectoryName = ".vscode";
+    public string GetDirectoryContainingSettingsFile(string searchDirectory)
     {
         var currentDirectory = new DirectoryInfo(searchDirectory);
-        var vscodeDirectoryPath = Path.Combine(currentDirectory.FullName, ".vscode");
+        var vscodeDirectoryPath = Path.Combine(currentDirectory.FullName, VsCodeDirectoryName);
         if (Directory.Exists(vscodeDirectoryPath))
         {
             return vscodeDirectoryPath;
         }
-        return null;
+        var pathToWrite = Path.Combine(searchDirectory, VsCodeDirectoryName);
+        return Directory.CreateDirectory(pathToWrite).FullName;
     }
 
     public Task WriteSettingsFileAsync(string directoryPath, OpenApiDocument openApiDocument, CancellationToken cancellationToken)
@@ -42,17 +44,9 @@ public class SettingsFileManagementService : ISettingsManagementService
 
     private async Task WriteSettingsFileInternalAsync(string directoryPath, SettingsFile settings, CancellationToken cancellationToken)
     {
-        var vsCodeDirectoryName = ".vscode";
         var parentDirectoryPath = Path.GetDirectoryName(directoryPath);
         var vscodeDirectoryPath = GetDirectoryContainingSettingsFile(parentDirectoryPath!);
-        if (!Directory.Exists(vscodeDirectoryPath))
-        {
-            var pathToWrite = Path.Combine(parentDirectoryPath!, vsCodeDirectoryName);
-            Directory.CreateDirectory(pathToWrite);
-        }
-        vscodeDirectoryPath = Path.Combine(parentDirectoryPath!, vsCodeDirectoryName);
         var settingsObjectString = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.SettingsFile);
-
         VsCodeSettingsManager settingsManager = new(vscodeDirectoryPath, SettingsFileName);
         await settingsManager.UpdateFileAsync(settingsObjectString, EnvironmentVariablesKey, cancellationToken).ConfigureAwait(false);
     }
