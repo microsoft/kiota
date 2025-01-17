@@ -29,12 +29,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             var baseUrl = GetBaseUrl(requestBuilderClass);
 
-            // Write the baseUrl variable
-            //WriteBaseUrl(baseUrl, writer);
-
-            // Extract and write the URL template
-            WriteUrlTemplate(urlTemplateProperty, writer);
-
             // Write path parameters
             WritePathParameters(pathParameters, writer);
 

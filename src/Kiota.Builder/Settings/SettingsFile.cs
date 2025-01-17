@@ -78,5 +78,8 @@ public class AuthenticationSettings
     public AuthenticationSettings()
     {
         HostAddress = "";
+        BasicAuth = "";
+        BearerAuth = "";
+        ApiKey = "";
     }
 }

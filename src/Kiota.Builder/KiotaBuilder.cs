@@ -561,7 +561,7 @@ public partial class KiotaBuilder
         return rootNamespace;
     }
 
-    private void ProcessSecurityRequirements(OpenApiOperation operation, CodeClass codeClass)
+    private void AddOperationSecurityRequirementToDOM(OpenApiOperation operation, CodeClass codeClass)
     {
         if (openApiDocument is null)
         {
@@ -753,7 +753,10 @@ public partial class KiotaBuilder
             {
 
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
-                ProcessSecurityRequirements(operation.Value, codeClass);
+                if (config.Language == GenerationLanguage.HTTP)
+                {
+                    AddOperationSecurityRequirementToDOM(operation.Value, codeClass);
+                }
             }
         }
 

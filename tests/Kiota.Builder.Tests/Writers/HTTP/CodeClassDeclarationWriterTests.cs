@@ -39,59 +39,6 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task WritesBaseUrlProperty()
-    {
-        var codeClass = new CodeClass
-        {
-            Name = "TestClass",
-            Kind = CodeClassKind.RequestBuilder
-        };
-        var urlTemplateProperty = new CodeProperty
-        {
-            Name = "urlTemplate",
-            Kind = CodePropertyKind.UrlTemplate,
-            DefaultValue = "\"https://example.com/{id}\"",
-            Type = new CodeType
-            {
-                Name = "string",
-                IsExternal = true
-            },
-        };
-        codeClass.AddProperty(urlTemplateProperty);
-
-        // Add base url property
-        var baseUrlProperty = new CodeProperty
-        {
-            Name = "BaseUrl",
-            Kind = CodePropertyKind.Custom,
-            Access = AccessModifier.Private,
-            DefaultValue = "https://example.com",
-            Type = new CodeType { Name = "string", IsExternal = true }
-        };
-        codeClass.AddProperty(baseUrlProperty);
-
-        var method = new CodeMethod
-        {
-            Name = "get",
-            Kind = CodeMethodKind.RequestExecutor,
-            Documentation = new CodeDocumentation { DescriptionTemplate = "GET method" },
-            ReturnType = new CodeType { Name = "void" }
-        };
-
-        codeClass.AddMethod(method);
-
-        root.AddClass(codeClass);
-
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root);
-
-        writer.Write(codeClass.StartBlock);
-        var result = tw.ToString();
-
-        Assert.Contains("# Base url for the server/host", result);
-        Assert.Contains("@url = https://example.com", result);
-    }
-
-    [Fact]
     public async Task WritesRequestExecutorMethods()
     {
         var codeClass = new CodeClass
@@ -211,9 +158,9 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
 
         // Check HTTP operations 
-        Assert.Contains("GET {{url}}/posts HTTP/1.1", result);
-        Assert.Contains("PATCH {{url}}/posts HTTP/1.1", result);
-        Assert.Contains("POST {{url}}/posts HTTP/1.1", result);
+        Assert.Contains("GET {{hostAddress}}/posts HTTP/1.1", result);
+        Assert.Contains("PATCH {{hostAddress}}/posts HTTP/1.1", result);
+        Assert.Contains("POST {{hostAddress}}/posts HTTP/1.1", result);
 
         // Check content type
         Assert.Contains("Content-Type: application/json", result);
