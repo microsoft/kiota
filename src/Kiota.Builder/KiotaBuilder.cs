@@ -604,7 +604,7 @@ public partial class KiotaBuilder
             {
                 Type = new CodeType { Name = Authentication.Basic.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
-                DefaultValue = $"{securityScheme.Scheme}Auth"
+                DefaultValue = "basicAuth"
             }
         );
     }
@@ -616,7 +616,7 @@ public partial class KiotaBuilder
             {
                 Type = new CodeType { Name = Authentication.APIKey.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
-                DefaultValue = $"{securityScheme.Scheme}Auth"
+                DefaultValue = "apiKeyAuth"
             }
         );
     }
@@ -628,7 +628,7 @@ public partial class KiotaBuilder
             {
                 Type = new CodeType { Name = Authentication.OAuthV2.ToString(), IsExternal = true },
                 Kind = CodePropertyKind.Headers,
-                DefaultValue = $"{securityScheme.Scheme}Auth"
+                DefaultValue = "bearerAuth"
             }
         );
     }
