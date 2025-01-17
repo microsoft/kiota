@@ -138,6 +138,8 @@ export function parseGenerationLanguage(value: string): KiotaGenerationLanguage 
           return KiotaGenerationLanguage.Ruby;
       case "cli":
           return KiotaGenerationLanguage.CLI;
+      case "dart":
+          return KiotaGenerationLanguage.Dart;
       default:
           throw new Error("unknown language " + value);
     }
