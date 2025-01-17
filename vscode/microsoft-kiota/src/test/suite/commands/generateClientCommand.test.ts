@@ -65,7 +65,8 @@ let extensionSettings = {
         [KiotaGenerationLanguage.Python]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Ruby]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Swift]: { serializers: [], deserializers: [] },
-        [KiotaGenerationLanguage.TypeScript]: { serializers: [], deserializers: [] }
+        [KiotaGenerationLanguage.TypeScript]: { serializers: [], deserializers: [] },
+        [KiotaGenerationLanguage.Dart]: { serializers: [], deserializers: [] }
     },
 };
 

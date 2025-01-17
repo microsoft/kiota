@@ -52,7 +52,7 @@ toml==0.10.2
 
 tomli==2.2.1 ; python_version < '3.11'
 
-tomli-w==1.1.0 ; python_version >= '3.7'
+tomli-w==1.2.0 ; python_version >= '3.7'
 
 tomlkit==0.13.2 ; python_version >= '3.7'
 
@@ -60,7 +60,7 @@ typing-extensions==4.12.2 ; python_version >= '3.7'
 
 urllib3==2.3.0 ; python_version >= '3.7'
 
-wrapt==1.17.1 ; python_version < '3.11'
+wrapt==1.17.2 ; python_version < '3.11'
 
 yapf==0.43.0
 
@@ -98,19 +98,19 @@ httpx[http2]==0.28.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.7.0
+microsoft-kiota-abstractions==1.7.1
 
-microsoft-kiota-authentication-azure==1.7.0
+microsoft-kiota-authentication-azure==1.7.1
 
-microsoft-kiota-http==1.7.0
+microsoft-kiota-http==1.7.1
 
-microsoft-kiota-serialization-json==1.7.0
+microsoft-kiota-serialization-json==1.7.1
 
-microsoft-kiota-serialization-text==1.7.0
+microsoft-kiota-serialization-text==1.7.1
 
-microsoft-kiota-serialization-form==1.7.0
+microsoft-kiota-serialization-form==1.7.1
 
-microsoft-kiota-serialization-multipart==1.7.0
+microsoft-kiota-serialization-multipart==1.7.1
 
 msal==1.31.1
 
