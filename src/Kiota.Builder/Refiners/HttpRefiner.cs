@@ -11,6 +11,8 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration)
 {
+    private const string BaseUrl = "BaseUrl";
+    private const string BaseUrlName = "string";
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -66,11 +68,11 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
             // Add a new property named BaseUrl and set its value to the baseUrl string
             var baseUrlProperty = new CodeProperty
             {
-                Name = "BaseUrl",
+                Name = BaseUrl,
                 Kind = CodePropertyKind.Custom,
                 Access = AccessModifier.Private,
                 DefaultValue = baseUrl,
-                Type = new CodeType { Name = "string", IsExternal = true }
+                Type = new CodeType { Name = BaseUrlName, IsExternal = true }
             };
             codeClass.AddProperty(baseUrlProperty);
         }

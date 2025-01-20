@@ -58,19 +58,19 @@ public class AuthenticationSettings
     }
 
     [JsonPropertyName("basicAuth")]
-    public string? BasicAuth
+    public string BasicAuth
     {
         get; set;
     }
 
     [JsonPropertyName("bearerAuth")]
-    public string? BearerAuth
+    public string BearerAuth
     {
         get; set;
     }
 
     [JsonPropertyName("apiKeyAuth")]
-    public string? ApiKey
+    public string ApiKey
     {
         get; set;
     }

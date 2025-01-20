@@ -292,7 +292,7 @@ public partial class KiotaBuilder
             {
                 sw.Start();
                 await settingsFileManagementService.WriteSettingsFileAsync(config.OutputPath, openApiDocument, cancellationToken).ConfigureAwait(false);
-                StopLogAndReset(sw, $"step {++stepId} - generated settings file for HTTP authentication - took");
+                StopLogAndReset(sw, $"step {++stepId} - generating settings file for HTTP authentication - took");
             }
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
