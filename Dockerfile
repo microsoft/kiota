@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
 ARG version_suffix
 WORKDIR /app
 
@@ -6,15 +6,15 @@ COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0; \
     else \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false --version-suffix "$version_suffix"; \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
     fi
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0-jammy-chiseled AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:9.0-noble-chiseled AS runtime
 WORKDIR /app
 
-COPY --from=build-env /app/kiota/src/kiota/bin/Release/net8.0 ./
+COPY --from=build-env /app/kiota/src/kiota/bin/Release/net9.0 ./
 
 VOLUME /app/output
 VOLUME /app/openapi.yaml
