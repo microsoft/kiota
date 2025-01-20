@@ -9,7 +9,16 @@ using Microsoft.OpenApi.Models;
 namespace Kiota.Builder.Writers.Http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
 {
-    private const string BaseUrlPropertyName = "hostAddress";
+    private static class Constants
+    {
+        internal const string BaseUrlPropertyName = "hostAddress";
+        internal const string PathParameters = "pathParameters";
+        internal const string BaseUrl = "baseUrl";
+        internal const string ApiKeyAuth = "apiKeyAuth";
+        internal const string BearerAuth = "bearerAuth";
+        internal const string HttpVersion = "HTTP/1.1";
+        internal const string LocalHostUrl = "http://localhost/";
+    }
 
     protected override void WriteTypeDeclaration(ClassDeclaration codeElement, LanguageWriter writer)
     {
@@ -58,12 +67,11 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .ToList();
 
         // Collect all query parameter properties into the aggregated list
-        queryParameterClasses?.ForEach(paramCodeClass =>
+        queryParameterClasses.ForEach(paramCodeClass =>
         {
             var queryParams = paramCodeClass
                 .Properties
-                .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter))
-                .ToList();
+                .SelectMany(static property => property.IsOfKind(CodePropertyKind.QueryParameter) ? [property] : Array.Empty<CodeProperty>());
 
             queryParameters.AddRange(queryParams);
         });
@@ -82,23 +90,10 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         var pathParameters = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
-            .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals("pathParameters", StringComparison.OrdinalIgnoreCase))
+            .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals(Constants.PathParameters, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         return pathParameters;
-    }
-
-    /// <summary>
-    /// Writes the base URL for the given request builder class to the writer.
-    /// </summary>
-    /// <param name="requestBuilderClass">The request builder class containing the base URL property.</param>
-    /// <param name="writer">The language writer to write the base URL to.</param>
-    private static void WriteBaseUrl(string? baseUrl, LanguageWriter writer)
-    {
-        // Write the base URL variable to the writer
-        writer.WriteLine($"# Base url for the server/host");
-        writer.WriteLine($"@{BaseUrlPropertyName} = {{hostAddress}}");
-        writer.WriteLine();
     }
 
     /// <summary>
@@ -110,7 +105,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     {
         // Retrieve the base URL property from the request builder class
         return requestBuilderClass.Properties
-            .FirstOrDefault(property => property.Name.Equals("BaseUrl", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
+            .FirstOrDefault(property => property.Name.Equals(Constants.BaseUrl, StringComparison.OrdinalIgnoreCase))?.DefaultValue;
     }
 
     /// <summary>
@@ -223,7 +218,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             );
 
             // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
-            writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} HTTP/1.1");
+            writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} {Constants.HttpVersion}");
 
             var authenticationMethod = requestBuilderClass
                 .Properties
@@ -233,10 +228,10 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             {
                 var schemeTypeMapping = new Dictionary<string, string>
                 {
-                    { SecuritySchemeType.ApiKey.ToString().ToLowerInvariant(), "apiKeyAuth" },
-                    { SecuritySchemeType.Http.ToString().ToLowerInvariant(), "bearerAuth" },
-                    { SecuritySchemeType.OAuth2.ToString().ToLowerInvariant(), "bearerAuth" },
-                    { SecuritySchemeType.OpenIdConnect.ToString().ToLowerInvariant(), "bearerAuth" }
+                    { SecuritySchemeType.ApiKey.ToString().ToLowerInvariant(), Constants.ApiKeyAuth },
+                    { SecuritySchemeType.Http.ToString().ToLowerInvariant(), Constants.BearerAuth },
+                    { SecuritySchemeType.OAuth2.ToString().ToLowerInvariant(), Constants.BearerAuth },
+                    { SecuritySchemeType.OpenIdConnect.ToString().ToLowerInvariant(), Constants.BearerAuth }
                 };
                 var schemeType = schemeTypeMapping[authenticationMethod.Type.Name.ToLowerInvariant()];
                 writer.WriteLine($"Authorization: {{{{{schemeType}}}}}");
@@ -302,10 +297,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     private static void WriteProperties(CodeClass requestBodyClass, LanguageWriter writer, HashSet<CodeClass>? processedClasses = null, int depth = 0)
     {
 
-        if (processedClasses == null)
-        {
-            processedClasses = new HashSet<CodeClass>();
-        }
+        processedClasses ??= [];
 
         // Add the current class to the set of processed classes
         if (!processedClasses.Add(requestBodyClass))
@@ -357,7 +349,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     private static string BuildUrlStringFromTemplate(string urlTemplateString, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, string? baseUrl)
     {
         // Use the provided baseUrl or default to "http://localhost/"
-        baseUrl ??= "http://localhost/";
+        baseUrl ??= Constants.LocalHostUrl;
 
         // unquote the urlTemplate string and replace the {+baseurl} with the actual base url string
         urlTemplateString = urlTemplateString.Trim('"').Replace("{+baseurl}", baseUrl, StringComparison.InvariantCultureIgnoreCase);
@@ -371,6 +363,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         };
 
         // Erase baseUrl and use the placeholder variable {baseUrl} already defined in the snippet
-        return requestInformation.URI.ToString().Replace(baseUrl, $"{{{{{BaseUrlPropertyName}}}}}", StringComparison.InvariantCultureIgnoreCase);
+        return requestInformation.URI.ToString().Replace(baseUrl, $"{{{{{Constants.BaseUrlPropertyName}}}}}", StringComparison.InvariantCultureIgnoreCase);
     }
 }

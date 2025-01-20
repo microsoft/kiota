@@ -37,8 +37,11 @@ public class SettingsFileManagementService : ISettingsManagementService
     private static SettingsFile GenerateSettingsFile(OpenApiDocument openApiDocument)
     {
         var settings = new SettingsFile();
-        settings.EnvironmentVariables.Development.HostAddress = openApiDocument.Servers[0].Url;
-        settings.EnvironmentVariables.Remote.HostAddress = openApiDocument.Servers[0].Url;
+        if(openApiDocument.Servers?.Count > 0)
+        {
+            settings.EnvironmentVariables.Development.HostAddress = openApiDocument.Servers[0].Url;
+            settings.EnvironmentVariables.Remote.HostAddress = openApiDocument.Servers[0].Url;
+        }
         return settings;
     }
 
@@ -47,54 +50,7 @@ public class SettingsFileManagementService : ISettingsManagementService
         var parentDirectoryPath = Path.GetDirectoryName(directoryPath);
         var vscodeDirectoryPath = GetDirectoryContainingSettingsFile(parentDirectoryPath!);
         var settingsObjectString = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.SettingsFile);
-        VsCodeSettingsManager settingsManager = new(vscodeDirectoryPath, SettingsFileName);
-        await settingsManager.UpdateFileAsync(settingsObjectString, EnvironmentVariablesKey, cancellationToken).ConfigureAwait(false);
-    }
-}
-
-public class VsCodeSettingsManager
-{
-    private readonly string _vscodePath;
-    private readonly string fileUpdatePath;
-
-    public VsCodeSettingsManager(string basePath, string targetFilePath)
-    {
-        _vscodePath = basePath;
-        fileUpdatePath = Path.Combine(_vscodePath, targetFilePath);
-    }
-
-    public async Task UpdateFileAsync(string fileUpdate, string fileUpdateKey, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
-        Dictionary<string, object> settings;
-
-        // Read existing settings or create new if file doesn't exist
-        if (File.Exists(fileUpdatePath))
-        {
-            string jsonContent = await File.ReadAllTextAsync(fileUpdatePath, cancellationToken).ConfigureAwait(false);
-            try
-            {
-                settings = JsonSerializer.Deserialize(
-                    jsonContent,
-                    SettingsFileGenerationContext.Default.DictionaryStringObject)
-                    ?? [];
-            }
-            catch (JsonException)
-            {
-                settings = [];
-            }
-        }
-        else
-        {
-            settings = [];
-        }
-
-        var fileUpdateDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(fileUpdate, SettingsFileGenerationContext.Default.DictionaryStringObject);
-        if (fileUpdateDictionary is not null)
-            settings[fileUpdateKey] = fileUpdateDictionary[fileUpdateKey];
-
-#pragma warning disable CA2007
-        await using var fileStream = File.Open(fileUpdatePath, FileMode.Create);
-        await JsonSerializer.SerializeAsync(fileStream, settings, SettingsFileGenerationContext.Default.DictionaryStringObject, cancellationToken).ConfigureAwait(false);
+        var fileUpdatePath = Path.Combine(vscodeDirectoryPath, SettingsFileName);
+        await VsCodeSettingsManager.UpdateFileAsync(settingsObjectString, EnvironmentVariablesKey, fileUpdatePath, cancellationToken).ConfigureAwait(false);
     }
 }
