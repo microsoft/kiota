@@ -579,8 +579,10 @@ public partial class KiotaBuilder
         {
             foreach (var scheme in securityRequirement.Keys)
             {
-                var securityScheme = securitySchemes[scheme.Reference.Id];
-                AddSecurity(codeClass, securityScheme);
+                if (securitySchemes.TryGetValue(scheme.Reference.Id, out var securityScheme))
+                {
+                    AddSecurity(codeClass, securityScheme);
+                }
             }
         }
     }

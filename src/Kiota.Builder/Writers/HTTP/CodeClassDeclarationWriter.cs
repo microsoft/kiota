@@ -18,6 +18,14 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         internal const string BearerAuth = "bearerAuth";
         internal const string HttpVersion = "HTTP/1.1";
         internal const string LocalHostUrl = "http://localhost/";
+
+        internal static Dictionary<string, string> SchemeTypeMapping = new()
+        {
+            { SecuritySchemeType.ApiKey.ToString().ToLowerInvariant(), ApiKeyAuth },
+            { SecuritySchemeType.Http.ToString().ToLowerInvariant(), BearerAuth },
+            { SecuritySchemeType.OAuth2.ToString().ToLowerInvariant(), BearerAuth },
+            { SecuritySchemeType.OpenIdConnect.ToString().ToLowerInvariant(), BearerAuth }
+        };
     }
 
     protected override void WriteTypeDeclaration(ClassDeclaration codeElement, LanguageWriter writer)
@@ -226,14 +234,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             if (authenticationMethod != null && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var _))
             {
-                var schemeTypeMapping = new Dictionary<string, string>
-                {
-                    { SecuritySchemeType.ApiKey.ToString().ToLowerInvariant(), Constants.ApiKeyAuth },
-                    { SecuritySchemeType.Http.ToString().ToLowerInvariant(), Constants.BearerAuth },
-                    { SecuritySchemeType.OAuth2.ToString().ToLowerInvariant(), Constants.BearerAuth },
-                    { SecuritySchemeType.OpenIdConnect.ToString().ToLowerInvariant(), Constants.BearerAuth }
-                };
-                var schemeType = schemeTypeMapping[authenticationMethod.Type.Name.ToLowerInvariant()];
+                var schemeType = Constants.SchemeTypeMapping[authenticationMethod.Type.Name.ToLowerInvariant()];
                 writer.WriteLine($"Authorization: {{{{{schemeType}}}}}");
             }
 

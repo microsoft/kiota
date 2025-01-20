@@ -18,6 +18,8 @@ public static class VsCodeSettingsManager
     public static async Task UpdateFileAsync(string fileUpdate, string fileUpdatePath, string fileUpdateKey, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
+        ArgumentException.ThrowIfNullOrEmpty(fileUpdatePath);
+        ArgumentException.ThrowIfNullOrEmpty(fileUpdateKey);
         Dictionary<string, object> settings = [];
 
         // Read existing settings or create new if file doesn't exist
