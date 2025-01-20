@@ -232,10 +232,12 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 .Properties
                 .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
 
-            if (authenticationMethod != null && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var _))
+            if (authenticationMethod != null
+                && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var schemeTypeObj)
+                && schemeTypeObj is SecuritySchemeType schemeType
+                && Constants.SchemeTypeMapping.TryGetValue(schemeType.ToString().ToLowerInvariant(), out var mappedSchemeType))
             {
-                var schemeType = Constants.SchemeTypeMapping[authenticationMethod.Type.Name.ToLowerInvariant()];
-                writer.WriteLine($"Authorization: {{{{{schemeType}}}}}");
+                writer.WriteLine($"Authorization: {{{{{mappedSchemeType}}}}}");
             }
 
             // Write the request body if present
