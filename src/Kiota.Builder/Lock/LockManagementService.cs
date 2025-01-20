@@ -82,6 +82,7 @@ public class LockManagementService : ILockManagementService
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
+        Directory.CreateDirectory(directoryPath);
 #pragma warning disable CA2007
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
 #pragma warning restore CA2007
