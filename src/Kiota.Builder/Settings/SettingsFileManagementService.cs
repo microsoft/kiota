@@ -51,6 +51,6 @@ public class SettingsFileManagementService : ISettingsManagementService
         var vscodeDirectoryPath = GetDirectoryContainingSettingsFile(parentDirectoryPath!);
         var settingsObjectString = JsonSerializer.Serialize(settings, SettingsFileGenerationContext.Default.SettingsFile);
         var fileUpdatePath = Path.Combine(vscodeDirectoryPath, SettingsFileName);
-        await VsCodeSettingsManager.UpdateFileAsync(settingsObjectString, fileUpdatePath, cancellationToken).ConfigureAwait(false);
+        await VsCodeSettingsManager.UpdateFileAsync(settingsObjectString, fileUpdatePath, EnvironmentVariablesKey, cancellationToken).ConfigureAwait(false);
     }
 }

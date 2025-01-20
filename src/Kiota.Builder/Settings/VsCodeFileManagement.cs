@@ -15,10 +15,10 @@ public static class VsCodeSettingsManager
         WriteIndented = true,
     };
     private static readonly SettingsFileGenerationContext context = new(options);
-    public static async Task UpdateFileAsync(string fileUpdate, string fileUpdatePath, CancellationToken cancellationToken)
+    public static async Task UpdateFileAsync(string fileUpdate, string fileUpdatePath, string fileUpdateKey, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(fileUpdate);
-        Dictionary<string, object> settings;
+        Dictionary<string, object> settings = [];
 
         // Read existing settings or create new if file doesn't exist
         if (File.Exists(fileUpdatePath))
@@ -30,17 +30,17 @@ public static class VsCodeSettingsManager
                 cancellationToken
             ).ConfigureAwait(false) ?? [];
         }
-        else
-        {
-            settings = [];
-        }
 
         var fileUpdateDictionary = JsonSerializer.Deserialize(fileUpdate, context.DictionaryStringObject);
         if (fileUpdateDictionary is not null)
         {
-            foreach (var kvp in fileUpdateDictionary)
+            if (fileUpdateDictionary.TryGetValue(fileUpdateKey, out var environmentVariables))
             {
-                settings[kvp.Key] = kvp.Value;
+                settings[fileUpdateKey] = environmentVariables;
+            }
+            else
+            {
+                settings[fileUpdateKey] = fileUpdateDictionary;
             }
         }
 
