@@ -16,11 +16,11 @@ public sealed class CodeEnumWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeEnum currentEnum;
     private const string EnumName = "someEnum";
-    private readonly CodeEnumWriter codeEnumWriter;
+    private readonly GenericElementWriter codeEnumWriter;
     public CodeEnumWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.HTTP, DefaultPath, DefaultName);
-        codeEnumWriter = new CodeEnumWriter(new HttpConventionService());
+        codeEnumWriter = new GenericElementWriter(new HttpConventionService());
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
