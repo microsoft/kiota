@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -27,7 +27,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -48,7 +48,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -69,7 +69,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -90,7 +90,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -111,7 +111,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -132,7 +132,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -154,7 +154,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -175,7 +175,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -196,7 +196,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "generate",
         "--openapi",
@@ -216,7 +216,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "search",
         "microsoft"
@@ -230,7 +230,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "search",
         "test"
@@ -244,7 +244,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "show",
         "-d",
@@ -259,12 +259,12 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "download",
         "msgraph::microsoft-graph",
         "-o",
-        "${workspaceFolder}/src/kiota/bin/Debug/net8.0/graphv1.yml"
+        "${workspaceFolder}/src/kiota/bin/Debug/net9.0/graphv1.yml"
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
@@ -275,7 +275,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "info",
         "-l",
@@ -290,7 +290,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "update",
         "-o",
@@ -305,7 +305,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "workspace",
         "migrate"
@@ -322,7 +322,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "client",
         "generate"
@@ -339,7 +339,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "client",
         "edit",
@@ -360,7 +360,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "plugin",
         "add",
@@ -389,7 +389,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net9.0/kiota.dll",
       "args": [
         "login",
         "github",

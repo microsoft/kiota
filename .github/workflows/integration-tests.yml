@@ -19,11 +19,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 9.x
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Build
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
       - uses: actions/upload-artifact@v4
         with:
@@ -82,7 +82,7 @@ jobs:
         if: matrix.language == 'csharp'
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 9.x
       - name: Setup Go
         if: matrix.language == 'go'
         uses: actions/setup-go@v5
