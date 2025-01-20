@@ -47,10 +47,10 @@ public partial class KiotaBuilder
     private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
-    private readonly SettingsFileManagementService settingsFileManagementService = new();
+    private readonly ISettingsManagementService settingsFileManagementService;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false, ISettingsManagementService? settingsManagementService = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -66,6 +66,7 @@ public partial class KiotaBuilder
         workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
         this.useKiotaConfig = useKiotaConfig;
         openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
+        settingsFileManagementService = settingsManagementService ?? new SettingsFileManagementService();
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
