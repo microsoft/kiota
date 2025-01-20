@@ -38,6 +38,7 @@ public class GenerationConfiguration : ICloneable
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
+    public string ClientOutputPath => Path.Combine(OutputPath, ClientClassName);
     public string ClientClassName { get; set; } = "ApiClient";
     public AccessModifier TypeAccessModifier { get; set; } = AccessModifier.Public;
     public string ClientNamespaceName { get; set; } = "ApiSdk";

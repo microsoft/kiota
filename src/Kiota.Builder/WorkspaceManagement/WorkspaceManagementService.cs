@@ -85,7 +85,7 @@ public class WorkspaceManagementService
             {
                 DescriptionHash = descriptionHash ?? string.Empty,
             };
-            await lockManagementService.WriteLockFileAsync(generationConfiguration.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
+            await lockManagementService.WriteLockFileAsync(generationConfiguration.ClientOutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
         }
     }
     public async Task RestoreStateAsync(string outputPath, CancellationToken cancellationToken = default)
@@ -139,7 +139,7 @@ public class WorkspaceManagementService
         }
         else
         {
-            var existingLock = await lockManagementService.GetLockFromDirectoryAsync(inputConfig.OutputPath, cancellationToken).ConfigureAwait(false);
+            var existingLock = await lockManagementService.GetLockFromDirectoryAsync(inputConfig.ClientOutputPath, cancellationToken).ConfigureAwait(false);
             var configurationLock = new KiotaLock(inputConfig)
             {
                 DescriptionHash = descriptionHash,

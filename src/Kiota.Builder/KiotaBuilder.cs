@@ -46,6 +46,7 @@ public partial class KiotaBuilder
     private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
+    private readonly string outputPath;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
@@ -64,19 +65,20 @@ public partial class KiotaBuilder
         workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
         this.useKiotaConfig = useKiotaConfig;
         openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
+        outputPath = this.config.ClientOutputPath;
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
-        if (config.CleanOutput && Directory.Exists(config.OutputPath))
+        if (config.CleanOutput && Directory.Exists(outputPath))
         {
-            logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
+            logger.LogInformation("Cleaning output directory {Path}", outputPath);
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
-            foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
+            foreach (var subDir in Directory.EnumerateDirectories(outputPath))
                 Directory.Delete(subDir, true);
-            await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
-            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
+            await workspaceManagementService.BackupStateAsync(outputPath, cancellationToken).ConfigureAwait(false);
+            foreach (var subFile in Directory.EnumerateFiles(outputPath)
                                             .Where(static x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
@@ -273,7 +275,7 @@ public partial class KiotaBuilder
             {
                 // Generate public API export
                 sw.Start();
-                var fileStream = File.Create(Path.Combine(config.OutputPath, PublicApiExportService.DomExportFileName));
+                var fileStream = File.Create(Path.Combine(outputPath, PublicApiExportService.DomExportFileName));
                 await using (fileStream.ConfigureAwait(false))
                 {
                     await new PublicApiExportService(config).SerializeDomAsync(fileStream, generatedCode, cancellationToken).ConfigureAwait(false);
@@ -301,11 +303,11 @@ public partial class KiotaBuilder
         {
             await CleanOutputDirectoryAsync(cancellationToken).ConfigureAwait(false);
             // doing this verification at the beginning to give immediate feedback to the user
-            Directory.CreateDirectory(config.OutputPath);
+            Directory.CreateDirectory(outputPath);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
+            throw new InvalidOperationException($"Could not open/create output directory {outputPath}, reason: {ex.Message}", ex);
         }
         try
         {
@@ -329,7 +331,7 @@ public partial class KiotaBuilder
         }
         catch
         {
-            await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
+            await workspaceManagementService.RestoreStateAsync(outputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
@@ -579,13 +581,13 @@ public partial class KiotaBuilder
 
     public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, outputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
         await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Files written to {Path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
+        logger.LogTrace("{Timestamp}ms: Files written to {Path}", stopwatch.ElapsedMilliseconds, outputPath);
     }
     private const string RequestBuilderSuffix = "RequestBuilder";
     private const string ItemRequestBuilderSuffix = "ItemRequestBuilder";
