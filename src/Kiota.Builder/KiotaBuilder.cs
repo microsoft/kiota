@@ -290,7 +290,9 @@ public partial class KiotaBuilder
 
             if (config.Language == GenerationLanguage.HTTP && openApiDocument is not null)
             {
+                sw.Start();
                 await settingsFileManagementService.WriteSettingsFileAsync(config.OutputPath, openApiDocument, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - generated settings file for HTTP authentication - took");
             }
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
@@ -578,57 +580,18 @@ public partial class KiotaBuilder
             foreach (var scheme in securityRequirement.Keys)
             {
                 var securityScheme = securitySchemes[scheme.Reference.Id];
-                switch (securityScheme.Type)
-                {
-                    case SecuritySchemeType.Http:
-                        AddHttpSecurity(codeClass, securityScheme);
-                        break;
-                    case SecuritySchemeType.ApiKey:
-                        AddApiKeySecurity(codeClass, securityScheme);
-                        break;
-                    case SecuritySchemeType.OAuth2:
-                        AddOAuth2Security(codeClass, securityScheme);
-                        break;
-                    default:
-                        logger.LogWarning("Unsupported security scheme type: {Type}", securityScheme.Type);
-                        break;
-                }
+                AddSecurity(codeClass, securityScheme);
             }
         }
     }
 
-    private void AddHttpSecurity(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
+    private void AddSecurity(CodeClass codeClass, OpenApiSecurityScheme openApiSecurityScheme)
     {
         codeClass.AddProperty(
             new CodeProperty
             {
-                Type = new CodeType { Name = Authentication.Basic.ToString(), IsExternal = true },
-                Kind = CodePropertyKind.Headers,
-                DefaultValue = "basicAuth"
-            }
-        );
-    }
-
-    private void AddApiKeySecurity(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
-    {
-        codeClass.AddProperty(
-            new CodeProperty
-            {
-                Type = new CodeType { Name = Authentication.APIKey.ToString(), IsExternal = true },
-                Kind = CodePropertyKind.Headers,
-                DefaultValue = "apiKeyAuth"
-            }
-        );
-    }
-
-    private void AddOAuth2Security(CodeClass codeClass, OpenApiSecurityScheme securityScheme)
-    {
-        codeClass.AddProperty(
-            new CodeProperty
-            {
-                Type = new CodeType { Name = Authentication.OAuthV2.ToString(), IsExternal = true },
-                Kind = CodePropertyKind.Headers,
-                DefaultValue = "bearerAuth"
+                Type = new CodeType { Name = openApiSecurityScheme.Type.ToString(), IsExternal = true },
+                Kind = CodePropertyKind.Headers
             }
         );
     }

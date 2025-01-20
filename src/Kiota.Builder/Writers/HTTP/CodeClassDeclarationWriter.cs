@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Writers.Http;
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
@@ -228,9 +229,17 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 .Properties
                 .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
 
-            if (authenticationMethod != null && Enum.IsDefined(typeof(Authentication), authenticationMethod.Type.Name))
+            if (authenticationMethod != null && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var _))
             {
-                writer.WriteLine($"Authorization: {{{{{authenticationMethod.DefaultValue}}}}}");
+                var schemeTypeMapping = new Dictionary<string, string>
+                {
+                    { SecuritySchemeType.ApiKey.ToString().ToLowerInvariant(), "apiKeyAuth" },
+                    { SecuritySchemeType.Http.ToString().ToLowerInvariant(), "bearerAuth" },
+                    { SecuritySchemeType.OAuth2.ToString().ToLowerInvariant(), "bearerAuth" },
+                    { SecuritySchemeType.OpenIdConnect.ToString().ToLowerInvariant(), "bearerAuth" }
+                };
+                var schemeType = schemeTypeMapping[authenticationMethod.Type.Name.ToLowerInvariant()];
+                writer.WriteLine($"Authorization: {{{{{schemeType}}}}}");
             }
 
             // Write the request body if present

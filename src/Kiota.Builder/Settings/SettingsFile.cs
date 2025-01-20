@@ -77,9 +77,9 @@ public class AuthenticationSettings
 
     public AuthenticationSettings()
     {
-        HostAddress = "";
-        BasicAuth = "";
-        BearerAuth = "";
-        ApiKey = "";
+        HostAddress = string.Empty;
+        BasicAuth = string.Empty;
+        BearerAuth = string.Empty;
+        ApiKey = string.Empty;
     }
 }
