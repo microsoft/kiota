@@ -6,7 +6,7 @@ Thanks for your interest in contributing to Kiota! We welcome contributions from
 
 To get started, you'll need to have the following tools installed:
 
-- [.NET SDK 8.0](https://get.dot.net/8)
+- [.NET SDK 9.0](https://get.dot.net/9)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
 

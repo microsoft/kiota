@@ -1356,7 +1356,7 @@ public partial class KiotaBuilder
             }).First();
 
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
-            var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
+            var method = Enum.Parse<HttpMethod>(operationType.ToString());
             var deprecationInformation = operation.GetDeprecationInformation();
             var returnTypes = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass, operationType);
             var executorMethod = new CodeMethod

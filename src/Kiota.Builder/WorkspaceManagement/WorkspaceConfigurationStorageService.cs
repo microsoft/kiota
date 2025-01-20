@@ -146,7 +146,7 @@ public class WorkspaceConfigurationStorageService
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     private static string GetBackupFilePath(string outputPath, string fileName)
     {
-        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
+        var hashedPath = Convert.ToHexString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "backup", hashedPath, fileName);
     }
 }
