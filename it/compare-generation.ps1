@@ -79,11 +79,11 @@ if ($firstGenerationProcess.ExitCode -ne 0 -or $secondGenerationProcess.ExitCode
 }
 
 # Remove variable output files
-Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
+Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "*/kiota-lock.json")
 if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
     Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")
 }
-Remove-Item (Join-Path -Path $tmpFolder2 -ChildPath "kiota-lock.json")
+Remove-Item (Join-Path -Path $tmpFolder2 -ChildPath "*/kiota-lock.json")
 if (Test-Path (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")) {
     Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")
 }
