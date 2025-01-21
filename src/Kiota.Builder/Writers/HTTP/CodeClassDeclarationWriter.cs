@@ -62,27 +62,34 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// Retrieves all the query parameters for the given request builder class.
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the query parameters.</param>
-    /// <returns>A list of all query parameters.</returns>
-    private static List<CodeProperty> GetAllQueryParameters(CodeClass requestBuilderClass)
+    /// <returns>An array of all query parameters.</returns>
+    private static CodeProperty[] GetAllQueryParameters(CodeClass requestBuilderClass)
     {
-        var queryParameters = new List<CodeProperty>();
-
         // Retrieve all the query parameter classes
         var queryParameterClasses = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeClass>()
             .Where(static element => element.IsOfKind(CodeClassKind.QueryParameters))
-            .ToList();
+            .ToArray();
 
-        // Collect all query parameter properties into the aggregated list
-        queryParameterClasses.ForEach(paramCodeClass =>
+        // Calculate the total number of query parameters
+        int totalQueryParameters = queryParameterClasses
+            .Sum(paramCodeClass => paramCodeClass.Properties
+            .Count(static property => property.IsOfKind(CodePropertyKind.QueryParameter)));
+
+        // Create an array to hold all query parameters
+        var queryParameters = new CodeProperty[totalQueryParameters];
+        int index = 0;
+
+        // Populate the array with query parameters
+        foreach (var paramCodeClass in queryParameterClasses)
         {
-            var queryParams = paramCodeClass
-                .Properties
-                .SelectMany(static property => property.IsOfKind(CodePropertyKind.QueryParameter) ? [property] : Array.Empty<CodeProperty>());
-
-            queryParameters.AddRange(queryParams);
-        });
+            foreach (var property in paramCodeClass.Properties
+                .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter)))
+            {
+                queryParameters[index++] = property;
+            }
+        }
 
         return queryParameters;
     }
@@ -91,15 +98,15 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// Retrieves all the path parameters for the given request builder class.
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the path parameters.</param>
-    /// <returns>A list of all path parameters, or an empty list if none are found.</returns>
-    private static List<CodeProperty> GetPathParameters(CodeClass requestBuilderClass)
+    /// <returns>An array of all path parameters, or an empty array if none are found.</returns>
+    private static CodeProperty[] GetPathParameters(CodeClass requestBuilderClass)
     {
         // Retrieve all the path variables except the generic path parameter named "pathParameters"
         var pathParameters = requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeProperty>()
             .Where(property => property.IsOfKind(CodePropertyKind.PathParameters) && !property.Name.Equals(Constants.PathParameters, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .ToArray();
 
         return pathParameters;
     }
@@ -150,23 +157,33 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <summary>
     /// Writes the path parameters for the given request builder class to the writer.
     /// </summary>
-    /// <param name="pathParameters">The list of path parameters to write.</param>
+    /// <param name="pathParameters">The array of path parameters to write.</param>
     /// <param name="writer">The language writer to write the path parameters to.</param>
-    private static void WritePathParameters(List<CodeProperty> pathParameters, LanguageWriter writer)
+    private static void WritePathParameters(CodeProperty[] pathParameters, LanguageWriter writer)
     {
+        if (pathParameters is null) return;
+
         // Write each path parameter property
-        pathParameters?.ForEach(prop => WriteHttpParameterProperty(prop, writer));
+        foreach (var pathParameter in pathParameters)
+        {
+            WriteHttpParameterProperty(pathParameter, writer);
+        }
     }
 
     /// <summary>
     /// Writes the query parameters for the given request builder class to the writer.
     /// </summary>
-    /// <param name="queryParameters">The list of query parameters to write.</param>
+    /// <param name="queryParameters">The array of query parameters to write.</param>
     /// <param name="writer">The language writer to write the query parameters to.</param>
-    private static void WriteQueryParameters(List<CodeProperty> queryParameters, LanguageWriter writer)
+    private static void WriteQueryParameters(CodeProperty[] queryParameters, LanguageWriter writer)
     {
+        if (queryParameters is null) return;
+
         // Write each query parameter property
-        queryParameters.ForEach(prop => WriteHttpParameterProperty(prop, writer));
+        foreach (var queryParameter in queryParameters)
+        {
+            WriteHttpParameterProperty(queryParameter, writer);
+        }
     }
 
     /// <summary>
@@ -194,22 +211,22 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
     /// <param name="writer">The language writer to write the HTTP methods to.</param>
-    /// <param name="queryParameters">The list of query parameters.</param>
-    /// <param name="pathParameters">The list of path parameters.</param>
+    /// <param name="queryParameters">The array of query parameters.</param>
+    /// <param name="pathParameters">The array of path parameters.</param>
     /// <param name="urlTemplateProperty">The URL template property containing the URL template.</param>
     /// <param name="baseUrl">The base URL.</param>
     private static void WriteHttpMethods(
         CodeClass requestBuilderClass,
         LanguageWriter writer,
-        List<CodeProperty> queryParameters,
-        List<CodeProperty> pathParameters,
+        CodeProperty[] queryParameters,
+        CodeProperty[] pathParameters,
         CodeProperty urlTemplateProperty,
         string? baseUrl)
     {
         // Retrieve all the HTTP methods of kind RequestExecutor
         var httpMethods = GetHttpMethods(requestBuilderClass);
 
-        var methodCount = httpMethods.Count;
+        var methodCount = httpMethods.Length;
         var currentIndex = 0;
 
         foreach (var method in httpMethods)
@@ -257,14 +274,13 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// Retrieves all the HTTP methods of kind RequestExecutor for the given request builder class.
     /// </summary>
     /// <param name="requestBuilderClass">The request builder class containing the HTTP methods.</param>
-    /// <returns>A list of HTTP methods of kind RequestExecutor.</returns>
-    private static List<CodeMethod> GetHttpMethods(CodeClass requestBuilderClass)
+    /// <returns>An array of HTTP methods of kind RequestExecutor.</returns>
+    private static CodeMethod[] GetHttpMethods(CodeClass requestBuilderClass)
     {
-        return requestBuilderClass
+        return [.. requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeMethod>()
-            .Where(static element => element.IsOfKind(CodeMethodKind.RequestExecutor))
-            .ToList();
+            .Where(static element => element.IsOfKind(CodeMethodKind.RequestExecutor))];
     }
 
     /// <summary>
@@ -349,7 +365,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         }
     }
 
-    private static string BuildUrlStringFromTemplate(string urlTemplateString, List<CodeProperty> queryParameters, List<CodeProperty> pathParameters, string? baseUrl)
+    private static string BuildUrlStringFromTemplate(string urlTemplateString, CodeProperty[] queryParameters, CodeProperty[] pathParameters, string? baseUrl)
     {
         // Use the provided baseUrl or default to "http://localhost/"
         baseUrl ??= Constants.LocalHostUrl;
