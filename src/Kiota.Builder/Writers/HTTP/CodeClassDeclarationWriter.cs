@@ -66,32 +66,13 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     private static CodeProperty[] GetAllQueryParameters(CodeClass requestBuilderClass)
     {
         // Retrieve all the query parameter classes
-        var queryParameterClasses = requestBuilderClass
+        return requestBuilderClass
             .GetChildElements(true)
             .OfType<CodeClass>()
             .Where(static element => element.IsOfKind(CodeClassKind.QueryParameters))
+            .SelectMany(paramCodeClass => paramCodeClass.Properties)
+            .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter))
             .ToArray();
-
-        // Calculate the total number of query parameters
-        int totalQueryParameters = queryParameterClasses
-            .Sum(paramCodeClass => paramCodeClass.Properties
-            .Count(static property => property.IsOfKind(CodePropertyKind.QueryParameter)));
-
-        // Create an array to hold all query parameters
-        var queryParameters = new CodeProperty[totalQueryParameters];
-        int index = 0;
-
-        // Populate the array with query parameters
-        foreach (var paramCodeClass in queryParameterClasses)
-        {
-            foreach (var property in paramCodeClass.Properties
-                .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter)))
-            {
-                queryParameters[index++] = property;
-            }
-        }
-
-        return queryParameters;
     }
 
     /// <summary>
