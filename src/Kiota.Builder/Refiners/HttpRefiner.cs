@@ -117,7 +117,7 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
                         Documentation = x.Documentation
                     })
                     .ToArray();
-                
+
                 if (customProperties.Length > 0)
                 {
                     codeClass.AddProperty(customProperties);
