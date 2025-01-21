@@ -101,30 +101,26 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
                 .OfType<CodeMethod>()
                 .FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
 
-            if (codeIndexer is not null)
+            if (codeIndexer is not null && element is CodeClass codeClass)
             {
                 // Retrieve all the parameters of kind CodeParameterKind.Custom
-                var customParameters = codeIndexer.Parameters
-                    .Where(static param => param.IsOfKind(CodeParameterKind.Custom))
-                    .ToArray();
-
-                // For each parameter:
-                foreach (var param in customParameters)
-                {
-                    // Create a new property of kind CodePropertyKind.PathParameters using the parameter and add it to the codeClass
-                    var pathParameterProperty = new CodeProperty
+                var customProperties = codeIndexer.Parameters
+                    .Where(static x => x.IsOfKind(CodeParameterKind.Custom))
+                    .Select(x => new CodeProperty
                     {
-                        Name = param.Name,
+                        Name = x.Name,
                         Kind = CodePropertyKind.PathParameters,
-                        Type = param.Type,
+                        Type = x.Type,
                         Access = AccessModifier.Public,
-                        DefaultValue = param.DefaultValue,
-                        SerializationName = param.SerializationName,
-                        Documentation = param.Documentation
-                    };
-
-                    if (element is CodeClass codeClass)
-                        codeClass.AddProperty(pathParameterProperty);
+                        DefaultValue = x.DefaultValue,
+                        SerializationName = x.SerializationName,
+                        Documentation = x.Documentation
+                    })
+                    .ToArray();
+                
+                if (customProperties.Length > 0)
+                {
+                    codeClass.AddProperty(customProperties);
                 }
             }
 
