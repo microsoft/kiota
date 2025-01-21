@@ -161,8 +161,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the path parameters to.</param>
     private static void WritePathParameters(CodeProperty[] pathParameters, LanguageWriter writer)
     {
-        if (pathParameters is null) return;
-
         // Write each path parameter property
         foreach (var pathParameter in pathParameters)
         {
@@ -177,8 +175,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the query parameters to.</param>
     private static void WriteQueryParameters(CodeProperty[] queryParameters, LanguageWriter writer)
     {
-        if (queryParameters is null) return;
-
         // Write each query parameter property
         foreach (var queryParameter in queryParameters)
         {

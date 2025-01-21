@@ -106,7 +106,7 @@ public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguage
                 // Retrieve all the parameters of kind CodeParameterKind.Custom
                 var customParameters = codeIndexer.Parameters
                     .Where(static param => param.IsOfKind(CodeParameterKind.Custom))
-                    .ToList();
+                    .ToArray();
 
                 // For each parameter:
                 foreach (var param in customParameters)
