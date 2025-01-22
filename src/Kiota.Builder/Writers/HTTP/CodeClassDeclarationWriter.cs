@@ -118,22 +118,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .FirstOrDefault(static property => property.IsOfKind(CodePropertyKind.UrlTemplate));
     }
 
-    /// <summary>
-    /// Writes the URL template for the given URL template property to the writer.
-    /// </summary>
-    /// <param name="urlTemplateProperty">The URL template property containing the URL template.</param>
-    /// <param name="writer">The language writer to write the URL template to.</param>
-    private static void WriteUrlTemplate(CodeProperty urlTemplateProperty, LanguageWriter writer)
-    {
-        // Write the URL template documentation as a comment
-        writer.WriteLine($"# {urlTemplateProperty.Documentation?.DescriptionTemplate}");
-
-        // Write the URL template value
-        writer.WriteLine($"# {urlTemplateProperty.DefaultValue}");
-
-        // Write an empty line for separation
-        writer.WriteLine();
-    }
 
     /// <summary>
     /// Writes the path parameters for the given request builder class to the writer.
