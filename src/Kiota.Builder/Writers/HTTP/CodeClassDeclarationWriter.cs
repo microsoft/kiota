@@ -293,8 +293,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .Where(static prop => prop.IsOfKind(CodePropertyKind.Custom))
             .ToArray();
 
-        var propertyCount = properties.Length;
-
         foreach (var prop in properties)
         {
             // Add a trailing comma if there are more properties to be written
