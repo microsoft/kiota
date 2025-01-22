@@ -404,6 +404,25 @@
       "type": "coreclr",
       "request": "attach",
       "processId": "${command:pickProcess}"
+    },
+    {
+      "name": "Launch Http",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/kiota/bin/Debug/net8.0/kiota.dll",
+      "args": [
+        "generate",
+        "--openapi",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "--language",
+        "http",
+        "--output",
+        "${workspaceFolder}/samples/msgraph-mail/http",
+      ],
+      "cwd": "${workspaceFolder}/src/kiota",
+      "stopAtEntry": false,
+      "console": "internalConsole"
     }
   ]
 }
