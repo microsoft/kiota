@@ -40,8 +40,8 @@ export class RegenerateService {
         this._clientKey,
         clientObjectItem.clientNamespaceName,
         clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
-        true, // clearCache
-        true, // cleanOutput
+        settings.clearCache,
+        settings.cleanOutput,
         clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
         clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
         settings.languagesSerializationConfiguration[language].serializers,

@@ -54,8 +54,9 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
   const folderSelectionOption = l10n.t('Browse your output directory');
 
   function getOutputPath(workspaceFolder: string, clientName: string) {
+    const outputPath = path.join(workspaceFolder, clientName);
     return [
-      { label: l10n.t('Default folder'), description: path.join(workspaceFolder, clientName) },
+      { label: l10n.t('Default folder'), description: outputPath },
       { label: folderSelectionOption }
     ];
   }
