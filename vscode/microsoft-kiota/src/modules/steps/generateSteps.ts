@@ -52,18 +52,17 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
   let step = 1;
   const folderSelectionOption = l10n.t('Browse your output directory');
-  let inputOptions = [
-    { label: l10n.t('Default folder'), description: workspaceFolder },
-    { label: folderSelectionOption }
-  ];
+
+  function getOutputPath(workspaceFolder: string, clientName: string) {
+    return [
+      { label: l10n.t('Default folder'), description: path.join(workspaceFolder, clientName) },
+      { label: folderSelectionOption }
+    ];
+  }
 
   function updateWorkspaceFolder(name: string | undefined) {
     if (name && (!workspaceOpen)) {
       workspaceFolder = getWorkspaceJsonDirectory(name);
-      inputOptions = [
-        { label: l10n.t('Default folder'), description: workspaceFolder },
-        { label: folderSelectionOption }
-      ];
     }
   }
   function getNextStepForGenerationType(generationType: string | QuickPickItem) {
@@ -143,7 +142,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 5,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {
@@ -241,7 +240,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 4,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {
@@ -297,7 +296,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 4,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {
