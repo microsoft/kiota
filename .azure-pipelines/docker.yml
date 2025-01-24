@@ -1,0 +1,24 @@
+trigger:
+  branches:
+    include:
+      - 'task/add-acr-pipeline'
+  tags:
+    include:
+      - v*
+  paths:
+    include:
+      - src/**
+      - azure-pipelines.yml
+
+schedules:
+  - cron: "0 18 * * 4"
+    displayName: "Weekly Publish Docker Image"
+    branches:
+      include:
+        - main
+    always: true
+
+variables:
+  REGISTRY: "msgraphprod.azurecr.io"
+  IMAGE_NAME: "public/openapi/kiota"
+  PREVIEW_BRANCH: "refs/heads/main
