@@ -8,7 +8,6 @@ trigger:
   paths:
     include:
       - src/**
-      - azure-pipelines.yml
 
 schedules:
   - cron: "0 18 * * 4"
