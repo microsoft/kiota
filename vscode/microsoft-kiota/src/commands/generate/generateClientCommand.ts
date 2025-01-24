@@ -22,6 +22,7 @@ import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
 import { displayGenerationResults } from "./generation-util";
 import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
+import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
 
 export class GenerateClientCommand extends Command {
 
@@ -66,6 +67,11 @@ export class GenerateClientCommand extends Command {
         pluginName
       };
     }
+    const settings = getExtensionSettings(extensionId);
+    if (settings.cleanOutput && !(await confirmDeletionOnCleanOutput())) {
+      // cancel generation and open settings
+      return vscode.commands.executeCommand('workbench.action.openSettings', 'kiota.cleanOutput.enabled');
+    }
     let config = await generateSteps(
       availableStateInfo,
       languagesInformation,
@@ -101,7 +107,6 @@ export class GenerateClientCommand extends Command {
       return;
     }
 
-    const settings = getExtensionSettings(extensionId);
     this._setWorkspaceGenerationContext({ generationType: config.generationType as string });
     let result;
     switch (generationType) {

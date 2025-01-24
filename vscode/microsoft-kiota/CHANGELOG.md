@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Fixed a bug in the VS Code extension deeplink with the API Center extension [#6004](https://github.com/microsoft/kiota/issues/6004)
+- Use a subdirectory in the output path when generating clients [#5977](https://github.com/microsoft/kiota/issues/5977)
 
 ## [1.22.100000001] - 2025-01-10
 
