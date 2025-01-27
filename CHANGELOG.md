@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for net9 only installations of the dotnet tool. [#5887](https://github.com/microsoft/kiota/issues/5887)
+
 ### Changed
 
 ## [1.22.3]
