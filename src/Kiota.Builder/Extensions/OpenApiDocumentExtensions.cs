@@ -31,7 +31,7 @@ internal static class OpenApiDocumentExtensions
     {
         ArgumentNullException.ThrowIfNull(openApiDocument);
         var candidateUrl = openApiDocument.Servers
-                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
+                                        ?.GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
                                         .FirstOrDefault()
                                         ?.OrderByDescending(static x => x.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
                                         ?.FirstOrDefault()
