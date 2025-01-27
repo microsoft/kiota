@@ -5,10 +5,6 @@ trigger:
   tags:
     include:
       - v*
-  paths:
-    include:
-      - src/**
-
 schedules:
   - cron: "0 18 * * 4"
     displayName: "Weekly Publish Docker Image"
@@ -20,4 +16,4 @@ schedules:
 variables:
   REGISTRY: "msgraphprod.azurecr.io"
   IMAGE_NAME: "public/openapi/kiota"
-  PREVIEW_BRANCH: "refs/heads/main
+  PREVIEW_BRANCH: "refs/heads/main"
