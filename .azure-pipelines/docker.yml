@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - main       # Trigger on pushes to main
+      - task/update-acr-pipeline
   tags:
     include:
       - v*         # Trigger on tags starting with 'v'
@@ -34,20 +35,20 @@ jobs:
   steps:
     # Enable QEMU for multi-architecture builds
     - script: |
-        docker run --privileged --rm tonistiigi/binfmt --install all
+        echo "Something"
       displayName: Enable QEMU for multi-arch
 
-    # Build Docker image for validation (no push)
-    - task: Docker@2
-      displayName: Validate Docker image build
-      inputs:
-        containerRegistry: ''
-        command: build
-        dockerfile: src/Dockerfile
-        tags: |
-          $(REGISTRY)/$(IMAGE_NAME):validation
-        arguments: |
-          --platform linux/amd64,linux/arm64/v8
+    # # Build Docker image for validation (no push)
+    # - task: Docker@2
+    #   displayName: Validate Docker image build
+    #   inputs:
+    #     containerRegistry: ''
+    #     command: build
+    #     dockerfile: src/Dockerfile
+    #     tags: |
+    #       $(REGISTRY)/$(IMAGE_NAME):validation
+    #     arguments: |
+    #       --platform linux/amd64,linux/arm64/v8
 
 # Job 2: Push Docker Images
 # - job: push_docker_images
