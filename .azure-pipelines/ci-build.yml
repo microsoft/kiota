@@ -10,11 +10,10 @@ pr: none
  
 variables:
   buildConfiguration: 'Release'
-  buildPlatform: 'Any CPU'
+  BUILDPLATFORM: 'Any CPU'
   REGISTRY: msgraphprodregistry.azurecr.io # Azure Container Registry
   IMAGE_NAME: public/openapi/kiota       # Docker image name
   PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
-  BUILDPLATFORM: "linux/amd64"           # Default build platform
 
 resources:
   repositories:
