@@ -14,6 +14,19 @@ schedules:
     always: true
 
 variables:
-  REGISTRY: "msgraphprod.azurecr.io"
+  REGISTRY: "msgraphprodregistry.azurecr.io"
   IMAGE_NAME: "public/openapi/kiota"
   PREVIEW_BRANCH: "refs/heads/main"
+
+stages:
+    - stage: Build docker image
+      jobs:
+          - job: Build
+            steps:
+            - task: Docker@2
+              displayName: Build the docker image
+              inputs:
+                command: 'build'
+                Dockerfile: '**/Dockerfile'
+                  
+    
