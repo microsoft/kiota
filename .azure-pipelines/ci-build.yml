@@ -39,6 +39,7 @@ extends:
         - job: validate_docker_build
           displayName: Validate Docker Build
           pool:
+            name: Azure-Pipelines-1ESPT-ExDShared
             vmImage: ubuntu-latest
           steps:
             # Enable QEMU for multi-architecture builds
@@ -47,23 +48,13 @@ extends:
               displayName: Enable QEMU for multi-arch
 
             # Build Docker image for validation (no push)
-            # - task: Docker@2
-            #   displayName: Validate Docker image build
-            #   inputs:
-            #     containerRegistry: ''
-            #     command: build
-            #     dockerfile: src/Dockerfile
-            #     tags: |
-            #       $(REGISTRY)/$(IMAGE_NAME):validation
-            #     arguments: |
-            #       --platform linux/amd64,linux/arm64/v8
-            # - task: 1ES.BuildContainerImage@1
-            #   inputs:
-            #     image: myregistry.azurecr.io/my/repo:tag    # Image name to build (including a tag). Required. Alias: localImage
-            #     path: path/to/build/context                 # Required. Alias: context
-            #     dockerfile: /path/to/Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
-            #     buildArguments: --build-arg FOO=bar         # Optional. Default: ''
-            #     enableNetwork: true                         # Optional. Default: false
-            #     enablePull: false                           # Optional. Default: true
-            #     enableCache: true                           # Optional. Default: false
-            #     useBuildKit: true                           # Optional. Default: false
+            - task: 1ES.BuildContainerImage@1
+              inputs:
+                image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
+                path: ./                 # Required. Alias: context
+                dockerfile: src/Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
+                buildArguments: --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+                enableNetwork: true                         # Optional. Default: false
+                enablePull: true                           # Optional. Default: true
+                enableCache: true                           # Optional. Default: false
+                useBuildKit: true                           # Optional. Default: false
