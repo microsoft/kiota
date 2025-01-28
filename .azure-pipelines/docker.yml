@@ -1,19 +1,98 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
-  branches:
-    include:
-      - 'task/add-acr-pipeline'
+  paths:
+    exclude:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
   tags:
     include:
-      - v*
+      - "v*"
+    exclude:
+      - "*preview*" # exclude preview tags so we don't publish twice
 schedules:
-  - cron: "0 18 * * 4"
-    displayName: "Weekly Publish Docker Image"
+  - cron: "0 18 * * 4" # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
+    displayName: Weekly preview
     branches:
       include:
         - main
     always: true
 
 variables:
-  REGISTRY: "msgraphprod.azurecr.io"
-  IMAGE_NAME: "public/openapi/kiota"
-  PREVIEW_BRANCH: "refs/heads/main"
+  buildPlatform: "Any CPU"
+  buildConfiguration: "Release"
+  ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
+
+parameters:
+  - name: previewBranch
+    type: string
+    default: "refs/heads/main"
+  - name: distributions
+    type: object
+    default:
+      - architecture: "win-x86"
+        jobPrefix: "win_x86"
+        os: "windows"
+        image: "windows-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "win-x64"
+        jobPrefix: "win_x64"
+        os: "windows"
+        image: "windows-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "linux-x64"
+        jobPrefix: "linux_x64"
+        os: "linux"
+        image: "ubuntu-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "linux-arm64"
+        jobPrefix: "linux_arm64"
+        os: "linux"
+        image: "ubuntu-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "osx-x64"
+        jobPrefix: "osx_x64"
+        os: "macOS"
+        image: "macOS-latest"
+        pool: Azure Pipelines
+        # MacOS images aren't available in 1ES templates
+        # https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-docs/1es-pipeline-templates/onboarding/macos-support
+      - architecture: "osx-arm64"
+        jobPrefix: "osx_arm64"
+        os: "macOS"
+        image: "macOS-latest"
+        pool: Azure Pipelines
+
+resources:
+  repositories:
+    - repository: 1ESPipelineTemplates
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
+  parameters:
+    sdl:
+      sourceAnalysisPool:
+        name: Azure-Pipelines-1ESPT-ExDShared
+        os: windows
+        image: windows-latest
+    stages:
+      - stage: build
+        jobs:
+          - job: update_appsettings
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
