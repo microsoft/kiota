@@ -40,7 +40,6 @@ extends:
         - job: validate_docker_build
           displayName: Validate Docker Build
           pool:
-            name: Azure-Pipelines-1ESPT-ExDShared
             vmImage: ubuntu-latest
           steps:
             # Enable QEMU for multi-architecture builds
