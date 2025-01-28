@@ -4,6 +4,7 @@ trigger:
   branches:
     include:
     - main
+    - azure-pipelines
  
 pr: none
  
@@ -26,7 +27,7 @@ extends:
   parameters:
     pool:
       name: Azure-Pipelines-1ESPT-ExDShared
-      vmImage: ubuntu-latest
+      vmImage: windows-latest
     stages:
     - stage: Build
       jobs:
@@ -40,7 +41,7 @@ extends:
           displayName: Validate Docker Build
           pool:
             name: Azure-Pipelines-1ESPT-ExDShared
-            vmImage: ubuntu-latest
+            vmImage: windows-latest
           steps:
             # Enable QEMU for multi-architecture builds
             - script: |
