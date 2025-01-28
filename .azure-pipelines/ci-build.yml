@@ -11,7 +11,7 @@ pr: none
 variables:
   buildConfiguration: 'Release'
   buildPlatform: 'Any CPU'
-  REGISTRY: msgraphprodregistry.azurecr.io        # Azure Container Registry
+  REGISTRY: msgraphprodregistry.azurecr.io # Azure Container Registry
   IMAGE_NAME: public/openapi/kiota       # Docker image name
   PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
  
@@ -40,12 +40,13 @@ extends:
         - job: validate_docker_build
           displayName: Validate Docker Build
           pool:
+            name: Azure-Pipelines-1ESPT-ExDShared
             vmImage: ubuntu-latest
           steps:
             # Enable QEMU for multi-architecture builds
-            - script: |
-                docker run --rm multiarch/qemu-user-static --reset -p yes
-              displayName: Enable QEMU for multi-arch
+            # - script: |
+            #     docker run --rm multiarch/qemu-user-static --reset -p yes
+            #   displayName: Enable QEMU for multi-arch
             - script: |
                 export DOCKER_BUILDKIT=1
               displayName: Enable BuildKit
