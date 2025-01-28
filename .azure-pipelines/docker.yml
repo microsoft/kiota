@@ -1,19 +1,35 @@
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+ 
 trigger:
   branches:
     include:
-      - 'task/add-acr-pipeline'
-  tags:
-    include:
-      - v*
-schedules:
-  - cron: "0 18 * * 4"
-    displayName: "Weekly Publish Docker Image"
-    branches:
-      include:
-        - main
-    always: true
-
+    - main
+ 
+pr: none
+ 
 variables:
-  REGISTRY: "msgraphprod.azurecr.io"
-  IMAGE_NAME: "public/openapi/kiota"
-  PREVIEW_BRANCH: "refs/heads/main"
+  buildConfiguration: 'Release'
+  buildPlatform: 'Any CPU'
+ 
+resources:
+  repositories:
+  - repository: 1ESPipelineTemplates
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+ 
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
+  parameters:
+    pool:
+      name: Azure-Pipelines-1ESPT-ExDShared
+      vmImage: windows-latest
+    stages:
+    - stage: Build
+      jobs:
+        - job: build
+          steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET 8'
+            inputs:
+              version: 8.x
