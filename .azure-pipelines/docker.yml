@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - 'task/add-acr-pipeline'
+      - 'task/update-acr-pipeline'
   tags:
     include:
       - v*
