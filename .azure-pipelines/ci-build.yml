@@ -14,7 +14,7 @@ variables:
   REGISTRY: msgraphprodregistry.azurecr.io # Azure Container Registry
   IMAGE_NAME: public/openapi/kiota       # Docker image name
   PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
- 
+
 resources:
   repositories:
   - repository: 1ESPipelineTemplates
@@ -34,9 +34,9 @@ extends:
         - job: build
           steps:
           - task: UseDotNet@2
-            displayName: 'Use .NET 8'
+            displayName: 'Use .NET 9'
             inputs:
-              version: 8.x
+              version: 9.x
         - job: validate_docker_build
           displayName: Validate Docker Build
           pool:
@@ -57,7 +57,7 @@ extends:
                 image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
                 path: ./                 # Required. Alias: context
                 dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
-                buildArguments: --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+                # buildArguments: --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
                 enableNetwork: true                         # Optional. Default: false
                 enablePull: true                           # Optional. Default: true
                 enableCache: true                           # Optional. Default: false
