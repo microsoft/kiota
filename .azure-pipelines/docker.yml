@@ -1,32 +1,95 @@
 trigger:
   branches:
     include:
-      - 'task/update-acr-pipeline'
+      - main       # Trigger on pushes to main
   tags:
     include:
-      - v*
+      - v*         # Trigger on tags starting with 'v'
+
+pr:
+  branches:
+    include:
+      - main       # Trigger on pull requests targeting main
+
 schedules:
-  - cron: "0 18 * * 4"
-    displayName: "Weekly Publish Docker Image"
+  - cron: "0 18 * * 4"  # Run every Thursday at 18:00 UTC
+    displayName: Weekly Schedule
     branches:
       include:
         - main
     always: true
 
 variables:
-  REGISTRY: "msgraphprodregistry.azurecr.io"
-  IMAGE_NAME: "public/openapi/kiota"
-  PREVIEW_BRANCH: "refs/heads/main"
+  REGISTRY: msgraphprodregistry.azurecr.io        # Azure Container Registry
+  IMAGE_NAME: public/openapi/kiota       # Docker image name
+  PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
 
-stages:
-    - stage: Build docker image
-      jobs:
-          - job: Build
-            steps:
-            - task: Docker@2
-              displayName: Build the docker image
-              inputs:
-                command: 'build'
-                Dockerfile: '**/Dockerfile'
-                  
-    
+jobs:
+
+# Job 1: Validate Docker Build
+- job: validate_docker_build
+  displayName: Validate Docker Build
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+    # Enable QEMU for multi-architecture builds
+    - script: |
+        docker run --privileged --rm tonistiigi/binfmt --install all
+      displayName: Enable QEMU for multi-arch
+
+    # Build Docker image for validation (no push)
+    - task: Docker@2
+      displayName: Validate Docker image build
+      inputs:
+        containerRegistry: ''
+        command: build
+        dockerfile: src/Dockerfile
+        tags: |
+          $(REGISTRY)/$(IMAGE_NAME):validation
+        arguments: |
+          --platform linux/amd64,linux/arm64/v8
+
+# Job 2: Push Docker Images
+- job: push_docker_images
+  displayName: Build and Push Docker Images
+  dependsOn: validate_docker_build
+  pool:
+    vmImage: ubuntu-latest
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  steps:
+    # Log in to ACR using a service connection
+    - task: Docker@2
+      displayName: Login to ACR
+      inputs:
+        containerRegistry: <SERVICE_CONNECTION_NAME>
+        command: login
+
+    # Build and push Docker images for nightly and preview builds
+    - script: |
+        if [[ "$(Build.SourceBranch)" == "$(PREVIEW_BRANCH)" ]]; then
+          VERSION_SUFFIX=$(pwsh ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA)
+
+          docker buildx build \
+            --push \
+            --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+            -t $(REGISTRY)/$(IMAGE_NAME):nightly \
+            -t $(REGISTRY)/$(IMAGE_NAME):$VERSION_SUFFIX \
+            -f src/Dockerfile .
+        fi
+      displayName: Push nightly and preview builds
+      condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+
+    # Build and push Docker images for release builds
+    - script: |
+        if [[ "$(Build.SourceBranch)" == "refs/tags/v"* ]]; then
+          VERSION=$(pwsh ./scripts/get-version-from-csproj.ps1 -isGHA)
+
+          docker buildx build \
+            --push \
+            --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+            -t $(REGISTRY)/$(IMAGE_NAME):latest \
+            -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
+            -f src/Dockerfile .
+        fi
+      displayName: Push release builds
+      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
