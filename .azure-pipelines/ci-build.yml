@@ -10,6 +10,9 @@ pr: none
 variables:
   buildConfiguration: 'Release'
   buildPlatform: 'Any CPU'
+  REGISTRY: msgraphprodregistry.azurecr.io        # Azure Container Registry
+  IMAGE_NAME: public/openapi/kiota       # Docker image name
+  PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
  
 resources:
   repositories:
@@ -33,3 +36,34 @@ extends:
             displayName: 'Use .NET 8'
             inputs:
               version: 8.x
+        - job: validate_docker_build
+          displayName: Validate Docker Build
+          pool:
+            vmImage: ubuntu-latest
+          steps:
+            # Enable QEMU for multi-architecture builds
+            - script: |
+                docker run --privileged --rm tonistiigi/binfmt --install all
+              displayName: Enable QEMU for multi-arch
+
+            # Build Docker image for validation (no push)
+            # - task: Docker@2
+            #   displayName: Validate Docker image build
+            #   inputs:
+            #     containerRegistry: ''
+            #     command: build
+            #     dockerfile: src/Dockerfile
+            #     tags: |
+            #       $(REGISTRY)/$(IMAGE_NAME):validation
+            #     arguments: |
+            #       --platform linux/amd64,linux/arm64/v8
+            # - task: 1ES.BuildContainerImage@1
+            #   inputs:
+            #     image: myregistry.azurecr.io/my/repo:tag    # Image name to build (including a tag). Required. Alias: localImage
+            #     path: path/to/build/context                 # Required. Alias: context
+            #     dockerfile: /path/to/Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
+            #     buildArguments: --build-arg FOO=bar         # Optional. Default: ''
+            #     enableNetwork: true                         # Optional. Default: false
+            #     enablePull: false                           # Optional. Default: true
+            #     enableCache: true                           # Optional. Default: false
+            #     useBuildKit: true                           # Optional. Default: false
