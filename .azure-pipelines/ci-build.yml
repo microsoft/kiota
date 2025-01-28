@@ -52,7 +52,7 @@ extends:
               inputs:
                 image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
                 path: ./                 # Required. Alias: context
-                dockerfile: src/Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
+                dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
                 buildArguments: --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
                 enableNetwork: true                         # Optional. Default: false
                 enablePull: true                           # Optional. Default: true
