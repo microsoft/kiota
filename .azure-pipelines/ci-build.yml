@@ -27,6 +27,7 @@ extends:
   parameters:
     pool:
       name: Azure-Pipelines-1ESPT-ExDShared
+      os: linux
       vmImage: ubuntu-latest
     stages:
     - stage: Build
@@ -41,6 +42,7 @@ extends:
           displayName: Validate Docker Build
           pool:
             name: Azure-Pipelines-1ESPT-ExDShared
+            os: linux
             vmImage: ubuntu-latest
           steps:
             # Enable QEMU for multi-architecture builds
