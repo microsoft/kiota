@@ -50,46 +50,46 @@ jobs:
           --platform linux/amd64,linux/arm64/v8
 
 # Job 2: Push Docker Images
-- job: push_docker_images
-  displayName: Build and Push Docker Images
-  dependsOn: validate_docker_build
-  pool:
-    vmImage: ubuntu-latest
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-  steps:
-    # Log in to ACR using a service connection
-    - task: Docker@2
-      displayName: Login to ACR
-      inputs:
-        containerRegistry: <SERVICE_CONNECTION_NAME>
-        command: login
+# - job: push_docker_images
+#   displayName: Build and Push Docker Images
+#   dependsOn: validate_docker_build
+#   pool:
+#     vmImage: ubuntu-latest
+#   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+#   steps:
+#     # Log in to ACR using a service connection
+#     - task: Docker@2
+#       displayName: Login to ACR
+#       inputs:
+#         containerRegistry: <SERVICE_CONNECTION_NAME>
+#         command: login
 
-    # Build and push Docker images for nightly and preview builds
-    - script: |
-        if [[ "$(Build.SourceBranch)" == "$(PREVIEW_BRANCH)" ]]; then
-          VERSION_SUFFIX=$(pwsh ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA)
+#     # Build and push Docker images for nightly and preview builds
+#     - script: |
+#         if [[ "$(Build.SourceBranch)" == "$(PREVIEW_BRANCH)" ]]; then
+#           VERSION_SUFFIX=$(pwsh ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA)
 
-          docker buildx build \
-            --push \
-            --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-            -t $(REGISTRY)/$(IMAGE_NAME):nightly \
-            -t $(REGISTRY)/$(IMAGE_NAME):$VERSION_SUFFIX \
-            -f src/Dockerfile .
-        fi
-      displayName: Push nightly and preview builds
-      condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+#           docker buildx build \
+#             --push \
+#             --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+#             -t $(REGISTRY)/$(IMAGE_NAME):nightly \
+#             -t $(REGISTRY)/$(IMAGE_NAME):$VERSION_SUFFIX \
+#             -f src/Dockerfile .
+#         fi
+#       displayName: Push nightly and preview builds
+#       condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
 
-    # Build and push Docker images for release builds
-    - script: |
-        if [[ "$(Build.SourceBranch)" == "refs/tags/v"* ]]; then
-          VERSION=$(pwsh ./scripts/get-version-from-csproj.ps1 -isGHA)
+#     # Build and push Docker images for release builds
+#     - script: |
+#         if [[ "$(Build.SourceBranch)" == "refs/tags/v"* ]]; then
+#           VERSION=$(pwsh ./scripts/get-version-from-csproj.ps1 -isGHA)
 
-          docker buildx build \
-            --push \
-            --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-            -t $(REGISTRY)/$(IMAGE_NAME):latest \
-            -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
-            -f src/Dockerfile .
-        fi
-      displayName: Push release builds
-      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+#           docker buildx build \
+#             --push \
+#             --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+#             -t $(REGISTRY)/$(IMAGE_NAME):latest \
+#             -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
+#             -f src/Dockerfile .
+#         fi
+#       displayName: Push release builds
+#       condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
