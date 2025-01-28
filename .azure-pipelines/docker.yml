@@ -1,96 +1,35 @@
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+ 
 trigger:
   branches:
     include:
-      - main       # Trigger on pushes to main
-      - task/update-acr-pipeline
-  tags:
-    include:
-      - v*         # Trigger on tags starting with 'v'
-
-pr:
-  branches:
-    include:
-      - main       # Trigger on pull requests targeting main
-
-schedules:
-  - cron: "0 18 * * 4"  # Run every Thursday at 18:00 UTC
-    displayName: Weekly Schedule
-    branches:
-      include:
-        - main
-    always: true
-
+    - main
+ 
+pr: none
+ 
 variables:
-  REGISTRY: msgraphprodregistry.azurecr.io        # Azure Container Registry
-  IMAGE_NAME: public/openapi/kiota       # Docker image name
-  PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
-
-jobs:
-
-# Job 1: Validate Docker Build
-- job: validate_docker_build
-  displayName: Validate Docker Build
-  pool:
-    vmImage: ubuntu-latest
-  steps:
-    # Enable QEMU for multi-architecture builds
-    - script: |
-        echo "Something"
-      displayName: Enable QEMU for multi-arch
-
-    # # Build Docker image for validation (no push)
-    # - task: Docker@2
-    #   displayName: Validate Docker image build
-    #   inputs:
-    #     containerRegistry: ''
-    #     command: build
-    #     dockerfile: src/Dockerfile
-    #     tags: |
-    #       $(REGISTRY)/$(IMAGE_NAME):validation
-    #     arguments: |
-    #       --platform linux/amd64,linux/arm64/v8
-
-# Job 2: Push Docker Images
-# - job: push_docker_images
-#   displayName: Build and Push Docker Images
-#   dependsOn: validate_docker_build
-#   pool:
-#     vmImage: ubuntu-latest
-#   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-#   steps:
-#     # Log in to ACR using a service connection
-#     - task: Docker@2
-#       displayName: Login to ACR
-#       inputs:
-#         containerRegistry: <SERVICE_CONNECTION_NAME>
-#         command: login
-
-#     # Build and push Docker images for nightly and preview builds
-#     - script: |
-#         if [[ "$(Build.SourceBranch)" == "$(PREVIEW_BRANCH)" ]]; then
-#           VERSION_SUFFIX=$(pwsh ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA)
-
-#           docker buildx build \
-#             --push \
-#             --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-#             -t $(REGISTRY)/$(IMAGE_NAME):nightly \
-#             -t $(REGISTRY)/$(IMAGE_NAME):$VERSION_SUFFIX \
-#             -f src/Dockerfile .
-#         fi
-#       displayName: Push nightly and preview builds
-#       condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-
-#     # Build and push Docker images for release builds
-#     - script: |
-#         if [[ "$(Build.SourceBranch)" == "refs/tags/v"* ]]; then
-#           VERSION=$(pwsh ./scripts/get-version-from-csproj.ps1 -isGHA)
-
-#           docker buildx build \
-#             --push \
-#             --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-#             -t $(REGISTRY)/$(IMAGE_NAME):latest \
-#             -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
-#             -f src/Dockerfile .
-#         fi
-#       displayName: Push release builds
-#       condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+  buildConfiguration: 'Release'
+  buildPlatform: 'Any CPU'
+ 
+resources:
+  repositories:
+  - repository: 1ESPipelineTemplates
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+ 
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
+  parameters:
+    pool:
+      name: Azure-Pipelines-1ESPT-ExDShared
+      vmImage: windows-latest
+    stages:
+    - stage: Build
+      jobs:
+        - job: build
+          steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET 8'
+            inputs:
+              version: 8.x
