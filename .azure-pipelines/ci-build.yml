@@ -44,6 +44,7 @@ extends:
           steps:
             # Enable QEMU for multi-architecture builds
             - script: |
+                docker pull tonistiigi/binfmt:latest
                 docker run --rm tonistiigi/binfmt --install all
               displayName: Enable QEMU for multi-arch
 
