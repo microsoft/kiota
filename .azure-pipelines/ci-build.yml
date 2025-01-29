@@ -30,7 +30,7 @@ parameters:
 
 - name: image
   type: string
-  default: Azure-Pipelines-1ESPT-ExDShared
+  default: ubuntu-latest
 
 - name: os
   type: string
