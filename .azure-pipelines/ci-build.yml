@@ -131,7 +131,9 @@ extends:
               path: $(Pipeline.Workspace)/PipelineArtifacts/drop
               artifact: drop
 
-    - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
-      parameters:
-        directory: 'microsoft-graph-explorer-v4'
-        repoName: ReleasePipelines
+    - stage: CheckoutAndCopy  # Add a new stage
+    jobs:
+      - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
+        parameters:
+          directory: 'microsoft-graph-explorer-v4'
+          repoName: ReleasePipelines
