@@ -76,36 +76,24 @@ extends:
             inputs:
               projects: '$(Build.SourcesDirectory)/kiota.sln'
               arguments: "--configuration $(BuildConfiguration) --no-incremental"
-
-        - job: validate_docker_build
-          dependsOn: build
-          displayName: Validate Docker Build
-          pool:
-            name: ${{ parameters.poolName }}
-            image: ${{ parameters.image }}
-            os: ${{ parameters.os }}
-          steps:
-            # Enable QEMU for multi-architecture builds
-            # - script: |
-            #     docker run --rm multiarch/qemu-user-static --reset -p yes
-            #   displayName: Enable QEMU for multi-arch
-            - script: |
+          - script: |
                 docker version
                 docker info
-              displayName: Show docker environment
-            - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
-              displayName: 'Set BUILDNUMBER variable'
-            - script: |
-                echo "Generated version_suffix: $(versionSuffix)"
-              displayName: 'Show generated version_suffix'
-            - powershell: |
-                .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash
-              displayName: 'Generate version suffix'
+            displayName: Show docker environment
+          - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
+            displayName: 'Set BUILDNUMBER variable'
+          - script: |
+              echo "Generated version_suffix: $(versionSuffix)"
+            displayName: 'Show generated version_suffix'
+          - powershell: |
+              .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash
+            displayName: 'Generate version suffix'
 
-            # Build Docker image for validation (no push)
-            - task: 1ES.BuildContainerImage@1
-              inputs:
-                image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
-                path: $(Build.SourcesDirectory)                 # Required. Alias: context
-                dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
-                buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+          # Build Docker image for validation (no push)
+          - task: 1ES.BuildContainerImage@1
+            inputs:
+              image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
+              path: $(Build.SourcesDirectory)                 # Required. Alias: context
+              dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
+              buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+      
