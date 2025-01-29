@@ -52,6 +52,7 @@ extends:
         image: windows-latest  # Name of the image in your pool. If not specified, first image of the pool is used
         exclude:
         - repository: ReleasePipelines
+        
     stages:
     - stage: Build
       jobs:
