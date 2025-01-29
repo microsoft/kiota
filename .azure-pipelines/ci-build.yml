@@ -22,6 +22,9 @@ resources:
     type: git
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
+  - repository: ReleasePipelines
+    type: git
+    name: "Graph Developer Experiences/release-pipelines"
 
 parameters:
 - name: poolName
@@ -128,7 +131,7 @@ extends:
               path: $(Pipeline.Workspace)/PipelineArtifacts/drop
               artifact: drop
 
-    - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
+    - template: pipelines/templates/checkout-and-copy.yml@ReleasePipelines
       parameters:
         directory: 'microsoft-graph-explorer-v4'
         repoName: ReleasePipelines
