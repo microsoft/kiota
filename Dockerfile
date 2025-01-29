@@ -5,11 +5,11 @@ WORKDIR /app
 COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
-RUN if [ -z "$version_suffix" ]; then \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0; \
-    else \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
-    fi
+RUN if "%version_suffix%"=="" ( \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 \
+    ) else ( \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "%version_suffix%" \
+    )
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0-windowsservercore-ltsc2022 AS runtime
 WORKDIR /app
