@@ -56,6 +56,10 @@ extends:
         - job: build
           steps:
           - task: UseDotNet@2
+            displayName: 'Use .NET 9'
+            inputs:
+              version: 9.x
+          - task: UseDotNet@2
             displayName: 'Use .NET 8'
             inputs:
               version: 8.x
