@@ -68,11 +68,13 @@ extends:
               checkLatest: true
 
           # Build the Product project
+          # Build the Product project
           - task: DotNetCoreCLI@2
-            displayName: 'Build Kiota project'
+            condition: eq(variables['isPrerelease'], 'false')
+            displayName: "build"
             inputs:
-              projects: '$(Build.SourcesDirectory)\kiota.sln'
-              arguments: '--configuration $(BuildConfiguration) --no-incremental'
+              projects: '$(Build.SourcesDirectory)/kiota.sln'
+              arguments: "--configuration $(BuildConfiguration) --no-incremental"
 
         - job: validate_docker_build
           dependsOn: build
