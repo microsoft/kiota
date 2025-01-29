@@ -21,22 +21,40 @@ resources:
     type: git
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
- 
+
+parameters:
+- name: poolName
+  type: string
+  default: pt-validation-ppe
+
+- name: image
+  type: string
+  default: pt-validation-ppe-linux
+
+- name: os
+  type: string
+  default: linux
+  
+pool:
+  name: Azure-Pipelines-1ESPT-ExDShared
+  vmImage: ubuntu-latest
+
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     pool:
       name: Azure-Pipelines-1ESPT-ExDShared
       vmImage: ubuntu-latest
+      os: ${{ parameters.os }}
     stages:
     - stage: Build
       jobs:
-        - job: build
-          steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET 9'
-            inputs:
-              version: 9.x
+        # - job: build
+        #   steps:
+        #   - task: UseDotNet@2
+        #     displayName: 'Use .NET 9'
+        #     inputs:
+        #       version: 9.x
         - job: validate_docker_build
           displayName: Validate Docker Build
           pool:
