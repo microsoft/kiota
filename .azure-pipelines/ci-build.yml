@@ -96,7 +96,7 @@ extends:
             inputs:
               command: publish
               publishWebProjects: false
-              projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj''
+              projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj'
               arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix $(versionSuffix)"
             condition: and(succeeded(), ne(variables['versionSuffix'], ''))
 
