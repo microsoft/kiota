@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0-windowsservercore-ltsc2022 AS build-env
-ARG version_suffix = ""
+ARG version_suffix
 WORKDIR /app
 
 COPY ./src ./kiota/src
