@@ -50,6 +50,7 @@ extends:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared  # Name of your hosted pool
         image: windows-latest  # Name of the image in your pool. If not specified, first image of the pool is used
+      sourceRepositoriesToScan:
         exclude:
         - repository: ReleasePipelines
 
@@ -136,7 +137,3 @@ extends:
           parameters:
             directory: 'microsoft-graph-explorer-v4'
             repoName: ReleasePipelines
-            sdl:
-              sourceRepositoriesToScan:
-                exclude:
-                - repository: ReleasePipelines
