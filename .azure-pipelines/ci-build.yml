@@ -26,11 +26,11 @@ resources:
 parameters:
 - name: poolName
   type: string
-  default: pt-validation-ppe
+  default: Azure-Pipelines-1ESPT-ExDShared
 
 - name: image
   type: string
-  default: pt-validation-ppe-linux
+  default: Azure-Pipelines-1ESPT-ExDShared
 
 - name: os
   type: string
