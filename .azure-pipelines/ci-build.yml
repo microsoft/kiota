@@ -76,7 +76,7 @@ extends:
             - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
               displayName: 'Set BUILDNUMBER variable'
             - powershell: |
-                .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash -isGHA $false
+                .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash
               displayName: 'Generate version suffix'          
             # Build Docker image for validation (no push)
             - task: 1ES.BuildContainerImage@1
