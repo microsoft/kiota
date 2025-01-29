@@ -119,5 +119,16 @@ extends:
               buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
           # Save Docker image as a pipeline artifact
           - script: |
-              docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/$(IMAGE_NAME)_validation.tar
+              docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)
             displayName: 'Save Docker image as a pipeline artifact'
+
+          templateContext:
+            outputs:
+            - output: pipelineArtifact
+              path: $(Pipeline.Workspace)/PipelineArtifacts/drop
+              artifact: drop
+
+    - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
+      parameters:
+        directory: 'microsoft-graph-explorer-v4'
+        repoName: ReleasePipelines
