@@ -132,8 +132,7 @@ extends:
           templateContext:
             outputs:
             - output: pipelineArtifact
-              path: $(Pipeline.Workspace)
-              artifact: drop
+              image: $(REGISTRY)/$(IMAGE_NAME):validation
 
     - stage: CheckoutAndCopy  # Add a new stage
       jobs:
