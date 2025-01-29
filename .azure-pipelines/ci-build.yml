@@ -82,12 +82,31 @@ extends:
             displayName: Show docker environment
           - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
             displayName: 'Set BUILDNUMBER variable'
-          - script: |
-              echo "Generated version_suffix: $(versionSuffix)"
-            displayName: 'Show generated version_suffix'
           - powershell: |
               .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash
             displayName: 'Generate version suffix'
+
+          - script: |
+              echo "Generated version_suffix: $(versionSuffix)"
+            displayName: 'Show generated version_suffix'
+
+          # Publish the Product project with version_suffix if available
+          - task: DotNetCoreCLI@2
+            displayName: "publish with version_suffix"
+            inputs:
+              command: publish
+              projects: '$(Build.SourcesDirectory)/kiota.sln'
+              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix $(versionSuffix)"
+            condition: and(succeeded(), ne(variables['versionSuffix'], ''))
+
+          # Publish the Product project without version_suffix if not available
+          - task: DotNetCoreCLI@2
+            displayName: "publish without version_suffix"
+            inputs:
+              command: publish
+              projects: '$(Build.SourcesDirectory)/kiota.sln'
+              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=false -f net9.0"
+            condition: and(succeeded(), eq(variables['versionSuffix'], ''))
 
           # Build Docker image for validation (no push)
           - task: 1ES.BuildContainerImage@1
