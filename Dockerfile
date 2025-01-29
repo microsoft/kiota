@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-windowsservercore-ltsc2022 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
 ARG version_suffix
 WORKDIR /app
 
