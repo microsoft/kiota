@@ -36,11 +36,6 @@ parameters:
   type: string
   default: linux
 
-pool:
-  name: ${{ parameters.poolName }}
-  image: ${{ parameters.image }}
-  os: ${{ parameters.os }}
-
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
