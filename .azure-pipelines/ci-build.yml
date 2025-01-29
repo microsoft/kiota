@@ -132,7 +132,7 @@ extends:
           templateContext:
             outputs:
             - output: pipelineArtifact
-              path: $(Pipeline.Workspace)/drop
+              path: $(Pipeline.Workspace)
               artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
