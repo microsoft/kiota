@@ -121,10 +121,3 @@ extends:
           - script: |
               docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/$(IMAGE_NAME)_validation.tar
             displayName: 'Save Docker image as a pipeline artifact'
-
-          # Publish the Docker image artifact
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: $(Build.ArtifactStagingDirectory)/$(IMAGE_NAME)_validation.tar
-              ArtifactName: docker-image
-              publishLocation: 'Container'
