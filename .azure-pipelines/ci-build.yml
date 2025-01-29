@@ -124,7 +124,7 @@ extends:
 
           # Publish the Docker image artifact
           - task: PublishBuildArtifacts@1
-          inputs:
-            PathtoPublish: $(Build.ArtifactStagingDirectory)/$(IMAGE_NAME)_validation.tar
-            ArtifactName: docker-image
-            publishLocation: 'Container'
+            inputs:
+              PathtoPublish: $(Build.ArtifactStagingDirectory)/$(IMAGE_NAME)_validation.tar
+              ArtifactName: docker-image
+              publishLocation: 'Container'
