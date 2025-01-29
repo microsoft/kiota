@@ -63,15 +63,15 @@ extends:
               versionSpec: '>=5.2.0'
               checkLatest: true
 
-          # # Build the Product project
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Build Kiota project'
-          #   inputs:
-          #     projects: '$(Build.SourcesDirectory)\kiota.sln'
-          #     arguments: '--configuration $(BuildConfiguration) --no-incremental'
+          # Build the Product project
+          - task: DotNetCoreCLI@2
+            displayName: 'Build Kiota project'
+            inputs:
+              projects: '$(Build.SourcesDirectory)\kiota.sln'
+              arguments: '--configuration $(BuildConfiguration) --no-incremental'
 
         - job: validate_docker_build
-          # dependsOn: build
+          dependsOn: build
           displayName: Validate Docker Build
           pool:
             name: ${{ parameters.poolName }}
