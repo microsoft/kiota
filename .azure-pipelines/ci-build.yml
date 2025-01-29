@@ -96,8 +96,8 @@ extends:
             inputs:
               command: publish
               publishWebProjects: false
-              projects: '$(Build.SourcesDirectory)/kiota.sln'
-              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix $(versionSuffix)"
+              projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj''
+              arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix $(versionSuffix)"
             condition: and(succeeded(), ne(variables['versionSuffix'], ''))
 
           # Publish the Product project without version_suffix if not available
@@ -106,8 +106,8 @@ extends:
             inputs:
               command: publish
               publishWebProjects: false
-              projects: '$(Build.SourcesDirectory)/kiota.sln'
-              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:TreatWarningsAsErrors=false -f net9.0"
+              projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj'
+              arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0"
             condition: and(succeeded(), eq(variables['versionSuffix'], ''))
 
           # Build Docker image for validation (no push)
