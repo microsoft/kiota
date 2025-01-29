@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:8.0-windowsservercore-ltsc2022 AS build-env
 ARG version_suffix
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
     fi
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0-noble-chiseled AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:8.0-windowsservercore-ltsc2022 AS runtime
 WORKDIR /app
 
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net9.0 ./
