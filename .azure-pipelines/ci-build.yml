@@ -117,6 +117,10 @@ extends:
               arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0"
             condition: and(succeeded(), eq(variables['versionSuffix'], ''))
 
+          # Ensure the directory exists before publishing the artifact
+          - script: mkdir -p $(Pipeline.Workspace)/drop
+            displayName: 'Create drop directory'
+
           # Build Docker image for validation (no push)
           - task: 1ES.BuildContainerImage@1
             inputs:
@@ -128,7 +132,7 @@ extends:
           templateContext:
             outputs:
             - output: pipelineArtifact
-              path: $(Pipeline.Workspace)/PipelineArtifacts/drop
+              path: $(Pipeline.Workspace)/drop
               artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
