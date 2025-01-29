@@ -131,7 +131,7 @@ extends:
 
           templateContext:
             outputs:
-            - output: pipelineArtifact
+            - output: containerImage
               image: $(REGISTRY)/$(IMAGE_NAME):validation
 
     - stage: CheckoutAndCopy  # Add a new stage
