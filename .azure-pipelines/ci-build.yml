@@ -50,6 +50,8 @@ extends:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared  # Name of your hosted pool
         image: windows-latest  # Name of the image in your pool. If not specified, first image of the pool is used
+        exclude:
+        - repository: ReleasePipelines
     stages:
     - stage: Build
       jobs:
@@ -120,10 +122,6 @@ extends:
               path: $(Build.SourcesDirectory)                 # Required. Alias: context
               dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
               buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
-          # Save Docker image as a pipeline artifact
-          - script: |
-              docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)
-            displayName: 'Save Docker image as a pipeline artifact'
 
           templateContext:
             outputs:
