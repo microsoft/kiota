@@ -37,17 +37,17 @@ parameters:
   default: linux
 
 pool:
-  name: Azure-Pipelines-1ESPT-ExDShared
-  os: linux
-  vmImage: ubuntu-latest
+  name: ${{ parameters.poolName }}
+  image: ${{ parameters.image }}
+  os: ${{ parameters.os }}
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     pool:
-      name: Azure-Pipelines-1ESPT-ExDShared
-      os: linux
-      vmImage: ubuntu-latest
+      name: ${{ parameters.poolName }}
+      image: ${{ parameters.image }}
+      os: ${{ parameters.os }}
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared  # Name of your hosted pool
@@ -84,9 +84,9 @@ extends:
           # dependsOn: build
           displayName: Validate Docker Build
           pool:
-            name: Azure-Pipelines-1ESPT-ExDShared
-            os: linux
-            vmImage: ubuntu-latest
+            name: ${{ parameters.poolName }}
+            image: ${{ parameters.image }}
+            os: ${{ parameters.os }}
           steps:
             # Enable QEMU for multi-architecture builds
             # - script: |
