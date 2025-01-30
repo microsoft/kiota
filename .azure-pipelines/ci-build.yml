@@ -130,16 +130,14 @@ extends:
               script: |
                 docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/image.tar
           
-          - task: PublishPipelineArtifact@1
-            inputs:
-              targetPath: '$(Build.ArtifactStagingDirectory)/image.tar'
-              artifact: 'drop'
-              publishLocation: 'pipeline'
+          - task: 1ES.PublishPipelineArtifact@1
+          inputs:
+            path: $(Build.ArtifactStagingDirectory)
+            artifact: drop
 
           # templateContext:
           #   outputs:
-          #   - output: containerImage
-          #     image: $(REGISTRY)/$(IMAGE_NAME):validation
+          #   - output: pipelineArtifact
           #     artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
