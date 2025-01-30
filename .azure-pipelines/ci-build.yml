@@ -421,8 +421,8 @@ extends:
                   - task: AzureKeyVault@2
                     displayName: "Azure Key Vault: Get Secrets"
                     inputs:
-                      azureSubscription: "MicrosofGraphKeyVault connection"
-                      KeyVaultName: MicrosofGraphKeyVault
+                      azureSubscription: "Federated AKV Managed Identity Connection"
+                      KeyVaultName: akv-prod-eastus
                       SecretsFilter: "graph-cli-apple-developer-certificate,graph-cli-apple-developer-certificate-password"
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
                   - bash: |
