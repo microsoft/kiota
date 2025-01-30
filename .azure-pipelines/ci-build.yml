@@ -53,9 +53,6 @@ extends:
       sourceRepositoriesToScan:
         exclude:
         - repository: ReleasePipelines
-    authenticatedContainerRegistries:
-      - registry: msgraphprodregistry.azurecr.io
-        identity: acr-push-managed-identity
     stages:
     - stage: Build
       jobs:
@@ -126,12 +123,18 @@ extends:
               path: $(Build.SourcesDirectory)                 # Required. Alias: context
               dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
               buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+          - task: Bash@3
+            displayName: Save Docker Image
+            inputs:
+              targetType: inline
+              script: |
+                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Pipeline.Workspace)/$(IMAGE_NAME)-validation.tar
 
-          templateContext:
-            outputs:
-            - output: containerImage
-              image: $(REGISTRY)/$(IMAGE_NAME):validation
-              artifact: drop
+          # templateContext:
+          #   outputs:
+          #   - output: containerImage
+          #     image: $(REGISTRY)/$(IMAGE_NAME):validation
+          #     artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
       jobs:
