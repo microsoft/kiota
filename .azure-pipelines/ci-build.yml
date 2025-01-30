@@ -131,9 +131,9 @@ extends:
                 docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/image.tar
           
           - task: 1ES.PublishPipelineArtifact@1
-          inputs:
-            path: $(Build.ArtifactStagingDirectory)
-            artifact: drop
+            inputs:
+              path: $(Build.ArtifactStagingDirectory)
+              artifact: drop
 
           # templateContext:
           #   outputs:
