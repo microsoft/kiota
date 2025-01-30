@@ -53,7 +53,9 @@ extends:
       sourceRepositoriesToScan:
         exclude:
         - repository: ReleasePipelines
-
+    authenticatedContainerRegistries:
+      - registry: msgraphprodregistry.azurecr.io
+        identity: acr-push-managed-identity
     stages:
     - stage: Build
       jobs:
@@ -117,10 +119,6 @@ extends:
               arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0"
             condition: and(succeeded(), eq(variables['versionSuffix'], ''))
 
-          # Ensure the directory exists before publishing the artifact
-          - script: mkdir -p $(Pipeline.Workspace)/drop
-            displayName: 'Create drop directory'
-
           # Build Docker image for validation (no push)
           - task: 1ES.BuildContainerImage@1
             inputs:
@@ -133,6 +131,7 @@ extends:
             outputs:
             - output: containerImage
               image: $(REGISTRY)/$(IMAGE_NAME):validation
+              artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
       jobs:
