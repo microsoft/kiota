@@ -128,7 +128,13 @@ extends:
             inputs:
               targetType: inline
               script: |
-                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Pipeline.Workspace)/kiota-validation.tar
+                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/image.tar
+          
+          # - task: PublishPipelineArtifact@1
+          #   inputs:
+          #     targetPath: '$(Build.ArtifactStagingDirectory)/image.tar'
+          #     artifact: 'drop'
+          #     publishLocation: 'pipeline'
 
           # templateContext:
           #   outputs:
