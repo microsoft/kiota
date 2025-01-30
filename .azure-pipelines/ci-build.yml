@@ -128,17 +128,12 @@ extends:
             inputs:
               targetType: inline
               script: |
-                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/image.tar
+                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/$(REGISTRY)_$(IMAGE_NAME)_validation.tar
           
           - task: 1ES.PublishPipelineArtifact@1
             inputs:
               path: $(Build.ArtifactStagingDirectory)
               artifact: drop
-
-          # templateContext:
-          #   outputs:
-          #   - output: pipelineArtifact
-          #     artifact: drop
 
     - stage: CheckoutAndCopy  # Add a new stage
       jobs:
