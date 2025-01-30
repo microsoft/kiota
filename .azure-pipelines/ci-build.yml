@@ -128,7 +128,7 @@ extends:
             inputs:
               targetType: inline
               script: |
-                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Pipeline.Workspace)/$(IMAGE_NAME)-validation.tar
+                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Pipeline.Workspace)/kiota-validation.tar
 
           # templateContext:
           #   outputs:
