@@ -128,7 +128,7 @@ extends:
             inputs:
               targetType: inline
               script: |
-                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/$(REGISTRY)_$(IMAGE_NAME)_validation.tar
+                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/kiota.tar
           
           - task: 1ES.PublishPipelineArtifact@1
             inputs:
@@ -139,5 +139,5 @@ extends:
       jobs:
         - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
           parameters:
-            directory: 'microsoft-graph-explorer-v4'
+            directory: 'kiota'
             repoName: ReleasePipelines
