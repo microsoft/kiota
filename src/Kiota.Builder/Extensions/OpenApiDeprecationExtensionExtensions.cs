@@ -24,15 +24,15 @@ internal static class OpenApiDeprecationExtensionExtensions
             return deprecatedValue.ToDeprecationInformation();
         else if (parameter.Schema != null && !parameter.Schema.IsReferencedSchema() && parameter.Schema.Deprecated)
             return parameter.Schema.GetDeprecationInformation();
-        else if (parameter.Content.Values.Select(static x => x.Schema).Where(static x => x != null && !x.IsReferencedSchema() && x.Deprecated).Select(static x => x.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation contentDeprecationInformation)
+        else if (parameter.Content.Values.Select(static x => x.Schema).Where(static x => x != null && !x.IsReferencedSchema() && x.Deprecated).Select(static x => x!.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation contentDeprecationInformation)
             return contentDeprecationInformation;
         return new(null, null, null, null, parameter.Deprecated);
     }
     internal static DeprecationInformation GetDeprecationInformation(this OpenApiOperation operation)
     {
-        if (operation.Deprecated && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
+        if (operation.Deprecated && operation.Extensions is not null && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
-        else if (operation.Responses.Values
+        else if (operation.Responses?.Values
                                 .SelectMany(static x => x.Content.Values)
                                 .Select(static x => x?.Schema)
                                 .OfType<OpenApiSchema>()
