@@ -11,4 +11,5 @@ public enum GenerationLanguage
     Ruby,
     CLI,
     Dart,
+    HTTP
 }

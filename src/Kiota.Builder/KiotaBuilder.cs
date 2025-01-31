@@ -29,6 +29,7 @@ using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Settings;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
@@ -50,9 +51,10 @@ public partial class KiotaBuilder
     private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
+    private readonly ISettingsManagementService settingsFileManagementService;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false, ISettingsManagementService? settingsManagementService = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
@@ -68,6 +70,7 @@ public partial class KiotaBuilder
         workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
         this.useKiotaConfig = useKiotaConfig;
         openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
+        settingsFileManagementService = settingsManagementService ?? new SettingsFileManagementService();
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
@@ -290,6 +293,13 @@ public partial class KiotaBuilder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+            if (config.Language == GenerationLanguage.HTTP && openApiDocument is not null)
+            {
+                sw.Start();
+                await settingsFileManagementService.WriteSettingsFileAsync(config.OutputPath, openApiDocument, cancellationToken).ConfigureAwait(false);
+                StopLogAndReset(sw, $"step {++stepId} - generating settings file for HTTP authentication - took");
+            }
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -564,6 +574,41 @@ public partial class KiotaBuilder
         return rootNamespace;
     }
 
+    private void AddOperationSecurityRequirementToDOM(OpenApiOperation operation, CodeClass codeClass)
+    {
+        if (openApiDocument is null)
+        {
+            logger.LogWarning("OpenAPI document is null");
+            return;
+        }
+
+        if (operation.Security == null || !operation.Security.Any())
+            return;
+
+        var securitySchemes = openApiDocument.Components.SecuritySchemes;
+        foreach (var securityRequirement in operation.Security)
+        {
+            foreach (var scheme in securityRequirement.Keys)
+            {
+                if (securitySchemes.TryGetValue(scheme.Reference.Id, out var securityScheme))
+                {
+                    AddSecurity(codeClass, securityScheme);
+                }
+            }
+        }
+    }
+
+    private void AddSecurity(CodeClass codeClass, OpenApiSecurityScheme openApiSecurityScheme)
+    {
+        codeClass.AddProperty(
+            new CodeProperty
+            {
+                Type = new CodeType { Name = openApiSecurityScheme.Type.ToString(), IsExternal = true },
+                Kind = CodePropertyKind.Headers
+            }
+        );
+    }
+
     /// <summary>
     /// Manipulate CodeDOM for language specific issues
     /// </summary>
@@ -681,7 +726,14 @@ public partial class KiotaBuilder
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
+            {
+
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
+                if (config.Language == GenerationLanguage.HTTP)
+                {
+                    AddOperationSecurityRequirementToDOM(operation.Value, codeClass);
+                }
+            }
         }
 
         if (rootNamespace != null)

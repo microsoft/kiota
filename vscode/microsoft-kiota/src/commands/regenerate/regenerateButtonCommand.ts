@@ -7,7 +7,8 @@ import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { isClientType, isPluginType } from "../../util";
-import { confirmOverride } from "../../utilities/regeneration";
+import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
+import { confirmOverwriteOnRegenerate } from "../../utilities/regeneration";
 import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
@@ -23,8 +24,14 @@ export class RegenerateButtonCommand extends Command {
 
   public async execute({ generationType, clientOrPluginKey, clientOrPluginObject }: WorkspaceGenerationContext): Promise<void> {
     const configuration = getGenerationConfiguration();
-    const regenerate = await confirmOverride();
-    if (!regenerate) {
+    const settings = getExtensionSettings(extensionId);
+    if (settings.cleanOutput) {
+      const accept = await confirmDeletionOnCleanOutput();
+      if (!accept) {
+        // cancel generation and open settings
+        return vscode.commands.executeCommand('workbench.action.openSettings', 'kiota.cleanOutput.enabled');
+      }
+    } else if (!(await confirmOverwriteOnRegenerate())) {
       return;
     }
 
@@ -39,7 +46,6 @@ export class RegenerateButtonCommand extends Command {
       });
     }
 
-    const settings = getExtensionSettings(extensionId);
     const selectedPaths = this._openApiTreeProvider.getSelectedPaths();
     if (selectedPaths.length === 0) {
       await vscode.window.showErrorMessage(
