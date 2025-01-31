@@ -61,6 +61,8 @@ extends:
     - stage: Build
       jobs:
         - job: build
+          variables:
+            version: ''
           steps:
           - task: UseDotNet@2
             displayName: 'Use .NET 8'
@@ -88,8 +90,10 @@ extends:
                 docker version
                 docker info
             displayName: Show docker environment
+          
           - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
             displayName: 'Set BUILDNUMBER variable'
+            
           - powershell: |
               .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA
             displayName: "Set version suffix"
@@ -103,12 +107,13 @@ extends:
             condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - powershell: |
-              .\scripts\get-version-from-csproj.ps1 -isGHA
+              $version = .\scripts\get-version-from-csproj.ps1 -isGHA
+              Write-Host "##vso[task.setvariable variable=version]$version"
             displayName: "Get Kiota's version-number from .csproj"
             name: getversion
           
           - powershell: |
-              .\scripts\get-release-notes.ps1 -version "$(getversion.version)"
+              .\scripts\get-release-notes.ps1 -version "$(version)"
             displayName: "Get release notes from CHANGELOG.md"
             condition: not(contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH']))
           
