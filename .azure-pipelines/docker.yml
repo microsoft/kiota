@@ -11,10 +11,14 @@ pr: none
 variables:
   buildConfiguration: 'Release'
   BUILDPLATFORM: 'linux/amd64'
-  REGISTRY: msgraphprodregistry.azurecr.io # Azure Container Registry
-  IMAGE_NAME: public/openapi/kiota       # Docker image name
-  PREVIEW_BRANCH: "refs/heads/main"      # Branch for preview builds
-  VERSION_SUFFIX: ""                    # Version suffix for preview builds
+  REGISTRY: msgraphprodregistry.azurecr.io
+  IMAGE_NAME: public/openapi/kiota
+  PREVIEW_BRANCH: "refs/heads/main"
+  VERSION_SUFFIX: ""
+  dotnetVersion8: '8.x'
+  dotnetVersion9: '9.x'
+  MSBuildTreatWarningsAsErrors: 'false'
+  CONTAINER_PLATFORMS: 'linux/amd64,linux/arm64/v8,linux/arm/v7'
 
 resources:
   repositories:
@@ -48,8 +52,8 @@ extends:
       os: ${{ parameters.os }}
     sdl:
       sourceAnalysisPool:
-        name: Azure-Pipelines-1ESPT-ExDShared  # Name of your hosted pool
-        image: windows-latest  # Name of the image in your pool. If not specified, first image of the pool is used
+        name: Azure-Pipelines-1ESPT-ExDShared
+        image: windows-latest
       sourceRepositoriesToScan:
         exclude:
         - repository: ReleasePipelines
@@ -61,12 +65,11 @@ extends:
           - task: UseDotNet@2
             displayName: 'Use .NET 8'
             inputs:
-              version: 8.x
+              version: $(dotnetVersion8)
           - task: UseDotNet@2
             displayName: 'Use .NET 9'
             inputs:
-              version: 9.x
-          # Install the nuget tool.
+              version: $(dotnetVersion9)
           - task: NuGetToolInstaller@1
             displayName: 'Install Nuget dependency manager'
             inputs:
@@ -76,7 +79,6 @@ extends:
           - script: |
               ls
             displayName: 'List files in the repo'
-          # Build the Product project
           - task: DotNetCoreCLI@2
             displayName: "build"
             inputs:
@@ -89,40 +91,66 @@ extends:
           - script: echo "##vso[task.setvariable variable=BUILDNUMBER]$(Build.BuildId)"
             displayName: 'Set BUILDNUMBER variable'
           - powershell: |
-              .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranchName) -previewBranch 'azure-pipelines' -excludeHeadingDash
-            displayName: 'Generate version suffix'
-
+              .\scripts\get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash -isGHA
+            displayName: "Set version suffix"
+            env:
+              BUILD_BUILDNUMBER: $(Build.BuildNumber)
+            name: getversionsuffix
+        
+          - powershell: |
+              .\scripts\update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
+            displayName: "Set version suffix in csproj for generators"
+            condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
+          - powershell: |
+              .\scripts\get-version-from-csproj.ps1 -isGHA
+            displayName: "Get Kiota's version-number from .csproj"
+            name: getversion
+          
+          - powershell: |
+              .\scripts\get-release-notes.ps1 -version "$(getversion.version)"
+            displayName: "Get release notes from CHANGELOG.md"
+            condition: not(contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH']))
+          
+          - powershell: |
+              .\scripts\get-release-notes.ps1 -version Unreleased
+            displayName: "Get release notes from CHANGELOG.md"
+            condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
+          - powershell: |
+              .\scripts\update-versions.ps1
+            displayName: "Update dependencies versions"
+          
           - script: |
               echo "Generated version_suffix: $(versionSuffix)"
             displayName: 'Show generated version_suffix'
 
-          # Publish the Product project with version_suffix if available
           - task: DotNetCoreCLI@2
             displayName: "publish with version_suffix"
             inputs:
               command: publish
               publishWebProjects: false
               projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj'
-              arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix $(versionSuffix)"
+              arguments: "-c Release -f net9.0 --version-suffix $(versionSuffix)"
             condition: and(succeeded(), ne(variables['versionSuffix'], ''))
 
-          # Publish the Product project without version_suffix if not available
           - task: DotNetCoreCLI@2
             displayName: "publish without version_suffix"
             inputs:
               command: publish
               publishWebProjects: false
               projects: '$(Build.SourcesDirectory)/src/kiota/kiota.csproj'
-              arguments: "-c Release -p:TreatWarningsAsErrors=false -f net9.0"
+              arguments: "-c Release -f net9.0"
             condition: and(succeeded(), eq(variables['versionSuffix'], ''))
 
-          # Build Docker image for validation (no push)
           - task: 1ES.BuildContainerImage@1
+            condition: contains(variables['Build.SourceBranch'], 'Preview')
             inputs:
-              image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
-              path: $(Build.SourcesDirectory)                 # Required. Alias: context
-              dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
-              buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+              image: $(REGISTRY)/$(IMAGE_NAME):validation
+              path: $(Build.SourcesDirectory)
+              dockerfile: ./Dockerfile
+              buildArguments: --build-arg version_suffix=$(versionSuffix) --platform $(CONTAINER_PLATFORMS)
+              
           - task: Bash@3
             displayName: Save Docker Image
             inputs:
@@ -135,7 +163,7 @@ extends:
               path: $(Build.ArtifactStagingDirectory)
               artifact: drop
 
-    - stage: CheckoutAndCopy  # Add a new stage
+    - stage: CheckoutAndCopy
       jobs:
         - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
           parameters:
