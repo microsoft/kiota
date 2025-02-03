@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Services;
 
 using Xunit;
@@ -29,7 +30,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     public void GetsDescription()
     {
         var node = OpenApiUrlTreeNode.Create();
-        node.PathItems.Add(Label, new()
+        node.PathItems.Add(Label, new OpenApiPathItem()
         {
             Description = "description",
             Summary = "summary"
@@ -46,9 +47,9 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("function()", new());
-        doc.Paths.Add("function({param})", new());
-        doc.Paths.Add("function({param}, {param2})", new());
+        doc.Paths.Add("function()", new OpenApiPathItem());
+        doc.Paths.Add("function({param})", new OpenApiPathItem());
+        doc.Paths.Add("function({param}, {param2})", new OpenApiPathItem());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.IsComplexPathMultipleParameters());
         Assert.False(node.Children.First().Value.IsComplexPathMultipleParameters());
@@ -62,7 +63,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param}", new());
+        doc.Paths.Add("{param}", new OpenApiPathItem());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.IsPathSegmentWithSingleSimpleParameter());
         Assert.True(node.Children.First().Value.IsPathSegmentWithSingleSimpleParameter());
@@ -74,7 +75,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param}", new());
+        doc.Paths.Add("{param}", new OpenApiPathItem());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.DoesNodeBelongToItemSubnamespace());
         Assert.True(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
@@ -83,7 +84,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("param}", new());
+        doc.Paths.Add("param}", new OpenApiPathItem());
         node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
 
@@ -91,7 +92,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param", new());
+        doc.Paths.Add("{param", new OpenApiPathItem());
         node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
     }
@@ -102,7 +103,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("\\users\\messages", new());
+        doc.Paths.Add("\\users\\messages", new OpenApiPathItem());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.Equal("graph.users.messages", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
         Assert.Equal("users.messages", node.Children.First().Value.GetNodeNamespaceFromPath(null));
@@ -114,7 +115,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new());
+        doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new OpenApiPathItem());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.Equal("graph.deviceManagement.microsoftGraphGetRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
     }
@@ -135,24 +136,24 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
                         Parameters = [
-                            new() {
+                            new OpenApiParameter() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
                                 Required = true,
-                                Schema = new() {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter (){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -163,19 +164,19 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 {
                     OperationType.Put, new() {
                         Parameters = [
-                            new() {
+                            new OpenApiParameter() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
                                 Required = true,
-                                Schema = new() {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema () {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -196,15 +197,15 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new OpenApiPathItem()
         {
             Parameters = [
-                new()
+                new OpenApiParameter()
                 {
                     Name = "param-with-dashes",
                     In = ParameterLocation.Path,
                     Required = true,
-                    Schema = new()
+                    Schema = new OpenApiSchema()
                     {
                         Type = JsonSchemaType.String
                     },
@@ -215,10 +216,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 { OperationType.Get, new() {
                         Parameters = [
 
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -246,15 +247,15 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new OpenApiPathItem()
         {
             Parameters = [
-                new()
+                new OpenApiParameter()
                 {
                     Name = "param-with-dashes",
                     In = ParameterLocation.Path,
                     Required = true,
-                    Schema = new()
+                    Schema = new OpenApiSchema()
                     {
                         Type = JsonSchemaType.String
                     },
@@ -265,10 +266,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 { OperationType.Get, new() {
                         Parameters = [
 
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -279,10 +280,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 { OperationType.Post, new() {
                         Parameters = [
 
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "$expand",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -296,10 +297,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 { OperationType.Delete, new() {
                         Parameters = [
 
-                            new (){
+                            new OpenApiParameter (){
                                 Name = "id",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -327,7 +328,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = {
                         new OpenApiParameter {
@@ -371,7 +372,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
@@ -415,7 +416,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = {
                         new OpenApiParameter {
@@ -458,7 +459,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
@@ -500,7 +501,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = {
                         new OpenApiParameter {
@@ -544,7 +545,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("users\\{id}\\manager", new()
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
@@ -589,48 +590,48 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = [],
         };
-        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
                         Parameters = [
-                            new() {
+                            new OpenApiParameter() {
                                 Name = "param-with-dashes",
                                 In = ParameterLocation.Path,
                                 Required = true,
-                                Schema = new() {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "api-version",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "api~topic",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             },
-                            new (){
+                            new OpenApiParameter(){
                                 Name = "api.encoding",
                                 In = ParameterLocation.Query,
-                                Schema = new () {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -659,26 +660,26 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("/reviews/{resource-type}.json", new()
+        doc.Paths.Add("/reviews/{resource-type}.json", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 { OperationType.Get, new() {
-                        Parameters = new List<OpenApiParameter> {
-                            new() {
+                        Parameters = new List<IOpenApiParameter> {
+                            new OpenApiParameter() {
                                 Name = "resource-type",
                                 In = ParameterLocation.Path,
                                 Required = true,
-                                Schema = new() {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
                             }
                         },
                         Responses = new OpenApiResponses() {
-                            {"200", new() {
+                            {"200", new OpenApiResponse() {
                                 Content = new Dictionary<string, OpenApiMediaType>() {
                                     {"application/json", new() {
-                                        Schema = new () {
+                                        Schema = new OpenApiSchema() {
                                             Type = JsonSchemaType.String
                                         }
                                     }}
@@ -700,17 +701,17 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
-        doc.Paths.Add("/reviews/{resource-type}.json", new()
+        doc.Paths.Add("/reviews/{resource-type}.json", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
                 {
                     OperationType.Get, new() {
-                        Parameters = new List<OpenApiParameter> {
-                            new() {
+                        Parameters = new List<IOpenApiParameter> {
+                            new OpenApiParameter() {
                                 Name = "resource-type",
                                 In = ParameterLocation.Path,
                                 Required = true,
-                                Schema = new() {
+                                Schema = new OpenApiSchema() {
                                     Type = JsonSchemaType.String
                                 },
                                 Style = ParameterStyle.Simple,
@@ -719,14 +720,14 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                         Responses = new OpenApiResponses()
                         {
                             {
-                                "200", new()
+                                "200", new OpenApiResponse()
                                 {
                                     Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         {
                                             "application/json", new()
                                             {
-                                                Schema = new ()
+                                                Schema = new OpenApiSchema()
                                                 {
                                                     Type = JsonSchemaType.Object,
                                                     Title = "json",
@@ -764,7 +765,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         var userSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, OpenApiSchema> {
+            Properties = new Dictionary<string, IOpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
                         Type = JsonSchemaType.String
@@ -780,7 +781,6 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             {
                 Id = "#/components/schemas/microsoft.graph.user"
             },
-            UnresolvedReference = false
         };
         var document = new OpenApiDocument
         {
@@ -876,7 +876,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             },
             Components = new OpenApiComponents
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {
                         "microsoft.graph.user", userSchema
                     }
@@ -913,7 +913,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         var ownerSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, OpenApiSchema> {
+            Properties = new Dictionary<string, IOpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
                         Type = JsonSchemaType.String
@@ -924,12 +924,11 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             {
                 Id = "#/components/schemas/owner"
             },
-            UnresolvedReference = false
         };
         var repoSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, OpenApiSchema> {
+            Properties = new Dictionary<string, IOpenApiSchema> {
                 {
                     "id", new OpenApiSchema {
                         Type = JsonSchemaType.String
@@ -940,7 +939,6 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             {
                 Id = "#/components/schemas/repo"
             },
-            UnresolvedReference = false
         };
         var document = new OpenApiDocument
         {
@@ -987,7 +985,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             },
             Components = new OpenApiComponents
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {"owner", ownerSchema},
                     {"repo", repoSchema}
                 }
