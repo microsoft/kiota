@@ -1075,7 +1075,6 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Nullable = true
                 }
             }
         };
@@ -1092,7 +1091,6 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Nullable = true
                 }
             }
         };
@@ -1109,7 +1107,6 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Nullable = true
                 }
             }
         };
@@ -1132,7 +1129,6 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Nullable = true
                 }
             }
         };
@@ -1150,7 +1146,6 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Nullable = true
                 }
             }
         };
@@ -1167,12 +1162,10 @@ public class OpenApiSchemaExtensionsTests
                 {
                     Type = JsonSchemaType.Number,
                     Format = "double",
-                    Nullable = true
                 },
                 new OpenApiSchema()
                 {
                     Type = JsonSchemaType.String,
-                    Nullable = true
                 },
                 new OpenApiSchema()
                 {
@@ -1183,7 +1176,6 @@ public class OpenApiSchemaExtensionsTests
                         "NaN",
                     },
                     Type = JsonSchemaType.String,
-                    Nullable = true
                 }
             }
         };

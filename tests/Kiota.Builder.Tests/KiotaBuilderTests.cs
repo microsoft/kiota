@@ -2965,7 +2965,6 @@ paths:
                                         {
                                             Schema = new OpenApiSchema
                                             {
-                                                Nullable = true,
                                                 AnyOf = new List<IOpenApiSchema> {
                                                     uploadSessionSchema
                                                 }
@@ -3051,7 +3050,6 @@ paths:
                                                 AnyOf = new List<IOpenApiSchema> {
                                                     uploadSessionSchema,
                                                     new OpenApiSchema {
-                                                        Nullable = true,
                                                     }
                                                 }
                                             }
@@ -3183,12 +3181,10 @@ paths:
                         AnyOf = [
                             new OpenApiSchema {
                                 Type = JsonSchemaType.String,
-                                Nullable = true
                             },
                             new OpenApiSchema {
                                 Type = JsonSchemaType.Number,
                                 Format = "int64",
-                                Nullable = true,
                             }
                         ]
                     }
@@ -5143,7 +5139,6 @@ components:
                                 new OpenApiSchema
                                 {
                                     Type = JsonSchemaType.Object,
-                                    Nullable = true
                                 }
                             }
                         }

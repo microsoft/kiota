@@ -42,7 +42,6 @@ internal class OpenApiSchemaComparer : IEqualityComparer<IOpenApiSchema>
         if (obj is null) return;
         if (!visitedSchemas.Add(obj)) return;
         hash.Add(obj.Deprecated);
-        hash.Add(obj.Nullable);
         hash.Add(obj.Discriminator, discriminatorComparer);
         GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas, ref hash);
         hash.Add(obj.AdditionalPropertiesAllowed);

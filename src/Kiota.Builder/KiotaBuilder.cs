@@ -1790,9 +1790,9 @@ public partial class KiotaBuilder
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
+        if ((typesCount == 1 && (schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
-                                                        x.Nullable &&
+                                                        (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
                                                         !x.HasAnyProperty() &&
                                                         !x.IsExclusiveUnion() &&
                                                         !x.IsInclusiveUnion() &&

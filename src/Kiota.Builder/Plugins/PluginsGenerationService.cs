@@ -207,8 +207,6 @@ public partial class PluginsGenerationService
                     openApiSchema.MinProperties = source.MinProperties;
                 if (source.UniqueItems is not null)
                     openApiSchema.UniqueItems = source.UniqueItems;
-                if (source.Nullable)
-                    openApiSchema.Nullable = true;
                 if (source.ReadOnly)
                     openApiSchema.ReadOnly = true;
                 if (source.WriteOnly)
