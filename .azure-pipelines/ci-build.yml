@@ -1,4 +1,4 @@
-name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(BuildDefinitionName)-$(Date:yyyyMMdd)
  
 trigger:
   branches:
