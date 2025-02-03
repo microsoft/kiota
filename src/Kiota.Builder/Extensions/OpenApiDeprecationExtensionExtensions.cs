@@ -3,6 +3,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
@@ -12,13 +13,13 @@ internal static class OpenApiDeprecationExtensionExtensions
     {
         return new DeprecationInformation(value.Description.CleanupDescription().CleanupXMLString(), value.Date, value.RemovalDate, value.Version.CleanupDescription().CleanupXMLString(), true);
     }
-    internal static DeprecationInformation GetDeprecationInformation(this OpenApiSchema schema)
+    internal static DeprecationInformation GetDeprecationInformation(this IOpenApiSchema schema)
     {
         if (schema.Deprecated && schema.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
         return new(null, null, null, null, schema.Deprecated);
     }
-    internal static DeprecationInformation GetDeprecationInformation(this OpenApiParameter parameter)
+    internal static DeprecationInformation GetDeprecationInformation(this IOpenApiParameter parameter)
     {
         if (parameter.Deprecated && parameter.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();

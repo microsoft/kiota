@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
 using Microsoft.Plugins.Manifest;
@@ -113,7 +115,7 @@ public partial class PluginsGenerationService
     {
         private readonly OpenApiDocument _document = openApiDocument;
 
-        public override void Visit(OpenApiSchema schema)
+        public override void Visit(IOpenApiSchema schema)
         {
             if (schema.Discriminator?.Mapping is null)
                 return;
@@ -126,7 +128,7 @@ public partial class PluginsGenerationService
 
     private sealed class AllOfPropertiesRetrievalVisitor : OpenApiVisitorBase
     {
-        public override void Visit(OpenApiSchema schema)
+        public override void Visit(IOpenApiSchema schema)
         {
             if (schema.AllOf is not { Count: > 0 })
                 return;
@@ -139,7 +141,7 @@ public partial class PluginsGenerationService
             base.Visit(schema);
         }
 
-        private static IEnumerable<KeyValuePair<string, OpenApiSchema>> GetAllProperties(OpenApiSchema schema)
+        private static IEnumerable<KeyValuePair<string, IOpenApiSchema>> GetAllProperties(IOpenApiSchema schema)
         {
             return schema.AllOf is not null ?
                 schema.AllOf.SelectMany(static x => GetAllProperties(x)).Union(schema.Properties) :
@@ -149,7 +151,7 @@ public partial class PluginsGenerationService
 
     private sealed class SelectFirstAnyOneOfVisitor : OpenApiVisitorBase
     {
-        public override void Visit(OpenApiSchema schema)
+        public override void Visit(IOpenApiSchema schema)
         {
             if (schema.AnyOf is { Count: > 0 })
             {
@@ -163,72 +165,75 @@ public partial class PluginsGenerationService
             }
             base.Visit(schema);
         }
-        internal static void CopyRelevantInformation(OpenApiSchema source, OpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
+        internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
         {
-            if (source.Type is not null && source.Type.HasValue)
-                target.Type = source.Type;
-            if (!string.IsNullOrEmpty(source.Format))
-                target.Format = source.Format;
-            if (source.Items is not null)
-                target.Items = source.Items;
-            if (source.Properties is not null && includeProperties)
-                target.Properties = new Dictionary<string, OpenApiSchema>(source.Properties);
-            if (source.Required is not null)
-                target.Required = new HashSet<string>(source.Required);
-            if (source.AdditionalProperties is not null)
-                target.AdditionalProperties = source.AdditionalProperties;
-            if (source.Enum is not null)
-                target.Enum = [.. source.Enum];
-            if (source.ExclusiveMaximum is not null)
-                target.ExclusiveMaximum = source.ExclusiveMaximum;
-            if (source.ExclusiveMinimum is not null)
-                target.ExclusiveMinimum = source.ExclusiveMinimum;
-            if (source.Maximum is not null)
-                target.Maximum = source.Maximum;
-            if (source.Minimum is not null)
-                target.Minimum = source.Minimum;
-            if (source.MaxItems is not null)
-                target.MaxItems = source.MaxItems;
-            if (source.MinItems is not null)
-                target.MinItems = source.MinItems;
-            if (source.MaxLength is not null)
-                target.MaxLength = source.MaxLength;
-            if (source.MinLength is not null)
-                target.MinLength = source.MinLength;
-            if (source.Pattern is not null)
-                target.Pattern = source.Pattern;
-            if (source.MaxProperties is not null)
-                target.MaxProperties = source.MaxProperties;
-            if (source.MinProperties is not null)
-                target.MinProperties = source.MinProperties;
-            if (source.UniqueItems is not null)
-                target.UniqueItems = source.UniqueItems;
-            if (source.Nullable)
-                target.Nullable = true;
-            if (source.ReadOnly)
-                target.ReadOnly = true;
-            if (source.WriteOnly)
-                target.WriteOnly = true;
-            if (source.Deprecated)
-                target.Deprecated = true;
-            if (source.Xml is not null)
-                target.Xml = source.Xml;
-            if (source.ExternalDocs is not null)
-                target.ExternalDocs = source.ExternalDocs;
-            if (source.Example is not null)
-                target.Example = source.Example;
-            if (source.Extensions is not null)
-                target.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
-            if (source.Discriminator is not null && includeDiscriminator)
-                target.Discriminator = source.Discriminator;
-            if (!string.IsNullOrEmpty(source.Description))
-                target.Description = source.Description;
-            if (!string.IsNullOrEmpty(source.Title))
-                target.Title = source.Title;
-            if (source.Default is not null)
-                target.Default = source.Default;
-            if (source.Reference is not null && includeReference)
-                target.Reference = source.Reference;
+            if (target is OpenApiSchema openApiSchema)
+            {
+                if (source.Type is not null && source.Type.HasValue)
+                    openApiSchema.Type = source.Type;
+                if (!string.IsNullOrEmpty(source.Format))
+                    openApiSchema.Format = source.Format;
+                if (source.Items is not null)
+                    openApiSchema.Items = source.Items;
+                if (source.Properties is not null && includeProperties)
+                    openApiSchema.Properties = new Dictionary<string, IOpenApiSchema>(source.Properties);
+                if (source.Required is not null)
+                    openApiSchema.Required = new HashSet<string>(source.Required);
+                if (source.AdditionalProperties is not null)
+                    openApiSchema.AdditionalProperties = source.AdditionalProperties;
+                if (source.Enum is not null)
+                    openApiSchema.Enum = [.. source.Enum];
+                if (source.ExclusiveMaximum is not null)
+                    openApiSchema.ExclusiveMaximum = source.ExclusiveMaximum;
+                if (source.ExclusiveMinimum is not null)
+                    openApiSchema.ExclusiveMinimum = source.ExclusiveMinimum;
+                if (source.Maximum is not null)
+                    openApiSchema.Maximum = source.Maximum;
+                if (source.Minimum is not null)
+                    openApiSchema.Minimum = source.Minimum;
+                if (source.MaxItems is not null)
+                    openApiSchema.MaxItems = source.MaxItems;
+                if (source.MinItems is not null)
+                    openApiSchema.MinItems = source.MinItems;
+                if (source.MaxLength is not null)
+                    openApiSchema.MaxLength = source.MaxLength;
+                if (source.MinLength is not null)
+                    openApiSchema.MinLength = source.MinLength;
+                if (source.Pattern is not null)
+                    openApiSchema.Pattern = source.Pattern;
+                if (source.MaxProperties is not null)
+                    openApiSchema.MaxProperties = source.MaxProperties;
+                if (source.MinProperties is not null)
+                    openApiSchema.MinProperties = source.MinProperties;
+                if (source.UniqueItems is not null)
+                    openApiSchema.UniqueItems = source.UniqueItems;
+                if (source.Nullable)
+                    openApiSchema.Nullable = true;
+                if (source.ReadOnly)
+                    openApiSchema.ReadOnly = true;
+                if (source.WriteOnly)
+                    openApiSchema.WriteOnly = true;
+                if (source.Deprecated)
+                    openApiSchema.Deprecated = true;
+                if (source.Xml is not null)
+                    openApiSchema.Xml = source.Xml;
+                if (source.ExternalDocs is not null)
+                    openApiSchema.ExternalDocs = source.ExternalDocs;
+                if (source.Example is not null)
+                    openApiSchema.Example = source.Example;
+                if (source.Extensions is not null)
+                    openApiSchema.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
+                if (source.Discriminator is not null && includeDiscriminator)
+                    openApiSchema.Discriminator = source.Discriminator;
+                if (!string.IsNullOrEmpty(source.Description))
+                    openApiSchema.Description = source.Description;
+                if (!string.IsNullOrEmpty(source.Title))
+                    openApiSchema.Title = source.Title;
+                if (source.Default is not null)
+                    openApiSchema.Default = source.Default;
+            }
+            else if (includeReference && source is OpenApiSchemaReference sourceRef && target is OpenApiSchemaReference targetRef)
+                targetRef.Reference = sourceRef.Reference;
         }
     }
 
@@ -259,10 +264,10 @@ public partial class PluginsGenerationService
                 operation.ExternalDocs = null;
             base.Visit(operation);
         }
-        public override void Visit(OpenApiSchema schema)
+        public override void Visit(IOpenApiSchema schema)
         {
-            if (schema.ExternalDocs is not null)
-                schema.ExternalDocs = null;
+            if (schema.ExternalDocs is not null && schema is OpenApiSchema openApiSchema)
+                openApiSchema.ExternalDocs = null;
             base.Visit(schema);
         }
         public override void Visit(OpenApiTag tag)
@@ -483,7 +488,7 @@ public partial class PluginsGenerationService
         return (opSecurity is null || opSecurity.UnresolvedReference) ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
     }
 
-    private static Auth GetAuthFromSecurityScheme(OpenApiSecurityScheme securityScheme)
+    private static Auth GetAuthFromSecurityScheme(OpenApiSecuritySchemeReference securityScheme)
     {
         string name = securityScheme.Reference.Id;
         return securityScheme.Type switch

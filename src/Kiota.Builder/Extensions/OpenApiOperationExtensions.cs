@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 
 namespace Kiota.Builder.Extensions;
 public static class OpenApiOperationExtensions
@@ -21,14 +22,14 @@ public static class OpenApiOperationExtensions
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>
-    internal static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
+    internal static IOpenApiSchema? GetResponseSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
         // Return Schema that represents all the possible success responses!
         return operation.GetResponseSchemas(SuccessCodes, structuredMimeTypes)
                             .FirstOrDefault();
     }
-    internal static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiOperation operation, HashSet<string> successCodesToUse, StructuredMimeTypesCollection structuredMimeTypes)
+    internal static IEnumerable<IOpenApiSchema> GetResponseSchemas(this OpenApiOperation operation, HashSet<string> successCodesToUse, StructuredMimeTypesCollection structuredMimeTypes)
     {
         if (operation.Responses is null) return [];
         // Return Schema that represents all the possible success responses!
@@ -36,7 +37,7 @@ public static class OpenApiOperationExtensions
                             .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                             .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
     }
-    internal static OpenApiSchema? GetRequestSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
+    internal static IOpenApiSchema? GetRequestSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
         return operation.RequestBody?.Content
@@ -57,7 +58,7 @@ public static class OpenApiOperationExtensions
         if (source.Count == 1 || !source.Keys.Where(static x => !multipartMimeTypes.Contains(x)).Any(structuredMimeTypes.Contains)) return true;
         return structuredMimeTypes.First() == multipartMimeTypes.First();
     }
-    internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
+    internal static IEnumerable<IOpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(structuredMimeTypes);
@@ -68,9 +69,9 @@ public static class OpenApiOperationExtensions
                     .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries)[0], c.Value))
                     .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup(c.Key)))
                     .Select(static co => co.Value.Schema)
-                    .OfType<OpenApiSchema>();
+                    .OfType<IOpenApiSchema>();
     }
-    internal static OpenApiSchema? GetResponseSchema(this OpenApiResponse response, StructuredMimeTypesCollection structuredMimeTypes)
+    internal static IOpenApiSchema? GetResponseSchema(this IOpenApiResponse response, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(response);
         return response.Content.GetValidSchemas(structuredMimeTypes).FirstOrDefault();

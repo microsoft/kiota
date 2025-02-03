@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.EqualityComparers;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.References;
 
 namespace Kiota.Builder.Extensions;
 
@@ -19,7 +20,7 @@ internal static class OpenApiDocumentExtensions
             {
                 inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
                 if (entry.Value.AllOf != null)
-                    foreach (var allOfEntry in entry.Value.AllOf.Where(static x => !string.IsNullOrEmpty(x.Reference?.Id)))
+                    foreach (var allOfEntry in entry.Value.AllOf.OfType<OpenApiSchemaReference>())
                     {
                         var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase));
                         dependents.TryAdd(entry.Key, false);

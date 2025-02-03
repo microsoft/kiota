@@ -4,43 +4,40 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 
 namespace Kiota.Builder.Validation;
 
-internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
+internal class OpenApiSchemaComparer : IEqualityComparer<IOpenApiSchema>
 {
     private readonly OpenApiDiscriminatorComparer discriminatorComparer;
     private readonly JsonNodeComparer jsonNodeComparer;
-    private readonly KeyValueComparer<string, OpenApiSchema> schemaMapComparer;
 
     public OpenApiSchemaComparer(
         OpenApiDiscriminatorComparer? discriminatorComparer = null,
-        JsonNodeComparer? jsonNodeComparer = null,
-        KeyValueComparer<string, OpenApiSchema>? schemaMapComparer = null)
+        JsonNodeComparer? jsonNodeComparer = null)
     {
         this.discriminatorComparer = discriminatorComparer ?? new OpenApiDiscriminatorComparer();
         this.jsonNodeComparer = jsonNodeComparer ?? new JsonNodeComparer();
-        this.schemaMapComparer = schemaMapComparer ?? new KeyValueComparer<string, OpenApiSchema>(StringComparer.Ordinal, this);
     }
 
     /// <inheritdoc/>
-    public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
+    public bool Equals(IOpenApiSchema? x, IOpenApiSchema? y)
     {
         // this workaround might result in collisions, however so far this has not been a problem
         // implemented this way to avoid stack overflow caused by schemas referencing themselves
         return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
-    public int GetHashCode([DisallowNull] OpenApiSchema obj)
+    public int GetHashCode([DisallowNull] IOpenApiSchema obj)
     {
         var hash = new HashCode();
         GetHashCodeInternal(obj, [], ref hash);
         return hash.ToHashCode();
     }
 
-    private void GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas, ref HashCode hash)
+    private void GetHashCodeInternal([DisallowNull] IOpenApiSchema obj, HashSet<IOpenApiSchema> visitedSchemas, ref HashCode hash)
     {
         if (obj is null) return;
         if (!visitedSchemas.Add(obj)) return;
