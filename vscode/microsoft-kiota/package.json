@@ -513,12 +513,14 @@
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
     "test": "vscode-test",
-    "test-with-coverage": "npm run pretest && vscode-test --coverage"
+    "test-with-coverage": "npm run pretest && vscode-test --coverage",
+    "test:unit": "jest"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^3.0.1",
     "@types/adm-zip": "^0.5.7",
     "@types/chai": "^5.0.1",
+    "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.3",
@@ -532,6 +534,7 @@
     "glob": "^11.0.1",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
+    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "typemoq": "^2.1.0",
     "typescript": "^5.7.3",
@@ -543,6 +546,7 @@
     "@vscode/l10n": "^0.0.18",
     "adm-zip": "^0.5.16",
     "is-online": "^11.0.0",
+    "jest": "^29.7.0",
     "original-fs": "^1.2.0",
     "vscode-jsonrpc": "^8.2.1"
   },
