@@ -376,6 +376,54 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("?? \"Test Value\"", result);
         Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
+        [Fact]
+    public async Task WritesSerializerBodyEnumCollectionAsync()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        var propName = "propWithDefaultValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        var propertyEnum = new CodeEnum
+        {
+            Name = "EnumTypeWithOption",
+            Parent = parentClass,
+        };
+        var enumOption = new CodeEnumOption() { Name = "SomeOption" };
+        propertyEnum.AddOption(enumOption);
+        var codeNamespace = parentClass.Parent as CodeNamespace;
+        codeNamespace.AddEnum(propertyEnum);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultEnum",
+            DefaultValue = enumOption.Name,
+            Type = new CodeType
+            {
+                TypeDefinition = propertyEnum,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializerFunction = root.FindChildByName<CodeFunction>($"serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializerFunction);
+        var parentNS = serializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var complexTypeDefinition = root.FindChildByName<CodeInterface>("SomeComplexType");
+        Assert.NotNull(complexTypeDefinition);
+        parentNS.TryAddCodeFile("foo", serializerFunction, parentClass, complexTypeDefinition);
+        writer.Write(serializerFunction);
+        var result = tw.ToString();
+        Assert.Contains("writeCollectionOfEnumValues<EnumTypeWithOption>(\"propWithDefaultEnum\"", result);
+        Assert.Contains("?? [EnumTypeWithOptionObject.SomeOption]", result);
+    }
     [Fact]
     public async Task WritesInheritedSerializerBodyAsync()
     {

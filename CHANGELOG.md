@@ -24,9 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug in the VS Code extension deeplink with the API Center extension [#6004](https://github.com/microsoft/kiota/issues/6004)
-
 - Drops Python 3.8 support by removing deprecated type aliases from generated code. [microsoft/kiota-python#349](https://github.com/microsoft/kiota-python/issues/349)
 - Removes superfluous inline imports in serializer methods in Python Generation. 
+- Fixes serialization of collection of enums. [microsoft/kiota-typescript#1276](https://github.com/microsoft/kiota-typescript/issues/1276)
 
 ## [1.22.2]
 
