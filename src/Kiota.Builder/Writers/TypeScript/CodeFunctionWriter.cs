@@ -409,16 +409,15 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WritePropertySerializationStatement(CodeProperty codeProperty, string modelParamName, string? serializationName, string? defaultValueSuffix, CodeFunction codeFunction, LanguageWriter writer)
     {
         var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var composedType = GetOriginalComposedType(codeProperty.Type);
 
-        if (!string.IsNullOrWhiteSpace(spreadOperator))
+        if (isCollectionOfEnum)
             writer.WriteLine($"if({modelParamName}.{codePropertyName})");
         if (composedType is not null && (composedType.IsComposedOfPrimitives(IsPrimitiveType) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
@@ -431,8 +430,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
     {
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
 
         bool isFirst = true;
         foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
@@ -446,7 +443,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 ? $"{isElse}if (Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}')) {{"
                 : $"{isElse}if ( typeof {modelParamName}.{codePropertyName} === \"{nodeType}\") {{");
 
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
             writer.CloseBlock();
             isFirst = false;
         }
