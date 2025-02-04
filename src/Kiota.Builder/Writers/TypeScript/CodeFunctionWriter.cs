@@ -515,7 +515,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return propType switch
         {
             _ when propType.TypeDefinition is CodeEnum currentEnum && !propType.IsCollection => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags ? "[]" : string.Empty)}>",
-            _ when propType.TypeDefinition is CodeEnum currentEnum && propType.IsCollection=> $"writeCollectionOfEnumValues<{currentEnum.Name.ToFirstCharacterUpperCase()}>",
+            _ when propType.TypeDefinition is CodeEnum currentEnum && propType.IsCollection => $"writeCollectionOfEnumValues<{currentEnum.Name.ToFirstCharacterUpperCase()}>",
             _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
             _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
             _ => null

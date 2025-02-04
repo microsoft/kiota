@@ -376,7 +376,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("?? \"Test Value\"", result);
         Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
-        [Fact]
+    [Fact]
     public async Task WritesSerializerBodyEnumCollectionAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass");
