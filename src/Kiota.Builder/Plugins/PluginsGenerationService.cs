@@ -134,7 +134,7 @@ public partial class PluginsGenerationService
                 return;
             var allPropertiesToAdd = GetAllProperties(schema).ToArray();
             foreach (var allOfEntry in schema.AllOf)
-                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, schema, false, false, false);
+                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, schema, false, false);
             foreach (var (key, value) in allPropertiesToAdd)
                 schema.Properties.TryAdd(key, value);
             schema.AllOf.Clear();
@@ -149,6 +149,46 @@ public partial class PluginsGenerationService
         }
     }
 
+    private sealed class ReplaceFirstSchemaByReference : OpenApiVisitorBase
+    {
+        public override void Visit(OpenApiMediaType mediaType)
+        {
+            mediaType.Schema = GetFirstSchema(mediaType.Schema);
+            base.Visit(mediaType);
+        }
+        public override void Visit(IOpenApiParameter parameter)
+        {
+            if (parameter is OpenApiParameter openApiParameter)
+                openApiParameter.Schema = GetFirstSchema(parameter.Schema);
+            base.Visit(parameter);
+        }
+        public override void Visit(IOpenApiHeader header)
+        {
+            if (header is OpenApiHeader openApiHeader)
+                openApiHeader.Schema = GetFirstSchema(header.Schema);
+            base.Visit(header);
+        }
+        public override void Visit(IOpenApiSchema schema)
+        {
+            if (schema is OpenApiSchema openApiSchema)
+            {
+                openApiSchema.Items = GetFirstSchema(schema.Items);
+                var properties = new Dictionary<string, IOpenApiSchema>(schema.Properties);
+                foreach (var (key, value) in properties)
+                    schema.Properties[key] = GetFirstSchema(value);
+            }
+            base.Visit(schema);
+        }
+        private static IOpenApiSchema? GetFirstSchema(IOpenApiSchema? schema)
+        {
+            if (schema is null) return null;
+            if (schema.AnyOf is { Count: > 0 } && schema.AnyOf[0] is OpenApiSchemaReference anyOfSchemaReference)
+                return anyOfSchemaReference;
+            if (schema.OneOf is { Count: > 0 } && schema.OneOf[0] is OpenApiSchemaReference oneOfSchemaReference)
+                return oneOfSchemaReference;
+            return schema;
+        }
+    }
     private sealed class SelectFirstAnyOneOfVisitor : OpenApiVisitorBase
     {
         public override void Visit(IOpenApiSchema schema)
@@ -165,7 +205,7 @@ public partial class PluginsGenerationService
             }
             base.Visit(schema);
         }
-        internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeReference = true, bool includeDiscriminator = true)
+        internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeDiscriminator = true)
         {
             if (target is OpenApiSchema openApiSchema)
             {
@@ -230,8 +270,6 @@ public partial class PluginsGenerationService
                 if (source.Default is not null)
                     openApiSchema.Default = source.Default;
             }
-            else if (includeReference && source is OpenApiSchemaReference sourceRef && target is OpenApiSchemaReference targetRef)
-                targetRef.Reference = sourceRef.Reference;
         }
     }
 
@@ -285,6 +323,10 @@ public partial class PluginsGenerationService
         var errorResponsesCleanupVisitor = new ErrorResponsesCleanupVisitor();
         var errorResponsesCleanupWalker = new OpenApiWalker(errorResponsesCleanupVisitor);
         errorResponsesCleanupWalker.Walk(document);
+
+        var replaceFirstSchemaByReference = new ReplaceFirstSchemaByReference();
+        var replaceFirstSchemaByReferenceWalker = new OpenApiWalker(replaceFirstSchemaByReference);
+        replaceFirstSchemaByReferenceWalker.Walk(document);
 
         var selectFirstAnyOneOfVisitor = new SelectFirstAnyOneOfVisitor();
         var selectFirstAnyOneOfWalker = new OpenApiWalker(selectFirstAnyOneOfVisitor);
