@@ -145,7 +145,7 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
+  await updateStatusBarItem(kiotaOutputChannel, kiotaStatusBarItem);
   context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaStatusBarItem })));
 }
 

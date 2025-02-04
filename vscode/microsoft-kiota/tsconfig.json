@@ -19,6 +19,7 @@
 
     // other options
 
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 

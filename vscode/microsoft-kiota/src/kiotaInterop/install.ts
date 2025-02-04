@@ -2,6 +2,9 @@ import AdmZip from 'adm-zip';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
+import appdataPath from 'appdata-path';
+
+import runtimeJson from './runtime.json';
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
@@ -20,17 +23,9 @@ const windowsPlatform = 'win';
 const osxPlatform = 'osx';
 const linuxPlatform = 'linux';
 
-const baseDir = path.join(__dirname, '../..');
-const packageJSON = () => {
-  try {
-    const packageJSONPath = path.join(baseDir, 'package.json');
-    return JSON.parse(fs.readFileSync(packageJSONPath, 'utf8'));
-  } catch (error) {
+const baseDir = appdataPath('kiota');
 
-  }
-}
-
-async function runIfNotLocked(acti; on: () => Promise<void>) {
+async function runIfNotLocked(action: () => Promise<void>) {
   const installStartTimeStamp = state[kiotaInstallStatusKey];
   const currentTimeStamp = new Date().getTime();
   if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
@@ -66,11 +61,12 @@ export async function ensureKiotaIsPresent() {
           }
         } catch (error) {
           console.error(error);
-          console.log("Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host logs for more information.")
-          fs.rmdirSync(installPath, ; { recursive: true });
+          console.log("Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host log;s for more information.");
+          fs.rmdirSync(installPath, { recursive: true });
+        }
+      });
+      ;
     }
-  });
-}
   }
 }
 
@@ -95,8 +91,8 @@ function getKiotaPathInternal(withFileName = true): string | undefined {
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
   if (packageToInstall) {
-    const installPath = path.join(baseDir, binariesRootDirectory);
-    const directoryPath = path.join(installPath, packageJSON().kiotaVersion, currentPlatform);
+    const installPath = path.join(baseDir, 'kiota', binariesRootDirectory);
+    const directoryPath = path.join(installPath, runtimeJson.kiotaVersion, currentPlatform);
     if (withFileName) {
       return path.join(directoryPath, fileName);
     }
@@ -128,12 +124,12 @@ function downloadFileFromUrl(url: string, destinationPath: string) {
 }
 
 function getDownloadUrl(platform: string): string {
-  return `${baseDownloadUrl}/v${packageJSON().kiotaVersion}/${platform}.zip`;
+  return `${baseDownloadUrl}/v${runtimeJson.kiotaVersion}/${platform}.zip`;
 }
 
 function getRuntimeDependenciesPackages(): Package[] {
-  if (packageJSON().runtimeDependencies) {
-    return JSON.parse(JSON.stringify(<Package[]>packageJSON().runtimeDependencies));
+  if (runtimeJson.runtimeDependencies) {
+    return JSON.parse(JSON.stringify(<Package[]>runtimeJson.runtimeDependencies));
   }
   throw new Error("No runtime dependencies found");
 }

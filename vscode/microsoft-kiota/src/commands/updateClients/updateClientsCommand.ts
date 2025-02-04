@@ -36,7 +36,7 @@ export class UpdateClientsCommand extends Command {
     if (existingApiManifestFileUris.length > 0) {
       await Promise.all(existingApiManifestFileUris.map(uri => showUpgradeWarningMessage(uri, null, null, this.context)));
     }
-    await updateStatusBarItem(this.context, this.kiotaOutputChannel, kiotaStatusBarItem);
+    await updateStatusBarItem(this.kiotaOutputChannel, kiotaStatusBarItem);
     try {
       this.kiotaOutputChannel.clear();
       this.kiotaOutputChannel.show();
