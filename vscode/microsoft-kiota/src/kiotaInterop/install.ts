@@ -1,8 +1,8 @@
 import AdmZip from 'adm-zip';
-import * as fs from 'fs';
-import * as https from 'https';
-import * as path from 'path';
 import appdataPath from 'appdata-path';
+import { https } from "follow-redirects";
+import * as fs from 'fs';
+import * as path from 'path';
 
 import runtimeJson from './runtime.json';
 
@@ -104,28 +104,32 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
   zip.extractAllTo(destinationPath, true);
 }
 
-function downloadFileFromUrl(url: string, destinationPath: string) {
+function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destinationPath);
     const request = https.get(url, (response) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         resolve(downloadFileFromUrl(response.headers.location, destinationPath));
       } else if (response.statusCode && response.statusCode >= 200 && response.statusCode < 300) {
-        const filePath = fs.createWriteStream(destinationPath);
-        response.pipe(filePath);
-        filePath.on('finish', () => {
-          filePath.close();
-          resolve(undefined);
-        });
-        filePath.on('error', (err) => {
-          fs.unlink(destinationPath, () => reject(err));
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
         });
       } else {
         reject(new Error(`Failed to download file: ${response.statusCode}`));
       }
     });
-    request.on('error', (err) => {
-      reject(err);
+
+    request.on("error", (err) => {
+      fs.unlink(destinationPath, () => reject(err));
     });
+
     request.end();
   });
 }
