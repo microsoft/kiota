@@ -514,12 +514,13 @@
     "lint": "eslint",
     "test": "vscode-test",
     "test-with-coverage": "npm run pretest && vscode-test --coverage",
-    "test:unit": "jest"
+    "test:unit": "jest --detectOpenHandles"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^3.0.1",
     "@types/adm-zip": "^0.5.7",
     "@types/chai": "^5.0.1",
+    "@types/follow-redirects": "^1.14.4",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
@@ -546,6 +547,7 @@
     "@vscode/l10n": "^0.0.18",
     "adm-zip": "^0.5.16",
     "appdata-path": "^1.0.0",
+    "follow-redirects": "^1.15.9",
     "is-online": "^11.0.0",
     "jest": "^29.7.0",
     "original-fs": "^1.2.0",
