@@ -8,8 +8,8 @@ import runtimeJson from './runtime.json';
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
-
 const state: { [key: string]: any } = {};
+
 let kiotaPath: string | undefined;
 const binariesRootDirectory = '.kiotabin';
 const baseDownloadUrl = "https://github.com/microsoft/kiota/releases/download";
@@ -23,12 +23,14 @@ const windowsPlatform = 'win';
 const osxPlatform = 'osx';
 const linuxPlatform = 'linux';
 
-const baseDir = appdataPath('kiota');
+const baseDir = appdataPath('Microsoft Kiota');
 
 async function runIfNotLocked(action: () => Promise<void>) {
   const installStartTimeStamp = state[kiotaInstallStatusKey];
   const currentTimeStamp = new Date().getTime();
   if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
+    //locking the context to prevent multiple downloads across multiple instances
+    //overriding after 30 seconds to prevent stale locks
     state[kiotaInstallStatusKey] = currentTimeStamp;
     try {
       await action();
@@ -39,7 +41,6 @@ async function runIfNotLocked(action: () => Promise<void>) {
 }
 
 export async function ensureKiotaIsPresent() {
-  console.log('ensure Kiota Is Present');
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
   const installPath = getKiotaPathInternal(false);
@@ -60,12 +61,10 @@ export async function ensureKiotaIsPresent() {
             makeExecutable(kiotaPath);
           }
         } catch (error) {
-          console.error(error);
-          console.log("Kiota download failed. Try closing all Visual Studio Code windows and open only one. Check the extension host log;s for more information.");
           fs.rmdirSync(installPath, { recursive: true });
+          throw new Error("Kiota download failed. Check the logs for more information.");
         }
       });
-      ;
     }
   }
 }
@@ -81,7 +80,6 @@ export function getKiotaPath(): string {
 }
 
 function makeExecutable(path: string) {
-  console.log('make kiota an executable');
   fs.chmodSync(path, 0o755);
 }
 
@@ -91,7 +89,7 @@ function getKiotaPathInternal(withFileName = true): string | undefined {
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
   if (packageToInstall) {
-    const installPath = path.join(baseDir, 'kiota', binariesRootDirectory);
+    const installPath = path.join(baseDir, binariesRootDirectory);
     const directoryPath = path.join(installPath, runtimeJson.kiotaVersion, currentPlatform);
     if (withFileName) {
       return path.join(directoryPath, fileName);
@@ -108,18 +106,27 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
 
 function downloadFileFromUrl(url: string, destinationPath: string) {
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
+    const request = https.get(url, (response) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         resolve(downloadFileFromUrl(response.headers.location, destinationPath));
-      } else {
+      } else if (response.statusCode && response.statusCode >= 200 && response.statusCode < 300) {
         const filePath = fs.createWriteStream(destinationPath);
         response.pipe(filePath);
         filePath.on('finish', () => {
           filePath.close();
           resolve(undefined);
         });
+        filePath.on('error', (err) => {
+          fs.unlink(destinationPath, () => reject(err));
+        });
+      } else {
+        reject(new Error(`Failed to download file: ${response.statusCode}`));
       }
     });
+    request.on('error', (err) => {
+      reject(err);
+    });
+    request.end();
   });
 }
 

@@ -1,5 +1,5 @@
 {
-  "kiotaVersion": "1.22.0",
+  "kiotaVersion": "1.22.3",
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
