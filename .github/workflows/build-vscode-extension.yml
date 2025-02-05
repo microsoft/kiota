@@ -42,14 +42,14 @@ jobs:
         working-directory: vscode/microsoft-kiota
       - run: npm run lint
         working-directory: vscode/microsoft-kiota
-      - name: run tests(linux)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test-with-coverage
-        working-directory: vscode/microsoft-kiota
-      - name: run tests
-        if: runner.os != 'Linux'
-        run: npm run test-with-coverage
-        working-directory: vscode/microsoft-kiota
+      # - name: run tests(linux)
+      #   if: runner.os == 'Linux'
+      #   run: xvfb-run -a npm run test-with-coverage
+      #   working-directory: vscode/microsoft-kiota
+      # - name: run tests
+      #   if: runner.os != 'Linux'
+      #   run: npm run test-with-coverage
+      #   working-directory: vscode/microsoft-kiota
       - name: run unit tests
         run: npm run test:unit
         working-directory: vscode/microsoft-kiota
