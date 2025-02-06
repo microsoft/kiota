@@ -2,7 +2,20 @@ import * as rpc from "vscode-jsonrpc/node";
 import { KiotaLogEntry } from ".";
 import connectToKiota from "./connect";
 
-export function removePlugin(pluginName: string, cleanOutput: boolean, workingDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+interface RemoveItemConfiguration {
+  cleanOutput: boolean;
+  workingDirectory: string;
+}
+
+interface RemovePluginConfiguration extends RemoveItemConfiguration {
+  pluginName: string;
+}
+
+interface RemoveClientConfiguration extends RemoveItemConfiguration {
+  clientName: string;
+}
+
+export function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaLogEntry[] | undefined> {
   return connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemovePlugin"
@@ -16,7 +29,9 @@ export function removePlugin(pluginName: string, cleanOutput: boolean, workingDi
   }, workingDirectory);
 };
 
-export function removeClient(clientName: string, cleanOutput: boolean, workingDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+
+
+export function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaLogEntry[] | undefined> {
   return connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemoveClient"

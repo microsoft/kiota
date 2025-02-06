@@ -43,7 +43,7 @@ export class DeleteWorkspaceItemCommand extends Command {
       const result = await this.deleteItem(type, workspaceTreeItem);
       if (result) {
         const isSuccess = result.some(k => k.message.includes('removed successfully'));
-        await vscode.commands.executeCommand('kiota.workspace.refresh'); 
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
         if (isSuccess) {
           void vscode.window.showInformationMessage(vscode.l10n.t('{0} removed successfully.', workspaceTreeItem.label));
         } else {
@@ -62,13 +62,9 @@ export class DeleteWorkspaceItemCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = type === "plugin" ? await removePlugin(
-        itemName,
-        false,
-        getWorkspaceJsonDirectory(),
+        { pluginName: itemName, cleanOutput: false, workingDirectory: getWorkspaceJsonDirectory() },
       ) : await removeClient(
-        itemName,
-        false,
-        getWorkspaceJsonDirectory(),
+        { clientName: itemName, cleanOutput: false, workingDirectory: getWorkspaceJsonDirectory() },
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;

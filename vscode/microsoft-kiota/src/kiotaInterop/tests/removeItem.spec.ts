@@ -25,7 +25,7 @@ describe("remove Client", () => {
     ];
 
     connectionStub.resolves(mockResults);
-    const results = await removeClient('test', false, process.cwd());
+    const results = await removeClient({ clientName: 'test', cleanOutput: false, workingDirectory: process.cwd() });
     expect(results).toBeDefined();
   });
 
@@ -53,7 +53,7 @@ describe("remove Plugin", () => {
     ];
 
     connectionStub.resolves(mockResults);
-    const results = await removePlugin('test', false, process.cwd());
+    const results = await removePlugin({ pluginName: 'test', cleanOutput: false, workingDirectory: process.cwd() });
     expect(results).toBeDefined();
   });
 
