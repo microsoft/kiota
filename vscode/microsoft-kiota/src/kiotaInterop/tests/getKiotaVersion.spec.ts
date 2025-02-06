@@ -1,18 +1,35 @@
-import { getKiotaVersion } from "../getKiotaVersion";
-import { ensureKiotaIsPresent } from "../install";
+import * as sinon from 'sinon';
 
-jest.setTimeout(60000);
+import { getKiotaVersion } from '../getKiotaVersion';
+import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {
+  let connectionStub: sinon.SinonStub;
 
-  beforeAll(async () => {
-    console.log("Running setup before all tests");
-    await ensureKiotaIsPresent();
-    console.log("ensured Kiota Is Present");
+  beforeEach(() => {
+    const stubs = setupKiotaStubs();
+    connectionStub = stubs.connectionStub;
   });
 
-  test("should return version when successful", async () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+
+  test('should return version when successful', async () => {
+    const mockResults: string = '1.0.0';
+
+    connectionStub.resolves(mockResults);
     const version = await getKiotaVersion();
     expect(version).toBeDefined();
+  });
+
+  test('should throw error when ensureKiotaIsPresent fails', async () => {
+    connectionStub.rejects(new Error('Installation failed'));
+    try {
+      await getKiotaVersion();
+    } catch (error) {
+      expect(`[${error}]`).toEqual("[Error: Installation failed]");
+    }
   });
 });

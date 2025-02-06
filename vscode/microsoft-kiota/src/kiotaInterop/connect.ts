@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
 import { getKiotaPath, ensureKiotaIsPresent } from './install';
 
-export async function connectToKiota<T>(callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = process.cwd()): Promise<T | undefined> {
+export default async function connectToKiota<T>(callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = process.cwd()): Promise<T | undefined> {
   const kiotaPath = getKiotaPath();
   await ensureKiotaIsPresent();
   const childProcess = cp.spawn(kiotaPath, ["rpc"], {
