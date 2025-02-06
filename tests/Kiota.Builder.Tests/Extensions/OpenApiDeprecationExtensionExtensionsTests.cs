@@ -206,11 +206,6 @@ public class OpenApiDeprecationExtensionExtensions
                                 {
                                     Schema = new OpenApiSchema
                                     {
-                                        Reference = new OpenApiReference
-                                        {
-                                            Type = ReferenceType.Schema,
-                                            Id = "someSchema"
-                                        },
                                         Deprecated = true,
                                         Extensions = new Dictionary<string, IOpenApiExtension>
                                         {
@@ -303,11 +298,6 @@ public class OpenApiDeprecationExtensionExtensions
                         {
                             Schema = new OpenApiSchema
                             {
-                                Reference = new OpenApiReference
-                                {
-                                    Type = ReferenceType.Schema,
-                                    Id = "someSchema"
-                                },
                                 Deprecated = true,
                                 Extensions = new Dictionary<string, IOpenApiExtension>
                                 {
@@ -404,11 +394,6 @@ public class OpenApiDeprecationExtensionExtensions
             Deprecated = false,
             Schema = new OpenApiSchema
             {
-                Reference = new OpenApiReference
-                {
-                    Id = "id",
-                    Type = ReferenceType.Schema
-                },
                 Deprecated = true,
                 Extensions = new Dictionary<string, IOpenApiExtension>
                 {
@@ -468,11 +453,6 @@ public class OpenApiDeprecationExtensionExtensions
                     {
                         Schema = new OpenApiSchema
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.Schema,
-                                Id = "id"
-                            },
                             Deprecated = true,
                             Extensions = new Dictionary<string, IOpenApiExtension>
                             {

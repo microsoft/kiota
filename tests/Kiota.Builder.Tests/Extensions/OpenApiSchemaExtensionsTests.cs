@@ -63,26 +63,13 @@ public class OpenApiSchemaExtensionsTests
     [Fact]
     public void ExternalReferencesAreNotSupported()
     {
-        var mockSchema = new OpenApiSchema
-        {
-            Reference = new OpenApiReference
-            {
-                Id = "example.json#/path/to/component",
-                ExternalResource = "http://example.com/example.json",
-            },
-        };
+        var mockSchema = new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json");
         Assert.Throws<NotSupportedException>(() => mockSchema.IsReferencedSchema());
     }
     [Fact]
     public void LocalReferencesAreSupported()
     {
-        var mockSchema = new OpenApiSchema
-        {
-            Reference = new OpenApiReference
-            {
-                Id = "#/path/to/component",
-            },
-        };
+        var mockSchema = new OpenApiSchemaReference("#/path/to/component");
         Assert.True(mockSchema.IsReferencedSchema());
     }
     [Fact]
@@ -111,20 +98,8 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.user"
-                    }
-                }
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.user"),
             ]
         };
         var names = schema.GetSchemaNames();
@@ -166,20 +141,8 @@ public class OpenApiSchemaExtensionsTests
                 new OpenApiSchema()
                 {
                     AllOf = [
-                        new OpenApiSchema()
-                        {
-                            Reference = new()
-                            {
-                                Id = "microsoft.graph.entity"
-                            }
-                        },
-                        new OpenApiSchema()
-                        {
-                            Reference = new()
-                            {
-                                Id = "microsoft.graph.user"
-                            }
-                        }
+                        new OpenApiSchemaReference("microsoft.graph.entity"),
+                        new OpenApiSchemaReference("microsoft.graph.user"),
                     ]
                 }
             ]
@@ -215,21 +178,9 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AnyOf = [
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.user"
-                    }
-                }
-            ]
+                        new OpenApiSchemaReference("microsoft.graph.entity"),
+                        new OpenApiSchemaReference("microsoft.graph.user"),
+                    ]
         };
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
@@ -262,21 +213,9 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             OneOf = [
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema()
-                {
-                    Reference = new()
-                    {
-                        Id = "microsoft.graph.user"
-                    }
-                }
-            ]
+                        new OpenApiSchemaReference("microsoft.graph.entity"),
+                        new OpenApiSchemaReference("microsoft.graph.user"),
+                    ]
         };
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
@@ -302,13 +241,7 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            Items = new OpenApiSchema()
-            {
-                Reference = new()
-                {
-                    Id = "microsoft.graph.entity"
-                }
-            },
+            Items = new OpenApiSchemaReference("microsoft.graph.entity")
         };
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
@@ -329,13 +262,7 @@ public class OpenApiSchemaExtensionsTests
     [Fact]
     public void GetSchemaNameReference()
     {
-        var schema = new OpenApiSchema
-        {
-            Reference = new()
-            {
-                Id = "microsoft.graph.entity"
-            }
-        };
+        var schema = new OpenApiSchemaReference("microsoft.graph.entity");
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
         Assert.Equal("entity", schema.GetSchemaName());
@@ -354,18 +281,10 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.user"
-                    }
-                }
-            }
+            AllOf = [
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.user")
+            ]
         };
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
@@ -376,22 +295,14 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema() {
-                    AllOf = new List<IOpenApiSchema> {
-                        new OpenApiSchema() {
-                            Reference = new() {
-                                Id = "microsoft.graph.entity"
-                            }
-                        },
-                        new OpenApiSchema() {
-                            Reference = new() {
-                                Id = "microsoft.graph.user"
-                            }
-                        }
-                    }
+                    AllOf = [
+                        new OpenApiSchemaReference("microsoft.graph.entity"),
+                        new OpenApiSchemaReference("microsoft.graph.user")
+                    ]
                 }
-            }
+            ]
         };
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
@@ -402,18 +313,10 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AnyOf = new List<IOpenApiSchema> {
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.user"
-                    }
-                }
-            }
+            AnyOf = [
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.user")
+            ]
         };
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
@@ -424,18 +327,10 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            OneOf = new List<IOpenApiSchema> {
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    }
-                },
-                new OpenApiSchema() {
-                    Reference = new() {
-                        Id = "microsoft.graph.user"
-                    }
-                }
-            }
+            OneOf = [
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.user")
+            ]
         };
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
@@ -446,13 +341,7 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            Items = new OpenApiSchema()
-            {
-                Reference = new()
-                {
-                    Id = "microsoft.graph.entity"
-                }
-            },
+            Items = new OpenApiSchemaReference("microsoft.graph.entity"),
         };
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
@@ -461,13 +350,7 @@ public class OpenApiSchemaExtensionsTests
     [Fact]
     public void GetReferenceIdsTitle()
     {
-        var schema = new OpenApiSchema
-        {
-            Reference = new()
-            {
-                Id = "microsoft.graph.entity"
-            }
-        };
+        var schema = new OpenApiSchemaReference("microsoft.graph.entity");
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
         Assert.Single(names);
@@ -484,23 +367,15 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
-                new OpenApiSchema() {
-                    Type = JsonSchemaType.Object,
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    },
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
-                        ["id"] = new OpenApiSchema()
-                    }
-                },
+            AllOf = [
+                new OpenApiSchemaReference("microsoft.graph.entity"),
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, IOpenApiSchema>() {
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
-            }
+            ]
         };
         Assert.True(schema.IsInherited());
         Assert.False(schema.IsIntersection());
@@ -508,35 +383,45 @@ public class OpenApiSchemaExtensionsTests
     [Fact]
     public void IsIntersection()
     {
+        var document = new OpenApiDocument()
+        {
+            Components = new()
+            {
+                Schemas = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["microsoft.graph.entity"] = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.Object,
+                        Properties = new Dictionary<string, IOpenApiSchema>()
+                        {
+                            ["id"] = new OpenApiSchema()
+                        }
+                    },
+                    ["microsoft.graph.user"] = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.Object,
+                        Properties = new Dictionary<string, IOpenApiSchema>()
+                        {
+                            ["firstName"] = new OpenApiSchema()
+                        }
+                    }
+                }
+            }
+        };
+        document.RegisterComponents();
         var schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
-                new OpenApiSchema() {
-                    Type = JsonSchemaType.Object,
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    },
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
-                        ["id"] = new OpenApiSchema()
-                    }
-                },
-                new OpenApiSchema() {
-                    Type = JsonSchemaType.Object,
-                    Reference = new() {
-                        Id = "microsoft.graph.user"
-                    },
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
-                        ["firstName"] = new OpenApiSchema()
-                    }
-                }
-            }
+            AllOf = [
+                new OpenApiSchemaReference("microsoft.graph.entity", document),
+                new OpenApiSchemaReference("microsoft.graph.user", document),
+            ]
         };
         Assert.False(schema.IsInherited());
         Assert.True(schema.IsIntersection());
 
         schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, IOpenApiSchema>() {
@@ -549,21 +434,21 @@ public class OpenApiSchemaExtensionsTests
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
-            }
+            ]
         };
         Assert.False(schema.IsInherited());
         Assert.True(schema.IsIntersection());
 
         schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, IOpenApiSchema>() {
                         ["id"] = new OpenApiSchema()
                     }
                 }
-            }
+            ]
         };
         Assert.False(schema.IsInherited());
         Assert.False(schema.IsIntersection());
@@ -571,7 +456,7 @@ public class OpenApiSchemaExtensionsTests
         schema = new OpenApiSchema
         {
             Title = "Trader Id",
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema()
                 {
                     Title = "UserId",
@@ -584,7 +469,7 @@ public class OpenApiSchemaExtensionsTests
                         Id = "UserId" // This property makes the schema "meaningful"
                     }
                 }
-            },
+            ],
             Reference = new OpenApiReference
             {
                 Id = "TraderId" // This property makes the schema "meaningful"
@@ -601,7 +486,7 @@ public class OpenApiSchemaExtensionsTests
         {
             Description = "description",
             Deprecated = true,
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
                     Reference = new() {
@@ -620,7 +505,7 @@ public class OpenApiSchemaExtensionsTests
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
-            }
+            ]
         };
         var result = schema.MergeIntersectionSchemaEntries();
         Assert.False(schema.IsInherited());
@@ -637,7 +522,7 @@ public class OpenApiSchemaExtensionsTests
         {
             Description = "description",
             Deprecated = true,
-            AllOf = new List<IOpenApiSchema> {
+            AllOf = [
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, IOpenApiSchema>() {
@@ -646,7 +531,7 @@ public class OpenApiSchemaExtensionsTests
                 },
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
-                    AllOf = new List<IOpenApiSchema>() {
+                    AllOf = [
                         new OpenApiSchema() {
                             Type = JsonSchemaType.Object,
                             Properties = new Dictionary<string, IOpenApiSchema>() {
@@ -660,9 +545,9 @@ public class OpenApiSchemaExtensionsTests
                                 ["lastName"] = new OpenApiSchema()
                             }
                         },
-                    }
+                    ]
                 }
-            }
+            ]
         };
         var result = schema.MergeIntersectionSchemaEntries();
         Assert.False(schema.IsInherited());
@@ -1043,7 +928,7 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             Type = JsonSchemaType.String,
-            Enum = new List<JsonNode>(),
+            Enum = [],
         };
         Assert.False(schema.IsEnum());
 
@@ -1053,15 +938,15 @@ public class OpenApiSchemaExtensionsTests
     private static readonly OpenApiSchema enumSchema = new OpenApiSchema
     {
         Title = "riskLevel",
-        Enum = new List<JsonNode>
-            {
+        Enum =
+            [
             "low",
             "medium",
             "high",
             "hidden",
             "none",
             "unknownFutureValue"
-        },
+        ],
         Type = JsonSchemaType.String
     };
     [Fact]
@@ -1069,14 +954,14 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AnyOf = new List<IOpenApiSchema>
-            {
+            AnyOf =
+            [
                 enumSchema,
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
                 }
-            }
+            ]
         };
         Assert.False(schema.IsEnum());
     }
@@ -1085,14 +970,14 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AllOf = new List<IOpenApiSchema>
-            {
+            AllOf =
+            [
                 enumSchema,
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
                 }
-            }
+            ]
         };
         Assert.False(schema.IsEnum());
     }
@@ -1101,14 +986,14 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            OneOf = new List<IOpenApiSchema>
-            {
+            OneOf =
+            [
                 enumSchema,
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
                 }
-            }
+            ]
         };
         Assert.False(schema.IsEnum());
     }
@@ -1122,15 +1007,15 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            OneOf = new List<IOpenApiSchema>
-            {
+            OneOf =
+            [
                 enumSchema,
                 numberSchema,
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
                 }
-            }
+            ]
         };
         Assert.False(schema.IsEnum());
     }
@@ -1139,15 +1024,15 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            AnyOf = new List<IOpenApiSchema>
-            {
+            AnyOf =
+            [
                 enumSchema,
                 numberSchema,
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
                 }
-            }
+            ]
         };
         Assert.False(schema.IsEnum());
     }
@@ -1156,8 +1041,8 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            OneOf = new List<IOpenApiSchema>
-            {
+            OneOf =
+            [
                 new OpenApiSchema()
                 {
                     Type = JsonSchemaType.Number,
@@ -1169,15 +1054,15 @@ public class OpenApiSchemaExtensionsTests
                 },
                 new OpenApiSchema()
                 {
-                    Enum = new List<JsonNode>
-                    {
+                    Enum =
+                    [
                         "INF",
                         "INF",
                         "NaN",
-                    },
+                    ],
                     Type = JsonSchemaType.String,
                 }
-            }
+            ]
         };
         Assert.True(schema.IsODataPrimitiveType());
     }
@@ -1186,8 +1071,8 @@ public class OpenApiSchemaExtensionsTests
     {
         var schema = new OpenApiSchema
         {
-            OneOf = new List<IOpenApiSchema>
-            {
+            OneOf =
+            [
                 new OpenApiSchema()
                 {
                     Type = JsonSchemaType.Number,
@@ -1199,14 +1084,14 @@ public class OpenApiSchemaExtensionsTests
                 },
                 new OpenApiSchema()
                 {
-                    Enum = new List<JsonNode>()
-                    {
+                    Enum =
+                    [
                         "INF",
                         "INF",
                         "NaN",
-                    }
+                    ]
                 }
-            }
+            ]
         };
         Assert.True(schema.IsODataPrimitiveType());
     }
@@ -1215,27 +1100,13 @@ public class OpenApiSchemaExtensionsTests
     {
         var entitySchema = new OpenApiSchema
         {
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity"
-            },
             Properties = new Dictionary<string, IOpenApiSchema>
             {
-                ["id"] = new OpenApiSchema
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Id = "microsoft.graph.entity"
-                    }
-                }
+                ["id"] = new OpenApiSchemaReference("microsoft.graph.entity")
             }
         };
         var userSchema = new OpenApiSchema
         {
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.user"
-            },
             OneOf =
             [
                 entitySchema,
@@ -1244,13 +1115,7 @@ public class OpenApiSchemaExtensionsTests
                     Type = JsonSchemaType.Object,
                     Properties = new Dictionary<string, IOpenApiSchema>
                     {
-                        ["firstName"] = new OpenApiSchema
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Id = "microsoft.graph.entity"
-                            }
-                        }
+                        ["firstName"] = new OpenApiSchemaReference("microsoft.graph.entity")
                     }
                 }
             ],
@@ -1263,6 +1128,10 @@ public class OpenApiSchemaExtensionsTests
                 }
             }
         };
+        var document = new OpenApiDocument();
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.SetReferenceHostDocument();
         entitySchema.AllOf =
         [
             userSchema
