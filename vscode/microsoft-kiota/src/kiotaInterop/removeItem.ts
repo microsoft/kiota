@@ -1,10 +1,9 @@
-import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
+import { KiotaLogEntry } from ".";
+import connectToKiota from "./connect";
 
-import { connectToKiota, KiotaLogEntry } from "../../kiotaInterop";
-
-export function removePlugin(context: vscode.ExtensionContext, pluginName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(context, async (connection) => {
+export function removePlugin(pluginName: string, cleanOutput: boolean, workingDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+  return connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemovePlugin"
     );
@@ -14,11 +13,11 @@ export function removePlugin(context: vscode.ExtensionContext, pluginName: strin
       cleanOutput
     );
     return result;
-  });
+  }, workingDirectory);
 };
 
-export function removeClient(context: vscode.ExtensionContext, clientName: string, cleanOutput: boolean): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(context, async (connection) => {
+export function removeClient(clientName: string, cleanOutput: boolean, workingDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+  return connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemoveClient"
     );
@@ -28,5 +27,5 @@ export function removeClient(context: vscode.ExtensionContext, clientName: strin
       cleanOutput
     );
     return result;
-  });
+  }, workingDirectory);
 };
