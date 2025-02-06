@@ -1,0 +1,22 @@
+{
+  "applicationName": "application",
+  "apiDependencies": {
+    "sampleplugin": {
+      "apiDescriptionUrl": "./sample.yaml",
+      "apiDeploymentBaseUrl": "http://localhost/",
+      "requests": [
+        {
+          "method": "GET",
+          "uriTemplate": "test/{id}"
+        },
+        {
+          "method": "GET",
+          "uriTemplate": "test"
+        }
+      ],
+      "extensions": {
+        "x-ms-kiota-hash": "D2AEF3B9B13D76143AD60AB97C41A15B28F2160FF9295E999FE4D0A2CB330F7A"
+      }
+    }
+  }
+}
