@@ -51,7 +51,11 @@ export class UpdateClientsCommand extends Command {
         title: vscode.l10n.t("Updating clients...")
       }, (progress, _) => {
         const settings = getExtensionSettings(extensionId);
-        return updateClients({ cleanOutput: settings.cleanOutput, clearCache: settings.clearCache });
+        return updateClients({
+          cleanOutput: settings.cleanOutput,
+          clearCache: settings.clearCache,
+          workspacePath: vscode.workspace.workspaceFolders![0].uri.fsPath
+        });
       });
       if (res) {
         await exportLogsAndShowErrors(res, this.kiotaOutputChannel);
