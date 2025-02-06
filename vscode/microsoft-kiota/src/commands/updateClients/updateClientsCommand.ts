@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
 import { API_MANIFEST_FILE, extensionId } from "../../constants";
+import { updateClients } from '../../kiotaInterop';
 import { getExtensionSettings } from '../../types/extensionSettings';
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from '../../utilities/messaging';
 import { updateStatusBarItem } from '../../utilities/status';
 import { Command } from "../Command";
-import { updateClients } from './updateClients';
 
 interface UpdateClientsCommandProps {
   kiotaStatusBarItem: vscode.StatusBarItem;
@@ -51,7 +51,7 @@ export class UpdateClientsCommand extends Command {
         title: vscode.l10n.t("Updating clients...")
       }, (progress, _) => {
         const settings = getExtensionSettings(extensionId);
-        return updateClients(this.context, settings.cleanOutput, settings.clearCache);
+        return updateClients({ cleanOutput: settings.cleanOutput, clearCache: settings.clearCache });
       });
       if (res) {
         await exportLogsAndShowErrors(res, this.kiotaOutputChannel);
