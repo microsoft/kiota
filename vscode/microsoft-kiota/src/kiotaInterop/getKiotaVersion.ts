@@ -1,6 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { connectToKiota } from './connect';
+import connectToKiota from './connect';
 
 export function getKiotaVersion(): Promise<string | undefined> {
 
