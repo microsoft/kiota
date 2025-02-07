@@ -4,8 +4,7 @@ import * as vscode from 'vscode';
 import { QuickPickItem } from "vscode";
 
 import { APIMANIFEST, CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS } from './constants';
-import { allGenerationLanguages } from './kiotaInterop';
-import { KiotaGenerationLanguage, KiotaPluginType } from './kiotaInterop/enums';
+import { allGenerationLanguages, KiotaGenerationLanguage, KiotaPluginType } from './kiotaInterop';
 import { GenerationType } from './types/enums';
 
 const clientTypes = [CLIENT, CLIENTS];

@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 
 import { generatePlugin, KiotaLogEntry } from '..';
-import { KiotaPluginType } from '../enums';
+import { KiotaPluginType } from '../types';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("generate plugin", () => {

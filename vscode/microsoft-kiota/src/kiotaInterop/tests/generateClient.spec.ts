@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 
 import { generateClient, KiotaLogEntry } from '..';
-import { KiotaGenerationLanguage } from '../enums';
+import { KiotaGenerationLanguage } from '../types';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("generate client", () => {
