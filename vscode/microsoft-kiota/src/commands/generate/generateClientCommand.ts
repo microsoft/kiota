@@ -20,8 +20,8 @@ import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
 import { generateClient } from "./generateClient";
 import { generatePlugin } from "./generatePlugin";
-import { displayGenerationResults } from "./generation-util";
-import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
+import { displayGenerationResults, getLanguageInformation } from "./generation-util";
+import { getLanguageInformationForDescription } from "../../kiotaInterop/languageInformation";
 import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
 
 export class GenerateClientCommand extends Command {
@@ -50,7 +50,7 @@ export class GenerateClientCommand extends Command {
       return;
     }
 
-    let languagesInformation = await getLanguageInformation(this._context);
+    let languagesInformation = await getLanguageInformation();
     let availableStateInfo: Partial<GenerateState>;
     if (isDeeplinkEnabled(deepLinkParams)) {
       if (!deepLinkParams.name && this._openApiTreeProvider.apiTitle) {
@@ -177,7 +177,7 @@ export class GenerateClientCommand extends Command {
         } else {
           await displayGenerationResults(this._openApiTreeProvider, config);
         }
-        await vscode.commands.executeCommand('kiota.workspace.refresh'); 
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
       }
 
       clearDeepLinkParams();  // Clear the state after successful generation
@@ -329,10 +329,10 @@ export class GenerateClientCommand extends Command {
     });
 
     let languagesInformation = await getLanguageInformationForDescription(
-      this._context,
-      this._openApiTreeProvider.descriptionUrl,
-      settings.clearCache
-    );
+      {
+        descriptionUrl: this._openApiTreeProvider.descriptionUrl,
+        clearCache: settings.clearCache
+      });
     if (languagesInformation) {
       this._dependenciesViewProvider.update(languagesInformation, language);
       await vscode.commands.executeCommand(treeViewFocusCommand);
