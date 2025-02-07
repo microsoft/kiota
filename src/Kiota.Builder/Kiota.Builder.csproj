@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.OpenApi" Version="2.0.0-preview7" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="2.0.0-preview1" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="2.0.0-preview7" />
-    <PackageReference Include="Microsoft.Plugins.Manifest" Version="2.0.0-rc2" />
+    <PackageReference Include="Microsoft.DeclarativeAgents.Manifest" Version="2.0.0-rc2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.12.19">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
