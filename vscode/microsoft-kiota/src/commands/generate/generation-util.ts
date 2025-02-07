@@ -1,9 +1,13 @@
-import * as vscode from "vscode";
 import * as fs from 'fs';
+import * as vscode from "vscode";
 
 import { KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
+import { LanguagesInformation } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
+import { getLanguageInformationInternal } from "../../kiotaInterop/languageInformation";
+
+let _languageInformation: LanguagesInformation | undefined; // doesn't change over the lifecycle of the extension
 
 export async function displayGenerationResults(openApiTreeProvider: OpenApiTreeProvider, config: any) {
   const clientNameOrPluginName = config.clientClassName || config.pluginName;
@@ -20,3 +24,14 @@ export async function displayGenerationResults(openApiTreeProvider: OpenApiTreeP
   await updateTreeViewIcons(treeViewId, false, true);
   await vscode.commands.executeCommand('kiota.workspace.refresh');
 }
+
+export async function getLanguageInformation(): Promise<LanguagesInformation | undefined> {
+  if (_languageInformation) {
+    return _languageInformation;
+  }
+  const result = await getLanguageInformationInternal();
+  if (result) {
+    _languageInformation = result;
+  }
+  return result;
+};
