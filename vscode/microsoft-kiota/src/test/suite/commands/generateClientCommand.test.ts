@@ -6,7 +6,7 @@ import * as path from "path";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as generateModule from "../../../commands/generate/generateClientCommand";
-import * as languageInfoModule from "../../../commands/generate/getLanguageInformation";
+import * as languageInfoModule from "../../../commands/generate/generation-util";
 import * as deepLinkParamsHandler from "../../../handlers/deepLinkParamsHandler";
 import { KiotaLogEntry } from "../../../kiotaInterop";
 import * as generateStepsModule from "../../../modules/steps/generateSteps";
@@ -47,6 +47,7 @@ let context: vscode.ExtensionContext = {
         }
     } as vscode.Extension<any>
 };
+
 
 let extensionSettings = {
     includeAdditionalData:false,
@@ -121,7 +122,7 @@ suite('GenerateClientCommand Test Suite', () => {
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
         vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         let stateInfo: Partial<generateStepsModule.GenerateState> = {
             clientClassName: treeProvider.clientClassName,
             clientNamespaceName: treeProvider.clientNamespaceName,
@@ -175,7 +176,7 @@ suite('GenerateClientCommand Test Suite', () => {
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
         assert.strictEqual(!treeProvider.descriptionUrl, false);
         vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         let stateInfo = await transformToGenerationConfig(pluginParams);
         sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , pluginParams);
         sinon.assert.calledOnce(showUpgradeWarningMessageStub);
@@ -232,7 +233,7 @@ suite('GenerateClientCommand Test Suite', () => {
 
         // assertions
         vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn, context);
+        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         var updatedDeepLinkParams: Partial<IntegrationParams> = JSON.parse(JSON.stringify(pluginParams));
         updatedDeepLinkParams["name"] = sanitizedApiTitle;
         sinon.assert.calledOnce(generateStepsFn);
