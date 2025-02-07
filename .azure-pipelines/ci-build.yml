@@ -122,12 +122,16 @@ extends:
               image: $(REGISTRY)/$(IMAGE_NAME):validation    # Image name to build (including a tag). Required. Alias: localImage
               path: $(Build.SourcesDirectory)                 # Required. Alias: context
               dockerfile: ./Dockerfile             # Optional. Default: 'contextPath/Dockerfile'
-              buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8         # Optional. Default: ''
+              buildArguments: --build-arg version_suffix=$(versionSuffix) --platform linux/amd64,linux/arm64/v8  
+                     # Optional. Default: ''
           - task: Bash@3
             displayName: Save Docker Image
             inputs:
               targetType: inline
               script: |
+                set -e
+                IMAGE_NAME=$(REGISTRY)/$(IMAGE_NAME):validation
+                
                 # Create manifest.json
                 echo '[{"Config":"config.json","RepoTags":["$(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber)"],"Layers":["layer.tar"]}]' > $(Build.ArtifactStagingDirectory)/manifest.json
                 
