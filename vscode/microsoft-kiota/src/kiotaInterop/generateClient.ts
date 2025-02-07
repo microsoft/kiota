@@ -24,7 +24,7 @@ interface ClientGenerationOptions {
   usesBackingStore: boolean;
   operation: ConsumerOperation;
 
-  workingDirectory?: string;
+  workingDirectory: string;
 }
 
 export function generateClient(
@@ -46,7 +46,7 @@ export function generateClient(
     structuredMimeTypes,
     includeAdditionalData,
     operation,
-    workingDirectory = getWorkspaceJsonDirectory()
+    workingDirectory
   }: ClientGenerationOptions): Promise<KiotaLogEntry[] | undefined> {
   return connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(

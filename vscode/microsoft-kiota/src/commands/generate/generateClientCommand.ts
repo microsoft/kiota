@@ -307,7 +307,7 @@ export class GenerateClientCommand extends Command {
           structuredMimeTypes: settings.structuredMimeTypes,
           includeAdditionalData: settings.includeAdditionalData,
           operation: ConsumerOperation.Add,
-          workingDirectory: config.workingDirectory
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;

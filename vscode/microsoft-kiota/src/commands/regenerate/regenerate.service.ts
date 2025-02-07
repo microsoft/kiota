@@ -8,7 +8,7 @@ import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, ge
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
-import { parseGenerationLanguage, parsePluginType } from "../../util";
+import { getWorkspaceJsonDirectory, parseGenerationLanguage, parsePluginType } from "../../util";
 import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
 
 export class RegenerateService {
@@ -45,7 +45,8 @@ export class RegenerateService {
           deserializers: settings.languagesSerializationConfiguration[language].deserializers,
           structuredMimeTypes: clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
           includeAdditionalData: clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
-          operation: ConsumerOperation.Edit
+          operation: ConsumerOperation.Edit,
+          workingDirectory: getWorkspaceJsonDirectory()
         });
       if (result) {
         const isSuccess = await checkForSuccess(result);
