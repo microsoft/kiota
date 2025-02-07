@@ -1,8 +1,7 @@
 import * as sinon from 'sinon';
 
-import { removeClient, removePlugin } from '../removeItem';
+import { KiotaLogEntry, removeClient, removePlugin } from '..';
 import { setupKiotaStubs } from './stubs.util';
-import { KiotaLogEntry } from '..';
 
 describe("remove Client", () => {
   let connectionStub: sinon.SinonStub;

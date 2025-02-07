@@ -13,8 +13,7 @@ import {
     KiotaOpenApiNode,
     PluginObjectProperties
 } from '../kiotaInterop';
-import { getManifestDetails } from '../kiotaInterop/getManifestDetails';
-import { showKiotaResult } from '../kiotaInterop/showKiotaResult';
+import { getManifestDetails, showKiotaResult } from '../kiotaInterop';
 import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
 import { SharedService } from './sharedService';

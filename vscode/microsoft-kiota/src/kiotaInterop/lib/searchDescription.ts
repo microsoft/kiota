@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaSearchResult, KiotaSearchResultItem } from ".";
-import connectToKiota from './connect';
+import { KiotaSearchResult, KiotaSearchResultItem } from "..";
+import connectToKiota from '../connect';
 export function searchDescription(searchTerm: string, clearCache: boolean): Promise<Record<string, KiotaSearchResultItem> | undefined> {
   return connectToKiota<Record<string, KiotaSearchResultItem>>(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaSearchResult, void>(

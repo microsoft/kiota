@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaShowConfiguration, KiotaShowResult } from ".";
-import connectToKiota from "./connect";
+import { KiotaShowConfiguration, KiotaShowResult } from "..";
+import connectToKiota from "../connect";
 
 interface KiotaResultOptions {
   includeFilters: string[];

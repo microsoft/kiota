@@ -1,7 +1,6 @@
 import * as sinon from 'sinon';
 
-import { KiotaManifestResult } from '..';
-import { getManifestDetails } from '../getManifestDetails';
+import { getManifestDetails, KiotaManifestResult } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {

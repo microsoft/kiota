@@ -1,7 +1,6 @@
 import * as sinon from 'sinon';
 
-import { KiotaSearchResultItem } from '..';
-import { searchDescription } from "../searchDescription";
+import { KiotaSearchResultItem, searchDescription } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("search description", () => {

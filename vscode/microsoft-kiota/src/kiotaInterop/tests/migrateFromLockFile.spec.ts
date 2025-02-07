@@ -1,8 +1,7 @@
 import * as sinon from 'sinon';
 
-import { migrateFromLockFile } from '../migrateFromLockFile';
+import { KiotaLogEntry, migrateFromLockFile } from '..';
 import { setupKiotaStubs } from './stubs.util';
-import { KiotaLogEntry } from '..';
 
 describe("migrate from lock file", () => {
   let connectionStub: sinon.SinonStub;

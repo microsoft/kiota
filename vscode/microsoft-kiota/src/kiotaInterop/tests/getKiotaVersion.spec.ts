@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 
-import { getKiotaVersion } from '../getKiotaVersion';
+import { getKiotaVersion } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {

@@ -1,9 +1,8 @@
 import * as sinon from 'sinon';
 
 
+import { KiotaLogEntry, updateClients } from '..';
 import { setupKiotaStubs } from './stubs.util';
-import { updateClients } from '../updateClients';
-import { KiotaLogEntry } from '..';
 
 describe("update Clients", () => {
   let connectionStub: sinon.SinonStub;

@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 
 
+import { getLanguageInformationForDescription, getLanguageInformationInternal } from '..';
 import { setupKiotaStubs } from './stubs.util';
-import { getLanguageInformationForDescription, getLanguageInformationInternal } from '../languageInformation';
 
 const sampleLanguageInfo = {
   CSharp: {
