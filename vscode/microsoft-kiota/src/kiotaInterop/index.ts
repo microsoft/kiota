@@ -9,7 +9,11 @@ import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { migrateFromLockFile } from './migrateFromLockFile';
 import { searchDescription } from './searchDescription';
 
-export { getKiotaVersion, migrateFromLockFile, searchDescription };
+export {
+    getKiotaVersion,
+    migrateFromLockFile,
+    searchDescription
+};
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);
