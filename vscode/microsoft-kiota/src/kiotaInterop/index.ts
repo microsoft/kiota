@@ -9,7 +9,11 @@ import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { searchDescription } from './searchDescription';
 import { updateClients } from './updateClients';
 
-export { getKiotaVersion, searchDescription, updateClients };
+export {
+    getKiotaVersion,
+    searchDescription,
+    updateClients,
+};
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);
