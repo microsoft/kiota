@@ -128,7 +128,18 @@ extends:
             inputs:
               targetType: inline
               script: |
-                docker save $(REGISTRY)/$(IMAGE_NAME):validation -o $(Build.ArtifactStagingDirectory)/kiota.tar
+                # Create manifest.json
+                echo '[{"Config":"config.json","RepoTags":["$(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber)"],"Layers":["layer.tar"]}]' > $(Build.ArtifactStagingDirectory)/manifest.json
+                
+                # Export the image configuration
+                docker inspect $(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber) > $(Build.ArtifactStagingDirectory)/config.json
+                
+                # Save the image layers
+                docker save $(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber) -o $(Build.ArtifactStagingDirectory)/layer.tar
+                
+                # Create the final archive
+                cd $(Build.ArtifactStagingDirectory)
+                tar -czf kiota.tar.gz manifest.json config.json layer.tar
           
           - task: 1ES.PublishPipelineArtifact@1
             inputs:
