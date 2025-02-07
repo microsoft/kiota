@@ -7,6 +7,7 @@ using Kiota.Builder.Extensions;
 
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 
 using Xunit;
@@ -701,6 +702,11 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         {
             Paths = new(),
         };
+        doc.AddComponent("microsoft.graph.json", new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Title = "json",
+        });
         doc.Paths.Add("/reviews/{resource-type}.json", new OpenApiPathItem()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
@@ -727,15 +733,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                         {
                                             "application/json", new()
                                             {
-                                                Schema = new OpenApiSchema()
-                                                {
-                                                    Type = JsonSchemaType.Object,
-                                                    Title = "json",
-                                                    Reference = new OpenApiReference()
-                                                    {
-                                                        Id = "microsoft.graph.json"
-                                                    }
-                                                }
+                                                Schema = new OpenApiSchemaReference("microsoft.graph.json"),
                                             }
                                         }
                                     }
@@ -746,6 +744,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 }
             }
         });
+        doc.SetReferenceHostDocument();
 
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new() { "application/json" });
@@ -777,10 +776,6 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.user"
-            },
         };
         var document = new OpenApiDocument
         {
@@ -807,7 +802,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = userSchema
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
                                         }
                                     }
                                 }
@@ -836,7 +831,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = userSchema
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
                                         }
                                     }
                                 }
@@ -865,7 +860,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = userSchema
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
                                         }
                                     }
                                 }
@@ -883,6 +878,8 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -920,10 +917,6 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/owner"
-            },
         };
         var repoSchema = new OpenApiSchema
         {
@@ -934,10 +927,6 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                         Type = JsonSchemaType.String
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/repo"
             },
         };
         var document = new OpenApiDocument
@@ -955,7 +944,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = repoSchema
+                                            Schema = new OpenApiSchemaReference("repo")
                                         }
                                     }
                                 }
@@ -974,7 +963,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = repoSchema
+                                            Schema = new OpenApiSchemaReference("repo")
                                         }
                                     }
                                 }
@@ -991,6 +980,8 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "GitHub", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);

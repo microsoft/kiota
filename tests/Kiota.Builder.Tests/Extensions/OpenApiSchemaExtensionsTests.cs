@@ -452,32 +452,29 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.False(schema.IsInherited());
         Assert.False(schema.IsIntersection());
+        var userIdSchema = new OpenApiSchema
+        {
+            Title = "UserId",
+            Description = "unique identifier",
+            Type = JsonSchemaType.String,
+            Pattern = "^[1-9][0-9]*$",
+            Example = "1323232",
+        };
+        var tmpDocument = new OpenApiDocument();
+        tmpDocument.AddComponent("UserId", userIdSchema);
 
         schema = new OpenApiSchema
         {
             Title = "Trader Id",
             AllOf = [
-                new OpenApiSchema()
-                {
-                    Title = "UserId",
-                    Description = "unique identifier",
-                    Type = JsonSchemaType.String,
-                    Pattern = "^[1-9][0-9]*$",
-                    Example = "1323232",
-                    Reference = new OpenApiReference
-                    {
-                        Id = "UserId" // This property makes the schema "meaningful"
-                    }
-                }
+                new OpenApiSchemaReference("UserId", tmpDocument),// This property makes the schema "meaningful"
             ],
-            Reference = new OpenApiReference
-            {
-                Id = "TraderId" // This property makes the schema "meaningful"
-            }
         };
+        tmpDocument.AddComponent("TraderId", schema);
+        var schemaReference = new OpenApiSchemaReference("TraderId", tmpDocument);  // This property makes the schema "meaningful"
 
-        Assert.False(schema.IsInherited());
-        Assert.False(schema.IsIntersection());
+        Assert.False(schemaReference.IsInherited());
+        Assert.False(schemaReference.IsIntersection());
     }
     [Fact]
     public void MergesIntersection()
@@ -489,18 +486,12 @@ public class OpenApiSchemaExtensionsTests
             AllOf = [
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
-                    Reference = new() {
-                        Id = "microsoft.graph.entity"
-                    },
                     Properties = new Dictionary<string, IOpenApiSchema>() {
                         ["id"] = new OpenApiSchema()
                     }
                 },
                 new OpenApiSchema() {
                     Type = JsonSchemaType.Object,
-                    Reference = new() {
-                        Id = "microsoft.graph.user"
-                    },
                     Properties = new Dictionary<string, IOpenApiSchema>() {
                         ["firstName"] = new OpenApiSchema()
                     }
@@ -564,6 +555,11 @@ public class OpenApiSchemaExtensionsTests
         [Fact]
         public void DoesMergeWithInheritance()
         {
+            var baseClassSchema = new OpenApiSchema()
+            {
+            };
+            var document = new OpenApiDocument();
+            document.AddComponent("BaseClass", baseClassSchema);
             var schema = new OpenApiSchema()
             {
                 Type = JsonSchemaType.Object,
@@ -577,13 +573,7 @@ public class OpenApiSchemaExtensionsTests
                         },
                         AllOf =
                         [
-                            new OpenApiSchema()
-                            {
-                                Reference = new()
-                                {
-                                    Id = "BaseClass"
-                                },
-                            },
+                            new OpenApiSchemaReference("BaseClass", document),
                             new OpenApiSchema()
                             {
                                 Type = JsonSchemaType.Object,
@@ -662,6 +652,11 @@ public class OpenApiSchemaExtensionsTests
         [Fact]
         public void DoesNotMergeWithMoreThanOneInclusiveEntry()
         {
+            var baseClassSchema = new OpenApiSchema()
+            {
+            };
+            var document = new OpenApiDocument();
+            document.AddComponent("BaseClass", baseClassSchema);
             var schema = new OpenApiSchema()
             {
                 Type = JsonSchemaType.Object,
@@ -675,13 +670,7 @@ public class OpenApiSchemaExtensionsTests
                         },
                         AllOf =
                         [
-                            new OpenApiSchema()
-                            {
-                                Reference = new()
-                                {
-                                    Id = "BaseClass"
-                                },
-                            },
+                            new OpenApiSchemaReference("BaseClass", document),
                             new OpenApiSchema()
                             {
                                 Type = JsonSchemaType.Object,
@@ -693,7 +682,7 @@ public class OpenApiSchemaExtensionsTests
                             },
                         ]
                     },
-                    new() { Type = JsonSchemaType.Object },
+                    new OpenApiSchema() { Type = JsonSchemaType.Object },
                 ],
             };
 
@@ -736,6 +725,11 @@ public class OpenApiSchemaExtensionsTests
         [Fact]
         public void DoesMergeWithInheritance()
         {
+            var baseClassSchema = new OpenApiSchema()
+            {
+            };
+            var document = new OpenApiDocument();
+            document.AddComponent("BaseClass", baseClassSchema);
             var schema = new OpenApiSchema()
             {
                 Type = JsonSchemaType.Object,
@@ -749,13 +743,7 @@ public class OpenApiSchemaExtensionsTests
                         },
                         AllOf =
                         [
-                            new OpenApiSchema()
-                            {
-                                Reference = new()
-                                {
-                                    Id = "BaseClass"
-                                },
-                            },
+                            new OpenApiSchemaReference("BaseClass", document),
                             new OpenApiSchema()
                             {
                                 Type = JsonSchemaType.Object,
@@ -834,6 +822,11 @@ public class OpenApiSchemaExtensionsTests
         [Fact]
         public void DoesNotMergeWithMoreThanOneExclusiveEntry()
         {
+            var baseClassSchema = new OpenApiSchema()
+            {
+            };
+            var document = new OpenApiDocument();
+            document.AddComponent("BaseClass", baseClassSchema);
             var schema = new OpenApiSchema()
             {
                 Type = JsonSchemaType.Object,
@@ -847,13 +840,7 @@ public class OpenApiSchemaExtensionsTests
                         },
                         AllOf =
                         [
-                            new OpenApiSchema()
-                            {
-                                Reference = new()
-                                {
-                                    Id = "BaseClass"
-                                },
-                            },
+                            new OpenApiSchemaReference("BaseClass", document),
                             new OpenApiSchema()
                             {
                                 Type = JsonSchemaType.Object,
@@ -865,7 +852,7 @@ public class OpenApiSchemaExtensionsTests
                             },
                         ]
                     },
-                    new() { Type = JsonSchemaType.Object },
+                    new OpenApiSchema() { Type = JsonSchemaType.Object },
                 ],
             };
 
