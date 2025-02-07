@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.ApiManifest;
-using Microsoft.Plugins.Manifest;
+using Microsoft.DeclarativeAgents.Manifest;
 
 namespace Kiota.Builder.WorkspaceManagement;
 

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-using Microsoft.Plugins.Manifest;
+using Microsoft.DeclarativeAgents.Manifest;
 using Moq;
 using Xunit;
 

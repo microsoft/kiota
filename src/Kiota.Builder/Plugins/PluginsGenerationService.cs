@@ -15,7 +15,7 @@ using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
-using Microsoft.Plugins.Manifest;
+using Microsoft.DeclarativeAgents.Manifest;
 
 namespace Kiota.Builder.Plugins;
 
