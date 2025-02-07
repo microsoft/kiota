@@ -6,12 +6,14 @@ import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
 import { getWorkspaceJsonDirectory } from '../util';
 import { getKiotaVersion } from './getKiotaVersion';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
+import { migrateFromLockFile } from './migrateFromLockFile';
 import { searchDescription } from './searchDescription';
 import { updateClients } from './updateClients';
 
 export {
     getKiotaVersion,
-    searchDescription,
+    migrateFromLockFile,
+    searchDescription
     updateClients,
 };
 
