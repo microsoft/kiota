@@ -1,11 +1,11 @@
-import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 
-import { connectToKiota, ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from "../../kiotaInterop";
-import { KiotaPluginType } from "../../types/enums";
-import { getWorkspaceJsonDirectory } from "../../util";
+import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from ".";
+import { KiotaPluginType } from "../types/enums";
+import { getWorkspaceJsonDirectory } from "../util";
+import connectToKiota from "./connect";
 
-export function generatePlugin(context: vscode.ExtensionContext,
+export function generatePlugin(
   descriptionPath: string,
   output: string,
   pluginTypes: KiotaPluginType[],
@@ -20,7 +20,7 @@ export function generatePlugin(context: vscode.ExtensionContext,
   pluginAuthRefid?: string,
   workingDirectory: string = getWorkspaceJsonDirectory(),
 ): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota<KiotaLogEntry[]>(context, async (connection) => {
+  return connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "GeneratePlugin"
     );
