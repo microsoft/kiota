@@ -4,14 +4,12 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../../constants";
-import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, getLogEntriesForLevel, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
+import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient, generatePlugin, getLogEntriesForLevel, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { parseGenerationLanguage, parsePluginType } from "../../util";
 import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
-import { generateClient } from "../generate/generateClient";
-import { generatePlugin } from "../generate/generatePlugin";
 
 export class RegenerateService {
 
@@ -31,25 +29,24 @@ export class RegenerateService {
       title: vscode.l10n.t("Re-generating client...")
     }, async (progress, _) => {
       const result = await generateClient(
-        this._context,
-        clientObjectItem.descriptionLocation ? clientObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
-        clientObjectItem.outputPath,
-        language,
-        selectedPaths ? selectedPaths : clientObjectItem.includePatterns,
-        clientObjectItem.excludePatterns ? clientObjectItem.excludePatterns : [],
-        this._clientKey,
-        clientObjectItem.clientNamespaceName,
-        clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
-        settings.clearCache,
-        settings.cleanOutput,
-        clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
-        clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
-        settings.languagesSerializationConfiguration[language].serializers,
-        settings.languagesSerializationConfiguration[language].deserializers,
-        clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
-        clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
-        ConsumerOperation.Edit
-      );
+        {
+          openAPIFilePath: clientObjectItem.descriptionLocation ? clientObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          outputPath: clientObjectItem.outputPath,
+          language,
+          includePatterns: selectedPaths ? selectedPaths : clientObjectItem.includePatterns,
+          excludePatterns: clientObjectItem.excludePatterns ? clientObjectItem.excludePatterns : [], clientClassName: this._clientKey,
+          clientNamespaceName: clientObjectItem.clientNamespaceName,
+          usesBackingStore: clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          excludeBackwardCompatible: clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
+          disabledValidationRules: clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
+          serializers: settings.languagesSerializationConfiguration[language].serializers,
+          deserializers: settings.languagesSerializationConfiguration[language].deserializers,
+          structuredMimeTypes: clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
+          includeAdditionalData: clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
+          operation: ConsumerOperation.Edit
+        });
       if (result) {
         const isSuccess = await checkForSuccess(result);
         if (!isSuccess) {
@@ -73,7 +70,6 @@ export class RegenerateService {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._context,
         pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
         pluginObjectItem.outputPath,
         pluginTypes,
