@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 
 import { removeClient, removePlugin } from '../removeItem';
 import { setupKiotaStubs } from './stubs.util';
+import { KiotaLogEntry } from '..';
 
 describe("remove Client", () => {
   let connectionStub: sinon.SinonStub;
@@ -17,7 +18,7 @@ describe("remove Client", () => {
 
 
   test('should return success when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: 'removed successfully'
@@ -45,7 +46,7 @@ describe("remove Plugin", () => {
 
 
   test('should return success when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: 'removed successfully'

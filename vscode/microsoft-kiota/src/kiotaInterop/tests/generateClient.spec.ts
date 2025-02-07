@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 import { KiotaGenerationLanguage } from '../../types/enums';
 import { generateClient } from '../generateClient';
 import { setupKiotaStubs } from './stubs.util';
+import { KiotaLogEntry } from '..';
 
 describe("generate client", () => {
   let connectionStub: sinon.SinonStub;
@@ -18,7 +19,7 @@ describe("generate client", () => {
 
 
   test('should generate a client when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: "Generation complete"

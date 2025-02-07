@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 import { KiotaPluginType } from '../../types/enums';
 import { generatePlugin } from '../generatePlugin';
 import { setupKiotaStubs } from './stubs.util';
+import { KiotaLogEntry } from '..';
 
 describe("generate plugin", () => {
   let connectionStub: sinon.SinonStub;
@@ -18,7 +19,7 @@ describe("generate plugin", () => {
 
 
   test('should generate a plugin when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: "Generation complete"

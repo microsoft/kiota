@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 
 import { setupKiotaStubs } from './stubs.util';
 import { updateClients } from '../updateClients';
+import { KiotaLogEntry } from '..';
 
 describe("update Clients", () => {
   let connectionStub: sinon.SinonStub;
@@ -18,7 +19,7 @@ describe("update Clients", () => {
 
 
   test('should return results when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: 'updated successfully'

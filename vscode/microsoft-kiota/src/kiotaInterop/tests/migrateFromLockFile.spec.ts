@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 
 import { migrateFromLockFile } from '../migrateFromLockFile';
 import { setupKiotaStubs } from './stubs.util';
+import { KiotaLogEntry } from '..';
 
 describe("migrate from lock file", () => {
   let connectionStub: sinon.SinonStub;
@@ -16,7 +17,7 @@ describe("migrate from lock file", () => {
   });
 
   test('should return success when successful', async () => {
-    const mockResults = [
+    const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
         message: 'migrated successfully'
