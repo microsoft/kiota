@@ -8,9 +8,21 @@ import { generateClient } from './generateClient';
 import { generatePlugin } from './generatePlugin';
 import { getKiotaVersion } from './getKiotaVersion';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
+import { removeClient, removePlugin } from './removeItem';
+import { migrateFromLockFile } from './migrateFromLockFile';
 import { searchDescription } from './searchDescription';
+import { updateClients } from './updateClients';
 
-export { generateClient, generatePlugin, getKiotaVersion, searchDescription };
+export {
+    generateClient,
+    generatePlugin,
+    getKiotaVersion,
+    migrateFromLockFile,
+    removeClient,
+    removePlugin,
+    searchDescription,
+    updateClients,
+};
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);

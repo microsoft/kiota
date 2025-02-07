@@ -6,6 +6,7 @@ import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
 import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { getLanguageInformationForDescription } from "../../kiotaInterop/languageInformation";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -19,8 +20,8 @@ import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
 import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
-import { displayGenerationResults } from "./generation-util";
-import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
+import { displayGenerationResults, getLanguageInformation } from "./generation-util";
+
 
 export class GenerateClientCommand extends Command {
 
@@ -48,7 +49,7 @@ export class GenerateClientCommand extends Command {
       return;
     }
 
-    let languagesInformation = await getLanguageInformation(this._context);
+    let languagesInformation = await getLanguageInformation();
     let availableStateInfo: Partial<GenerateState>;
     if (isDeeplinkEnabled(deepLinkParams)) {
       if (!deepLinkParams.name && this._openApiTreeProvider.apiTitle) {
@@ -324,10 +325,10 @@ export class GenerateClientCommand extends Command {
     });
 
     let languagesInformation = await getLanguageInformationForDescription(
-      this._context,
-      this._openApiTreeProvider.descriptionUrl,
-      settings.clearCache
-    );
+      {
+        descriptionUrl: this._openApiTreeProvider.descriptionUrl,
+        clearCache: settings.clearCache
+      });
     if (languagesInformation) {
       this._dependenciesViewProvider.update(languagesInformation, language);
       await vscode.commands.executeCommand(treeViewFocusCommand);
