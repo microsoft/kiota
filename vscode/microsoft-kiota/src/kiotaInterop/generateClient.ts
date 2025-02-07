@@ -2,7 +2,6 @@ import * as rpc from "vscode-jsonrpc/node";
 
 import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from ".";
 import { KiotaGenerationLanguage } from "../types/enums";
-import { getWorkspaceJsonDirectory } from "../util";
 import connectToKiota from "./connect";
 
 interface ClientGenerationOptions {

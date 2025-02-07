@@ -4,13 +4,13 @@ import * as rpc from 'vscode-jsonrpc/node';
 
 import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
 import { getWorkspaceJsonDirectory } from '../util';
+import { generateClient } from './generateClient';
+import { generatePlugin } from './generatePlugin';
 import { getKiotaVersion } from './getKiotaVersion';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { searchDescription } from './searchDescription';
-import { generatePlugin } from './generatePlugin';
-import { generateClient } from './generateClient';
 
-export { getKiotaVersion, searchDescription, generateClient, generatePlugin };
+export { generateClient, generatePlugin, getKiotaVersion, searchDescription };
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);
