@@ -1,8 +1,8 @@
 import * as rpc from "vscode-jsonrpc/node";
 
 import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from ".";
-import { KiotaPluginType } from "../types/enums";
 import connectToKiota from "./connect";
+import { KiotaPluginType } from "./enums";
 
 interface PluginGenerationOptions {
   openAPIFilePath: string;

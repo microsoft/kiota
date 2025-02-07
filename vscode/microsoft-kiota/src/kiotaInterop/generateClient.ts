@@ -1,8 +1,8 @@
 import * as rpc from "vscode-jsonrpc/node";
 
 import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from ".";
-import { KiotaGenerationLanguage } from "../types/enums";
 import connectToKiota from "./connect";
+import { KiotaGenerationLanguage } from "./enums";
 
 interface ClientGenerationOptions {
   clearCache: boolean;

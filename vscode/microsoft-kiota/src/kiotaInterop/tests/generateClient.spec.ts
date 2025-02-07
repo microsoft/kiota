@@ -1,9 +1,9 @@
 import * as sinon from 'sinon';
 
-import { KiotaGenerationLanguage } from '../../types/enums';
+import { KiotaLogEntry } from '..';
+import { KiotaGenerationLanguage } from '../enums';
 import { generateClient } from '../generateClient';
 import { setupKiotaStubs } from './stubs.util';
-import { KiotaLogEntry } from '..';
 
 describe("generate client", () => {
   let connectionStub: sinon.SinonStub;

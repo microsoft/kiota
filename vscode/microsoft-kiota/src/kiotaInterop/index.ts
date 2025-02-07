@@ -1,5 +1,5 @@
 
-import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
+import { KiotaGenerationLanguage, KiotaPluginType } from './enums';
 import { generateClient } from './generateClient';
 import { generatePlugin } from './generatePlugin';
 import { getKiotaVersion } from './getKiotaVersion';
