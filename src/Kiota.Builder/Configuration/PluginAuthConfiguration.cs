@@ -1,6 +1,6 @@
 ﻿using System;
-using Microsoft.OpenApi.Models;
 using Microsoft.DeclarativeAgents.Manifest;
+using Microsoft.OpenApi.Models;
 
 
 namespace Kiota.Builder.Configuration;
