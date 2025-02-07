@@ -4,6 +4,8 @@ import * as rpc from 'vscode-jsonrpc/node';
 
 import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
 import { getWorkspaceJsonDirectory } from '../util';
+import { generateClient } from './generateClient';
+import { generatePlugin } from './generatePlugin';
 import { getKiotaVersion } from './getKiotaVersion';
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 import { removeClient, removePlugin } from './removeItem';
@@ -12,11 +14,13 @@ import { searchDescription } from './searchDescription';
 import { updateClients } from './updateClients';
 
 export {
+    generateClient,
+    generatePlugin,
     getKiotaVersion,
     migrateFromLockFile,
-    removeClient, 
-    removePlugin
-    searchDescription
+    removeClient,
+    removePlugin,
+    searchDescription,
     updateClients,
 };
 

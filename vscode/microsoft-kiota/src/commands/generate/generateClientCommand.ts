@@ -5,7 +5,8 @@ import * as vscode from "vscode";
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { ConsumerOperation, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { getLanguageInformationForDescription } from "../../kiotaInterop/languageInformation";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -15,14 +16,12 @@ import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
-import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel, showLogs } from "../../utilities/logging";
+import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
+import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
-import { generateClient } from "./generateClient";
-import { generatePlugin } from "./generatePlugin";
 import { displayGenerationResults, getLanguageInformation } from "./generation-util";
-import { getLanguageInformationForDescription } from "../../kiotaInterop/languageInformation";
-import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
+
 
 export class GenerateClientCommand extends Command {
 
@@ -193,23 +192,23 @@ export class GenerateClientCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._context,
-        this._openApiTreeProvider.descriptionUrl,
-        outputPath,
-        [pluginTypes],
-        selectedPaths,
-        [],
-        typeof config.pluginName === "string"
-          ? config.pluginName
-          : "ApiClient",
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.disableValidationRules,
-        ConsumerOperation.Add,
-        null,
-        '',
-        config.workingDirectory
-      );
+        {
+          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          outputPath: outputPath,
+          pluginTypes: [pluginTypes],
+          includePatterns: selectedPaths,
+          excludePatterns: [],
+          clientClassName: typeof config.pluginName === "string"
+            ? config.pluginName
+            : "ApiClient",
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Add,
+          pluginAuthType: null,
+          pluginAuthRefid: '',
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+        });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
@@ -239,23 +238,23 @@ export class GenerateClientCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._context,
-        this._openApiTreeProvider.descriptionUrl,
-        outputPath,
-        pluginTypes,
-        selectedPaths,
-        [],
-        typeof config.pluginName === "string"
-          ? config.pluginName
-          : "ApiClient",
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.disableValidationRules,
-        ConsumerOperation.Add,
-        null,
-        '',
-        config.workingDirectory
-      );
+        {
+          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          outputPath: outputPath,
+          pluginTypes,
+          includePatterns: selectedPaths,
+          excludePatterns: [],
+          clientClassName: typeof config.pluginName === "string"
+            ? config.pluginName
+            : "ApiClient",
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Add,
+          pluginAuthType: null,
+          pluginAuthRefid: '',
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+        });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
@@ -292,30 +291,27 @@ export class GenerateClientCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generateClient(
-        this._context,
-        this._openApiTreeProvider.descriptionUrl,
-        outputPath,
-        language,
-        selectedPaths,
-        [],
-        typeof config.clientClassName === "string"
-          ? config.clientClassName
-          : "ApiClient",
-        typeof config.clientNamespaceName === "string"
-          ? config.clientNamespaceName
-          : "ApiSdk",
-        settings.backingStore,
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.excludeBackwardCompatible,
-        settings.disableValidationRules,
-        settings.languagesSerializationConfiguration[language].serializers,
-        settings.languagesSerializationConfiguration[language].deserializers,
-        settings.structuredMimeTypes,
-        settings.includeAdditionalData,
-        ConsumerOperation.Add,
-        config.workingDirectory
-      );
+        {
+          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          outputPath: outputPath, language,
+          includePatterns: selectedPaths, excludePatterns: [],
+          clientClassName: typeof config.clientClassName === "string"
+            ? config.clientClassName
+            : "ApiClient", clientNamespaceName: typeof config.clientNamespaceName === "string"
+              ? config.clientNamespaceName
+              : "ApiSdk",
+          usesBackingStore: settings.backingStore,
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          excludeBackwardCompatible: settings.excludeBackwardCompatible,
+          disabledValidationRules: settings.disableValidationRules,
+          serializers: settings.languagesSerializationConfiguration[language].serializers,
+          deserializers: settings.languagesSerializationConfiguration[language].deserializers,
+          structuredMimeTypes: settings.structuredMimeTypes,
+          includeAdditionalData: settings.includeAdditionalData,
+          operation: ConsumerOperation.Add,
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+        });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
