@@ -19,6 +19,7 @@ using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 
 using Moq;
@@ -1555,11 +1556,7 @@ paths:
                         }
                     }
                 },
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/bar.foo"
-            },
+            }
         };
         var document = new OpenApiDocument
         {
@@ -1576,7 +1573,7 @@ paths:
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = fooSchema
+                                            Schema = new OpenApiSchemaReference("bar.foo")
                                         }
                                     }
                                 }
@@ -1585,15 +1582,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "bar.foo", fooSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("bar.foo", fooSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -1622,10 +1613,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.user"
-            },
         };
         var document = new OpenApiDocument
         {
@@ -1648,7 +1635,7 @@ paths:
                                                     {
                                                         "value", new OpenApiSchema {
                                                             Type = JsonSchemaType.Array,
-                                                            Items = userSchema
+                                                            Items = new OpenApiSchemaReference("microsoft.graph.user")
                                                         }
                                                     },
                                                     {
@@ -1668,15 +1655,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -1759,10 +1740,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.resourceAction"
-            },
         };
         var permissionSchema = new OpenApiSchema
         {
@@ -1773,15 +1750,11 @@ paths:
                         Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
                             AnyOf = new List<IOpenApiSchema> {
-                                resourceActionSchema,
+                                new OpenApiSchemaReference("microsoft.graph.resourceAction"),
                             }
                         }
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.rolePermission"
             },
         };
         var document = new OpenApiDocument
@@ -1814,7 +1787,7 @@ paths:
                                                 Type = JsonSchemaType.Array,
                                                 Items = new OpenApiSchema {
                                                     AnyOf = new List<IOpenApiSchema> {
-                                                        permissionSchema,
+                                                        new OpenApiSchemaReference("microsoft.graph.rolePermission"),
                                                     }
                                                 }
                                             }
@@ -1826,14 +1799,10 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    { "microsoft.graph.rolePermission", permissionSchema },
-                    { "microsoft.graph.resourceAction", resourceActionSchema },
-                }
-            }
         };
+        document.AddComponent("microsoft.graph.resourceAction", resourceActionSchema);
+        document.AddComponent("microsoft.graph.rolePermission", permissionSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -1878,10 +1847,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.resourceAction"
-            },
         };
         var permissionSchema = new OpenApiSchema
         {
@@ -1892,15 +1857,11 @@ paths:
                         Type = JsonSchemaType.Array,
                         Items = new OpenApiSchema {
                             AnyOf = new List<IOpenApiSchema> {
-                                resourceActionSchema,
+                                new OpenApiSchemaReference("microsoft.graph.resourceAction"),
                             }
                         }
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.rolePermission"
             },
         };
         var document = new OpenApiDocument
@@ -1962,7 +1923,7 @@ paths:
                                                 Type = JsonSchemaType.Array,
                                                 Items = new OpenApiSchema {
                                                     AnyOf = new List<IOpenApiSchema> {
-                                                        permissionSchema,
+                                                        new OpenApiSchemaReference("microsoft.graph.rolePermission"),
                                                     }
                                                 }
                                             }
@@ -1974,14 +1935,10 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    { "microsoft.graph.rolePermission", permissionSchema },
-                    { "microsoft.graph.resourceAction", resourceActionSchema },
-                }
-            }
         };
+        document.AddComponent("microsoft.graph.resourceAction", resourceActionSchema);
+        document.AddComponent("microsoft.graph.rolePermission", permissionSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.CLI }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -2108,10 +2065,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "resource"
-            },
         };
         var document = new OpenApiDocument
         {
@@ -2149,7 +2102,7 @@ paths:
                                                                 }
                                                             },
                                                             AllOf = [
-                                                                resourceSchema,
+                                                                new OpenApiSchemaReference("resource"),
                                                             ]
                                                         }
                                                     }
@@ -2163,15 +2116,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "#/components/resource", resourceSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("resource", resourceSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -2198,16 +2145,12 @@ paths:
         var resourceSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Reference = new OpenApiReference
-            {
-                Id = "resource"
-            },
         };
 
         var properties = new Dictionary<string, IOpenApiSchema>
         {
             { "info", new OpenApiSchema { Type = JsonSchemaType.String, } },
-            { "derivedResource", new OpenApiSchema { AllOf = new List<IOpenApiSchema> { resourceSchema, } } },
+            { "derivedResource", new OpenApiSchema { AllOf = new List<IOpenApiSchema> { new OpenApiSchemaReference("resource"), } } },
         };
 
         resourceSchema.Properties = properties;
@@ -2230,7 +2173,7 @@ paths:
                                             Schema = new OpenApiSchema {
                                                 AllOf = new List<IOpenApiSchema>()
                                                 {
-                                                    resourceSchema
+                                                    new OpenApiSchemaReference("resource"),
                                                 }
                                             }
                                         }
@@ -2241,15 +2184,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "#/components/resource", resourceSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("resource", resourceSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -2635,11 +2572,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.error",
-                Type = ReferenceType.Schema
-            },
         };
         var errorResponse = new OpenApiResponse
         {
@@ -2647,13 +2579,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = errorSchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.error")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.error",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -2687,28 +2614,18 @@ paths:
                                         }
                                     }
                                 },
-                                ["4XX"] = errorResponse,
-                                ["5XX"] = errorResponse,
-                                ["401"] = errorResponse
+                                ["4XX"] = new OpenApiResponseReference("microsoft.graph.error"),
+                                ["5XX"] = new OpenApiResponseReference("microsoft.graph.error"),
+                                ["401"] = new OpenApiResponseReference("microsoft.graph.error")
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.error", errorSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.error", errorResponse
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.error", errorSchema);
+        document.AddComponent("microsoft.graph.error", errorResponse);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -2743,11 +2660,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.error",
-                Type = ReferenceType.Schema
-            },
         };
         var errorResponse = new OpenApiResponse
         {
@@ -2755,13 +2667,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = errorSchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.error")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.error",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -2795,27 +2702,17 @@ paths:
                                         }
                                     }
                                 },
-                                ["default"] = errorResponse,
-                                ["401"] = errorResponse
+                                ["default"] = new OpenApiResponseReference("microsoft.graph.error"),
+                                ["401"] = new OpenApiResponseReference("microsoft.graph.error")
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.error", errorSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.error", errorResponse
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.error", errorSchema);
+        document.AddComponent("microsoft.graph.error", errorResponse);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -2858,25 +2755,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "weatherForecast",
-                Type = ReferenceType.Schema
-            },
         };
-        var forecastResponse = new OpenApiResponse
+        var weatherForecastResponse = new OpenApiResponse
         {
             Content =
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = weatherForecastSchema
+                    Schema = new OpenApiSchemaReference("weatherForecast")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "weatherForecast",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -2890,26 +2777,16 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = forecastResponse
+                                ["200"] = new OpenApiResponseReference("weatherForecast")
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "weatherForecast", weatherForecastSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "weatherForecast", forecastResponse
-                    }
-                }
-            },
         };
+        document.AddComponent("weatherForecast", weatherForecastSchema);
+        document.AddComponent("weatherForecast", weatherForecastResponse);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
