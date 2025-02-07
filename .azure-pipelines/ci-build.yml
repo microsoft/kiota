@@ -130,16 +130,23 @@ extends:
               targetType: inline
               script: |
                 set -e
+
                 IMAGE_NAME=$(REGISTRY)/$(IMAGE_NAME):validation
-                
+
+                # Check if the image exists
+                if ! docker inspect $IMAGE_NAME > /dev/null 2>&1; then
+                  echo "Error: Docker image $IMAGE_NAME does not exist."
+                  exit 1
+                fi
+
                 # Create manifest.json
-                echo '[{"Config":"config.json","RepoTags":["$(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber)"],"Layers":["layer.tar"]}]' > $(Build.ArtifactStagingDirectory)/manifest.json
+                echo '[{"Config":"config.json","RepoTags":["$IMAGE_NAME"],"Layers":["layer.tar"]}]' > $(Build.ArtifactStagingDirectory)/manifest.json
                 
                 # Export the image configuration
-                docker inspect $(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber) > $(Build.ArtifactStagingDirectory)/config.json
+                docker inspect $IMAGE_NAME > $(Build.ArtifactStagingDirectory)/config.json
                 
                 # Save the image layers
-                docker save $(REGISTRY)/$(IMAGE_NAME):$(Build.BuildNumber) -o $(Build.ArtifactStagingDirectory)/layer.tar
+                docker save $IMAGE_NAME -o $(Build.ArtifactStagingDirectory)/layer.tar
                 
                 # Create the final archive
                 cd $(Build.ArtifactStagingDirectory)
