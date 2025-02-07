@@ -71,18 +71,22 @@ export class RegenerateService {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
-        pluginObjectItem.outputPath,
-        pluginTypes,
-        selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
-        [],
-        this._clientKey,
-        settings.clearCache,
-        false,
-        settings.disableValidationRules,
-        ConsumerOperation.Edit,
-        pluginObjectItem.authType ? pluginObjectItem.authType : null,
-        pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
+        {
+          openAPIFilePath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          outputPath: pluginObjectItem.outputPath,
+          pluginTypes,
+          includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
+          excludePatterns: [],
+          clientClassName: this._clientKey,
+          clearCache: settings.clearCache,
+          cleanOutput: false,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Edit,
+          pluginAuthType: pluginObjectItem.authType ? pluginObjectItem.authType : null,
+          pluginAuthRefid: pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
+          workingDirectory: getWorkspaceJsonDirectory()
+        },
+
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;

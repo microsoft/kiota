@@ -191,22 +191,23 @@ export class GenerateClientCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._openApiTreeProvider.descriptionUrl,
-        outputPath,
-        [pluginTypes],
-        selectedPaths,
-        [],
-        typeof config.pluginName === "string"
-          ? config.pluginName
-          : "ApiClient",
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.disableValidationRules,
-        ConsumerOperation.Add,
-        null,
-        '',
-        config.workingDirectory
-      );
+        {
+          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          outputPath: outputPath,
+          pluginTypes: [pluginTypes],
+          includePatterns: selectedPaths,
+          excludePatterns: [],
+          clientClassName: typeof config.pluginName === "string"
+            ? config.pluginName
+            : "ApiClient",
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Add,
+          pluginAuthType: null,
+          pluginAuthRefid: '',
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+        });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
@@ -236,22 +237,23 @@ export class GenerateClientCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._openApiTreeProvider.descriptionUrl,
-        outputPath,
-        pluginTypes,
-        selectedPaths,
-        [],
-        typeof config.pluginName === "string"
-          ? config.pluginName
-          : "ApiClient",
-        settings.clearCache,
-        settings.cleanOutput,
-        settings.disableValidationRules,
-        ConsumerOperation.Add,
-        null,
-        '',
-        config.workingDirectory
-      );
+        {
+          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          outputPath: outputPath,
+          pluginTypes,
+          includePatterns: selectedPaths,
+          excludePatterns: [],
+          clientClassName: typeof config.pluginName === "string"
+            ? config.pluginName
+            : "ApiClient",
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Add,
+          pluginAuthType: null,
+          pluginAuthRefid: '',
+          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+        });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);

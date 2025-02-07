@@ -2,23 +2,41 @@ import * as rpc from "vscode-jsonrpc/node";
 
 import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from ".";
 import { KiotaPluginType } from "../types/enums";
-import { getWorkspaceJsonDirectory } from "../util";
 import connectToKiota from "./connect";
 
+interface PluginGenerationOptions {
+  openAPIFilePath: string;
+  outputPath: string;
+  pluginTypes: KiotaPluginType[];
+  includePatterns: string[];
+  excludePatterns: string[];
+  clientClassName: string;
+  clearCache: boolean;
+  cleanOutput: boolean;
+  disabledValidationRules: string[];
+  operation: ConsumerOperation;
+  pluginAuthType?: PluginAuthType | null;
+  pluginAuthRefid?: string;
+
+  workingDirectory: string;
+}
+
 export function generatePlugin(
-  descriptionPath: string,
-  output: string,
-  pluginTypes: KiotaPluginType[],
-  includeFilters: string[],
-  excludeFilters: string[],
-  clientClassName: string,
-  clearCache: boolean,
-  cleanOutput: boolean,
-  disableValidationRules: string[],
-  operation: ConsumerOperation,
-  pluginAuthType?: PluginAuthType | null,
-  pluginAuthRefid?: string,
-  workingDirectory: string = getWorkspaceJsonDirectory(),
+  {
+    openAPIFilePath,
+    outputPath,
+    pluginTypes,
+    includePatterns,
+    excludePatterns,
+    clientClassName,
+    clearCache,
+    cleanOutput,
+    disabledValidationRules,
+    operation,
+    pluginAuthType,
+    pluginAuthRefid,
+    workingDirectory
+  }: PluginGenerationOptions
 ): Promise<KiotaLogEntry[] | undefined> {
   return connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
@@ -31,11 +49,11 @@ export function generatePlugin(
         cleanOutput,
         clearCache,
         clientClassName,
-        disabledValidationRules: disableValidationRules,
-        excludePatterns: excludeFilters,
-        includePatterns: includeFilters,
-        openAPIFilePath: descriptionPath,
-        outputPath: output,
+        disabledValidationRules,
+        excludePatterns,
+        includePatterns,
+        openAPIFilePath,
+        outputPath,
         pluginAuthType,
         pluginAuthRefid,
         operation,
