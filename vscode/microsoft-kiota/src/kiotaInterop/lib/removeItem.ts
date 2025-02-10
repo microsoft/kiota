@@ -15,32 +15,42 @@ interface RemoveClientConfiguration extends RemoveItemConfiguration {
   clientName: string;
 }
 
-export function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(async (connection) => {
+export async function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaLogEntry[] | undefined> {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemovePlugin"
     );
-    const result = await connection.sendRequest(
+    return await connection.sendRequest(
       request,
       pluginName,
       cleanOutput
     );
-    return result;
   }, workingDirectory);
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };
 
 
 
-export function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(async (connection) => {
+export async function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaLogEntry[] | undefined> {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemoveClient"
     );
-    const result = await connection.sendRequest(
+    return await connection.sendRequest(
       request,
       clientName,
       cleanOutput
     );
-    return result;
   }, workingDirectory);
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

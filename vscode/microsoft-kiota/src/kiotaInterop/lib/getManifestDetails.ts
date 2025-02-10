@@ -10,10 +10,10 @@ interface ManifestOptions {
 }
 
 export async function getManifestDetails({ manifestPath, clearCache, apiIdentifier }: ManifestOptions): Promise<KiotaManifestResult | undefined> {
-  return connectToKiota(async (connection) => {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType<KiotaGetManifestDetailsConfiguration, KiotaManifestResult, void>('GetManifestDetails');
 
-    const result = await connection.sendRequest(
+    return await connection.sendRequest(
       request,
       {
         manifestPath,
@@ -21,6 +21,11 @@ export async function getManifestDetails({ manifestPath, clearCache, apiIdentifi
         clearCache
       }
     );
-    return result;
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

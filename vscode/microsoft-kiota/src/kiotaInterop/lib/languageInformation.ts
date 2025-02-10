@@ -7,8 +7,8 @@ interface LanguageInformationConfiguration {
   descriptionUrl: string; clearCache: boolean;
 }
 
-export function getLanguageInformationInternal(): Promise<LanguagesInformation | undefined> {
-  return connectToKiota<LanguagesInformation>(async (connection) => {
+export async function getLanguageInformationInternal(): Promise<LanguagesInformation | undefined> {
+  const result = await connectToKiota<LanguagesInformation>(async (connection) => {
     const request = new rpc.RequestType0<LanguagesInformation, void>(
       "Info"
     );
@@ -16,11 +16,17 @@ export function getLanguageInformationInternal(): Promise<LanguagesInformation |
       request,
     );
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };
 
-export function getLanguageInformationForDescription({ descriptionUrl, clearCache }: LanguageInformationConfiguration):
+export async function getLanguageInformationForDescription({ descriptionUrl, clearCache }: LanguageInformationConfiguration):
   Promise<LanguagesInformation | undefined> {
-  return connectToKiota<LanguagesInformation>(async (connection) => {
+  const result = await connectToKiota<LanguagesInformation>(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, LanguagesInformation, void>(
       "InfoForDescription"
     );
@@ -30,4 +36,10 @@ export function getLanguageInformationForDescription({ descriptionUrl, clearCach
       clearCache
     );
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

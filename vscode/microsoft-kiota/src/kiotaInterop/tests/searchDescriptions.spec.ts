@@ -26,20 +26,20 @@ describe("search description", () => {
     };
 
     connectionStub.resolves(mockResults);
-    const result = await searchDescription('test', false);
+    const result = await searchDescription({ searchTerm: 'test', clearCache: false });
     expect(result).toEqual(mockResults.results);
   });
 
   test('should return undefined when no results are found', async () => {
     connectionStub.resolves(undefined);
-    const result = await searchDescription('test', false);
+    const result = await searchDescription({ searchTerm: 'test', clearCache: false });
     expect(result).toBeUndefined();
   });
 
   test('should return undefined when search fails', async () => {
     connectionStub.rejects(new Error('Search failed'));
     try {
-      await searchDescription('test', false);
+      await searchDescription({ searchTerm: 'test', clearCache: false });
     } catch (error) {
       expect(`[${error}]`).toEqual('[Error: Search failed]');
     }

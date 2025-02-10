@@ -3,7 +3,7 @@ import * as rpc from 'vscode-jsonrpc/node';
 
 import { getKiotaPath, ensureKiotaIsPresent } from './install';
 
-export default async function connectToKiota<T>(callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = process.cwd()): Promise<T | undefined> {
+export default async function connectToKiota<T>(callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = process.cwd()): Promise<T | undefined | Error> {
   const kiotaPath = getKiotaPath();
   await ensureKiotaIsPresent();
   const childProcess = cp.spawn(kiotaPath, ["rpc"], {
@@ -23,7 +23,7 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
   } catch (error) {
     const errorMessage = (error as { data?: { message: string; }; })?.data?.message
       || 'An unknown error occurred';
-    throw new Error(errorMessage);
+    return new Error(errorMessage);
   } finally {
     connection.dispose();
     childProcess.kill();

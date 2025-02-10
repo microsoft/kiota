@@ -57,14 +57,21 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
       title: vscode.l10n.t("Searching...")
     }, (progress, _) => {
       const settings = getExtensionSettings(extensionId);
-      return searchDescription(x, settings.clearCache);
+      return searchDescription({ searchTerm: x, clearCache: settings.clearCache });
     }));
 
     if (config.descriptionPath) {
-      await openTreeViewWithProgress(async () => {
-        await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
-        await updateTreeViewIcons(treeViewId, true, false);
-      });
+      try {
+
+        await openTreeViewWithProgress(async () => {
+          await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
+          await updateTreeViewIcons(treeViewId, true, false);
+        });
+      } catch (err) {
+        const error = err as Error;
+        vscode.window.showErrorMessage(error.message);
+        return;
+      }
 
       const generateAnswer = vscode.l10n.t("Generate");
       const showGenerateMessage = this.context.globalState.get<boolean>(SHOW_MESSAGE_AFTER_API_LOAD, true);

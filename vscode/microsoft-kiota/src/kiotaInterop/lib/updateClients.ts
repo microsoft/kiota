@@ -9,17 +9,22 @@ interface UpdateClientsConfiguration {
   workspacePath: string;
 }
 
-export function updateClients({ cleanOutput, clearCache, workspacePath }: UpdateClientsConfiguration): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(async (connection) => {
+export async function updateClients({ cleanOutput, clearCache, workspacePath }: UpdateClientsConfiguration): Promise<KiotaLogEntry[] | undefined> {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType3<string, boolean, boolean, KiotaLogEntry[], void>(
       "Update"
     );
-    const result = await connection.sendRequest(
+    return await connection.sendRequest(
       request,
       workspacePath,
       cleanOutput,
       clearCache,
     );
-    return result;
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

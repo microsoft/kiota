@@ -3,15 +3,20 @@ import * as rpc from "vscode-jsonrpc/node";
 import { KiotaLogEntry } from "..";
 import connectToKiota from "../connect";
 
-export function migrateFromLockFile(lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota(async (connection) => {
+export async function migrateFromLockFile(lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType1<string, KiotaLogEntry[], void>(
       "MigrateFromLockFile"
     );
-    const result = await connection.sendRequest(
+    return await connection.sendRequest(
       request,
       lockFileDirectory
     );
-    return result;
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

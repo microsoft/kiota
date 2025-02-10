@@ -26,28 +26,8 @@ interface ClientGenerationOptions {
   workingDirectory: string;
 }
 
-export function generateClient(
-  {
-    openAPIFilePath,
-    outputPath,
-    language,
-    includePatterns,
-    excludePatterns,
-    clientClassName,
-    clientNamespaceName,
-    usesBackingStore,
-    clearCache,
-    cleanOutput,
-    excludeBackwardCompatible,
-    disabledValidationRules,
-    serializers,
-    deserializers,
-    structuredMimeTypes,
-    includeAdditionalData,
-    operation,
-    workingDirectory
-  }: ClientGenerationOptions): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota<KiotaLogEntry[]>(async (connection) => {
+export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaLogEntry[] | undefined> {
+  const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "Generate"
     );
@@ -55,26 +35,31 @@ export function generateClient(
     return await connection.sendRequest(
       request,
       {
-        cleanOutput,
-        clearCache,
-        clientClassName,
-        clientNamespaceName,
-        deserializers,
-        disabledValidationRules,
-        excludeBackwardCompatible,
-        excludePatterns,
-        includeAdditionalData,
-        includePatterns,
-        language,
-        openAPIFilePath,
-        outputPath,
-        serializers,
-        structuredMimeTypes,
-        usesBackingStore,
-        operation: operation
+        cleanOutput: clientGenerationOptions.cleanOutput,
+        clearCache: clientGenerationOptions.clearCache,
+        clientClassName: clientGenerationOptions.clientClassName,
+        clientNamespaceName: clientGenerationOptions.clientNamespaceName,
+        deserializers: clientGenerationOptions.deserializers,
+        disabledValidationRules: clientGenerationOptions.disabledValidationRules,
+        excludeBackwardCompatible: clientGenerationOptions.excludeBackwardCompatible,
+        excludePatterns: clientGenerationOptions.excludePatterns,
+        includeAdditionalData: clientGenerationOptions.includeAdditionalData,
+        includePatterns: clientGenerationOptions.includePatterns,
+        language: clientGenerationOptions.language,
+        openAPIFilePath: clientGenerationOptions.openAPIFilePath,
+        outputPath: clientGenerationOptions.outputPath,
+        serializers: clientGenerationOptions.serializers,
+        structuredMimeTypes: clientGenerationOptions.structuredMimeTypes,
+        usesBackingStore: clientGenerationOptions.usesBackingStore,
+        operation: clientGenerationOptions.operation
       } as GenerationConfiguration,
     );
-  }, workingDirectory);
+  }, clientGenerationOptions.workingDirectory);
 
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };
 

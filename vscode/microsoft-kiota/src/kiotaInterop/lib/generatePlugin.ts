@@ -21,43 +21,34 @@ interface PluginGenerationOptions {
   workingDirectory: string;
 }
 
-export function generatePlugin(
-  {
-    openAPIFilePath,
-    outputPath,
-    pluginTypes,
-    includePatterns,
-    excludePatterns,
-    clientClassName,
-    clearCache,
-    cleanOutput,
-    disabledValidationRules,
-    operation,
-    pluginAuthType,
-    pluginAuthRefid,
-    workingDirectory
-  }: PluginGenerationOptions
+export async function generatePlugin(pluginGenerationOptions: PluginGenerationOptions
 ): Promise<KiotaLogEntry[] | undefined> {
-  return connectToKiota<KiotaLogEntry[]>(async (connection) => {
+  const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "GeneratePlugin"
     );
     return await connection.sendRequest(
       request,
       {
-        pluginTypes,
-        cleanOutput,
-        clearCache,
-        clientClassName,
-        disabledValidationRules,
-        excludePatterns,
-        includePatterns,
-        openAPIFilePath,
-        outputPath,
-        pluginAuthType,
-        pluginAuthRefid,
-        operation,
+        pluginTypes: pluginGenerationOptions.pluginTypes,
+        cleanOutput: pluginGenerationOptions.cleanOutput,
+        clearCache: pluginGenerationOptions.clearCache,
+        clientClassName: pluginGenerationOptions.clientClassName,
+        disabledValidationRules: pluginGenerationOptions.disabledValidationRules,
+        excludePatterns: pluginGenerationOptions.excludePatterns,
+        includePatterns: pluginGenerationOptions.includePatterns,
+        openAPIFilePath: pluginGenerationOptions.openAPIFilePath,
+        outputPath: pluginGenerationOptions.outputPath,
+        pluginAuthType: pluginGenerationOptions.pluginAuthType,
+        pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid,
+        operation: pluginGenerationOptions.operation,
       } as GenerationConfiguration,
     );
-  }, workingDirectory);
+  }, pluginGenerationOptions.workingDirectory);
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };

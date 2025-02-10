@@ -11,15 +11,20 @@ interface KiotaResultOptions {
 }
 
 export async function showKiotaResult({ includeFilters, descriptionPath, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaShowResult | undefined> {
-  return connectToKiota(async (connection) => {
+  const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
 
-    const result = await connection.sendRequest(request, {
+    return await connection.sendRequest(request, {
       includeFilters,
       excludeFilters,
       descriptionPath,
       clearCache
     });
-    return result;
   });
+
+  if (result instanceof Error) {
+    throw result;
+  }
+
+  return result;
 };
