@@ -1737,7 +1737,7 @@ public partial class KiotaBuilder
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
             // inline schema + referenced schema
             (false, { Length: > 0 }, { Length: 1 }, _) =>
-                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x is OpenApiSchema)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x is IOpenApiSchema)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // properties + referenced schema
             (true, { Length: 0 }, { Length: 1 }, _) =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
@@ -1779,7 +1779,7 @@ public partial class KiotaBuilder
         if (!currentClass.Documentation.DescriptionAvailable &&
             new string[] { schema.Description }
                         .Union(schema.AllOf
-                                    .OfType<OpenApiSchema>()
+                                    .OfType<IOpenApiSchema>()
                                     .Select(static x => x.Description))
                         .FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string description)
             currentClass.Documentation.DescriptionTemplate = description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
@@ -1888,13 +1888,13 @@ public partial class KiotaBuilder
         }
 
         // type: object with single oneOf referring to inheritance or intersection
-        if (schema.IsObjectType() && schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries() is OpenApiSchema mergedExclusiveUnionSchema)
+        if (schema.IsObjectType() && schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries() is IOpenApiSchema mergedExclusiveUnionSchema)
         {
             return CreateModelDeclarations(currentNode, mergedExclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
 
         // type: object with single anyOf referring to inheritance or intersection
-        if (schema.IsObjectType() && schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries() is OpenApiSchema mergedInclusiveUnionSchema)
+        if (schema.IsObjectType() && schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries() is IOpenApiSchema mergedInclusiveUnionSchema)
         {
             return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
