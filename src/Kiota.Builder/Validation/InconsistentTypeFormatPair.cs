@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
 
-public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
+public class InconsistentTypeFormatPair : ValidationRule<IOpenApiSchema>
 {
     private static readonly Dictionary<JsonSchemaType, HashSet<string>> validPairs = new()
     {

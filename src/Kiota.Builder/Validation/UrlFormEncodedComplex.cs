@@ -3,6 +3,7 @@ using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
@@ -13,14 +14,14 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
     };
     public UrlFormEncodedComplex() : base(nameof(UrlFormEncodedComplex), static (context, operation) =>
     {
-        if (operation.GetRequestSchema(validContentTypes) is OpenApiSchema requestSchema)
+        if (operation.GetRequestSchema(validContentTypes) is { } requestSchema)
             ValidateSchema(requestSchema, context, "request body");
-        if (operation.GetResponseSchema(validContentTypes) is OpenApiSchema responseSchema)
+        if (operation.GetResponseSchema(validContentTypes) is { } responseSchema)
             ValidateSchema(responseSchema, context, "response body");
     })
     {
     }
-    private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, string schemaName)
+    private static void ValidateSchema(IOpenApiSchema schema, IValidationContext context, string schemaName)
     {
         if (schema == null) return;
         if (!schema.IsObjectType())

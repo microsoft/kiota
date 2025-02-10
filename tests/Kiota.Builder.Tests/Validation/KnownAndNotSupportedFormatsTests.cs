@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Readers;
 using Xunit;
@@ -81,7 +82,7 @@ paths:
         var rule = new KnownAndNotSupportedFormats();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
-        settings.RuleSet.Add(typeof(OpenApiSchema), [rule]);
+        settings.RuleSet.Add(typeof(IOpenApiSchema), [rule]);
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
         OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);

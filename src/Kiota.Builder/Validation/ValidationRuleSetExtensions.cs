@@ -1,6 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
@@ -16,9 +17,9 @@ public static class ValidationRuleSetExtensions
 
         ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry(), typeof(OpenApiDocument));
         ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries(), typeof(OpenApiDocument));
-        ruleSet.AddRuleIfEnabled(configuration, new GetWithBody(), typeof(OpenApiPathItem));
-        ruleSet.AddRuleIfEnabled(configuration, new KnownAndNotSupportedFormats(), typeof(OpenApiSchema));
-        ruleSet.AddRuleIfEnabled(configuration, new InconsistentTypeFormatPair(), typeof(OpenApiSchema));
+        ruleSet.AddRuleIfEnabled(configuration, new GetWithBody(), typeof(IOpenApiPathItem));
+        ruleSet.AddRuleIfEnabled(configuration, new KnownAndNotSupportedFormats(), typeof(IOpenApiSchema));
+        ruleSet.AddRuleIfEnabled(configuration, new InconsistentTypeFormatPair(), typeof(IOpenApiSchema));
         ruleSet.AddRuleIfEnabled(configuration, new UrlFormEncodedComplex(), typeof(OpenApiOperation));
         ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration), typeof(OpenApiOperation));
         ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration), typeof(OpenApiDocument));
