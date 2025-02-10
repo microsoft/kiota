@@ -4,9 +4,8 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../../constants";
-import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient, generatePlugin, getLogEntriesForLevel, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
+import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient, generatePlugin, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
-import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { getWorkspaceJsonDirectory, parseGenerationLanguage, parsePluginType } from "../../util";
 import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";

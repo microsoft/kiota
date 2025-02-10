@@ -24,7 +24,7 @@ describe("getKiotaVersion", () => {
     expect(version).toBeDefined();
   });
 
-  test('should throw error when ensureKiotaIsPresent fails', async () => {
+  test('should throw error when connection fails', async () => {
     connectionStub.rejects(new Error('Installation failed'));
     try {
       await getKiotaVersion();
