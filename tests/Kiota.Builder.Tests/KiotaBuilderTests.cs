@@ -3361,7 +3361,7 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObjects")
                 }
             },
         };
