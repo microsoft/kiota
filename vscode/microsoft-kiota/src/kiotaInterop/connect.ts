@@ -21,11 +21,9 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
   try {
     return await callback(connection);
   } catch (error) {
-    console.warn(error);
     const errorMessage = (error as { data?: { message: string; }; })?.data?.message
       || 'An unknown error occurred';
-    console.log(errorMessage);
-    return undefined;
+    throw new Error(errorMessage);
   } finally {
     connection.dispose();
     childProcess.kill();
