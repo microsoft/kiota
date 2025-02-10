@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.97.0"
   },
   "license": "MIT",
   "categories": [
@@ -517,7 +517,7 @@
     "test:unit": "jest --detectOpenHandles"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^3.0.1",
+    "@stylistic/eslint-plugin-ts": "^3.1.0",
     "@types/adm-zip": "^0.5.7",
     "@types/chai": "^5.0.1",
     "@types/follow-redirects": "^1.14.4",
@@ -525,13 +525,13 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.3",
-    "@types/vscode": "^1.96.0",
+    "@types/vscode": "^1.97.0",
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.23.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.1.2",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.0",
     "glob": "^11.0.1",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
