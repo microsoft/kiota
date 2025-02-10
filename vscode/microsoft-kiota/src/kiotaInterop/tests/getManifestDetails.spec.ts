@@ -3,7 +3,7 @@ import * as sinon from 'sinon';
 import { getManifestDetails, KiotaManifestResult } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
-describe("getKiotaVersion", () => {
+describe("get manifest details", () => {
   let connectionStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -22,8 +22,8 @@ describe("getKiotaVersion", () => {
     };
 
     connectionStub.resolves(mockResults);
-    const version = await getManifestDetails({ manifestPath: '', clearCache: true, apiIdentifier: 'my-api' });
-    expect(version).toBeDefined();
+    const details = await getManifestDetails({ manifestPath: '', clearCache: true, apiIdentifier: 'my-api' });
+    expect(details).toBeDefined();
   });
 
 });
