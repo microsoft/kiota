@@ -71,7 +71,7 @@ public static class OpenApiSchemaExtensions
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
-            FlattenEmptyEntries([schema.Items], static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && flat.IsSemanticallyMeaningful());
+            FlattenEmptyEntries([schema.Items], static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is IOpenApiSchema flat && flat.IsSemanticallyMeaningful());
     }
 
     public static bool IsObjectType(this IOpenApiSchema? schema)
@@ -129,7 +129,7 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is not null
             && schema.IsInclusiveUnion(0)
-            && schema.AnyOf.OnlyOneOrDefault() is OpenApiSchema subSchema
+            && schema.AnyOf.OnlyOneOrDefault() is IOpenApiSchema subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
             var result = schema.CreateShallowCopy();
@@ -146,7 +146,7 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is not null
             && schema.IsExclusiveUnion(0)
-            && schema.OneOf.OnlyOneOrDefault() is OpenApiSchema subSchema
+            && schema.OneOf.OnlyOneOrDefault() is IOpenApiSchema subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
             var result = schema.CreateShallowCopy();
@@ -173,12 +173,12 @@ public static class OpenApiSchemaExtensions
                                     .ToArray();
         var entriesToMerge = meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).ToArray();
         if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator &&
-            result is OpenApiSchema resultSchema)
-            if (resultSchema.Discriminator is null)
-                resultSchema.Discriminator = discriminator;
-            else if (string.IsNullOrEmpty(resultSchema.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
+            result is IOpenApiSchema resultSchema)
+            if (resultSchema.Discriminator is null && resultSchema is OpenApiSchema openApiSchema)
+                openApiSchema.Discriminator = discriminator;
+            else if (resultSchema.Discriminator is not null && string.IsNullOrEmpty(resultSchema.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
                 resultSchema.Discriminator.PropertyName = discriminator.PropertyName;
-            else if (discriminator.Mapping?.Any() ?? false)
+            else if (resultSchema.Discriminator is not null && (discriminator.Mapping?.Any() ?? false))
                 resultSchema.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
