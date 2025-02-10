@@ -1564,7 +1564,7 @@ public partial class KiotaBuilder
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.RequestBody is not null &&
-            operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
+            operation.GetRequestSchema(config.StructuredMimeTypes) is IOpenApiSchema requestBodySchema)
         {
             CodeTypeBase requestBodyType;
             if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes)
