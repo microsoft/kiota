@@ -46,7 +46,7 @@ public static class OpenApiOperationExtensions
     private static readonly StructuredMimeTypesCollection multipartMimeTypes = new(["multipart/form-data"]);
     internal static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
     {
-        return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is OpenApiSchema schema &&
+        return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is IOpenApiSchema schema &&
         source.GetValidSchemas(multipartMimeTypes).FirstOrDefault() == schema;
     }
     internal static bool IsMultipartTopMimeType(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
