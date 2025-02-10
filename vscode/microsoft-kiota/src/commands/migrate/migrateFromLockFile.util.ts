@@ -18,7 +18,7 @@ export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext
             );
 
             if (result === vscode.l10n.t("OK")) {
-                await handleMigration(context, workspaceFolders![0]);
+                await handleMigration(workspaceFolders![0]);
                 await vscode.commands.executeCommand('kiota.workspace.refresh');
             }
         }
@@ -55,10 +55,7 @@ export function displayMigrationMessages(logEntries: KiotaLogEntry[]) {
 }
 
 
-export async function handleMigration(
-    context: vscode.ExtensionContext,
-    workspaceFolder: vscode.WorkspaceFolder
-): Promise<void> {
+export async function handleMigration(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: vscode.l10n.t("Migrating your API clients..."),

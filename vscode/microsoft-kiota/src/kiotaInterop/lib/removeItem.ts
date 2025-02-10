@@ -1,5 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
-import { KiotaLogEntry } from "..";
+
+import { KiotaLogEntry, KiotaResult } from "..";
 import connectToKiota from "../connect";
 
 interface RemoveItemConfiguration {
@@ -15,7 +16,7 @@ interface RemoveClientConfiguration extends RemoveItemConfiguration {
   clientName: string;
 }
 
-export async function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaLogEntry[] | undefined> {
+export async function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaResult | undefined> {
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemovePlugin"
@@ -31,12 +32,21 @@ export async function removePlugin({ pluginName, cleanOutput, workingDirectory }
     throw result;
   }
 
-  return result;
+  if (result) {
+    return {
+      isSuccess: result.some(k => k.message.includes('removed successfully')),
+      logs: result
+    };
+  }
+
+  return undefined;
 };
 
 
 
-export async function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaLogEntry[] | undefined> {
+
+
+export async function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaResult | undefined> {
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
       "RemoveClient"
@@ -52,5 +62,12 @@ export async function removeClient({ clientName, cleanOutput, workingDirectory }
     throw result;
   }
 
-  return result;
+  if (result) {
+    return {
+      isSuccess: result.some(k => k.message.includes('removed successfully')),
+      logs: result
+    };
+  }
+
+  return undefined;
 };

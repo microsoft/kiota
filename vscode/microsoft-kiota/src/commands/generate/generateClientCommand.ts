@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, KiotaPluginType, LogLevel } from "../../kiotaInterop";
+import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "../../kiotaInterop";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -16,7 +16,7 @@ import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationConte
 import { getSanitizedString, getWorkspaceJsonDirectory, parseGenerationLanguage, parseGenerationType, parsePluginType, updateTreeViewIcons } from "../../util";
 import { isDeeplinkEnabled, transformToGenerationConfig } from "../../utilities/deep-linking";
 import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
-import { checkForSuccess, exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
+import { exportLogsAndShowErrors, logFromLogLevel } from "../../utilities/logging";
 import { showUpgradeWarningMessage } from "../../utilities/messaging";
 import { Command } from "../Command";
 import { displayGenerationResults, getLanguageInformation } from "./generation-util";
@@ -124,7 +124,7 @@ export class GenerateClientCommand extends Command {
         return;
     }
 
-    const authenticationWarnings = getLogEntriesForLevel(result ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
+    const authenticationWarnings = getLogEntriesForLevel(result?.logs ?? [], LogLevel.warning).filter(entry => entry.message.startsWith('Authentication warning'));
     if (authenticationWarnings.length > 0) {
       authenticationWarnings.forEach(entry => logFromLogLevel(entry, this._kiotaOutputChannel));
 
@@ -140,7 +140,7 @@ export class GenerateClientCommand extends Command {
       }
     }
 
-    if (result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
+    if (result?.isSuccess) {
       // Save state before opening the new window
       const outputState = {
         outputPath,
@@ -182,7 +182,7 @@ export class GenerateClientCommand extends Command {
     }
   }
 
-  private async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaResult | undefined> {
     const pluginTypes = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -209,7 +209,7 @@ export class GenerateClientCommand extends Command {
           workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
         "pluginType": pluginTypes.toString(),
@@ -220,15 +220,14 @@ export class GenerateClientCommand extends Command {
       return result;
     });
     if (result) {
-      const isSuccess = await checkForSuccess(result);
-      if (!isSuccess) {
-        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+      if (!result.isSuccess) {
+        await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }
     return result;
   }
-  private async generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generatePluginAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaResult | undefined> {
     const pluginTypes = Array.isArray(config.pluginTypes) ? parsePluginType(config.pluginTypes) : [KiotaPluginType.ApiPlugin];
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -255,7 +254,7 @@ export class GenerateClientCommand extends Command {
           workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generatePlugin.completed`, {
         "pluginType": pluginTypes.toString(),
@@ -266,9 +265,8 @@ export class GenerateClientCommand extends Command {
       return result;
     });
     if (result) {
-      const isSuccess = await checkForSuccess(result);
-      if (!isSuccess) {
-        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+      if (!result.isSuccess) {
+        await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
       }
       const deepLinkParams = getDeepLinkParams();
       const isttkIntegration = deepLinkParams.source?.toLowerCase() === 'ttk';
@@ -278,7 +276,7 @@ export class GenerateClientCommand extends Command {
     }
     return result;
   }
-  private async generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaLogEntry[] | undefined> {
+  private async generateClientAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaResult | undefined> {
     const language =
       typeof config.language === "string"
         ? parseGenerationLanguage(config.language)
@@ -312,7 +310,7 @@ export class GenerateClientCommand extends Command {
           workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generateClient.completed`, {
         "language": generationLanguageToString(language),
@@ -333,9 +331,8 @@ export class GenerateClientCommand extends Command {
       await vscode.commands.executeCommand(treeViewFocusCommand);
     }
     if (result) {
-      const isSuccess = await checkForSuccess(result);
-      if (!isSuccess) {
-        await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+      if (!result.isSuccess) {
+        await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
       }
       void vscode.window.showInformationMessage(vscode.l10n.t('Generation completed successfully.'));
     }

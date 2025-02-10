@@ -251,3 +251,7 @@ export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProp
 export interface LanguagesInformation {
   [key: string]: LanguageInformation;
 }
+
+export interface KiotaResult extends KiotaLoggedResult {
+  isSuccess: boolean;
+}

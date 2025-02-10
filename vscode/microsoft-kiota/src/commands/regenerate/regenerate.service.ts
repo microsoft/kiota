@@ -8,7 +8,7 @@ import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, ge
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { getWorkspaceJsonDirectory, parseGenerationLanguage, parsePluginType } from "../../util";
-import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
+import { exportLogsAndShowErrors } from "../../utilities/logging";
 
 export class RegenerateService {
 
@@ -48,9 +48,8 @@ export class RegenerateService {
           workingDirectory: getWorkspaceJsonDirectory()
         });
       if (result) {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+        if (!result.isSuccess) {
+          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(`Client ${this._clientKey} re-generated successfully.`);
       }
@@ -88,7 +87,7 @@ export class RegenerateService {
 
       );
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
 
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
@@ -98,9 +97,8 @@ export class RegenerateService {
         "duration": duration,
       });
       if (result) {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+        if (!result.isSuccess) {
+          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(vscode.l10n.t(`Plugin ${this._clientKey} re-generated successfully.`));
       }

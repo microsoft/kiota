@@ -25,6 +25,6 @@ export class MigrateFromLockFileCommand extends Command {
       return;
     }
 
-    await handleMigration(this._context, workspaceFolder);
+    await handleMigration(workspaceFolder);
   }
 }

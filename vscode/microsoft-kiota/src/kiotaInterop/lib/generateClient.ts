@@ -1,8 +1,8 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "..";
+import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "..";
 import connectToKiota from "../connect";
-import { KiotaGenerationLanguage } from "../types";
+import { KiotaGenerationLanguage, KiotaResult } from "../types";
 
 interface ClientGenerationOptions {
   clearCache: boolean;
@@ -26,7 +26,7 @@ interface ClientGenerationOptions {
   workingDirectory: string;
 }
 
-export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaLogEntry[] | undefined> {
+export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaResult | undefined> {
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "Generate"
@@ -60,6 +60,13 @@ export async function generateClient(clientGenerationOptions: ClientGenerationOp
     throw result;
   }
 
-  return result;
+  if (result) {
+    return {
+      isSuccess: checkForSuccess(result as KiotaLogEntry[]),
+      logs: result
+    };
+  }
+
+  return undefined;
 };
 
