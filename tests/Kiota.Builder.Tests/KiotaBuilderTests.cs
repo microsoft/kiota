@@ -2818,11 +2818,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.uploadSession",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -2843,7 +2838,7 @@ paths:
                                             Schema = new OpenApiSchema
                                             {
                                                 AnyOf = new List<IOpenApiSchema> {
-                                                    uploadSessionSchema
+                                                    new OpenApiSchemaReference("microsoft.graph.uploadSession")
                                                 }
                                             }
                                         }
@@ -2854,15 +2849,9 @@ paths:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.uploadSession", uploadSessionSchema
-                    }
-                },
-            },
         };
+        document.AddComponent("microsoft.graph.uploadSession", uploadSessionSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -2900,11 +2889,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.uploadSession",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -2925,7 +2909,7 @@ paths:
                                             Schema = new OpenApiSchema
                                             {
                                                 AnyOf = new List<IOpenApiSchema> {
-                                                    uploadSessionSchema,
+                                                    new OpenApiSchemaReference("microsoft.graph.uploadSession"),
                                                     new OpenApiSchema {
                                                     }
                                                 }
@@ -2938,15 +2922,9 @@ paths:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.uploadSession", uploadSessionSchema
-                    }
-                },
-            },
         };
+        document.AddComponent("microsoft.graph.uploadSession", uploadSessionSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -2987,11 +2965,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "anyOfNullable",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -3009,7 +2982,7 @@ paths:
                                     Content = new Dictionary<string, OpenApiMediaType> {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = anyOfSchema
+                                            Schema = new OpenApiSchemaReference("anyOfNullable")
                                         }
                                     }
                                 }
@@ -3018,15 +2991,9 @@ paths:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "anyOfNullable", anyOfSchema
-                    }
-                },
-            },
         };
+        document.AddComponent("anyOfNullable", anyOfSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -3067,11 +3034,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "anyOfNullable",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -3089,7 +3051,7 @@ paths:
                                     Content = new Dictionary<string, OpenApiMediaType> {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = anyOfSchema
+                                            Schema = new OpenApiSchemaReference("anyOfNullable")
                                         }
                                     }
                                 }
@@ -3098,15 +3060,9 @@ paths:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "anyOfNullable", anyOfSchema
-                    }
-                },
-            },
         };
+        document.AddComponent("anyOfNullable", anyOfSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
@@ -3157,11 +3113,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectSchema = new OpenApiSchema
         {
@@ -3178,13 +3129,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObject",
-                Type = ReferenceType.Schema
-            },
             AllOf = new List<IOpenApiSchema> {
-                entitySchema
+                new OpenApiSchemaReference("microsoft.graph.entity")
             },
         };
         var directoryObjects = new OpenApiResponse
@@ -3193,13 +3139,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = entitySchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.entity")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -3213,29 +3154,17 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = directoryObjects,
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.entity", entitySchema
-                    },
-                    {
-                        "microsoft.graph.directoryObject", directoryObjectSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjects
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjects);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -3292,11 +3221,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectSchema = new OpenApiSchema
         {
@@ -3313,13 +3237,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObject",
-                Type = ReferenceType.Schema
-            },
             AllOf = new List<IOpenApiSchema> {
-                entitySchema
+                new OpenApiSchemaReference("microsoft.graph.entity")
             },
         };
         var fileSchema = new OpenApiSchema
@@ -3337,11 +3256,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.file",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjects = new OpenApiResponse()
         {
@@ -3349,13 +3263,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType()
                 {
-                    Schema = entitySchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.entity")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument()
@@ -3368,32 +3277,18 @@ paths:
                         [OperationType.Get] = new OpenApiOperation() {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = directoryObjects,
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.entity", entitySchema
-                    },
-                    {
-                        "microsoft.graph.directoryObject", directoryObjectSchema
-                    },
-                    {
-                        "microsoft.graph.file", fileSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjects
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.file", fileSchema);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjects);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -3432,11 +3327,6 @@ paths:
             {
                 PropertyName = "@odata.type",
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectSchema = new OpenApiSchema
         {
@@ -3456,23 +3346,13 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObject",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectsResponse = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             OneOf = new List<IOpenApiSchema> {
-                entitySchema,
-                directoryObjectSchema
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Schema
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.directoryObject")
             },
         };
         var directoryObjects = new OpenApiResponse
@@ -3481,13 +3361,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = directoryObjectsResponse
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -3501,32 +3376,18 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = directoryObjects,
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.entity", entitySchema
-                    },
-                    {
-                        "microsoft.graph.directoryObject", directoryObjectSchema
-                    },
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjectsResponse
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjects
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjectsResponse);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjects);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
@@ -3571,17 +3432,12 @@ paths:
             {
                 PropertyName = "@odata.type",
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = new List<IOpenApiSchema> {
-                entitySchema,
+                new OpenApiSchemaReference("microsoft.graph.entity"),
                 new OpenApiSchema {
                     Properties = new Dictionary<string, IOpenApiSchema> {
                         {
@@ -3600,17 +3456,12 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObject",
-                Type = ReferenceType.Schema
-            },
         };
         var userSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = new List<IOpenApiSchema> {
-                directoryObjectSchema,
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
                 new OpenApiSchema {
                     Properties = new Dictionary<string, IOpenApiSchema> {
                         {
@@ -3629,11 +3480,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.user",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjects = new OpenApiResponse
         {
@@ -3641,13 +3487,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = directoryObjectSchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -3661,32 +3502,18 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = directoryObjects,
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.entity", entitySchema
-                    },
-                    {
-                        "microsoft.graph.directoryObject", directoryObjectSchema
-                    },
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjects
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjects);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
@@ -3754,17 +3581,12 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.entity",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjectSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                entitySchema,
+                new OpenApiSchemaReference("microsoft.graph.entity"),
                 new OpenApiSchema
                 {
                     Properties = new Dictionary<string, IOpenApiSchema> {
@@ -3784,17 +3606,12 @@ paths:
                     }
                 }
             ],
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObject",
-                Type = ReferenceType.Schema
-            },
         };
         var userSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                directoryObjectSchema,
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
                 new OpenApiSchema
                 {
                     Properties = new Dictionary<string, IOpenApiSchema> {
@@ -3814,11 +3631,6 @@ paths:
                     }
                 }
             ],
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.user",
-                Type = ReferenceType.Schema
-            },
         };
         var directoryObjects = new OpenApiResponse
         {
@@ -3826,13 +3638,8 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = directoryObjectSchema
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "microsoft.graph.directoryObjects",
-                Type = ReferenceType.Response
             },
         };
         var document = new OpenApiDocument
@@ -3846,32 +3653,18 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = directoryObjects,
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
                             }
                         }
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.entity", entitySchema
-                    },
-                    {
-                        "microsoft.graph.directoryObject", directoryObjectSchema
-                    },
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                },
-                Responses = new Dictionary<string, IOpenApiResponse> {
-                    {
-                        "microsoft.graph.directoryObjects", directoryObjects
-                    }
-                }
-            },
         };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.AddComponent("microsoft.graph.directoryObjects", directoryObjects);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
@@ -3909,11 +3702,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.simpleObject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -3931,7 +3719,7 @@ paths:
                                         ["application/json"] = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
                                                 OneOf = new List<IOpenApiSchema> {
-                                                    simpleObjet,
+                                                    new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
                                                         Type = JsonSchemaType.Number
                                                     }
@@ -3945,15 +3733,9 @@ paths:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subNS.simpleObject", simpleObjet
-                    }
-                }
-            },
         };
+        document.AddComponent("subNS.simpleObject", simpleObjet);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4026,11 +3808,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.simpleObject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4048,7 +3825,7 @@ components:
                                         ["application/json"] = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
                                                 OneOf = new List<IOpenApiSchema> {
-                                                    simpleObjet,
+                                                    new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
                                                         Type = JsonSchemaType.Object,
                                                         Properties = new Dictionary<string, IOpenApiSchema> {
@@ -4069,15 +3846,9 @@ components:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subNS.simpleObject", simpleObjet
-                    }
-                }
-            },
         };
+        document.AddComponent("subNS.simpleObject", simpleObjet);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4108,11 +3879,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.simpleObject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4130,7 +3896,7 @@ components:
                                         ["application/json"] = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
                                                 AnyOf = new List<IOpenApiSchema> {
-                                                    simpleObjet,
+                                                    new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
                                                         Type = JsonSchemaType.Number
                                                     }
@@ -4144,15 +3910,9 @@ components:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subNS.simpleObject", simpleObjet
-                    }
-                }
-            },
         };
+        document.AddComponent("subNS.simpleObject", simpleObjet);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4183,11 +3943,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.simpleObject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4205,7 +3960,7 @@ components:
                                         ["application/json"] = new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
                                                 AnyOf = new List<IOpenApiSchema> {
-                                                    simpleObjet,
+                                                    new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
                                                         Type = JsonSchemaType.Object,
                                                         Properties = new Dictionary<string, IOpenApiSchema> {
@@ -4226,15 +3981,9 @@ components:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subNS.simpleObject", simpleObjet
-                    }
-                }
-            },
         };
+        document.AddComponent("subNS.simpleObject", simpleObjet);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4279,17 +4028,12 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.baseObject",
-                Type = ReferenceType.Schema
-            },
         };
         var derivedObject = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                baseObject,
+                new OpenApiSchemaReference("subNS.baseObject"),
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
@@ -4311,17 +4055,12 @@ components:
                     },
                 }
             ],
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.derivedObject",
-                Type = ReferenceType.Schema
-            },
         };
         var secondLevelDerivedObject = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                derivedObject,
+                new OpenApiSchemaReference("subNS.derivedObject"),
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
@@ -4334,11 +4073,6 @@ components:
                     }
                 }
             ],
-            Reference = new OpenApiReference
-            {
-                Id = "subNS.secondLevelDerivedObject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4354,7 +4088,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = derivedObject
+                                            Schema = new OpenApiSchemaReference("subNS.derivedObject")
                                         }
                                     }
                                 },
@@ -4363,21 +4097,11 @@ components:
                     }
                 }
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subNS.baseObject", baseObject
-                    },
-                    {
-                        "subNS.derivedObject", derivedObject
-                    },
-                    {
-                        "subNS.secondLevelDerivedObject", secondLevelDerivedObject
-                    }
-                }
-            },
         };
+        document.AddComponent("subNS.baseObject", baseObject);
+        document.AddComponent("subNS.derivedObject", derivedObject);
+        document.AddComponent("subNS.secondLevelDerivedObject", secondLevelDerivedObject);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4807,11 +4531,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4827,7 +4546,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -4836,15 +4555,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4869,11 +4582,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "subns.myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4889,7 +4597,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("subns.myobject")
                                         }
                                     }
                                 },
@@ -4898,15 +4606,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "subns.myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("subns.myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -4931,11 +4633,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -4951,7 +4648,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -4960,15 +4657,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5012,7 +4703,7 @@ components:
                         {
                             AnyOf = new List<IOpenApiSchema>
                             {
-                                enumSchema,
+                                new OpenApiSchemaReference("riskLevel"),
                                 new OpenApiSchema
                                 {
                                     Type = JsonSchemaType.Object,
@@ -5021,11 +4712,6 @@ components:
                         }
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
             },
         };
 
@@ -5043,7 +4729,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5051,20 +4737,11 @@ components:
                         }
                     }
                 }
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    },
-                    {
-                        "riskLevel", enumSchema
-                    }
-                },
-
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.AddComponent("riskLevel", enumSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5106,14 +4783,9 @@ components:
                 {
                     "signInRiskLevels", new OpenApiSchema {
                         Type = JsonSchemaType.Array,
-                        Items = enumSchema
+                        Items = new OpenApiSchemaReference("riskLevel")
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
             },
         };
 
@@ -5131,7 +4803,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5140,19 +4812,10 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    },
-                    {
-                        "riskLevel", enumSchema
-                    }
-                },
-
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.AddComponent("riskLevel", enumSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5185,11 +4848,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5205,7 +4863,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5213,16 +4871,10 @@ components:
                         }
                     }
                 }
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5248,11 +4900,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5272,7 +4919,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5280,16 +4927,10 @@ components:
                         }
                     }
                 }
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5313,11 +4954,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
             Description = @"	some description with invalid characters: 
 ",
         };
@@ -5335,7 +4971,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5344,15 +4980,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5380,11 +5010,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5400,7 +5025,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         [contentType] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5409,15 +5034,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5519,11 +5138,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var myOtherObjectSchema = new OpenApiSchema
         {
@@ -5534,11 +5148,6 @@ components:
                         Type = JsonSchemaType.String,
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myotherobject",
-                Type = ReferenceType.Schema
             },
         };
         var document = new OpenApiDocument
@@ -5555,14 +5164,14 @@ components:
                                 ["2XX"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myOtherObjectSchema
+                                            Schema = new OpenApiSchemaReference("myotherobject")
                                         }
                                     }
                                 },
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5571,14 +5180,10 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    { "myobject", myObjectSchema },
-                    { "myotherobject", myOtherObjectSchema },
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.AddComponent("myotherobject", myOtherObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
@@ -5612,11 +5217,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5632,7 +5232,7 @@ components:
                                 ["2XX"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5642,15 +5242,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
@@ -5674,22 +5268,6 @@ components:
     [Fact]
     public void Considers204WithNoSchemaOver206WithNoSchema()
     {
-        var myObjectSchema = new OpenApiSchema
-        {
-            Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, IOpenApiSchema> {
-                {
-                    "id", new OpenApiSchema {
-                        Type = JsonSchemaType.String,
-                    }
-                }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
-        };
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -5708,14 +5286,6 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
@@ -5756,11 +5326,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5776,7 +5341,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5786,15 +5351,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5827,11 +5386,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -5847,7 +5401,7 @@ components:
                                 [statusCode.ToString()] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5856,15 +5410,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -5884,11 +5432,7 @@ components:
     [Theory]
     public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix)
     {
-        var paths = new OpenApiPaths();
-        var components = new OpenApiComponents
-        {
-            Schemas = new Dictionary<string, IOpenApiSchema>()
-        };
+        var document = new OpenApiDocument();
         foreach (var componentName in componentNames)
         {
             var myObjectSchema = new OpenApiSchema
@@ -5901,13 +5445,8 @@ components:
                         }
                     }
                 },
-                Reference = new OpenApiReference
-                {
-                    Id = componentName,
-                    Type = ReferenceType.Schema
-                },
             };
-            paths.Add($"answer{componentName}", new OpenApiPathItem
+            document.Paths.Add($"answer{componentName}", new OpenApiPathItem
             {
                 Operations = {
                         [OperationType.Get] = new OpenApiOperation
@@ -5917,7 +5456,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference(componentName)
                                         }
                                     }
                                 },
@@ -5925,13 +5464,10 @@ components:
                         }
                     }
             });
-            components.Schemas.Add(componentName, myObjectSchema);
+            document.AddComponent(componentName, myObjectSchema);
         }
-        var document = new OpenApiDocument
-        {
-            Paths = paths,
-            Components = components,
-        };
+        document.SetReferenceHostDocument();
+
         var result = KiotaBuilder.GetDeeperMostCommonNamespaceNameForModels(document);
         Assert.Equal(stripPrefix, result);
     }
@@ -5947,11 +5483,6 @@ components:
                         Type = JsonSchemaType.String,
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
             },
         };
         var document = new OpenApiDocument
@@ -5987,7 +5518,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -5996,15 +5527,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -6034,11 +5559,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6057,7 +5577,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6066,15 +5586,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -6103,11 +5617,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6123,7 +5632,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6131,16 +5640,10 @@ components:
                         }
                     }
                 }
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -6165,11 +5668,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6185,7 +5683,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6194,15 +5692,9 @@ components:
                     }
                 },
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -6229,11 +5721,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6249,7 +5736,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6267,7 +5754,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6275,16 +5762,10 @@ components:
                         }
                     }
                 },
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -6313,11 +5794,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6333,7 +5809,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6351,7 +5827,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6359,16 +5835,10 @@ components:
                         }
                     }
                 },
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -6397,11 +5867,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6417,7 +5882,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6428,7 +5893,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -6437,7 +5902,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6448,7 +5913,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -6457,7 +5922,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6475,7 +5940,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6493,7 +5958,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6501,16 +5966,10 @@ components:
                         }
                     }
                 },
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -6551,11 +6010,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -6581,7 +6035,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -6589,16 +6043,10 @@ components:
                         }
                     }
                 },
-            },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
             }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -6868,11 +6316,11 @@ components:
         Assert.Equal("The id of the author's posts to retrieve", authorsCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(authorsCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(authorsCollectionIndexer.Deprecation.IsDeprecated);
-        var authorsCllectionStringIndexer = authorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{authorsCollectionIndexer.Name}-string");
-        Assert.NotNull(authorsCllectionStringIndexer);
-        Assert.Equal("string", authorsCllectionStringIndexer.IndexParameter.Type.Name);
-        Assert.True(authorsCllectionStringIndexer.IndexParameter.Type.IsNullable);
-        Assert.True(authorsCllectionStringIndexer.Deprecation.IsDeprecated);
+        var authorsCollectionStringIndexer = authorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{authorsCollectionIndexer.Name}-string");
+        Assert.NotNull(authorsCollectionStringIndexer);
+        Assert.Equal("string", authorsCollectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(authorsCollectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(authorsCollectionStringIndexer.Deprecation.IsDeprecated);
         var authorsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.authors.item");
         Assert.NotNull(authorsItemRequestBuilderNamespace);
         var authorsItemRequestBuilder = authorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("authorItemRequestBuilder");
@@ -6887,11 +6335,11 @@ components:
         Assert.Equal("The id of the actor", actorsCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate, StringComparer.OrdinalIgnoreCase);
         Assert.False(actorsCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(actorsCollectionIndexer.Deprecation.IsDeprecated);
-        var actorsCllectionStringIndexer = actorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{actorsCollectionIndexer.Name}-string");
-        Assert.NotNull(actorsCllectionStringIndexer);
-        Assert.Equal("string", actorsCllectionStringIndexer.IndexParameter.Type.Name);
-        Assert.True(actorsCllectionStringIndexer.IndexParameter.Type.IsNullable);
-        Assert.True(actorsCllectionStringIndexer.Deprecation.IsDeprecated);
+        var actorsCollectionStringIndexer = actorsCollectionRequestBuilder.FindChildByName<CodeIndexer>($"{actorsCollectionIndexer.Name}-string");
+        Assert.NotNull(actorsCollectionStringIndexer);
+        Assert.Equal("string", actorsCollectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(actorsCollectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(actorsCollectionStringIndexer.Deprecation.IsDeprecated);
         var actorsItemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.actors.item");
         Assert.NotNull(actorsItemRequestBuilderNamespace);
         var actorsItemRequestBuilder = actorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("actorItemRequestBuilder");
@@ -7026,10 +6474,6 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.user"
-            },
         };
         var document = new OpenApiDocument
         {
@@ -7061,7 +6505,7 @@ paths:
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = userSchema
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
                                         }
                                     }
                                 }
@@ -7070,15 +6514,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -7106,10 +6544,6 @@ paths:
                         Type = JsonSchemaType.String
                     }
                 }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "#/components/schemas/microsoft.graph.user"
             },
         };
         var document = new OpenApiDocument
@@ -7142,7 +6576,7 @@ paths:
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = userSchema
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
                                         }
                                     }
                                 }
@@ -7151,15 +6585,9 @@ paths:
                     }
                 },
             },
-            Components = new OpenApiComponents
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "microsoft.graph.user", userSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
@@ -9760,11 +9188,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -9780,7 +9203,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9791,7 +9214,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -9800,7 +9223,7 @@ components:
                                 ["201"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9818,7 +9241,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9829,7 +9252,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -9848,15 +9271,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -9904,11 +9321,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -9924,7 +9336,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9935,7 +9347,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -9944,7 +9356,7 @@ components:
                                 ["201"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9962,7 +9374,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -9973,7 +9385,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -9992,15 +9404,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -10048,11 +9454,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -10068,7 +9469,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -10079,7 +9480,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -10088,7 +9489,7 @@ components:
                                 ["201"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -10097,15 +9498,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         KiotaBuilder.CleanupOperationIdForPlugins(document);
         var operations = document.Paths.SelectMany(path => path.Value.Operations).ToList();
         foreach (var path in operations)
@@ -10149,11 +9544,6 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
         };
         var document = new OpenApiDocument
         {
@@ -10169,7 +9559,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -10181,7 +9571,7 @@ components:
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     ["application/json"] = new OpenApiMediaType {
-                                        Schema = myObjectSchema
+                                        Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
@@ -10190,7 +9580,7 @@ components:
                                 ["201"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -10209,7 +9599,7 @@ components:
                                 ["200"] = new OpenApiResponse {
                                     Content = {
                                         ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                            Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
                                 },
@@ -10219,15 +9609,9 @@ components:
                     }
                 }
             },
-            Components = new()
-            {
-                Schemas = new Dictionary<string, IOpenApiSchema> {
-                    {
-                        "myobject", myObjectSchema
-                    }
-                }
-            }
         };
+        document.AddComponent("myobject", myObjectSchema);
+        document.SetReferenceHostDocument();
         KiotaBuilder.CleanupOperationIdForPlugins(document);
         var operations = document.Paths.SelectMany(path => path.Value.Operations).ToList();
         foreach (var path in operations)
