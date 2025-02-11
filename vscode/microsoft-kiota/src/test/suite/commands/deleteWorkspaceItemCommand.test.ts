@@ -35,7 +35,7 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
 
     const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
     const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
-    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves([{ message: 'removed successfully' }]);
+    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves({ isSuccess: true, logs: [{ message: 'removed successfully' }] });
 
     await command.execute(workspaceTreeItem);
 

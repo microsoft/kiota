@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 
-import { KiotaLogEntry, removeClient, removePlugin } from '..';
+import { KiotaLogEntry, KiotaResult, removeClient, removePlugin } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("remove Client", () => {
@@ -53,8 +53,10 @@ describe("remove Plugin", () => {
     ];
 
     connectionStub.resolves(mockResults);
-    const results = await removePlugin({ pluginName: 'test', cleanOutput: false, workingDirectory: process.cwd() });
+    const results: KiotaResult | undefined = await removePlugin({ pluginName: 'test', cleanOutput: false, workingDirectory: process.cwd() })!;
     expect(results).toBeDefined();
+    expect(results?.isSuccess).toBeTruthy();
+
   });
 
 });

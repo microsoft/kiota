@@ -2,8 +2,8 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',
-    '**/?(*.)+(spec).[jt]s?(x)'
+    '**/__tests__/**/*.[t]s?(x)',
+    '**/?(*.)+(spec).[t]s?(x)'
   ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
@@ -12,7 +12,7 @@ module.exports = {
     }],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!chai/)',
+    '/node_modules/',
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
