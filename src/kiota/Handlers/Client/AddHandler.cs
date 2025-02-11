@@ -2,12 +2,12 @@
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
-using kiota.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
@@ -120,7 +120,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         if (excludePatterns0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
         // if (disabledValidationRules0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules0));
         if (structuredMimeTypes0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes0.ToArray()));
-        
+
         // Start span
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,

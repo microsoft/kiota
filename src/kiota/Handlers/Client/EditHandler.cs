@@ -2,12 +2,12 @@
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
-using kiota.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
@@ -119,7 +119,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
         // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules));
         if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
-        
+
         // Start span
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
@@ -128,7 +128,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         var meterRuntime = tc?.Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
             description: "Duration of the command", tags: tags);
         if (meterRuntime is null) stopwatch = null;
-        
+
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
 

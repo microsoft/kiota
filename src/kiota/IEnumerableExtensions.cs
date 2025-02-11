@@ -1,6 +1,7 @@
-namespace kiota;
+﻿namespace kiota;
 
-public static class IEnumerableExtensions {
+public static class IEnumerableExtensions
+{
     public static IEnumerable<T> ConcatNullable<T>(this IEnumerable<T>? left, IEnumerable<T>? right)
     {
         if (left is not null && right is not null) return left.Concat(right);
