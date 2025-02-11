@@ -35,10 +35,14 @@
     <!-- the source generators emit warnings -->
     <NoWarn>$(NoWarn);CS8785;NU5048;NU5104</NoWarn>
   </PropertyGroup>
+  <PropertyGroup>
+      <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kiota.Builder\Kiota.Builder.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
@@ -56,6 +60,7 @@
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.11.1" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.0" />
     <PackageReference Include="StreamJsonRpc" Version="2.20.20" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />

@@ -1,17 +1,25 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
 using System.Text.Json;
 using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
+using kiota.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
 
 internal class AddHandler : BaseKiotaCommandHandler
 {
+    private readonly KeyValuePair<string, object?>[] _commonTags =
+    [
+        new(TelemetryLabels.TagGenerationOutputType, "client"),
+        new(TelemetryLabels.TagCommandName, "add"),
+        new(TelemetryLabels.TagCommandRevision, 1)
+    ];
     public required Option<string> ClassOption
     {
         get; init;
@@ -72,21 +80,64 @@ internal class AddHandler : BaseKiotaCommandHandler
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
+        // Span start time
+        Stopwatch? stopwatch = Stopwatch.StartNew();
+        var startTime = DateTimeOffset.UtcNow;
+        // Get options
+        string? output0 = context.ParseResult.GetValueForOption(OutputOption);
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         AccessModifier typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
+        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
-        string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
-        string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? [];
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? [];
-        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? [];
-        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? [];
+        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
+        string? namespaceName0 = context.ParseResult.GetValueForOption(NamespaceOption);
+        List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
+        List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
+        List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
+        List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
+        var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
+
+        // set up telemetry tags
+        var tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
+        {
+            new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
+            // new($"{TelemetryLabels.TagCommandParams}.type_access_modifier", typeAccessModifier.ToString("G")),
+            new($"{TelemetryLabels.TagCommandParams}.backing_store", backingStore),
+            new($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", excludeBackwardCompatible),
+            // new($"{TelemetryLabels.TagCommandParams}.include_additional_data", includeAdditionalData),
+            new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
+        } : null;
+        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
+        if (output0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
+        if (namespaceName0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
+        // if (className0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
+        // if (openapi0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
+        if (includePatterns0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
+        if (excludePatterns0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
+        // if (disabledValidationRules0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules0));
+        if (structuredMimeTypes0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes0.ToArray()));
+        
+        // Start span
+        using var invokeActivity = tc?.ActivitySource.StartActivity(
+            TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
+            startTime: startTime, parentContext: default,
+            tags: _commonTags.ConcatNullable(tags));
+        var meterRuntime = tc?.Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
+            description: "Duration of the command", tags: tags);
+        if (meterRuntime is null) stopwatch = null;
+
+        string output = output0 ?? string.Empty;
+        string openapi = openapi0 ?? string.Empty;
+        string className = className0 ?? string.Empty;
+        string namespaceName = namespaceName0 ?? string.Empty;
+        List<string> includePatterns = includePatterns0 ?? [];
+        List<string> excludePatterns = excludePatterns0 ?? [];
+        List<string> disabledValidationRules = disabledValidationRules0 ?? [];
+        List<string> structuredMimeTypes = structuredMimeTypes0 ?? [];
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
@@ -125,25 +176,34 @@ internal class AddHandler : BaseKiotaCommandHandler
 
             try
             {
+                using var genActivity = !skipGeneration
+                    ? tc?.ActivitySource.StartActivity(TelemetryLabels.SpanGenerateClientAction, ActivityKind.Internal, invokeActivity?.Context ?? default, tags)
+                    : null;
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
+                    genActivity?.SetTag(TelemetryLabels.TagGeneratorLanguage, Configuration.Generation.Language.ToString("G"));
                     DisplaySuccess("Generation completed successfully");
                     DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
+                    genActivity?.SetStatus(ActivityStatusCode.Ok);
                 }
                 else if (skipGeneration)
                 {
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
+                genActivity?.Stop();
                 var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
+                invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;
             }
             catch (Exception ex)
             {
+                invokeActivity?.SetStatus(ActivityStatusCode.Error);
+                invokeActivity?.AddException(ex);
 #if DEBUG
                 logger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
@@ -151,6 +211,10 @@ internal class AddHandler : BaseKiotaCommandHandler
                 logger.LogCritical("error adding the client: {exceptionMessage}", ex.Message);
                 return 1;
 #endif
+            }
+            finally
+            {
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
             }
         }
     }
