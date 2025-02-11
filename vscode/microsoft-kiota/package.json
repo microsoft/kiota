@@ -512,8 +512,8 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
-    "test": "vscode-test",
-    "test-with-coverage": "npm run pretest && vscode-test --coverage",
+    "test": "vscode-test --require ts-node/register 'src/**/*.test.ts'",
+    "test:coverage": "npm run pretest && test --coverage",
     "test:unit": "jest --detectOpenHandles"
   },
   "devDependencies": {
