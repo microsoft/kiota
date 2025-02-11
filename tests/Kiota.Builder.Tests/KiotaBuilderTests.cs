@@ -3294,8 +3294,8 @@ paths:
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity", true);
-        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject", true);
         Assert.NotNull(entityClass);
+        Assert.NotNull(codeModel.FindChildByName<CodeClass>("directoryObject", true));
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
         Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
