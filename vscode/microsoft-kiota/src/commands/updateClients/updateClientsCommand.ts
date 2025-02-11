@@ -34,7 +34,7 @@ export class UpdateClientsCommand extends Command {
     }
     const existingApiManifestFileUris = await vscode.workspace.findFiles(`**/${API_MANIFEST_FILE}`);
     if (existingApiManifestFileUris.length > 0) {
-      await Promise.all(existingApiManifestFileUris.map(uri => showUpgradeWarningMessage(uri, null, null, this.context)));
+      await Promise.all(existingApiManifestFileUris.map(uri => showUpgradeWarningMessage(uri, null, null)));
     }
     await updateStatusBarItem(this.kiotaOutputChannel, kiotaStatusBarItem);
     try {

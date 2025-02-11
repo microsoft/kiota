@@ -97,7 +97,7 @@ export class GenerateClientCommand extends Command {
         manifestKey = config.pluginName;
         break;
     }
-    await showUpgradeWarningMessage(path.join(outputPath, ".kiota", API_MANIFEST_FILE), manifestKey, config.generationType as string, this._context);
+    await showUpgradeWarningMessage(path.join(outputPath, ".kiota", API_MANIFEST_FILE), manifestKey, config.generationType as string);
     if (!this._openApiTreeProvider.descriptionUrl) {
       await vscode.window.showErrorMessage(
         vscode.l10n.t("No description found, select a description first")

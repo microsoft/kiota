@@ -1,22 +1,15 @@
 import * as vscode from "vscode";
 import { MANIFEST_KIOTA_VERSION_KEY } from "../constants";
-
-function checkVersion(clientVersion: string | null | undefined, packageKiotaVersion: any): Thenable<string | undefined> {
-  if (clientVersion && clientVersion !== packageKiotaVersion) {
-    return vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, packageKiotaVersion));
-  }
-  return Promise.resolve(undefined);
-}
+import { getKiotaVersion } from "../kiotaInterop";
 
 type ApiDependencyPartial = { extensions: { [MANIFEST_KIOTA_VERSION_KEY]: string | undefined } | undefined };
 type ManifestFilePartial = { apiDependencies: { [name: string]: ApiDependencyPartial | undefined } | undefined };
 
-function extractClientVersion(data: ApiDependencyPartial): string | undefined {
-  return data?.extensions?.[MANIFEST_KIOTA_VERSION_KEY];
-}
-
-export async function showUpgradeWarningMessage(apiManifestPath: string | vscode.Uri, manifestKey: string | null | undefined, generationType: string | null, context: vscode.ExtensionContext): Promise<void> {
-  const kiotaVersion = context.extension.packageJSON.kiotaVersion;
+export async function showUpgradeWarningMessage(apiManifestPath: string | vscode.Uri, manifestKey: string | null | undefined, generationType: string | null): Promise<void> {
+  const kiotaVersion = await getKiotaVersion();
+  if (!kiotaVersion) {
+    return;
+  }
   let manifestFileData;
   let manifestPathUri: vscode.Uri = apiManifestPath instanceof vscode.Uri ? apiManifestPath : vscode.Uri.file(apiManifestPath);
   try {
