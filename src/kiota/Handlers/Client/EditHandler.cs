@@ -109,7 +109,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));
         if (excludeBackwardCompatible is { } ebc) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", ebc));
         // if (includeAdditionalData is { } iad) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_additional_data", iad));
-        if (skipGeneration is { } sg) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.skip_generation", sg));
+        tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration));
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (output0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
         if (namespaceName0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
