@@ -7,11 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
+using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-using Microsoft.Plugins.Manifest;
 using Moq;
 using Xunit;
 
