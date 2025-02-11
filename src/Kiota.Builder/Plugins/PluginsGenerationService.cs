@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Interfaces;
