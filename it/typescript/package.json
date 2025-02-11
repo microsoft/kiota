@@ -19,15 +19,15 @@
   "prettier": "./.prettierrc.json",
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
-    "@stylistic/eslint-plugin-ts": "^3.0.1",
+    "@stylistic/eslint-plugin-ts": "^3.1.0",
     "@types/node": "^22.13.1",
-    "@typescript-eslint/eslint-plugin": "^8.23.0",
-    "@typescript-eslint/parser": "^8.23.0",
-    "esbuild": "^0.24.2",
-    "eslint": "^9.19.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "minimist": "^1.2.8",
-    "prettier": "^3.4.2",
+    "prettier": "^3.5.0",
     "typescript": "^4.9.5"
   },
   "dependencies": {
