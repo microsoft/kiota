@@ -24,8 +24,8 @@
     "allowSyntheticDefaultImports": true,
     "types": [
       "node",
-      "jest",
-      "mocha"
+      "jest"
     ],
+    "skipLibCheck": true
   }
 }
