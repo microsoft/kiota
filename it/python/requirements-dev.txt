@@ -78,11 +78,11 @@ attrs==25.1.0 ; python_version >= '3.7'
 
 azure-core==1.32.0 ; python_version >= '3.7'
 
-azure-identity==1.19.0
+azure-identity==1.20.0
 
 cffi==1.17.1
 
-cryptography==44.0.0 ; python_version >= '3.7'
+cryptography==44.0.1 ; python_version >= '3.7'
 
 frozenlist==1.5.0 ; python_version >= '3.7'
 
