@@ -116,7 +116,8 @@ internal class PublicApiExportService
     {
         return generationConfiguration.Language switch
         {
-            GenerationLanguage.CSharp => new CSharpConventionService(),
+            GenerationLanguage.CSharp => new CSharpConventionService(false),
+            GenerationLanguage.CSharp13 => new CSharpConventionService(true),
             GenerationLanguage.Java => new JavaConventionService(),
             GenerationLanguage.TypeScript => new TypeScriptConventionService(),
             GenerationLanguage.PHP => new PhpConventionService(),

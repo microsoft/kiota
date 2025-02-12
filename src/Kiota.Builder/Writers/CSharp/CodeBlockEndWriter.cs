@@ -11,7 +11,10 @@ public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, CSharpConventionSe
         writer.CloseBlock();
         if (codeElement?.Parent is CodeClass codeClass && codeClass.Parent is CodeNamespace)
         {
-            writer.CloseBlock();
+            if (!conventions.UseCSharp13)
+            {
+                writer.CloseBlock();
+            }
             conventions.WritePragmaRestore(writer, CSharpConventionService.CS0618);
         }
     }

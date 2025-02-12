@@ -10,10 +10,10 @@ public class CSharpWriterTests
     [Fact]
     public void Instantiates()
     {
-        var writer = new CSharpWriter("./", "graph");
+        var writer = new CSharpWriter("./", "graph", false);
         Assert.NotNull(writer);
         Assert.NotNull(writer.PathSegmenter);
-        Assert.Throws<ArgumentNullException>(() => new CSharpWriter(null, "graph"));
-        Assert.Throws<ArgumentNullException>(() => new CSharpWriter("./", null));
+        Assert.Throws<ArgumentNullException>(() => new CSharpWriter(null, "graph", false));
+        Assert.Throws<ArgumentNullException>(() => new CSharpWriter("./", null, false));
     }
 }

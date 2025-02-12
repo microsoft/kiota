@@ -18,6 +18,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             writer.WriteLine(AutoGenerationHeader);
+            if(conventions.UseCSharp13)
+            {
+                writer.WriteLine(CSharpConventionService.NullableEnableDirective);
+            }
             conventions.WritePragmaDisable(writer, CSharpConventionService.CS0618);
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
@@ -28,8 +32,11 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            writer.WriteLine($"namespace {codeElement.Parent.Parent.Name}");
-            writer.StartBlock();
+            writer.WriteLine($"namespace {codeElement.Parent.Parent.Name}" + (conventions.UseCSharp13 ? ";" : string.Empty));
+            if(!conventions.UseCSharp13)
+            {
+                writer.StartBlock();
+            }
         }
 
         var derivedTypes = (codeElement.Inherits is null ? Enumerable.Empty<string?>() : new string?[] { conventions.GetTypeString(codeElement.Inherits, parentClass) })

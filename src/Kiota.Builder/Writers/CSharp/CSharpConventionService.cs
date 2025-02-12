@@ -9,7 +9,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.CSharp;
-public class CSharpConventionService : CommonLanguageConventionService
+public class CSharpConventionService(bool useCSharp13 = false) : CommonLanguageConventionService
 {
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
@@ -23,6 +23,7 @@ public class CSharpConventionService : CommonLanguageConventionService
 
     public const string CS0618 = "CS0618";
     public const string CS1591 = "CS1591";
+    public bool UseCSharp13 => useCSharp13;
 
     public static void WriteNullableOpening(LanguageWriter writer)
     {
@@ -40,6 +41,49 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("#endif", false);
+    }
+    public static void WriteStartingBlock(
+        LanguageWriter writer,
+        string line
+    )
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteLine(line);
+        writer.WriteLine("{");
+    }
+    public void WriteNullableAware(
+        LanguageWriter writer,
+        bool includeNullableReferenceType,
+        Action<LanguageWriter> nullableCallback,
+        Action<LanguageWriter> nonNullableCallback)
+    {
+        ArgumentNullException.ThrowIfNull(nullableCallback);
+        ArgumentNullException.ThrowIfNull(nonNullableCallback);
+
+        if (!UseCSharp13)
+        {
+            if (includeNullableReferenceType)
+            {
+                WriteNullableOpening(writer);
+                nullableCallback(writer);
+                WriteNullableMiddle(writer);
+            }
+            nonNullableCallback(writer);
+
+            if (includeNullableReferenceType)
+                WriteNullableClosing(writer);
+        }
+        else
+        {
+            if (includeNullableReferenceType)
+            {
+                nullableCallback(writer);
+            }
+            else
+            {
+                nonNullableCallback(writer);
+            }
+        }
     }
     public void WritePragmaDisable(LanguageWriter writer, string code)
     {
@@ -132,6 +176,8 @@ public class CSharpConventionService : CommonLanguageConventionService
                 {
                     if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
+                    else if(UseCSharp13)
+                        nullCheck = $"if ({identName} is not null) ";
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }

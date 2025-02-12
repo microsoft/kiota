@@ -2,6 +2,7 @@
 public enum GenerationLanguage
 {
     CSharp,
+    CSharp13,
     Java,
     TypeScript,
     PHP,
