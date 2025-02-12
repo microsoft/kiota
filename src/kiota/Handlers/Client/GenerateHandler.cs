@@ -40,7 +40,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
         CreateTelemetryTags(tc, refresh, className0, logLevel, out var tags);
-        
+
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanGenerateClientCommand, ActivityKind.Internal,
             startTime: startTime, parentContext: default,

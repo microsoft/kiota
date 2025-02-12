@@ -105,7 +105,7 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         CreateTelemetryTags(tc, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
             namespaceName0, includePatterns, excludePatterns, structuredMimeTypes, out var tags);
-        
+
         // Start span
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
