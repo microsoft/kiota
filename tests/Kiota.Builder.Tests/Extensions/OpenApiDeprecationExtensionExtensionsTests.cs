@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 using Xunit;
 
@@ -192,6 +193,21 @@ public class OpenApiDeprecationExtensionExtensions
     [Fact]
     public void GetsNoDeprecationOnOperationWithDeprecatedReferenceResponseSchema()
     {
+        var schema = new OpenApiSchema
+        {
+            Deprecated = true,
+            Extensions = new Dictionary<string, IOpenApiExtension>
+            {
+                { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
+                    Description = "description",
+                    Version = "version",
+                    RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                    Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                } }
+            }
+        };
+        var document = new OpenApiDocument();
+        document.AddComponent("schema", schema);
         var operation = new OpenApiOperation
         {
             Deprecated = false,
@@ -204,19 +220,7 @@ public class OpenApiDeprecationExtensionExtensions
                         {
                             { "application/json", new OpenApiMediaType
                                 {
-                                    Schema = new OpenApiSchema
-                                    {
-                                        Deprecated = true,
-                                        Extensions = new Dictionary<string, IOpenApiExtension>
-                                        {
-                                            { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
-                                                Description = "description",
-                                                Version = "version",
-                                                RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                                Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                            } }
-                                        }
-                                    }
+                                    Schema = new OpenApiSchemaReference("schema", document)
                                 }
                             }
                         }
@@ -287,6 +291,21 @@ public class OpenApiDeprecationExtensionExtensions
     [Fact]
     public void GetsNoDeprecationOnOperationWithDeprecatedReferenceRequestSchema()
     {
+        var schema = new OpenApiSchema
+        {
+            Deprecated = true,
+            Extensions = new Dictionary<string, IOpenApiExtension>
+            {
+                { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
+                    Description = "description",
+                    Version = "version",
+                    RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                    Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                } }
+            }
+        };
+        var document = new OpenApiDocument();
+        document.AddComponent("schema", schema);
         var operation = new OpenApiOperation
         {
             Deprecated = false,
@@ -296,19 +315,7 @@ public class OpenApiDeprecationExtensionExtensions
                 {
                     { "application/json", new OpenApiMediaType
                         {
-                            Schema = new OpenApiSchema
-                            {
-                                Deprecated = true,
-                                Extensions = new Dictionary<string, IOpenApiExtension>
-                                {
-                                    { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
-                                        Description = "description",
-                                        Version = "version",
-                                        RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                        Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                    } }
-                                }
-                            }
+                            Schema = new OpenApiSchemaReference("schema", document)
                         }
                     }
                 }
@@ -389,22 +396,25 @@ public class OpenApiDeprecationExtensionExtensions
     [Fact]
     public void GetsNoDeprecationInformationOnParameterWithDeprecatedReferenceSchema()
     {
+        var schema = new OpenApiSchema
+        {
+            Deprecated = true,
+            Extensions = new Dictionary<string, IOpenApiExtension>
+            {
+                { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
+                    Description = "description",
+                    Version = "version",
+                    RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                    Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                } }
+            }
+        };
+        var document = new OpenApiDocument();
+        document.AddComponent("schema", schema);
         var parameter = new OpenApiParameter
         {
             Deprecated = false,
-            Schema = new OpenApiSchema
-            {
-                Deprecated = true,
-                Extensions = new Dictionary<string, IOpenApiExtension>
-                {
-                    { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
-                        Description = "description",
-                        Version = "version",
-                        RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                        Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                    } }
-                }
-            }
+            Schema = new OpenApiSchemaReference("schema", document)
         };
         var deprecationInformation = parameter.GetDeprecationInformation();
         Assert.NotNull(deprecationInformation);
@@ -445,25 +455,28 @@ public class OpenApiDeprecationExtensionExtensions
     [Fact]
     public void GetsNoDeprecationInformationOnParameterWithDeprecatedReferenceContentSchema()
     {
+        var schema = new OpenApiSchema
+        {
+            Deprecated = true,
+            Extensions = new Dictionary<string, IOpenApiExtension>
+            {
+                { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
+                    Description = "description",
+                    Version = "version",
+                    RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                    Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
+                } }
+            }
+        };
+        var document = new OpenApiDocument();
+        document.AddComponent("schema", schema);
         var parameter = new OpenApiParameter
         {
             Deprecated = false,
             Content = new Dictionary<string, OpenApiMediaType>() {
                 { "application/json", new OpenApiMediaType()
                     {
-                        Schema = new OpenApiSchema
-                        {
-                            Deprecated = true,
-                            Extensions = new Dictionary<string, IOpenApiExtension>
-                            {
-                                { OpenApiDeprecationExtension.Name, new OpenApiDeprecationExtension {
-                                    Description = "description",
-                                    Version = "version",
-                                    RemovalDate = new DateTimeOffset(2023, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                    Date = new DateTimeOffset(2021, 05, 04, 0, 0, 0, TimeSpan.Zero),
-                                } }
-                            }
-                        }
+                        Schema = new OpenApiSchemaReference("schema", document)
                     }
                 }
             }
