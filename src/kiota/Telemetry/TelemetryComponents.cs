@@ -11,6 +11,12 @@ public class TelemetryComponents : IDisposable
     public ActivitySource ActivitySource => _activitySource ??= new ActivitySource(TelemetryLabels.ScopeName);
     public Meter Meter => _meter ??= new Meter(TelemetryLabels.ScopeName);
 
+    public Histogram<double>? CreateCommandDurationHistogram(IEnumerable<KeyValuePair<string, object?>>? tags)
+    {
+        return Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
+            description: "Duration of the command", tags: tags);
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

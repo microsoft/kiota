@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using kiota.Telemetry;
 using Kiota.Builder;
@@ -38,20 +39,14 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
-        // set up telemetry tags
-        var tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
-        {
-            new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
-        } : null;
-        if (className0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));
-        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
-
+        CreateTelemetryTags(tc, refresh, className0, logLevel, out var tags);
+        
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanGenerateClientCommand, ActivityKind.Internal,
             startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags));
-        var meterRuntime = tc?.Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
-            description: "Duration of the command", tags: tags);
+        var meterRuntime = tc?.CreateCommandDurationHistogram(tags);
+        using var activity = invokeActivity; // only here to ensure activity disposal
         if (meterRuntime is null) stopwatch = null;
 
         var className = className0 ?? string.Empty;
@@ -132,5 +127,17 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
             }
         }
+    }
+
+    private static void CreateTelemetryTags(TelemetryComponents? tc, bool refresh, string? className, LogLevel? logLevel,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
+        {
+            new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
+        } : null;
+        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

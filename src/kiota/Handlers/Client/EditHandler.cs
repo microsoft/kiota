@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using kiota.Telemetry;
 using Kiota.Builder;
@@ -102,31 +103,15 @@ internal class EditHandler : BaseKiotaCommandHandler
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
-        // set up telemetry tags
-        var tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16) : null;
-        if (language is { } l) tags?.Add(new KeyValuePair<string, object?>(TelemetryLabels.TagGeneratorLanguage, l.ToString("G")));
-        // if (typeAccessModifier is { } tam) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.type_access_modifier", tam.ToString("G")));
-        if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));
-        if (excludeBackwardCompatible is { } ebc) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", ebc));
-        // if (includeAdditionalData is { } iad) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_additional_data", iad));
-        tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration));
-        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        if (output0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
-        if (namespaceName0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
-        // if (className0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
-        // if (openapi0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
-        if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
-        if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
-        // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules));
-        if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
-
+        CreateTelemetryTags(tc, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
+            namespaceName0, includePatterns, excludePatterns, structuredMimeTypes, out var tags);
+        
         // Start span
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
             startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags));
-        var meterRuntime = tc?.Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
-            description: "Duration of the command", tags: tags);
+        var meterRuntime = tc?.CreateCommandDurationHistogram(tags);
         if (meterRuntime is null) stopwatch = null;
 
         Configuration.Generation.SkipGeneration = skipGeneration;
@@ -232,5 +217,29 @@ internal class EditHandler : BaseKiotaCommandHandler
                 if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
             }
         }
+    }
+
+    private static void CreateTelemetryTags(TelemetryComponents? tc, GenerationLanguage? language, bool? backingStore,
+        bool? excludeBackwardCompatible, bool skipGeneration, string? output, string? namespaceName,
+        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16) : null;
+        if (language is { } l) tags?.Add(new KeyValuePair<string, object?>(TelemetryLabels.TagGeneratorLanguage, l.ToString("G")));
+        // if (typeAccessModifier is { } tam) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.type_access_modifier", tam.ToString("G")));
+        if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));
+        if (excludeBackwardCompatible is { } ebc) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", ebc));
+        // if (includeAdditionalData is { } iad) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_additional_data", iad));
+        tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration));
+        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
+        if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
+        if (namespaceName is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
+        // if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
+        // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
+        if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
+        if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
+        // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules));
+        if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
     }
 }

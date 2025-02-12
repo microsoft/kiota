@@ -101,33 +101,15 @@ internal class AddHandler : BaseKiotaCommandHandler
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
-        // set up telemetry tags
-        var tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
-        {
-            new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
-            // new($"{TelemetryLabels.TagCommandParams}.type_access_modifier", typeAccessModifier.ToString("G")),
-            new($"{TelemetryLabels.TagCommandParams}.backing_store", backingStore),
-            new($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", excludeBackwardCompatible),
-            // new($"{TelemetryLabels.TagCommandParams}.include_additional_data", includeAdditionalData),
-            new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
-        } : null;
-        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        if (output0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
-        if (namespaceName0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
-        // if (className0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
-        // if (openapi0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
-        if (includePatterns0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
-        if (excludePatterns0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
-        // if (disabledValidationRules0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules0));
-        if (structuredMimeTypes0 is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes0.ToArray()));
-
+        CreateTelemetryTags(tc, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
+            namespaceName0, includePatterns0, excludePatterns0, structuredMimeTypes0, out var tags);
         // Start span
         using var invokeActivity = tc?.ActivitySource.StartActivity(
             TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
             startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags));
-        var meterRuntime = tc?.Meter.CreateHistogram<double>(name: TelemetryLabels.InstrumentCommandDurationName, unit: "s",
-            description: "Duration of the command", tags: tags);
+        // Create command duration meter
+        var meterRuntime = tc?.CreateCommandDurationHistogram(tags);
         if (meterRuntime is null) stopwatch = null;
 
         string output = output0 ?? string.Empty;
@@ -217,5 +199,31 @@ internal class AddHandler : BaseKiotaCommandHandler
                 if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
             }
         }
+    }
+
+    private static void CreateTelemetryTags(TelemetryComponents? tc, GenerationLanguage language, bool backingStore,
+        bool excludeBackwardCompatible, bool skipGeneration, string? output, string? namespaceName,
+        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
+            {
+                new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
+                // new($"{TelemetryLabels.TagCommandParams}.type_access_modifier", typeAccessModifier.ToString("G")),
+                new($"{TelemetryLabels.TagCommandParams}.backing_store", backingStore),
+                new($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", excludeBackwardCompatible),
+                // new($"{TelemetryLabels.TagCommandParams}.include_additional_data", includeAdditionalData),
+                new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
+            } : null;
+        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
+        if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
+        if (namespaceName is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
+        // if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
+        // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
+        if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
+        if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
+        // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules0));
+        if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
     }
 }
