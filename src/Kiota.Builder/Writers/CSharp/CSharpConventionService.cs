@@ -176,7 +176,7 @@ public class CSharpConventionService(bool useCSharp13 = false) : CommonLanguageC
                 {
                     if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
-                    else if(UseCSharp13)
+                    else if (UseCSharp13)
                         nullCheck = $"if ({identName} is not null) ";
                     else
                         nullCheck = $"if ({identName} != null) ";

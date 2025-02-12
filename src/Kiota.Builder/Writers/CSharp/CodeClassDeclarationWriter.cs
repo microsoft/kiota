@@ -18,7 +18,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             writer.WriteLine(AutoGenerationHeader);
-            if(conventions.UseCSharp13)
+            if (conventions.UseCSharp13)
             {
                 writer.WriteLine(CSharpConventionService.NullableEnableDirective);
             }
@@ -33,7 +33,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
             writer.WriteLine($"namespace {codeElement.Parent.Parent.Name}" + (conventions.UseCSharp13 ? ";" : string.Empty));
-            if(!conventions.UseCSharp13)
+            if (!conventions.UseCSharp13)
             {
                 writer.StartBlock();
             }
