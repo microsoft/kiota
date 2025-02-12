@@ -1737,7 +1737,7 @@ public partial class KiotaBuilder
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
             // inline schema + referenced schema
             (false, { Length: > 0 }, { Length: 1 }, _) =>
-                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x is IOpenApiSchema)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
+                AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x is not null)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // properties + referenced schema
             (true, { Length: 0 }, { Length: 1 }, _) =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
