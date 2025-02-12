@@ -42,7 +42,7 @@ public class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<strin
             // hash code calculation is resistant to prefix collisions
             // i.e. "ab" + "cd" will not be the same as "abc" + "d"
             hash.Add(item, _stringComparer);
-        };
+        }
         return hash.ToHashCode();
     }
 }
