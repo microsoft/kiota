@@ -26,6 +26,13 @@ interface ClientGenerationOptions {
   workingDirectory: string;
 }
 
+/**
+ * Generates a client based on the provided client generation options.
+ *
+ * @param {ClientGenerationOptions} clientGenerationOptions - The options for generating the client.
+ * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
+ * @throws {Error} If an error occurs during the client generation process.
+ */
 export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaResult | undefined> {
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(

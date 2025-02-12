@@ -21,6 +21,16 @@ interface PluginGenerationOptions {
   workingDirectory: string;
 }
 
+/**
+ * Generates a plugin based on the provided options.
+ *
+ * @param {PluginGenerationOptions} pluginGenerationOptions - The options for generating the plugin.
+ * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
+ * @throws {Error} If an error occurs during the generation process.
+ *
+ * The function connects to Kiota and sends a request to generate a plugin using the provided options.
+ * It handles the response and checks for success, returning the result or throwing an error if one occurs.
+ */
 export async function generatePlugin(pluginGenerationOptions: PluginGenerationOptions
 ): Promise<KiotaResult | undefined> {
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
