@@ -1779,7 +1779,7 @@ public partial class KiotaBuilder
         if (!currentClass.Documentation.DescriptionAvailable &&
             new string[] { schema.Description }
                         .Union(schema.AllOf
-                                    .OfType<IOpenApiSchema>()
+                                    .OfType<OpenApiSchema>()
                                     .Select(static x => x.Description))
                         .FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string description)
             currentClass.Documentation.DescriptionTemplate = description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
