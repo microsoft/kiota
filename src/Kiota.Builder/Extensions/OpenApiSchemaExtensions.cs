@@ -110,7 +110,7 @@ public static class OpenApiSchemaExtensions
     internal static IOpenApiSchema? MergeInclusiveUnionSchemaEntries(this IOpenApiSchema? schema)
     {
         if (schema is null || !schema.IsInclusiveUnion(0)) return null;
-        var result = schema.CreateShallowCopy();
+        var result = schema.GetSchemaOrTargetShallowCopy();
         result.AnyOf.Clear();
         result.TryAddProperties(schema.AnyOf.SelectMany(static x => x.Properties));
         return result;
@@ -119,7 +119,7 @@ public static class OpenApiSchemaExtensions
     internal static IOpenApiSchema? MergeExclusiveUnionSchemaEntries(this IOpenApiSchema? schema)
     {
         if (schema is null || !schema.IsExclusiveUnion(0)) return null;
-        var result = schema.CreateShallowCopy();
+        var result = schema.GetSchemaOrTargetShallowCopy();
         result.OneOf.Clear();
         result.TryAddProperties(schema.OneOf.SelectMany(static x => x.Properties));
         return result;
@@ -132,7 +132,7 @@ public static class OpenApiSchemaExtensions
             && schema.AnyOf.OnlyOneOrDefault() is IOpenApiSchema subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
-            var result = schema.CreateShallowCopy();
+            var result = schema.GetSchemaOrTargetShallowCopy();
             result.AnyOf.Clear();
             result.TryAddProperties(subSchema.Properties);
             result.AllOf.AddRange(subSchema.AllOf);
@@ -149,7 +149,7 @@ public static class OpenApiSchemaExtensions
             && schema.OneOf.OnlyOneOrDefault() is IOpenApiSchema subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
-            var result = schema.CreateShallowCopy();
+            var result = schema.GetSchemaOrTargetShallowCopy();
             result.OneOf.Clear();
             result.TryAddProperties(subSchema.Properties);
             result.AllOf.AddRange(subSchema.AllOf);
@@ -159,17 +159,23 @@ public static class OpenApiSchemaExtensions
         return null;
     }
 
-    internal static IOpenApiSchema? MergeIntersectionSchemaEntries(this IOpenApiSchema? schema, HashSet<IOpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<IOpenApiSchema, bool>? filter = default)
+    private static OpenApiSchema GetSchemaOrTargetShallowCopy(this IOpenApiSchema? schema)
     {
-        if (schema is null) return null;
-        if (!schema.IsIntersection() && !overrideIntersection) return schema;
-        var result = schema switch
+        return schema switch
         {
             OpenApiSchema oas => (OpenApiSchema)oas.CreateShallowCopy(),
             OpenApiSchemaReference oasr when oasr.Target is OpenApiSchema target => (OpenApiSchema)target.CreateShallowCopy(),
             OpenApiSchemaReference => throw new InvalidOperationException("The schema reference is not resolved"),
             _ => throw new InvalidOperationException("The schema type is not supported")
         };
+    }
+
+    internal static IOpenApiSchema? MergeIntersectionSchemaEntries(this IOpenApiSchema? schema, HashSet<IOpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<IOpenApiSchema, bool>? filter = default)
+    {
+        if (schema is null) return null;
+        if (!schema.IsIntersection() && !overrideIntersection) return schema;
+
+        var result = schema.GetSchemaOrTargetShallowCopy();
         result.AllOf.Clear();
         var meaningfulSchemas = schema.AllOf
                                     .Where(x => (x.IsSemanticallyMeaningful() || x.AllOf.Any()) && (filter == null || filter(x)))
@@ -191,7 +197,7 @@ public static class OpenApiSchemaExtensions
         return result;
     }
 
-    internal static void TryAddProperties(this IOpenApiSchema schema, IEnumerable<KeyValuePair<string, IOpenApiSchema>> properties)
+    internal static void TryAddProperties(this OpenApiSchema schema, IEnumerable<KeyValuePair<string, IOpenApiSchema>> properties)
     {
         foreach (var property in properties)
         {
