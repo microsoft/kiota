@@ -1202,7 +1202,7 @@ public partial class KiotaBuilder
         var typeName = typeNames.Find(static x => x is not null && !typeNamesToSkip.Contains(x.Value));
 
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
-        return (typeName, format?.ToLowerInvariant()) switch
+        return (typeName & ~JsonSchemaType.Null, format?.ToLowerInvariant()) switch
         {
             (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
             (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
