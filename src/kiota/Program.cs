@@ -1,8 +1,11 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
+using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using kiota.Telemetry;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -13,50 +16,60 @@ namespace kiota;
 
 static class Program
 {
+    // TODO: Use config
     const string appInsightsConnectionString = "InstrumentationKey=88938a3d-6016-4d17-85f7-8dd00afc39d4;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=9b0946d3-0df5-4563-9aed-ed6f6fa86fe9";
     static async Task<int> Main(string[] args)
     {
-        // TODO: Abstract into telemetry component.
-        var version = Kiota.Generated.KiotaVersion.Current();
-        var resourceBuilder =
-            ResourceBuilder
-                .CreateDefault()
-                .AddService(serviceName: "kiota", serviceNamespace: "microsoft.openapi", serviceVersion: version);
-        if (OsName() is { } osName)
-        {
-            resourceBuilder.AddAttributes(new[]
-            {
-                new KeyValuePair<string, object>("os.name", osName),
-                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString()),
-            });
-        }
-        using var meterProvider = Sdk.CreateMeterProviderBuilder()
-            .AddMeter("microsoft.openapi.kiota")
-            .AddHttpClientInstrumentation()
-            .AddRuntimeInstrumentation()
-            .SetResourceBuilder(resourceBuilder)
-            .SetExemplarFilter(ExemplarFilterType.TraceBased)
-            .AddOtlpExporter(ConfigureOpenTelemetryProtocolExporter)
-            // .AddAzureMonitorMetricExporter(ConfigureAzureMonitorExporter)
-            .Build();
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-            .AddSource("microsoft.openapi.kiota")
-            .AddHttpClientInstrumentation()
-            .SetResourceBuilder(resourceBuilder)
-            .AddOtlpExporter(ConfigureOpenTelemetryProtocolExporter)
-            // .AddAzureMonitorTraceExporter(ConfigureAzureMonitorExporter)
-            .Build();
         var rootCommand = KiotaHost.GetRootCommand();
         var builder = new CommandLineBuilder(rootCommand);
-        using var tc = new TelemetryComponents();
-        builder.AddMiddleware(ic =>
+        builder.UseHost(static args =>
         {
-            ic.BindingContext.AddService(_ => tc);
+            var hostBuilder = Host.CreateDefaultBuilder(args);
+            hostBuilder.ConfigureServices(ConfigureServiceContainer);
+            return hostBuilder;
         });
         var parser = builder.Build();
         var result = await parser.InvokeAsync(args);
         DisposeSubCommands(rootCommand);
         return result;
+    }
+
+    private static void ConfigureServiceContainer(IServiceCollection services)
+    {
+        services.AddOpenTelemetry()
+            .ConfigureResource(static r =>
+            {
+                r.AddService(
+                    serviceName: "kiota",
+                    serviceNamespace: "microsoft.openapi",
+                    serviceVersion: Kiota.Generated.KiotaVersion.Current());
+                if (OsName() is { } osName)
+                {
+                    r.AddAttributes([
+                        new KeyValuePair<string, object>("os.name", osName),
+                        new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
+                    ]);
+                }
+            })
+            .WithMetrics(static mp =>
+            {
+                mp.AddMeter($"{TelemetryLabels.ScopeName}*")
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .SetExemplarFilter(ExemplarFilterType.TraceBased);
+                mp.AddOtlpExporter(ConfigureOpenTelemetryProtocolExporter);
+                // mp.AddConsoleExporter();
+                // mp.AddAzureMonitorMetricExporter(ConfigureAzureMonitorExporter);
+            })
+            .WithTracing(static tp =>
+            {
+                tp.AddSource($"{TelemetryLabels.ScopeName}*")
+                    .AddHttpClientInstrumentation();
+                tp.AddOtlpExporter(ConfigureOpenTelemetryProtocolExporter);
+                // tp.AddConsoleExporter();
+                // tp.AddAzureMonitorTraceExporter(ConfigureAzureMonitorExporter);
+            });
+        services.AddSingleton<Instrumentation>();
     }
 
     private static void DisposeSubCommands(this Command command)
@@ -71,7 +84,7 @@ static class Program
 
     private static void ConfigureOpenTelemetryProtocolExporter(OtlpExporterOptions options)
     {
-        // TODO: Update endpoint
+        // TODO: Use config
         options.Endpoint = new Uri("http://localhost:4317");
     }
 

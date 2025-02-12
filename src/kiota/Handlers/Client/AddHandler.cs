@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
@@ -99,17 +101,19 @@ internal class AddHandler : BaseKiotaCommandHandler
         List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
-        CreateTelemetryTags(tc, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
+        var host = context.GetHost();
+        var instrumentation = host.Services.GetService<Instrumentation>();
+        var activitySource = instrumentation?.ActivitySource;
+
+        CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
             namespaceName0, includePatterns0, excludePatterns0, structuredMimeTypes0, out var tags);
         // Start span
-        using var invokeActivity = tc?.ActivitySource.StartActivity(
-            TelemetryLabels.SpanAddClientCommand, ActivityKind.Internal,
-            startTime: startTime, parentContext: default,
-            tags: _commonTags.ConcatNullable(tags));
-        // Create command duration meter
-        var meterRuntime = tc?.CreateCommandDurationHistogram(tags);
+        using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanAddClientCommand,
+            startTime: startTime,
+            tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
+        // Command duration meter
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram(tags);
         if (meterRuntime is null) stopwatch = null;
 
         string output = output0 ?? string.Empty;
@@ -159,7 +163,11 @@ internal class AddHandler : BaseKiotaCommandHandler
             try
             {
                 using var genActivity = !skipGeneration
-                    ? tc?.ActivitySource.StartActivity(TelemetryLabels.SpanGenerateClientAction, ActivityKind.Internal, invokeActivity?.Context ?? default, tags)
+                    ? activitySource?.StartActivity(
+                        TelemetryLabels.SpanGenerateClientAction,
+                        ActivityKind.Internal,
+                        invokeActivity?.Context ?? default,
+                        tags?.Concat(Telemetry.Telemetry.GetThreadTags()))
                     : null;
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
@@ -201,13 +209,13 @@ internal class AddHandler : BaseKiotaCommandHandler
         }
     }
 
-    private static void CreateTelemetryTags(TelemetryComponents? tc, GenerationLanguage language, bool backingStore,
+    private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage language, bool backingStore,
         bool excludeBackwardCompatible, bool skipGeneration, string? output, string? namespaceName,
         List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes,
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
             {
                 new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
                 // new($"{TelemetryLabels.TagCommandParams}.type_access_modifier", typeAccessModifier.ToString("G")),

@@ -2,12 +2,11 @@
 
 public static class IEnumerableExtensions
 {
-    public static IEnumerable<T> ConcatNullable<T>(this IEnumerable<T>? left, IEnumerable<T>? right)
+    public static IEnumerable<T>? ConcatNullable<T>(this IEnumerable<T>? left, IEnumerable<T>? right)
     {
         if (left is not null && right is not null) return left.Concat(right);
-        if (right is null) return left!;
-        if (left is null) return right;
-        return [];
+        // At this point, either left is null, right is null or both are null
+        return left ?? right;
     }
 
     public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T>? source)

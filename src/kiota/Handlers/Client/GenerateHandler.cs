@@ -1,12 +1,13 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Text.Json;
 using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
@@ -37,16 +38,17 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         bool refresh = context.ParseResult.GetValueForOption(RefreshOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        var tc = context.BindingContext.GetService(typeof(TelemetryComponents)) as TelemetryComponents;
 
-        CreateTelemetryTags(tc, refresh, className0, logLevel, out var tags);
+        var host = context.GetHost();
+        var instrumentation = host.Services.GetService<Instrumentation>();
+        var activitySource = instrumentation?.ActivitySource;
 
-        using var invokeActivity = tc?.ActivitySource.StartActivity(
-            TelemetryLabels.SpanGenerateClientCommand, ActivityKind.Internal,
-            startTime: startTime, parentContext: default,
-            tags: _commonTags.ConcatNullable(tags));
-        var meterRuntime = tc?.CreateCommandDurationHistogram(tags);
-        using var activity = invokeActivity; // only here to ensure activity disposal
+        CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);
+
+        using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanGenerateClientCommand,
+            ActivityKind.Internal, startTime: startTime, parentContext: default,
+            tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram(tags);
         if (meterRuntime is null) stopwatch = null;
 
         var className = className0 ?? string.Empty;
@@ -77,9 +79,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 }
                 foreach (var clientEntry in clientEntries)
                 {
-                    using var genActivity = tc?.ActivitySource.StartActivity(TelemetryLabels.SpanGenerateClientAction,
-                        ActivityKind.Internal, invokeActivity?.Context ?? default,
-                        tags: _commonTags.ConcatNullable(tags));
+                    using var genActivity = activitySource?.StartActivity(
+                        TelemetryLabels.SpanGenerateClientAction, ActivityKind.Internal,
+                        invokeActivity?.Context ?? default,
+                        tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
                     var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
@@ -129,11 +132,11 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         }
     }
 
-    private static void CreateTelemetryTags(TelemetryComponents? tc, bool refresh, string? className, LogLevel? logLevel,
+    private static void CreateTelemetryTags(ActivitySource? activitySource, bool refresh, string? className, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = tc?.ActivitySource.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
         {
             new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
         } : null;
