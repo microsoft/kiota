@@ -736,8 +736,7 @@ components:
         Assert.NotNull(doClass);
         var deletedDateTimeProperty = doClass.FindChildByName<CodeProperty>("DeletedDateTime", false);
         Assert.NotNull(deletedDateTimeProperty);
-        var unionType = deletedDateTimeProperty.Type as CodeUnionType;
-        Assert.NotNull(unionType);
+        var unionType = Assert.IsType<CodeUnionType>(deletedDateTimeProperty.Type);
         Assert.Equal("directoryObject_deletedDateTime", unionType.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(3, unionType.Types.Count());
         Assert.Contains(unionType.Types, t => "DateTimeOffset".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
