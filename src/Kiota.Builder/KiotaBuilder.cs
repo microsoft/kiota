@@ -2107,6 +2107,17 @@ public partial class KiotaBuilder
         AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
         return newClass;
     }
+    /// <summary>
+    /// Creates a reference to the component so inheritance scenarios get the right class name
+    /// </summary>
+    /// <param name="componentName">Component to lookup</param>
+    /// <returns>A reference to the component schema</returns>
+    private OpenApiSchemaReference? GetSchemaReferenceToComponentSchema(string componentName)
+    {
+        if (openApiDocument?.Components?.Schemas?.ContainsKey(componentName) ?? false)
+            return new OpenApiSchemaReference(componentName, openApiDocument);
+        return null;
+    }
     private IEnumerable<KeyValuePair<string, CodeType>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiOperation? currentOperation)
     {
         // Generate types that this discriminator references
@@ -2292,7 +2303,7 @@ public partial class KiotaBuilder
     private CodeType? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiOperation? currentOperation)
     {
         var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
-        if (openApiDocument == null || string.IsNullOrEmpty(componentKey) || openApiDocument.Components?.Schemas is null || !openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema))
+        if (openApiDocument == null || string.IsNullOrEmpty(componentKey) || openApiDocument.Components?.Schemas is null || GetSchemaReferenceToComponentSchema(componentKey) is not { } discriminatorSchema)
         {
             logger.LogWarning("Discriminator {ComponentKey} not found in the OpenAPI document.", componentKey);
             return null;
