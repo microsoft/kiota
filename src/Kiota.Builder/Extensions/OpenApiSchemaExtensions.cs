@@ -163,7 +163,13 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is null) return null;
         if (!schema.IsIntersection() && !overrideIntersection) return schema;
-        var result = schema.CreateShallowCopy();
+        var result = schema switch
+        {
+            OpenApiSchema oas => (OpenApiSchema)oas.CreateShallowCopy(),
+            OpenApiSchemaReference oasr when oasr.Target is OpenApiSchema target => (OpenApiSchema)target.CreateShallowCopy(),
+            OpenApiSchemaReference => throw new InvalidOperationException("The schema reference is not resolved"),
+            _ => throw new InvalidOperationException("The schema type is not supported")
+        };
         result.AllOf.Clear();
         var meaningfulSchemas = schema.AllOf
                                     .Where(x => (x.IsSemanticallyMeaningful() || x.AllOf.Any()) && (filter == null || filter(x)))
@@ -172,14 +178,13 @@ public static class OpenApiSchemaExtensions
                                     .OfType<IOpenApiSchema>()
                                     .ToArray();
         var entriesToMerge = meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).ToArray();
-        if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator &&
-            result is IOpenApiSchema resultSchema)
-            if (resultSchema.Discriminator is null && resultSchema is OpenApiSchema openApiSchema)
-                openApiSchema.Discriminator = discriminator;
-            else if (resultSchema.Discriminator is not null && string.IsNullOrEmpty(resultSchema.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
-                resultSchema.Discriminator.PropertyName = discriminator.PropertyName;
-            else if (resultSchema.Discriminator is not null && (discriminator.Mapping?.Any() ?? false))
-                resultSchema.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
+        if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator)
+            if (result.Discriminator is null)
+                result.Discriminator = discriminator;
+            else if (result.Discriminator is not null && string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
+                result.Discriminator.PropertyName = discriminator.PropertyName;
+            else if (result.Discriminator is not null && (discriminator.Mapping?.Any() ?? false))
+                result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
 
