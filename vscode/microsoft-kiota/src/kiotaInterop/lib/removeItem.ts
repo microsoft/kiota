@@ -55,10 +55,10 @@ export async function removePlugin({ pluginName, cleanOutput, workingDirectory }
 /**
  * Removes a client using the provided configuration.
  *
- * @param {RemoveClientConfiguration} param0 - The configuration for removing the client.
- * @param {string} param0.clientName - The name of the client to be removed.
- * @param {boolean} param0.cleanOutput - A flag indicating whether to clean the output.
- * @param {string} param0.workingDirectory - The working directory for the operation.
+ * @param {RemoveClientConfiguration} config - The configuration for removing the client.
+ * @param {string} config.clientName - The name of the client to be removed.
+ * @param {boolean} config.cleanOutput - A flag indicating whether to clean the output.
+ * @param {string} config.workingDirectory - The working directory for the operation.
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if the client was removed successfully, or undefined if no result is returned.
  * @throws {Error} Throws an error if the result is an instance of Error.
  */

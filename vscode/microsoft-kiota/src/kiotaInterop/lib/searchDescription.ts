@@ -11,9 +11,9 @@ interface SearchConfiguration {
 /**
  * Searches for a description based on the provided search term and cache settings.
  *
- * @param {SearchConfiguration} param0 - The search configuration object.
- * @param {string} param0.searchTerm - The term to search for.
- * @param {boolean} param0.clearCache - Whether to clear the cache before searching.
+ * @param {SearchConfiguration} config - The search configuration object.
+ * @param {string} config.searchTerm - The term to search for.
+ * @param {boolean} config.clearCache - Whether to clear the cache before searching.
  * @returns {Promise<Record<string, KiotaSearchResultItem> | undefined>} A promise that resolves to a record of search results or undefined if no results are found.
  * @throws {Error} Throws an error if the search operation fails.
  */
