@@ -739,9 +739,9 @@ components:
         var unionType = Assert.IsType<CodeUnionType>(deletedDateTimeProperty.Type);
         Assert.Equal("directoryObject_deletedDateTime", unionType.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(3, unionType.Types.Count());
-        Assert.Contains(unionType.Types, t => "DateTimeOffset".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(unionType.Types, t => "directoryObject_deletedDateTimeMember1".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(unionType.Types, t => "int64".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Single(unionType.Types, t => "DateTimeOffset".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Single(unionType.Types, t => "directoryObject_deletedDateTimeMember1".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Single(unionType.Types, t => "int64".Equals(t.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Null(modelsNS.FindChildByName<CodeClass>("users"));
     }
     [Theory]
@@ -8541,8 +8541,8 @@ components:
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
-        Assert.Null(registeredModelClass.StartBlock.Inherits);
         Assert.NotNull(registeredModelClass);
+        Assert.Null(registeredModelClass.StartBlock.Inherits);
         Assert.Single(registeredModelClass.Properties, static x => x.Kind is CodePropertyKind.AdditionalData);
         Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
         Assert.Single(registeredModelClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
