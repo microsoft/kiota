@@ -1,4 +1,3 @@
-import * as sinon from "sinon";
 import * as vscode from 'vscode';
 
 import { DeleteWorkspaceItemCommand } from '../../../commands/deleteWorkspaceItem/deleteWorkspaceItemCommand';
@@ -14,15 +13,15 @@ describe('DeleteWorkspaceItemCommand Tests', () => {
 
   beforeAll(() => {
     context = { extension: { packageJSON: { telemetryInstrumentationKey: 'test-key' } } } as any;
-    outputChannel = { appendLine: sinon.stub() } as any;
-    var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-    var stubbedSharedService = sinon.createStubInstance(sharedServiceModule.SharedService);
-    command = new DeleteWorkspaceItemCommand(context, treeProvider, outputChannel, stubbedSharedService,);
+    outputChannel = { appendLine: jest.fn() } as any;
+    const treeProvider = jest.fn(() => ({} as treeModule.OpenApiTreeProvider));
+    const stubbedSharedService = jest.fn(() => ({} as sharedServiceModule.SharedService));
+    command = new DeleteWorkspaceItemCommand(context, treeProvider(), outputChannel, stubbedSharedService());
     workspaceTreeItem = { label: 'test-item', category: 'plugin' } as any;
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.clearAllMocks();
   });
 
   test('getName should return correct command name', () => {
@@ -32,15 +31,15 @@ describe('DeleteWorkspaceItemCommand Tests', () => {
   test('execute should show success message and refresh workspace on success', async () => {
     const yesAnswer: vscode.MessageItem = { title: vscode.l10n.t("Yes") };
 
-    const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
-    const showInformationMessageStub = sinon.stub(vscode.window, 'showInformationMessage').resolves();
-    const deleteItemStub = sinon.stub(command as any, 'deleteItem').resolves({ isSuccess: true, logs: [{ message: 'removed successfully' }] });
+    const showWarningMessageStub = jest.spyOn(vscode.window, 'showWarningMessage').mockResolvedValue(yesAnswer);
+    const showInformationMessageStub = jest.spyOn(vscode.window, 'showInformationMessage').mockResolvedValue(undefined);
+    const deleteItemStub = jest.spyOn(command as any, 'deleteItem').mockResolvedValue({ isSuccess: true, logs: [{ message: 'removed successfully' }] });
 
     await command.execute(workspaceTreeItem);
 
-    expect(showWarningMessageStub.calledOnce).toEqual(true);
-    expect(showInformationMessageStub.calledOnce).toEqual(true);
-    expect(deleteItemStub.calledOnce).toEqual(true);
+    expect(showWarningMessageStub).toHaveBeenCalledTimes(1);
+    expect(showInformationMessageStub).toHaveBeenCalledTimes(1);
+    expect(deleteItemStub).toHaveBeenCalledTimes(1);
   });
 
 });
