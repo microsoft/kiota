@@ -11,7 +11,7 @@ interface KiotaResultOptions {
 }
 
 /**
- * Asynchronously shows the Kiota result based on the provided options.
+ * Shows the Kiota result based on the provided options.
  *
  * @param {KiotaResultOptions} options - The options to configure the Kiota result.
  * @param {string[]} options.includeFilters - Filters to include in the result.
