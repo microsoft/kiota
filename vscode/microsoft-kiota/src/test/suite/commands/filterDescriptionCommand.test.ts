@@ -7,7 +7,7 @@ import * as filterStepsModule from "../../../modules/steps/filterSteps";
 import * as treeModule from "../../../providers/openApiTreeProvider";
 
 
-suite('FilterDescriptionCommand Test Suite', () => {
+describe('FilterDescriptionCommand Test Suite', () => {
 	void vscode.window.showInformationMessage('Start FilterDescriptionCommand tests.');
     const sanbox = sinon.createSandbox();
 

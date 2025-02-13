@@ -12,7 +12,7 @@ describe('DeleteWorkspaceItemCommand Tests', () => {
   let command: DeleteWorkspaceItemCommand;
   let workspaceTreeItem: WorkspaceTreeItem;
 
-  setup(() => {
+  beforeAll(() => {
     context = { extension: { packageJSON: { telemetryInstrumentationKey: 'test-key' } } } as any;
     outputChannel = { appendLine: sinon.stub() } as any;
     var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
