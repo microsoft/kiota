@@ -1,4 +1,3 @@
-import assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
 
@@ -7,13 +6,13 @@ import * as treeModule from "../../../providers/openApiTreeProvider";
 import * as sharedServiceModule from '../../../providers/sharedService';
 import { WorkspaceTreeItem } from '../../../providers/workspaceTreeProvider';
 
-suite('DeleteWorkspaceItemCommand Tests', () => {
+describe('DeleteWorkspaceItemCommand Tests', () => {
   let context: vscode.ExtensionContext;
   let outputChannel: vscode.LogOutputChannel;
   let command: DeleteWorkspaceItemCommand;
   let workspaceTreeItem: WorkspaceTreeItem;
 
-  setup(() => {
+  beforeAll(() => {
     context = { extension: { packageJSON: { telemetryInstrumentationKey: 'test-key' } } } as any;
     outputChannel = { appendLine: sinon.stub() } as any;
     var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
@@ -22,12 +21,12 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
     workspaceTreeItem = { label: 'test-item', category: 'plugin' } as any;
   });
 
-  teardown(() => {
+  afterEach(() => {
     sinon.restore();
   });
 
   test('getName should return correct command name', () => {
-    assert.strictEqual("kiota.workspace.deleteItem", command.getName());
+    expect("kiota.workspace.deleteItem").toEqual(command.getName());
   });
 
   test('execute should show success message and refresh workspace on success', async () => {
@@ -39,9 +38,9 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
 
     await command.execute(workspaceTreeItem);
 
-    assert.strictEqual(showWarningMessageStub.calledOnce, true);
-    assert.strictEqual(showInformationMessageStub.calledOnce, true);
-    assert.strictEqual(deleteItemStub.calledOnce, true);
+    expect(showWarningMessageStub.calledOnce).toEqual(true);
+    expect(showInformationMessageStub.calledOnce).toEqual(true);
+    expect(deleteItemStub.calledOnce).toEqual(true);
   });
 
 });
