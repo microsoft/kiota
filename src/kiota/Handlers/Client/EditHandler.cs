@@ -114,8 +114,10 @@ internal class EditHandler : BaseKiotaCommandHandler
         using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanEditClientCommand,
             ActivityKind.Internal, startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
-        var meterRuntime = instrumentation?.CreateCommandDurationHistogram(tags);
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
@@ -174,21 +176,20 @@ internal class EditHandler : BaseKiotaCommandHandler
                                                                     .Select(static x => x.TrimQuotes()));
 
                 DefaultSerializersAndDeserializers(Configuration.Generation);
-                using var genActivity = !skipGeneration
-                    ? activitySource?.StartActivity(
-                        TelemetryLabels.SpanGenerateClientAction,
-                        ActivityKind.Internal,
-                        invokeActivity?.Context ?? default,
-                        tags?.Concat(Telemetry.Telemetry.GetThreadTags()))
-                    : null;
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
-                    genActivity?.SetTag(TelemetryLabels.TagGeneratorLanguage, Configuration.Generation.Language.ToString("G"));
                     DisplaySuccess("Generation completed successfully");
                     DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
-                    genActivity?.SetStatus(ActivityStatusCode.Ok);
+                    var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                    var meterTags = new TagList(_commonTags.AsSpan())
+                    {
+                        new KeyValuePair<string, object?>(
+                            TelemetryLabels.TagGeneratorLanguage,
+                            Configuration.Generation.Language.ToString("G"))
+                    };
+                    genCounter?.Add(1, meterTags);
                 }
                 else if (skipGeneration)
                 {
@@ -200,7 +201,6 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayWarning("Generation skipped as no changes were detected");
                     DisplayCleanHint("client generate", "--refresh");
                 }
-                genActivity?.Stop();
                 var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "client edit");

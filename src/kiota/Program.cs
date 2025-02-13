@@ -17,7 +17,7 @@ namespace kiota;
 static class Program
 {
     // TODO: Use config
-    const string appInsightsConnectionString = "InstrumentationKey=88938a3d-6016-4d17-85f7-8dd00afc39d4;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=9b0946d3-0df5-4563-9aed-ed6f6fa86fe9";
+    const string appInsightsConnectionString = "InstrumentationKey=aacd0827-313f-4e2e-8690-9be8740e3423;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=eebbb820-b386-412f-92ee-ae7ac854ed6c";
     static async Task<int> Main(string[] args)
     {
         var rootCommand = KiotaHost.GetRootCommand();
@@ -39,10 +39,9 @@ static class Program
         services.AddOpenTelemetry()
             .ConfigureResource(static r =>
             {
-                r.AddService(
-                    serviceName: "kiota",
-                    serviceNamespace: "microsoft.openapi",
-                    serviceVersion: Kiota.Generated.KiotaVersion.Current());
+                r.AddService(serviceName: "kiota",
+                        serviceNamespace: "microsoft.openapi",
+                        serviceVersion: Kiota.Generated.KiotaVersion.Current());
                 if (OsName() is { } osName)
                 {
                     r.AddAttributes([
@@ -55,6 +54,7 @@ static class Program
             {
                 mp.AddMeter($"{TelemetryLabels.ScopeName}*")
                     .AddHttpClientInstrumentation()
+                    // TODO: Decide if runtime metrics are useful
                     .AddRuntimeInstrumentation()
                     .SetExemplarFilter(ExemplarFilterType.TraceBased);
                 mp.AddOtlpExporter(ConfigureOpenTelemetryProtocolExporter);

@@ -113,8 +113,10 @@ internal class AddHandler : BaseKiotaCommandHandler
             startTime: startTime,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
         // Command duration meter
-        var meterRuntime = instrumentation?.CreateCommandDurationHistogram(tags);
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
 
         string output = output0 ?? string.Empty;
         string openapi = openapi0 ?? string.Empty;
@@ -162,28 +164,26 @@ internal class AddHandler : BaseKiotaCommandHandler
 
             try
             {
-                using var genActivity = !skipGeneration
-                    ? activitySource?.StartActivity(
-                        TelemetryLabels.SpanGenerateClientAction,
-                        ActivityKind.Internal,
-                        invokeActivity?.Context ?? default,
-                        tags?.Concat(Telemetry.Telemetry.GetThreadTags()))
-                    : null;
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
-                    genActivity?.SetTag(TelemetryLabels.TagGeneratorLanguage, Configuration.Generation.Language.ToString("G"));
                     DisplaySuccess("Generation completed successfully");
                     DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
-                    genActivity?.SetStatus(ActivityStatusCode.Ok);
+                    var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                    var meterTags = new TagList(_commonTags.AsSpan())
+                    {
+                        new KeyValuePair<string, object?>(
+                            TelemetryLabels.TagGeneratorLanguage,
+                            Configuration.Generation.Language.ToString("G"))
+                    };
+                    genCounter?.Add(1, meterTags);
                 }
                 else if (skipGeneration)
                 {
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                genActivity?.Stop();
                 var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");

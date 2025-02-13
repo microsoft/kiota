@@ -48,8 +48,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanGenerateClientCommand,
             ActivityKind.Internal, startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
-        var meterRuntime = instrumentation?.CreateCommandDurationHistogram(tags);
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
 
         var className = className0 ?? string.Empty;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
@@ -79,19 +81,12 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 }
                 foreach (var clientEntry in clientEntries)
                 {
-                    using var genActivity = activitySource?.StartActivity(
-                        TelemetryLabels.SpanGenerateClientAction, ActivityKind.Internal,
-                        invokeActivity?.Context ?? default,
-                        tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
                     var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
                     generationConfiguration.Operation = ConsumerOperation.Generate;
-                    genActivity?.SetTag(
-                        TelemetryLabels.TagGeneratorLanguage,
-                        generationConfiguration.Language.ToString("G"));
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                     if (result)
@@ -100,14 +95,20 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                         DisplayUrlInformation(generationConfiguration.ApiRootUrl);
                         var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
                         DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
-                        genActivity?.SetStatus(ActivityStatusCode.Ok);
+                        var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                        var meterTags = new TagList(_commonTags.AsSpan())
+                        {
+                            new KeyValuePair<string, object?>(
+                                TelemetryLabels.TagGeneratorLanguage,
+                                generationConfiguration.Language.ToString("G"))
+                        };
+                        genCounter?.Add(1, meterTags);
                     }
                     else
                     {
                         DisplayWarning($"Update of {clientEntry.Key} skipped, no changes detected");
                         DisplayCleanHint("client generate", "--refresh");
                     }
-                    genActivity?.Stop();
                 }
 
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
