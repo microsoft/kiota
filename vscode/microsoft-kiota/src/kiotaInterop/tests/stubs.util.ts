@@ -1,17 +1,16 @@
-import * as sinon from 'sinon';
 import * as rpc from 'vscode-jsonrpc';
 import * as connectToKiota from '../connect';
 
 export function setupKiotaStubs() {
-  const connectionStub = sinon.stub();
+  const connectionStub = jest.fn();
 
   const mockConnection = {
     sendRequest: connectionStub,
-    listen: sinon.stub(),
-    dispose: sinon.stub(),
+    listen: jest.fn(),
+    dispose: jest.fn(),
   } as unknown as rpc.MessageConnection;
 
-  const connectToKiotaStub = sinon.stub(connectToKiota, 'default').callsFake(
+  const connectToKiotaStub = jest.spyOn(connectToKiota, 'default').mockImplementation(
     async (callback: (connection: rpc.MessageConnection) => Promise<any>) => {
       return callback(mockConnection);
     }

@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { KiotaLogEntry, migrateFromLockFile } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("migrate from lock file", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,7 +10,7 @@ describe("migrate from lock file", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   test('should return success when successful', async () => {
@@ -23,7 +21,7 @@ describe("migrate from lock file", () => {
       }
     ];
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results = await migrateFromLockFile('lockfile');
     expect(results).toBeDefined();
   });

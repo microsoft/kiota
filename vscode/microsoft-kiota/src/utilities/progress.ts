@@ -8,13 +8,9 @@ function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
     cancellable: false,
     title: vscode.l10n.t("Loading...")
   }, async (progress, _) => {
-    try {
-      const result = await callback();
-      await vscode.commands.executeCommand(treeViewFocusCommand);
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    const result = await callback();
+    await vscode.commands.executeCommand(treeViewFocusCommand);
+    return result;
   });
 }
 

@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { KiotaSearchResultItem, searchDescription } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("search description", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,7 +10,7 @@ describe("search description", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -25,19 +23,19 @@ describe("search description", () => {
       },
     };
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const result = await searchDescription({ searchTerm: 'test', clearCache: false });
     expect(result).toEqual(mockResults.results);
   });
 
   test('should return undefined when no results are found', async () => {
-    connectionStub.resolves(undefined);
+    connectionStub.mockResolvedValue(undefined);
     const result = await searchDescription({ searchTerm: 'test', clearCache: false });
     expect(result).toBeUndefined();
   });
 
-  test('should return undefined when search fails', async () => {
-    connectionStub.rejects(new Error('Search failed'));
+  test('should throw error when search fails', async () => {
+    connectionStub.mockRejectedValue(new Error('Search failed'));
     try {
       await searchDescription({ searchTerm: 'test', clearCache: false });
     } catch (error) {

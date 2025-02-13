@@ -62,7 +62,6 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
 
     if (config.descriptionPath) {
       try {
-
         await openTreeViewWithProgress(async () => {
           await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
           await updateTreeViewIcons(treeViewId, true, false);

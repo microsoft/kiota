@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { getKiotaVersion } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,20 +10,20 @@ describe("getKiotaVersion", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
   test('should return version when successful', async () => {
     const mockResults: string = '1.0.0';
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const version = await getKiotaVersion();
     expect(version).toBeDefined();
   });
 
   test('should throw error when connection fails', async () => {
-    connectionStub.rejects(new Error('Installation failed'));
+    connectionStub.mockRejectedValueOnce(new Error('Installation failed'));
     try {
       await getKiotaVersion();
     } catch (error) {

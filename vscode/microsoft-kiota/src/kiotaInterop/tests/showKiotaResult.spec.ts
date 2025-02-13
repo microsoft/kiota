@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { KiotaShowResult, showKiotaResult } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,7 +10,7 @@ describe("getKiotaVersion", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -37,7 +35,7 @@ describe("getKiotaVersion", () => {
       logs: []
     };
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const version = await showKiotaResult({ includeFilters: [], descriptionPath: 'descriptionPath', excludeFilters: [], clearCache: false });
     expect(version).toBeDefined();
   });

@@ -1,11 +1,8 @@
-import * as sinon from 'sinon';
-
-
 import { KiotaLogEntry, updateClients } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("update Clients", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -13,7 +10,7 @@ describe("update Clients", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -25,7 +22,7 @@ describe("update Clients", () => {
       }
     ];
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results = await updateClients({ clearCache: false, cleanOutput: false, workspacePath: 'test' });
     expect(results).toBeDefined();
   });
