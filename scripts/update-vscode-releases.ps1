@@ -7,19 +7,26 @@ param (
   [string]
   [Parameter(Mandatory = $true, ParameterSetName = 'Local')]
   [Parameter(Mandatory = $true, ParameterSetName = 'Online')]
-  $filePath,
+  $packageJsonFilePath,
   [string]
   [Parameter(Mandatory = $true, ParameterSetName = 'Local')]
   [Parameter(Mandatory = $false, ParameterSetName = 'Online')]
   $binaryFolderPath = "",
   [switch]
   [Parameter(Mandatory = $false, ParameterSetName = 'Online')]
-  $online
+  $online,
+  [string]
+  [Parameter(Mandatory = $true, ParameterSetName = 'Local')]
+  [Parameter(Mandatory = $true, ParameterSetName = 'Online')]
+  $runtimeFilePath
 )
 
 $version = $version.TrimStart("v")
-$packageJson = Get-Content $filePath | ConvertFrom-Json
-$packageJson.kiotaVersion = $version
+$packageJson = Get-Content $packageJsonFilePath | ConvertFrom-Json
+$runtimeJson = Get-Content $runtimeFilePath | ConvertFrom-Json
+
+$runtimeJson.kiotaVersion = $version
+
 $fragments = $version.Split("-preview.")
 $versionParts = $fragments[0].Split(".")
 $updatedPatchVersion = $versionParts[2].TrimStart("0")
@@ -49,7 +56,7 @@ else {
 }
 $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $updatedPatchVersion
 $packageJson.version = $extensionVersion
-$runtimeDependencies = $packageJson.runtimeDependencies
+$runtimeDependencies = $runtimeJson.runtimeDependencies
 
 if ($online) {
   Write-Warning "Downloading binaries from GitHub."
@@ -76,7 +83,9 @@ foreach ($runtimeDependency in $runtimeDependencies) {
     Write-Warning "Could not find file $binPath"
   }
 }
-Set-Content $filePath ($packageJson | ConvertTo-Json -Depth 10)
+Set-Content $runtimeFilePath ($runtimeJson | ConvertTo-Json -Depth 10)
+Set-Content $packageJsonFilePath ($packageJson | ConvertTo-Json -Depth 10)
+
 if ($online) {
   Remove-Item -Recurse -Force $binaryFolderPath
 }
