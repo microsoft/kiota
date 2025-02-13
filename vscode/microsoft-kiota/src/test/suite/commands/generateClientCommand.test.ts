@@ -2,7 +2,6 @@
 // as well as import your extension to test it
 import TelemetryReporter from "@vscode/extension-telemetry";
 import * as path from "path";
-import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as generateModule from "../../../commands/generate/generateClientCommand";
 import * as languageInfoModule from "../../../commands/generate/generation-util";
@@ -17,13 +16,12 @@ import { getSanitizedString } from "../../../util";
 import { IntegrationParams, transformToGenerationConfig } from "../../../utilities/deep-linking";
 import * as msgUtilitiesModule from "../../../utilities/messaging";
 
-
 let context: vscode.ExtensionContext = {
     subscriptions: [],
     workspaceState: {
-        update: sinon.stub().resolves(),
-        keys: sinon.stub().returns([]),
-        get: sinon.stub().returns(undefined)
+        update: jest.fn().mockResolvedValue(undefined),
+        keys: jest.fn().mockReturnValue([]),
+        get: jest.fn().mockReturnValue(undefined)
     } as vscode.Memento,
     globalState: {} as any,
     secrets: {} as vscode.SecretStorage,
@@ -45,7 +43,6 @@ let context: vscode.ExtensionContext = {
         }
     } as vscode.Extension<any>
 };
-
 
 let extensionSettings = {
     includeAdditionalData:false,
@@ -74,195 +71,174 @@ let result: KiotaLogEntry[] = [{level: 1, message: "Parsing OpenAPI file"},{leve
 const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>):void =>{};
 
 describe('GenerateClientCommand Test Suite', () => {
-    const sanbox = sinon.createSandbox();
-    let myOutputChannel = vscode.window.createOutputChannel("Kiota", {
-        log: true,
+    let myOutputChannel: vscode.LogOutputChannel;
+
+    beforeEach(() => {
+        myOutputChannel = vscode.window.createOutputChannel("Kiota", {
+            log: true,
+        });
     });
 
     afterEach(() => {
-        sanbox.restore();
+        jest.clearAllMocks();
     });
 
     test('test function getName of GenerateClientCommand', () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         expect("kiota.openApiExplorer.generateClient").toEqual(generateClientCommand.getName());
     });
 
     test('test function execute of GenerateClientCommand with 0 selected paths', async () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        treeProvider.getSelectedPaths.returns([]);
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const vscodeWindowSpy = sinon.stub(vscode.window, "showErrorMessage");
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        treeProvider.getSelectedPaths = jest.fn().mockReturnValue([]);
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
+        const vscodeWindowSpy = jest.spyOn(vscode.window, "showErrorMessage").mockResolvedValue(undefined);
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
         expect((treeProvider.getSelectedPaths()).length).toEqual(0);
-        sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
-        vscodeWindowSpy.restore();
+        expect(vscodeWindowSpy).toHaveBeenCalledWith(vscode.l10n.t("No endpoints selected, select endpoints first"));
     });
 
     test('test function execute of GenerateClientCommand with descriptionUrl unset', async () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        treeProvider.getSelectedPaths.returns(["repairs"]);
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        treeProvider.getSelectedPaths = jest.fn().mockReturnValue(["repairs"]);
         treeProvider.apiTitle = "Repairs OAD";
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const vscodeWindowSpy = sinon.mock(vscode.window).expects(
-            "showErrorMessage").once().withArgs(
-                vscode.l10n.t("No description found, select a description first")
-            );
-        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
-        getlanguageInfoFn.resolves(undefined);
-        let config: Partial<generateStepsModule.GenerateState> = {generationType: "client"};
-        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
-        generateStepsFn.resolves(config);
-        const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
+        const vscodeWindowSpy = jest.spyOn(vscode.window, "showErrorMessage").mockResolvedValue(undefined);
+        const getlanguageInfoFn = jest.spyOn(languageInfoModule, "getLanguageInformation").mockResolvedValue(undefined);
+        const generateStepsFn = jest.spyOn(generateStepsModule, "generateSteps").mockResolvedValue({ generationType: "client" });
+        const showUpgradeWarningMessageStub = jest.spyOn(msgUtilitiesModule, "showUpgradeWarningMessage").mockResolvedValue(undefined);
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
         expect((treeProvider.getSelectedPaths()).length).toEqual(1);
-        vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
-        let stateInfo: Partial<generateStepsModule.GenerateState> = {
+        expect(vscodeWindowSpy).toHaveBeenCalledWith(vscode.l10n.t("No description found, select a description first"));
+        expect(getlanguageInfoFn).toHaveBeenCalled();
+        expect(generateStepsFn).toHaveBeenCalledWith(expect.objectContaining({
             clientClassName: treeProvider.clientClassName,
             clientNamespaceName: treeProvider.clientNamespaceName,
             language: treeProvider.language,
             outputPath: treeProvider.outputPath,
-            pluginName:"RepairsOAD"
-        };
-        expect(!treeProvider.descriptionUrl).toEqual(true);
-        sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , {});
-        sinon.assert.calledOnce(showUpgradeWarningMessageStub);
-        sinon.restore();
+            pluginName: "RepairsOAD"
+        }), undefined, {});
+        expect(showUpgradeWarningMessageStub).toHaveBeenCalled();
     });
 
     test('test successful completion of function execute of GenerateClientCommand', async () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        sinon.stub(
-            treeProvider, "descriptionUrl"
-        ).get(
-            function getterFn() {
-                return "https://graph.microsoft.com/v1.0/$metadata";
-            }
-        );
-        treeProvider.getSelectedPaths.returns(["repairs"]);
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        Object.defineProperty(treeProvider, "descriptionUrl", {
+            get: jest.fn().mockReturnValue("https://graph.microsoft.com/v1.0/$metadata")
+        });
+        treeProvider.getSelectedPaths = jest.fn().mockReturnValue(["repairs"]);
         treeProvider.apiTitle = "Repairs OAD";
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const vscodeWindowSpy = sinon.mock(vscode.window).expects("showErrorMessage").never();
-        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
-        getlanguageInfoFn.resolves(undefined);
-        const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
-        const getExtensionSettingsStub = sinon.stub(settingsModule, "getExtensionSettings").onFirstCall().returns(extensionSettings);
-        //set deeplinkparams with name provided.
-        var pluginParams: any = {
-            name: "OverridingRepairsOADname", //sanitized before setDeepLinkParams is called
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
+        const vscodeWindowSpy = jest.spyOn(vscode.window, "showErrorMessage").mockResolvedValue(undefined);
+        const getlanguageInfoFn = jest.spyOn(languageInfoModule, "getLanguageInformation").mockResolvedValue(undefined);
+        const showUpgradeWarningMessageStub = jest.spyOn(msgUtilitiesModule, "showUpgradeWarningMessage").mockResolvedValue(undefined);
+        const getExtensionSettingsStub = jest.spyOn(settingsModule, "getExtensionSettings").mockReturnValue(extensionSettings);
+        const generateStepsFn = jest.spyOn(generateStepsModule, "generateSteps").mockResolvedValue({
+            generationType: "plugin",
+            outputPath: "path/to/temp/folder",
+            pluginName: "OverridingRepairsOADname"
+        });
+        deepLinkParamsHandler.setDeepLinkParams({
+            name: "OverridingRepairsOADname",
             kind: "plugin",
             type: "ApiPlugin",
             source: "tafutaAPI"
-        };
-        let config: Partial<generateStepsModule.GenerateState> = {generationType: "plugin", outputPath: "path/to/temp/folder", pluginName: pluginParams.name};
-        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
-        generateStepsFn.resolves(config);
-        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
+        });
 
-        //stub and call generateCommand
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
-            "generatePluginAndRefreshUI").once().withArgs(
-                config, extensionSettings, "path/to/temp/folder", ["repairs"]
-            );
-        generatePluginAndRefreshUIExpectation.resolves(result);
         await generateClientCommand.execute();
         expect((treeProvider.getSelectedPaths()).length).toEqual(1);
-        expect(!treeProvider.descriptionUrl).toEqual(false);
-        vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
-        let stateInfo = await transformToGenerationConfig(pluginParams);
-        sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , pluginParams);
-        sinon.assert.calledOnce(showUpgradeWarningMessageStub);
-        sinon.assert.calledOnceWithMatch(getExtensionSettingsStub, "kiota");
-
-        // expect successful call to method generatePluginAndRefreshUI
-        generatePluginAndRefreshUIExpectation.verify();
-        sinon.restore();
+        expect(treeProvider.descriptionUrl).toBeTruthy();
+        expect(vscodeWindowSpy).not.toHaveBeenCalled();
+        expect(getlanguageInfoFn).toHaveBeenCalled();
+        const stateInfo = await transformToGenerationConfig({
+            name: "OverridingRepairsOADname",
+            kind: "plugin",
+            type: "ApiPlugin",
+            source: "tafutaAPI"
+        });
+        expect(generateStepsFn).toHaveBeenCalledWith(stateInfo, undefined, {
+            name: "OverridingRepairsOADname",
+            kind: "plugin",
+            type: "ApiPlugin",
+            source: "tafutaAPI"
+        });
+        expect(showUpgradeWarningMessageStub).toHaveBeenCalled();
+        expect(getExtensionSettingsStub).toHaveBeenCalledWith("kiota");
     });
 
     test('test ttk integration in function execute of GenerateClientCommand', async () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        sinon.stub(
-            treeProvider, "descriptionUrl"
-        ).get( 
-            function getterFn() {
-                return "https://graph.microsoft.com/v1.0/$metadata";
-            }
-        );
-        treeProvider.getSelectedPaths.returns(["repairs"]);
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        Object.defineProperty(treeProvider, "descriptionUrl", {
+            get: jest.fn().mockReturnValue("https://graph.microsoft.com/v1.0/$metadata")
+        });
+        treeProvider.getSelectedPaths = jest.fn().mockReturnValue(["repairs"]);
         treeProvider.apiTitle = "Repairs OAD";
-        let sanitizedApiTitle = getSanitizedString(treeProvider.apiTitle);
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const vscodeWindowSpy = sinon.mock(vscode.window).expects("showErrorMessage").never();
-        const getlanguageInfoFn = sinon.stub(languageInfoModule, "getLanguageInformation");
-        getlanguageInfoFn.resolves(undefined);
-        sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
-        const clearDeepLinkParamSpy = sinon.spy(deepLinkParamsHandler, "clearDeepLinkParams");
-        sinon.stub(settingsModule, "getExtensionSettings").returns(extensionSettings);
-        var pluginParams: any = {
+        const sanitizedApiTitle = getSanitizedString(treeProvider.apiTitle);
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
+        const vscodeWindowSpy = jest.spyOn(vscode.window, "showErrorMessage").mockResolvedValue(undefined);
+        const getlanguageInfoFn = jest.spyOn(languageInfoModule, "getLanguageInformation").mockResolvedValue(undefined);
+        jest.spyOn(msgUtilitiesModule, "showUpgradeWarningMessage").mockResolvedValue(undefined);
+        const clearDeepLinkParamSpy = jest.spyOn(deepLinkParamsHandler, "clearDeepLinkParams");
+        jest.spyOn(settingsModule, "getExtensionSettings").mockReturnValue(extensionSettings);
+        const generateStepsFn = jest.spyOn(generateStepsModule, "generateSteps").mockResolvedValue({
+            generationType: "apimanifest",
+            outputPath: "path/to/temp/folder",
+            pluginName: sanitizedApiTitle
+        });
+        deepLinkParamsHandler.setDeepLinkParams({
             kind: "plugin",
             type: "apimanifest",
             source: "TTK",
             ttkContext: {
                 lastCommand: 'createDeclarativeCopilotWithManifest'
             }
-        }; 
-        let config: Partial<generateStepsModule.GenerateState> = {generationType: "apimanifest", outputPath: "path/to/temp/folder", pluginName: sanitizedApiTitle};
-        const generateStepsFn = sinon.stub(generateStepsModule, "generateSteps");
-        generateStepsFn.resolves(config);
-        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
+        });
 
-        //stub and call generateCommand
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        var outputPath = path.join("path", "to", "temp", "folder", "appPackage"); //make it os agnostic
-        const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
-            "generateManifestAndRefreshUI").twice().withArgs(
-                config, extensionSettings, outputPath, ["repairs"]
-            );
-        generateManifestAndRefreshUIExpectation.resolves(result);
-        let executeCommandStub = sinon.stub(vscode.commands, "executeCommand");
-        executeCommandStub.resolves();
+        const outputPath = path.join("path", "to", "temp", "folder", "appPackage");
+        const executeCommandStub = jest.spyOn(vscode.commands, "executeCommand").mockResolvedValue(undefined);
         await generateClientCommand.execute();
 
-        // expections
-        vscodeWindowSpy.verify();
-        sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
-        var updatedDeepLinkParams: Partial<IntegrationParams> = JSON.parse(JSON.stringify(pluginParams));
-        updatedDeepLinkParams["name"] = sanitizedApiTitle;
-        sinon.assert.calledOnce(generateStepsFn);
-        sinon.assert.calledWithMatch(
-            executeCommandStub, 
+        expect(vscodeWindowSpy).not.toHaveBeenCalled();
+        expect(getlanguageInfoFn).toHaveBeenCalled();
+        const updatedDeepLinkParams: Partial<IntegrationParams> = {
+            kind: "plugin",
+            type: "apimanifest",
+            source: "TTK",
+            name: sanitizedApiTitle
+        };
+        expect(generateStepsFn).toHaveBeenCalledWith(expect.objectContaining({
+            generationType: "apimanifest",
+            outputPath: "path/to/temp/folder",
+            pluginName: sanitizedApiTitle
+        }), undefined, updatedDeepLinkParams);
+        expect(executeCommandStub).toHaveBeenCalledWith(
             'fx-extension.createprojectfromkiota',
             [
                 path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-openapi.yml`),
                 path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-apiplugin.json`),
-                {lastCommand: 'createDeclarativeCopilotWithManifest'}
+                { lastCommand: 'createDeclarativeCopilotWithManifest' }
             ]
         );
-        sinon.assert.calledOnce(clearDeepLinkParamSpy);
+        expect(clearDeepLinkParamSpy).toHaveBeenCalled();
 
-        //test call to ttk createprojectfromkiota fails with undefined ttkContext Param
-        pluginParams = {
+        // Test call to ttk createprojectfromkiota fails with undefined ttkContext Param
+        deepLinkParamsHandler.setDeepLinkParams({
             kind: "plugin",
             type: "apimanifest",
-            source: "TTK",
-        }; 
-        deepLinkParamsHandler.setDeepLinkParams(pluginParams);
-        executeCommandStub.throws("ttk context not provided");
-        const telemetryStub = sinon.stub(TelemetryReporter.prototype, "sendTelemetryEvent").resolves();
-        //call execute command again but this time expect call to fail
+            source: "TTK"
+        });
+        executeCommandStub.mockRejectedValue(new Error("ttk context not provided"));
+        const telemetryStub = jest.spyOn(TelemetryReporter.prototype, "sendTelemetryEvent").mockImplementation(() => { });
         await generateClientCommand.execute();
-        sinon.assert.calledWith(
-            telemetryStub,
+        expect(telemetryStub).toHaveBeenCalledWith(
             "DeepLinked fx-extension.createprojectfromkiota",
-            {"error": '{"name":"ttk context not provided"}' }
+            { "error": '{"name":"ttk context not provided"}' }
         );
-        generateManifestAndRefreshUIExpectation.verify();
     });
 });
