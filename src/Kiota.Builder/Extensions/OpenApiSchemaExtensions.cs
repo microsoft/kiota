@@ -187,10 +187,13 @@ public static class OpenApiSchemaExtensions
         if (entriesToMerge.Select(static x => x.Discriminator).OfType<OpenApiDiscriminator>().FirstOrDefault() is OpenApiDiscriminator discriminator)
             if (result.Discriminator is null)
                 result.Discriminator = discriminator;
-            else if (result.Discriminator is not null && string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
-                result.Discriminator.PropertyName = discriminator.PropertyName;
-            else if (result.Discriminator is not null && (discriminator.Mapping?.Any() ?? false))
-                result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
+            else
+            {
+                if (string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
+                    result.Discriminator.PropertyName = discriminator.PropertyName;
+                if (discriminator.Mapping?.Any() ?? false)
+                    result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
+            }
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
 
