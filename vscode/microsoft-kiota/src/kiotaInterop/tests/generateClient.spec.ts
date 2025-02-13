@@ -1,11 +1,9 @@
-import * as sinon from 'sinon';
-
 import { generateClient, KiotaLogEntry } from '..';
 import { KiotaGenerationLanguage } from '../types';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("generate client", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -13,7 +11,7 @@ describe("generate client", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -23,7 +21,7 @@ describe("generate client", () => {
         level: 0,
         message: "Generation complete"
       }
-    ]; connectionStub.resolves(mockResults);
+    ]; connectionStub.mockResolvedValue(mockResults);
 
     const results = await generateClient({
       openAPIFilePath: 'openAPIFilePath',

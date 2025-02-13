@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { KiotaLogEntry, KiotaResult, removeClient, removePlugin } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("remove Client", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,7 +10,7 @@ describe("remove Client", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -24,7 +22,7 @@ describe("remove Client", () => {
       }
     ];
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results = await removeClient({ clientName: 'test', cleanOutput: false, workingDirectory: process.cwd() });
     expect(results).toBeDefined();
   });
@@ -32,7 +30,7 @@ describe("remove Client", () => {
 });
 
 describe("remove Plugin", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -40,7 +38,7 @@ describe("remove Plugin", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -52,7 +50,7 @@ describe("remove Plugin", () => {
       }
     ];
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results: KiotaResult | undefined = await removePlugin({ pluginName: 'test', cleanOutput: false, workingDirectory: process.cwd() })!;
     expect(results).toBeDefined();
     expect(results?.isSuccess).toBeTruthy();

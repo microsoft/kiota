@@ -1,6 +1,3 @@
-import * as sinon from 'sinon';
-
-
 import { getLanguageInformationForDescription, getLanguageInformationInternal } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
@@ -24,7 +21,7 @@ const sampleLanguageInfo = {
 };
 
 describe("Language Information", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -32,13 +29,13 @@ describe("Language Information", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
   test('should return language information for a description when successful', async () => {
     const mockResults = sampleLanguageInfo;
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results = await getLanguageInformationForDescription({ clearCache: false, descriptionUrl: 'test.com' });
     expect(results).toBeDefined();
   });
@@ -46,7 +43,7 @@ describe("Language Information", () => {
   test('should return internal language information when successful', async () => {
     const mockResults = sampleLanguageInfo;
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const results = await getLanguageInformationInternal();
     expect(results).toBeDefined();
   });

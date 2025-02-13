@@ -1,10 +1,8 @@
-import * as sinon from 'sinon';
-
 import { getManifestDetails, KiotaManifestResult } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("get manifest details", () => {
-  let connectionStub: sinon.SinonStub;
+  let connectionStub: jest.Mock;
 
   beforeEach(() => {
     const stubs = setupKiotaStubs();
@@ -12,7 +10,7 @@ describe("get manifest details", () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
 
@@ -21,7 +19,7 @@ describe("get manifest details", () => {
       logs: []
     };
 
-    connectionStub.resolves(mockResults);
+    connectionStub.mockResolvedValue(mockResults);
     const details = await getManifestDetails({ manifestPath: '', clearCache: true, apiIdentifier: 'my-api' });
     expect(details).toBeDefined();
   });
