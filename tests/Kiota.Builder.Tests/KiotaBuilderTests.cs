@@ -3541,6 +3541,7 @@ paths:
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
         Assert.Single(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.DoesNotContain(directoryObjectClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
         Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
     }
