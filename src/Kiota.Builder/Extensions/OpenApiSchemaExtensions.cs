@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Models.References;
@@ -178,9 +179,9 @@ public static class OpenApiSchemaExtensions
         var result = schema.GetSchemaOrTargetShallowCopy();
         result.AllOf.Clear();
         var meaningfulSchemas = schema.AllOf
+                                    .Where(x => x is not null && (schemasToExclude is null || !schemasToExclude.Contains(x)))
                                     .Where(x => (x.IsSemanticallyMeaningful() || x.AllOf.Any()) && (filter == null || filter(x)))
                                     .Select(x => MergeIntersectionSchemaEntries(x, schemasToExclude, overrideIntersection, filter))
-                                    .Where(x => x is not null && (schemasToExclude is null || !schemasToExclude.Contains(x)))
                                     .OfType<IOpenApiSchema>()
                                     .ToArray();
         var entriesToMerge = meaningfulSchemas.FlattenEmptyEntries(static x => x.AllOf).Union(meaningfulSchemas).ToArray();
@@ -194,6 +195,11 @@ public static class OpenApiSchemaExtensions
                 if (discriminator.Mapping?.Any() ?? false)
                     result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
             }
+
+        if (schema is OpenApiSchemaReference schemaReference)
+        {
+            schema.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
+        }
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
 

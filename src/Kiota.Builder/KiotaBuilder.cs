@@ -2099,8 +2099,12 @@ public partial class KiotaBuilder
             }
         }
 
+        var lookupSchema = schema.Extensions.TryGetValue(OpenApiKiotaMergedExtension.Name, out var rawExtension) &&
+                                                rawExtension is OpenApiKiotaMergedExtension kiotaMergedExtension ?
+            new OpenApiSchemaReference(kiotaMergedExtension.OriginalName, openApiDocument) :
+            schema;
         // Recurse into the discriminator & generate its referenced types
-        var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass, currentOperation)
+        var mappings = GetDiscriminatorMappings(currentNode, lookupSchema, currentNamespace, newClass, currentOperation)
                         .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
                                     definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
