@@ -1,7 +1,6 @@
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import TelemetryReporter from "@vscode/extension-telemetry";
-import assert from "assert";
 import * as path from "path";
 import * as sinon from "sinon";
 import * as vscode from 'vscode';
@@ -74,12 +73,13 @@ let result: KiotaLogEntry[] = [{level: 1, message: "Parsing OpenAPI file"},{leve
 
 const setWorkspaceGenerationContext = (params: Partial<WorkspaceGenerationContext>):void =>{};
 
-suite('GenerateClientCommand Test Suite', () => {
+describe('GenerateClientCommand Test Suite', () => {
     const sanbox = sinon.createSandbox();
     let myOutputChannel = vscode.window.createOutputChannel("Kiota", {
         log: true,
     });
-    teardown(() => {
+
+    afterEach(() => {
         sanbox.restore();
     });
 
@@ -87,7 +87,7 @@ suite('GenerateClientCommand Test Suite', () => {
         var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        assert.strictEqual("kiota.openApiExplorer.generateClient", generateClientCommand.getName());
+        expect("kiota.openApiExplorer.generateClient").toEqual(generateClientCommand.getName());
     });
 
     test('test function execute of GenerateClientCommand with 0 selected paths', async () => {
@@ -97,7 +97,7 @@ suite('GenerateClientCommand Test Suite', () => {
         const vscodeWindowSpy = sinon.stub(vscode.window, "showErrorMessage");
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
-        assert.strictEqual((treeProvider.getSelectedPaths()).length, 0);
+        expect((treeProvider.getSelectedPaths()).length).toEqual(0);
         sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
         vscodeWindowSpy.restore();
     });
@@ -119,7 +119,7 @@ suite('GenerateClientCommand Test Suite', () => {
         const showUpgradeWarningMessageStub = sinon.stub(msgUtilitiesModule, "showUpgradeWarningMessage");
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
-        assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
+        expect((treeProvider.getSelectedPaths()).length).toEqual(1);
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         let stateInfo: Partial<generateStepsModule.GenerateState> = {
@@ -129,7 +129,7 @@ suite('GenerateClientCommand Test Suite', () => {
             outputPath: treeProvider.outputPath,
             pluginName:"RepairsOAD"
         };
-        assert.strictEqual(!treeProvider.descriptionUrl, true);
+        expect(!treeProvider.descriptionUrl).toEqual(true);
         sinon.assert.calledOnceWithMatch(generateStepsFn, stateInfo, undefined , {});
         sinon.assert.calledOnce(showUpgradeWarningMessageStub);
         sinon.restore();
@@ -172,8 +172,8 @@ suite('GenerateClientCommand Test Suite', () => {
             );
         generatePluginAndRefreshUIExpectation.resolves(result);
         await generateClientCommand.execute();
-        assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
-        assert.strictEqual(!treeProvider.descriptionUrl, false);
+        expect((treeProvider.getSelectedPaths()).length).toEqual(1);
+        expect(!treeProvider.descriptionUrl).toEqual(false);
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         let stateInfo = await transformToGenerationConfig(pluginParams);
@@ -181,7 +181,7 @@ suite('GenerateClientCommand Test Suite', () => {
         sinon.assert.calledOnce(showUpgradeWarningMessageStub);
         sinon.assert.calledOnceWithMatch(getExtensionSettingsStub, "kiota");
 
-        // assert successful call to method generatePluginAndRefreshUI
+        // expect successful call to method generatePluginAndRefreshUI
         generatePluginAndRefreshUIExpectation.verify();
         sinon.restore();
     });
@@ -230,7 +230,7 @@ suite('GenerateClientCommand Test Suite', () => {
         executeCommandStub.resolves();
         await generateClientCommand.execute();
 
-        // assertions
+        // expections
         vscodeWindowSpy.verify();
         sinon.assert.calledOnceWithMatch(getlanguageInfoFn);
         var updatedDeepLinkParams: Partial<IntegrationParams> = JSON.parse(JSON.stringify(pluginParams));
