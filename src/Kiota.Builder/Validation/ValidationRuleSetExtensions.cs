@@ -1,5 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
@@ -13,18 +15,18 @@ public static class ValidationRuleSetExtensions
         configuration ??= new();
         if (configuration.DisabledValidationRules.Contains(AllValidationRule)) return;
 
-        ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry());
-        ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries());
-        ruleSet.AddRuleIfEnabled(configuration, new GetWithBody());
-        ruleSet.AddRuleIfEnabled(configuration, new KnownAndNotSupportedFormats());
-        ruleSet.AddRuleIfEnabled(configuration, new InconsistentTypeFormatPair());
-        ruleSet.AddRuleIfEnabled(configuration, new UrlFormEncodedComplex());
-        ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration));
-        ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration));
+        ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry(), typeof(OpenApiDocument));
+        ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries(), typeof(OpenApiDocument));
+        ruleSet.AddRuleIfEnabled(configuration, new GetWithBody(), typeof(IOpenApiPathItem));
+        ruleSet.AddRuleIfEnabled(configuration, new KnownAndNotSupportedFormats(), typeof(IOpenApiSchema));
+        ruleSet.AddRuleIfEnabled(configuration, new InconsistentTypeFormatPair(), typeof(IOpenApiSchema));
+        ruleSet.AddRuleIfEnabled(configuration, new UrlFormEncodedComplex(), typeof(OpenApiOperation));
+        ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration), typeof(OpenApiOperation));
+        ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration), typeof(OpenApiDocument));
     }
-    private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule
+    private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance, Type ruleType) where T : ValidationRule
     {
-        if (!configuration.DisabledValidationRules.Contains(instance.GetType().Name))
-            ruleSet.Add(instance);
+        if (!configuration.DisabledValidationRules.Contains(typeof(T).Name))
+            ruleSet.Add(ruleType, instance);
     }
 }

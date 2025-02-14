@@ -16,10 +16,10 @@ public class OpenApiOperationExtensionsTests
         var operation = new OpenApiOperation
         {
             Responses = new() {
-                { "200", new() {
+                { "200", new OpenApiResponse() {
                     Content = new Dictionary<string, OpenApiMediaType> {
                         {"application/json", new() {
-                            Schema = new()
+                            Schema = new OpenApiSchema()
                         }}
                     }
                 }}
@@ -28,10 +28,10 @@ public class OpenApiOperationExtensionsTests
         var operation2 = new OpenApiOperation
         {
             Responses = new() {
-                { "400", new() {
+                { "400", new OpenApiResponse() {
                     Content = new Dictionary<string, OpenApiMediaType> {
                         {"application/json", new() {
-                            Schema = new()
+                            Schema = new OpenApiSchema()
                         }}
                     }
                 }}
@@ -40,10 +40,10 @@ public class OpenApiOperationExtensionsTests
         var operation3 = new OpenApiOperation
         {
             Responses = new() {
-                { "200", new() {
+                { "200", new OpenApiResponse() {
                     Content = new Dictionary<string, OpenApiMediaType> {
                         {"application/invalid", new() {
-                            Schema = new()
+                            Schema = new OpenApiSchema()
                         }}
                     }
                 }}

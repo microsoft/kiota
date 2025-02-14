@@ -330,9 +330,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string FindFunctionInNameSpace(string functionName, CodeElement codeElement, CodeType returnType)
     {
-        var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
+        var myNamespace = returnType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() ?? throw new InvalidOperationException("Namespace not found for return type");
 
-        CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
+        CodeFunction[] codeFunctions = [.. myNamespace.FindChildrenByName<CodeFunction>(functionName)];
 
         var codeFunction = Array.Find(codeFunctions,
             func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??

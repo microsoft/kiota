@@ -10,7 +10,7 @@ using Kiota.Builder.Plugins;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Services;
 using Moq;
 using Xunit;
@@ -75,13 +75,12 @@ paths:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
             ClientClassName = inputPluginName,
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -234,7 +233,7 @@ components:
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -260,12 +259,11 @@ components:
         Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
-        var openApiReader = new OpenApiStreamReader();
-
         // Validate the original file.
-        var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
-        var originalDocument = openApiReader.Read(originalOpenApiFile, out var originalDiagnostic);
-        Assert.Empty(originalDiagnostic.Errors);
+        using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
+        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var originalDocument = originalResult.Document;
+        Assert.Empty(originalResult.Diagnostic.Errors);
 
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
@@ -280,12 +278,13 @@ components:
         Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
 
         // Validate the output open api file
-        var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultDocument = openApiReader.Read(resultOpenApiFile, out var diagnostic);
-        Assert.Empty(diagnostic.Errors);
+        using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml");
+        var resultDocument = resultResult.Document;
+        Assert.Empty(resultResult.Diagnostic.Errors);
 
         // Assertions / validations
-        Assert.Single(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
+        Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
         Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
         Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // We removed the error response
@@ -297,7 +296,7 @@ components:
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
         Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
         Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
-        Assert.Equal("string", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type);
+        Assert.Equal(JsonSchemaType.String, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type.Value);
         Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
     }
 
@@ -487,13 +486,12 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -523,7 +521,7 @@ components:
         // Cleanup
         try
         {
-            Directory.Delete(outputDirectory);
+            Directory.Delete(outputDirectory, true);
         }
         catch (Exception)
         {
@@ -566,13 +564,12 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
-        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -645,7 +642,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("string", schema.Type);
+                    Assert.Equal(JsonSchemaType.String, schema.Type.Value);
                     Assert.Equal(5, schema.MaxLength);
                 }
             },
@@ -665,7 +662,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(3, schema.Properties.Count);
                 }
             },
@@ -685,7 +682,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
                 }
             },
@@ -705,7 +702,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
                 }
             },
@@ -725,7 +722,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
                 }
             },
@@ -741,7 +738,7 @@ components:
                     Assert.NotEmpty(slicedDocument.Paths);
                     var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
                         .Content["application/json"].Schema;
-                    Assert.Equal("object", schema.Type);
+                    Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
                 }
             },
@@ -777,7 +774,7 @@ components:
         var generationConfiguration = new GenerationConfiguration
         {
             OutputPath = outputDirectory,
-            OpenAPIFilePath = "openapiPath",
+            OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin],
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
@@ -796,10 +793,9 @@ components:
         try
         {
             // Validate the sliced openapi
-            var slicedApiContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, OpenApiFileName));
-            var r = new OpenApiStringReader();
-            var slicedDocument = r.Read(slicedApiContent, out var diagnostic);
-            assertions(slicedDocument, diagnostic);
+            using var stream = File.Open(Path.Combine(outputDirectory, OpenApiFileName), FileMode.Open);
+            var readResult = await OpenApiDocument.LoadAsync(stream);
+            assertions(readResult.Document, readResult.Diagnostic);
         }
         finally
         {
