@@ -1222,7 +1222,6 @@ public partial class KiotaBuilder
             (JsonSchemaType.Number, _) => new CodeType { Name = "double", IsExternal = true },
             (JsonSchemaType.Integer, _) => new CodeType { Name = "integer", IsExternal = true },
             (JsonSchemaType.Boolean, _) => new CodeType { Name = "boolean", IsExternal = true },
-            //TODO handle the case where we have multiple entries
             (_, _) when !string.IsNullOrEmpty(childType) => new CodeType { Name = childType, IsExternal = false, },
             (_, _) => null,
         };
