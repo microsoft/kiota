@@ -59,10 +59,7 @@ public static class OpenApiSchemaExtensions
     {
         return schema switch
         {
-            OpenApiSchemaReference reference => reference.Reference.IsExternal ?
-                    // TODO remove this failsafe once we have a test with external documents.
-                    throw new NotSupportedException("External references are not supported in this version of Kiota. While Kiota awaits on OpenAPI.Net to support inlining external references, you can use https://www.nuget.org/packages/Microsoft.OpenApi.Hidi to generate an OpenAPI description with inlined external references and then use this new reference with Kiota.") :
-                    true,
+            OpenApiSchemaReference => true,
             _ => false,
         };
     }

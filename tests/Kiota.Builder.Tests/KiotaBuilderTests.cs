@@ -38,6 +38,76 @@ public sealed partial class KiotaBuilderTests : IDisposable
         _httpClient.Dispose();
         GC.SuppressFinalize(this);
     }
+    [Fact]
+    public async Task SupportsExternalReferences()
+    {
+        var tempFilePathReferee = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePathReferee,
+"""
+openapi: 3.1.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /placeholder:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    MySchema:
+      type: object
+      properties:
+        id:
+          type: string
+""");
+        var tempFilePathReferrer = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePathReferrer,
+$$$"""
+openapi: 3.1.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /placeholder:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: './{{{Path.GetFileName(tempFilePathReferee)}}}#/components/schemas/MySchema'
+components:
+  schemas:
+    MySchema:
+      type: object
+      properties:
+        id:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePathReferrer, Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePathReferrer, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var modelClass = rootNS.FindChildByName<CodeClass>("MySchema", true);
+        Assert.NotNull(modelClass);
+        Assert.Single(modelClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+    }
     [InlineData("https://graph.microsoft.com/description.yaml", "/v1.0", "https://graph.microsoft.com/v1.0")]
     [InlineData("/home/vsts/a/s/1", "/v1.0", "/v1.0")]
     [InlineData("https://graph.microsoft.com/docs/description.yaml", "../v1.0", "https://graph.microsoft.com/v1.0")]
