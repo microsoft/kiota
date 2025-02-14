@@ -39,19 +39,19 @@ internal static class KiotaHostExtensions
                             ]);
                         }
                     });
-                    openTelemetryBuilder.WithMetrics(static mp =>
-                    {
-                        mp.AddMeter($"{TelemetryLabels.ScopeName}*")
-                            .AddHttpClientInstrumentation()
-                            // TODO: Decide if runtime metrics are useful
-                            .AddRuntimeInstrumentation()
-                            .SetExemplarFilter(ExemplarFilterType.TraceBased);
-                    })
-                    .WithTracing(static tp =>
-                    {
-                        tp.AddSource($"{TelemetryLabels.ScopeName}*")
-                            .AddHttpClientInstrumentation();
-                    });
+                openTelemetryBuilder.WithMetrics(static mp =>
+                {
+                    mp.AddMeter($"{TelemetryLabels.ScopeName}*")
+                        .AddHttpClientInstrumentation()
+                        // TODO: Decide if runtime metrics are useful
+                        .AddRuntimeInstrumentation()
+                        .SetExemplarFilter(ExemplarFilterType.TraceBased);
+                })
+                .WithTracing(static tp =>
+                {
+                    tp.AddSource($"{TelemetryLabels.ScopeName}*")
+                        .AddHttpClientInstrumentation();
+                });
                 if (cfg.OpenTelemetry.Enabled)
                 {
                     // Only register OpenTelemetry exporter if enabled.

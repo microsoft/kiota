@@ -1,4 +1,4 @@
-namespace kiota.Telemetry.Config;
+﻿namespace kiota.Telemetry.Config;
 
 public class OpenTelemetryConfig
 {
