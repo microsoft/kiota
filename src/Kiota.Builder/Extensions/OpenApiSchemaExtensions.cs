@@ -34,6 +34,7 @@ public static class OpenApiSchemaExtensions
         return schema switch
         {
             OpenApiSchemaReference reference => reference.Reference?.Id,
+            OpenApiSchema s when s.GetMergedSchemaOriginalReferenceId() is string originalReferenceId => originalReferenceId,
             _ => null,
         };
     }
@@ -198,12 +199,19 @@ public static class OpenApiSchemaExtensions
 
         if (schema is OpenApiSchemaReference schemaReference)
         {
-            schema.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
+            result.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
         }
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
 
         return result;
+    }
+
+    internal static string? GetMergedSchemaOriginalReferenceId(this IOpenApiSchema schema)
+    {
+        return schema.Extensions.TryGetValue(OpenApiKiotaMergedExtension.Name, out var extension) && extension is OpenApiKiotaMergedExtension mergedExtension ?
+            mergedExtension.OriginalName :
+            null;
     }
 
     internal static void TryAddProperties(this OpenApiSchema schema, IEnumerable<KeyValuePair<string, IOpenApiSchema>> properties)
