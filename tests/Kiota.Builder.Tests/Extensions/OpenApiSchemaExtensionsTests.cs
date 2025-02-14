@@ -77,10 +77,16 @@ public class OpenApiSchemaExtensionsTests
         }.IsExclusiveUnion());
     }
     [Fact]
-    public void ExternalReferencesAreNotSupported()
+    public void ExternalReferencesAreSupported()
     {
         var mockSchema = new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json");
-        Assert.Throws<NotSupportedException>(() => mockSchema.IsReferencedSchema());
+        Assert.True(mockSchema.IsReferencedSchema());
+    }
+    [Fact]
+    public void SchemasAreNotConsideredReferences()
+    {
+        var mockSchema = new OpenApiSchema();
+        Assert.False(mockSchema.IsReferencedSchema());
     }
     [Fact]
     public void LocalReferencesAreSupported()
