@@ -137,3 +137,6 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1720.severity = none
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CA2227.severity = none
+
+[*.csproj]
+indent_size = 2

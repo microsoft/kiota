@@ -11,6 +11,10 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
+      OpenTelemetry:
+        patterns:
+          - "OpenTelemetry.*"
+          - "Azure.Monitor.OpenTelemetry.Exporter"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
