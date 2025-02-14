@@ -4316,6 +4316,48 @@ components:
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
     [Fact]
+    public void MapsArrayOfTypesAsUnionType()
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                Type = JsonSchemaType.Number | JsonSchemaType.String,
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(method);
+        var unionType = Assert.IsType<CodeUnionType>(method.ReturnType);
+        Assert.Equal(2, unionType.Types.Count());
+        Assert.Contains("string", unionType.Types.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("double", unionType.Types.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
     public void MapsQueryParameterArrayTypes()
     {
         var document = new OpenApiDocument

@@ -244,8 +244,19 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsExclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
-        return schema?.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries;
+        if (schema is null) return false;
+        return schema.OneOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries ||
+            schema.IsArrayOfTypes();
         // so we don't consider one of object/nullable as a union type
+    }
+    public static bool IsArrayOfTypes(this IOpenApiSchema? schema)
+    {
+        if (schema is null) return false;
+        return schema.Type.HasValue && !IsPowerOfTwo((uint)(schema.Type.Value & ~JsonSchemaType.Null));
+    }
+    private static bool IsPowerOfTwo(uint x)
+    {
+        return (x & (x - 1)) == 0;
     }
     private static readonly HashSet<JsonSchemaType> oDataTypes = [
         JsonSchemaType.Number,
@@ -269,6 +280,7 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsODataPrimitiveType(this IOpenApiSchema schema)
     {
+        if (schema is null) return false;
         return schema.IsExclusiveUnion() &&
                schema.OneOf.Count == 3 &&
                schema.OneOf.Count(static x => isStringType(x) && (x.Enum?.Any() ?? false)) == 1 &&

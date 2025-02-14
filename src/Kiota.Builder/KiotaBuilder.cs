@@ -1190,7 +1190,7 @@ public partial class KiotaBuilder
         }
         return prop;
     }
-    private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array];
+    private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array, JsonSchemaType.Object | JsonSchemaType.Null, JsonSchemaType.Array | JsonSchemaType.Null];
     private static CodeType? GetPrimitiveType(IOpenApiSchema? typeSchema, string? childType = default)
     {
         var typeNames = new List<JsonSchemaType?> { typeSchema?.Items?.Type, typeSchema?.Type };
@@ -1801,7 +1801,7 @@ public partial class KiotaBuilder
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false)) &&
             schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
-        {// once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
+        {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             return new CodeType
@@ -1852,7 +1852,27 @@ public partial class KiotaBuilder
             if (!unionType.ContainsType(declarationType))
                 unionType.AddType(declarationType);
         }
+        if (schema.IsArrayOfTypes())
+        {
+            AddTypeArrayMemberToComposedType(schema, JsonSchemaType.Boolean, unionType);
+            AddTypeArrayMemberToComposedType(schema, JsonSchemaType.Integer, unionType);
+            AddTypeArrayMemberToComposedType(schema, JsonSchemaType.Number, unionType);
+            AddTypeArrayMemberToComposedType(schema, JsonSchemaType.String, unionType);
+        }
         return unionType;
+    }
+    private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
+    {
+        if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;
+
+        var temporarySchema = new OpenApiSchema { Type = typeToScan, Format = schema.Format };
+        if (GetPrimitiveType(temporarySchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
+        {
+            if (schema.IsArray())
+                primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+            if (!codeComposedTypeBase.ContainsType(primitiveType))
+                codeComposedTypeBase.AddType(primitiveType);
+        }
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
     {

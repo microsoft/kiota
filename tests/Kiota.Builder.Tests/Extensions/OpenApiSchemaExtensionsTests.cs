@@ -61,6 +61,22 @@ public class OpenApiSchemaExtensionsTests
 
     }
     [Fact]
+    public void IsExclusiveUnionMatchesTypeArrays()
+    {
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.String | JsonSchemaType.Number
+        }.IsExclusiveUnion());
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.String | JsonSchemaType.Number | JsonSchemaType.Null
+        }.IsExclusiveUnion());
+        Assert.False(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Number | JsonSchemaType.Null
+        }.IsExclusiveUnion());
+    }
+    [Fact]
     public void ExternalReferencesAreNotSupported()
     {
         var mockSchema = new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json");
