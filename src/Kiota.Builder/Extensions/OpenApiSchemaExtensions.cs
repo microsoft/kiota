@@ -115,6 +115,7 @@ public static class OpenApiSchemaExtensions
         var result = schema.GetSchemaOrTargetShallowCopy();
         result.AnyOf.Clear();
         result.TryAddProperties(schema.AnyOf.SelectMany(static x => x.Properties));
+        schema.AddOriginalReferenceIdExtension(result);
         return result;
     }
 
@@ -124,6 +125,7 @@ public static class OpenApiSchemaExtensions
         var result = schema.GetSchemaOrTargetShallowCopy();
         result.OneOf.Clear();
         result.TryAddProperties(schema.OneOf.SelectMany(static x => x.Properties));
+        schema.AddOriginalReferenceIdExtension(result);
         return result;
     }
 
@@ -138,6 +140,7 @@ public static class OpenApiSchemaExtensions
             result.AnyOf.Clear();
             result.TryAddProperties(subSchema.Properties);
             result.AllOf.AddRange(subSchema.AllOf);
+            schema.AddOriginalReferenceIdExtension(result);
             return result;
         }
 
@@ -155,6 +158,7 @@ public static class OpenApiSchemaExtensions
             result.OneOf.Clear();
             result.TryAddProperties(subSchema.Properties);
             result.AllOf.AddRange(subSchema.AllOf);
+            schema.AddOriginalReferenceIdExtension(result);
             return result;
         }
 
@@ -197,14 +201,24 @@ public static class OpenApiSchemaExtensions
                     result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
             }
 
-        if (schema is OpenApiSchemaReference schemaReference)
-        {
-            result.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
-        }
+        schema.AddOriginalReferenceIdExtension(result);
 
         result.TryAddProperties(entriesToMerge.SelectMany(static x => x.Properties));
 
         return result;
+    }
+
+    /// <summary>
+    /// Adds a temporary extension to the schema to store the original reference id of the schema being merged.
+    /// This is used to keep track of the original reference id of the schema being merged when the schema is a reference.
+    /// The reference id is used to generate the class name of the schema.
+    /// </summary>
+    /// <param name="schema">Original schema that was merged.</param>
+    /// <param name="result">Resulting merged schema.</param>
+    private static void AddOriginalReferenceIdExtension(this IOpenApiSchema schema, OpenApiSchema result)
+    {
+        if (schema is not OpenApiSchemaReference schemaReference) return;
+        result.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
     }
 
     internal static string? GetMergedSchemaOriginalReferenceId(this IOpenApiSchema schema)
