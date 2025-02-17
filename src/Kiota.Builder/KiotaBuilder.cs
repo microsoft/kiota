@@ -1194,6 +1194,8 @@ public partial class KiotaBuilder
     private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array, JsonSchemaType.Object | JsonSchemaType.Null, JsonSchemaType.Array | JsonSchemaType.Null];
     private static CodeType? GetPrimitiveType(IOpenApiSchema? typeSchema, string? childType = default)
     {
+        if (typeSchema?.Items?.IsEnum() ?? false)
+            return null;
         var typeNames = new List<JsonSchemaType?> { typeSchema?.Items?.Type, typeSchema?.Type };
         if (typeSchema?.AnyOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
