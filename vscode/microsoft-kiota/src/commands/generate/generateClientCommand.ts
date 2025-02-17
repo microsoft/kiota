@@ -206,7 +206,7 @@ export class GenerateClientCommand extends Command {
           operation: ConsumerOperation.Add,
           pluginAuthType: null,
           pluginAuthRefid: '',
-          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+          workingDirectory: config.workingDirectory || getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
@@ -251,7 +251,7 @@ export class GenerateClientCommand extends Command {
           operation: ConsumerOperation.Add,
           pluginAuthType: null,
           pluginAuthRefid: '',
-          workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
+          workingDirectory: config.workingDirectory || getWorkspaceJsonDirectory()
         });
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;

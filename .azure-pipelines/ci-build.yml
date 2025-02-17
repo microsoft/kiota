@@ -610,7 +610,7 @@ extends:
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/src/kiotaInterop/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries                
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/src/kiotaInterop/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
               - script: npm i -g @vscode/vsce
                 displayName: "Install vsce"
