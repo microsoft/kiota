@@ -1180,7 +1180,8 @@ public partial class KiotaBuilder
         if (kind == CodePropertyKind.Custom &&
             propertySchema?.Default is JsonValue stringDefaultJsonValue &&
             stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
-            !string.IsNullOrEmpty(stringDefaultValue))
+            !string.IsNullOrEmpty(stringDefaultValue) &&
+            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
             prop.DefaultValue = $"\"{stringDefaultValue}\"";
 
         if (existingType == null)
