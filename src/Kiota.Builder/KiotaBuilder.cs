@@ -1932,7 +1932,7 @@ public partial class KiotaBuilder
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, typeNameForInlineSchema, isRequestBody);
         }
 
-        if (schema.Type is not null || !string.IsNullOrEmpty(schema.Format))
+        if (schema.Type is not null && (schema.Type & ~JsonSchemaType.Null) != 0 || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema) ?? new CodeType { Name = UntypedNodeName, IsExternal = true };
         if ((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) &&
            (schema.AnyOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
