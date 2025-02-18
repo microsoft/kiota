@@ -527,7 +527,7 @@
     "@typescript-eslint/parser": "^8.24.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "chai": "^5.1.2",
+    "chai": "^5.2.0",
     "eslint": "^9.20.1",
     "glob": "^11.0.1",
     "mocha": "^11.1.0",
