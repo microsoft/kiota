@@ -11,6 +11,9 @@ npm install kiota-Interop
 
 ## Usage
 
+### [`getKiotaTree`](/kiotaInterop./lib/getKiotaTree.ts )
+Returns a tree of the open api description.
+
 ### [`generateClient`](./lib/generateClient.ts )
 
 Generates a client based on the provided client generation options.
@@ -51,9 +54,6 @@ Removes a client using the provided configuration.
 ### [`searchDescription`](./lib/searchDescription.ts )
 Searches for a description based on the provided search term and cache settings.
 
-### [`showKiotaResult`](/kiotaInterop./lib/showKiotaResult.ts )
-Shows the Kiota result based on the provided options.
-
 ### [`updateClients`](./lib/updateClients.ts )
-Shows the Kiota result based on the provided options.
+Updates the clients in the Kiota environment.
 

@@ -68,8 +68,8 @@ export async function handleMigration(workspaceFolder: vscode.WorkspaceFolder): 
 
             progress.report({ increment: 100 });
 
-            if (migrationResult && migrationResult.length > 0) {
-                displayMigrationMessages(migrationResult);
+            if ((migrationResult?.length ?? 0) > 0) {
+                displayMigrationMessages(migrationResult!);
             } else {
                 vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
             }

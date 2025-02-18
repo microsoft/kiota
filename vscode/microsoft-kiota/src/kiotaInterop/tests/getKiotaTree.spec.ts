@@ -1,7 +1,7 @@
-import { KiotaShowResult, showKiotaResult } from '..';
+import { KiotaTreeResult, getKiotaTree } from '..';
 import { setupKiotaStubs } from './stubs.util';
 
-describe("getKiotaVersion", () => {
+describe("get kiota tree", () => {
   let connectionStub: jest.Mock;
 
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe("getKiotaVersion", () => {
 
 
   test('should return path details when successful', async () => {
-    const mockResults: KiotaShowResult = {
+    const mockResults: KiotaTreeResult = {
       apiTitle: 'my-api',
       rootNode: {
         segment: "segment",
@@ -36,8 +36,8 @@ describe("getKiotaVersion", () => {
     };
 
     connectionStub.mockResolvedValue(mockResults);
-    const version = await showKiotaResult({ includeFilters: [], descriptionPath: 'descriptionPath', excludeFilters: [], clearCache: false });
-    expect(version).toBeDefined();
+    const tree = await getKiotaTree({ includeFilters: [], descriptionPath: 'descriptionPath', excludeFilters: [], clearCache: false });
+    expect(tree).toBeDefined();
   });
 
 });
