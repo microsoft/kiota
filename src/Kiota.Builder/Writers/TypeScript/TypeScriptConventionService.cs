@@ -360,7 +360,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return (currentType.TypeDefinition, isCollection, propertyType) switch
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
-                (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
+                (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue()",
                 (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
                 (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
