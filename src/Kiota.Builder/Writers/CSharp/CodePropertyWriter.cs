@@ -18,17 +18,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        if (isNullableReferenceType)
-        {
-            CSharpConventionService.WriteNullableOpening(writer);
-            WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            CSharpConventionService.WriteNullableMiddle(writer);
-        }
-
-        WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
-
-        if (isNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
+        conventions.WriteNullableAware(
+            writer,
+            isNullableReferenceType,
+            writer => WritePropertyInternal(codeElement, writer, $"{propertyType}?"),
+            writer => WritePropertyInternal(codeElement, writer, propertyType)
+        );
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
@@ -38,10 +33,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
+        var accessModifier = conventions.GetAccessModifier(codeElement.Access);
+        var codeElementNameFirstCharacterUpperCase = codeElement.Name.ToFirstCharacterUpperCase();
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
+                writer.WriteLine($"{accessModifier} {propertyType} {codeElementNameFirstCharacterUpperCase}");
                 writer.StartBlock();
                 writer.Write("get => ");
                 conventions.AddRequestBuilderBody(parentClass, propertyType, writer, includeIndent: false);
@@ -52,7 +49,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 var backingStoreKey = codeElement.WireName;
                 var nullableOp = !codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? "?" : string.Empty;
                 var defaultPropertyValue = codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? new Dictionary<string, object>()" : string.Empty;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
+                writer.WriteLine($"{accessModifier} {propertyType} {codeElementNameFirstCharacterUpperCase}");
                 writer.StartBlock();
                 writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Get<{propertyType}>(\"{backingStoreKey}\"){defaultPropertyValue}; }}");
                 writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Set(\"{backingStoreKey}\", value); }}");
@@ -60,9 +57,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
-                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
+                    writer.WriteLine($"public override {propertyType} {codeElementNameFirstCharacterUpperCase} {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
                 else
-                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => base.Message; }}");
+                    writer.WriteLine($"public override {propertyType} {codeElementNameFirstCharacterUpperCase} {{ get => base.Message; }}");
                 break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
@@ -71,7 +68,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 defaultValue = $" = new {propertyType}();";
                 goto default;
             default:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
+                writer.WriteLine($"{accessModifier} {propertyType} {codeElementNameFirstCharacterUpperCase} {{ {simpleBody} }}{defaultValue}");
                 break;
         }
     }
