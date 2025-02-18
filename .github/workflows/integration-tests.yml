@@ -59,11 +59,7 @@ jobs:
         run: ./it/download-openapi-specs.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - id: replace_url
-        # 97 so we don't exceed the 128 character limit for artifact names with the generation-results-typescript prefix
-        run: |
-          $original="${{ matrix.description }}"
-          $replaced=($original -replace "[-:<>|\*\?\\\/\.]", "_").Substring(0, [Math]::Min(97, $original.Length))
-          Write-Output "ARTKEY=$replaced" >> $Env:GITHUB_OUTPUT
+        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
@@ -107,25 +103,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: replace_url
-        # 97 so we don't exceed the 128 character limit for artifact names with the generation-results-typescript prefix
-        run: |
-          $original="${{ matrix.description }}"
-          $replaced=($original -replace "[-:<>|\*\?\\\/\.]", "_").Substring(0, [Math]::Min(97, $original.Length))
-          Write-Output "ARTKEY=$replaced" >> $Env:GITHUB_OUTPUT
+        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - uses: actions/download-artifact@v4
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - id: get_description_path
-        run: |
-          if ("${{ matrix.description }}").StartsWith("./")) {
-            echo "DESCRIPTION_PATH=${{ matrix.description }}" >> $Env:GITHUB_OUTPUT
-          } else {
-            echo "DESCRIPTION_PATH=./description/openapi.yaml" >> $Env:GITHUB_OUTPUT
-          }
-        shell: pwsh
       - uses: actions/download-artifact@v4
         with:
           name: generator
@@ -185,7 +169,7 @@ jobs:
         shell: pwsh
       - name: Generate Code
         shell: pwsh
-        run: ./it/generate-code.ps1 -descriptionUrl ${{ steps.get_description_path.outputs.DESCRIPTION_PATH }} -language ${{ matrix.language }}
+        run: ./it/generate-code.ps1 -descriptionUrl ${{ steps.replace_url.outputs.DESCRIPTION_PATH }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - name: Execute the IT test
         shell: pwsh
