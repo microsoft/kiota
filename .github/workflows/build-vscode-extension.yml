@@ -29,13 +29,12 @@ jobs:
         with:
           node-version: 18.x
       - id: last_release
-        uses: pozetroninc/github-action-get-latest-release@v0.8.0
-        with:
-          owner: microsoft
-          repo: kiota
-          excludes: prerelease, draft
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.release }}" -filePath "./vscode/microsoft-kiota/package.json" -online
+        run: |
+          $releaseVersion = gh release list --exclude-drafts --exclude-pre-releases --json tagName,isLatest | ConvertFrom-Json | ? {$_.isLatest -eq $true} | select -first 1 -ExpandProperty tagName
+          Write-Output "RELEASE_VERSION=$releaseVersion" >> $Env:GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -filePath "./vscode/microsoft-kiota/package.json" -online
         shell: pwsh
       - name: Install dependencies
         run: npm ci
