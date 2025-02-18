@@ -59,7 +59,7 @@ jobs:
         run: ./it/download-openapi-specs.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - id: replace_url
-        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }}
+        run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: replace_url
-        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }}
+        run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
       - uses: actions/download-artifact@v4
         if: startsWith(matrix.description, './') != true
