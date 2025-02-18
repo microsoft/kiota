@@ -15,7 +15,8 @@ public static class TelemetryLabels
     public const string TagCommandName = "kiota.command.name";
     public const string TagCommandRevision = "kiota.command.revision";
     public const string TagCommandParams = "kiota.command.parameters";
-    public const string TagGeneratorLanguage = "kiota.language";
+    public const string TagGeneratorLanguage = "kiota.client.language";
+    public const string TagGeneratorPluginTypes = "kiota.plugin.types";
     // plugin, client, manifest etc.
     public const string TagGenerationOutputType = "kiota.output_type";
 

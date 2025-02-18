@@ -101,6 +101,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
+        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         var host = context.GetHost();
@@ -108,7 +109,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
-            namespaceName0, includePatterns, excludePatterns, structuredMimeTypes, out var tags);
+            namespaceName0, includePatterns, excludePatterns, structuredMimeTypes, logLevel, out var tags);
 
         // Start span
         using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanEditClientCommand,
@@ -228,7 +229,7 @@ internal class EditHandler : BaseKiotaCommandHandler
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage? language, bool? backingStore,
         bool? excludeBackwardCompatible, bool skipGeneration, string? output, string? namespaceName,
-        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes,
+        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
@@ -248,5 +249,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
         // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules));
         if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

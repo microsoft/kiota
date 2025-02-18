@@ -86,28 +86,29 @@ internal class AddHandler : BaseKiotaCommandHandler
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string? output0 = context.ParseResult.GetValueForOption(OutputOption);
+        string? output = context.ParseResult.GetValueForOption(OutputOption);
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         AccessModifier typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
-        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
+        string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
-        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
-        string? namespaceName0 = context.ParseResult.GetValueForOption(NamespaceOption);
+        string? className = context.ParseResult.GetValueForOption(ClassOption);
+        string? namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
         List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
+        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
-        CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
-            namespaceName0, includePatterns0, excludePatterns0, structuredMimeTypes0, out var tags);
+        CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output,
+            namespaceName, includePatterns0, excludePatterns0, structuredMimeTypes0, logLevel, out var tags);
         // Start span
         using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanAddClientCommand,
             startTime: startTime,
@@ -118,10 +119,6 @@ internal class AddHandler : BaseKiotaCommandHandler
         // Add this run to the command execution counter
         instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
 
-        string output = output0 ?? string.Empty;
-        string openapi = openapi0 ?? string.Empty;
-        string className = className0 ?? string.Empty;
-        string namespaceName = namespaceName0 ?? string.Empty;
         List<string> includePatterns = includePatterns0 ?? [];
         List<string> excludePatterns = excludePatterns0 ?? [];
         List<string> disabledValidationRules = disabledValidationRules0 ?? [];
@@ -211,7 +208,7 @@ internal class AddHandler : BaseKiotaCommandHandler
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage language, bool backingStore,
         bool excludeBackwardCompatible, bool skipGeneration, string? output, string? namespaceName,
-        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes,
+        List<string>? includePatterns, List<string>? excludePatterns, List<string>? structuredMimeTypes, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
@@ -233,5 +230,6 @@ internal class AddHandler : BaseKiotaCommandHandler
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
         // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules0));
         if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }
