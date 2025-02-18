@@ -13,7 +13,7 @@ import {
     KiotaOpenApiNode,
     PluginObjectProperties
 } from '../kiotaInterop';
-import { getManifestDetails, showKiotaResult } from '../kiotaInterop';
+import { getManifestDetails, getKiotaTree } from '../kiotaInterop';
 import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
 import { SharedService } from './sharedService';
@@ -320,7 +320,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
-        const result = await showKiotaResult({
+        const result = await getKiotaTree({
             includeFilters: this.includeFilters,
             descriptionPath: this.descriptionUrl,
             excludeFilters: this.excludeFilters,

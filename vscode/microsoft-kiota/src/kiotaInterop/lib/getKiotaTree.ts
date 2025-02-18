@@ -1,6 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaShowConfiguration, KiotaShowResult } from "..";
+import { KiotaShowConfiguration, KiotaTreeResult } from "..";
 import connectToKiota from "../connect";
 
 interface KiotaResultOptions {
@@ -10,9 +10,9 @@ interface KiotaResultOptions {
   clearCache: boolean;
 }
 
-export async function showKiotaResult({ includeFilters, descriptionPath, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaShowResult | undefined> {
+export async function getKiotaTree({ includeFilters, descriptionPath, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaTreeResult | undefined> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
+    const request = new rpc.RequestType<KiotaShowConfiguration, KiotaTreeResult, void>('Show');
 
     return await connection.sendRequest(request, {
       includeFilters,

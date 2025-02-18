@@ -61,7 +61,7 @@ export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConf
 interface KiotaLoggedResult {
   logs: KiotaLogEntry[];
 }
-export interface KiotaShowResult extends KiotaLoggedResult {
+export interface KiotaTreeResult extends KiotaLoggedResult {
   rootNode?: KiotaOpenApiNode;
   apiTitle?: string;
 }

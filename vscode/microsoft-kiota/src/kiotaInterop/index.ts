@@ -1,28 +1,25 @@
 
 import { generateClient } from './lib/generateClient';
 import { generatePlugin } from './lib/generatePlugin';
+import { getKiotaTree } from './lib/getKiotaTree';
 import { getKiotaVersion } from './lib/getKiotaVersion';
 import { getManifestDetails } from './lib/getManifestDetails';
 import { getLanguageInformationForDescription, getLanguageInformationInternal } from './lib/languageInformation';
 import { migrateFromLockFile } from './lib/migrateFromLockFile';
 import { removeClient, removePlugin } from './lib/removeItem';
 import { searchDescription } from './lib/searchDescription';
-import { showKiotaResult } from './lib/showKiotaResult';
 import { updateClients } from './lib/updateClients';
 
 export {
     generateClient,
-    generatePlugin,
-    getKiotaVersion,
+    generatePlugin, getKiotaTree, getKiotaVersion,
     getLanguageInformationForDescription,
     getLanguageInformationInternal,
     getManifestDetails,
     migrateFromLockFile,
     removeClient,
     removePlugin,
-    searchDescription,
-    showKiotaResult,
-    updateClients
+    searchDescription, updateClients
 };
 
 export * from './types';
