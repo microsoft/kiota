@@ -1,15 +1,25 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Client;
 
 internal class GenerateHandler : BaseKiotaCommandHandler
 {
+    private readonly KeyValuePair<string, object?>[] _commonTags =
+    [
+        new(TelemetryLabels.TagGenerationOutputType, "client"),
+        new(TelemetryLabels.TagCommandName, "generate"),
+        new(TelemetryLabels.TagCommandRevision, 2)
+    ];
     public required Option<string> ClassOption
     {
         get; init;
@@ -20,9 +30,30 @@ internal class GenerateHandler : BaseKiotaCommandHandler
     }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
+        // Span start time
+        Stopwatch? stopwatch = Stopwatch.StartNew();
+        var startTime = DateTimeOffset.UtcNow;
+        // Get options
+        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
         bool refresh = context.ParseResult.GetValueForOption(RefreshOption);
+        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
+
+        var host = context.GetHost();
+        var instrumentation = host.Services.GetService<Instrumentation>();
+        var activitySource = instrumentation?.ActivitySource;
+
+        CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);
+
+        using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanGenerateClientCommand,
+            ActivityKind.Internal, startTime: startTime, parentContext: default,
+            tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
+        if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+
+        var className = className0 ?? string.Empty;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
@@ -64,6 +95,14 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                         DisplayUrlInformation(generationConfiguration.ApiRootUrl);
                         var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
                         DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
+                        var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                        var meterTags = new TagList(_commonTags.AsSpan())
+                        {
+                            new KeyValuePair<string, object?>(
+                                TelemetryLabels.TagGeneratorLanguage,
+                                generationConfiguration.Language.ToString("G"))
+                        };
+                        genCounter?.Add(1, meterTags);
                     }
                     else
                     {
@@ -71,10 +110,14 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                         DisplayCleanHint("client generate", "--refresh");
                     }
                 }
+
+                invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;
             }
             catch (Exception ex)
             {
+                invokeActivity?.SetStatus(ActivityStatusCode.Error);
+                invokeActivity?.AddException(ex);
 #if DEBUG
                 logger.LogCritical(ex, "error adding the client: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
@@ -83,6 +126,22 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 return 1;
 #endif
             }
+            finally
+            {
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+            }
         }
+    }
+
+    private static void CreateTelemetryTags(ActivitySource? activitySource, bool refresh, string? className, LogLevel? logLevel,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
+        {
+            new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
+        } : null;
+        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

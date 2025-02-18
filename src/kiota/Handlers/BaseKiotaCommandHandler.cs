@@ -109,7 +109,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var isPatSignedIn = await patSignInCallBack(cancellationToken).ConfigureAwait(false);
         var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch
         {
-            (true, _) => (GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
+            (true, _) => ((IAuthenticationProvider?)GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
             (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
             (_, _) => (null, (CancellationToken cts) => Task.FromResult(false))
         };
@@ -158,7 +158,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             return string.Empty;
         return Path.IsPathRooted(source) || source.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
-    protected void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment)
+    protected void AssignIfNotNullOrEmpty(string? input, Action<GenerationConfiguration, string> assignment)
     {
         if (!string.IsNullOrEmpty(input))
             assignment.Invoke(Configuration.Generation, input);
