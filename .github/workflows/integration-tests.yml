@@ -126,8 +126,6 @@ jobs:
         shell: pwsh
         run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute the IT test
         shell: pwsh
         run: ./it/exec-cmd.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}

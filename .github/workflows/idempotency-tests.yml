@@ -73,8 +73,6 @@ jobs:
         shell: pwsh
         run: ./it/compare-generation.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - id: replace_url
         if: always()
         run: |
