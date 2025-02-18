@@ -3,6 +3,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
@@ -12,38 +13,36 @@ internal static class OpenApiDeprecationExtensionExtensions
     {
         return new DeprecationInformation(value.Description.CleanupDescription().CleanupXMLString(), value.Date, value.RemovalDate, value.Version.CleanupDescription().CleanupXMLString(), true);
     }
-    internal static DeprecationInformation GetDeprecationInformation(this OpenApiSchema schema)
+    internal static DeprecationInformation GetDeprecationInformation(this IOpenApiSchema schema)
     {
         if (schema.Deprecated && schema.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
         return new(null, null, null, null, schema.Deprecated);
     }
-    internal static DeprecationInformation GetDeprecationInformation(this OpenApiParameter parameter)
+    internal static DeprecationInformation GetDeprecationInformation(this IOpenApiParameter parameter)
     {
         if (parameter.Deprecated && parameter.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
         else if (parameter.Schema != null && !parameter.Schema.IsReferencedSchema() && parameter.Schema.Deprecated)
             return parameter.Schema.GetDeprecationInformation();
-        else if (parameter.Content.Values.Select(static x => x.Schema).Where(static x => x != null && !x.IsReferencedSchema() && x.Deprecated).Select(static x => x.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation contentDeprecationInformation)
+        else if (parameter.Content.Values.Select(static x => x.Schema).Where(static x => x != null && !x.IsReferencedSchema() && x.Deprecated).Select(static x => x!.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation contentDeprecationInformation)
             return contentDeprecationInformation;
         return new(null, null, null, null, parameter.Deprecated);
     }
     internal static DeprecationInformation GetDeprecationInformation(this OpenApiOperation operation)
     {
-        if (operation.Deprecated && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
+        if (operation.Deprecated && operation.Extensions is not null && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
-        else if (operation.Responses.Values
+        else if (operation.Responses?.Values
                                 .SelectMany(static x => x.Content.Values)
                                 .Select(static x => x?.Schema)
                                 .OfType<OpenApiSchema>()
-                                .Where(static x => !x.IsReferencedSchema())
                                 .Select(static x => x.GetDeprecationInformation())
                                 .FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation responseDeprecationInformation)
             return responseDeprecationInformation;
         else if (operation.RequestBody?.Content.Values
                                             .Select(static x => x?.Schema)
                                             .OfType<OpenApiSchema>()
-                                            .Where(static x => !x.IsReferencedSchema())
                                             .Select(static x => x.GetDeprecationInformation())
                                             .FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation requestDeprecationInformation)
             return requestDeprecationInformation;

@@ -1,12 +1,12 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
 
-public class KnownAndNotSupportedFormats : ValidationRule<OpenApiSchema>
+public class KnownAndNotSupportedFormats : ValidationRule<IOpenApiSchema>
 {
     internal static readonly HashSet<string> knownAndUnsupportedFormats = new(StringComparer.OrdinalIgnoreCase) {
         "email",

@@ -1,28 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 
 namespace Kiota.Builder.EqualityComparers;
 
-internal class OpenApiSchemaReferenceComparer(StringComparer? stringComparer = null) : IEqualityComparer<OpenApiSchema>
+internal class OpenApiSchemaReferenceComparer(StringComparer? stringComparer = null) : IEqualityComparer<IOpenApiSchema>
 {
     private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;
-    public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
+    public bool Equals(IOpenApiSchema? x, IOpenApiSchema? y)
     {
-        if (string.IsNullOrEmpty(x?.Reference?.Id) || string.IsNullOrEmpty(y?.Reference?.Id)) return object.Equals(x, y);
-        return _stringComparer.Equals(x.Reference.Id, y.Reference.Id);
+        if (x is not OpenApiSchemaReference xRef || y is not OpenApiSchemaReference yRef) return object.Equals(x, y);
+        return _stringComparer.Equals(xRef.Reference.Id, yRef.Reference.Id);
     }
-    public int GetHashCode([DisallowNull] OpenApiSchema obj)
+    public int GetHashCode([DisallowNull] IOpenApiSchema obj)
     {
+        if (obj is not OpenApiSchemaReference objRef) return obj.GetHashCode();
         var hash = new HashCode();
-        if (!string.IsNullOrEmpty(obj.Reference?.Id))
+        if (!string.IsNullOrEmpty(objRef.Reference?.Id))
         {
-            hash.Add(obj.Reference.Id, _stringComparer);
+            hash.Add(objRef.Reference.Id, _stringComparer);
         }
         else
         {
-            hash.Add(obj);
+            hash.Add(objRef);
         }
 
         return hash.ToHashCode();
