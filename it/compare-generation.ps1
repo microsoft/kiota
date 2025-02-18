@@ -58,6 +58,13 @@ elseif ($descriptionUrl.StartsWith("http")) {
     Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
 }
 else {
+    if (Test-Path Env:GITHUB_TOKEN) {
+        $signInProcess = Start-Process "$kiotaExec" -ArgumentList "login github pat --pat $Env:GITHUB_TOKEN" -Wait -NoNewWindow -PassThru
+        if ($signInProcess.ExitCode -ne 0) {
+            Write-Error "Failed to sign in to GitHub"
+            # no need to exit, the download might still work
+        }
+    }
     $downloadProcess = Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow -PassThru
     if ($downloadProcess.ExitCode -ne 0) {
         Write-Error "Failed to download the openapi description"
