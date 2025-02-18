@@ -123,4 +123,16 @@ public sealed class CodePropertyWriterTests : IDisposable
         };
         Assert.Throws<InvalidOperationException>(() => writer.Write(property));
     }
+    [Fact]
+    public void WritesCorrectTypeForProperty()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        property.Type = new CodeType
+        {
+            Name = "base64"
+        };
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"{PropertyName}?: ArrayBuffer | null", result);
+    }
 }
