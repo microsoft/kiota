@@ -2,14 +2,13 @@ import TelemetryReporter from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
 import { extensionId } from "../../constants";
-import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
+import { getLogEntriesForLevel, KiotaResult, LogLevel, removeClient, removePlugin } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { SharedService } from "../../providers/sharedService";
 import { WorkspaceTreeItem } from "../../providers/workspaceTreeProvider";
-import { isPluginType } from "../../util";
+import { getWorkspaceJsonDirectory, isPluginType } from "../../util";
 import { exportLogsAndShowErrors } from "../../utilities/logging";
 import { Command } from "../Command";
-import { removeClient, removePlugin } from "./removeItem";
 
 export class DeleteWorkspaceItemCommand extends Command {
   constructor(
@@ -43,18 +42,17 @@ export class DeleteWorkspaceItemCommand extends Command {
 
       const result = await this.deleteItem(type, workspaceTreeItem);
       if (result) {
-        const isSuccess = result.some(k => k.message.includes('removed successfully'));
-        await vscode.commands.executeCommand('kiota.workspace.refresh'); 
-        if (isSuccess) {
+        await vscode.commands.executeCommand('kiota.workspace.refresh');
+        if (result.isSuccess) {
           void vscode.window.showInformationMessage(vscode.l10n.t('{0} removed successfully.', workspaceTreeItem.label));
         } else {
-          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
       }
     }
   }
 
-  private async deleteItem(type: string, workspaceTreeItem: WorkspaceTreeItem): Promise<KiotaLogEntry[] | undefined> {
+  private async deleteItem(type: string, workspaceTreeItem: WorkspaceTreeItem): Promise<KiotaResult | undefined> {
     const itemName = workspaceTreeItem.label;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
@@ -63,16 +61,12 @@ export class DeleteWorkspaceItemCommand extends Command {
     }, async (progress, _) => {
       const start = performance.now();
       const result = type === "plugin" ? await removePlugin(
-        this._context,
-        itemName,
-        false,
+        { pluginName: itemName, cleanOutput: false, workingDirectory: getWorkspaceJsonDirectory() },
       ) : await removeClient(
-        this._context,
-        itemName,
-        false,
+        { clientName: itemName, cleanOutput: false, workingDirectory: getWorkspaceJsonDirectory() },
       );
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.remove${type}.completed`, {
         "pluginType": itemName,

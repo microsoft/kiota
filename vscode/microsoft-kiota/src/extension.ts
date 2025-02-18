@@ -8,7 +8,7 @@ import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItem/delet
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
-import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile";
+import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile.util";
 import { MigrateFromLockFileCommand } from './commands/migrate/migrateFromLockFileCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/openApidescription/searchOrOpenApiDescriptionCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/openApiTreeView/addAllToSelectedEndpointsCommand';
@@ -145,7 +145,7 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
+  await updateStatusBarItem(kiotaOutputChannel, kiotaStatusBarItem);
   context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaStatusBarItem })));
 }
 

@@ -1,14 +1,15 @@
 import { defineConfig } from '@vscode/test-cli';
 
 export default defineConfig({
-    tests:[
+    tests: [
         {
-            files: 'out/test/**/*.test.js'
+            files: 'out/test/**/*.test.js',
+            exclude: '**/*.spec.[tj]s'
         }
     ],
     coverage: {
         includeAll: true,
-        exclude: ["**/src/test", "**/dist", "**/*.test.[tj]s", "**/*.ts"],
+        exclude: ["**/src/test", "**/dist", "**/*.test.[tj]s", "**/*.ts", "**/*.spec.[tj]s"],
         reporter: ["text-summary", "html", "json-summary", "lcov", "cobertura"],
     },
 });
