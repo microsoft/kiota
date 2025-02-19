@@ -38,7 +38,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         bool refresh = context.ParseResult.GetValueForOption(RefreshOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        
+
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;

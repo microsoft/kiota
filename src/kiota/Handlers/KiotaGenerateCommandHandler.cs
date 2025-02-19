@@ -3,11 +3,10 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
-
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using kiota.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -101,7 +100,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        
+
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;

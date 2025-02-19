@@ -2,9 +2,9 @@
 using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.WorkspaceManagement;
-using kiota.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -36,7 +36,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-        
+
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -83,7 +83,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
             }
         }
     }
-    
+
     private static void CreateTelemetryTags(ActivitySource? activitySource, bool cleanOutput, string? className, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
     {

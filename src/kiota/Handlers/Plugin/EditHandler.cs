@@ -3,11 +3,11 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
-using kiota.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
@@ -103,7 +103,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         Configuration.Generation.Operation = ConsumerOperation.Edit;
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
-        
+
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
@@ -199,7 +199,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         } : null;
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
-        if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray()));
+        if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x => x.ToString("G").ToLowerInvariant()).ToArray()));
         // if (pluginAuthType is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", redacted));
         // if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_ref_id", redacted));
         // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));

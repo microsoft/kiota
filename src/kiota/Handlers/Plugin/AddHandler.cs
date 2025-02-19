@@ -3,11 +3,11 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
-using kiota.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
@@ -99,11 +99,11 @@ internal class AddHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Add;
-        if (pluginTypes is { Count: > 0})
+        if (pluginTypes is { Count: > 0 })
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
-        if (includePatterns0 is { Count: > 0})
+        if (includePatterns0 is { Count: > 0 })
             Configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns0 is { Count: > 0 })
             Configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -172,7 +172,7 @@ internal class AddHandler : BaseKiotaCommandHandler
             } : null;
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
-        if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray()));
+        if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x => x.ToString("G").ToLowerInvariant()).ToArray()));
         // if (pluginAuthType is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", redacted));
         // if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_ref_id", redacted));
         // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
