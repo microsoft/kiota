@@ -1,7 +1,7 @@
+import { updateClients } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 
 import { API_MANIFEST_FILE, extensionId } from "../../constants";
-import { updateClients } from '../../kiotaInterop';
 import { getExtensionSettings } from '../../types/extensionSettings';
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from '../../utilities/messaging';

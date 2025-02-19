@@ -1,12 +1,13 @@
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
+import { KiotaGenerationLanguage, KiotaLogEntry } from "@microsoft/kiota";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from 'vscode';
+
 import * as generateModule from "../../../commands/generate/generateClientCommand";
 import * as languageInfoModule from "../../../commands/generate/generation-util";
 import * as deepLinkParamsHandler from "../../../handlers/deepLinkParamsHandler";
-import { KiotaGenerationLanguage, KiotaLogEntry } from "../../../kiotaInterop";
 import * as generateStepsModule from "../../../modules/steps/generateSteps";
 import * as dependenciesModule from "../../../providers/dependenciesViewProvider";
 import * as treeModule from "../../../providers/openApiTreeProvider";

@@ -1,9 +1,9 @@
+import { searchDescription } from "@microsoft/kiota";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
 import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../../constants";
 import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { searchDescription } from "../../kiotaInterop";
 import { searchSteps } from "../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
