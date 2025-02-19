@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed mapping of Binary Types to array buffer in TypeScript. [#6124](https://github.com/microsoft/kiota/issues/6124)
+
 ## [1.23.0] - 2025-02-06
 
 ### Added
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for net9 only installations of the dotnet tool. [#5887](https://github.com/microsoft/kiota/issues/5887)
 
 ### Changed
+
 - Fixes serialization of collection of enums. [microsoft/kiota-typescript#1276](https://github.com/microsoft/kiota-typescript/issues/1276)
 
 ## [1.22.3]
