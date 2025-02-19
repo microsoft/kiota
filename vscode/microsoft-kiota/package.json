@@ -517,8 +517,6 @@
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^3.1.0",
-    "@types/adm-zip": "^0.5.7",
-    "@types/follow-redirects": "^1.14.4",
     "@types/jest": "^29.5.14",
     "@types/node": "22.x",
     "@types/vscode": "^1.97.0",
@@ -538,12 +536,7 @@
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.8",
     "@vscode/l10n": "^0.0.18",
-    "adm-zip": "^0.5.16",
-    "appdata-path": "^1.0.0",
-    "follow-redirects": "^1.15.9",
-    "is-online": "^11.0.0",
     "jest": "^29.7.0",
-    "original-fs": "^1.2.0",
-    "vscode-jsonrpc": "^8.2.1"
+    "original-fs": "^1.2.0"
   }
 }

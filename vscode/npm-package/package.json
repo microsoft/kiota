@@ -1,0 +1,39 @@
+{
+  "name": "@microsoft/kiota",
+  "version": "1.0.0",
+  "description": "npm package exposing Kiota CLI functionality to Typescript",
+  "main": "index.ts",
+  "repository": {
+    "url": "https://github.com/microsoft/kiota.git",
+    "type": "git"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest --detectOpenHandles"
+  },
+  "keywords": [
+    "Kiota"
+  ],
+  "author": "Microsoft",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "appdata-path": "^1.0.0",
+    "follow-redirects": "^1.15.9",
+    "jest": "^29.7.0",
+    "original-fs": "^1.2.0",
+    "vscode-jsonrpc": "^8.2.1"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/follow-redirects": "^1.14.4",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.4",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3"
+  }
+}
