@@ -13,7 +13,7 @@ namespace kiota.Extension;
 
 internal static class KiotaHostExtensions
 {
-    internal static IHostBuilder ConfigureKiotaServices(this IHostBuilder hostBuilder)
+    internal static IHostBuilder ConfigureKiotaTelemetryServices(this IHostBuilder hostBuilder)
     {
         return hostBuilder.ConfigureServices(ConfigureServiceContainer);
 
@@ -79,16 +79,14 @@ internal static class KiotaHostExtensions
                 }
                 services.AddSingleton<Instrumentation>();
             }
-            return;
+        }
+        static string? OsName()
+        {
+            if (OperatingSystem.IsWindows()) return "windows";
+            if (OperatingSystem.IsLinux()) return "linux";
+            if (OperatingSystem.IsMacOS()) return "macos";
 
-            static string? OsName()
-            {
-                if (OperatingSystem.IsWindows()) return "windows";
-                if (OperatingSystem.IsLinux()) return "linux";
-                if (OperatingSystem.IsMacOS()) return "macos";
-
-                return OperatingSystem.IsFreeBSD() ? "freebsd" : null;
-            }
+            return OperatingSystem.IsFreeBSD() ? "freebsd" : null;
         }
     }
 }

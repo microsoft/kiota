@@ -3,9 +3,9 @@ using System.Diagnostics.Metrics;
 
 namespace kiota.Telemetry;
 
-internal class Instrumentation : IDisposable
+internal class Instrumentation(IMeterFactory meterFactory) : IDisposable
 {
-    private readonly Meter _meter = new(TelemetryLabels.ScopeName);
+    private readonly Meter _meter = meterFactory.Create(TelemetryLabels.ScopeName);
 
     /// <summary>
     /// An activity source is used to create activities (spans) during manual instrumentation.
@@ -57,6 +57,5 @@ internal class Instrumentation : IDisposable
     {
         GC.SuppressFinalize(this);
         this.ActivitySource.Dispose();
-        this._meter.Dispose();
     }
 }

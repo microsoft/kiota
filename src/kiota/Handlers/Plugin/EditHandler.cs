@@ -3,6 +3,7 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;

@@ -1,4 +1,4 @@
-﻿namespace kiota;
+﻿namespace kiota.Extension;
 
 internal static class StringExtensions
 {
