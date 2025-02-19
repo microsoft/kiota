@@ -3,11 +3,11 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders;
-using kiota.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -192,7 +192,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         await fileStream.FlushAsync(cancellationToken);
         return (path, 0);
     }
-    
+
     private static void CreateTelemetryTags(ActivitySource? activitySource, string searchTerm, string? version,
         string? outputPath, bool cleanOutput, bool clearCache, bool disableSslValidation, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
