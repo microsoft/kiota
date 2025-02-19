@@ -85,7 +85,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         CreateTelemetryTags(activitySource, pluginTypes, skipGeneration, output, includePatterns0, excludePatterns0,
             logLevel, out var tags);
         // Start span
-        using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanAddClientCommand,
+        using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanAddPluginCommand,
             startTime: startTime,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
         // Command duration meter
@@ -174,7 +174,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
         if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray()));
         // if (pluginAuthType is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", redacted));
-        // if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", redacted));
+        // if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_ref_id", redacted));
         // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
         if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));

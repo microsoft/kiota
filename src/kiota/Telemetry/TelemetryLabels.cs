@@ -24,4 +24,6 @@ public static class TelemetryLabels
     public const string SpanAddClientCommand = "Client/Add InvokeAsync()";
     public const string SpanEditClientCommand = "Client/Edit InvokeAsync()";
     public const string SpanGenerateClientCommand = "Client/Generate InvokeAsync()";
+
+    public const string SpanAddPluginCommand = "Plugin/Add InvokeAsync()";
 }
