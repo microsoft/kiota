@@ -1,6 +1,6 @@
 ﻿namespace kiota;
 
-public static class IEnumerableExtensions
+internal static class IEnumerableExtensions
 {
     public static IEnumerable<T>? ConcatNullable<T>(this IEnumerable<T>? left, IEnumerable<T>? right)
     {

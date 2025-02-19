@@ -9,7 +9,8 @@ public static class TelemetryLabels
     // Meter instruments
     public const string InstrumentCommandDurationName = "kiota.command.duration";
     public const string InstrumentCommandExecutionsCount = "kiota.command.executions";
-    public const string InstrumentGenerationCount = "kiota.generation.count";
+    public const string InstrumentClientGenerationCount = "kiota.client.generations";
+    public const string InstrumentPluginGenerationCount = "kiota.plugin.generations";
 
     // Tags/Attributes
     public const string TagCommandName = "kiota.command.name";
@@ -24,6 +25,10 @@ public static class TelemetryLabels
     public const string SpanAddClientCommand = "Client/Add InvokeAsync()";
     public const string SpanEditClientCommand = "Client/Edit InvokeAsync()";
     public const string SpanGenerateClientCommand = "Client/Generate InvokeAsync()";
+    public const string SpanRemoveClientCommand = "Client/Remove InvokeAsync()";
 
     public const string SpanAddPluginCommand = "Plugin/Add InvokeAsync()";
+    public const string SpanEditPluginCommand = "Plugin/Edit InvokeAsync()";
+    public const string SpanGeneratePluginCommand = "Plugin/Generate InvokeAsync()";
+    public const string SpanRemovePluginCommand = "Plugin/Remove InvokeAsync()";
 }

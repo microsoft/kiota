@@ -23,13 +23,23 @@ internal class Instrumentation : IDisposable
     }
 
     /// <summary>
-    /// Creates a counter instrument for language generation
+    /// Creates a counter instrument for client generations
     /// </summary>
     /// <returns>A counter instrument</returns>
-    public Counter<long> CreateLanguageGenerationCounter()
+    public Counter<long> CreateClientGenerationCounter()
     {
-        return _meter.CreateCounter<long>(name: TelemetryLabels.InstrumentGenerationCount,
-            description: "Count of generations that have been run");
+        return _meter.CreateCounter<long>(name: TelemetryLabels.InstrumentClientGenerationCount,
+            description: "Count of client generations that have been run");
+    }
+
+    /// <summary>
+    /// Creates a counter instrument for plugin generations
+    /// </summary>
+    /// <returns>A counter instrument</returns>
+    public Counter<long> CreatePluginGenerationCounter()
+    {
+        return _meter.CreateCounter<long>(name: TelemetryLabels.InstrumentPluginGenerationCount,
+            description: "Count of plugin generations that have been run");
     }
 
     /// <summary>

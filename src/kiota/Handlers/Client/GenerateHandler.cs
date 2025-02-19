@@ -95,7 +95,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                         DisplayUrlInformation(generationConfiguration.ApiRootUrl);
                         var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{clientEntry.Key}";
                         DisplayInfoHint(generationConfiguration.Language, string.Empty, manifestPath);
-                        var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                        var genCounter = instrumentation?.CreateClientGenerationCounter();
                         var meterTags = new TagList(_commonTags.AsSpan())
                         {
                             new KeyValuePair<string, object?>(

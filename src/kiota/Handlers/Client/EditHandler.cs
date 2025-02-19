@@ -183,7 +183,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                 {
                     DisplaySuccess("Generation completed successfully");
                     DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
-                    var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                    var genCounter = instrumentation?.CreateClientGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(

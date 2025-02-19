@@ -44,7 +44,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
 
         CreateTelemetryTags(activitySource, cleanOutput, className0, logLevel, out var tags);
 
-        using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanGenerateClientCommand,
+        using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanRemoveClientCommand,
             ActivityKind.Internal, startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();

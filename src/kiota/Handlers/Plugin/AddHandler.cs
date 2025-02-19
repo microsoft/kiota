@@ -123,7 +123,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                 {
                     DisplaySuccess("Generation completed successfully");
                     DisplayUrlInformation(Configuration.Generation.ApiRootUrl, true);
-                    var genCounter = instrumentation?.CreateLanguageGenerationCounter();
+                    var genCounter = instrumentation?.CreatePluginGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(
