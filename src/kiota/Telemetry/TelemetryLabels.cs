@@ -31,4 +31,6 @@ public static class TelemetryLabels
     public const string SpanEditPluginCommand = "Plugin/Edit InvokeAsync()";
     public const string SpanGeneratePluginCommand = "Plugin/Generate InvokeAsync()";
     public const string SpanRemovePluginCommand = "Plugin/Remove InvokeAsync()";
+
+    public const string SpanDownloadCommand = "Download InvokeAsync()";
 }
