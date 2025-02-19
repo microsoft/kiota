@@ -11,7 +11,7 @@ npm install kiota-Interop
 
 ## Usage
 
-### [`getKiotaTree`](/kiotaInterop./lib/getKiotaTree.ts )
+### [`getKiotaTree`](./lib/getKiotaTree.ts )
 Returns a tree of the open api description.
 
 ### [`generateClient`](./lib/generateClient.ts )

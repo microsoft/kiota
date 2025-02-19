@@ -12,6 +12,7 @@
     "test": "tests"
   },
   "scripts": {
+    "lint": "eslint",
     "test": "jest --detectOpenHandles"
   },
   "keywords": [
@@ -28,12 +29,19 @@
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "^4.0.1",
     "@types/adm-zip": "^0.5.7",
     "@types/follow-redirects": "^1.14.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.4",
+    "@types/vscode": "^1.97.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.20.1",
+    "glob": "^11.0.1",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
+    "typemoq": "^2.1.0",
     "typescript": "^5.7.3"
   }
 }
