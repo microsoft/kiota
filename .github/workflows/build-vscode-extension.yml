@@ -89,8 +89,6 @@ jobs:
         working-directory: vscode/npm-package
       - run: npm run lint
         working-directory: vscode/npm-package
-      - run: npm run build
-        working-directory: vscode/npm-package
       - run: npm pack
         working-directory: vscode/npm-package
       - name: Upload artifact
