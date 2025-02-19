@@ -35,7 +35,7 @@ internal static class KiotaHostExtensions
                         {
                             r.AddAttributes([
                                 new KeyValuePair<string, object>("os.name", osName),
-                            new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
+                                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
                             ]);
                         }
                     });
