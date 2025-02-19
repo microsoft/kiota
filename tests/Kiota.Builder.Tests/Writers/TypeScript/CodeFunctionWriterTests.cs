@@ -1577,5 +1577,45 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         Assert.Contains("\"property\": n => { parentClass.property = n.getCollectionOfObjectValues<ArrayOfObjects>(createArrayOfObjectsFromDiscriminatorValue) ?? n.getNumberValue() ?? n.getObjectValue<SingleObject>(createSingleObjectFromDiscriminatorValue) ?? n.getStringValue(); }", result);
     }
+    [Fact]
+    public void WritesByteArrayPropertyDeserialization()
+    {
+        var intfc = new CodeInterface
+        {
+            Name = "SomeInterface",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass() { Name = "SomeClass" }
+        };
+        var deserializationMethod = new CodeMethod
+        {
+            Name = "deserialize",
+            ReturnType = new CodeType { Name = "SomeInterface" },
+            Access = AccessModifier.Public,
+            IsAsync = true,
+            IsStatic = true,
+            Kind = CodeMethodKind.Deserializer,
+        };
+        deserializationMethod.AddParameter(new CodeParameter
+        {
+            Name = "model",
+            Type = new CodeType { TypeDefinition = intfc }
+        });
+        intfc.OriginalClass.AddMethod(deserializationMethod);
+        var prop = new CodeProperty
+        {
+            Name = "property",
+            Type = new CodeType { Name = "base64" }
+        };
+        intfc.AddProperty(prop);
+        var function = new CodeFunction(deserializationMethod);
+        var codeFile = new CodeFile
+        {
+            Name = "someFile",
+        };
+        codeFile.AddElements(function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("\"property\": n => { model.property = n.getByteArrayValue(); }", result, StringComparison.Ordinal);
+    }
 }
 
