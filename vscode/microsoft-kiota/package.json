@@ -512,8 +512,7 @@
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
     "test": "vscode-test",
-    "test:coverage": "npm run pretest && test --coverage",
-    "test:unit": "jest --detectOpenHandles"
+    "test:coverage": "npm run pretest && test --coverage"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^3.1.0",

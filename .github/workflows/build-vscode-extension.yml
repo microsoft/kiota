@@ -35,15 +35,12 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/microsoft-kiota/src/kiotaInterop/runtime.json" -online
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
       - name: Install dependencies
         run: npm ci
         working-directory: vscode/microsoft-kiota
       - run: npm run lint
-        working-directory: vscode/microsoft-kiota
-      - name: run unit tests
-        run: npm run test:unit
         working-directory: vscode/microsoft-kiota
       - name: run tests(linux)
         if: runner.os == 'Linux'
@@ -70,3 +67,34 @@ jobs:
         with:
           name: vscode-extension
           path: vscode/microsoft-kiota/*.vsix
+  build_npm_package:
+    needs: [checksecret]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - id: last_release
+        run: |
+          $releaseVersion = gh release list --exclude-drafts --exclude-pre-releases --json tagName,isLatest | ConvertFrom-Json | ? {$_.isLatest -eq $true} | select -first 1 -ExpandProperty tagName
+          Write-Output "RELEASE_VERSION=$releaseVersion" >> $Env:GITHUB_OUTPUT
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
+        shell: pwsh
+      - name: Install dependencies
+        run: npm ci
+        working-directory: vscode/npm-package
+      - run: npm run lint
+        working-directory: vscode/npm-package
+      - run: npm run build
+        working-directory: vscode/npm-package
+      - run: npm pack
+        working-directory: vscode/npm-package
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microsoft-kiota
+          path: vscode/npm-package/*.tgz
