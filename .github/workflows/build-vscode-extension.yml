@@ -35,7 +35,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.release }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/microsoft-kiota/src/kiotaInterop/runtime.json" -online
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/microsoft-kiota/src/kiotaInterop/runtime.json" -online
         shell: pwsh
       - name: Install dependencies
         run: npm ci
