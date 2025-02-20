@@ -15,7 +15,9 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     {
         var extension = new LanguagesInformation();
         foreach (var property in jsonNode.Where(static property => property.Value is JsonObject))
+        {
             extension.Add(property.Key, LanguageInformation.Parse(property.Value!));
+        }
 
         return extension;
     }
