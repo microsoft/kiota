@@ -511,8 +511,9 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
-    "test": "vscode-test",
-    "test:coverage": "npm run pretest && test --coverage"
+    "test": "npm run test:unit && vscode-test",
+    "test:coverage": "npm run pretest && test --coverage",
+    "test:unit": "jest --detectOpenHandles"
   },
   "devDependencies": {
     "@microsoft/kiota": "1.0.0",
