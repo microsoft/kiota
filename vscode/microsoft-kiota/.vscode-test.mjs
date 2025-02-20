@@ -9,7 +9,15 @@ export default defineConfig({
     ],
     coverage: {
         includeAll: true,
-        exclude: ["**/src/test", "**/dist", "**/*.test.[tj]s", "**/*.ts", "**/*.spec.[tj]s"],
+      exclude: [
+        "**/src/test",
+        "**/dist",
+        "**/*.test.[tj]s",
+        "**/*.spec.[tj]s",
+        "**/node_modules",
+        "**/*.config.js",
+        "**/*.config.ts"
+      ],
         reporter: ["text-summary", "html", "json-summary", "lcov", "cobertura"],
     },
 });
