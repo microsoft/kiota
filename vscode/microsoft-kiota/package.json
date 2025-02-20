@@ -515,27 +515,15 @@
     "test:coverage": "npm run pretest && test --coverage"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^3.1.0",
-    "@types/jest": "^29.5.14",
-    "@types/node": "22.x",
-    "@types/vscode": "^1.97.0",
-    "@typescript-eslint/eslint-plugin": "^8.24.1",
-    "@typescript-eslint/parser": "^8.24.1",
+    "@microsoft/kiota": "1.0.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.20.1",
-    "glob": "^11.0.1",
-    "ts-jest": "^29.2.5",
-    "ts-loader": "^9.5.2",
-    "typemoq": "^2.1.0",
-    "typescript": "^5.7.3",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.8",
     "@vscode/l10n": "^0.0.18",
-    "jest": "^29.7.0",
     "original-fs": "^1.2.0"
   }
 }

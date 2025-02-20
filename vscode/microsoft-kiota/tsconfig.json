@@ -9,7 +9,10 @@
     "paths": {
       "glob": [
         "./node_modules/glob/dist/commonjs"
-      ] // https://github.com/isaacs/node-glob/issues/557
+      ], // https://github.com/isaacs/node-glob/issues/557
+      "@microsoft/kiota/*": [
+        "../npm-package/*"
+      ]
     },
     "sourceMap": true,
     "rootDir": "src",
@@ -26,6 +29,10 @@
       "node",
       "jest"
     ],
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+  },
+  "include": [
+    "./**/*",
+    "../npm-package/**/*"
+  ],
 }

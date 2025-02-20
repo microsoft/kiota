@@ -39,9 +39,9 @@ jobs:
         shell: pwsh
       - name: Install dependencies
         run: npm ci
-        working-directory: vscode/microsoft-kiota
+        working-directory: vscode
       - run: npm run lint
-        working-directory: vscode/microsoft-kiota
+        working-directory: vscode
       - name: run tests(linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run test:coverage

@@ -1,0 +1,41 @@
+{
+  "name": "kiota-vscode-extension",
+  "version": "1.0.0",
+  "description": "main package exposing Kiota CLI functionality to Typescript via npm and vscode extension",
+  "repository": {
+    "url": "https://github.com/microsoft/kiota.git",
+    "type": "git"
+  },
+  "scripts": {
+    "lint": "lerna run lint",
+    "test:vscode": "lerna run test --scope=kiota",
+    "test:package": "lerna run test --scope=\"@microsoft/kiota\"",
+    "test": "npm i && npm run test:package && npm run test:vscode"
+  },
+  "keywords": [
+    "Kiota"
+  ],
+  "author": "Microsoft",
+  "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "^4.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.4",
+    "@types/vscode": "^1.97.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.20.1",
+    "glob": "^11.0.1",
+    "lerna": "^8.2.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "typemoq": "^2.1.0",
+    "typescript": "^5.7.3"
+  },
+  "workspaces": [
+    "microsoft-kiota",
+    "npm-package"
+  ],
+  "dependencies": {
+    "jest": "^29.7.0"
+  }
+}
