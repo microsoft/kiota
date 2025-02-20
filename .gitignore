@@ -450,3 +450,4 @@ samples/
 it/openapi.yaml
 
 idempotency-results/
+vscode/npm-package/dist/*
