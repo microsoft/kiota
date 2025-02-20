@@ -33,4 +33,7 @@ public static class TelemetryLabels
     public const string SpanRemovePluginCommand = "Plugin/Remove InvokeAsync()";
 
     public const string SpanDownloadCommand = "Download InvokeAsync()";
+    public const string SpanGitHubDeviceLoginCommand = "Login/GitHub/Device InvokeAsync()";
+    public const string SpanGitHubLogoutCommand = "Logout/GitHub InvokeAsync()";
+    public const string SpanGitHubPatLoginCommand = "Login/GitHub/Pat InvokeAsync()";
 }
