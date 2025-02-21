@@ -515,7 +515,6 @@
     "test:coverage": "npm run pretest && test --coverage"
   },
   "devDependencies": {
-    "@microsoft/kiota": "1.0.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "webpack": "^5.98.0",
@@ -524,6 +523,6 @@
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.8",
     "@vscode/l10n": "^0.0.18",
-    "original-fs": "^1.2.0"
+    "@microsoft/kiota": "1.0.0"
   }
 }
