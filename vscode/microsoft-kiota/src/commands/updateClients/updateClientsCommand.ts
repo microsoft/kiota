@@ -1,4 +1,4 @@
-import { updateClients } from '@microsoft/kiota';
+import { KiotaLogEntry, updateClients } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 
 import { API_MANIFEST_FILE, extensionId } from "../../constants";
@@ -51,11 +51,11 @@ export class UpdateClientsCommand extends Command {
         title: vscode.l10n.t("Updating clients...")
       }, async (progress, _) => {
         const settings = getExtensionSettings(extensionId);
-        const updateResult: [] = await updateClients({
+        const updateResult = await updateClients({
           cleanOutput: settings.cleanOutput,
           clearCache: settings.clearCache,
           workspacePath: vscode.workspace.workspaceFolders![0].uri.fsPath
-        });
+        }) as KiotaLogEntry[];
         return updateResult;
       });
       if (res) {
