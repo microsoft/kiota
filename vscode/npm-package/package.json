@@ -11,6 +11,7 @@
     "lib": "lib",
     "test": "tests"
   },
+  "type": "module",
   "scripts": {
     "lint": "eslint",
     "test": "jest --detectOpenHandles",
