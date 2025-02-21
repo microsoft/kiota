@@ -14,9 +14,9 @@ docutils==0.21.2 ; python_version >= '3.7'
 
 exceptiongroup==1.2.2 ; python_version < '3.11'
 
-flit==3.10.1
+flit==3.11.0
 
-flit-core==3.10.1 ; python_version >= '3.6'
+flit-core==3.11.0 ; python_version >= '3.6'
 
 idna==3.10
 
