@@ -1,22 +1,22 @@
 {
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
-    "module": "CommonJS",
-    "target": "ES2020",
+    "module": "ES6",
+    "target": "ES2017",
     "lib": [
-      "ES2020"
+      "ES6"
     ],
     "sourceMap": true,
     "rootDir": ".",
     "outDir": "dist",
     "strict": true,
-    "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "types": [
       "node",
       "jest"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node"
   }
 }
