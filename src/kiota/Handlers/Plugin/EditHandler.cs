@@ -86,7 +86,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
-        CreateTelemetryTags(activitySource, pluginTypes, skipGeneration, output, includePatterns, excludePatterns,
+        CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId0, skipGeneration, output, includePatterns, excludePatterns,
             logLevel, out var tags);
         // Start span
         using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanEditPluginCommand,
@@ -190,8 +190,9 @@ internal class EditHandler : BaseKiotaCommandHandler
     }
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, List<PluginType>? pluginTypes,
-        bool skipGeneration, string? output, List<string>? includePatterns, List<string>? excludePatterns,
-        LogLevel? logLevel, out List<KeyValuePair<string, object?>>? tags)
+        SecuritySchemeType? pluginAuthType, string? pluginAuthRefId, bool skipGeneration, string? output,
+        List<string>? includePatterns, List<string>? excludePatterns, LogLevel? logLevel,
+        out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
@@ -201,8 +202,8 @@ internal class EditHandler : BaseKiotaCommandHandler
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
         if (pluginTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_types", pluginTypes.Select(static x => x.ToString("G").ToLowerInvariant()).ToArray()));
-        // if (pluginAuthType is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", redacted));
-        // if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_ref_id", redacted));
+        if (pluginAuthType is { } at) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_type", at.ToString("G")));
+        if (pluginAuthRefId is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.auth_ref_id", redacted));
         // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
         if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
