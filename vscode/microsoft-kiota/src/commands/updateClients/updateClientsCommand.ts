@@ -49,13 +49,14 @@ export class UpdateClientsCommand extends Command {
         location: vscode.ProgressLocation.Notification,
         cancellable: false,
         title: vscode.l10n.t("Updating clients...")
-      }, (progress, _) => {
+      }, async (progress, _) => {
         const settings = getExtensionSettings(extensionId);
-        return updateClients({
+        const updateResult: [] = await updateClients({
           cleanOutput: settings.cleanOutput,
           clearCache: settings.clearCache,
           workspacePath: vscode.workspace.workspaceFolders![0].uri.fsPath
         });
+        return updateResult;
       });
       if (res) {
         await exportLogsAndShowErrors(res, this.kiotaOutputChannel);

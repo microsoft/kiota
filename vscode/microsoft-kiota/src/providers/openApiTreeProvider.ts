@@ -338,7 +338,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     this.rawRootNode = createKiotaOpenApiNode(
                         clientNameOrPluginName,
                         '/',
-                        [this.rawRootNode],
+                        [this.rawRootNode!],
                         false,
                         false,
                         undefined,
