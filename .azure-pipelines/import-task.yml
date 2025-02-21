@@ -1,0 +1,4 @@
+version: v1.1.0
+steps:
+  - cmd: |
+      az acr import --name msgraphpperegistry --source $(packageUri) --image kiota:latest

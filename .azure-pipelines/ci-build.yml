@@ -156,6 +156,13 @@ extends:
             inputs:
               path: $(Build.ArtifactStagingDirectory)
               artifact: drop
+          
+              # Copy the YAML file to the artifact staging directory
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: $(Build.SourcesDirectory)/.azure-pipelines
+              Contents: import-task.yml
+              TargetFolder: $(Build.ArtifactStagingDirectory)
 
     - stage: CheckoutAndCopy  # Add a new stage
       jobs:
@@ -163,3 +170,4 @@ extends:
           parameters:
             directory: 'kiota'
             repoName: ReleasePipelines
+            branch: 'task/use-tasks'
