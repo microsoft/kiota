@@ -19,6 +19,9 @@
     "paths": {
       "glob": [
         "./node_modules/glob/dist/commonjs"
+      ],
+      "@microsoft/kiota": [
+        "../npm-package/dist/*"
       ]
     }
   }
