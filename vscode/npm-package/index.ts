@@ -1,14 +1,13 @@
-
-import { generateClient } from './lib/generateClient';
-import { generatePlugin } from './lib/generatePlugin';
-import { getKiotaTree } from './lib/getKiotaTree';
-import { getKiotaVersion } from './lib/getKiotaVersion';
-import { getManifestDetails } from './lib/getManifestDetails';
-import { getLanguageInformationForDescription, getLanguageInformationInternal } from './lib/languageInformation';
-import { migrateFromLockFile } from './lib/migrateFromLockFile';
-import { removeClient, removePlugin } from './lib/removeItem';
-import { searchDescription } from './lib/searchDescription';
-import { updateClients } from './lib/updateClients';
+const { generateClient } = require('./lib/generateClient');
+const { generatePlugin } = require('./lib/generatePlugin');
+const { getKiotaTree } = require('./lib/getKiotaTree');
+const { getKiotaVersion } = require('./lib/getKiotaVersion');
+const { getManifestDetails } = require('./lib/getManifestDetails');
+const { getLanguageInformationForDescription, getLanguageInformationInternal } = require('./lib/languageInformation');
+const { migrateFromLockFile } = require('./lib/migrateFromLockFile');
+const { removeClient, removePlugin } = require('./lib/removeItem');
+const { searchDescription } = require('./lib/searchDescription');
+const { updateClients } = require('./lib/updateClients');
 
 export {
     generateClient,
