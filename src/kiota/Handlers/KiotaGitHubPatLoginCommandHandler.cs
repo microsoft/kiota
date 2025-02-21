@@ -43,7 +43,8 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
         // Add this run to the command execution counter
-        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var (loggerFactory, logger) = GetLoggerAndFactory<PatAuthenticationProvider>(context);
         using (loggerFactory)
@@ -69,7 +70,7 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
             }
             finally
             {
-                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
     }
@@ -91,7 +92,7 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16) : null;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(1) : null;
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

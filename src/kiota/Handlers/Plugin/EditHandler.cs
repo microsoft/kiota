@@ -96,7 +96,8 @@ internal class EditHandler : BaseKiotaCommandHandler
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
         // Add this run to the command execution counter
-        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var className = className0.OrEmpty();
         var pluginAuthRefId = pluginAuthRefId0.OrEmpty();
@@ -184,7 +185,7 @@ internal class EditHandler : BaseKiotaCommandHandler
             }
             finally
             {
-                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
     }
@@ -195,7 +196,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(8)
         {
             new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
         } : null;

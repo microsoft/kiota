@@ -23,7 +23,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         new(TelemetryLabels.TagCommandName, "edit"),
         new(TelemetryLabels.TagCommandRevision, 1)
     ];
-
     public required Option<string> ClassOption
     {
         get; init;
@@ -111,7 +110,6 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
             namespaceName0, includePatterns, excludePatterns, structuredMimeTypes, logLevel, out var tags);
-
         // Start span
         using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanEditClientCommand,
             ActivityKind.Internal, startTime: startTime, parentContext: default,
@@ -119,7 +117,8 @@ internal class EditHandler : BaseKiotaCommandHandler
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
         // Add this run to the command execution counter
-        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
@@ -223,7 +222,7 @@ internal class EditHandler : BaseKiotaCommandHandler
             }
             finally
             {
-                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
     }
@@ -234,7 +233,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16) : null;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(10) : null;
         if (language is { } l) tags?.Add(new KeyValuePair<string, object?>(TelemetryLabels.TagGeneratorLanguage, l.ToString("G")));
         // if (typeAccessModifier is { } tam) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.type_access_modifier", tam.ToString("G")));
         if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));

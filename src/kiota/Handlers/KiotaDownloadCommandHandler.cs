@@ -74,7 +74,8 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
         // Add this run to the command execution counter
-        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         string outputPath = outputPath0.OrEmpty();
         string version = version0.OrEmpty();
@@ -113,7 +114,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             }
             finally
             {
-                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
     }
@@ -200,7 +201,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     {
         // set up telemetry tags
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(16)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(7)
             {
                 // TODO: value is always the same. Is collection useful?
                 new($"{TelemetryLabels.TagCommandParams}.search_term", redacted),

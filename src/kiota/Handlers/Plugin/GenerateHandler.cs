@@ -45,14 +45,15 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);
-
+        // Start span
         using var invokeActivity = activitySource?.StartActivity(TelemetryLabels.SpanGeneratePluginCommand,
             ActivityKind.Internal, startTime: startTime, parentContext: default,
             tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
         var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
         if (meterRuntime is null) stopwatch = null;
         // Add this run to the command execution counter
-        instrumentation?.CreateCommandExecutionCounter().Add(1, _commonTags);
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var className = className0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
@@ -127,7 +128,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             }
             finally
             {
-                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, _commonTags);
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
     }
@@ -136,7 +137,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(3)
         {
             new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
         } : null;
