@@ -2604,7 +2604,7 @@ public partial class KiotaBuilder
         var paramType = GetPrimitiveType(schema) ?? new()
         {
             IsExternal = true,
-            Name = schema.Items is not null && schema.Items.Type.ToIdentifier() is string name ? name : "null",
+            Name = schema.Items is not null && (schema.Items.Type & ~JsonSchemaType.Null)?.ToIdentifiers().FirstOrDefault() is string name ? name : "null",
         };
 
         paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
