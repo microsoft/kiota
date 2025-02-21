@@ -170,4 +170,3 @@ extends:
           parameters:
             directory: 'kiota'
             repoName: ReleasePipelines
-            branch: 'task/use-tasks'
