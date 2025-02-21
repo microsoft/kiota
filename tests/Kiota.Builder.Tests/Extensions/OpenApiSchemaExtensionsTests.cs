@@ -1054,22 +1054,22 @@ public class OpenApiSchemaExtensionsTests
             [
                 new OpenApiSchema()
                 {
-                    Type = JsonSchemaType.Number,
+                    Type = JsonSchemaType.Number | JsonSchemaType.Null,
                     Format = "double",
                 },
                 new OpenApiSchema()
                 {
-                    Type = JsonSchemaType.String,
+                    Type = JsonSchemaType.String | JsonSchemaType.Null,
                 },
                 new OpenApiSchema()
                 {
                     Enum =
                     [
-                        "INF",
+                        "-INF",
                         "INF",
                         "NaN",
                     ],
-                    Type = JsonSchemaType.String,
+                    Type = JsonSchemaType.String | JsonSchemaType.Null,
                 }
             ]
         };
@@ -1084,18 +1084,18 @@ public class OpenApiSchemaExtensionsTests
             [
                 new OpenApiSchema()
                 {
-                    Type = JsonSchemaType.Number,
+                    Type = JsonSchemaType.Number | JsonSchemaType.Null,
                     Format = "double",
                 },
                 new OpenApiSchema()
                 {
-                    Type = JsonSchemaType.String,
+                    Type = JsonSchemaType.String | JsonSchemaType.Null,
                 },
                 new OpenApiSchema()
                 {
                     Enum =
                     [
-                        "INF",
+                        "-INF",
                         "INF",
                         "NaN",
                     ]

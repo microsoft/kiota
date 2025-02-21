@@ -258,6 +258,8 @@ public static class OpenApiSchemaExtensions
     private static readonly HashSet<JsonSchemaType> oDataTypes = [
         JsonSchemaType.Number,
         JsonSchemaType.Integer,
+        JsonSchemaType.Number | JsonSchemaType.Null,
+        JsonSchemaType.Integer | JsonSchemaType.Null,
     ];
     private static readonly Func<IOpenApiSchema, bool> isODataType = static x => x.Type is not null && oDataTypes.Contains(x.Type.Value);
     private static readonly Func<IOpenApiSchema, bool> isStringType = static x => x is { Type: JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null) };
