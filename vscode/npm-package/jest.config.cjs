@@ -5,7 +5,7 @@ module.exports = {
     '**/?(*.)+(spec).ts?(x)'
   ],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
+    '^.+\\.ts?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
       diagnostics: false
     }],

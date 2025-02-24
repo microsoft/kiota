@@ -13,7 +13,6 @@
     "allowSyntheticDefaultImports": true,
     "types": [
       "node",
-      "jest"
     ],
     "skipLibCheck": true,
     "paths": {
@@ -21,7 +20,7 @@
         "./node_modules/glob/dist/commonjs"
       ],
       "@microsoft/kiota": [
-        "../npm-package/dist/*"
+        "../npm-package/dist/cjs/*"
       ]
     }
   }
