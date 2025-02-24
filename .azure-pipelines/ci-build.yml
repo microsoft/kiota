@@ -73,6 +73,11 @@ extends:
                   versionSpec: ">=5.2.0"
                   checkLatest: true
 
+              - task: 1ES.PublishPipelineArtifact@1
+                inputs:
+                  path: $(Build.ArtifactStagingDirectory)
+                  artifact: drop
+
       - stage: CheckoutAndCopy # Add a new stage
         jobs:
           - template: pipelines/templates/checkout-and-copy-1es.yml@ReleasePipelines
