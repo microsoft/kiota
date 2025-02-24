@@ -43,7 +43,7 @@ internal static class KiotaHostExtensions
                 {
                     mp.AddMeter($"{TelemetryLabels.ScopeName}*")
                         .AddHttpClientInstrumentation()
-                        // TODO: Decide if runtime metrics are useful
+                        // Decide if runtime metrics are useful
                         .AddRuntimeInstrumentation()
                         .SetExemplarFilter(ExemplarFilterType.TraceBased);
                 })

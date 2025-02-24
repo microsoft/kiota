@@ -64,7 +64,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var instrumentation = host.Services.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
-        CreateTelemetryTags(activitySource, searchTerm, version0, outputPath0, cleanOutput, clearCache, disableSSLValidation,
+        CreateTelemetryTags(activitySource, version0, outputPath0, cleanOutput, clearCache, disableSSLValidation,
             logLevel, out var tags);
         // Start span
         using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanDownloadCommand,
@@ -195,7 +195,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         return (path, 0);
     }
 
-    private static void CreateTelemetryTags(ActivitySource? activitySource, string searchTerm, string? version,
+    private static void CreateTelemetryTags(ActivitySource? activitySource, string? version,
         string? outputPath, bool cleanOutput, bool clearCache, bool disableSslValidation, LogLevel? logLevel,
         out List<KeyValuePair<string, object?>>? tags)
     {
@@ -203,7 +203,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(7)
             {
-                // TODO: value is always the same. Is collection useful?
+                // search term is required, so it's always available
                 new($"{TelemetryLabels.TagCommandParams}.search_term", redacted),
                 new($"{TelemetryLabels.TagCommandParams}.clean_output", cleanOutput),
                 new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),

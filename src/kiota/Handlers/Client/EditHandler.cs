@@ -235,19 +235,14 @@ internal class EditHandler : BaseKiotaCommandHandler
         // set up telemetry tags
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(10) : null;
         if (language is { } l) tags?.Add(new KeyValuePair<string, object?>(TelemetryLabels.TagGeneratorLanguage, l.ToString("G")));
-        // if (typeAccessModifier is { } tam) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.type_access_modifier", tam.ToString("G")));
         if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));
         if (excludeBackwardCompatible is { } ebc) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", ebc));
-        // if (includeAdditionalData is { } iad) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_additional_data", iad));
         tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration));
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (output is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.output", redacted));
         if (namespaceName is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.namespace", redacted));
-        // if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));
-        // if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
         if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
         if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
-        // if (disabledValidationRules is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.disable_validation_rules", disabledValidationRules));
         if (structuredMimeTypes is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.structured_media_types", structuredMimeTypes.ToArray()));
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
