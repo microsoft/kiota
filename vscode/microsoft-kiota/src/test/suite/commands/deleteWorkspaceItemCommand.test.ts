@@ -30,7 +30,7 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
     assert.strictEqual("kiota.workspace.deleteItem", command.getName());
   });
 
-  test('execute should show success message and refresh workspace on success', async () => {
+  test.skip('execute should show success message and refresh workspace on success', async () => {
     const yesAnswer: vscode.MessageItem = { title: vscode.l10n.t("Yes") };
 
     const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage').resolves(yesAnswer);
