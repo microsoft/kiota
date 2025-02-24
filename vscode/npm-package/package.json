@@ -2,7 +2,6 @@
   "name": "@microsoft/kiota",
   "version": "1.0.0",
   "description": "npm package exposing Kiota CLI functionality to TypeScript",
-  "main": "index.ts",
   "repository": {
     "url": "https://github.com/microsoft/kiota.git",
     "type": "git"
@@ -11,11 +10,21 @@
     "lib": "lib",
     "test": "tests"
   },
-  "type": "module",
+  "main": "dist/esm/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    "import": "./dist/esm/index.js",
+    "require": "./dist/cjs/index.js"
+  },
+  "types": "dist/esm/types/index.d.ts",
   "scripts": {
     "lint": "eslint",
-    "test": "jest --detectOpenHandles",
-    "build": "tsc"
+    "test": "jest --detectOpenHandles --verbose",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "clean": "rimraf dist",
+    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs"
   },
   "keywords": [
     "Kiota"

@@ -27,6 +27,7 @@
     "@types/vscode": "^1.97.0",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
+    "cpx": "^1.5.0",
     "eslint": "^9.20.1",
     "glob": "^11.0.1",
     "lerna": "^8.2.0",
