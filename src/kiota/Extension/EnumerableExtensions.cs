@@ -13,4 +13,8 @@ internal static class EnumerableExtensions
     {
         return source ?? [];
     }
+    public static T[] OrEmpty<T>(this T[]? source)
+    {
+        return source ?? [];
+    }
 }
