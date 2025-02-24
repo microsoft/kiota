@@ -1,9 +1,10 @@
 ﻿using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
 
-public class GetWithBody : ValidationRule<OpenApiPathItem>
+public class GetWithBody : ValidationRule<IOpenApiPathItem>
 {
     public GetWithBody() : base(nameof(GetWithBody), static (context, pathItem) =>
     {
