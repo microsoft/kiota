@@ -220,7 +220,7 @@ internal class
     {
         // set up telemetry tags
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(7)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(6)
         {
             new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
         } : null;
