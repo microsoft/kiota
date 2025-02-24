@@ -13,6 +13,7 @@ module.exports = {
   },
   transformIgnorePatterns: [
     '/node_modules/',
+    '/dist/',
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
