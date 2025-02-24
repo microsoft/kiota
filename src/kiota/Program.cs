@@ -13,6 +13,7 @@ static class Program
     {
         var rootCommand = KiotaHost.GetRootCommand();
         var parser = new CommandLineBuilder(rootCommand)
+            .UseDefaults()
             .UseHost(static args => Host.CreateDefaultBuilder(args).ConfigureKiotaTelemetryServices())
             .Build();
         var result = await parser.InvokeAsync(args);

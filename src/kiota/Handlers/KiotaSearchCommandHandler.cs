@@ -6,10 +6,10 @@ using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
 using System.Diagnostics;
 using System.Text.Json;
-using Kiota.Builder;
-using Kiota.Builder.SearchProviders;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder;
+using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -143,7 +143,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             new($"{TelemetryLabels.TagCommandParams}.search_term", redacted),
             new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
         } : null;
-        
+
         if (version is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.version", redacted));
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
