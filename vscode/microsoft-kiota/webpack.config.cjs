@@ -31,7 +31,10 @@ const extensionConfig = {
   },
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    alias: {
+      '@microsoft/kiota': path.resolve(__dirname, '../npm-package/dist/cjs'),
+    }
   },
   module: {
     rules: [
@@ -51,4 +54,5 @@ const extensionConfig = {
     level: "log", // enables logging required for problem matchers
   },
 };
+console.log('Resolving @microsoft/kiota from:', path.resolve(__dirname, '../npm-package/dist/cjs'));
 module.exports = [ extensionConfig ];
