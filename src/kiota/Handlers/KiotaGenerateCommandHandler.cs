@@ -78,8 +78,8 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
-        // Get options
         WarnShouldUseKiotaConfigClientsCommands();
+        // Get options
         string? output = context.ParseResult.GetValueForOption(OutputOption);
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);

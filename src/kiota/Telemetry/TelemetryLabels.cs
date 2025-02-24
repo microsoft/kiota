@@ -39,4 +39,5 @@ public static class TelemetryLabels
     public const string SpanInfoCommand = "Info InvokeAsync()";
     public const string SpanSearchCommand = "Search InvokeAsync()";
     public const string SpanShowCommand = "Show InvokeAsync()";
+    public const string SpanUpdateCommand = "Update InvokeAsync()";
 }
