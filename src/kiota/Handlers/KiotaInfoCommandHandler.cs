@@ -5,16 +5,16 @@ using System.CommandLine.IO;
 using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
 using System.Diagnostics;
-using Kiota.Builder;
-using Kiota.Builder.Configuration;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Writers;
 
 namespace kiota.Handlers;
-internal class 
+internal class
     KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
 {
     private readonly KeyValuePair<string, object?>[] _commonTags =

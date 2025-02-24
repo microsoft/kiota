@@ -37,4 +37,6 @@ public static class TelemetryLabels
     public const string SpanGitHubLogoutCommand = "Logout/GitHub InvokeAsync()";
     public const string SpanGitHubPatLoginCommand = "Login/GitHub/Pat InvokeAsync()";
     public const string SpanInfoCommand = "Info InvokeAsync()";
+    public const string SpanSearchCommand = "Search InvokeAsync()";
+    public const string SpanShowCommand = "Show InvokeAsync()";
 }
