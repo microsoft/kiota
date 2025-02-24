@@ -151,14 +151,7 @@ extends:
                 # Create the final archive
                 cd $(Build.ArtifactStagingDirectory)
                 tar -czf kiota.tar.gz manifest.json config.json layer.tar
-          
-            # Copy the YAML file to the artifact staging directory
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: $(Build.SourcesDirectory)/.azure-pipelines
-              Contents: import-task.yml
-              TargetFolder: $(Build.ArtifactStagingDirectory)
-              
+
           - task: 1ES.PublishPipelineArtifact@1
             inputs:
               path: $(Build.ArtifactStagingDirectory)
