@@ -528,7 +528,7 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.2.0",
-    "eslint": "^9.20.1",
+    "eslint": "^9.21.0",
     "glob": "^11.0.1",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
