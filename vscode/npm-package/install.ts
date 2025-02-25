@@ -4,7 +4,10 @@ import { https } from "follow-redirects";
 import * as fs from 'fs';
 import * as path from 'path';
 
-const runtimeJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'runtime.json'), 'utf8'));
+const runtimeJsonPath = require.resolve('@microsoft/kiota/runtime.json');
+const runtimeJson = JSON.parse(fs.readFileSync(runtimeJsonPath, 'utf8'));
+
+console.log('Loaded runtime.json from:', runtimeJsonPath);
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
