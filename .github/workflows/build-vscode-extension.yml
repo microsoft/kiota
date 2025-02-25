@@ -48,8 +48,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
-      - name: Install dependencies
-        run: npm install
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install
         working-directory: vscode
       - run: npm run lint
         working-directory: vscode
@@ -70,12 +72,11 @@ jobs:
       #     projectBaseDir: vscode
       - run: npm run package:${{ matrix.builds.id }}
         working-directory: vscode
-
       - run: npm i -g @vscode/vsce
         if: matrix.builds.id == 'vscode'
       - run: | 
           npm ls @microsoft/kiota
-          vsce package 
+          vsce package --no-dependencies
           vsce ls
         if: matrix.builds.id == 'vscode'
         working-directory: vscode/microsoft-kiota
