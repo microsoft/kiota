@@ -25,7 +25,8 @@
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
     "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "package": "npm pack"
   },
   "keywords": [
     "Kiota"
