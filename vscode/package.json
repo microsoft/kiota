@@ -14,7 +14,7 @@
     "test": "npm run test:package && npm run test:vscode",
     "test:vscode:coverage": "lerna run test:coverage --scope=kiota",
     "test:package:coverage": "lerna run test:coverage --scope=\"@microsoft/kiota\"",
-    "test:coverage": "npm i && npm run build && npm run test:package:coverage && npm run test:vscode:coverage"
+    "test:coverage": "npm run test:package:coverage && npm run test:vscode:coverage"
   },
   "keywords": [
     "Kiota"

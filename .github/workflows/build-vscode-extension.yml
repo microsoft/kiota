@@ -20,9 +20,16 @@ jobs:
         id: checksecret_job
         run: |
           echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-  build_extension:
+  build:
     needs: [checksecret]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        coverage:
+          - name: "VS Code Extension"
+            path: "./microsoft-kiota/coverage"
+          - name: "Npm Package"
+            path: "./npm-package/coverage"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,15 +57,28 @@ jobs:
         if: runner.os != 'Linux'
         run: npm run test
         working-directory: vscode/microsoft-kiota
+      - name: Code Coverage Report ${{ matrix.coverage.name }}
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ${{ matrix.coverage.path }}/cobertura-coverage.xml
+          format: markdown
+          hide_branch_rate: false
+          output: both
+          badge: true
+      - name: Archive coverage files
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage files for ${{ matrix.coverage.name }}
+          path: ${{ matrix.coverage.path }}
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: vscode/microsoft-kiota
+          projectBaseDir: vscode
       - run: npm run package
-        working-directory: vscode/microsoft-kiota
+        working-directory: vscode
       - run: npm i -g @vscode/vsce
       - run: vsce package
         working-directory: vscode/microsoft-kiota

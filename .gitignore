@@ -451,3 +451,4 @@ it/openapi.yaml
 
 idempotency-results/
 vscode/npm-package/dist/*
+vscode/npm-package/coverage/*

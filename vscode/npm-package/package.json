@@ -19,12 +19,13 @@
   "types": "dist/esm/types/index.d.ts",
   "scripts": {
     "lint": "eslint",
-    "test": "jest --detectOpenHandles",
+    "test": "jest",
     "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
-    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs"
+    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "Kiota"
