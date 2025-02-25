@@ -76,10 +76,13 @@ jobs:
 
       - run: npm run package:${{ matrix.builds.id }}
         working-directory: vscode
-      - run: npm i -g @vscode/vsce
+      - run: | 
+          npm i -g @vscode/vsce
+          npm run build
         if: matrix.builds.id == 'vscode'
       - run: | 
-          npm ls @microsoft/kiota
+          ls -l node_modules/@microsoft/kiota
+          cat node_modules/@microsoft/kiota/runtime.json
           vsce package --no-dependencies
           vsce ls
         if: matrix.builds.id == 'vscode'
