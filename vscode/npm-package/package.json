@@ -24,7 +24,7 @@
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
-    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs",
+    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/esm && cpx runtime.json dist/cjs && cpx package.json dist/cjs && cpx package.json dist/esm",
     "test:coverage": "jest --coverage",
     "package": "npm pack"
   },
