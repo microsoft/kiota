@@ -70,6 +70,21 @@ jobs:
       #     projectBaseDir: vscode
       - run: npm run package:${{ matrix.builds.id }}
         working-directory: vscode
+
+      - name: Install npm package from local [temporary]
+        if: matrix.builds.id == 'vscode'
+        run: | 
+          npm install
+          npm run build
+          npm pack
+        working-directory: vscode/npm-package
+
+      - name: Update VS Code extension's package.json to use local package
+        if: matrix.builds.id == 'vscode'
+        run: |
+          PACKAGE_PATH=$(realpath vscode/npm-package/*.tgz)
+          jq --arg pkg "$PACKAGE_PATH" '.dependencies["@microsoft/kiota"] = $pkg' vscode/microsoft-kiota/package.json > temp.json && mv temp.json vscode/microsoft-kiota/package.json
+
       - run: npm i -g @vscode/vsce
         if: matrix.builds.id == 'vscode'
       - run: vsce package --no-dependencies
