@@ -51,7 +51,7 @@ jobs:
         working-directory: vscode
       - name: run tests(linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test
+        run: xvfb-run -a npm run test:coverage
         working-directory: vscode
       - name: run tests
         if: runner.os != 'Linux'
