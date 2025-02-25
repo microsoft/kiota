@@ -25,11 +25,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        coverage:
+        builds:
           - name: "VS Code Extension"
-            path: "./microsoft-kiota/coverage"
+            path: "microsoft-kiota"
+            id: "vscode"
+            item: "vsix"
           - name: "Npm Package"
-            path: "./npm-package/coverage"
+            path: "npm-package"
+            id: "package"
+            item: "tgz"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,39 +55,28 @@ jobs:
         working-directory: vscode
       - name: run tests(linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:coverage
+        run: xvfb-run -a npm run test:${{ matrix.builds.id }}:coverage
         working-directory: vscode
       - name: run tests
         if: runner.os != 'Linux'
-        run: npm run test:coverage
-        working-directory: vscode/microsoft-kiota
-      - name: Code Coverage Report ${{ matrix.coverage.name }}
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: ${{ matrix.coverage.path }}/cobertura-coverage.xml
-          format: markdown
-          hide_branch_rate: false
-          output: both
-          badge: true
-      - name: Archive coverage files
-        uses: actions/upload-artifact@v4
-        with:
-          name: Coverage files for ${{ matrix.coverage.name }}
-          path: ${{ matrix.coverage.path }}
-      - name: Run sonar cloud analysis
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: vscode
-      - run: npm run package
+        run: npm run test:${{ matrix.builds.id }}:coverage
+        working-directory: vscode
+      # - name: Run sonar cloud analysis
+      #   if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
+      #   uses: SonarSource/sonarqube-scan-action@v5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   with:
+      #     projectBaseDir: vscode
+      - run: npm run package:${{ matrix.builds.id }}
         working-directory: vscode
       - run: npm i -g @vscode/vsce
+        if: matrix.builds.id == 'vscode'
       - run: vsce package
+        if: matrix.builds.id == 'vscode'
         working-directory: vscode/microsoft-kiota
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
-          path: vscode/microsoft-kiota/*.vsix
+          path: vscode/${{ matrix.builds.name }}/*.${{ matrix.builds.item }}

@@ -10,10 +10,10 @@
     "lint": "lerna run lint",
     "build": "npm run build -w npm-package",
     "test:vscode": "lerna run build && lerna run test --scope=kiota",
-    "test:package": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test --scope=\"@microsoft/kiota\"",
-    "test": "npm run test:package && npm run test:vscode",
     "test:vscode:coverage": "lerna run build && lerna run test:coverage --scope=kiota",
+    "test:package": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test --scope=\"@microsoft/kiota\"",
     "test:package:coverage": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test:coverage --scope=\"@microsoft/kiota\"",
+    "test": "npm run test:package && npm run test:vscode",
     "test:coverage": "npm run test:package:coverage && npm run test:vscode:coverage"
   },
   "keywords": [
