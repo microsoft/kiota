@@ -26,6 +26,7 @@
     "clean": "rimraf dist",
     "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/esm && cpx runtime.json dist/cjs && cpx package.json dist/cjs && cpx package.json dist/esm",
     "test:coverage": "jest --coverage",
+    "prepack": "npm run build",
     "package": "npm pack"
   },
   "keywords": [
