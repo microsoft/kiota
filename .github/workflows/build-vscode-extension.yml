@@ -84,6 +84,7 @@ jobs:
         run: |
           PACKAGE_PATH=$(realpath vscode/npm-package/*.tgz)
           jq --arg pkg "$PACKAGE_PATH" '.dependencies["@microsoft/kiota"] = $pkg' vscode/microsoft-kiota/package.json > temp.json && mv temp.json vscode/microsoft-kiota/package.json
+          cat vscode/microsoft-kiota/package.json
 
       - run: npm i -g @vscode/vsce
         if: matrix.builds.id == 'vscode'
