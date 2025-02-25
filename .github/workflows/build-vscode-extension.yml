@@ -55,7 +55,7 @@ jobs:
         working-directory: vscode
       - name: run tests
         if: runner.os != 'Linux'
-        run: npm run test
+        run: npm run test:coverage
         working-directory: vscode/microsoft-kiota
       - name: Code Coverage Report ${{ matrix.coverage.name }}
         uses: irongut/CodeCoverageSummary@v1.3.0
