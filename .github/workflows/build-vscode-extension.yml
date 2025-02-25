@@ -74,16 +74,20 @@ jobs:
           args: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
+      - run: npm run build
+        working-directory: packages/kiota
+      - run: npm install
+      - run: lerna link
+      - run: ls -l node_modules/@microsoft/kiota || echo "kiota is missing!"
+        working-directory: vscode/microsoft-kiota
+      - run: cat node_modules/@microsoft/kiota/runtime.json || echo "runtime.json missing!"
+        working-directory: vscode/microsoft-kiota
       - run: npm run package:${{ matrix.builds.id }}
         working-directory: vscode
       - run: npm i -g @vscode/vsce
         if: matrix.builds.id == 'vscode'
-      - run: npm run build
-        if: matrix.builds.id == 'vscode'
-        working-directory: vscode
-      - run: | 
-          ls -l node_modules/@microsoft/kiota
-          cat node_modules/@microsoft/kiota/runtime.json
+      - run: |
+          npm ls @microsoft/kiota
           vsce package --no-dependencies
           vsce ls
         if: matrix.builds.id == 'vscode'
