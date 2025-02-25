@@ -79,4 +79,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
-          path: vscode/${{ matrix.builds.name }}/*.${{ matrix.builds.item }}
+          path: vscode/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}
