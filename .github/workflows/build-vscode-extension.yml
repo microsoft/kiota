@@ -72,13 +72,11 @@ jobs:
         working-directory: vscode
       - run: npm i -g @vscode/vsce
         if: matrix.builds.id == 'vscode'
-      - run: |
-          vsce package
-          find vscode/microsoft-kiota -type f -iname '*.js' -exec rm -f {} \;
+      - run: vsce package --no-dependencies
         if: matrix.builds.id == 'vscode'
         working-directory: vscode/microsoft-kiota
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.builds.name }}
+          name: ${{ matrix.builds.path }}
           path: vscode/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}
