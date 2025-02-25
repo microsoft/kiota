@@ -1193,8 +1193,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", result);
         Assert.Contains("complexType2Value != null", result);
         Assert.Contains("writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", result);
-        AssertExtensions.Before("writer.writeStringValue(null, stringValue)", "writer.writeObjectValue<ComplexType1>(null, complexType1Value, [complexType3Value])", result);
         AssertExtensions.Before("writer.writeStringValue(null, stringValue)", "writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", result);
+        AssertExtensions.Before("writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", "writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", result);
         AssertExtensions.Before("writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", "writer.writeObjectValue<ComplexType1>(null, complexType1Value, [complexType3Value])", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
