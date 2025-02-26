@@ -51,7 +51,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: vscode/${{ matrix.builds.path }}
+        working-directory: vscode
+
       - run: npm run lint
         working-directory: vscode/${{ matrix.builds.path }}
 
