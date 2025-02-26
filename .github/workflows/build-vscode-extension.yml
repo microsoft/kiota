@@ -48,21 +48,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
-      - name: Clean install dependencies
-        run: |
-          rm -rf node_modules package-lock.json
-          npm install
-        working-directory: vscode
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: vscode/${{ matrix.builds.path }}
       - run: npm run lint
-        working-directory: vscode
+        working-directory: vscode/${{ matrix.builds.path }}
+
+
       - name: run tests(linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
+        working-directory: vscode/${{ matrix.builds.path }}
+
       - name: run tests
         if: runner.os != 'Linux'
         run: npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
+        working-directory: vscode/${{ matrix.builds.path }}
               
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
@@ -74,22 +76,30 @@ jobs:
           args: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
-      - run: ls -l node_modules/@microsoft/kiota || echo "kiota is missing!"
-        if: matrix.builds.id == 'vscode'
-        working-directory: vscode/microsoft-kiota
-      - run: cat node_modules/@microsoft/kiota/runtime.json || echo "runtime.json missing!"
-        if: matrix.builds.id == 'vscode'
-        working-directory: vscode/microsoft-kiota
-      - run: npm run package:${{ matrix.builds.id }}
-        working-directory: vscode
-      - run: npm i -g @vscode/vsce
-        if: matrix.builds.id == 'vscode'
+      - run: npm run package
+        if: matrix.builds.id == 'package'
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      # applies specifically to vscode 
       - run: |
-          npm ls @microsoft/kiota
-          vsce package --no-dependencies
-          vsce ls
+          npm i -g @vscode/vsce
+
+          cd ../npm-package
+          npm install
+          npm run package
+
+          cd ../microsoft-kiota
+
+          npm ci
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+
+          vsce package
+        working-directory: vscode/${{ matrix.builds.path }}
+        name: 'Package VSCode extension'
         if: matrix.builds.id == 'vscode'
-        working-directory: vscode/microsoft-kiota
+
+        # back to common operations
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

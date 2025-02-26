@@ -4,9 +4,7 @@ import { https } from "follow-redirects";
 import * as fs from 'fs';
 import * as path from 'path';
 
-const packageRoot = path.dirname(require.resolve('./package.json'));
-const runtimeJsonPath = path.join(packageRoot, 'runtime.json');
-const runtimeJson = JSON.parse(fs.readFileSync(runtimeJsonPath, 'utf8'));
+import runtimeJson from './runtime.json';
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
