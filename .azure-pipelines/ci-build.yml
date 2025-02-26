@@ -100,7 +100,7 @@ stages:
 
         command: build
 
-        containerRegistry: 'ACR Push Test'
+        containerRegistry: 'Docker ACR Push SN Test'
 
         repository: '$(IMAGE_NAME)'
 
@@ -260,7 +260,7 @@ stages:
 
         command: login
 
-        containerRegistry: 'ACR Push Test'
+        containerRegistry: 'Docker ACR Push SN Test'
  
     # For nightly builds using Docker CLI directly with buildx
 
