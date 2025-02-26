@@ -51,14 +51,15 @@
     "@types/vscode": "^1.97.0",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
+    "cpx": "^1.5.0",
     "eslint": "^9.20.1",
     "glob": "^11.0.1",
-    "typemoq": "^2.1.0",
-    "typescript": "^5.7.3",
-    "cpx": "^1.5.0",
     "jest": "^29.7.0",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.2.6",
-    "ts-loader": "^9.5.2"
+    "ts-loader": "^9.5.2",
+    "typemoq": "^2.1.0",
+    "typescript": "^5.7.3"
   },
   "files": [
     "runtime.json"
