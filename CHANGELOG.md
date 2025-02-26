@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed mapping of Binary Types to array buffer in TypeScript. [#6124](https://github.com/microsoft/kiota/issues/6124)
 - Updated kiota generate classname flag validator to prevent invalid class names. [#6187](https://github.com/microsoft/kiota/issues/6187)
 - Fixed enum serialization for union and intersection types in Dart. [#6201](https://github.com/microsoft/kiota/pull/6201)
+- Added mapping for Bundle package in PHP to show up in Kiota commands. [#4636](https://github.com/microsoft/kiota/issues/4636)
 
 ## [1.23.0] - 2025-02-06
 
