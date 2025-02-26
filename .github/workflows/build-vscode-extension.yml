@@ -61,6 +61,7 @@ jobs:
       - run: npm i -g @vscode/vsce
       - run: |
           cd ../npm-package
+          npm install
           npm run package
           cd ../microsoft-kiota
           npm install ../npm-package/microsoft-kiota-1.0.0.tgz
