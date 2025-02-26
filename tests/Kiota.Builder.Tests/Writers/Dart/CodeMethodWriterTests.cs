@@ -272,6 +272,10 @@ public sealed class CodeMethodWriterTests : IDisposable
             Name = "ComplexType2",
             Kind = CodeClassKind.Model,
         }).First();
+        var enumType = root.AddEnum(new CodeEnum
+        {
+            Name = "EnumType",
+        }).First();
         var unionType = root.AddClass(new CodeClass
         {
             Name = "UnionType",
@@ -300,6 +304,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Name = "String",
         };
+        var eType = new CodeType
+        {
+            Name = "SomeEnum",
+            TypeDefinition = enumType,
+        };
         unionType.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType
         {
             Name = "ComplexType1",
@@ -313,6 +322,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         unionType.OriginalComposedType.AddType(cType1);
         unionType.OriginalComposedType.AddType(cType2);
         unionType.OriginalComposedType.AddType(sType);
+        unionType.OriginalComposedType.AddType(eType);
         unionType.AddProperty(new CodeProperty
         {
             Name = "complexType1Value",
@@ -376,6 +386,27 @@ public sealed class CodeMethodWriterTests : IDisposable
                 Kind = CodeMethodKind.Getter,
             }
         });
+        unionType.AddProperty(new CodeProperty
+        {
+            Name = "enumValue",
+            Type = eType,
+            Kind = CodePropertyKind.Custom,
+            Setter = new CodeMethod
+            {
+                Name = "setEnumValue",
+                ReturnType = new CodeType
+                {
+                    Name = "void"
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new CodeMethod
+            {
+                Name = "getEnumValue",
+                ReturnType = eType,
+                Kind = CodeMethodKind.Getter,
+            },
+        });
         return unionType;
     }
     private CodeClass AddIntersectionType()
@@ -394,6 +425,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Name = "ComplexType3",
             Kind = CodeClassKind.Model,
+        }).First();
+        var enumType = root.AddEnum(new CodeEnum
+        {
+            Name = "EnumType",
         }).First();
         var intersectionType = root.AddClass(new CodeClass
         {
@@ -443,10 +478,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Name = "String",
         };
+        var eType = new CodeType
+        {
+            Name = "SomeEnum",
+            TypeDefinition = enumType,
+        };
         intersectionType.OriginalComposedType.AddType(cType1);
         intersectionType.OriginalComposedType.AddType(cType2);
         intersectionType.OriginalComposedType.AddType(cType3);
         intersectionType.OriginalComposedType.AddType(sType);
+        intersectionType.OriginalComposedType.AddType(eType);
         intersectionType.AddProperty(new CodeProperty
         {
             Name = "complexType1Value",
@@ -530,6 +571,27 @@ public sealed class CodeMethodWriterTests : IDisposable
                 ReturnType = sType,
                 Kind = CodeMethodKind.Getter,
             }
+        });
+        intersectionType.AddProperty(new CodeProperty
+        {
+            Name = "enumValue",
+            Type = eType,
+            Kind = CodePropertyKind.Custom,
+            Setter = new()
+            {
+                Name = "setEnumValue",
+                ReturnType = new CodeType
+                {
+                    Name = "void",
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new()
+            {
+                Name = "getEnumValue",
+                ReturnType = eType,
+                Kind = CodeMethodKind.Getter,
+            },
         });
         return intersectionType;
     }
@@ -1092,6 +1154,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.writeStringValue(null, stringValue)", result);
         Assert.Contains("complexType2Value != null", result);
         Assert.Contains("writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", result);
+        Assert.Contains("enumValue != null", result);
+        Assert.Contains("writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1125,9 +1189,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.writeObjectValue<ComplexType1>(null, complexType1Value, [complexType3Value])", result);
         Assert.Contains("stringValue != null", result);
         Assert.Contains("writer.writeStringValue(null, stringValue)", result);
+        Assert.Contains("enumValue != null", result);
+        Assert.Contains("writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", result);
         Assert.Contains("complexType2Value != null", result);
         Assert.Contains("writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", result);
-        AssertExtensions.Before("writer.writeStringValue(null, stringValue)", "writer.writeObjectValue<ComplexType1>(null, complexType1Value, [complexType3Value])", result);
+        AssertExtensions.Before("writer.writeStringValue(null, stringValue)", "writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", result);
+        AssertExtensions.Before("writer.writeEnumValue<EnumType>(null, enumValue, (e) => e?.value)", "writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", result);
         AssertExtensions.Before("writer.writeCollectionOfObjectValues<ComplexType2>(null, complexType2Value)", "writer.writeObjectValue<ComplexType1>(null, complexType1Value, [complexType3Value])", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
