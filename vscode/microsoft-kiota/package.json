@@ -516,7 +516,7 @@
     "test-with-coverage": "npm run pretest && vscode-test --coverage"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^4.0.1",
+    "@stylistic/eslint-plugin-ts": "^4.1.0",
     "@types/adm-zip": "^0.5.7",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
