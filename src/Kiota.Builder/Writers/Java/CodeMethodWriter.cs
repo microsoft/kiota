@@ -799,7 +799,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         }
         return propertyType switch
         {
-            "byte[]" => "getByteArrayValue()",
+            "Byte[]" => "getByteArrayValue()",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"get{propertyType}Value()",
             _ => $"getObjectValue({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})",
         };
@@ -822,7 +822,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         }
         return propertyType switch
         {
-            "byte[]" => "writeByteArrayValue",
+            "Byte[]" => "writeByteArrayValue",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"write{propertyType}Value",
             _ => "writeObjectValue",
         };
