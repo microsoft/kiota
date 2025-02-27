@@ -116,17 +116,18 @@ jobs:
       - run: |
           npm i -g @vscode/vsce
 
-          cd ../npm-package
+          cd npm-package
           npm install
           npm run package
 
-          cd ../microsoft-kiota
+          cd ..
+          npm install
 
-          npm ci
+          cd microsoft-kiota
           npm install ../npm-package/microsoft-kiota-1.0.0.tgz
 
           vsce package
-        working-directory: vscode/${{ matrix.builds.path }}
+        working-directory: vscode
         name: 'Package VSCode extension'
         if: matrix.builds.id == 'vscode'
 
