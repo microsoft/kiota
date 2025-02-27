@@ -57,40 +57,42 @@ jobs:
         run: npm run lint
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests(linux) - ${{ matrix.builds.id }}
+      - name: run tests(linux) - package
         if: runner.os == 'Linux' && matrix.builds.id == 'package'
         run: xvfb-run -a npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests - ${{ matrix.builds.id }}
+      - name: run tests - package
         if: runner.os != 'Linux' && matrix.builds.id == 'package'
         run: npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests(linux) - - ${{ matrix.builds.id }}
+      - name: run tests(linux) - vscode
         if: runner.os == 'Linux' && matrix.builds.id == 'vscode'
         run: |
-          cd ../npm-package
+          cd npm-package
           npm install
           npm run package
 
-          cd ../microsoft-kiota
+          cd ..
+          npm install
 
-          npm ci
+          cd microsoft-kiota
           npm install ../npm-package/microsoft-kiota-1.0.0.tgz
           xvfb-run -a npm run test:coverage
-        working-directory: vscode/${{ matrix.builds.path }}
+        working-directory: vscode
 
-      - name: run tests - - ${{ matrix.builds.id }}
+      - name: run tests - vscode
         if: runner.os != 'Linux' && matrix.builds.id == 'vscode'
         run: |
-          cd ../npm-package
+          cd npm-package
           npm install
           npm run package
 
-          cd ../microsoft-kiota
+          cd ..
+          npm install
 
-          npm ci
+          cd microsoft-kiota
           npm install ../npm-package/microsoft-kiota-1.0.0.tgz
           npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
