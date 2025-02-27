@@ -2,12 +2,22 @@ trigger:
   branches:
     include:
       - main
-      - azure-pipelines # Ensuring it triggers on your preview branch
-
+      - azure-pipelines
   paths:
     include:
-      - Dockerfile
       - src/**
+      - .azure-pipelines/**
+  tags:
+    include:
+      - v*
+
+schedules:
+- cron: "0 18 * * 4"  # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
+  displayName: Weekly build
+  branches:
+    include:
+      - main
+  always: true
 
 variables:
   REGISTRY: 'msgraphpperegistry.azurecr.io'
@@ -16,39 +26,117 @@ variables:
   TAG: '$(Build.BuildId)'
 
 stages:
-  - stage: BuildAndPush
-    displayName: 'Build and Push Multi-Arch Image'
+  - stage: BuildImage
+    displayName: 'Build Docker Image'
+    condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))
     jobs:
-      - job: BuildAndPush
-        displayName: 'Build and Push Docker Image'
+      - job: BuildDockerImage
+        displayName: 'Build Docker Image'
+        pool:
+          vmImage: 'ubuntu-latest'
         steps:
           - checkout: self
+          - script: |
+              docker run --privileged --rm tonistiigi/binfmt --install all
+            displayName: 'Enable multi-platform builds'
+          - script: |
+              docker buildx create --use --name mybuilder
+            displayName: 'Set up Docker BuildX'
+          - script: |
+              docker buildx inspect --bootstrap
+            displayName: 'Ensure BuildX is working'
+          - script: |
+              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                --tag $(REGISTRY)/$(IMAGE_NAME):validation \
+                --load \
+                .
+            displayName: 'Build Multi-Platform Image'
 
+  - stage: PushToRegistry
+    displayName: 'Push Docker Image'
+    dependsOn: []
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])))
+    jobs:
+      - job: PushDockerImage
+        displayName: 'Push Docker Image'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          
           - task: AzureCLI@2
-            displayName: 'Login to Azure using ARM service connection'
+            displayName: 'Login to Azure Container Registry'
             inputs:
               azureSubscription: 'ACR Push Test'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
                 az acr login --name $(REGISTRY)
-
+          
+          - powershell: |
+              $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
+              $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
+              Write-Host "##vso[task.setvariable variable=truncatedRunNumber]$truncatedNumber"
+            displayName: 'Get truncated run number'
+            condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
+          - powershell: |
+              ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+            displayName: 'Set version suffix'
+            name: getversionsuffix
+          
+          - powershell: |
+              ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
+            displayName: 'Set version suffix in csproj for generators'
+            condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
+          - powershell: |
+              ./scripts/get-version-from-csproj.ps1
+            displayName: 'Get Kiota version number'
+            name: getversion
+          
+          - powershell: |
+              $version = if ("$(Build.SourceBranch)" -eq "$(PREVIEW_BRANCH)") { "Unreleased" } else { "$(getversion.version)" }
+              ./scripts/get-release-notes.ps1 -version $version
+            displayName: 'Get release notes from CHANGELOG.md'
+          
+          - powershell: |
+              ./scripts/update-versions.ps1
+            displayName: 'Update dependencies versions'
+          
           - script: |
               docker run --privileged --rm tonistiigi/binfmt --install all
             displayName: 'Enable multi-platform builds'
-
+          
           - script: |
               docker buildx create --use --name mybuilder
             displayName: 'Set up Docker BuildX'
-
+          
           - script: |
               docker buildx inspect --bootstrap
             displayName: 'Ensure BuildX is working'
-
+          
+          - powershell: |
+              $date = Get-Date -Format "yyyyMMdd"
+              Write-Host "##vso[task.setvariable variable=currentDate]$date"
+            displayName: 'Get current date'
+            condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
           - script: |
-              docker buildx build --platform linux/amd64,linux/arm64 \
+              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                 --push \
-                -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
-                -t $(REGISTRY)/$(IMAGE_NAME):latest \
+                -t $(REGISTRY)/$(IMAGE_NAME):nightly \
+                -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version)-preview.$(currentDate)$(truncatedRunNumber) \
+                --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) \
                 .
-            displayName: 'Build and Push Multi-Platform Image'
+            displayName: 'Build and Push Preview Image'
+            condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+          
+          - script: |
+              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                --push \
+                -t $(REGISTRY)/$(IMAGE_NAME):latest \
+                -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version) \
+                .
+            displayName: 'Build and Push Release Image'
+            condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
