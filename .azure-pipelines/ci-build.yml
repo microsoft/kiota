@@ -45,11 +45,16 @@ stages:
           - script: |
               docker buildx inspect --bootstrap
             displayName: 'Ensure BuildX is working'
-          - script: |
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-                --tag $(REGISTRY)/$(IMAGE_NAME):validation \
-                --output type=image,name=$(REGISTRY)/$(IMAGE_NAME):validation,push=false \
-                .
+          - bash: |
+              # Build for validation only
+              echo "Building multi-platform image for validation..."
+              
+              # Use the same approach as the working Push stage
+              docker buildx build \
+                --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                --output type=registry,push=false \
+                -t $(REGISTRY)/$(IMAGE_NAME):validation \
+                "$(Build.SourcesDirectory)"
             displayName: 'Build Multi-Platform Image for Validation'
 
   - stage: PushToRegistry
