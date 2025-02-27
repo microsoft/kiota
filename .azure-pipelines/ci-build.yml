@@ -128,21 +128,36 @@ stages:
           - bash: |
               # Debug version variable
               echo "Version is: $(getversion.version)"
+              VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+              echo "Cleaned version: $VERSION"
               
-              # Ensure we're in the right directory (where the Dockerfile is located)
-              pwd
-              ls -la
+              # Debug other variables
+              echo "Current date: $(currentDate)"
+              echo "Truncated run number: $(truncatedRunNumber)"
               
-              # Use a single-line command to avoid potential YAML parsing issues
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 --push -t $(REGISTRY)/$(IMAGE_NAME):nightly -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version)-preview.$(currentDate)$(truncatedRunNumber) --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) .
+              # Use explicit variable references and ensure proper context path
+              docker buildx build \
+                --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                --push \
+                -t $(REGISTRY)/$(IMAGE_NAME):nightly \
+                -t $(REGISTRY)/$(IMAGE_NAME):$VERSION-preview.$(currentDate)$(truncatedRunNumber) \
+                --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) \
+                "$(Build.SourcesDirectory)"
             displayName: 'Build and Push Preview Image'
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - bash: |
               # Debug version variable
               echo "Version is: $(getversion.version)"
+              VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+              echo "Cleaned version: $VERSION"
               
-              # Use a single-line command to avoid potential YAML parsing issues
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 --push -t $(REGISTRY)/$(IMAGE_NAME):latest -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version) .
+              # Use explicit variable references and ensure proper context path
+              docker buildx build \
+                --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                --push \
+                -t $(REGISTRY)/$(IMAGE_NAME):latest \
+                -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
+                "$(Build.SourcesDirectory)"
             displayName: 'Build and Push Release Image'
             condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
