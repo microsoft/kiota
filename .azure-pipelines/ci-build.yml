@@ -125,27 +125,24 @@ stages:
             displayName: 'Get current date'
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
-          - script: |
+          - bash: |
               # Debug version variable
               echo "Version is: $(getversion.version)"
               
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-                --push \
-                -t $(REGISTRY)/$(IMAGE_NAME):nightly \
-                -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version)-preview.$(currentDate)$(truncatedRunNumber) \
-                --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) \
-                .
+              # Ensure we're in the right directory (where the Dockerfile is located)
+              pwd
+              ls -la
+              
+              # Use a single-line command to avoid potential YAML parsing issues
+              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 --push -t $(REGISTRY)/$(IMAGE_NAME):nightly -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version)-preview.$(currentDate)$(truncatedRunNumber) --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) .
             displayName: 'Build and Push Preview Image'
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
-          - script: |
+          - bash: |
               # Debug version variable
               echo "Version is: $(getversion.version)"
               
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-                --push \
-                -t $(REGISTRY)/$(IMAGE_NAME):latest \
-                -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version) \
-                .
+              # Use a single-line command to avoid potential YAML parsing issues
+              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 --push -t $(REGISTRY)/$(IMAGE_NAME):latest -t $(REGISTRY)/$(IMAGE_NAME):$(getversion.version) .
             displayName: 'Build and Push Release Image'
             condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
