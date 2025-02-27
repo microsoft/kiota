@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 
 import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../../constants";
 import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
+import { searchDescription } from "../../kiotaInterop";
 import { searchSteps } from "../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
@@ -10,7 +11,6 @@ import { updateTreeViewIcons } from "../../util";
 import { IntegrationParams, validateDeepLinkQueryParams } from "../../utilities/deep-linking";
 import { openTreeViewWithProgress } from "../../utilities/progress";
 import { Command } from "../Command";
-import { searchDescription } from "./searchDescription";
 
 export class SearchOrOpenApiDescriptionCommand extends Command {
 
@@ -57,14 +57,20 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
       title: vscode.l10n.t("Searching...")
     }, (progress, _) => {
       const settings = getExtensionSettings(extensionId);
-      return searchDescription(this.context, x, settings.clearCache);
+      return searchDescription({ searchTerm: x, clearCache: settings.clearCache });
     }));
 
     if (config.descriptionPath) {
-      await openTreeViewWithProgress(async () => {
-        await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
-        await updateTreeViewIcons(treeViewId, true, false);
-      });
+      try {
+        await openTreeViewWithProgress(async () => {
+          await this.openApiTreeProvider.setDescriptionUrl(config.descriptionPath!);
+          await updateTreeViewIcons(treeViewId, true, false);
+        });
+      } catch (err) {
+        const error = err as Error;
+        vscode.window.showErrorMessage(error.message);
+        return;
+      }
 
       const generateAnswer = vscode.l10n.t("Generate");
       const showGenerateMessage = this.context.globalState.get<boolean>(SHOW_MESSAGE_AFTER_API_LOAD, true);

@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { ExtensionContext, Uri, workspace } from "vscode";
 
 import { extensionId } from "../../constants";
-import { handleMigration } from "../../util";
 import { Command } from "../Command";
+import { handleMigration } from "./migrateFromLockFile.util";
 
 export class MigrateFromLockFileCommand extends Command {
   private _context: ExtensionContext;
@@ -25,6 +25,6 @@ export class MigrateFromLockFileCommand extends Command {
       return;
     }
 
-    await handleMigration(this._context, workspaceFolder);
+    await handleMigration(workspaceFolder);
   }
 }
