@@ -121,12 +121,12 @@ jobs:
           npm run package
 
           cd ..
-          npm install
-
           cd microsoft-kiota
+          npm install --no-audit --no-fund --legacy-peer-deps
           npm install ../npm-package/microsoft-kiota-1.0.0.tgz
 
           vsce package
+          vsce ls --tree
         working-directory: vscode
         name: 'Package VSCode extension'
         if: matrix.builds.id == 'vscode'
