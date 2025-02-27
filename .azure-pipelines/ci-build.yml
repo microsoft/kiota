@@ -2,7 +2,7 @@ trigger:
   branches:
     include:
       - main
-      - task/add-new-acr-pipeline
+      - azure-pipelines
   paths:
     include:
       - src/**
@@ -20,7 +20,7 @@ schedules:
   always: true
 
 variables:
-  REGISTRY: 'msgraphprodregistry.azurecr.io'
+  REGISTRY: 'msgraphpperegistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
   PREVIEW_BRANCH: 'refs/heads/azure-pipelines'
   TAG: '$(Build.BuildId)'
@@ -59,7 +59,7 @@ stages:
 
   - stage: PushToRegistry
     displayName: 'Push Docker Image'
-    dependsOn: BuildImage
+    dependsOn: []
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])))
     jobs:
       - job: PushDockerImage
@@ -72,7 +72,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Login to Azure Container Registry'
             inputs:
-              azureSubscription: 'ACR Images Push Service Connection'
+              azureSubscription: 'ACR Push Test'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
