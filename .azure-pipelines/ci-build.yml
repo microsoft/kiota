@@ -874,7 +874,6 @@ extends:
                         packageParentPath: "$(Pipeline.Workspace)"
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
-          - deployment: deploy_vscode
 
       - stage: BuildImage
         displayName: 'Build Docker Image'
