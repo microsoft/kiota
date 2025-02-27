@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
 
@@ -30,11 +30,11 @@ public class OpenApiKiotaExtension : IOpenApiExtension
             writer.WriteEndObject();
         }
     }
-    public static OpenApiKiotaExtension Parse(IOpenApiAny source)
+    public static OpenApiKiotaExtension Parse(JsonNode source)
     {
-        if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        if (source is not JsonObject jsonNode) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiKiotaExtension();
-        if (rawObject.TryGetValue(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), out var languagesInfo) && languagesInfo is OpenApiObject objectValue)
+        if (jsonNode.TryGetPropertyValue(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), out var languagesInfo) && languagesInfo is JsonObject objectValue)
         {
             extension.LanguagesInformation = LanguagesInformation.Parse(objectValue);
         }

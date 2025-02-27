@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Readers;
+using Microsoft.OpenApi.Reader;
 
 namespace Kiota.Builder.Extensions;
 public static class OpenApiSettingsExtensions
