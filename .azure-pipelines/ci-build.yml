@@ -92,7 +92,9 @@ stages:
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - powershell: |
-              ./scripts/get-version-from-csproj.ps1
+              $version = ./scripts/get-version-from-csproj.ps1
+              Write-Host "Version found: $version" 
+              Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
             displayName: 'Get Kiota version number'
             name: getversion
           
@@ -124,6 +126,9 @@ stages:
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - script: |
+              # Debug version variable
+              echo "Version is: $(getversion.version)"
+              
               docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                 --push \
                 -t $(REGISTRY)/$(IMAGE_NAME):nightly \
@@ -134,6 +139,9 @@ stages:
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - script: |
+              # Debug version variable
+              echo "Version is: $(getversion.version)"
+              
               docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                 --push \
                 -t $(REGISTRY)/$(IMAGE_NAME):latest \
