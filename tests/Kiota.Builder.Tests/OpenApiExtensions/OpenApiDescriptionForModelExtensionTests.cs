@@ -6,7 +6,6 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
@@ -22,8 +21,7 @@ public sealed class OpenApiDescriptionForModelExtensionTests : IDisposable
     [Fact]
     public void Parses()
     {
-        var oaiValue = new OpenApiString("This is a description");
-        var value = OpenApiDescriptionForModelExtension.Parse(oaiValue);
+        var value = OpenApiDescriptionForModelExtension.Parse("This is a description");
         Assert.NotNull(value);
         Assert.Equal("This is a description", value.Description);
     }

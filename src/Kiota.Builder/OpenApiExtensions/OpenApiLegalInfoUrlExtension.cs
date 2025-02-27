@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Any;
+﻿using System.Text.Json.Nodes;
 
 namespace Kiota.Builder.OpenApiExtensions;
 
@@ -10,7 +10,7 @@ public class OpenApiLegalInfoUrlExtension : OpenApiSimpleStringExtension
         get; set;
     }
     protected override string? ValueSelector => Legal;
-    public static OpenApiLegalInfoUrlExtension Parse(IOpenApiAny source)
+    public static OpenApiLegalInfoUrlExtension Parse(JsonNode source)
     {
         return new OpenApiLegalInfoUrlExtension
         {

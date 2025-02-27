@@ -13,14 +13,14 @@ public class OpenApiSchemaComparerTests
     {
         Assert.Equal(new HashCode().ToHashCode(), _comparer.GetHashCode(null));
         Assert.True(_comparer.Equals(null, null));
-        Assert.False(_comparer.Equals(new(), null));
-        Assert.False(_comparer.Equals(null, new()));
+        Assert.False(_comparer.Equals(new OpenApiSchema(), null));
+        Assert.False(_comparer.Equals(null, new OpenApiSchema()));
     }
 
     [Fact]
     public void TestEquals()
     {
-        Assert.True(_comparer.Equals(new(), new()));
+        Assert.True(_comparer.Equals(new OpenApiSchema(), new OpenApiSchema()));
     }
     [Fact]
     public void DoesNotStackOverFlowOnCircularReferencesForEquals()
