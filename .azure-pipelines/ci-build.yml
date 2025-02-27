@@ -46,11 +46,11 @@ stages:
               docker buildx inspect --bootstrap
             displayName: 'Ensure BuildX is working'
           - script: |
-              docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+              docker buildx build --platform linux/amd64 \
                 --tag $(REGISTRY)/$(IMAGE_NAME):validation \
                 --load \
                 .
-            displayName: 'Build Multi-Platform Image'
+            displayName: 'Build Single-Platform Image for Validation'
 
   - stage: PushToRegistry
     displayName: 'Push Docker Image'
