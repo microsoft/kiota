@@ -123,10 +123,10 @@ internal class EditHandler : BaseKiotaCommandHandler
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
 
-        string output = output0 ?? string.Empty;
-        string openapi = openapi0 ?? string.Empty;
-        string className = className0 ?? string.Empty;
-        string namespaceName = namespaceName0 ?? string.Empty;
+        string output = output0.OrEmpty();
+        string openapi = openapi0.OrEmpty();
+        string className = className0.OrEmpty();
+        string namespaceName = namespaceName0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {

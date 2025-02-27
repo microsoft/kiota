@@ -92,8 +92,8 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         string? className = context.ParseResult.GetValueForOption(ClassOption);
         AccessModifier typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
         string? namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
-        List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption) ?? [];
-        List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption) ?? [];
+        List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption).OrEmpty();
+        List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption).OrEmpty();
         List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
@@ -119,10 +119,10 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        List<string> includePatterns = includePatterns0 ?? [];
-        List<string> excludePatterns = excludePatterns0 ?? [];
-        List<string> disabledValidationRules = disabledValidationRules0 ?? [];
-        List<string> structuredMimeTypes = structuredMimeTypes0 ?? [];
+        List<string> includePatterns = includePatterns0.OrEmpty();
+        List<string> excludePatterns = excludePatterns0.OrEmpty();
+        List<string> disabledValidationRules = disabledValidationRules0.OrEmpty();
+        List<string> structuredMimeTypes = structuredMimeTypes0.OrEmpty();
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(manifest, (c, s) => c.ApiManifestPath = s);

@@ -54,7 +54,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        string className = className0 ?? string.Empty;
+        string className = className0.OrEmpty();
         using (loggerFactory)
         {
             try

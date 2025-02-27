@@ -121,10 +121,10 @@ internal class AddHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        List<string> includePatterns = includePatterns0 ?? [];
-        List<string> excludePatterns = excludePatterns0 ?? [];
-        List<string> disabledValidationRules = disabledValidationRules0 ?? [];
-        List<string> structuredMimeTypes = structuredMimeTypes0 ?? [];
+        List<string> includePatterns = includePatterns0.OrEmpty();
+        List<string> excludePatterns = excludePatterns0.OrEmpty();
+        List<string> disabledValidationRules = disabledValidationRules0.OrEmpty();
+        List<string> structuredMimeTypes = structuredMimeTypes0.OrEmpty();
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);

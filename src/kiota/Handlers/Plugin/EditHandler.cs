@@ -167,7 +167,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                 }
                 var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
                 DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
-                DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "plugin edit");
+                DisplayGenerateAdvancedHint(includePatterns.OrEmpty(), excludePatterns.OrEmpty(), string.Empty, manifestPath, "plugin edit");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;
             }
