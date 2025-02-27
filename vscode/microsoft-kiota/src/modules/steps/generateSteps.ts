@@ -1,9 +1,9 @@
+import { allGenerationLanguages, generationLanguageToString, LanguagesInformation, maturityLevelToString } from '@microsoft/kiota';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { l10n, QuickPickItem, workspace } from 'vscode';
 
 import { BaseStepsState, MultiStepInput } from '.';
-import { allGenerationLanguages, generationLanguageToString, LanguagesInformation, maturityLevelToString } from '../../kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from '../../util';
 import { IntegrationParams, isDeeplinkEnabled } from '../../utilities/deep-linking';
 import { isTemporaryDirectory } from '../../utilities/temporary-folder';

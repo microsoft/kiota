@@ -1,26 +1,3 @@
-/**
- * Options for generating a client.
- *
- * @param {boolean} clearCache - Whether to clear the cache before generating the client.
- * @param {boolean} cleanOutput - Whether to clean the output directory before generating the client.
- * @param {string} clientClassName - The name of the client class to generate.
- * @param {string} clientNamespaceName - The namespace name for the generated client.
- * @param {string[]} deserializers - The list of deserializers to use.
- * @param {string[]} disabledValidationRules - The list of validation rules to disable.
- * @param {boolean} excludeBackwardCompatible - Whether to exclude backward-compatible changes.
- * @param {string[]} excludePatterns - The list of patterns to exclude from generation.
- * @param {boolean} includeAdditionalData - Whether to include additional data in the generated client.
- * @param {string[]} includePatterns - The list of patterns to include in generation.
- * @param {KiotaGenerationLanguage} language - The programming language for the generated client.
- * @param {string} openAPIFilePath - The file path to the OpenAPI specification.
- * @param {string} outputPath - The output path for the generated client.
- * @param {string[]} serializers - The list of serializers to use.
- * @param {string[]} structuredMimeTypes - The list of structured MIME types to support.
- * @param {boolean} usesBackingStore - Whether the generated client uses a backing store.
- * @param {ConsumerOperation} operation - The consumer operation to perform.
- * @param {string} workingDirectory - The working directory for the generation process.
- *
- */
 import * as rpc from "vscode-jsonrpc/node";
 
 import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "..";

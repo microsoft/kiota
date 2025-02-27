@@ -2,19 +2,20 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: [
-    '**/__tests__/**/*.[t]s?(x)',
-    '**/?(*.)+(spec).[t]s?(x)'
+    '**/?(*.)+(spec).ts?(x)'
   ],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
+    '^.+\\.ts?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
       diagnostics: false
     }],
   },
   transformIgnorePatterns: [
     '/node_modules/',
+    '/dist/',
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^dist/(.*)$': '<rootDir>/src/$1'
   },
 };

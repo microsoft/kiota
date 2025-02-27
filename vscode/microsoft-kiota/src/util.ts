@@ -1,10 +1,10 @@
+import { allGenerationLanguages, KiotaGenerationLanguage, KiotaPluginType } from '@microsoft/kiota';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { QuickPickItem } from "vscode";
 
 import { APIMANIFEST, CLIENT, CLIENTS, KIOTA_DIRECTORY, KIOTA_WORKSPACE_FILE, PLUGIN, PLUGINS } from './constants';
-import { allGenerationLanguages, KiotaGenerationLanguage, KiotaPluginType } from './kiotaInterop';
 import { GenerationType } from './types/enums';
 
 const clientTypes = [CLIENT, CLIENTS];

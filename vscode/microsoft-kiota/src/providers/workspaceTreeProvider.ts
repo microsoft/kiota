@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
+import { ClientOrPluginProperties } from '@microsoft/kiota';
 
 import { CLIENTS, KIOTA_WORKSPACE_FILE, PLUGINS } from '../constants';
-import { ClientOrPluginProperties } from '../kiotaInterop';
 import { WorkspaceContent, WorkspaceContentService } from '../modules/workspace';
 import { getWorkspaceJsonPath, isClientType, isPluginType } from '../util';
 import { SharedService } from './sharedService';
