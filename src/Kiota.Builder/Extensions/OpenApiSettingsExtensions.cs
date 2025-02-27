@@ -19,6 +19,7 @@ public static class OpenApiSettingsExtensions
         settings.ExtensionParsers.TryAdd(OpenApiLegalInfoUrlExtension.Name, static (i, _) => OpenApiLegalInfoUrlExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiReasoningInstructionsExtension.Name, static (i, _) => OpenApiAiReasoningInstructionsExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiRespondingInstructionsExtension.Name, static (i, _) => OpenApiAiRespondingInstructionsExtension.Parse(i));
+        settings.ExtensionParsers.TryAdd(OpenApiAiAuthReferenceIdExtension.Name, static (i, _) => OpenApiAiAuthReferenceIdExtension.Parse(i));
     }
 
     public static void AddGenerationExtensions(this OpenApiReaderSettings settings)
