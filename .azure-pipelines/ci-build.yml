@@ -1,310 +1,57 @@
-# azure-pipelines.yml
-
 trigger:
-
   branches:
-
     include:
-
-      - azure-pipelines
-
       - main
+      - azure-pipelines # Ensuring it triggers on your preview branch
 
   paths:
-
     include:
-
+      - Dockerfile
       - src/**
 
-      - azure-pipelines.yml
+pool:
+  vmImage: $(vmImageName)
 
-  tags:
-
-    include:
-
-      - v*
- 
-pr:
-
-  paths:
-
-    include:
-
-      - src/**
-
-      - azure-pipelines.yml
- 
-schedules:
-
-  - cron: "0 18 * * 4" # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
-
-    displayName: Weekly build
-
-    branches:
-
-      include:
-
-        - main
-
-    always: true
- 
 variables:
-
   REGISTRY: 'msgraphpperegistry.azurecr.io'
-
   IMAGE_NAME: 'public/openapi/kiota'
-
   PREVIEW_BRANCH: 'refs/heads/azure-pipelines'
+  TAG: '$(Build.BuildId)'
 
-  vmImageName: 'ubuntu-latest'
- 
 stages:
-
-- stage: Build
-
-  displayName: Build and validate image
-
-  condition: and(succeeded(), or(eq(variables['Build.Reason'], 'PullRequest'), startsWith(variables['Build.SourceBranch'], 'refs/heads/')))
-
-  jobs:
-
-  - job: BuildImage
-
-    displayName: Build Docker image
-
-    pool:
-
-      vmImage: $(vmImageName)
-
-    steps:
-
-    - checkout: self
-
-    - script: |
-
-        # Set up Docker buildx
-
-        docker run --privileged --rm tonistiigi/binfmt --install all
-
-        docker buildx create --name mybuilder --driver docker-container --use
-
-        docker buildx inspect --bootstrap
-
-      displayName: 'Setup multi-platform build'
- 
-    - task: Docker@2
-
-      displayName: Build image (validation)
-
-      inputs:
-
-        command: build
-
-        containerRegistry: 'Docker ACR Push SN Test'
-
-        repository: '$(IMAGE_NAME)'
-
-        tags: 'validation'
-
-        Dockerfile: '**/Dockerfile'
- 
-- stage: Publish
-
-  displayName: Push Docker image
-
-  dependsOn: []
-
-  condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
-
-  jobs:
-
-  - job: PushImage
-
-    displayName: Push Docker image
-
-    pool:
-
-      vmImage: $(vmImageName)
-
-    steps:
-
-    - checkout: self
-
-    - task: PowerShell@2
-
-      displayName: 'Get truncated run number'
-
-      name: GetRunNumber
-
-      condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-
-      inputs:
-
-        targetType: 'inline'
-
-        script: |
-
-          $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
-
-          $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
-
-          Write-Host "##vso[task.setvariable variable=truncatedRunNumber;isOutput=true]$truncatedNumber"
- 
-    - task: PowerShell@2
-
-      displayName: 'Set version suffix'
-
-      name: GetVersionSuffix
-
-      inputs:
-
-        filePath: './scripts/get-prerelease-version.ps1'
-
-        arguments: '-currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash'
-
-        pwsh: true
-
-    - task: PowerShell@2
-
-      displayName: 'Set version suffix in csproj for generators'
-
-      condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-
-      inputs:
-
-        filePath: './scripts/update-version-suffix-for-source-generator.ps1'
-
-        arguments: '-versionSuffix "$(GetVersionSuffix.versionSuffix)"'
-
-        pwsh: true
- 
-    - task: PowerShell@2
-
-      displayName: 'Get Kiota version from csproj'
-
-      name: GetVersion
-
-      inputs:
-
-        filePath: './scripts/get-version-from-csproj.ps1'
-
-        pwsh: true
- 
-    - task: PowerShell@2
-
-      displayName: 'Get release notes from CHANGELOG.md'
-
-      condition: not(contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH']))
-
-      inputs:
-
-        filePath: './scripts/get-release-notes.ps1'
-
-        arguments: '-version "$(GetVersion.version)"'
-
-        pwsh: true
- 
-    - task: PowerShell@2
-
-      displayName: 'Get release notes from CHANGELOG.md (preview)'
-
-      condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-
-      inputs:
-
-        filePath: './scripts/get-release-notes.ps1'
-
-        arguments: '-version "Unreleased"'
-
-        pwsh: true
- 
-    - task: PowerShell@2
-
-      displayName: 'Update dependencies versions'
-
-      inputs:
-
-        filePath: './scripts/update-versions.ps1'
-
-        pwsh: true
- 
-    - script: |
-
-        echo "##vso[task.setvariable variable=currentDate]$(date +'%Y%m%d')"
-
-      displayName: 'Get current date'
-
-      condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
- 
-    # Setup multi-platform build environment
-
-    - script: |
-
-        # Set up Docker buildx
-
-        docker run --privileged --rm tonistiigi/binfmt --install all
-
-        docker buildx create --name mybuilder --driver docker-container --use
-
-        docker buildx inspect --bootstrap
-
-      displayName: 'Setup multi-platform build'
-
-    # Use Docker@2 task to authenticate with ACR using the ARM service connection
-
-    - task: Docker@2
-
-      displayName: 'Login to ACR with ARM Service Connection'
-
-      inputs:
-
-        command: login
-
-        containerRegistry: 'Docker ACR Push SN Test'
- 
-    # For nightly builds using Docker CLI directly with buildx
-
-    - script: |
-
-        # Build and push with buildx for multi-platform
-
-        echo "Building and pushing multi-platform images for preview"
-
-        docker buildx build --push \
-
-          --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-
-          --tag $(REGISTRY)/$(IMAGE_NAME):nightly \
-
-          --tag $(REGISTRY)/$(IMAGE_NAME):$(GetVersion.version)-preview.$(currentDate)$(GetRunNumber.truncatedRunNumber) \
-
-          --build-arg version_suffix=preview.$(currentDate)$(GetRunNumber.truncatedRunNumber) \
-
-          -f **/Dockerfile .
-
-      displayName: 'Push to ACR - Nightly'
-
-      condition: contains(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
- 
-    # For release builds using Docker CLI directly with buildx
-
-    - script: |
-
-        # Build and push with buildx for multi-platform
-
-        echo "Building and pushing multi-platform images for release"
-
-        docker buildx build --push \
-
-          --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-
-          --tag $(REGISTRY)/$(IMAGE_NAME):latest \
-
-          --tag $(REGISTRY)/$(IMAGE_NAME):$(GetVersion.version) \
-
-          -f **/Dockerfile .
-
-      displayName: 'Push to ACR - Release'
-
-      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
- 
+  - stage: BuildAndPush
+    displayName: 'Build and Push Multi-Arch Image'
+    jobs:
+      - job: BuildAndPush
+        displayName: 'Build and Push Docker Image'
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Login to Azure using ARM service connection'
+            inputs:
+              azureSubscription: 'ACR Push Test'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr login --name $(REGISTRY)
+
+          - script: |
+              docker run --privileged --rm tonistiigi/binfmt --install all
+            displayName: 'Enable multi-platform builds'
+
+          - script: |
+              docker buildx create --use --name mybuilder
+            displayName: 'Set up Docker BuildX'
+
+          - script: |
+              docker buildx inspect --bootstrap
+            displayName: 'Ensure BuildX is working'
+
+          - script: |
+              docker buildx build --platform linux/amd64,linux/arm64 \
+                --push \
+                -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
+                -t $(REGISTRY)/$(IMAGE_NAME):latest \
+                .
+            displayName: 'Build and Push Multi-Platform Image'
