@@ -81,7 +81,8 @@ stages:
             condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
           
           - powershell: |
-              ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+              $result = ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+              Write-Host "##vso[task.setvariable variable=versionSuffix;isoutput=true]$result"
             displayName: 'Set version suffix'
             name: getversionsuffix
           
