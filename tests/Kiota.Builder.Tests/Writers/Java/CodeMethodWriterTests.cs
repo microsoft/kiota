@@ -24,7 +24,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     private const string ExecuterExceptionVar = "executionException";
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
-    private const string MethodDescription = "some description";
+    private const string MethodDescription = "some description & some special character <>";
     private const string ParamDescription = "some parameter description";
     private const string ParamName = "paramName";
     public CodeMethodWriterTests()
@@ -1552,6 +1552,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("@see <a href=", result);
+        // special xml characters are escaped for javadoc generation
+        Assert.DoesNotContain("some description & some special character <>", result);
+        Assert.Contains("some description", result);
+        Assert.Contains("some special character", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
