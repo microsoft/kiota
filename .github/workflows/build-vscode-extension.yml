@@ -58,13 +58,13 @@ jobs:
 
       - name: run tests(linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
+        run: xvfb-run -a npm run test:coverage
+        working-directory: vscode/${{ matrix.builds.path }}
 
       - name: run tests
         if: runner.os != 'Linux'
-        run: npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
+        run: npm run test:coverage
+        working-directory: vscode/${{ matrix.builds.path }}
               
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
