@@ -53,18 +53,48 @@ jobs:
         run: npm install
         working-directory: vscode
 
-      - run: npm run lint
+      - name: Lint
+        run: npm run lint
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests(linux)
-        if: runner.os == 'Linux'
+      - name: run tests(linux) - ${{ matrix.builds.id }}
+        if: runner.os == 'Linux' && matrix.builds.id == 'package'
         run: xvfb-run -a npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests
-        if: runner.os != 'Linux'
+      - name: run tests - ${{ matrix.builds.id }}
+        if: runner.os != 'Linux' && matrix.builds.id == 'package'
         run: npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
+
+      - name: run tests(linux) - - ${{ matrix.builds.id }}
+        if: runner.os == 'Linux' && matrix.builds.id == 'vscode'
+        run: |
+          cd ../npm-package
+          npm install
+          npm run package
+
+          cd ../microsoft-kiota
+
+          npm ci
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          xvfb-run -a npm run test:coverage
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      - name: run tests - - ${{ matrix.builds.id }}
+        if: runner.os != 'Linux' && matrix.builds.id == 'vscode'
+        run: |
+          cd ../npm-package
+          npm install
+          npm run package
+
+          cd ../microsoft-kiota
+
+          npm ci
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          npm run test:coverage
+        working-directory: vscode/${{ matrix.builds.path }}
+
               
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
