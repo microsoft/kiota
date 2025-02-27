@@ -2,7 +2,7 @@ trigger:
   branches:
     include:
       - main
-      - azure-pipelines
+      - task/add-new-acr-pipeline
   paths:
     include:
       - src/**
@@ -22,7 +22,7 @@ schedules:
 variables:
   REGISTRY: 'msgraphpperegistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
-  PREVIEW_BRANCH: 'refs/heads/azure-pipelines'
+  PREVIEW_BRANCH: 'refs/heads/task/add-new-acr-pipeline'
   TAG: '$(Build.BuildId)'
 
 stages:
