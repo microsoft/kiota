@@ -54,7 +54,7 @@ stages:
 
   - stage: PushToRegistry
     displayName: 'Push Docker Image'
-    dependsOn: []
+    dependsOn: BuildImage
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])))
     jobs:
       - job: PushDockerImage
