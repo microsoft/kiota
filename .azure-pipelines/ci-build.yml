@@ -9,9 +9,6 @@ trigger:
       - Dockerfile
       - src/**
 
-pool:
-  vmImage: $(vmImageName)
-
 variables:
   REGISTRY: 'msgraphpperegistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
