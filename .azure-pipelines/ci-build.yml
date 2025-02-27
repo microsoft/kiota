@@ -20,7 +20,7 @@ schedules:
   always: true
 
 variables:
-  REGISTRY: 'msgraphpperegistry.azurecr.io'
+  REGISTRY: 'msgraphprodregistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
   PREVIEW_BRANCH: 'refs/heads/task/add-new-acr-pipeline'
   TAG: '$(Build.BuildId)'
@@ -72,7 +72,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Login to Azure Container Registry'
             inputs:
-              azureSubscription: 'ACR Push Test'
+              azureSubscription: 'ACR Images Push Service Connection'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
