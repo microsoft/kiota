@@ -49,10 +49,10 @@ stages:
               # Build for validation only
               echo "Building multi-platform image for validation..."
               
-              # Use the same approach as the working Push stage
+              # Build without pushing to registry
               docker buildx build \
                 --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-                --output type=registry,push=false \
+                --output type=image \
                 -t $(REGISTRY)/$(IMAGE_NAME):validation \
                 "$(Build.SourcesDirectory)"
             displayName: 'Build Multi-Platform Image for Validation'
