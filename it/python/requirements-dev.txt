@@ -2,7 +2,7 @@
 
 astroid==3.3.8 ; python_full_version >= '3.7.2'
 
-certifi==2024.12.14 ; python_version >= '3.6'
+certifi==2025.1.31 ; python_version >= '3.6'
 
 charset-normalizer==3.4.1 ; python_full_version >= '3.7.0'
 
@@ -14,9 +14,9 @@ docutils==0.21.2 ; python_version >= '3.7'
 
 exceptiongroup==1.2.2 ; python_version < '3.11'
 
-flit==3.10.1
+flit==3.11.0
 
-flit-core==3.10.1 ; python_version >= '3.6'
+flit-core==3.11.0 ; python_version >= '3.6'
 
 idna==3.10
 
@@ -24,13 +24,13 @@ importlib-metadata==6.8.0 ; python_version >= '3.7'
 
 iniconfig==2.0.0 ; python_version >= '3.7'
 
-isort==6.0.0
+isort==6.0.1
 
 lazy-object-proxy==1.10.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.14.1
+mypy==1.15.0
 
 mypy-extensions==1.0.0 ; python_version >= '3.5'
 
@@ -66,7 +66,7 @@ yapf==0.43.0
 
 zipp==3.21.0 ; python_version >= '3.7'
 
-aiohttp==3.11.11 ; python_version >= '3.6'
+aiohttp==3.11.13 ; python_version >= '3.6'
 
 aiosignal==1.3.2 ; python_version >= '3.7'
 
@@ -78,17 +78,17 @@ attrs==25.1.0 ; python_version >= '3.7'
 
 azure-core==1.32.0 ; python_version >= '3.7'
 
-azure-identity==1.19.0
+azure-identity==1.20.0
 
 cffi==1.17.1
 
-cryptography==44.0.0 ; python_version >= '3.7'
+cryptography==44.0.1 ; python_version >= '3.7'
 
 frozenlist==1.5.0 ; python_version >= '3.7'
 
 h11==0.14.0 ; python_version >= '3.7'
 
-h2==4.1.0
+h2==4.2.0
 
 hpack==4.1.0 ; python_full_version >= '3.6.1'
 
@@ -98,19 +98,19 @@ httpx[http2]==0.28.1
 
 hyperframe==6.1.0 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.9.1
+microsoft-kiota-abstractions==1.9.2
 
-microsoft-kiota-authentication-azure==1.9.1
+microsoft-kiota-authentication-azure==1.9.2
 
-microsoft-kiota-http==1.9.1
+microsoft-kiota-http==1.9.2
 
-microsoft-kiota-serialization-json==1.9.1
+microsoft-kiota-serialization-json==1.9.2
 
-microsoft-kiota-serialization-text==1.9.1
+microsoft-kiota-serialization-text==1.9.2
 
-microsoft-kiota-serialization-form==1.9.1
+microsoft-kiota-serialization-form==1.9.2
 
-microsoft-kiota-serialization-multipart==1.9.1
+microsoft-kiota-serialization-multipart==1.9.2
 
 msal==1.31.1
 

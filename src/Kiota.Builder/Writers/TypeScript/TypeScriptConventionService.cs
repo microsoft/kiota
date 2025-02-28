@@ -205,7 +205,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return type?.Name switch
         {
             TYPE_INTEGER or TYPE_INT or TYPE_INT64 or TYPE_FLOAT or TYPE_DOUBLE or TYPE_BYTE or TYPE_SBYTE or TYPE_DECIMAL => TYPE_NUMBER,
-            TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => TYPE_STRING,
+            TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => "ArrayBuffer",
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),
             null => TYPE_OBJECT,
             _ when type is CodeComposedTypeBase composedType => composedType.Name.ToFirstCharacterUpperCase(),
@@ -360,7 +360,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return (currentType.TypeDefinition, isCollection, propertyType) switch
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
-                (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue",
+                (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue()",
                 (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
                 (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
