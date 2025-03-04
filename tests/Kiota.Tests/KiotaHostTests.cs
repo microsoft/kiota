@@ -56,6 +56,9 @@ public sealed class KiotaHostTests : IDisposable
     public async Task ThrowsOnInvalidClassNameAsync()
     {
         Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", ".Graph"], _console));
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", "Graph-api"], _console));
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", "1Graph"], _console));
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", "Gr@ph"], _console));
     }
     [Fact]
     public async Task AcceptsDeserializersAsync()

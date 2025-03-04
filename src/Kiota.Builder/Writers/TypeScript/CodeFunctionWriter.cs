@@ -330,9 +330,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string FindFunctionInNameSpace(string functionName, CodeElement codeElement, CodeType returnType)
     {
-        var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
+        var myNamespace = returnType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() ?? throw new InvalidOperationException("Namespace not found for return type");
 
-        CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
+        CodeFunction[] codeFunctions = [.. myNamespace.FindChildrenByName<CodeFunction>(functionName)];
 
         var codeFunction = Array.Find(codeFunctions,
             func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??
@@ -391,7 +391,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var serializationName = GetSerializationMethodName(codeProperty.Type, codeFunction.OriginalLocalMethod);
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
 
-
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
             var serializeName = GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
@@ -409,16 +408,15 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WritePropertySerializationStatement(CodeProperty codeProperty, string modelParamName, string? serializationName, string? defaultValueSuffix, CodeFunction codeFunction, LanguageWriter writer)
     {
         var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var composedType = GetOriginalComposedType(codeProperty.Type);
 
-        if (!string.IsNullOrWhiteSpace(spreadOperator))
+        if (isCollectionOfEnum)
             writer.WriteLine($"if({modelParamName}.{codePropertyName})");
         if (composedType is not null && (composedType.IsComposedOfPrimitives(IsPrimitiveType) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
@@ -431,8 +429,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
     {
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
 
         bool isFirst = true;
         foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
@@ -446,7 +442,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 ? $"{isElse}if (Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}')) {{"
                 : $"{isElse}if ( typeof {modelParamName}.{codePropertyName} === \"{nodeType}\") {{");
 
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
             writer.CloseBlock();
             isFirst = false;
         }
@@ -518,7 +514,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         return propType switch
         {
-            _ when propType.TypeDefinition is CodeEnum currentEnum => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>",
+            _ when propType.TypeDefinition is CodeEnum currentEnum && !propType.IsCollection => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags ? "[]" : string.Empty)}>",
+            _ when propType.TypeDefinition is CodeEnum currentEnum && propType.IsCollection => $"writeCollectionOfEnumValues<{currentEnum.Name.ToFirstCharacterUpperCase()}>",
             _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
             _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
             _ => null
@@ -617,7 +614,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var codeEnumOption = enumDefinition.Options.First(x =>
                 x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
                     StringComparison.OrdinalIgnoreCase));
-            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+            var enumDefault = $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+            if (!string.IsNullOrEmpty(enumDefault) && !enumDefault.EqualsIgnoreCase("\"null\"") && IsCollectionOfEnum(codeProperty))
+            {
+                enumDefault = "[" + enumDefault + "]";
+            }
+            return enumDefault;
         }
 
         // only string primitive should keep quotes

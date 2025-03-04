@@ -1,8 +1,10 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Kiota.Builder.Validation;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Readers;
-using Microsoft.OpenApi.Validations;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
@@ -10,9 +12,8 @@ namespace Kiota.Builder.Tests.Validation;
 public class NoContentWithBodyTests
 {
     [Fact]
-    public void AddsAWarningWhen204WithBody()
+    public async Task AddsAWarningWhen204WithBody()
     {
-        var rule = new NoContentWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -23,20 +24,15 @@ paths:
     get:
       responses:
         '204':
+          description: some description
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Single(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhen204WithNoBody()
+    public async Task DoesntAddAWarningWhen204WithNoBody()
     {
-        var rule = new NoContentWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -48,19 +44,14 @@ paths:
   /enumeration:
     get:
       responses:
-        '204':";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        '204':
+          description: some description";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhen200WithBody()
+    public async Task DoesntAddAWarningWhen200WithBody()
     {
-        var rule = new NoContentWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -75,15 +66,21 @@ paths:
           application/json:
       responses:
         '200':
+          description: some description
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
     }
-
+    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+    {
+        var rule = new NoContentWithBody();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+        var settings = new OpenApiReaderSettings();
+        settings.RuleSet.Add(typeof(OpenApiOperation), [rule]);
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
+        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
+        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+        return result.Diagnostic;
+    }
 }
