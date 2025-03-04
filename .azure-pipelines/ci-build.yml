@@ -871,42 +871,11 @@ extends:
                         packageParentPath: "$(Pipeline.Workspace)"
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
-
-      - stage: BuildImage
-        displayName: 'Build Docker Image'
-        condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))
-        jobs:
-          - job: BuildDockerImage
-            displayName: 'Build Docker Image'
-            pool:
-              vmImage: 'ubuntu-latest'
-            steps:
-              - checkout: self
-              - script: |
-                  docker run --privileged --rm tonistiigi/binfmt --install all
-                displayName: 'Enable multi-platform builds'
-              - script: |
-                  docker buildx create --use --name mybuilder
-                displayName: 'Set up Docker BuildX'
-              - script: |
-                  docker buildx inspect --bootstrap
-                displayName: 'Ensure BuildX is working'
-              - bash: |
-                  # Build for validation only
-                  echo "Building multi-platform image for validation..."
-                  
-                  # Build without pushing to registry
-                  docker buildx build \
-                    --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-                    --output type=image \
-                    -t $(REGISTRY)/$(IMAGE_NAME):validation \
-                    "$(Build.SourcesDirectory)"
-                displayName: 'Build Multi-Platform Image for Validation'
-      
+                        
       - stage: PushToRegistry
         displayName: 'Push Docker Image'
-        dependsOn: BuildImage
-        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])))
+        dependsOn: []
+        condition: and(succeeded(), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
         jobs:
           - job: PushDockerImage
             displayName: 'Push Docker Image'
