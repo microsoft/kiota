@@ -883,7 +883,9 @@ extends:
           - job: PushDockerImage
             displayName: 'Push Docker Image'
             pool:
-              vmImage: 'ubuntu-latest'
+              name: Azure-Pipelines-1ESPT-ExDShared
+              image: ubuntu-latest
+              os: linux
             steps:
               - checkout: self
               
