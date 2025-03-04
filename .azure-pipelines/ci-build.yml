@@ -32,9 +32,9 @@ variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
-  REGISTRY: 'msgraphprodregistry.azurecr.io'
+  REGISTRY: 'msgraphpperegistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
-  PREVIEW_BRANCH: 'refs/heads/main'
+  PREVIEW_BRANCH: 'refs/heads/task/add-new-acr-pipeline'
   TAG: '$(Build.BuildId)'
 
 parameters:
@@ -875,7 +875,7 @@ extends:
       - stage: PushToRegistry
         displayName: 'Push Docker Image'
         dependsOn: []
-        condition: and(succeeded(), or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
+        condition: and(or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
         jobs:
           - job: PushDockerImage
             displayName: 'Push Docker Image'
