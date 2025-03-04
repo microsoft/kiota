@@ -20,9 +20,6 @@ trigger:
       - "v*"
     exclude:
       - "*preview*" # exclude preview tags so we don't publish twice
-  branches:
-    include:
-      - task/add-new-acr-pipeline
 schedules:
   - cron: "0 18 * * 4" # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
     displayName: Weekly preview
@@ -35,9 +32,9 @@ variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
-  REGISTRY: 'msgraphpperegistry.azurecr.io'
+  REGISTRY: 'msgraphprodregistry.azurecr.io'
   IMAGE_NAME: 'public/openapi/kiota'
-  PREVIEW_BRANCH: 'refs/heads/task/add-new-acr-pipeline'
+  PREVIEW_BRANCH: 'refs/heads/main'
   TAG: '$(Build.BuildId)'
 
 parameters:
