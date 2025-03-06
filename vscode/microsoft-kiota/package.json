@@ -518,7 +518,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/adm-zip": "^0.5.7",
-    "@types/chai": "^5.0.1",
+    "@types/chai": "^5.2.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.4",
