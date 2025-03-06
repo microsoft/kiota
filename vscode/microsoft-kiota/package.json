@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.98.0"
   },
   "license": "MIT",
   "categories": [
@@ -522,7 +522,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.97.0",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.26.0",
     "@typescript-eslint/parser": "^8.26.0",
     "@vscode/test-cli": "^0.0.10",
