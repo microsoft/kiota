@@ -51,6 +51,8 @@ servers:
 paths:
   /test:
     get:
+      tags:
+        - test  
       summary: summary for test path
       description: description for test path
       responses:
@@ -261,7 +263,9 @@ components:
 
         // Validate the original file.
         using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
-        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var settings = new OpenApiReaderSettings();
+        settings.AddYamlReader();
+        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml", settings);
         var originalDocument = originalResult.Document;
         Assert.Empty(originalResult.Diagnostic.Errors);
 
@@ -279,7 +283,7 @@ components:
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml");
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml", settings);
         var resultDocument = resultResult.Document;
         Assert.Empty(resultResult.Diagnostic.Errors);
 
@@ -794,7 +798,9 @@ components:
         {
             // Validate the sliced openapi
             using var stream = File.Open(Path.Combine(outputDirectory, OpenApiFileName), FileMode.Open);
-            var readResult = await OpenApiDocument.LoadAsync(stream);
+            var settings = new OpenApiReaderSettings();
+            settings.AddYamlReader();
+            var readResult = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
             assertions(readResult.Document, readResult.Diagnostic);
         }
         finally

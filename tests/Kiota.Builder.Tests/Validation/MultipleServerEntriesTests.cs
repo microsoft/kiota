@@ -60,8 +60,7 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
         var settings = new OpenApiReaderSettings();
         settings.RuleSet.Add(typeof(OpenApiDocument), [rule]);
-        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
-        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
+        settings.AddYamlReader();
         var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
         return result.Diagnostic;
     }
