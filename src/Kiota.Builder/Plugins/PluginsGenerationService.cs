@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -470,7 +470,7 @@ public partial class PluginsGenerationService
                 var auth = configAuth;
                 try
                 {
-                    auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements ?? []);
+                    auth = configAuth ?? GetAuth(operation.Security ?? document.Security ?? []);
                 }
                 catch (UnsupportedSecuritySchemeException e)
                 {
