@@ -871,14 +871,10 @@ extends:
                         packageParentPath: "$(Pipeline.Workspace)"
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
-                        
-      - stage: PushToRegistry
-        displayName: 'Push Docker Image'
-        dependsOn: []
-        condition: and(or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
-        jobs:
           - job: PushDockerImage
             displayName: 'Push Docker Image'
+            dependsOn: []
+            condition: and(or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               image: ubuntu-latest
