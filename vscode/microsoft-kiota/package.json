@@ -8,7 +8,7 @@
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.98.0"
   },
   "license": "MIT",
   "categories": [
@@ -516,25 +516,25 @@
     "test-with-coverage": "npm run pretest && vscode-test --coverage"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^4.1.0",
+    "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/adm-zip": "^0.5.7",
-    "@types/chai": "^5.0.1",
+    "@types/chai": "^5.2.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.97.0",
-    "@typescript-eslint/eslint-plugin": "^8.25.0",
-    "@typescript-eslint/parser": "^8.25.0",
+    "@types/vscode": "^1.98.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.2.0",
-    "eslint": "^9.21.0",
+    "eslint": "^9.22.0",
     "glob": "^11.0.1",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
     "ts-loader": "^9.5.2",
     "typemoq": "^2.1.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.2",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
   },
