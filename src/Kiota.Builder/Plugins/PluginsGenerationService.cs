@@ -531,22 +531,27 @@ public partial class PluginsGenerationService
     private static Auth GetAuthFromSecurityScheme(OpenApiSecuritySchemeReference securityScheme)
     {
         string name = securityScheme.Reference.Id;
+        string? authenticationReferenceId = null;
+
+        if (securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
+            authenticationReferenceId = authReferenceId.AuthenticationReferenceId;
+
         return securityScheme.Type switch
         {
             SecuritySchemeType.ApiKey => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = authenticationReferenceId ?? $"{{{name}_REGISTRATION_ID}}"
             },
             // Only Http bearer is supported
             SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) =>
                 new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = authenticationReferenceId ?? $"{{{name}_REGISTRATION_ID}}"
             },
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
-                ReferenceId = $"{{{name}_CONFIGURATION_ID}}"
+                ReferenceId = authenticationReferenceId ?? $"{{{name}_CONFIGURATION_ID}}"
             },
             _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
                 $"Unsupported security scheme type '{securityScheme.Type}'.")
