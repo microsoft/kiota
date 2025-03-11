@@ -540,18 +540,18 @@ public partial class PluginsGenerationService
         {
             SecuritySchemeType.ApiKey => new ApiKeyPluginVault
             {
-                ReferenceId = authenticationReferenceId ?? $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             // Only Http bearer is supported
             SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) =>
                 new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {
-                ReferenceId = authenticationReferenceId ?? $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
-                ReferenceId = authenticationReferenceId ?? $"{{{name}_CONFIGURATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_CONFIGURATION_ID}}" : authenticationReferenceId
             },
             _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
                 $"Unsupported security scheme type '{securityScheme.Type}'.")
