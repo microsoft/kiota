@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -98,7 +99,7 @@ components:
           tokenUrl: https://login.microsoftonline.com/tenantid/oauth2/v2.0/token
           scopes:
             user.read: Grants read access to the signed-in user's profile
-      x-ai-vault-reference-id-: someValue789
+      x-ai-auth-reference-id: someValue789
     GraphOAuth2AuthAppOnly:
       type: oauth2
       flows:
@@ -106,7 +107,7 @@ components:
           tokenUrl: https://login.microsoftonline.com/tenantid/oauth2/v2.0/token
           scopes:
             user.read.all: Grants read access to all users' full profiles
-      x-ai-vault-reference-id-: 'otherValue123'";
+      x-ai-auth-reference-id: 'otherValue123'";
 
         Directory.CreateDirectory(TempDirectory);
         var documentPath = Path.Combine(TempDirectory, "document.yaml");
@@ -117,8 +118,10 @@ components:
         var (openApiDocumentStream, _) = await documentDownloadService.LoadStreamAsync(documentPath, generationConfig);
         var document = await documentDownloadService.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfig);
         Assert.NotNull(document);
-        Assert.NotNull(document.Info);
-        Assert.True(document.Info.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension));
+        Assert.NotEmpty(document.Components.SecuritySchemes);
+        Assert.Equal(2, document.Components.SecuritySchemes.Count);
+        var firstSecurityScheme = document.Components.SecuritySchemes.First().Value;
+        Assert.True(firstSecurityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension));
         Assert.IsType<OpenApiAiAuthReferenceIdExtension>(authReferenceIdExtension);
         Assert.Equal("someValue789", ((OpenApiAiAuthReferenceIdExtension)authReferenceIdExtension).AuthenticationReferenceId);
     }
