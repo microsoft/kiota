@@ -1,5 +1,6 @@
 import * as cp from 'child_process';
-import * as vscode from "vscode";
+import * as os from 'node:os';
+import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 
 import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
@@ -9,7 +10,9 @@ import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);
     await ensureKiotaIsPresent(context);
-    const childProcess = cp.spawn(kiotaPath, ["rpc"], {
+    const prefix = os.platform() === 'win32' ? '\\\\.\\pipe\\' : '';
+    const pipeName = "KiotaJsonRpc";
+    const childProcess = cp.spawn(kiotaPath, ["rpc", "--mode", "NamedPipe", "--pipe-name", pipeName], {
         cwd: workingDirectory,
         env: {
             ...process.env,
@@ -17,9 +20,9 @@ export async function connectToKiota<T>(context: vscode.ExtensionContext, callba
             KIOTA_CONFIG_PREVIEW: "true",
         }
     });
-    let connection = rpc.createMessageConnection(
-        new rpc.StreamMessageReader(childProcess.stdout),
-        new rpc.StreamMessageWriter(childProcess.stdin));
+    const name = `${prefix}${pipeName}`;
+    let [reader, writer] = rpc.createServerPipeTransport(name);
+    let connection = rpc.createMessageConnection(reader, writer);
     connection.listen();
     try {
         return await callback(connection);
