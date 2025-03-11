@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace Kiota.Builder.OpenApiExtensions;
 
