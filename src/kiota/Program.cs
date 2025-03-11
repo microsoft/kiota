@@ -4,6 +4,7 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using kiota.Extension;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace kiota;
 
@@ -14,7 +15,17 @@ static class Program
         var rootCommand = KiotaHost.GetRootCommand();
         var parser = new CommandLineBuilder(rootCommand)
             .UseDefaults()
-            .UseHost(static args => Host.CreateDefaultBuilder(args).ConfigureKiotaTelemetryServices())
+            .UseHost(static args =>
+            {
+                return Host.CreateDefaultBuilder(args)
+                    .ConfigureKiotaTelemetryServices()
+                    .ConfigureLogging(static logging =>
+                    {
+                        logging.ClearProviders();
+                        logging.AddDebug();
+                        logging.AddEventSourceLogger();
+                    });
+            })
             .Build();
         var result = await parser.InvokeAsync(args);
         DisposeSubCommands(rootCommand);
