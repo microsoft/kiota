@@ -1,9 +1,8 @@
 import AdmZip from 'adm-zip';
-import appdataPath from 'appdata-path';
 import { https } from "follow-redirects";
 import * as fs from 'fs';
 import * as path from 'path';
-import { getConfig } from './config';
+import { getKiotaConfig } from './config';
 
 import runtimeJson from './runtime.json';
 
@@ -83,7 +82,7 @@ function makeExecutable(path: string) {
 }
 
 function getBaseDir(): string {
-  return getConfig().binaryLocation || appdataPath('Microsoft Kiota');
+  return getKiotaConfig().binaryLocation || path.resolve(__dirname);
 }
 
 function getKiotaPathInternal(withFileName = true): string | undefined {

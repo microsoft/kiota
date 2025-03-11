@@ -6,10 +6,10 @@ let config: Config = {
   binaryLocation: ""
 };
 
-export function setConfig(newConfig: Partial<Config>) {
+export function setKiotaConfig(newConfig: Partial<Config>) {
   config = { ...config, ...newConfig };
 }
 
-export function getConfig(): Config {
+export function getKiotaConfig(): Config {
   return config;
 }
