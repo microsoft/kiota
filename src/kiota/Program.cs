@@ -22,7 +22,9 @@ static class Program
                     .ConfigureLogging(static logging =>
                     {
                         logging.ClearProviders();
+#if DEBUG
                         logging.AddDebug();
+#endif
                         logging.AddEventSourceLogger();
                     });
             })
