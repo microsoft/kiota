@@ -1,8 +1,8 @@
 import AdmZip from 'adm-zip';
-import appdataPath from 'appdata-path';
 import { https } from "follow-redirects";
 import * as fs from 'fs';
 import * as path from 'path';
+import { getKiotaConfig } from './config';
 
 import runtimeJson from './runtime.json';
 
@@ -22,8 +22,6 @@ export interface Package {
 const windowsPlatform = 'win';
 const osxPlatform = 'osx';
 const linuxPlatform = 'linux';
-
-const baseDir = appdataPath('Microsoft Kiota');
 
 async function runIfNotLocked(action: () => Promise<void>) {
   const installStartTimeStamp = state[kiotaInstallStatusKey];
@@ -83,11 +81,16 @@ function makeExecutable(path: string) {
   fs.chmodSync(path, 0o755);
 }
 
+function getBaseDir(): string {
+  return getKiotaConfig().binaryLocation || path.resolve(__dirname);
+}
+
 function getKiotaPathInternal(withFileName = true): string | undefined {
   const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
+  const baseDir = getBaseDir();
   if (packageToInstall) {
     const installPath = path.join(baseDir, binariesRootDirectory);
     const directoryPath = path.join(installPath, runtimeJson.kiotaVersion, currentPlatform);

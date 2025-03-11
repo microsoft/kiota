@@ -56,7 +56,6 @@
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "appdata-path": "^1.0.0",
     "follow-redirects": "^1.15.9",
     "original-fs": "^1.2.0",
     "vscode-jsonrpc": "^8.2.1"

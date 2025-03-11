@@ -1,3 +1,4 @@
+export * from './config';
 export * from './lib/generateClient';
 export * from './lib/generatePlugin';
 export * from './lib/getKiotaTree';
