@@ -25,9 +25,7 @@ import { UpdateClientsCommand } from './commands/updateClients/updateClientsComm
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { UriHandler } from './handlers/uriHandler';
-import {
-  ClientOrPluginProperties
-} from "./kiotaInterop";
+import { ClientOrPluginProperties, setKiotaConfig } from "./kiotaInterop";
 import { WorkspaceContentService } from './modules/workspace';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
@@ -50,6 +48,7 @@ let workspaceGenerationContext: WorkspaceGenerationContext;
 export async function activate(
   context: vscode.ExtensionContext
 ): Promise<void> {
+  setKiotaConfig({ binaryLocation: context.asAbsolutePath('') });
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });

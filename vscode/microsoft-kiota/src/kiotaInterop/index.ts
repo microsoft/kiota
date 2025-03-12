@@ -1,4 +1,5 @@
 
+import { getKiotaConfig, setKiotaConfig } from './config';
 import { generateClient } from './lib/generateClient';
 import { generatePlugin } from './lib/generatePlugin';
 import { getKiotaTree } from './lib/getKiotaTree';
@@ -12,14 +13,19 @@ import { updateClients } from './lib/updateClients';
 
 export {
     generateClient,
-    generatePlugin, getKiotaTree, getKiotaVersion,
+    generatePlugin, 
+    getKiotaTree, 
+    getKiotaVersion,
     getLanguageInformationForDescription,
     getLanguageInformationInternal,
     getManifestDetails,
     migrateFromLockFile,
     removeClient,
     removePlugin,
-    searchDescription, updateClients
+    searchDescription, 
+    updateClients,
+    getKiotaConfig,
+    setKiotaConfig
 };
 
 export * from './types';
