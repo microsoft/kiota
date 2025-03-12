@@ -15,7 +15,7 @@
     <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.24.0</VersionPrefix>
+    <VersionPrefix>1.25.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -63,7 +63,7 @@
     <PackageReference Include="StreamJsonRpc" Version="2.20.20" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1"/>
+    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
     <PackageReference Include="System.CommandLine.Rendering" Version="0.4.0-alpha.22272.1" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
