@@ -32,10 +32,10 @@ variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
-  REGISTRY: 'msgraphprodregistry.azurecr.io'
-  IMAGE_NAME: 'public/openapi/kiota'
-  PREVIEW_BRANCH: 'refs/heads/main'
-  TAG: '$(Build.BuildId)'
+  REGISTRY: "msgraphprodregistry.azurecr.io"
+  IMAGE_NAME: "public/openapi/kiota"
+  PREVIEW_BRANCH: "refs/heads/main"
+  TAG: "$(Build.BuildId)"
 
 parameters:
   - name: previewBranch
@@ -872,7 +872,7 @@ extends:
                         nuGetFeedType: external
                         publishFeedCredentials: "OpenAPI Nuget Connection"
           - job: PushDockerImage
-            displayName: 'Push Docker Image'
+            displayName: "Push Docker Image"
             dependsOn: []
             condition: and(or(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])), not(contains(variables['Build.SourceBranch'], '-preview')))
             pool:
@@ -881,78 +881,73 @@ extends:
               os: linux
             steps:
               - checkout: self
-              
+
               - task: AzureCLI@2
-                displayName: 'Login to Azure Container Registry'
+                displayName: "Login to Azure Container Registry"
                 inputs:
-                  azureSubscription: 'ACR Images Push Service Connection'
+                  azureSubscription: "ACR Images Push Service Connection"
                   scriptType: bash
                   scriptLocation: inlineScript
                   inlineScript: |
                     az acr login --name $(REGISTRY)
-              
+
               - powershell: |
                   $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
                   $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
                   Write-Host "##vso[task.setvariable variable=truncatedRunNumber]$truncatedNumber"
-                displayName: 'Get truncated run number'
+                displayName: "Get truncated run number"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-              
+
               - powershell: |
                   $result = ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
                   Write-Host "##vso[task.setvariable variable=versionSuffix;isoutput=true]$result"
-                displayName: 'Set version suffix'
+                displayName: "Set version suffix"
                 name: getversionsuffix
-              
+
               - powershell: |
                   ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
-                displayName: 'Set version suffix in csproj for generators'
+                displayName: "Set version suffix in csproj for generators"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-              
+
               - powershell: |
                   $version = ./scripts/get-version-from-csproj.ps1
                   Write-Host "Version found: $version" 
                   Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
-                displayName: 'Get Kiota version number'
+                displayName: "Get Kiota version number"
                 name: getversion
-              
-              - powershell: |
-                  $version = if ("$(Build.SourceBranch)" -eq "$(PREVIEW_BRANCH)") { "Unreleased" } else { "$(getversion.version)" }
-                  ./scripts/get-release-notes.ps1 -version $version
-                displayName: 'Get release notes from CHANGELOG.md'
-              
+
               - powershell: |
                   ./scripts/update-versions.ps1
-                displayName: 'Update dependencies versions'
-              
+                displayName: "Update dependencies versions"
+
               - script: |
                   docker run --privileged --rm tonistiigi/binfmt --install all
-                displayName: 'Enable multi-platform builds'
-              
+                displayName: "Enable multi-platform builds"
+
               - script: |
                   docker buildx create --use --name mybuilder
-                displayName: 'Set up Docker BuildX'
-              
+                displayName: "Set up Docker BuildX"
+
               - script: |
                   docker buildx inspect --bootstrap
-                displayName: 'Ensure BuildX is working'
-              
+                displayName: "Ensure BuildX is working"
+
               - powershell: |
                   $date = Get-Date -Format "yyyyMMdd"
                   Write-Host "##vso[task.setvariable variable=currentDate]$date"
-                displayName: 'Get current date'
+                displayName: "Get current date"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-              
+
               - bash: |
                   # Debug version variable
                   echo "Version is: $(getversion.version)"
                   VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
                   echo "Cleaned version: $VERSION"
-                  
+
                   # Debug other variables
                   echo "Current date: $(currentDate)"
                   echo "Truncated run number: $(truncatedRunNumber)"
-                  
+
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
@@ -961,15 +956,15 @@ extends:
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION-preview.$(currentDate)$(truncatedRunNumber) \
                     --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) \
                     "$(Build.SourcesDirectory)"
-                displayName: 'Build and Push Preview Image'
+                displayName: "Build and Push Preview Image"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
-              
+
               - bash: |
                   # Debug version variable
                   echo "Version is: $(getversion.version)"
                   VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
                   echo "Cleaned version: $VERSION"
-                  
+
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
@@ -977,5 +972,5 @@ extends:
                     -t $(REGISTRY)/$(IMAGE_NAME):latest \
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
                     "$(Build.SourcesDirectory)"
-                displayName: 'Build and Push Release Image'
+                displayName: "Build and Push Release Image"
                 condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
