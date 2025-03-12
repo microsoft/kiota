@@ -522,11 +522,11 @@
   "devDependencies": {
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "chai": "^5.2.0",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.4",
     "@types/sinon": "^17.0.4",
-    "chai": "^5.2.0",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
     "webpack": "^5.98.0",

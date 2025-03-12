@@ -1,6 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { ClientOrPluginProperties } from "@microsoft/kiota";
+import { ClientOrPluginProperties, setKiotaConfig } from "@microsoft/kiota";
 import TelemetryReporter from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
@@ -48,6 +48,7 @@ let workspaceGenerationContext: WorkspaceGenerationContext;
 export async function activate(
   context: vscode.ExtensionContext
 ): Promise<void> {
+  setKiotaConfig({ binaryLocation: context.asAbsolutePath('') });
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
