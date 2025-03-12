@@ -1,5 +1,5 @@
 import AdmZip from 'adm-zip';
-import { https } from "follow-redirects";
+import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -108,32 +108,19 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(destinationPath);
-    const request = https.get(url, (response) => {
+  return new Promise((resolve) => {
+    https.get(url, (response: any) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         resolve(downloadFileFromUrl(response.headers.location, destinationPath));
-      } else if (response.statusCode && response.statusCode >= 200 && response.statusCode < 300) {
-        response.pipe(file);
-        file.on("finish", () => {
-          file.close((err) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve();
-            }
-          });
-        });
       } else {
-        reject(new Error(`Failed to download file: ${response.statusCode}`));
+        const filePath = fs.createWriteStream(destinationPath);
+        response.pipe(filePath);
+        filePath.on('finish', () => {
+          filePath.close();
+          resolve(undefined);
+        });
       }
     });
-
-    request.on("error", (err) => {
-      fs.unlink(destinationPath, () => reject(err));
-    });
-
-    request.end();
   });
 }
 
