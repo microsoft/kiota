@@ -26,10 +26,10 @@ export async function getKiotaTree({ includeFilters, descriptionPath, excludeFil
     const request = new rpc.RequestType<KiotaShowConfiguration, KiotaTreeResult, void>('Show');
 
     return await connection.sendRequest(request, {
-      includeFilters: includeFilters || [],
-      excludeFilters: excludeFilters || [],
+      includeFilters: includeFilters ?? [],
+      excludeFilters: excludeFilters ?? [],
       descriptionPath,
-      clearCache: clearCache || false,
+      clearCache: clearCache ?? false,
     });
   });
 

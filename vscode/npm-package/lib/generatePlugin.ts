@@ -60,13 +60,13 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
         operation: pluginGenerationOptions.operation,
         clientClassName: pluginGenerationOptions.pluginName,
 
-        cleanOutput: pluginGenerationOptions.cleanOutput || false,
-        clearCache: pluginGenerationOptions.clearCache || false,
-        disabledValidationRules: pluginGenerationOptions.disabledValidationRules || [],
-        excludePatterns: pluginGenerationOptions.excludePatterns || [],
-        includePatterns: pluginGenerationOptions.includePatterns || [],
-        pluginAuthType: pluginGenerationOptions.pluginAuthType || null,
-        pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid || '',
+        cleanOutput: pluginGenerationOptions.cleanOutput ?? false,
+        clearCache: pluginGenerationOptions.clearCache ?? false,
+        disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
+        excludePatterns: pluginGenerationOptions.excludePatterns ?? [],
+        includePatterns: pluginGenerationOptions.includePatterns ?? [],
+        pluginAuthType: pluginGenerationOptions.pluginAuthType ?? null,
+        pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid ?? '',
       } as GenerationConfiguration,
     );
   }, pluginGenerationOptions.workingDirectory);
