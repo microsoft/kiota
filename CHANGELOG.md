@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.24.0] - 2025-03-12
+
+### Added
+
 - Added support for OpenAPI 3.1. [#3914](https://github.com/microsoft/kiota/issues/3914)
 
 ### Changed
@@ -1576,3 +1582,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
