@@ -9683,14 +9683,14 @@ components:
     [Theory]
     [InlineData("repos/{id}/", "repos/{*}/")] // normalish case
     [InlineData("repos/{id}", "repos/{*}")]// no trailing slash
-    [InlineData("/repos/{id}", "/repos/{*}")]// no trailing slash(slash at begining).
+    [InlineData("/repos/{id}", "/repos/{*}")]// no trailing slash(slash at beginning).
     [InlineData("repos/{id}/dependencies/{dep-id}", "repos/{*}/dependencies/{*}")]// multiple indexers
-    [InlineData("/repos/{id}/dependencies/{dep-id}/", "/repos/{*}/dependencies/{*}/")]// multiple indexers(slash at begining and end).
-    [InlineData("/repos/{id}/dependencies/{dep-id}", "/repos/{*}/dependencies/{*}")]// multiple indexers(slash at begining).
+    [InlineData("/repos/{id}/dependencies/{dep-id}/", "/repos/{*}/dependencies/{*}/")]// multiple indexers(slash at beginning and end).
+    [InlineData("/repos/{id}/dependencies/{dep-id}", "/repos/{*}/dependencies/{*}")]// multiple indexers(slash at beginning).
     [InlineData("repos/{id}/{dep-id}", "repos/{*}/{*}")]// indexers following each other.
-    [InlineData("/repos/{id}/{dep-id}", "/repos/{*}/{*}")]// indexers following each other(slash at begining).
+    [InlineData("/repos/{id}/{dep-id}", "/repos/{*}/{*}")]// indexers following each other(slash at beginning).
     [InlineData("repos/msft", "repos/msft")]// no indexers
-    [InlineData("/repos", "/repos")]// no indexers(slash at begining).
+    [InlineData("/repos", "/repos")]// no indexers(slash at beginning).
     [InlineData("repos", "repos")]// no indexers
     public void ReplacesAllIndexesWithWildcard(string inputPath, string expectedGlob)
     {
