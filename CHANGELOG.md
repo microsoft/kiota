@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.24.1] - 2025-03-13
+
+### Changed
+
+- Fixed docker images publishing
+
 ## [1.24.0] - 2025-03-12
 
 ### Added
@@ -1582,4 +1588,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
