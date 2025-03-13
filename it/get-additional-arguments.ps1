@@ -1,12 +1,12 @@
 #!/usr/bin/env pwsh
 
 param(
-    [Parameter(Mandatory = $true)][string]$descriptionUrl,
+    [Parameter(Mandatory = $true)][string]$descriptionKey,
     [Parameter(Mandatory = $true)][string]$language,
     [Parameter(Mandatory = $false)][string]$includeOutputParameter = $true
 )
 
-if ([string]::IsNullOrEmpty($descriptionUrl)) {
+if ([string]::IsNullOrEmpty($descriptionKey)) {
     Write-Error "Description URL is empty"
     exit 1
 }
@@ -48,7 +48,7 @@ if ($includeOutputParameter -eq $false) {
 
 $configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
-$descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
+$descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionKey }).value
 if ($null -ne $descriptionValue) {
     if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
         $descriptionValue.ExcludePatterns | ForEach-Object {
@@ -65,7 +65,7 @@ if ($null -ne $descriptionValue) {
     }
 }
 else {
-    Write-Information "No configuration found for $descriptionUrl"
+    Write-Information "No configuration found for $descriptionKey"
 }
 
 return $command
