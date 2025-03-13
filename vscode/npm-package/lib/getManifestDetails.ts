@@ -5,7 +5,7 @@ import connectToKiota from "../connect";
 
 interface ManifestOptions {
   manifestPath: string;
-  clearCache: boolean;
+  clearCache?: boolean;
   apiIdentifier?: string;
 }
 
@@ -14,7 +14,7 @@ interface ManifestOptions {
  *
  * @param {ManifestOptions} options - The options for retrieving the manifest details.
  * @param {string} options.manifestPath - The path to the manifest file.
- * @param {boolean} options.clearCache - Whether to clear the cache before retrieving the manifest details.
+ * @param {boolean} [options.clearCache] - Whether to clear the cache before retrieving the manifest details.
  * @param {string} [options.apiIdentifier] - The identifier of the API.
  * @returns {Promise<KiotaManifestResult | undefined>} A promise that resolves to the manifest details or undefined if not found.
  * @throws {Error} Throws an error if the request fails.
@@ -28,7 +28,7 @@ export async function getManifestDetails({ manifestPath, clearCache, apiIdentifi
       {
         manifestPath,
         apiIdentifier: apiIdentifier ?? '',
-        clearCache
+        clearCache: clearCache ?? false,
       }
     );
   });
