@@ -118,7 +118,7 @@ jobs:
         shell: pwsh
       - name: Verify idempotency
         shell: pwsh
-        run: ./it/compare-generation.ps1 -descriptionUrl "${{ steps.replace_url.outputs.DESCRIPTION_PATH }}" -language "${{ matrix.language }}"
+        run: ./it/compare-generation.ps1 -descriptionUrl "${{ steps.replace_url.outputs.DESCRIPTION_PATH }}" -descriptionKey ${{ matrix.description }}  -language "${{ matrix.language }}"
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - uses: actions/upload-artifact@v4
         if: always()
