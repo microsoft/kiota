@@ -30,7 +30,7 @@ describe("generate plugin", () => {
       includePatterns: [],
       excludePatterns: [],
       pluginTypes: [KiotaPluginType.ApiPlugin],
-      clientClassName: 'ApiClient',
+      pluginName: 'ApiClient',
       clearCache: false,
       cleanOutput: false,
       disabledValidationRules: [],

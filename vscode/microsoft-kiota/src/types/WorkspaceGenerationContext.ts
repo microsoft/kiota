@@ -1,4 +1,4 @@
-import { ClientOrPluginProperties } from "../kiotaInterop";
+import { ClientOrPluginProperties } from "@microsoft/kiota";
 
 export interface WorkspaceGenerationContext {
   clientOrPluginKey: string;

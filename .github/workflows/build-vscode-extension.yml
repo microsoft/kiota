@@ -20,9 +20,20 @@ jobs:
         id: checksecret_job
         run: |
           echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-  build_extension:
+  build:
     needs: [checksecret]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        builds:
+          - name: "VS Code Extension"
+            path: "microsoft-kiota"
+            id: "vscode"
+            item: "vsix"
+          - name: "Npm Package"
+            path: "npm-package"
+            id: "package"
+            item: "tgz"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,35 +46,95 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/microsoft-kiota/src/kiotaInterop/runtime.json" -online
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
+
       - name: Install dependencies
         run: npm install
-        working-directory: vscode/microsoft-kiota
-      - run: npm run lint
-        working-directory: vscode/microsoft-kiota
-      - name: run tests(linux)
-        if: runner.os == 'Linux'
+        working-directory: vscode
+
+      - name: Lint
+        run: npm run lint
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      - name: run tests(linux) - package
+        if: runner.os == 'Linux' && matrix.builds.id == 'package'
         run: xvfb-run -a npm run test:coverage
-        working-directory: vscode/microsoft-kiota
-      - name: run tests
-        if: runner.os != 'Linux'
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      - name: run tests - package
+        if: runner.os != 'Linux' && matrix.builds.id == 'package'
         run: npm run test:coverage
-        working-directory: vscode/microsoft-kiota
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      - name: run tests(linux) - vscode
+        if: runner.os == 'Linux' && matrix.builds.id == 'vscode'
+        run: |
+          cd npm-package
+          npm install
+          npm run package
+
+          cd ..
+          npm install
+
+          cd microsoft-kiota
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          xvfb-run -a npm run test:coverage
+        working-directory: vscode
+
+      - name: run tests - vscode
+        if: runner.os != 'Linux' && matrix.builds.id == 'vscode'
+        run: |
+          cd npm-package
+          npm install
+          npm run package
+
+          cd ..
+          npm install
+
+          cd microsoft-kiota
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          npm run test:coverage
+        working-directory: vscode/${{ matrix.builds.path }}
+
+              
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: vscode/microsoft-kiota
+          projectBaseDir: vscode
+          args: >
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
+
       - run: npm run package
-        working-directory: vscode/microsoft-kiota
-      - run: npm i -g @vscode/vsce
-      - run: vsce package
-        working-directory: vscode/microsoft-kiota
+        if: matrix.builds.id == 'package'
+        working-directory: vscode/${{ matrix.builds.path }}
+
+      # applies specifically to vscode 
+      - run: |
+          npm i -g @vscode/vsce
+
+          cd npm-package
+          npm install
+          npm run package
+
+          cd ..
+          cd microsoft-kiota
+          npm install --no-audit --no-fund --legacy-peer-deps
+          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+
+          vsce package
+          vsce ls --tree
+        working-directory: vscode
+        name: 'Package VSCode extension'
+        if: matrix.builds.id == 'vscode'
+
+        # back to common operations
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vscode-extension
-          path: vscode/microsoft-kiota/*.vsix
+          name: ${{ matrix.builds.name }}
+          path: vscode/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}

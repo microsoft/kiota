@@ -1,7 +1,7 @@
+import { KiotaLogEntry, LogLevel, migrateFromLockFile } from "@microsoft/kiota";
 import * as vscode from "vscode";
 
 import { KIOTA_LOCK_FILE } from "../../constants";
-import { KiotaLogEntry, LogLevel, migrateFromLockFile } from "../../kiotaInterop";
 import { getWorkspaceJsonPath } from "../../util";
 
 export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {

@@ -1,3 +1,4 @@
+import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "@microsoft/kiota";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -5,7 +6,6 @@ import * as vscode from "vscode";
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "../../kiotaInterop";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -197,7 +197,7 @@ export class GenerateClientCommand extends Command {
           pluginTypes: [pluginTypes],
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,
@@ -242,7 +242,7 @@ export class GenerateClientCommand extends Command {
           pluginTypes,
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,

@@ -2,9 +2,9 @@ import AdmZip from 'adm-zip';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getKiotaConfig } from './config';
 
 import runtimeJson from './runtime.json';
-import { getKiotaConfig } from './config';
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
