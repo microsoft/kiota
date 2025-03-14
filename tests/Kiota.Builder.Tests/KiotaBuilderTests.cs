@@ -655,6 +655,7 @@ components:
     }
     [Theory]
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Python)]
@@ -4474,6 +4475,7 @@ components:
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Java)]
     [Theory]
     public void MapsEnumQueryParameterType(GenerationLanguage generationLanguage)
@@ -4517,7 +4519,7 @@ components:
         Assert.NotNull(queryParameters);
         var backwardCompatibleProperty = queryParameters.Properties.FirstOrDefault(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(backwardCompatibleProperty);
-        if (generationLanguage is GenerationLanguage.CSharp)
+        if (generationLanguage is GenerationLanguage.CSharp or GenerationLanguage.CSharp13)
         {
             Assert.Equal("string", backwardCompatibleProperty.Type.Name);
             Assert.True(backwardCompatibleProperty.Type.AllTypes.First().IsExternal);
