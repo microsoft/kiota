@@ -1,4 +1,5 @@
-import { KiotaLogEntry, updateClients } from '..';
+import { KiotaLogEntry } from '../types';
+import { updateClients } from '../lib/updateClients';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("update Clients", () => {

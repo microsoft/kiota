@@ -1,4 +1,5 @@
-import { KiotaLogEntry, migrateFromLockFile } from '..';
+import { KiotaLogEntry } from '../types';
+import { migrateFromLockFile } from '../lib/migrateFromLockFile';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("migrate from lock file", () => {
