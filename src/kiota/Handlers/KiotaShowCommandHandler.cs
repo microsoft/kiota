@@ -102,9 +102,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Generation.DisableSSLValidation = disableSSLValidation;
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             var descriptionProvided = (!string.IsNullOrEmpty(openapi) || !string.IsNullOrEmpty(manifest)) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, httpClient, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;

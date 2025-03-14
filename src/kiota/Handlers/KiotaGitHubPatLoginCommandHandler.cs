@@ -49,7 +49,8 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<PatAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var result = await LoginAsync(logger, pat, cancellationToken).ConfigureAwait(false);

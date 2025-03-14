@@ -89,14 +89,15 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
-                var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
+                var searcher = await GetKiotaSearcherAsync(loggerFactory, httpClient, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken).ConfigureAwait(false);
-                var result = await SaveResultsAsync(searchTerm, version, results, logger, cancellationToken);
+                var result = await SaveResultsAsync(searchTerm, version, results, httpClient, logger, cancellationToken);
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return result;
             }
@@ -118,13 +119,13 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
+    private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         if (!results.Any())
             DisplayError("No matching result found, use the search command to find the right key");
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
-            var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
+            var (path, statusCode) = await SaveResultAsync(results.First(), httpClient, logger, cancellationToken);
             if (statusCode == 0)
             {
                 DisplaySuccess($"File successfully downloaded to {path}");
@@ -138,7 +139,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 
         return 0;
     }
-    private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken)
+    private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         string path;
         if (result.Value.DescriptionUrl is null)
@@ -184,6 +185,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         if (Path.GetDirectoryName(path) is string directoryName && !Directory.Exists(directoryName))
             Directory.CreateDirectory(directoryName);
 
+        // TODO: register service in DI container.
         var cacheProvider = new DocumentCachingProvider(httpClient, logger)
         {
             ClearCache = true,

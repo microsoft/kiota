@@ -48,10 +48,11 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<DeviceCodeAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                var result = await LoginAsync(logger, cancellationToken).ConfigureAwait(false);
+                var result = await LoginAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return result;
             }
@@ -73,7 +74,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<int> LoginAsync(ILogger logger, CancellationToken cancellationToken)
+    private async Task<int> LoginAsync(HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         var authenticationProvider = new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                                                         "repo",
@@ -90,7 +91,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         if (dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue.FirstOrDefault() is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase))
         {
             DisplaySuccess("Authentication successful.");
-            await ListOutRepositoriesAsync(authenticationProvider, cancellationToken);
+            await ListOutRepositoriesAsync(httpClient, authenticationProvider, cancellationToken);
             DisplayManageInstallationHint();
             DisplaySearchBasicHint();
             DisplayGitHubLogoutHint();
@@ -102,7 +103,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             return 1;
         }
     }
-    private async Task ListOutRepositoriesAsync(IAuthenticationProvider authProvider, CancellationToken cancellationToken)
+    private async Task ListOutRepositoriesAsync(HttpClient httpClient, IAuthenticationProvider authProvider, CancellationToken cancellationToken)
     {
         var requestAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         var client = new GitHubClient(requestAdapter);

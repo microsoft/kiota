@@ -60,7 +60,9 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         {
             try
             {
-                await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+                var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+                await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+                // TODO: register service in DI container.
                 var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true);
                 await workspaceManagementService.RemovePluginAsync(className, cleanOutput, cancellationToken).ConfigureAwait(false);
                 DisplaySuccess($"Plugin {className} removed successfully!");

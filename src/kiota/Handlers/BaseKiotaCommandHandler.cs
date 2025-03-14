@@ -32,15 +32,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         FileName = "pat-api.github.com"
     };
 
-    private HttpClient? _httpClient;
-    protected HttpClient httpClient
-    {
-        get
-        {
-            _httpClient ??= GetHttpClient();
-            return _httpClient;
-        }
-    }
     public required Option<LogLevel> LogLevelOption
     {
         get; init;
@@ -62,20 +53,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         return configObject;
     });
 
-    protected HttpClient GetHttpClient()
-    {
-        var httpClientHandler = new HttpClientHandler();
-        if (Configuration.Generation.DisableSSLValidation)
-            httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-
-        var httpClient = new HttpClient(httpClientHandler);
-
-        disposables.Add(httpClientHandler);
-        disposables.Add(httpClient);
-
-        return httpClient;
-    }
-
     private const string GitHubScope = "repo";
     private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) =>
     {
@@ -87,7 +64,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var provider = GetGitHubPatStorageService(logger);
         return provider.IsTokenPresentAsync(cancellationToken);
     };
-    private IAuthenticationProvider GetGitHubAuthenticationProvider(ILogger logger) =>
+    private IAuthenticationProvider GetGitHubAuthenticationProvider(ILogger logger, HttpClient httpClient) =>
         new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                             GitHubScope,
                                             new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
@@ -100,7 +77,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
                                     new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
                                     logger,
                                     GetGitHubPatStorageService(logger));
-    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, HttpClient httpClient, CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger<KiotaSearcher>();
         var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(logger);
@@ -109,7 +86,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var isPatSignedIn = await patSignInCallBack(cancellationToken).ConfigureAwait(false);
         var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch
         {
-            (true, _) => ((IAuthenticationProvider?)GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
+            (true, _) => ((IAuthenticationProvider?)GetGitHubAuthenticationProvider(logger, httpClient), deviceCodeSignInCallback),
             (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
             (_, _) => (null, (CancellationToken cts) => Task.FromResult(false))
         };
@@ -119,13 +96,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     {
         throw new InvalidOperationException("This command handler is async only");
     }
-    protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
+    protected async Task CheckForNewVersionAsync(HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         if (Configuration.Update.Disabled)
         {
             return;
         }
 
+        // TODO: register service in DI container.
         var updateService = new UpdateService(httpClient, logger, Configuration.Update);
         var result = await updateService.GetUpdateMessageAsync(Kiota.Generated.KiotaVersion.Current(), cancellationToken).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(result))

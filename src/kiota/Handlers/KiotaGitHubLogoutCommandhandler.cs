@@ -44,7 +44,8 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);

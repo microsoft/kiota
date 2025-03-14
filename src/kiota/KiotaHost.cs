@@ -1,4 +1,6 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Text.RegularExpressions;
 using kiota.Handlers;
@@ -7,6 +9,7 @@ using Kiota.Builder;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota;
@@ -14,6 +17,29 @@ public static partial class KiotaHost
 {
     internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";
     internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable(KiotaPreviewEnvironmentVariable), out var isPreviewEnabled) && isPreviewEnabled);
+
+    // Option matching requires instance equality
+    internal static readonly GenerationConfiguration DefaultConfiguration = new();
+    internal static readonly Lazy<Option<string>> OutputOption = new(() => GetOutputPathOption(DefaultConfiguration.OutputPath));
+    internal static readonly Lazy<Option<LogLevel>> LogLevelOption = new(GetLogLevelOption);
+    private static readonly Lazy<Option<bool>> DisableSslValidationOption = new(() => GetDisableSSLValidationOption(DefaultConfiguration.DisableSSLValidation));
+
+    internal static void ConfigureCliOverridesMiddleware(InvocationContext ctx)
+    {
+        var overrides = ctx.GetHost().Services.GetRequiredService<CliOverrides>();
+
+        var disableSslValidationResult = ctx.ParseResult.FindResultFor(DisableSslValidationOption.Value);
+        if (disableSslValidationResult != null)
+        {
+            overrides.DisableSslValidation = disableSslValidationResult.GetValueOrDefault<bool>();
+        }
+        
+        var outputOptionResult = ctx.ParseResult.FindResultFor(OutputOption.Value);
+        if (outputOptionResult != null)
+        {
+            overrides.OutputPath = outputOptionResult.GetValueOrDefault<string>();
+        }
+    }
     public static RootCommand GetRootCommand()
     {
         var rootCommand = new RootCommand();
@@ -45,7 +71,7 @@ public static partial class KiotaHost
     }
     private static Command GetGitHubDeviceLoginCommand()
     {
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
         var deviceLoginCommand = new Command("device", "Logs in to GitHub using a device code flow.")
         {
             logLevelOption,
@@ -58,7 +84,7 @@ public static partial class KiotaHost
     }
     private static Command GetGitHubPatLoginCommand()
     {
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
         var patOption = new Option<string>("--pat", "The personal access token to use to authenticate to GitHub.")
         {
             IsRequired = true
@@ -77,7 +103,7 @@ public static partial class KiotaHost
     }
     private static Command GetGitHubLogoutCommand()
     {
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
         var githubLogoutCommand = new Command("github", "Logs out of GitHub.") {
             logLevelOption,
         };
@@ -105,7 +131,7 @@ public static partial class KiotaHost
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
         var manifestOption = GetManifestOption(defaultGenerationConfiguration.ApiManifestPath);
         var versionOption = GetVersionOption();
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
@@ -163,13 +189,13 @@ public static partial class KiotaHost
         var manifestOption = GetManifestOption(defaultGenerationConfiguration.ApiManifestPath);
 
         var versionOption = GetVersionOption();
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
         var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         maxDepthOption.AddAlias("--m-d");
-        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultGenerationConfiguration.DisableSSLValidation);
+        var disableSSLValidationOption = DisableSslValidationOption.Value;
         var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
             logLevelOption,
@@ -222,7 +248,7 @@ public static partial class KiotaHost
         var keyArgument = new Argument<string>("key", "The search result key to download the description for. Use the search command to get the key.");
         var defaultConfiguration = new DownloadConfiguration();
 
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
@@ -232,7 +258,7 @@ public static partial class KiotaHost
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
-        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+        var disableSSLValidationOption = DisableSslValidationOption.Value;
 
         var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
             keyArgument,
@@ -266,7 +292,7 @@ public static partial class KiotaHost
         var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
         var defaultConfiguration = new SearchConfiguration();
 
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
@@ -452,7 +478,7 @@ public static partial class KiotaHost
 
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
 
         var backingStoreOption = GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
 
@@ -484,7 +510,7 @@ public static partial class KiotaHost
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
-        var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+        var disableSSLValidationOption = DisableSslValidationOption.Value;
 
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
@@ -538,7 +564,7 @@ public static partial class KiotaHost
         var defaultConfiguration = new GenerationConfiguration();
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
-        var logLevelOption = GetLogLevelOption();
+        var logLevelOption = LogLevelOption.Value;
 
         var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
 

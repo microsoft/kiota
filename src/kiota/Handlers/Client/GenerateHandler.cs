@@ -59,7 +59,8 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
             try
@@ -89,6 +90,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
                     generationConfiguration.Operation = ConsumerOperation.Generate;
+                    // TODO: register service in DI container.
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                     if (result)

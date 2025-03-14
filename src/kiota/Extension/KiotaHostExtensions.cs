@@ -1,9 +1,12 @@
-﻿using Azure.Monitor.OpenTelemetry.Exporter;
+﻿using System.CommandLine.Hosting;
+using Azure.Monitor.OpenTelemetry.Exporter;
+using Kiota.Builder.Configuration;
 using kiota.Telemetry;
 using kiota.Telemetry.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -13,6 +16,51 @@ namespace kiota.Extension;
 
 internal static class KiotaHostExtensions
 {
+    internal static IHostBuilder ConfigureBaseServices(this IHostBuilder builder)
+    {
+        builder.ConfigureAppConfiguration(static (ctx, configuration) =>
+        {
+            var defaultStream = new MemoryStream(Kiota.Generated.KiotaAppSettings.Default());
+            configuration.AddJsonStream(defaultStream)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables(prefix: "KIOTA_");
+        });
+        builder.ConfigureServices(static (ctx, services) =>
+        {
+            services.Configure<KiotaConfiguration>(ctx.Configuration);
+            services.Configure<TelemetryConfig>(ctx.Configuration.GetSection(TelemetryConfig.ConfigSectionKey));
+            services.AddHttpClient(string.Empty).ConfigurePrimaryHttpMessageHandler(static sp =>
+            {
+                var overrides = sp.GetRequiredService<CliOverrides>();
+                var httpClientHandler = new HttpClientHandler();
+                if (overrides.GetEffectiveDisableSslValidation())
+                {
+                    httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                }
+                return httpClientHandler;
+            });
+            services.AddSingleton<CliOverrides>();
+            services.AddKeyedSingleton<GenerationConfiguration>(ServiceConstants.ServiceKeys.Default);
+        });
+        builder.ConfigureLogging(static (ctx, logging) =>
+        {
+            logging.ClearProviders();
+#if DEBUG
+            logging.AddDebug();
+#endif
+            logging.AddEventSourceLogger();
+
+            // TODO: Add the file logger and find a strategy for changing the output path
+            var parseResult = ctx.GetInvocationContext().ParseResult;
+            var logLevelResult = parseResult.FindResultFor(KiotaHost.LogLevelOption.Value);
+            if (logLevelResult != null)
+            {
+                logging.SetMinimumLevel(logLevelResult.GetValueOrDefault<LogLevel>());
+            }
+        });
+        return builder;
+    }
+
     internal static IHostBuilder ConfigureKiotaTelemetryServices(this IHostBuilder hostBuilder)
     {
         return hostBuilder.ConfigureServices(ConfigureServiceContainer);

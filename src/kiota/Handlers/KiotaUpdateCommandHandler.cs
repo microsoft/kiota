@@ -76,7 +76,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
@@ -103,7 +104,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                                                             TelemetryLabels.TagGeneratorLanguage,
                                                             x.Language.ToString("G"))
                                                     };
-                                                    var result = await GenerateClientAsync(context, x, cancellationToken);
+                                                    var result = await GenerateClientAsync(context, httpClient, x, cancellationToken);
                                                     genCounter?.Add(1, meterTags);
                                                     return result;
                                                 }));
@@ -138,7 +139,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<bool> GenerateClientAsync(InvocationContext context, GenerationConfiguration config, CancellationToken cancellationToken)
+    private async Task<bool> GenerateClientAsync(InvocationContext context, HttpClient httpClient, GenerationConfiguration config, CancellationToken cancellationToken)
     {
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, config.OutputPath);
         using (loggerFactory)
