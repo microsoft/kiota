@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 
 namespace Kiota.Builder.OpenApiExtensions;
 
-public class OpenApiAdaptiveCardExtension : OpenApiSimpleStringExtension
+public class OpenApiAiAdaptiveCardExtension : OpenApiSimpleStringExtension
 {
     public static string Name => "x-ai-adaptive-card";
     public string? AdaptiveCard
@@ -10,9 +10,9 @@ public class OpenApiAdaptiveCardExtension : OpenApiSimpleStringExtension
         get; set;
     }
     protected override string? ValueSelector => AdaptiveCard;
-    public static OpenApiAdaptiveCardExtension Parse(JsonNode source)
+    public static OpenApiAiAdaptiveCardExtension Parse(JsonNode source)
     {
-        return new OpenApiAdaptiveCardExtension
+        return new OpenApiAiAdaptiveCardExtension
         {
             AdaptiveCard = ParseString(source)
         };
