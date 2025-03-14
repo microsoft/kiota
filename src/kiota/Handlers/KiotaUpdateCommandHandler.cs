@@ -9,6 +9,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers;
 
@@ -62,7 +63,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        AssignIfNotNullOrEmpty(configuration, output, (c, s) => c.OutputPath = s);
         var searchPath = GetAbsolutePath(output.OrEmpty());
         var lockService = new LockManagementService();
         var lockFileDirectoryPaths = lockService.GetDirectoriesContainingLockFile(searchPath);
@@ -71,12 +73,13 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             DisplayError("No lock file found. Please run the generation command first.");
             return 1;
         }
-        Configuration.Generation.ClearCache = clearCache;
-        Configuration.Generation.CleanOutput = cleanOutput;
+        configuration.Generation.ClearCache = clearCache;
+        configuration.Generation.CleanOutput = cleanOutput;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
@@ -88,7 +91,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                                                                                     TaskScheduler.Default)));
                 var configurations = locks.Select(x =>
                 {
-                    var config = (GenerationConfiguration)Configuration.Generation.Clone();
+                    var config = (GenerationConfiguration)configuration.Generation.Clone();
                     x.lockInfo?.UpdateGenerationConfigurationFromLock(config);
                     config.OutputPath = x.lockDirectoryPath;
                     return config;
@@ -103,7 +106,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                                                             TelemetryLabels.TagGeneratorLanguage,
                                                             x.Language.ToString("G"))
                                                     };
-                                                    var result = await GenerateClientAsync(context, x, cancellationToken);
+                                                    var result = await GenerateClientAsync(context, httpClient, x, cancellationToken);
                                                     genCounter?.Add(1, meterTags);
                                                     return result;
                                                 }));
@@ -113,8 +116,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                     DisplayUrlInformation(configurations.FirstOrDefault(x => lockDirectoryPath.Equals(x.OutputPath, StringComparison.OrdinalIgnoreCase))?.ApiRootUrl);
                 }
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
-                foreach (var configuration in configurations)
-                    DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath, string.Empty);
+                foreach (var generationConfiguration in configurations)
+                    DisplayInfoHint(generationConfiguration.Language, generationConfiguration.OpenAPIFilePath, string.Empty);
                 if (Array.Exists(results, static x => x) && !cleanOutput)
                     DisplayCleanHint("update");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
@@ -138,7 +141,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<bool> GenerateClientAsync(InvocationContext context, GenerationConfiguration config, CancellationToken cancellationToken)
+    private async Task<bool> GenerateClientAsync(InvocationContext context, HttpClient httpClient, GenerationConfiguration config, CancellationToken cancellationToken)
     {
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, config.OutputPath);
         using (loggerFactory)

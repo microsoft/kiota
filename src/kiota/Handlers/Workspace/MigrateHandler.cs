@@ -61,6 +61,8 @@ internal class MigrateHandler : BaseKiotaCommandHandler
         {
             try
             {
+                var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+                // TODO: register service in DI container.
                 var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true, workingDirectory);
                 var clientNames = await workspaceManagementService.MigrateFromLockFileAsync(clientName, lockDirectory, cancellationToken).ConfigureAwait(false);
                 if (!clientNames.Any())

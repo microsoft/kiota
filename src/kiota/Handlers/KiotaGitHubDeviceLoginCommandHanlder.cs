@@ -4,9 +4,11 @@ using System.Diagnostics;
 using kiota.Authentication.GitHub.DeviceCode;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
@@ -48,10 +50,12 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<DeviceCodeAuthenticationProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                var result = await LoginAsync(logger, cancellationToken).ConfigureAwait(false);
+                var result = await LoginAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return result;
             }
@@ -73,9 +77,9 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<int> LoginAsync(ILogger logger, CancellationToken cancellationToken)
+    private async Task<int> LoginAsync(KiotaConfiguration configuration, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
-        var authenticationProvider = new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
+        var authenticationProvider = new DeviceCodeAuthenticationProvider(configuration.Search.GitHub.AppId,
                                                                         "repo",
                                                                         new List<string> { "api.github.com" },
                                                                         httpClient,
@@ -84,14 +88,14 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var dummyRequest = new RequestInformation()
         {
             HttpMethod = Method.GET,
-            URI = Configuration.Search.GitHub.ApiBaseUrl,
+            URI = configuration.Search.GitHub.ApiBaseUrl,
         };
         await authenticationProvider.AuthenticateRequestAsync(dummyRequest, cancellationToken: cancellationToken);
         if (dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue.FirstOrDefault() is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase))
         {
             DisplaySuccess("Authentication successful.");
-            await ListOutRepositoriesAsync(authenticationProvider, cancellationToken);
-            DisplayManageInstallationHint();
+            await ListOutRepositoriesAsync(httpClient, authenticationProvider, cancellationToken);
+            DisplayManageInstallationHint(configuration);
             DisplaySearchBasicHint();
             DisplayGitHubLogoutHint();
             return 0;
@@ -102,7 +106,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             return 1;
         }
     }
-    private async Task ListOutRepositoriesAsync(IAuthenticationProvider authProvider, CancellationToken cancellationToken)
+    private async Task ListOutRepositoriesAsync(HttpClient httpClient, IAuthenticationProvider authProvider, CancellationToken cancellationToken)
     {
         var requestAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         var client = new GitHubClient(requestAdapter);

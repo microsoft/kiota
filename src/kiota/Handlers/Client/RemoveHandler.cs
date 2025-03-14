@@ -5,9 +5,11 @@ using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers.Client;
 internal class RemoveHandler : BaseKiotaCommandHandler
@@ -59,7 +61,10 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         {
             try
             {
-                await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+                var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+                var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+                await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
+                // TODO: register service in DI container.
                 var workspaceManagementService = new WorkspaceManagementService(logger, httpClient, true);
                 await workspaceManagementService.RemoveClientAsync(className, cleanOutput, cancellationToken).ConfigureAwait(false);
                 DisplaySuccess($"Client {className} removed successfully!");
