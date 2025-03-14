@@ -27,6 +27,9 @@ public class CodeUsingWriter
                                                         .Select(static x => (x.Name, string.Empty, x.Declaration?.Name))
                                                         .GroupBy(static x => x.Item3)
                                                         .OrderBy(static x => x.Key)
+                                                        // TODO: figure out why __future__ imports are not being sorted correctly
+                                                        // .OrderBy(static x => !x.Key!.StartsWith("__future__", StringComparison.OrdinalIgnoreCase))
+                                                        // .ThenBy(static x => x.Key)
                                                         .ToArray();
         if (externalImportSymbolsAndPaths.Length != 0)
         {
