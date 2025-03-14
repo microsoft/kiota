@@ -78,7 +78,7 @@ export class RegenerateService {
           pluginTypes,
           includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
           excludePatterns: [],
-          clientClassName: this._clientKey,
+          pluginName: this._clientKey,
           clearCache: settings.clearCache,
           cleanOutput: false,
           disabledValidationRules: settings.disableValidationRules,

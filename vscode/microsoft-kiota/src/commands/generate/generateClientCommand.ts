@@ -197,7 +197,7 @@ export class GenerateClientCommand extends Command {
           pluginTypes: [pluginTypes],
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,
@@ -242,7 +242,7 @@ export class GenerateClientCommand extends Command {
           pluginTypes,
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,
