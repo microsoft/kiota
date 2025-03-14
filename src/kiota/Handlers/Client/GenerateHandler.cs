@@ -10,6 +10,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers.Client;
 
@@ -55,14 +56,16 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
         var className = className0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            var generationConfiguration = host.Services.GetRequiredKeyedService<GenerationConfiguration>(ServiceConstants.ServiceKeys.Default);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
             try
             {
                 var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
@@ -84,7 +87,6 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 }
                 foreach (var clientEntry in clientEntries)
                 {
-                    var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
                     generationConfiguration.ClearCache = refresh;

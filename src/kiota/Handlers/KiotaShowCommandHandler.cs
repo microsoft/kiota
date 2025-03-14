@@ -6,9 +6,11 @@ using System.Text;
 using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Handlers;
@@ -98,14 +100,15 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         var excludePatterns = excludePatterns0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
-        Configuration.Search.ClearCache = clearCache;
-        Configuration.Generation.DisableSSLValidation = disableSSLValidation;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Search.ClearCache = clearCache;
+        configuration.Generation.DisableSSLValidation = disableSSLValidation;
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             var descriptionProvided = (!string.IsNullOrEmpty(openapi) || !string.IsNullOrEmpty(manifest)) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, httpClient, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, configuration, loggerFactory, httpClient, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;
@@ -119,14 +122,14 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 logger.LogError("no description provided");
                 return 1;
             }
-            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
-            Configuration.Generation.ApiManifestPath = manifest;
-            Configuration.Generation.IncludePatterns = [.. includePatterns];
-            Configuration.Generation.ExcludePatterns = [.. excludePatterns];
-            Configuration.Generation.ClearCache = clearCache;
+            configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
+            configuration.Generation.ApiManifestPath = manifest;
+            configuration.Generation.IncludePatterns = [.. includePatterns];
+            configuration.Generation.ExcludePatterns = [.. excludePatterns];
+            configuration.Generation.ClearCache = clearCache;
             try
             {
-                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
+                var urlTreeNode = await new KiotaBuilder(logger, configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
 
                 var builder = new StringBuilder();
                 if (urlTreeNode != null)

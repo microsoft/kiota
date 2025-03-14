@@ -9,9 +9,11 @@ using System.Text.Json;
 using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers;
 
@@ -63,21 +65,22 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         string version = version0.OrEmpty();
-        Configuration.Search.ClearCache = clearCache;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Search.ClearCache = clearCache;
 
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
-                var searcher = await GetKiotaSearcherAsync(loggerFactory, httpClient, cancellationToken).ConfigureAwait(false);
+                var searcher = await GetKiotaSearcherAsync(configuration, loggerFactory, httpClient, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken);
-                await DisplayResultsAsync(searchTerm, version, results, logger, cancellationToken);
+                await DisplayResultsAsync(searchTerm, version, results, configuration, logger, cancellationToken);
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;
             }
@@ -99,7 +102,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task DisplayResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
+    private async Task DisplayResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, KiotaConfiguration configuration, ILogger logger, CancellationToken cancellationToken)
     {
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
@@ -127,7 +130,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             DisplaySearchHint(results.Keys.FirstOrDefault(), version);
-            await DisplayLoginHintAsync(logger, cancellationToken);
+            await DisplayLoginHintAsync(configuration, logger, cancellationToken);
             DisplaySearchAddHint();
         }
     }

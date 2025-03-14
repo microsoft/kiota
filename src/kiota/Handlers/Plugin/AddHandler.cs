@@ -11,6 +11,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.Handlers.Plugin;
@@ -96,42 +97,43 @@ internal class AddHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
-        AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
-        AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
-        Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ConsumerOperation.Add;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        AssignIfNotNullOrEmpty(configuration, output, (c, s) => c.OutputPath = s);
+        AssignIfNotNullOrEmpty(configuration, openapi, (c, s) => c.OpenAPIFilePath = s);
+        AssignIfNotNullOrEmpty(configuration, className, (c, s) => c.ClientClassName = s);
+        configuration.Generation.SkipGeneration = skipGeneration;
+        configuration.Generation.Operation = ConsumerOperation.Add;
         if (pluginTypes is { Count: > 0 })
-            Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+            configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
-            Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
+            configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
         if (includePatterns0 is { Count: > 0 })
-            Configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns0 is { Count: > 0 })
-            Configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
-        Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+            configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        configuration.Generation.OpenAPIFilePath = GetAbsolutePath(configuration.Generation.OpenAPIFilePath);
+        configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.Generation.OutputPath));
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
             try
             {
-                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
+                var builder = new KiotaBuilder(logger, configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");
-                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl, true);
+                    DisplayUrlInformation(configuration.Generation.ApiRootUrl, true);
                     var genCounter = instrumentation?.CreatePluginGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(
                             TelemetryLabels.TagGeneratorPluginTypes,
-                            Configuration.Generation.PluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray())
+                            configuration.Generation.PluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray())
                     };
                     genCounter?.Add(1, meterTags);
                 }
@@ -140,7 +142,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{configuration.Generation.ClientClassName}";
                 DisplayGenerateAdvancedHint(includePatterns0.OrEmpty(), excludePatterns0.OrEmpty(), string.Empty, manifestPath, "plugin add");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;

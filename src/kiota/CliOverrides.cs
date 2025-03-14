@@ -6,9 +6,7 @@ using static kiota.ServiceConstants;
 namespace kiota;
 
 internal class CliOverrides(
-    IOptionsMonitor<KiotaConfiguration> kiotaConfiguration,
-    [FromKeyedServices(ServiceKeys.Default)]
-    GenerationConfiguration generationConfiguration
+    IOptionsMonitor<KiotaConfiguration> kiotaConfiguration
 )
 {
     public bool? DisableSslValidation
@@ -25,12 +23,10 @@ internal class CliOverrides(
 
     internal bool GetEffectiveDisableSslValidation()
     {
-        return this.DisableSslValidation ?? kiotaConfiguration.CurrentValue?.Generation.DisableSSLValidation ??
-            generationConfiguration.DisableSSLValidation;
+        return this.DisableSslValidation ?? kiotaConfiguration.CurrentValue.Generation.DisableSSLValidation;
     }
     internal string GetEffectiveOutputPath()
     {
-        return this.OutputPath ?? kiotaConfiguration.CurrentValue?.Generation.OutputPath ??
-            generationConfiguration.OutputPath;
+        return this.OutputPath ?? kiotaConfiguration.CurrentValue.Generation.OutputPath;
     }
 }

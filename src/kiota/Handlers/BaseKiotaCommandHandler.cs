@@ -19,12 +19,12 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         generationConfiguration.Serializers = defaultGenerationConfiguration.Serializers;
         generationConfiguration.Deserializers = defaultGenerationConfiguration.Deserializers;
     }
-    protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(ILogger logger) => new()
+    protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(KiotaConfiguration configuration, ILogger logger) => new()
     {
         Logger = logger,
-        ApiBaseUrl = Configuration.Search.GitHub.ApiBaseUrl,
+        ApiBaseUrl = configuration.Search.GitHub.ApiBaseUrl,
         Concrete = null,
-        AppId = Configuration.Search.GitHub.AppId,
+        AppId = configuration.Search.GitHub.AppId,
     };
     protected static TempFolderTokenStorageService GetGitHubPatStorageService(ILogger logger) => new()
     {
@@ -35,10 +35,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     public required Option<LogLevel> LogLevelOption
     {
         get; init;
-    }
-    protected KiotaConfiguration Configuration
-    {
-        get => ConfigurationFactory.Value;
     }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new(() =>
     {
@@ -54,9 +50,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     });
 
     private const string GitHubScope = "repo";
-    private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) =>
+    private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(KiotaConfiguration configuration, ILogger logger) => (cancellationToken) =>
     {
-        var provider = GetGitHubDeviceStorageService(logger);
+        var provider = GetGitHubDeviceStorageService(configuration, logger);
         return provider.TokenStorageService.Value.IsTokenPresentAsync(cancellationToken);
     };
     private static Func<CancellationToken, Task<bool>> GetIsGitHubPatSignedInCallback(ILogger logger) => (cancellationToken) =>
@@ -64,47 +60,47 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         var provider = GetGitHubPatStorageService(logger);
         return provider.IsTokenPresentAsync(cancellationToken);
     };
-    private IAuthenticationProvider GetGitHubAuthenticationProvider(ILogger logger, HttpClient httpClient) =>
-        new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
+    private IAuthenticationProvider GetGitHubAuthenticationProvider(string appId, string host, ILogger logger, HttpClient httpClient) =>
+        new DeviceCodeAuthenticationProvider(appId,
                                             GitHubScope,
-                                            new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                            new List<string> { host },
                                             httpClient,
                                             DisplayGitHubDeviceCodeLoginMessage,
                                             logger);
-    private IAuthenticationProvider GetGitHubPatAuthenticationProvider(ILogger logger) =>
-        new PatAuthenticationProvider(Configuration.Search.GitHub.AppId,
+    private IAuthenticationProvider GetGitHubPatAuthenticationProvider(string appId, string host, ILogger logger) =>
+        new PatAuthenticationProvider(appId,
                                     GitHubScope,
-                                    new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                    new List<string> { host },
                                     logger,
                                     GetGitHubPatStorageService(logger));
-    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, HttpClient httpClient, CancellationToken cancellationToken)
+    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(KiotaConfiguration configuration, ILoggerFactory loggerFactory, HttpClient httpClient, CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger<KiotaSearcher>();
-        var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(logger);
+        var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(configuration, logger);
         var patSignInCallBack = GetIsGitHubPatSignedInCallback(logger);
         var isDeviceCodeSignedIn = await deviceCodeSignInCallback(cancellationToken).ConfigureAwait(false);
         var isPatSignedIn = await patSignInCallBack(cancellationToken).ConfigureAwait(false);
         var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch
         {
-            (true, _) => ((IAuthenticationProvider?)GetGitHubAuthenticationProvider(logger, httpClient), deviceCodeSignInCallback),
-            (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
+            (true, _) => ((IAuthenticationProvider?)GetGitHubAuthenticationProvider(configuration.Search.GitHub.AppId, configuration.Search.GitHub.ApiBaseUrl.Host, logger, httpClient), deviceCodeSignInCallback),
+            (_, true) => (GetGitHubPatAuthenticationProvider(configuration.Search.GitHub.AppId, configuration.Search.GitHub.ApiBaseUrl.Host, logger), patSignInCallBack),
             (_, _) => (null, (CancellationToken cts) => Task.FromResult(false))
         };
-        return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
+        return new KiotaSearcher(logger, configuration.Search, httpClient, provider, callback);
     }
     public int Invoke(InvocationContext context)
     {
         throw new InvalidOperationException("This command handler is async only");
     }
-    protected async Task CheckForNewVersionAsync(HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
+    protected async Task CheckForNewVersionAsync(KiotaConfiguration configuration, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
-        if (Configuration.Update.Disabled)
+        if (configuration.Update.Disabled)
         {
             return;
         }
 
         // TODO: register service in DI container.
-        var updateService = new UpdateService(httpClient, logger, Configuration.Update);
+        var updateService = new UpdateService(httpClient, logger, configuration.Update);
         var result = await updateService.GetUpdateMessageAsync(Kiota.Generated.KiotaVersion.Current(), cancellationToken).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(result))
             DisplayWarning(result);
@@ -136,10 +132,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             return string.Empty;
         return Path.IsPathRooted(source) || source.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
-    protected void AssignIfNotNullOrEmpty(string? input, Action<GenerationConfiguration, string> assignment)
+    protected void AssignIfNotNullOrEmpty(KiotaConfiguration configuration, string? input, Action<GenerationConfiguration, string> assignment)
     {
         if (!string.IsNullOrEmpty(input))
-            assignment.Invoke(Configuration.Generation, input);
+            assignment.Invoke(configuration.Generation, input);
     }
     protected static string NormalizeSlashesInPath(string path)
     {
@@ -340,18 +336,18 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         DisplayHint("Hint: use the logout command to sign out of GitHub.",
                     "Example: kiota logout github");
     }
-    protected void DisplayManageInstallationHint()
+    protected void DisplayManageInstallationHint(KiotaConfiguration configuration)
     {
-        DisplayHint($"Hint: go to {Configuration.Search.GitHub.AppManagement} to manage your which organizations and repositories Kiota has access to.");
+        DisplayHint($"Hint: go to {configuration.Search.GitHub.AppManagement} to manage your which organizations and repositories Kiota has access to.");
     }
     protected void DisplaySearchBasicHint()
     {
         DisplayHint("Hint: use the search command to search for an OpenAPI description.",
                     "Example: kiota search <search term>");
     }
-    protected async Task DisplayLoginHintAsync(ILogger logger, CancellationToken token)
+    protected async Task DisplayLoginHintAsync(KiotaConfiguration configuration, ILogger logger, CancellationToken token)
     {
-        var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
+        var deviceCodeAuthProvider = GetGitHubDeviceStorageService(configuration, logger);
         var patStorage = GetGitHubPatStorageService(logger);
         if (!await deviceCodeAuthProvider.TokenStorageService.Value.IsTokenPresentAsync(token) && !await patStorage.IsTokenPresentAsync(token))
         {
@@ -364,9 +360,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         if (KiotaHost.IsConfigPreviewEnabled.Value)
             DisplayWarning("Warning: the kiota generate and update commands are deprecated, use kiota client commands instead.");
     }
-    protected void WarnUsingPreviewLanguage(GenerationLanguage language)
+    protected void WarnUsingPreviewLanguage(KiotaConfiguration configuration, GenerationLanguage language)
     {
-        if (Configuration.Languages.TryGetValue(language.ToString(), out var languageInformation) && languageInformation.MaturityLevel is not LanguageMaturityLevel.Stable)
+        if (configuration.Languages.TryGetValue(language.ToString(), out var languageInformation) && languageInformation.MaturityLevel is not LanguageMaturityLevel.Stable)
             DisplayWarning($"Warning: the {language} language is in preview ({languageInformation.MaturityLevel}) some features are not fully supported and source breaking changes will happen with future updates.");
     }
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)

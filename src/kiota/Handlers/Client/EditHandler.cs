@@ -12,6 +12,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers.Client;
 
@@ -120,20 +121,21 @@ internal class EditHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ConsumerOperation.Edit;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Generation.SkipGeneration = skipGeneration;
+        configuration.Generation.Operation = ConsumerOperation.Edit;
 
         string output = output0.OrEmpty();
         string openapi = openapi0.OrEmpty();
         string className = className0.OrEmpty();
         string namespaceName = namespaceName0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
@@ -149,47 +151,47 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayError($"No client found with the provided name {className}");
                     return 1;
                 }
-                clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(Configuration.Generation, className);
+                clientConfiguration.UpdateGenerationConfigurationFromApiClientConfiguration(configuration.Generation, className);
                 if (language.HasValue)
-                    Configuration.Generation.Language = language.Value;
+                    configuration.Generation.Language = language.Value;
                 if (typeAccessModifier.HasValue)
-                    Configuration.Generation.TypeAccessModifier = typeAccessModifier.Value;
+                    configuration.Generation.TypeAccessModifier = typeAccessModifier.Value;
                 if (backingStore.HasValue)
-                    Configuration.Generation.UsesBackingStore = backingStore.Value;
+                    configuration.Generation.UsesBackingStore = backingStore.Value;
                 if (excludeBackwardCompatible.HasValue)
-                    Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
+                    configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
                 if (includeAdditionalData.HasValue)
-                    Configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
-                AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
-                AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
-                AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
-                AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
+                    configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
+                AssignIfNotNullOrEmpty(configuration, output, (c, s) => c.OutputPath = s);
+                AssignIfNotNullOrEmpty(configuration, openapi, (c, s) => c.OpenAPIFilePath = s);
+                AssignIfNotNullOrEmpty(configuration, className, (c, s) => c.ClientClassName = s);
+                AssignIfNotNullOrEmpty(configuration, namespaceName, (c, s) => c.ClientNamespaceName = s);
                 if (includePatterns is { Count: > 0 })
-                    Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (excludePatterns is { Count: > 0 })
-                    Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (disabledValidationRules is { Count: > 0 })
-                    Configuration.Generation.DisabledValidationRules = disabledValidationRules
+                    configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                             .Select(static x => x.TrimQuotes())
                                                                             .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (structuredMimeTypes is { Count: > 0 })
-                    Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                    configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                                     .Select(static x => x.TrimQuotes()));
 
-                DefaultSerializersAndDeserializers(Configuration.Generation);
-                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
+                DefaultSerializersAndDeserializers(configuration.Generation);
+                var builder = new KiotaBuilder(logger, configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");
-                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
+                    DisplayUrlInformation(configuration.Generation.ApiRootUrl);
                     var genCounter = instrumentation?.CreateClientGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(
                             TelemetryLabels.TagGeneratorLanguage,
-                            Configuration.Generation.Language.ToString("G"))
+                            configuration.Generation.Language.ToString("G"))
                     };
                     genCounter?.Add(1, meterTags);
                 }
@@ -203,8 +205,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayWarning("Generation skipped as no changes were detected");
                     DisplayCleanHint("client generate", "--refresh");
                 }
-                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
-                DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{configuration.Generation.ClientClassName}";
+                DisplayInfoHint(configuration.Generation.Language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns ?? [], excludePatterns ?? [], string.Empty, manifestPath, "client edit");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;

@@ -4,9 +4,11 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers;
 internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
@@ -50,7 +52,8 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
                 var result = await LoginAsync(logger, pat, cancellationToken).ConfigureAwait(false);

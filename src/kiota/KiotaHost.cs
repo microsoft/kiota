@@ -33,7 +33,7 @@ public static partial class KiotaHost
         {
             overrides.DisableSslValidation = disableSslValidationResult.GetValueOrDefault<bool>();
         }
-        
+
         var outputOptionResult = ctx.ParseResult.FindResultFor(OutputOption.Value);
         if (outputOptionResult != null)
         {

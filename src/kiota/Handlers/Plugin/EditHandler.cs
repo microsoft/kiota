@@ -11,6 +11,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.Handlers.Plugin;
@@ -101,18 +102,19 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         var className = className0.OrEmpty();
         var pluginAuthRefId = pluginAuthRefId0.OrEmpty();
-        Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ConsumerOperation.Edit;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Generation.SkipGeneration = skipGeneration;
+        configuration.Generation.Operation = ConsumerOperation.Edit;
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
-            Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
+            configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
@@ -128,31 +130,31 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayError($"No plugin found with the provided name {className}");
                     return 1;
                 }
-                pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
-                AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
-                AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
-                AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
+                pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(configuration.Generation, className);
+                AssignIfNotNullOrEmpty(configuration, output, (c, s) => c.OutputPath = s);
+                AssignIfNotNullOrEmpty(configuration, openapi, (c, s) => c.OpenAPIFilePath = s);
+                AssignIfNotNullOrEmpty(configuration, className, (c, s) => c.ClientClassName = s);
                 if (includePatterns is { Count: > 0 })
-                    Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (excludePatterns is { Count: > 0 })
-                    Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
-                    Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
-                Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
-                Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
-                DefaultSerializersAndDeserializers(Configuration.Generation);
-                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
+                    configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+                configuration.Generation.OpenAPIFilePath = GetAbsolutePath(configuration.Generation.OpenAPIFilePath);
+                configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.Generation.OutputPath));
+                DefaultSerializersAndDeserializers(configuration.Generation);
+                var builder = new KiotaBuilder(logger, configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");
-                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl, true);
+                    DisplayUrlInformation(configuration.Generation.ApiRootUrl, true);
                     var genCounter = instrumentation?.CreatePluginGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(
                             TelemetryLabels.TagGeneratorPluginTypes,
-                            Configuration.Generation.PluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray())
+                            configuration.Generation.PluginTypes.Select(static x=> x.ToString("G").ToLowerInvariant()).ToArray())
                     };
                     genCounter?.Add(1, meterTags);
                 }
@@ -166,8 +168,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                     DisplayWarning("Generation skipped as no changes were detected");
                     DisplayCleanHint("plugin generate", "--refresh");
                 }
-                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
-                DisplayInfoHint(Configuration.Generation.Language, string.Empty, manifestPath);
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{configuration.Generation.ClientClassName}";
+                DisplayInfoHint(configuration.Generation.Language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns.OrEmpty(), excludePatterns.OrEmpty(), string.Empty, manifestPath, "plugin edit");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return 0;

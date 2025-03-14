@@ -11,6 +11,7 @@ using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Writers;
 
 namespace kiota.Handlers;
@@ -94,19 +95,20 @@ internal class
         string version = version0.OrEmpty();
         DependencyType[] dependencyTypes = dependencyTypes0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
-        Configuration.Search.ClearCache = clearCache;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             if (!language.HasValue)
             {
-                ShowLanguagesTable();
+                ShowLanguagesTable(configuration.Languages);
                 DisplayInfoAdvancedHint();
                 return 0;
             }
 
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, httpClient, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, configuration, loggerFactory, httpClient, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;
@@ -116,16 +118,16 @@ internal class
                 openapi = searchResultDescription;
             }
 
-            Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
-            Configuration.Generation.ClearCache = clearCache;
-            Configuration.Generation.Language = language.Value;
+            configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
+            configuration.Generation.ClearCache = clearCache;
+            configuration.Generation.Language = language.Value;
 
-            var instructions = Configuration.Languages;
+            var instructions = configuration.Languages;
             if (!string.IsNullOrEmpty(openapi))
             {
                 try
                 {
-                    var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
+                    var builder = new KiotaBuilder(logger, configuration.Generation, httpClient);
                     var result = await builder.GetLanguagesInformationAsync(cancellationToken);
                     if (result != null)
                         instructions = result;
@@ -152,9 +154,8 @@ internal class
             return 0;
         }
     }
-    private void ShowLanguagesTable()
+    private void ShowLanguagesTable(LanguagesInformation defaultInformation)
     {
-        var defaultInformation = Configuration.Languages;
         var view = new TableView<KeyValuePair<string, LanguageInformation>>()
         {
             Items = defaultInformation.OrderBy(static x => x.Key).Select(static x => x).ToList(),

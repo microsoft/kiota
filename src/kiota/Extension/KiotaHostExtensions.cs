@@ -1,8 +1,8 @@
 ﻿using System.CommandLine.Hosting;
 using Azure.Monitor.OpenTelemetry.Exporter;
-using Kiota.Builder.Configuration;
 using kiota.Telemetry;
 using kiota.Telemetry.Config;
+using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

@@ -126,57 +126,58 @@ internal class AddHandler : BaseKiotaCommandHandler
         List<string> excludePatterns = excludePatterns0.OrEmpty();
         List<string> disabledValidationRules = disabledValidationRules0.OrEmpty();
         List<string> structuredMimeTypes = structuredMimeTypes0.OrEmpty();
-        AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
-        AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
-        AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
-        AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
-        Configuration.Generation.UsesBackingStore = backingStore;
-        Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
-        Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
-        Configuration.Generation.Language = language;
-        WarnUsingPreviewLanguage(language);
-        Configuration.Generation.TypeAccessModifier = typeAccessModifier;
-        Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.Operation = ConsumerOperation.Add;
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        AssignIfNotNullOrEmpty(configuration, output, (c, s) => c.OutputPath = s);
+        AssignIfNotNullOrEmpty(configuration, openapi, (c, s) => c.OpenAPIFilePath = s);
+        AssignIfNotNullOrEmpty(configuration, className, (c, s) => c.ClientClassName = s);
+        AssignIfNotNullOrEmpty(configuration, namespaceName, (c, s) => c.ClientNamespaceName = s);
+        configuration.Generation.UsesBackingStore = backingStore;
+        configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
+        configuration.Generation.IncludeAdditionalData = includeAdditionalData;
+        configuration.Generation.Language = language;
+        WarnUsingPreviewLanguage(configuration, language);
+        configuration.Generation.TypeAccessModifier = typeAccessModifier;
+        configuration.Generation.SkipGeneration = skipGeneration;
+        configuration.Generation.Operation = ConsumerOperation.Add;
         if (includePatterns.Count != 0)
-            Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)
-            Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (disabledValidationRules.Count != 0)
-            Configuration.Generation.DisabledValidationRules = disabledValidationRules
+            configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                     .Select(static x => x.TrimQuotes())
                                                                     .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (structuredMimeTypes.Count != 0)
-            Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
 
-        Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
-        Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
-        Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
+        configuration.Generation.OpenAPIFilePath = GetAbsolutePath(configuration.Generation.OpenAPIFilePath);
+        configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.Generation.OutputPath));
+        configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.Generation.ApiManifestPath));
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
-            await CheckForNewVersionAsync(httpClient, logger, cancellationToken).ConfigureAwait(false);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
-                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
+                var builder = new KiotaBuilder(logger, configuration.Generation, httpClient, true);
                 var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");
-                    DisplayUrlInformation(Configuration.Generation.ApiRootUrl);
+                    DisplayUrlInformation(configuration.Generation.ApiRootUrl);
                     var genCounter = instrumentation?.CreateClientGenerationCounter();
                     var meterTags = new TagList(_commonTags.AsSpan())
                     {
                         new KeyValuePair<string, object?>(
                             TelemetryLabels.TagGeneratorLanguage,
-                            Configuration.Generation.Language.ToString("G"))
+                            configuration.Generation.Language.ToString("G"))
                     };
                     genCounter?.Add(1, meterTags);
                 }
@@ -185,7 +186,7 @@ internal class AddHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as --skip-generation was passed");
                     DisplayGenerateCommandHint();
                 } // else we get an error because we're adding a client that already exists
-                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{Configuration.Generation.ClientClassName}";
+                var manifestPath = $"{GetAbsolutePath(Path.Combine(WorkspaceConfigurationStorageService.KiotaDirectorySegment, WorkspaceConfigurationStorageService.ManifestFileName))}#{configuration.Generation.ClientClassName}";
                 DisplayInfoHint(language, string.Empty, manifestPath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, string.Empty, manifestPath, "client add");
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
