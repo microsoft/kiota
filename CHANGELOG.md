@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.24.1] - 2025-03-13
+
+### Changed
+
+- Fixed docker images publishing
+
+## [1.24.0] - 2025-03-12
+
+### Added
+
 - Added support for OpenAPI 3.1. [#3914](https://github.com/microsoft/kiota/issues/3914)
 
 ### Changed
@@ -19,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated kiota generate classname flag validator to prevent invalid class names. [#6187](https://github.com/microsoft/kiota/issues/6187)
 - Fixed enum serialization for union and intersection types in Dart. [#6201](https://github.com/microsoft/kiota/pull/6201)
 - Added mapping for Bundle package in PHP to show up in Kiota commands. [#4636](https://github.com/microsoft/kiota/issues/4636)
+- Fixes javadoc warning present in generated Java code comments due to the presence of special XML character.
 
 ## [1.23.0] - 2025-02-06
 

@@ -470,7 +470,7 @@ public partial class PluginsGenerationService
                 var auth = configAuth;
                 try
                 {
-                    auth = configAuth ?? GetAuth(operation.Security ?? document.SecurityRequirements ?? []);
+                    auth = configAuth ?? GetAuth(operation.Security ?? document.Security ?? []);
                 }
                 catch (UnsupportedSecuritySchemeException e)
                 {
@@ -531,22 +531,27 @@ public partial class PluginsGenerationService
     private static Auth GetAuthFromSecurityScheme(OpenApiSecuritySchemeReference securityScheme)
     {
         string name = securityScheme.Reference.Id;
+        string? authenticationReferenceId = null;
+
+        if (securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
+            authenticationReferenceId = authReferenceId.AuthenticationReferenceId;
+
         return securityScheme.Type switch
         {
             SecuritySchemeType.ApiKey => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             // Only Http bearer is supported
             SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) =>
                 new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {
-                ReferenceId = $"{{{name}_REGISTRATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
-                ReferenceId = $"{{{name}_CONFIGURATION_ID}}"
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_CONFIGURATION_ID}}" : authenticationReferenceId
             },
             _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
                 $"Unsupported security scheme type '{securityScheme.Type}'.")

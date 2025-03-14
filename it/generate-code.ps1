@@ -3,6 +3,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language,
+    [Parameter(Mandatory = $false)][string]$descriptionKey,
     [Parameter(Mandatory = $false)][switch]$dev
 )
 
@@ -11,13 +12,19 @@ if ([string]::IsNullOrEmpty($descriptionUrl)) {
     exit 1
 }
 
+if ([string]::IsNullOrEmpty($descriptionKey)) {
+    Write-Warning "Description Configuration Key is empty. Using the description URL as the key."
+    # If the descriptionKey is not provided, use the descriptionUrl as the key
+    $descriptionKey = $descriptionUrl
+}
+
 if ([string]::IsNullOrEmpty($language)) {
     Write-Error "Language is empty"
     exit 1
 }
 
 $additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
-$additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionUrl $descriptionUrl -language $language"
+$additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionKey $descriptionKey -language $language"
 $rootPath = Join-Path -Path $PSScriptRoot -ChildPath ".."
 
 $Env:KIOTA_TUTORIAL_ENABLED = "false"

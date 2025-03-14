@@ -31,8 +31,6 @@ internal class OpenApiDocumentDownloadService
         ArgumentNullException.ThrowIfNull(logger);
         HttpClient = httpClient;
         Logger = logger;
-        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yaml, new OpenApiYamlReader());
-        OpenApiReaderRegistry.RegisterReader(OpenApiConstants.Yml, new OpenApiYamlReader());
     }
     private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
     {
@@ -118,6 +116,7 @@ internal class OpenApiDocumentDownloadService
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();
+        settings.AddYamlReader();
         if (config.IsPluginConfiguration)
             settings.AddPluginsExtensions();// Add all extensions for plugins
 

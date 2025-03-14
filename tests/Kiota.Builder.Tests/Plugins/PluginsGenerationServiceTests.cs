@@ -51,6 +51,8 @@ servers:
 paths:
   /test:
     get:
+      tags:
+        - test  
       summary: summary for test path
       description: description for test path
       responses:
@@ -261,7 +263,9 @@ components:
 
         // Validate the original file.
         using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
-        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml");
+        var settings = new OpenApiReaderSettings();
+        settings.AddYamlReader();
+        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml", settings);
         var originalDocument = originalResult.Document;
         Assert.Empty(originalResult.Diagnostic.Errors);
 
@@ -279,7 +283,7 @@ components:
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml");
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml", settings);
         var resultDocument = resultResult.Document;
         Assert.Empty(resultResult.Diagnostic.Errors);
 
@@ -323,7 +327,7 @@ components:
             },
             // multiple security schemes
             {
-                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header }, apiKey1: {type: apiKey, name: x-api-key1, in: header }}}",
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key0, in: header, x-ai-auth-reference-id: auth1234 }, apiKey1: {type: apiKey, name: x-api-key1, in: header }}}",
                 string.Empty, "security: [apiKey0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
@@ -332,7 +336,7 @@ components:
                     var auth0 = resultingManifest.Document.Runtimes[0].Auth;
                     Assert.IsType<ApiKeyPluginVault>(auth0);
                     Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
-                    Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                    Assert.Equal("auth1234", ((ApiKeyPluginVault)auth0!).ReferenceId);
                 }
             },
             // security requirement in root object
@@ -352,7 +356,7 @@ components:
             // },
             // auth provided in config overrides openapi file auth
             {
-                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header, x-ai-auth-reference-id: auth1234 }}}",
                 string.Empty, "security: [apiKey0: []]", new PluginAuthConfiguration("different_ref_id") {AuthType = PluginAuthType.OAuthPluginVault}, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
@@ -410,7 +414,7 @@ components:
             },
             // oauth2
             {
-                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {}}}}",
+                "{securitySchemes: {oauth2_0: {type: oauth2, flows: {}, x-ai-auth-reference-id: auth1234}}}",
                 string.Empty, "security: [oauth2_0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
@@ -419,7 +423,7 @@ components:
                     var auth0 = resultingManifest.Document.Runtimes[0].Auth;
                     Assert.IsType<OAuthPluginVault>(auth0);
                     Assert.Equal(AuthType.OAuthPluginVault, auth0?.Type);
-                    Assert.Equal("{oauth2_0_CONFIGURATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
+                    Assert.Equal("auth1234", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
             // should be anonymous
@@ -556,8 +560,8 @@ components:
                               components:
                                 {
                                   securitySchemes: {
-                                    apiKey0: { type: apiKey, name: x-api-key0, in: header },
-                                    apiKey1: { type: apiKey, name: x-api-key1, in: header },
+                                    apiKey0: { type: apiKey, name: x-api-key0, in: header, x-ai-auth-reference-id: auth1234 },
+                                    apiKey1: { type: apiKey, name: x-api-key1, in: header, x-ai-auth-reference-id: auth5678 },
                                   },
                                 }
                               """;
@@ -600,11 +604,11 @@ components:
         var auth0 = resultingManifest.Document.Runtimes[0].Auth;
         Assert.IsType<ApiKeyPluginVault>(auth0);
         Assert.Equal(AuthType.ApiKeyPluginVault, auth0.Type);
-        Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+        Assert.Equal("auth1234", ((ApiKeyPluginVault)auth0!).ReferenceId);
         var auth1 = resultingManifest.Document.Runtimes[1].Auth;
         Assert.IsType<ApiKeyPluginVault>(auth1);
         Assert.Equal(AuthType.ApiKeyPluginVault, auth1.Type);
-        Assert.Equal("{apiKey1_REGISTRATION_ID}", ((ApiKeyPluginVault)auth1!).ReferenceId);
+        Assert.Equal("auth5678", ((ApiKeyPluginVault)auth1!).ReferenceId);
         // Cleanup
         try
         {
@@ -794,7 +798,9 @@ components:
         {
             // Validate the sliced openapi
             using var stream = File.Open(Path.Combine(outputDirectory, OpenApiFileName), FileMode.Open);
-            var readResult = await OpenApiDocument.LoadAsync(stream);
+            var settings = new OpenApiReaderSettings();
+            settings.AddYamlReader();
+            var readResult = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
             assertions(readResult.Document, readResult.Diagnostic);
         }
         finally

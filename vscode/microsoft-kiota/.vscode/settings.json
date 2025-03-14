@@ -12,5 +12,9 @@
     "typescript.tsc.autoDetect": "off",
     "cSpell.words": [
         "Kiota"
-    ]
+    ],
+    "explorer.fileNesting.patterns": {
+        // Fold package json translation files
+        "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock, package.*.json"
+    }
 }
