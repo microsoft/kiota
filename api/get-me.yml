@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/microsoft.graph.user"
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
