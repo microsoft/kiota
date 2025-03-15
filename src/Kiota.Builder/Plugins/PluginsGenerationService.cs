@@ -494,6 +494,7 @@ public partial class PluginsGenerationService
                     Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
+                    Capabilities = GetFunctionCapabilitiesFromOperation(operation),
 
                 });
                 conversationStarters.Add(new ConversationStarter
@@ -585,6 +586,35 @@ public partial class PluginsGenerationService
             {
                 Instructions = new Instructions(instructionsExtractor(rExt)
                     .Where(static x => !string.IsNullOrEmpty(x)).Select(static x => x.CleanupXMLString()).ToList())
+            };
+        }
+
+        return null;
+    }
+
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
+    {
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension<OpenApiAiAdaptiveCardExtension>(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        if (responseSemantics is null)
+            return null;
+        return new FunctionCapabilities
+        {
+            ResponseSemantics = responseSemantics,
+        };
+    }
+
+    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension<T>(OpenApiOperation openApiOperation, string extensionName)
+    {
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
+        {
+            string jsonString = $"{{ \"file\": \"{adaptiveCard.File}\" }}";
+            using JsonDocument doc = JsonDocument.Parse(jsonString);
+            JsonElement staticTemplate = doc.RootElement;
+            return new ResponseSemantics
+            {
+                DataPath = adaptiveCard.DataPath,
+                StaticTemplate = staticTemplate,
             };
         }
 
