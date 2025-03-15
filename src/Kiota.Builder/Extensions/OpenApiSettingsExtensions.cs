@@ -20,6 +20,7 @@ public static class OpenApiSettingsExtensions
         settings.ExtensionParsers.TryAdd(OpenApiAiReasoningInstructionsExtension.Name, static (i, _) => OpenApiAiReasoningInstructionsExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiRespondingInstructionsExtension.Name, static (i, _) => OpenApiAiRespondingInstructionsExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiAiAuthReferenceIdExtension.Name, static (i, _) => OpenApiAiAuthReferenceIdExtension.Parse(i));
+        settings.ExtensionParsers.TryAdd(OpenApiAiAdaptiveCardExtension.Name, static (i, _) => OpenApiAiAdaptiveCardExtension.Parse(i));
     }
 
     public static void AddGenerationExtensions(this OpenApiReaderSettings settings)
