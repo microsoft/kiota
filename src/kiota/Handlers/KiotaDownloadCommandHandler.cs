@@ -11,6 +11,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers;
 
@@ -79,24 +80,26 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 
         string outputPath = outputPath0.OrEmpty();
         string version = version0.OrEmpty();
-        Configuration.Download.ClearCache = clearCache;
-        Configuration.Download.DisableSSLValidation = disableSSLValidation;
-        Configuration.Download.CleanOutput = cleanOutput;
-        Configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        configuration.Download.ClearCache = clearCache;
+        configuration.Download.DisableSSLValidation = disableSSLValidation;
+        configuration.Download.CleanOutput = cleanOutput;
+        configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
 
-        Configuration.Search.ClearCache = Configuration.Download.ClearCache;
+        configuration.Search.ClearCache = configuration.Download.ClearCache;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {
-                var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
+                var searcher = await GetKiotaSearcherAsync(configuration, loggerFactory, httpClient, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken).ConfigureAwait(false);
-                var result = await SaveResultsAsync(searchTerm, version, results, logger, cancellationToken);
+                var result = await SaveResultsAsync(searchTerm, version, results, configuration, httpClient, logger, cancellationToken);
                 invokeActivity?.SetStatus(ActivityStatusCode.Ok);
                 return result;
             }
@@ -118,13 +121,13 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
+    private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, KiotaConfiguration configuration, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         if (!results.Any())
             DisplayError("No matching result found, use the search command to find the right key");
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
-            var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
+            var (path, statusCode) = await SaveResultAsync(results.First(), configuration, httpClient, logger, cancellationToken);
             if (statusCode == 0)
             {
                 DisplaySuccess($"File successfully downloaded to {path}");
@@ -138,7 +141,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 
         return 0;
     }
-    private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken)
+    private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, KiotaConfiguration configuration, HttpClient httpClient, ILogger logger, CancellationToken cancellationToken)
     {
         string path;
         if (result.Value.DescriptionUrl is null)
@@ -148,18 +151,18 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         }
         try
         {
-            Console.WriteLine($"output path: {Configuration.Download.OutputPath}");
+            Console.WriteLine($"output path: {configuration.Download.OutputPath}");
             var defaultOutputPath = new DownloadConfiguration().OutputPath.Replace('/', Path.DirectorySeparatorChar);
             var defaultExtension = Path.GetExtension(defaultOutputPath)[1..];
             var fileExtension = Path.GetExtension(result.Value.DescriptionUrl.ToString())[1..];
-            if (Configuration.Download.OutputPath.Equals(defaultOutputPath, StringComparison.OrdinalIgnoreCase) &&
+            if (configuration.Download.OutputPath.Equals(defaultOutputPath, StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrEmpty(fileExtension) &&
                 !fileExtension.Equals(defaultExtension, StringComparison.OrdinalIgnoreCase))
-                Configuration.Download.OutputPath = Configuration.Download.OutputPath[..^defaultExtension.Length] + fileExtension;
-            if (Path.IsPathFullyQualified(Configuration.Download.OutputPath))
-                path = Configuration.Download.OutputPath;
+                configuration.Download.OutputPath = configuration.Download.OutputPath[..^defaultExtension.Length] + fileExtension;
+            if (Path.IsPathFullyQualified(configuration.Download.OutputPath))
+                path = configuration.Download.OutputPath;
             else
-                path = Path.GetFullPath(Configuration.Download.OutputPath);
+                path = Path.GetFullPath(configuration.Download.OutputPath);
             if (string.IsNullOrEmpty(Path.GetFileName(path)))
             {
                 logger.LogCritical("The output path does not contain a file name: {path}", path);
@@ -168,12 +171,12 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         }
         catch (Exception)
         {
-            logger.LogCritical("Invalid output path: {path}", Configuration.Download.OutputPath);
+            logger.LogCritical("Invalid output path: {path}", configuration.Download.OutputPath);
             return (string.Empty, 1);
         }
         if (File.Exists(path))
         {
-            if (Configuration.Download.CleanOutput)
+            if (configuration.Download.CleanOutput)
                 File.Delete(path);
             else
             {
@@ -184,6 +187,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         if (Path.GetDirectoryName(path) is string directoryName && !Directory.Exists(directoryName))
             Directory.CreateDirectory(directoryName);
 
+        // TODO: register service in DI container.
         var cacheProvider = new DocumentCachingProvider(httpClient, logger)
         {
             ClearCache = true,

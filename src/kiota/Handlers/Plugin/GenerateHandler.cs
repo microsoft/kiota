@@ -10,6 +10,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers.Plugin;
 
@@ -59,9 +60,12 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+            var generationConfiguration = host.Services.GetRequiredKeyedService<GenerationConfiguration>(ServiceConstants.ServiceKeys.Default);
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             logger.AppendInternalTracing();
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
             try
             {
                 var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
@@ -83,7 +87,6 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                 }
                 foreach (var clientEntry in clientEntries)
                 {
-                    var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiPluginConfiguration(generationConfiguration, clientEntry.Key, requests);
                     DefaultSerializersAndDeserializers(generationConfiguration);

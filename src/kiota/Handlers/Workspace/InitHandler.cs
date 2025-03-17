@@ -3,9 +3,11 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers.Workspace;
 
@@ -42,7 +44,8 @@ internal class InitHandler : BaseKiotaCommandHandler
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
-        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceConfigurationStorageService>(context, Configuration.Generation.OutputPath);
+        var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceConfigurationStorageService>(context, configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             try

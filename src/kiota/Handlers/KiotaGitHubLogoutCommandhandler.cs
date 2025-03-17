@@ -3,9 +3,11 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace kiota.Handlers;
 
@@ -44,10 +46,12 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory)
         {
-            await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
+            var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+            var configuration = host.Services.GetRequiredService<IOptions<KiotaConfiguration>>().Value;
+            await CheckForNewVersionAsync(configuration, httpClient, logger, cancellationToken).ConfigureAwait(false);
             try
             {
-                var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
+                var deviceCodeAuthProvider = GetGitHubDeviceStorageService(configuration, logger);
                 var deviceCodeResult = await deviceCodeAuthProvider.TokenStorageService.Value.DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
                 var patResult = await GetGitHubPatStorageService(logger).DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
                 if (deviceCodeResult || patResult)
