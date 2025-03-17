@@ -1056,3 +1056,43 @@ extends:
                     "$(Build.SourcesDirectory)"
                 displayName: "Build and Push Release Image"
                 condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+          - job: deploy_npm
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: "Npm package"
+                  targetPath: $(Pipeline.Workspace)/npm-package
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            dependsOn:
+              - github_release
+            steps:
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: "18.x"
+              - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+                displayName: "Set version suffix"
+              - task: EsrpRelease@7
+                inputs:
+                  connectedservicename: 'Federated DevX ESRP Managed Identity Connection'
+                  keyvaultname: 'akv-prod-eastus'
+                  authcertname: 'ReferenceLibraryPrivateCert'
+                  signcertname: 'ReferencePackagePublisherCertificate'
+                  clientid: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
+                  intent: 'PackageDistribution'
+                  contenttype: 'npm'
+                  contentsource: 'Folder'
+                  folderlocation: '$(Pipeline.Workspace)/npm-package/'
+                  waitforreleasecompletion: true
+                  owners: $(NPM_OWNERS_LIST)
+                  approvers: $(NPM_APPROVERS_LIST)
+                  serviceendpointurl: 'https://api.esrp.microsoft.com'
+                  mainpublisher: 'ESRPRELPACMAN'
+                  domaintenantid: 'cdc5aeea-15c5-4db6-b079-fcadd2505dc2'
