@@ -3,6 +3,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language,
+    [Parameter(Mandatory = $false)][string]$descriptionKey,
     [Parameter(Mandatory = $false)][switch]$dev,
     [Parameter(Mandatory = $false)][switch]$preserveOutput
 )
@@ -10,6 +11,12 @@ param(
 if ([string]::IsNullOrEmpty($descriptionUrl)) {
     Write-Error "Description URL is empty"
     exit 1
+}
+
+if ([string]::IsNullOrEmpty($descriptionKey)) {
+    Write-Warning "Description Configuration Key is empty. Using the description URL as the key."
+    # If the descriptionKey is not provided, use the descriptionUrl as the key
+    $descriptionKey = $descriptionUrl
 }
 
 if ([string]::IsNullOrEmpty($language)) {
@@ -69,7 +76,7 @@ $tmpFolder1 = New-TemporaryDirectory
 $tmpFolder2 = New-TemporaryDirectory
 
 $additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
-$additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionUrl $descriptionUrl -language $language -includeOutputParameter $false"
+$additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionKey $descriptionKey -language $language -includeOutputParameter $false"
 $firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1" -Wait -NoNewWindow -PassThru
 $secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2" -Wait -NoNewWindow -PassThru
 

@@ -7,7 +7,7 @@
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.98.0"
   },
   "license": "MIT",
   "categories": [
@@ -525,8 +525,6 @@
     "chai": "^5.2.0",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.13.4",
-    "@types/sinon": "^17.0.4",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
     "webpack": "^5.98.0",
