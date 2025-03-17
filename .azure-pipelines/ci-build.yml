@@ -840,6 +840,9 @@ extends:
                 - input: pipelineArtifact
                   artifactName: changelog
                   targetPath: "$(Pipeline.Workspace)/changelog"
+                - input: pipelineArtifact
+                  artifactName: "Npm Package"
+                  targetPath: "$(Pipeline.Workspace)/npm-package"
                 - ${{ each distribution in parameters.distributions }}:
                     - input: pipelineArtifact
                       artifactName: Binaries_${{ distribution.jobPrefix }}
