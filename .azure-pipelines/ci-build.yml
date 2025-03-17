@@ -618,9 +618,19 @@ extends:
                 displayName: "Update VSCode extension version-number"
               - script: npm i -g @vscode/vsce
                 displayName: "Install vsce"
-              - script: npm ci
+              - script: |
+                  cd npm-package
+                  npm install
+                  npm run package
+
+                  cd ..
+                  npm install
+
+                  cd microsoft-kiota
+                  tgz_file=$(ls ../npm-package/*.tgz)
+                  npm install $tgz_file                  
                 displayName: "Install dependencies"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota

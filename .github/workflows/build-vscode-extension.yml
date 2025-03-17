@@ -78,7 +78,8 @@ jobs:
           npm install
 
           cd microsoft-kiota
-          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          tgz_file=$(ls ../npm-package/*.tgz)
+          npm install $tgz_file
           xvfb-run -a npm run test:coverage
         working-directory: vscode
 
@@ -93,7 +94,8 @@ jobs:
           npm install
 
           cd microsoft-kiota
-          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          tgz_file=$(ls ../npm-package/*.tgz)
+          npm install $tgz_file
           npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
@@ -123,7 +125,8 @@ jobs:
           cd ..
           cd microsoft-kiota
           npm install --no-audit --no-fund --legacy-peer-deps
-          npm install ../npm-package/microsoft-kiota-1.0.0.tgz
+          tgz_file=$(ls ../npm-package/*.tgz)
+          npm install $tgz_file
 
           vsce package
           vsce ls --tree
