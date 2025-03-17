@@ -14,9 +14,9 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
       KIOTA_CONFIG_PREVIEW: "true",
     }
   });
-  let connection = rpc.createMessageConnection(
-    new rpc.StreamMessageReader(childProcess.stdout),
-    new rpc.StreamMessageWriter(childProcess.stdin));
+  const inputReader = new rpc.StreamMessageReader(childProcess.stdout);
+  const outputWriter = new rpc.StreamMessageWriter(childProcess.stdin);
+  const connection = rpc.createMessageConnection(inputReader, outputWriter);
   connection.listen();
   try {
     return await callback(connection);
@@ -25,7 +25,11 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
       || 'An unknown error occurred';
     return new Error(errorMessage);
   } finally {
+    inputReader.dispose();
+    outputWriter.dispose();
     connection.dispose();
+
+    childProcess.stdin?.end();
     childProcess.kill();
   }
 }

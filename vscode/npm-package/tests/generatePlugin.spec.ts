@@ -1,4 +1,5 @@
-import { generatePlugin, KiotaLogEntry } from '..';
+import { generatePlugin } from '../lib/generatePlugin';
+import { KiotaLogEntry } from '../types';
 import { KiotaPluginType } from '../types';
 import { setupKiotaStubs } from './stubs.util';
 
