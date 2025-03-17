@@ -871,6 +871,7 @@ extends:
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
                           $(Pipeline.Workspace)/*.nupkg
                           $(Pipeline.Workspace)/*.snupkg
                         addChangeLog: false
@@ -886,6 +887,7 @@ extends:
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
                           $(Pipeline.Workspace)/*.nupkg
                           $(Pipeline.Workspace)/*.snupkg
                         addChangeLog: false
