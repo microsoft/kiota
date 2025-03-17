@@ -2,6 +2,7 @@ import * as cp from 'child_process';
 import * as net from 'node:net';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { v4 as uuidv4 } from 'uuid';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 
@@ -9,13 +10,11 @@ import { KiotaGenerationLanguage, KiotaPluginType } from '../types/enums';
 import { getWorkspaceJsonDirectory } from "../util";
 import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 
-const extensionSanitizerRe = /[^a-zA-Z0-9_]+/g;
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = getWorkspaceJsonDirectory()): Promise<T | undefined> {
     const kiotaPath = getKiotaPath(context);
     await ensureKiotaIsPresent(context);
     // Use a unique pipe for this extension.
-    const re = extensionSanitizerRe;
-    const suffix = context.extension.id.replace(re, '_');
+    const suffix = uuidv4();
     const pipeName = `KiotaJsonRpc-${suffix}`;
     const childProcess = cp.spawn(kiotaPath, ["rpc", "--mode", "NamedPipe", "--pipe-name", pipeName], {
         cwd: workingDirectory,
