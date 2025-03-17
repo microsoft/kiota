@@ -697,6 +697,73 @@ extends:
                 inputs:
                   artifactName: VSCode
                   targetPath: "$(Build.ArtifactStagingDirectory)/VSCode"
+          - job: build_npm_package
+            dependsOn:
+              [
+                win_x64_build_binaries,
+                win_x86_build_binaries,
+                linux_x64_build_binaries,
+                linux_arm64_build_binaries,
+                osx_x64_build_binaries,
+                osx_arm64_build_binaries,
+              ]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+            steps:
+              - checkout: self
+                clean: true
+                submodules: true
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: "18.x"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+                displayName: "Set version suffix"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                displayName: "Get Kiota's version-number from .csproj"
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+                displayName: "Update NPM package version-number"
+              - script: npm run build
+                displayName: "Build"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+              - script: npm run package
+                displayName: "Package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+              - pwsh: |
+                  $packageFiles = Get-ChildItem -Filter *.tgz -Recurse
+                  if ($packageFiles.Count -ne 1) {
+                    Write-Error "Expected 1 package file, found $($packageFiles.Count)"
+                    exit 1
+                  }
+                  $packageFileName = $extensionFiles[0].BaseName
+                  Write-Output "##vso[task.setvariable variable=extensionFileName;isOutput=true]$packageFileName"
+                displayName: "Get package file name"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+                name: getPackageFileName
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/npm-package
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/npm-package
+                  contents: |
+                    *.tgz
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: Npm Package"
+                inputs:
+                  artifactName: "Npm Package"
+                  targetPath: "$(Build.ArtifactStagingDirectory)/npm-package"
 
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
