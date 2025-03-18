@@ -3,22 +3,17 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as rpc from 'vscode-jsonrpc/node';
 
 import { treeViewId } from '../constants';
 import {
     ClientObjectProperties,
     ClientOrPluginProperties,
     ConfigurationFile,
-    connectToKiota,
-    KiotaGetManifestDetailsConfiguration,
     KiotaLogEntry,
-    KiotaManifestResult,
     KiotaOpenApiNode,
-    KiotaShowConfiguration,
-    KiotaShowResult,
     PluginObjectProperties
 } from '../kiotaInterop';
+import { getManifestDetails, getKiotaTree } from '../kiotaInterop';
 import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
 import { SharedService } from './sharedService';
@@ -303,16 +298,15 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public get filter(): string {
         return this._filterText;
     }
-    private async loadNodesFromManifest(manifestPath: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
+
+    async loadNodesFromManifest(manifestPath: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         const settings = this.settingsGetter();
-        const result = await connectToKiota(this.context, async (connection) => {
-            const request = new rpc.RequestType<KiotaGetManifestDetailsConfiguration, KiotaManifestResult, void>('GetManifestDetails');
-            return await connection.sendRequest(request, {
-                manifestPath,
-                apiIdentifier: apiIdentifier ?? '',
-                clearCache: settings.clearCache
-            });
+        const result = await getManifestDetails({
+            manifestPath,
+            clearCache: settings.clearCache,
+            apiIdentifier
         });
+
         if (result) {
             this._descriptionUrl = result.apiDescriptionPath;
             this.includeFilters = result.selectedPaths ?? [];
@@ -321,19 +315,18 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         return [];
     }
+
     private async loadNodes(clearCache: boolean, clientNameOrPluginName?: string): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
             return;
         }
-        const result = await connectToKiota(this.context, async (connection) => {
-            const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
-            return await connection.sendRequest(request, {
-                includeFilters: this.includeFilters,
-                excludeFilters: this.excludeFilters,
-                descriptionPath: this.descriptionUrl,
-                clearCache
-            });
+        const result = await getKiotaTree({
+            includeFilters: this.includeFilters,
+            descriptionPath: this.descriptionUrl,
+            excludeFilters: this.excludeFilters,
+            clearCache
         });
+
         if (result) {
             this.apiTitle = result.apiTitle;
             this.sharedService.set('clientOrPluginKey', clientNameOrPluginName);

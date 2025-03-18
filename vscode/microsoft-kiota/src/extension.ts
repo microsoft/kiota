@@ -8,7 +8,7 @@ import { DeleteWorkspaceItemCommand } from './commands/deleteWorkspaceItem/delet
 import { EditPathsCommand } from './commands/editPathsCommand';
 import { GenerateClientCommand } from './commands/generate/generateClientCommand';
 import { displayGenerationResults } from './commands/generate/generation-util';
-import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile";
+import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile.util";
 import { MigrateFromLockFileCommand } from './commands/migrate/migrateFromLockFileCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/openApidescription/searchOrOpenApiDescriptionCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/openApiTreeView/addAllToSelectedEndpointsCommand';
@@ -25,9 +25,7 @@ import { UpdateClientsCommand } from './commands/updateClients/updateClientsComm
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { UriHandler } from './handlers/uriHandler';
-import {
-  ClientOrPluginProperties
-} from "./kiotaInterop";
+import { ClientOrPluginProperties, setKiotaConfig } from "./kiotaInterop";
 import { WorkspaceContentService } from './modules/workspace';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";
@@ -50,6 +48,7 @@ let workspaceGenerationContext: WorkspaceGenerationContext;
 export async function activate(
   context: vscode.ExtensionContext
 ): Promise<void> {
+  setKiotaConfig({ binaryLocation: context.asAbsolutePath('') });
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
@@ -145,7 +144,7 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem(context, kiotaOutputChannel, kiotaStatusBarItem);
+  await updateStatusBarItem(kiotaOutputChannel, kiotaStatusBarItem);
   context.subscriptions.push(vscode.commands.registerCommand(updateClientsCommand.getName(), async () => await updateClientsCommand.execute({ kiotaStatusBarItem })));
 }
 
