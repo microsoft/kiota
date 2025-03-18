@@ -59,7 +59,9 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "follow-redirects": "^1.15.9",
+    "is-online": "^11.0.0",
     "original-fs": "^1.2.0",
+    "uuid": "^11.1.0",
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {

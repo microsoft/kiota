@@ -1,12 +1,20 @@
 import * as cp from 'child_process';
+import * as net from 'node:net';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { v4 as uuidv4 } from 'uuid';
 import * as rpc from 'vscode-jsonrpc/node';
+
 import { ensureKiotaIsPresent, getKiotaPath } from './install';
 
 
 export default async function connectToKiota<T>(callback: (connection: rpc.MessageConnection) => Promise<T | undefined>, workingDirectory: string = process.cwd()): Promise<T | undefined | Error> {
   const kiotaPath = getKiotaPath();
   await ensureKiotaIsPresent();
-  const childProcess = cp.spawn(kiotaPath, ["rpc"], {
+  // Use a unique pipe for this extension.
+  const suffix = uuidv4();
+  const pipeName = `KiotaJsonRpc-${suffix}`;
+  const childProcess = cp.spawn(kiotaPath, ["rpc", "--mode", "NamedPipe", "--pipe-name", pipeName], {
     cwd: workingDirectory,
     env: {
       ...process.env,
@@ -14,8 +22,11 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
       KIOTA_CONFIG_PREVIEW: "true",
     }
   });
-  const inputReader = new rpc.StreamMessageReader(childProcess.stdout);
-  const outputWriter = new rpc.StreamMessageWriter(childProcess.stdin);
+  const prefix = os.platform() === 'win32' ? '\\\\.\\pipe\\' : path.join(os.tmpdir(), 'CoreFxPipe_');
+  const name = `${prefix}${pipeName}`;
+  const socket = net.createConnection(name);
+  const inputReader = new rpc.SocketMessageReader(socket);
+  const outputWriter = new rpc.SocketMessageWriter(socket);
   const connection = rpc.createMessageConnection(inputReader, outputWriter);
   connection.listen();
   try {
