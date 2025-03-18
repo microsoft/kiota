@@ -515,7 +515,7 @@
     "test:coverage": "npm run pretest && test --coverage"
   },
   "dependencies": {
-    "@microsoft/kiota": "1.0.0",
+    "@microsoft/kiota": "^1.0.0",
     "@vscode/extension-telemetry": "^0.9.8",
     "@vscode/l10n": "^0.0.18"
   },
