@@ -63,7 +63,7 @@ $runtimeJsonDirectory = Split-Path -Path $runtimeFilePath -Parent
 $runtimePackageJsonFilePath = Join-Path -Path $runtimeJsonDirectory -ChildPath "package.json"
 if (Test-Path $runtimePackageJsonFilePath) {
   $runtimePackageJson = Get-Content $runtimePackageJsonFilePath | ConvertFrom-Json
-  $runtimePackageJson.version = $extensionVersion
+  $runtimePackageJson.version = $version
   Set-Content $runtimePackageJsonFilePath ($runtimePackageJson | ConvertTo-Json -Depth 10)
 }
 
