@@ -616,23 +616,37 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
+             
               - script: |
-                  npm i -g @vscode/vsce
-                  npm i -g rimraf
+                  npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+
               - script: |
                   cd npm-package
                   npm install
+                displayName: "Install npm-package dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              
+              - script: |
+                  cd npm-package
                   npm run package
-
+                displayName: "Package npm-package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              
+              - script: |
                   cd ..
                   npm install
-
+                displayName: "Install root dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              
+              - script: |
                   cd microsoft-kiota
                   tgz_file=$(ls ../npm-package/*.tgz)
-                  npm install $tgz_file                  
-                displayName: "Install dependencies"
+                  npm install $tgz_file
+                displayName: "Install package as vscode dependency"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
+
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
