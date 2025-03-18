@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug following OpenAPI 3.1 support that lead to false warnings about unknown type/format pairs. [#6270](https://github.com/microsoft/kiota/issues/6270)
+
 ## [1.24.1] - 2025-03-13
 
 ### Changed
