@@ -616,8 +616,10 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
-              - script: npm i -g @vscode/vsce
-                displayName: "Install vsce"
+              - script: |
+                  npm i -g @vscode/vsce
+                  npm i -g rimraf
+                displayName: "Install Global dependencies"
               - script: |
                   cd npm-package
                   npm install
@@ -735,6 +737,9 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update NPM package version-number"
+              - script: |
+                  npm i -g rimraf
+                displayName: "Install Global dependencies"
               - script: npm run build
                 displayName: "Build"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
