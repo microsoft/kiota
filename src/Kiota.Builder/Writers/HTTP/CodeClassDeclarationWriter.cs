@@ -72,6 +72,8 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .Where(static element => element.IsOfKind(CodeClassKind.QueryParameters))
             .SelectMany(paramCodeClass => paramCodeClass.Properties)
             .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter))
+            .GroupBy(property => property.Name)
+            .Select(group => group.First())
             .ToArray();
     }
 
