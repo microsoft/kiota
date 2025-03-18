@@ -754,9 +754,6 @@ extends:
               - script: |
                   npm i -g rimraf
                 displayName: "Install Global dependencies"
-              - script: npm run build
-                displayName: "Build"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
               - script: npm run package
                 displayName: "Package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
