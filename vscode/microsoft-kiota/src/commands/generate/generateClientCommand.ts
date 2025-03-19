@@ -10,7 +10,6 @@ import { GenerateState, generateSteps } from "../../modules/steps/generateSteps"
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { GenerationType } from "../../types/enums";
-import { GenerationType } from "../../types/enums";
 import { ExtensionSettings, getExtensionSettings } from "../../types/extensionSettings";
 import { GeneratedOutputState } from "../../types/GeneratedOutputState";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
