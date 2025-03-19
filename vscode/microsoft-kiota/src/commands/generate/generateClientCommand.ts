@@ -192,7 +192,7 @@ export class GenerateClientCommand extends Command {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
           pluginTypes: [pluginTypes],
           includePatterns: selectedPaths,
@@ -237,7 +237,7 @@ export class GenerateClientCommand extends Command {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
           pluginTypes,
           includePatterns: selectedPaths,

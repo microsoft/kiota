@@ -73,7 +73,7 @@ export class RegenerateService {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
           outputPath: pluginObjectItem.outputPath,
           pluginTypes,
           includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
