@@ -635,12 +635,8 @@ extends:
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               
               - script: |
-                  cd ..
                   npm install
-                displayName: "Install root dependencies"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
-              
-              - script: |
+
                   cd microsoft-kiota
                   tgz_file=$(ls ../npm-package/*.tgz)
                   npm install $tgz_file
