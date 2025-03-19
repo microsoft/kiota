@@ -765,8 +765,8 @@ extends:
                     Write-Error "Expected 1 package file, found $($packageFiles.Count)"
                     exit 1
                   }
-                  $packageFileName = $extensionFiles[0].BaseName
-                  Write-Output "##vso[task.setvariable variable=extensionFileName;isOutput=true]$packageFileName"
+                  $packageFileName = $packageFiles[0].BaseName
+                  Write-Output "##vso[task.setvariable variable=packageFileName;isOutput=true]$packageFileName"
                 displayName: "Get package file name"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
                 name: getPackageFileName
