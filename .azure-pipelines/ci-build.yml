@@ -750,9 +750,15 @@ extends:
               - script: |
                   npm i -g rimraf
                 displayName: "Install Global dependencies"
+
+              - script: npm install
+                displayName: "Install package dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+              
               - script: npm run package
                 displayName: "Package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+
               - pwsh: |
                   $packageFiles = Get-ChildItem -Filter *.tgz -Recurse
                   if ($packageFiles.Count -ne 1) {
