@@ -1,7 +1,11 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { ValidateManifestRequest, ValidateManifestResult } from "..";
+import { ValidateManifestResult } from "..";
 import connectToKiota from '../connect';
+
+interface ValidateManifestRequest {
+  manifestPath: string;
+}
 
 /**
  * Validates an OpenAPI manifest by connecting to the Kiota service.

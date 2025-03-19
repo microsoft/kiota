@@ -4,6 +4,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
+using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
@@ -335,13 +336,13 @@ internal partial class Server : IServer
     public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
     => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
 
-    public Task<ValidateManifestResult> ValidateManifestAsync(string manifestPath, CancellationToken cancellationToken)
+    public async Task<ValidateManifestResult> ValidateManifestAsync(string manifestPath, CancellationToken cancellationToken)
     {
-        var logs = new List<LogEntry>();
-        logs.Add(new LogEntry(LogLevel.Information, "Manifest validation is not implemented yet."));
-        var result = new ValidateManifestResult(logs);
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var validator = new OpenApiValidationService(httpClient, logger);
+        var document = await validator.GetDocumentAsync(manifestPath, cancellationToken);
 
-        return Task.FromResult(result);
-        //throw new NotImplementedException();
+        var result = new ValidateManifestResult(logger.LogEntries);
+        return result;
     }
 }

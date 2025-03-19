@@ -1,0 +1,49 @@
+﻿openapi: 3.0.0
+info:
+  title: "Discriminator API"
+  version: "1.0.0"
+bad_node:
+  /discriminateme:
+    post:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Component"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Component"
+components:
+  schemas:
+    Component:
+      oneOf:
+        - $ref: "#/components/schemas/Component1"
+        - $ref: "#/components/schemas/Component2"
+      discriminator:
+        propertyName: objectType
+        mapping:
+          obj1: "#/components/schemas/Component1"
+          obj2: "#/components/schemas/Component2"
+    Component1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        one:
+          type: string
+    Component2:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        two:
+          type: string
