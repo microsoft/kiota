@@ -2,10 +2,11 @@ import * as rpc from "vscode-jsonrpc/node";
 
 import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from "..";
 import connectToKiota from "../connect";
-import { KiotaPluginType, KiotaResult } from "../types";
+import { KiotaPluginType, GeneratePluginResult } from "../types";
+import * as path from "path";
 
 interface PluginGenerationOptions {
-  openAPIFilePath: string;
+  descriptionPath: string;
   outputPath: string;
   pluginTypes: KiotaPluginType[];
   pluginName: string;
@@ -46,7 +47,7 @@ interface PluginGenerationOptions {
  * It handles the response and checks for success, returning the result or throwing an error if one occurs.
  */
 export async function generatePlugin(pluginGenerationOptions: PluginGenerationOptions
-): Promise<KiotaResult | undefined> {
+): Promise<GeneratePluginResult | undefined> {
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "GeneratePlugin"
@@ -54,7 +55,7 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
     return await connection.sendRequest(
       request,
       {
-        openAPIFilePath: pluginGenerationOptions.openAPIFilePath,
+        openAPIFilePath: pluginGenerationOptions.descriptionPath,
         outputPath: pluginGenerationOptions.outputPath,
         pluginTypes: pluginGenerationOptions.pluginTypes,
         operation: pluginGenerationOptions.operation,
@@ -76,7 +77,16 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
   }
 
   if (result) {
+    const outputPath = pluginGenerationOptions.outputPath;
+    const pluginName = pluginGenerationOptions.pluginName;
+    const pathOfSpec = path.join(outputPath, `${pluginName.toLowerCase()}-openapi.yml`);
+    const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-apiplugin.json`);
     return {
+      aiPlugin: pathPluginManifest,
+      openAPISpec: pathOfSpec, 
+      apis: [],
+      serverMapping: [],
+      authMapping: [],
       isSuccess: checkForSuccess(result as KiotaLogEntry[]),
       logs: result
     };
