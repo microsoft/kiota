@@ -1,4 +1,5 @@
-import { generatePlugin, KiotaLogEntry } from '..';
+import { generatePlugin } from '../lib/generatePlugin';
+import { KiotaLogEntry } from '../types';
 import { KiotaPluginType } from '../types';
 import { setupKiotaStubs } from './stubs.util';
 
@@ -25,7 +26,7 @@ describe("generate plugin", () => {
     connectionStub.mockResolvedValue(mockResults);
 
     const results = await generatePlugin({
-      openAPIFilePath: 'openAPIFilePath',
+      descriptionPath: 'openAPIFilePath',
       outputPath: 'outputPath',
       includePatterns: [],
       excludePatterns: [],

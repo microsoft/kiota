@@ -35,6 +35,14 @@ export interface KiotaLogEntry {
   message: string;
 }
 
+export enum OpenApiAuthType {
+  None = 0,
+  ApiKey = 1,
+  Http = 2,
+  OAuth2 = 3,
+  OpenIdConnect = 4,
+}
+
 export interface KiotaOpenApiNode {
   segment: string,
   path: string,
@@ -43,7 +51,10 @@ export interface KiotaOpenApiNode {
   isOperation?: boolean;
   documentationUrl?: string;
   clientNameOrPluginName?: string;
+  authType?: OpenApiAuthType;
+  logs?: KiotaLogEntry[];
 }
+
 interface CacheClearableConfiguration {
   clearCache: boolean;
 }
@@ -254,4 +265,36 @@ export interface LanguagesInformation {
 
 export interface KiotaResult extends KiotaLoggedResult {
   isSuccess: boolean;
+}
+
+export interface ValidateOpenApiResult extends KiotaLoggedResult {
+}
+
+interface APIInfo {
+  operationId: string;
+  description: string;
+  summary: string;
+  adaptiveCard: object;
+  adaptiveCardMockData: object;
+}
+
+interface ServerMapping {
+  serverUrl: string;
+  operationIds: string[];
+}
+
+interface AuthMapping {
+  registrationIdEnvName: string;
+  auth: {
+    [key: string]: object;
+  };
+  operationIds: string[];
+}
+
+export interface GeneratePluginResult extends KiotaResult {
+  aiPlugin: string;
+  openAPISpec: string;
+  apis: APIInfo[];
+  serverMapping: ServerMapping[];
+  authMapping: AuthMapping[];
 }

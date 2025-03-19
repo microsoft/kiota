@@ -13,6 +13,8 @@ namespace kiota.Extension;
 
 internal static class KiotaHostExtensions
 {
+    private const string TelemetryOptOutKey = "KIOTA_CLI_TELEMETRY_OPTOUT";
+
     internal static IHostBuilder ConfigureKiotaTelemetryServices(this IHostBuilder hostBuilder)
     {
         return hostBuilder.ConfigureServices(ConfigureServiceContainer);
@@ -22,7 +24,10 @@ internal static class KiotaHostExtensions
             TelemetryConfig cfg = new();
             var section = context.Configuration.GetSection(TelemetryConfig.ConfigSectionKey);
             section.Bind(cfg);
-            if (!cfg.Disabled)
+            // Spec mandates using an environment variable for opt-out
+            // cfg.Disabled acts as a feature flag, the env var is an option.
+            var disabled = Environment.GetEnvironmentVariable(TelemetryOptOutKey)?.ToLowerInvariant();
+            if (!cfg.Disabled && disabled is not ("1" or "true"))
             {
                 // Only register if telemetry is enabled.
                 var openTelemetryBuilder = services.AddOpenTelemetry()

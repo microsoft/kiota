@@ -40,6 +40,8 @@
   "scripts": {
     "lint": "eslint",
     "test": "jest",
+    "test:unit": "jest --config=jest.config.unit.cjs",
+    "test:integration": "jest --config=jest.config.integration.cjs",
     "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
@@ -57,6 +59,7 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "original-fs": "^1.2.0",
+    "uuid": "^11.1.0",
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {

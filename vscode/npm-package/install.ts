@@ -39,9 +39,15 @@ async function runIfNotLocked(action: () => Promise<void>) {
 }
 
 export async function ensureKiotaIsPresent() {
+  const installPath = getKiotaPathInternal(false);
+  if (installPath) {
+    await ensureKiotaIsPresentInPath(installPath);
+  }
+}
+
+export async function ensureKiotaIsPresentInPath(installPath: string) {
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
-  const installPath = getKiotaPathInternal(false);
   if (installPath) {
     if (!fs.existsSync(installPath) || fs.readdirSync(installPath).length === 0) {
       await runIfNotLocked(async () => {

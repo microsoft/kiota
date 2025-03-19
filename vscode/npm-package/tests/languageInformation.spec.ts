@@ -1,4 +1,4 @@
-import { getLanguageInformationForDescription, getLanguageInformationInternal } from '..';
+import { getLanguageInformationForDescription, getLanguageInformationInternal } from '../lib/languageInformation';
 import { setupKiotaStubs } from './stubs.util';
 
 const sampleLanguageInfo = {

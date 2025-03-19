@@ -21,7 +21,7 @@ interface KiotaResultOptions {
  * @returns {Promise<KiotaTreeResult | undefined>} A promise that resolves to the Kiota show result or undefined if an error occurs.
  * @throws {Error} Throws an error if the result is an instance of Error.
  */
-export async function getKiotaTree({ includeFilters, descriptionPath, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaTreeResult | undefined> {
+export async function getKiotaTree({ descriptionPath, includeFilters, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaTreeResult | undefined> {
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType<KiotaShowConfiguration, KiotaTreeResult, void>('Show');
 
