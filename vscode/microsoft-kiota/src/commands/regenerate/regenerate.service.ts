@@ -50,28 +50,7 @@ export class RegenerateService {
           operation: ConsumerOperation.Edit,
           workingDirectory: getWorkspaceJsonDirectory()
         });
-        {
-          openAPIFilePath: clientObjectItem.descriptionLocation ? clientObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
-          outputPath: clientObjectItem.outputPath,
-          language,
-          includePatterns: selectedPaths ? selectedPaths : clientObjectItem.includePatterns,
-          excludePatterns: clientObjectItem.excludePatterns ? clientObjectItem.excludePatterns : [], clientClassName: this._clientKey,
-          clientNamespaceName: clientObjectItem.clientNamespaceName,
-          usesBackingStore: clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
-          clearCache: settings.clearCache,
-          cleanOutput: settings.cleanOutput,
-          excludeBackwardCompatible: clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
-          disabledValidationRules: clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
-          serializers: settings.languagesSerializationConfiguration[language].serializers,
-          deserializers: settings.languagesSerializationConfiguration[language].deserializers,
-          structuredMimeTypes: clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
-          includeAdditionalData: clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
-          operation: ConsumerOperation.Edit,
-          workingDirectory: getWorkspaceJsonDirectory()
-        });
       if (result) {
-        if (!result.isSuccess) {
-          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         if (!result.isSuccess) {
           await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
@@ -112,7 +91,6 @@ export class RegenerateService {
       );
       const duration = performance.now() - start;
       const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
-      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
 
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
@@ -122,8 +100,6 @@ export class RegenerateService {
         "duration": duration,
       });
       if (result) {
-        if (!result.isSuccess) {
-          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         if (!result.isSuccess) {
           await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }

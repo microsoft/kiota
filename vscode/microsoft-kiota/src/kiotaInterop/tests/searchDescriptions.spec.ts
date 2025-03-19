@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { KiotaSearchResultItem, searchDescription } from '..';
 import { setupKiotaStubs } from './stubs.util';
 

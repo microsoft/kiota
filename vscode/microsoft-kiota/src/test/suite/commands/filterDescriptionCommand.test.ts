@@ -1,3 +1,7 @@
+// You can import and use all API from the 'vscode' module
+// as well as import your extension to test it
+import assert from "assert";
+import * as sinon from "sinon";
 import * as vscode from 'vscode';
 import * as filterModule from "../../../commands/openApiTreeView/filterDescriptionCommand";
 import * as filterStepsModule from "../../../modules/steps/filterSteps";
@@ -7,22 +11,22 @@ suite('FilterDescriptionCommand Test Suite', () => {
     void vscode.window.showInformationMessage('Start FilterDescriptionCommand tests.');
     const sanbox = sinon.createSandbox();
 
-    afterEach(async () => {
-        jest.clearAllMocks();
+    teardown(async () => {
+        sanbox.restore();
     });
 
     test('test function getName of filterDescriptionCommand', () => {
-        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         const filterDescriptionCommand = new filterModule.FilterDescriptionCommand(treeProvider);
-        expect("kiota.openApiExplorer.filterDescription").toEqual(filterDescriptionCommand.getName());
+        assert.strictEqual("kiota.openApiExplorer.filterDescription", filterDescriptionCommand.getName());
     });
 
     test('test function execute of filterDescriptionCommand', async () => {
-        const filterStepsStub = jest.spyOn(filterStepsModule, 'filterSteps').mockResolvedValue({});
-        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        const filterStepsStub = sanbox.stub(filterStepsModule, 'filterSteps');
+        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
         const filterDescriptionCommand = new filterModule.FilterDescriptionCommand(treeProvider);
         await filterDescriptionCommand.execute();
-        expect(filterStepsStub).toHaveBeenCalledTimes(1);
-        expect(filterStepsStub).toHaveBeenCalledWith(treeProvider.filter, expect.any(Function));
+        sinon.assert.calledOnce(filterStepsStub);
+        sinon.assert.calledWith(filterStepsStub, treeProvider.filter, sinon.match.func);
     });
 });

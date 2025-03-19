@@ -1,4 +1,5 @@
-import { runCLI } from 'jest';
+import { glob } from 'glob';
+import Mocha from 'mocha';
 import * as path from 'path';
 
 export async function run(): Promise<void> {
