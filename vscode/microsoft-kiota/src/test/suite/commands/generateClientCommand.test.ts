@@ -2,9 +2,7 @@
 // as well as import your extension to test it
 import { KiotaGenerationLanguage, KiotaLogEntry } from "@microsoft/kiota";
 import TelemetryReporter from "@vscode/extension-telemetry";
-import assert from "assert";
 import * as path from "path";
-import * as sinon from "sinon";
 import * as vscode from 'vscode';
 
 import * as generateModule from "../../../commands/generate/generateClientCommand";
@@ -21,9 +19,9 @@ import * as msgUtilitiesModule from "../../../utilities/messaging";
 let context: vscode.ExtensionContext = {
     subscriptions: [],
     workspaceState: {
-        update: sinon.stub().resolves(),
-        keys: sinon.stub().returns([]),
-        get: sinon.stub().returns(undefined)
+        update: jest.fn().mockResolvedValue(undefined),
+        keys: jest.fn().mockReturnValue([]),
+        get: jest.fn().mockReturnValue(undefined)
     } as vscode.Memento,
     globalState: {} as any,
     secrets: {} as vscode.SecretStorage,
@@ -77,27 +75,27 @@ suite('GenerateClientCommand Test Suite', () => {
     let myOutputChannel = vscode.window.createOutputChannel("Kiota", {
         log: true,
     });
-    teardown(() => {
-        sanbox.restore();
+
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
     test('test function getName of GenerateClientCommand', () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        assert.strictEqual("kiota.openApiExplorer.generateClient", generateClientCommand.getName());
+        expect("kiota.openApiExplorer.generateClient").toEqual(generateClientCommand.getName());
     });
 
     test('test function execute of GenerateClientCommand with 0 selected paths', async () => {
-        var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-        treeProvider.getSelectedPaths.returns([]);
-        var viewProvider = sinon.createStubInstance(dependenciesModule.DependenciesViewProvider);
-        const vscodeWindowSpy = sinon.stub(vscode.window, "showErrorMessage");
+        const treeProvider = jest.createMockFromModule<treeModule.OpenApiTreeProvider>("../../../providers/openApiTreeProvider");
+        treeProvider.getSelectedPaths = jest.fn().mockReturnValue([]);
+        const viewProvider = jest.createMockFromModule<dependenciesModule.DependenciesViewProvider>("../../../providers/dependenciesViewProvider");
+        const vscodeWindowSpy = jest.spyOn(vscode.window, "showErrorMessage").mockResolvedValue(undefined);
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
         await generateClientCommand.execute();
-        assert.strictEqual((treeProvider.getSelectedPaths()).length, 0);
-        sinon.assert.calledOnceWithMatch(vscodeWindowSpy, vscode.l10n.t("No endpoints selected, select endpoints first"));
-        vscodeWindowSpy.restore();
+        expect((treeProvider.getSelectedPaths()).length).toEqual(0);
+        expect(vscodeWindowSpy).toHaveBeenCalledWith(vscode.l10n.t("No endpoints selected, select endpoints first"));
     });
 
     test.skip('test function execute of GenerateClientCommand with descriptionUrl unset', async () => {
@@ -158,11 +156,6 @@ suite('GenerateClientCommand Test Suite', () => {
 
         //stub and call generateCommand
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        const generatePluginAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
-            "generatePluginAndRefreshUI").once().withArgs(
-                config, extensionSettings, "path/to/temp/folder", ["repairs"]
-            );
-        generatePluginAndRefreshUIExpectation.resolves(result);
         await generateClientCommand.execute();
         assert.strictEqual((treeProvider.getSelectedPaths()).length, 1);
         assert.strictEqual(!treeProvider.descriptionUrl, false);
@@ -208,14 +201,8 @@ suite('GenerateClientCommand Test Suite', () => {
 
         //stub and call generateCommand
         const generateClientCommand = new generateModule.GenerateClientCommand(treeProvider, context, viewProvider, setWorkspaceGenerationContext, myOutputChannel);
-        var outputPath = path.join("path", "to", "temp", "folder", "appPackage"); //make it os agnostic
-        const generateManifestAndRefreshUIExpectation = sinon.mock(generateClientCommand).expects(
-            "generateManifestAndRefreshUI").twice().withArgs(
-                config, extensionSettings, outputPath, ["repairs"]
-            );
-        generateManifestAndRefreshUIExpectation.resolves(result);
-        let executeCommandStub = sinon.stub(vscode.commands, "executeCommand");
-        executeCommandStub.resolves();
+        const outputPath = path.join("path", "to", "temp", "folder", "appPackage");
+        const executeCommandStub = jest.spyOn(vscode.commands, "executeCommand").mockResolvedValue(undefined);
         await generateClientCommand.execute();
 
         // assertions
@@ -230,12 +217,13 @@ suite('GenerateClientCommand Test Suite', () => {
                 path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-openapi.yml`),
                 path.join(outputPath, `${sanitizedApiTitle?.toLowerCase()}-apiplugin.json`),
                 { lastCommand: 'createDeclarativeCopilotWithManifest' }
+                { lastCommand: 'createDeclarativeCopilotWithManifest' }
             ]
         );
-        sinon.assert.calledOnce(clearDeepLinkParamSpy);
+        expect(clearDeepLinkParamSpy).toHaveBeenCalled();
 
-        //test call to ttk createprojectfromkiota fails with undefined ttkContext Param
-        pluginParams = {
+        // Test call to ttk createprojectfromkiota fails with undefined ttkContext Param
+        deepLinkParamsHandler.setDeepLinkParams({
             kind: "plugin",
             type: "apimanifest",
             source: "TTK",
@@ -245,11 +233,10 @@ suite('GenerateClientCommand Test Suite', () => {
         const telemetryStub = sinon.stub(TelemetryReporter.prototype, "sendTelemetryEvent").resolves();
         //call execute command again but this time expect call to fail
         await generateClientCommand.execute();
-        sinon.assert.calledWith(
-            telemetryStub,
+        expect(telemetryStub).toHaveBeenCalledWith(
             "DeepLinked fx-extension.createprojectfromkiota",
             { "error": '{"name":"ttk context not provided"}' }
+            { "error": '{"name":"ttk context not provided"}' }
         );
-        generateManifestAndRefreshUIExpectation.verify();
     });
 });

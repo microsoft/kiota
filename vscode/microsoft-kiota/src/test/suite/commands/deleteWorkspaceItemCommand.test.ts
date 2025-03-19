@@ -1,5 +1,3 @@
-import assert from "assert";
-import * as sinon from "sinon";
 import * as vscode from 'vscode';
 
 import { DeleteWorkspaceItemCommand } from '../../../commands/deleteWorkspaceItem/deleteWorkspaceItemCommand';
@@ -7,27 +5,27 @@ import * as treeModule from "../../../providers/openApiTreeProvider";
 import * as sharedServiceModule from '../../../providers/sharedService';
 import { WorkspaceTreeItem } from '../../../providers/workspaceTreeProvider';
 
-suite('DeleteWorkspaceItemCommand Tests', () => {
+describe('DeleteWorkspaceItemCommand Tests', () => {
   let context: vscode.ExtensionContext;
   let outputChannel: vscode.LogOutputChannel;
   let command: DeleteWorkspaceItemCommand;
   let workspaceTreeItem: WorkspaceTreeItem;
 
-  setup(() => {
+  beforeAll(() => {
     context = { extension: { packageJSON: { telemetryInstrumentationKey: 'test-key' } } } as any;
-    outputChannel = { appendLine: sinon.stub() } as any;
-    var treeProvider = sinon.createStubInstance(treeModule.OpenApiTreeProvider);
-    var stubbedSharedService = sinon.createStubInstance(sharedServiceModule.SharedService);
-    command = new DeleteWorkspaceItemCommand(context, treeProvider, outputChannel, stubbedSharedService,);
+    outputChannel = { appendLine: jest.fn() } as any;
+    const treeProvider = jest.fn(() => ({} as treeModule.OpenApiTreeProvider));
+    const stubbedSharedService = jest.fn(() => ({} as sharedServiceModule.SharedService));
+    command = new DeleteWorkspaceItemCommand(context, treeProvider(), outputChannel, stubbedSharedService());
     workspaceTreeItem = { label: 'test-item', category: 'plugin' } as any;
   });
 
-  teardown(() => {
-    sinon.restore();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   test('getName should return correct command name', () => {
-    assert.strictEqual("kiota.workspace.deleteItem", command.getName());
+    expect("kiota.workspace.deleteItem").toEqual(command.getName());
   });
 
   test.skip('execute should show success message and refresh workspace on success', async () => {
@@ -39,9 +37,9 @@ suite('DeleteWorkspaceItemCommand Tests', () => {
 
     await command.execute(workspaceTreeItem);
 
-    assert.strictEqual(showWarningMessageStub.calledOnce, true);
-    assert.strictEqual(showInformationMessageStub.calledOnce, true);
-    assert.strictEqual(deleteItemStub.calledOnce, true);
+    expect(showWarningMessageStub).toHaveBeenCalledTimes(1);
+    expect(showInformationMessageStub).toHaveBeenCalledTimes(1);
+    expect(deleteItemStub).toHaveBeenCalledTimes(1);
   });
 
 });

@@ -5,7 +5,6 @@ import * as vscode from "vscode";
 import { KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
-
 let _languageInformation: LanguagesInformation | undefined; // doesn't change over the lifecycle of the extension
 
 export async function displayGenerationResults(openApiTreeProvider: OpenApiTreeProvider, config: any) {

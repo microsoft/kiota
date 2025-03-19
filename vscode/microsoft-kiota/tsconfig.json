@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+  "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "module": "CommonJS",
     "target": "ES2020",

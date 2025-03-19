@@ -5,6 +5,7 @@ import * as path from 'path';
 import { GenerateState } from "../modules/steps/generateSteps";
 import { allGenerationLanguagesToString, getSanitizedString, parseGenerationLanguage, parsePluginType } from "../util";
 import { createTemporaryFolder } from "./temporary-folder";
+import { KiotaGenerationLanguage, KiotaPluginType } from '../kiotaInterop';
 
 export function isDeeplinkEnabled(deepLinkParams: Partial<IntegrationParams>): boolean {
   const minimumNumberOfParams = 1;
