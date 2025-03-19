@@ -623,16 +623,10 @@ extends:
                 workingDirectory: $(Build.SourcesDirectory)/vscode
 
               - script: |
-                  cd npm-package
                   npm install
-                displayName: "Install npm-package dependencies"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
-              
-              - script: |
-                  cd npm-package
                   npm run package
                 displayName: "Package npm-package"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
+                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
               
               - script: |
                   npm install
@@ -759,17 +753,6 @@ extends:
                 displayName: "Package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
 
-              - pwsh: |
-                  $packageFiles = Get-ChildItem -Filter *.tgz -Recurse
-                  if ($packageFiles.Count -ne 1) {
-                    Write-Error "Expected 1 package file, found $($packageFiles.Count)"
-                    exit 1
-                  }
-                  $packageFileName = $packageFiles[0].BaseName
-                  Write-Output "##vso[task.setvariable variable=packageFileName;isOutput=true]$packageFileName"
-                displayName: "Get package file name"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
-                name: getPackageFileName
               - task: CopyFiles@2
                 displayName: Prepare staging folder for upload
                 inputs:
