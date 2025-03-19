@@ -255,3 +255,10 @@ export interface LanguagesInformation {
 export interface KiotaResult extends KiotaLoggedResult {
   isSuccess: boolean;
 }
+
+export interface ValidateManifestRequest {
+  manifestPath: string;
+}
+
+export interface ValidateManifestResult extends KiotaLoggedResult {
+}

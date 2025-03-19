@@ -16,4 +16,5 @@ internal interface IServer
     Task<List<LogEntry>> MigrateFromLockFileAsync(string lockDirectoryPath, CancellationToken cancellationToken);
     Task<List<LogEntry>> RemoveClientAsync(string clientName, bool cleanOutput, CancellationToken cancellationToken);
     Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken);
+    Task<ValidateManifestResult> ValidateManifestAsync(string manifestPath, CancellationToken cancellationToken);
 }

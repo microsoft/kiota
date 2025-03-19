@@ -9,6 +9,7 @@ using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Rpc;
@@ -333,4 +334,14 @@ internal partial class Server : IServer
 
     public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
     => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
+
+    public Task<ValidateManifestResult> ValidateManifestAsync(string manifestPath, CancellationToken cancellationToken)
+    {
+        var logs = new List<LogEntry>();
+        logs.Add(new LogEntry(LogLevel.Information, "Manifest validation is not implemented yet."));
+        var result = new ValidateManifestResult(logs);
+
+        return Task.FromResult(result);
+        //throw new NotImplementedException();
+    }
 }
