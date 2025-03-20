@@ -8,11 +8,11 @@ import * as path from "path";
 interface PluginGenerationOptions {
   descriptionPath: string;
   outputPath: string;
-  pluginTypes: KiotaPluginType[];
   pluginName: string;
   operation: ConsumerOperation;
   workingDirectory: string;
 
+  pluginType?: KiotaPluginType;
   includePatterns?: string[];
   excludePatterns?: string[];
   clearCache?: boolean;
@@ -20,7 +20,6 @@ interface PluginGenerationOptions {
   disabledValidationRules?: string[];
   pluginAuthType?: PluginAuthType | null;
   pluginAuthRefid?: string;
-
 }
 
 /**
@@ -30,9 +29,9 @@ interface PluginGenerationOptions {
  * @param {string} pluginGenerationOptions.openAPIFilePath - The file path to the OpenAPI specification.
  * @param {string} pluginGenerationOptions.pluginName - The name of the plugin to generate.
  * @param {string} pluginGenerationOptions.outputPath - The output path where the generated plugin will be saved.
- * @param {KiotaPluginType[]} pluginGenerationOptions.pluginTypes - The types of plugins to generate.
  * @param {ConsumerOperation} pluginGenerationOptions.operation - The operation to perform during generation.
  * @param {string} pluginGenerationOptions.workingDirectory - The working directory for the generation process.
+ * @param {KiotaPluginType} [pluginGenerationOptions.pluginType] - The type of the plugin to generate.
  * @param {string[]} [pluginGenerationOptions.includePatterns] - The patterns to include in the generation process.
  * @param {string[]} [pluginGenerationOptions.excludePatterns] - The patterns to exclude from the generation process.
  * @param {boolean} [pluginGenerationOptions.clearCache] - Whether to clear the cache before generation.
@@ -48,6 +47,7 @@ interface PluginGenerationOptions {
  */
 export async function generatePlugin(pluginGenerationOptions: PluginGenerationOptions
 ): Promise<GeneratePluginResult | undefined> {
+  const pluginType = pluginGenerationOptions.pluginType ?? KiotaPluginType.ApiPlugin;
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
     const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
       "GeneratePlugin"
@@ -57,10 +57,10 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
       {
         openAPIFilePath: pluginGenerationOptions.descriptionPath,
         outputPath: pluginGenerationOptions.outputPath,
-        pluginTypes: pluginGenerationOptions.pluginTypes,
         operation: pluginGenerationOptions.operation,
         clientClassName: pluginGenerationOptions.pluginName,
 
+        pluginTypes: [pluginType],
         cleanOutput: pluginGenerationOptions.cleanOutput ?? false,
         clearCache: pluginGenerationOptions.clearCache ?? false,
         disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
@@ -80,7 +80,8 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
     const outputPath = pluginGenerationOptions.outputPath;
     const pluginName = pluginGenerationOptions.pluginName;
     const pathOfSpec = path.join(outputPath, `${pluginName.toLowerCase()}-openapi.yml`);
-    const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-apiplugin.json`);
+    const plugingTypeName = pluginType.toString();
+    const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-${plugingTypeName.toLowerCase()}.json`);
     return {
       aiPlugin: pathPluginManifest,
       openAPISpec: pathOfSpec, 
