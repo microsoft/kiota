@@ -621,22 +621,7 @@ extends:
                   npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
-
-              - script: |
-                  npm install
-                  npm run package
-                displayName: "Package npm-package"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
-              
-              - script: |
-                  npm install
-
-                  cd microsoft-kiota
-                  tgz_file=$(ls ../npm-package/*.tgz)
-                  npm install $tgz_file
-                displayName: "Install package as vscode dependency"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
-
+           
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
@@ -747,11 +732,11 @@ extends:
 
               - script: npm install
                 displayName: "Install package dependencies"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               
               - script: npm run package
                 displayName: "Package"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/npm-package
+                workingDirectory: $(Build.SourcesDirectory)/vscode
 
               - task: CopyFiles@2
                 displayName: Prepare staging folder for upload
@@ -763,7 +748,7 @@ extends:
               - task: 1ES.PublishPipelineArtifact@1
                 displayName: "Publish Artifact: Npm Package"
                 inputs:
-                  artifactName: "Npm Package"
+                  artifactName: npm-package
                   targetPath: "$(Build.ArtifactStagingDirectory)/npm-package"
 
       - stage: deploy
@@ -842,7 +827,7 @@ extends:
                   artifactName: changelog
                   targetPath: "$(Pipeline.Workspace)/changelog"
                 - input: pipelineArtifact
-                  artifactName: "Npm Package"
+                  artifactName: npm-package
                   targetPath: "$(Pipeline.Workspace)/npm-package"
                 - ${{ each distribution in parameters.distributions }}:
                     - input: pipelineArtifact
@@ -1067,7 +1052,7 @@ extends:
               isProduction: true
               inputs:
                 - input: pipelineArtifact
-                  artifactName: "Npm package"
+                  artifactName: npm-package
                   targetPath: $(Pipeline.Workspace)/npm-package
                 - input: pipelineArtifact
                   artifactName: scripts
