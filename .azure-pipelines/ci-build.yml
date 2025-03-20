@@ -627,14 +627,14 @@ extends:
                 displayName: "Install vscode dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
            
-              - script: vsce package --pre-release
+              - script: npx lerna exec --scope kiota -- vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode
                 condition: eq(variables['isPrerelease'], 'true')
 
-              - script: vsce package
+              - script: npx lerna exec --scope kiota -- vsce package
                 displayName: "Package VSCode extension as release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode
                 condition: eq(variables['isPrerelease'], 'false')
                 
               - pwsh: |
