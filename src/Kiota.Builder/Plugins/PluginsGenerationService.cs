@@ -608,8 +608,9 @@ public partial class PluginsGenerationService
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
         {
-            string jsonString = $"{{\"file\":\"{adaptiveCard.File}\"}}";
-            using JsonDocument doc = JsonDocument.Parse(jsonString);
+            JsonNode node = new JsonObject();
+            node["file"] = JsonValue.Create(adaptiveCard.File);
+            using JsonDocument doc = JsonDocument.Parse(node.ToJsonString());
             JsonElement staticTemplate = doc.RootElement.Clone();
             return new ResponseSemantics
             {
