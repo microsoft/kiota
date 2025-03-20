@@ -57,27 +57,16 @@ jobs:
         run: npm run lint
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests(linux) - package
-        if: runner.os == 'Linux' && matrix.builds.id == 'package'
+      - name: run tests(linux) - ${{ matrix.builds.id }}
+        if: runner.os == 'Linux' 
         run: xvfb-run -a npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests - package
-        if: runner.os != 'Linux' && matrix.builds.id == 'package'
+      - name: run tests - ${{ matrix.builds.id }}
+        if: runner.os != 'Linux' 
         run: npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
-      - name: run tests(linux) - vscode
-        if: runner.os == 'Linux' && matrix.builds.id == 'vscode'
-        run: xvfb-run -a npm run test:coverage
-        working-directory: vscode
-
-      - name: run tests - vscode
-        if: runner.os != 'Linux' && matrix.builds.id == 'vscode'
-        run: npm run test:coverage
-        working-directory: vscode/${{ matrix.builds.path }}
-
-              
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
         uses: SonarSource/sonarqube-scan-action@v5
@@ -90,26 +79,14 @@ jobs:
 
       - run: npm run package
         if: matrix.builds.id == 'package'
+        name: 'Package - ${{ matrix.builds.id }}'
         working-directory: vscode/${{ matrix.builds.path }}
 
-      # applies specifically to vscode 
       - run: |
-          npm i -g @vscode/vsce
-
-          cd npm-package
-          npm install
-          npm run package
-
-          cd ..
-          cd microsoft-kiota
-          npm install --no-audit --no-fund --legacy-peer-deps
-          tgz_file=$(ls ../npm-package/*.tgz)
-          npm install $tgz_file
-
           vsce package
           vsce ls --tree
         working-directory: vscode
-        name: 'Package VSCode extension'
+        name: 'Package - ${{ matrix.builds.id }}'
         if: matrix.builds.id == 'vscode'
 
         # back to common operations
