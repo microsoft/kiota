@@ -739,7 +739,7 @@ extends:
                 displayName: "Install package dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               
-              - script: npm run package
+              - script: npm run package:package
                 displayName: "Package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
 
