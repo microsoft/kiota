@@ -603,7 +603,7 @@ public partial class PluginsGenerationService
         };
     }
 
-    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension<T>(OpenApiOperation openApiOperation, string extensionName)
+    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
     {
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
