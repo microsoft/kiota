@@ -85,6 +85,7 @@ jobs:
         working-directory: vscode
 
       - run: |
+          npm i -g @vscode/vsce
           vsce package
           vsce ls --tree
         working-directory: vscode
