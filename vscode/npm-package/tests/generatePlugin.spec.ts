@@ -26,11 +26,11 @@ describe("generate plugin", () => {
     connectionStub.mockResolvedValue(mockResults);
 
     const results = await generatePlugin({
-      openAPIFilePath: 'openAPIFilePath',
+      descriptionPath: 'openAPIFilePath',
       outputPath: 'outputPath',
       includePatterns: [],
       excludePatterns: [],
-      pluginTypes: [KiotaPluginType.ApiPlugin],
+      pluginType: KiotaPluginType.ApiPlugin,
       pluginName: 'ApiClient',
       clearCache: false,
       cleanOutput: false,
