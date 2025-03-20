@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -494,6 +495,7 @@ public partial class PluginsGenerationService
                     Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
+                    Capabilities = GetFunctionCapabilitiesFromOperation(operation),
 
                 });
                 conversationStarters.Add(new ConversationStarter
@@ -585,6 +587,36 @@ public partial class PluginsGenerationService
             {
                 Instructions = new Instructions(instructionsExtractor(rExt)
                     .Where(static x => !string.IsNullOrEmpty(x)).Select(static x => x.CleanupXMLString()).ToList())
+            };
+        }
+
+        return null;
+    }
+
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
+    {
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        if (responseSemantics is null)
+            return null;
+        return new FunctionCapabilities
+        {
+            ResponseSemantics = responseSemantics,
+        };
+    }
+
+    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
+    {
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
+        {
+            JsonNode node = new JsonObject();
+            node["file"] = JsonValue.Create(adaptiveCard.File);
+            using JsonDocument doc = JsonDocument.Parse(node.ToJsonString());
+            JsonElement staticTemplate = doc.RootElement.Clone();
+            return new ResponseSemantics
+            {
+                DataPath = adaptiveCard.DataPath,
+                StaticTemplate = staticTemplate,
             };
         }
 
