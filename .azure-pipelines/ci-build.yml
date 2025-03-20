@@ -609,7 +609,7 @@ extends:
                 submodules: true
               - task: NodeTool@0
                 inputs:
-                  versionSpec: "18.x"
+                  versionSpec: "20.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
