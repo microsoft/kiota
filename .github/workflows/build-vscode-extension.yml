@@ -57,17 +57,17 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        working-directory: vscode/${{ matrix.builds.path }}
+        working-directory: vscode
 
       - name: run tests(linux) - ${{ matrix.builds.id }}
         if: runner.os == 'Linux' 
-        run: xvfb-run -a npm run test:coverage
-        working-directory: vscode/${{ matrix.builds.path }}
+        run: xvfb-run -a npm run test:${{ matrix.builds.id }}:coverage
+        working-directory: vscode
 
       - name: run tests - ${{ matrix.builds.id }}
         if: runner.os != 'Linux' 
-        run: npm run test:coverage
-        working-directory: vscode/${{ matrix.builds.path }}
+        run: npm run test:${{ matrix.builds.id }}:coverage
+        working-directory: vscode
 
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
@@ -79,10 +79,10 @@ jobs:
           args: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
-      - run: npm run package
+      - run: npm run package:${{ matrix.builds.id }}
         if: matrix.builds.id == 'package'
         name: 'Package - ${{ matrix.builds.id }}'
-        working-directory: vscode/${{ matrix.builds.path }}
+        working-directory: vscode
 
       - run: |
           vsce package
