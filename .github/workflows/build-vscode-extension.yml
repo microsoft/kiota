@@ -69,34 +69,12 @@ jobs:
 
       - name: run tests(linux) - vscode
         if: runner.os == 'Linux' && matrix.builds.id == 'vscode'
-        run: |
-          cd npm-package
-          npm install
-          npm run package
-
-          cd ..
-          npm install
-
-          cd microsoft-kiota
-          tgz_file=$(ls ../npm-package/*.tgz)
-          npm install $tgz_file
-          xvfb-run -a npm run test:coverage
+        run: xvfb-run -a npm run test:coverage
         working-directory: vscode
 
       - name: run tests - vscode
         if: runner.os != 'Linux' && matrix.builds.id == 'vscode'
-        run: |
-          cd npm-package
-          npm install
-          npm run package
-
-          cd ..
-          npm install
-
-          cd microsoft-kiota
-          tgz_file=$(ls ../npm-package/*.tgz)
-          npm install $tgz_file
-          npm run test:coverage
+        run: npm run test:coverage
         working-directory: vscode/${{ matrix.builds.path }}
 
               
