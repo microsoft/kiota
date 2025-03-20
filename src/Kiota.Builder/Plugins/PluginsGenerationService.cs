@@ -594,7 +594,7 @@ public partial class PluginsGenerationService
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
     {
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension<OpenApiAiAdaptiveCardExtension>(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
         if (responseSemantics is null)
             return null;
         return new FunctionCapabilities
