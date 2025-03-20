@@ -22,7 +22,7 @@ idna==3.10
 
 importlib-metadata==6.8.0 ; python_version >= '3.7'
 
-iniconfig==2.0.0 ; python_version >= '3.7'
+iniconfig==2.1.0 ; python_version >= '3.7'
 
 isort==6.0.1
 
