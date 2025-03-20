@@ -621,7 +621,9 @@ extends:
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
 
-              - script: npm install
+              - script: |
+                  npm install
+                  npm list
                 displayName: "Install vscode dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
            
