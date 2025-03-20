@@ -35,20 +35,20 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -filePath "./vscode/microsoft-kiota/package.json" -online
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/microsoft-kiota/src/kiotaInterop/runtime.json" -online
         shell: pwsh
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         working-directory: vscode/microsoft-kiota
       - run: npm run lint
         working-directory: vscode/microsoft-kiota
       - name: run tests(linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test-with-coverage
+        run: xvfb-run -a npm run test:coverage
         working-directory: vscode/microsoft-kiota
       - name: run tests
         if: runner.os != 'Linux'
-        run: npm run test-with-coverage
+        run: npm run test:coverage
         working-directory: vscode/microsoft-kiota
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'

@@ -4,14 +4,11 @@ import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../../constants";
-import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, getLogEntriesForLevel, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
+import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient, generatePlugin, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
-import { KiotaGenerationLanguage, KiotaPluginType } from "../../types/enums";
 import { ExtensionSettings } from "../../types/extensionSettings";
-import { parseGenerationLanguage, parsePluginType } from "../../util";
-import { checkForSuccess, exportLogsAndShowErrors } from "../../utilities/logging";
-import { generateClient } from "../generate/generateClient";
-import { generatePlugin } from "../generate/generatePlugin";
+import { getWorkspaceJsonDirectory, parseGenerationLanguage, parsePluginType } from "../../util";
+import { exportLogsAndShowErrors } from "../../utilities/logging";
 
 export class RegenerateService {
 
@@ -31,29 +28,28 @@ export class RegenerateService {
       title: vscode.l10n.t("Re-generating client...")
     }, async (progress, _) => {
       const result = await generateClient(
-        this._context,
-        clientObjectItem.descriptionLocation ? clientObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
-        clientObjectItem.outputPath,
-        language,
-        selectedPaths ? selectedPaths : clientObjectItem.includePatterns,
-        clientObjectItem.excludePatterns ? clientObjectItem.excludePatterns : [],
-        this._clientKey,
-        clientObjectItem.clientNamespaceName,
-        clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
-        settings.clearCache,
-        settings.cleanOutput,
-        clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
-        clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
-        settings.languagesSerializationConfiguration[language].serializers,
-        settings.languagesSerializationConfiguration[language].deserializers,
-        clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
-        clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
-        ConsumerOperation.Edit
-      );
+        {
+          openAPIFilePath: clientObjectItem.descriptionLocation ? clientObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          outputPath: clientObjectItem.outputPath,
+          language,
+          includePatterns: selectedPaths ? selectedPaths : clientObjectItem.includePatterns,
+          excludePatterns: clientObjectItem.excludePatterns ? clientObjectItem.excludePatterns : [], clientClassName: this._clientKey,
+          clientNamespaceName: clientObjectItem.clientNamespaceName,
+          usesBackingStore: clientObjectItem.usesBackingStore ? clientObjectItem.usesBackingStore : settings.backingStore,
+          clearCache: settings.clearCache,
+          cleanOutput: settings.cleanOutput,
+          excludeBackwardCompatible: clientObjectItem.excludeBackwardCompatible ? clientObjectItem.excludeBackwardCompatible : settings.excludeBackwardCompatible,
+          disabledValidationRules: clientObjectItem.disabledValidationRules ? clientObjectItem.disabledValidationRules : settings.disableValidationRules,
+          serializers: settings.languagesSerializationConfiguration[language].serializers,
+          deserializers: settings.languagesSerializationConfiguration[language].deserializers,
+          structuredMimeTypes: clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
+          includeAdditionalData: clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
+          operation: ConsumerOperation.Edit,
+          workingDirectory: getWorkspaceJsonDirectory()
+        });
       if (result) {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+        if (!result.isSuccess) {
+          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(`Client ${this._clientKey} re-generated successfully.`);
       }
@@ -73,22 +69,25 @@ export class RegenerateService {
     }, async (progress, _) => {
       const start = performance.now();
       const result = await generatePlugin(
-        this._context,
-        pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
-        pluginObjectItem.outputPath,
-        pluginTypes,
-        selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
-        [],
-        this._clientKey,
-        settings.clearCache,
-        false,
-        settings.disableValidationRules,
-        ConsumerOperation.Edit,
-        pluginObjectItem.authType ? pluginObjectItem.authType : null,
-        pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
+        {
+          openAPIFilePath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          outputPath: pluginObjectItem.outputPath,
+          pluginTypes,
+          includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
+          excludePatterns: [],
+          clientClassName: this._clientKey,
+          clearCache: settings.clearCache,
+          cleanOutput: false,
+          disabledValidationRules: settings.disableValidationRules,
+          operation: ConsumerOperation.Edit,
+          pluginAuthType: pluginObjectItem.authType ? pluginObjectItem.authType : null,
+          pluginAuthRefid: pluginObjectItem.authReferenceId ? pluginObjectItem.authReferenceId : '',
+          workingDirectory: getWorkspaceJsonDirectory()
+        },
+
       );
       const duration = performance.now() - start;
-      const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+      const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
 
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.re-generatePlugin.completed`, {
@@ -98,9 +97,8 @@ export class RegenerateService {
         "duration": duration,
       });
       if (result) {
-        const isSuccess = await checkForSuccess(result);
-        if (!isSuccess) {
-          await exportLogsAndShowErrors(result, this._kiotaOutputChannel);
+        if (!result.isSuccess) {
+          await exportLogsAndShowErrors(result.logs, this._kiotaOutputChannel);
         }
         void vscode.window.showInformationMessage(vscode.l10n.t(`Plugin ${this._clientKey} re-generated successfully.`));
       }
