@@ -86,9 +86,10 @@ jobs:
 
       - run: |
           npm i -g @vscode/vsce
+          npm list
           vsce package
           vsce ls --tree
-        working-directory: vscode
+        working-directory: vscode/${{ matrix.builds.path }}
         name: 'Package - ${{ matrix.builds.id }}'
         if: matrix.builds.id == 'vscode'
 
