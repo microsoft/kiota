@@ -1,7 +1,7 @@
+import { ClientOrPluginProperties } from "@microsoft/kiota";
 import * as vscode from 'vscode';
 
 import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../constants";
-import { ClientOrPluginProperties } from "../kiotaInterop";
 import { OpenApiTreeProvider } from "../providers/openApiTreeProvider";
 import { WorkspaceGenerationContext } from "../types/WorkspaceGenerationContext";
 import { updateTreeViewIcons } from "../util";

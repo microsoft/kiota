@@ -1,3 +1,11 @@
+import {
+    getKiotaTree, getManifestDetails, ClientObjectProperties,
+    ClientOrPluginProperties,
+    ConfigurationFile,
+    KiotaLogEntry,
+    KiotaOpenApiNode,
+    PluginObjectProperties
+} from '@microsoft/kiota';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -5,15 +13,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { treeViewId } from '../constants';
-import {
-    ClientObjectProperties,
-    ClientOrPluginProperties,
-    ConfigurationFile,
-    KiotaLogEntry,
-    KiotaOpenApiNode,
-    PluginObjectProperties
-} from '../kiotaInterop';
-import { getManifestDetails, getKiotaTree } from '../kiotaInterop';
 import { ExtensionSettings } from '../types/extensionSettings';
 import { updateTreeViewIcons } from '../util';
 import { SharedService } from './sharedService';
@@ -339,7 +338,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     this.rawRootNode = createKiotaOpenApiNode(
                         clientNameOrPluginName,
                         '/',
-                        [this.rawRootNode],
+                        [this.rawRootNode!],
                         false,
                         false,
                         undefined,

@@ -1,4 +1,5 @@
-import { ClientOrPluginProperties } from "../../kiotaInterop";
+import { ClientOrPluginProperties } from "@microsoft/kiota"
+  ;
 import WorkspaceContentService from "./workspaceContentService";
 
 export interface WorkspaceContent {
@@ -7,3 +8,4 @@ export interface WorkspaceContent {
   plugins: Record<string, ClientOrPluginProperties>;
 }
 export { WorkspaceContentService };
+

@@ -1,5 +1,5 @@
+import { KiotaGenerationLanguage } from "@microsoft/kiota";
 import * as vscode from "vscode";
-import { KiotaGenerationLanguage } from "../kiotaInterop";
 
 export function getExtensionSettings(extensionId: string): ExtensionSettings {
     return {
