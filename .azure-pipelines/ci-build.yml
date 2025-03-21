@@ -579,15 +579,7 @@ extends:
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
-            dependsOn:
-              [
-                win_x64_build_binaries,
-                win_x86_build_binaries,
-                linux_x64_build_binaries,
-                linux_arm64_build_binaries,
-                osx_x64_build_binaries,
-                osx_arm64_build_binaries,
-              ]
+            dependsOn: [update_appsettings]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -627,17 +619,14 @@ extends:
                 displayName: "Install vscode dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
 
-              - script: ls -l $(Build.SourcesDirectory)/vscode/microsoft-kiota/node_modules/@microsoft/kiota
-                displayName: "Verify Symlink for @microsoft/kiota"  
-           
-              - script: npx lerna exec --scope kiota -- vsce package --pre-release
+              - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
+                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'true')
 
-              - script: npx lerna exec --scope kiota -- vsce package
+              - script: vsce package
                 displayName: "Package VSCode extension as release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode
+                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'false')
                 
               - pwsh: |
