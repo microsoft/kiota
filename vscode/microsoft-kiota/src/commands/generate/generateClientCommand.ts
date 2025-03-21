@@ -183,7 +183,7 @@ export class GenerateClientCommand extends Command {
   }
 
   private async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaResult | undefined> {
-    const pluginTypes = KiotaPluginType.ApiManifest;
+    const pluginType = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -194,7 +194,7 @@ export class GenerateClientCommand extends Command {
         {
           descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
-          pluginTypes: [pluginTypes],
+          pluginType,
           includePatterns: selectedPaths,
           excludePatterns: [],
           pluginName: typeof config.pluginName === "string"
@@ -212,7 +212,7 @@ export class GenerateClientCommand extends Command {
       const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
-        "pluginType": pluginTypes.toString(),
+        "pluginType": pluginType.toString(),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
@@ -239,7 +239,7 @@ export class GenerateClientCommand extends Command {
         {
           descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
-          pluginTypes,
+          pluginType: pluginTypes[0],
           includePatterns: selectedPaths,
           excludePatterns: [],
           pluginName: typeof config.pluginName === "string"

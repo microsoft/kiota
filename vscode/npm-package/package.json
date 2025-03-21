@@ -39,9 +39,9 @@
   ],
   "scripts": {
     "lint": "eslint",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:unit": "jest --config=jest.config.unit.cjs",
-    "test:integration": "jest --config=jest.config.integration.cjs",
+    "test:integration": "jest --config=jest.config.integration.cjs --runInBand",
     "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",

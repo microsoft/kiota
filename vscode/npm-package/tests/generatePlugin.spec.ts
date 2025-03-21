@@ -30,7 +30,7 @@ describe("generate plugin", () => {
       outputPath: 'outputPath',
       includePatterns: [],
       excludePatterns: [],
-      pluginTypes: [KiotaPluginType.ApiPlugin],
+      pluginType: KiotaPluginType.ApiPlugin,
       pluginName: 'ApiClient',
       clearCache: false,
       cleanOutput: false,
