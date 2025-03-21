@@ -1278,7 +1278,7 @@ public partial class KiotaBuilder
     {
         if (schema != null)
         {
-            var suffix = $"{operationType}Response";
+            var suffix = $"{operationType.Method.ToLowerInvariant()}Response";
             var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
             if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
             { //TODO remove for v2
@@ -1353,7 +1353,7 @@ public partial class KiotaBuilder
             var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
             var requestConfigClass = parentClass.AddInnerClass(new CodeClass
             {
-                Name = $"{parentClass.Name}{operationType}RequestConfiguration",
+                Name = $"{parentClass.Name}{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestConfiguration",
                 Kind = CodeClassKind.RequestConfiguration,
                 Documentation = new()
                 {
@@ -1362,12 +1362,12 @@ public partial class KiotaBuilder
             }).First();
 
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
-            var method = Enum.Parse<DomHttpMethod>(operationType.ToString());
+            var method = Enum.Parse<DomHttpMethod>(operationType.ToString(), true);
             var deprecationInformation = operation.GetDeprecationInformation();
             var returnTypes = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass, operationType);
             var executorMethod = new CodeMethod
             {
-                Name = operationType.ToString(),
+                Name = operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase(),
                 Kind = CodeMethodKind.RequestExecutor,
                 HttpMethod = method,
                 Parent = parentClass,
@@ -1426,7 +1426,7 @@ public partial class KiotaBuilder
 
             var generatorMethod = new CodeMethod
             {
-                Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
+                Name = $"To{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestInformation",
                 Kind = CodeMethodKind.RequestGenerator,
                 IsAsync = false,
                 HttpMethod = method,
@@ -1588,7 +1588,7 @@ public partial class KiotaBuilder
                                                 config.StructuredMimeTypes.Contains(x.Value.ContentType)))
                         {
                             if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key],
-                                    operation, method, $"{operationType}RequestBody",
+                                    operation, method, $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestBody",
                                     isRequestBody: true) is CodeType propertyType &&
                                 propertyType.TypeDefinition is not null)
                                 multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
@@ -1601,7 +1601,7 @@ public partial class KiotaBuilder
                         foreach (var property in requestBodySchema.Properties.Values.Where(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes)))
                         {
                             if (CreateModelDeclarations(currentNode, property,
-                                    operation, method, $"{operationType}RequestBody",
+                                    operation, method, $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestBody",
                                     isRequestBody: true) is CodeType { TypeDefinition: not null } propertyType)
                                 multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                         }
@@ -1609,14 +1609,14 @@ public partial class KiotaBuilder
                     else
                     {
                         requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
-                                            $"{operationType}RequestBody", isRequestBody: true) ??
+                                            $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestBody", isRequestBody: true) ??
                                         throw new InvalidSchemaException();
                     }
                 }
                 else
                 {
                     requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method,
-                                        $"{operationType}RequestBody", isRequestBody: true) ??
+                                        $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestBody", isRequestBody: true) ??
                                     throw new InvalidSchemaException();
                 }
                 method.AddParameter(new CodeParameter
@@ -2507,7 +2507,7 @@ public partial class KiotaBuilder
         {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
-                Name = $"{parentClass.Name}{operationType}QueryParameters",
+                Name = $"{parentClass.Name}{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
                 Documentation = new()
                 {
@@ -2540,7 +2540,7 @@ public partial class KiotaBuilder
             var shortestNamespace = GetShortestNamespace(codeNamespace, enumSchema);
             var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
-                enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
+                enumName = $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
             if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
             {
                 resultType = new CodeType

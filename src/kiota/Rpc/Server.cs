@@ -133,7 +133,7 @@ internal partial class Server : IServer
     private static partial Regex indexingNormalizationRegex();
     private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, HttpMethod operationType, bool forIndexing = false)
     {
-        var name = $"{node.Path}#{operationType.ToString().ToUpperInvariant()}";
+        var name = $"{node.Path}#{operationType.Method.ToUpperInvariant()}";
         if (forIndexing)
             return indexingNormalizationRegex().Replace(name, "{}");
         return name;

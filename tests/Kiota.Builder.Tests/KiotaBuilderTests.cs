@@ -1445,9 +1445,9 @@ paths:
         var rootNamespace = codeModel.GetChildElements(true).Single();
         var rootBuilder = rootNamespace.GetChildElements(true).OfType<CodeClass>().Single(e => e.Name == "Graph");
         var tasksProperty = rootBuilder.Properties.Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
-        var tasksRequestBuilder = tasksProperty.Type as CodeType;
-        Assert.NotNull(tasksRequestBuilder);
-        var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
+        var tasksRequestBuilder = Assert.IsType<CodeType>(tasksProperty.Type);
+        var classTypeDefinition = Assert.IsType<CodeClass>(tasksRequestBuilder.TypeDefinition);
+        var getMethod = classTypeDefinition.Methods.Single(e => e.Name == "Get");
         var returnType = getMethod.ReturnType;
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
