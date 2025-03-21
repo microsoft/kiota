@@ -108,9 +108,9 @@ public static class OpenApiSchemaExtensions
 
     internal static IOpenApiSchema? MergeInclusiveUnionSchemaEntries(this IOpenApiSchema? schema)
     {
-        if (schema is null || schema.AnyOf is null || !schema.IsInclusiveUnion(0)) return null;
+        if (schema is null || !schema.IsInclusiveUnion(0)) return null;
         var result = schema.GetSchemaOrTargetShallowCopy();
-        if (result.AnyOf is null) return null;
+        if (result.AnyOf is null || schema.AnyOf is null) return result;
         result.AnyOf.Clear();
         result.TryAddProperties(schema.AnyOf.Where(static x => x.Properties is not null).SelectMany(static x => x.Properties!));
         schema.AddOriginalReferenceIdExtension(result);
@@ -119,9 +119,9 @@ public static class OpenApiSchemaExtensions
 
     internal static IOpenApiSchema? MergeExclusiveUnionSchemaEntries(this IOpenApiSchema? schema)
     {
-        if (schema is null || schema.OneOf is null || !schema.IsExclusiveUnion(0)) return null;
+        if (schema is null || !schema.IsExclusiveUnion(0)) return null;
         var result = schema.GetSchemaOrTargetShallowCopy();
-        if (result.OneOf is null) return null;
+        if (result.OneOf is null || schema.OneOf is null) return result;
         result.OneOf.Clear();
         result.TryAddProperties(schema.OneOf.Where(static x => x.Properties is not null).SelectMany(static x => x.Properties!));
         schema.AddOriginalReferenceIdExtension(result);
@@ -179,8 +179,8 @@ public static class OpenApiSchemaExtensions
 
     internal static IOpenApiSchema? MergeIntersectionSchemaEntries(this IOpenApiSchema? schema, HashSet<IOpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<IOpenApiSchema, bool>? filter = default)
     {
-        if (schema is null || schema.AllOf is null) return null;
-        if (!schema.IsIntersection() && !overrideIntersection) return schema;
+        if (schema is null) return null;
+        if (schema.AllOf is null || !schema.IsIntersection() && !overrideIntersection) return schema;
 
         var result = schema.GetSchemaOrTargetShallowCopy();
         result.AllOf?.Clear();
