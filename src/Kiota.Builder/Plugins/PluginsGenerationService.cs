@@ -67,7 +67,7 @@ public partial class PluginsGenerationService
         PrepareDescriptionForCopilot(trimmedPluginDocument);
         // trimming a second time to remove any components that are no longer used after the inlining
         trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
-        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title[..^9]; // removing the second ` - Subset` suffix from the title
+        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // removing the second ` - Subset` suffix from the title
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
 
@@ -131,22 +131,29 @@ public partial class PluginsGenerationService
     {
         public override void Visit(IOpenApiSchema schema)
         {
-            if (schema.AllOf is not { Count: > 0 })
+            var targetSchema = schema switch
+            {
+                OpenApiSchemaReference openApiSchemaReference => openApiSchemaReference.RecursiveTarget,
+                OpenApiSchema openApiSchema => openApiSchema,
+                _ => null
+            };
+            if (targetSchema is not { AllOf.Count: > 0 })
                 return;
-            var allPropertiesToAdd = GetAllProperties(schema).ToArray();
-            foreach (var allOfEntry in schema.AllOf)
-                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, schema, false, false);
+            var allPropertiesToAdd = GetAllProperties(targetSchema).ToArray();
+            foreach (var allOfEntry in targetSchema.AllOf)
+                SelectFirstAnyOneOfVisitor.CopyRelevantInformation(allOfEntry, targetSchema, false, false);
+            targetSchema.Properties ??= new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal);
             foreach (var (key, value) in allPropertiesToAdd)
-                schema.Properties.TryAdd(key, value);
-            schema.AllOf.Clear();
+                targetSchema.Properties.TryAdd(key, value);
+            targetSchema.AllOf.Clear();
             base.Visit(schema);
         }
 
         private static IEnumerable<KeyValuePair<string, IOpenApiSchema>> GetAllProperties(IOpenApiSchema schema)
         {
             return schema.AllOf is not null ?
-                schema.AllOf.SelectMany(static x => GetAllProperties(x)).Union(schema.Properties) :
-                schema.Properties;
+                schema.AllOf.SelectMany(static x => GetAllProperties(x)).Union(schema.Properties ?? new Dictionary<string, IOpenApiSchema>(0)) :
+                (schema.Properties ?? new Dictionary<string, IOpenApiSchema>(0));
         }
     }
 
@@ -171,12 +178,13 @@ public partial class PluginsGenerationService
         }
         public override void Visit(IOpenApiSchema schema)
         {
-            if (schema is OpenApiSchema openApiSchema)
+            if (schema is OpenApiSchema { Properties.Count: > 0 } openApiSchema)
             {
                 openApiSchema.Items = GetFirstSchema(schema.Items);
-                var properties = new Dictionary<string, IOpenApiSchema>(schema.Properties);
+                var properties = new Dictionary<string, IOpenApiSchema>(openApiSchema.Properties);
                 foreach (var (key, value) in properties)
-                    schema.Properties[key] = GetFirstSchema(value);
+                    if (GetFirstSchema(value) is { } firstSchema)
+                        openApiSchema.Properties[key] = firstSchema;
             }
             base.Visit(schema);
         }
@@ -361,12 +369,12 @@ public partial class PluginsGenerationService
         // remove unused components using the OpenApi.Net library
         var requestUrls = new Dictionary<string, List<string>>();
         var basePath = doc.GetAPIRootUrl(Configuration.OpenAPIFilePath);
-        foreach (var path in doc.Paths.Where(static path => path.Value.Operations.Count > 0))
+        foreach (var path in doc.Paths.Where(static path => path.Value.Operations is { Count: > 0 }))
         {
             var key = string.IsNullOrEmpty(basePath)
                 ? path.Key
                 : $"{basePath}/{path.Key.TrimStart(KiotaBuilder.ForwardSlash)}";
-            requestUrls[key] = path.Value.Operations.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
+            requestUrls[key] = path.Value.Operations!.Keys.Select(static key => key.ToString().ToUpperInvariant()).ToList();
         }
 
         if (requestUrls.Count == 0)
@@ -433,16 +441,19 @@ public partial class PluginsGenerationService
             ? DefaultContactEmail
             : openApiInfo.Contact.Email;
 
-        if (openApiInfo.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
-            descriptionExtension is OpenApiDescriptionForModelExtension extension &&
-            !string.IsNullOrEmpty(extension.Description))
-            descriptionForModel = extension.Description.CleanupXMLString();
-        if (openApiInfo.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
-            legalUrl = legal.Legal;
-        if (openApiInfo.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
-            logoUrl = logo.Url;
-        if (openApiInfo.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
-            privacyUrl = privacy.Privacy;
+        if (openApiInfo.Extensions is not null)
+        {
+            if (openApiInfo.Extensions.TryGetValue(OpenApiDescriptionForModelExtension.Name, out var descriptionExtension) &&
+                descriptionExtension is OpenApiDescriptionForModelExtension extension &&
+                !string.IsNullOrEmpty(extension.Description))
+                descriptionForModel = extension.Description.CleanupXMLString();
+            if (openApiInfo.Extensions.TryGetValue(OpenApiLegalInfoUrlExtension.Name, out var legalExtension) && legalExtension is OpenApiLegalInfoUrlExtension legal)
+                legalUrl = legal.Legal;
+            if (openApiInfo.Extensions.TryGetValue(OpenApiLogoExtension.Name, out var logoExtension) && logoExtension is OpenApiLogoExtension logo)
+                logoUrl = logo.Url;
+            if (openApiInfo.Extensions.TryGetValue(OpenApiPrivacyPolicyUrlExtension.Name, out var privacyExtension) && privacyExtension is OpenApiPrivacyPolicyUrlExtension privacy)
+                privacyUrl = privacy.Privacy;
+        }
 
         return new OpenApiManifestInfo(descriptionForModel, legalUrl, logoUrl, privacyUrl, contactEmail);
     }
@@ -464,7 +475,7 @@ public partial class PluginsGenerationService
         var functions = new List<Function>();
         var conversationStarters = new List<ConversationStarter>();
         var configAuth = authInformation?.ToPluginManifestAuth();
-        if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+        if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) && pathItem.Operations is not null)
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
@@ -532,10 +543,10 @@ public partial class PluginsGenerationService
 
     private static Auth GetAuthFromSecurityScheme(OpenApiSecuritySchemeReference securityScheme)
     {
-        string name = securityScheme.Reference.Id;
+        var name = securityScheme.Reference.Id;
         string? authenticationReferenceId = null;
 
-        if (securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
+        if (securityScheme.Extensions is not null && securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
             authenticationReferenceId = authReferenceId.AuthenticationReferenceId;
 
         return securityScheme.Type switch
@@ -545,7 +556,7 @@ public partial class PluginsGenerationService
                 ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             // Only Http bearer is supported
-            SecuritySchemeType.Http when securityScheme.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase) =>
+            SecuritySchemeType.Http when "bearer".Equals(securityScheme.Scheme, StringComparison.OrdinalIgnoreCase) =>
                 new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {

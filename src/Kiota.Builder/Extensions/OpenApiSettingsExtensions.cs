@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Reader;
 
 namespace Kiota.Builder.Extensions;
@@ -13,6 +16,7 @@ public static class OpenApiSettingsExtensions
     public static void AddPluginsExtensions(this OpenApiReaderSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        settings.ExtensionParsers ??= new Dictionary<string, Func<JsonNode, OpenApiSpecVersion, IOpenApiExtension>>(StringComparer.OrdinalIgnoreCase);
         settings.ExtensionParsers.TryAdd(OpenApiLogoExtension.Name, static (i, _) => OpenApiLogoExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiDescriptionForModelExtension.Name, static (i, _) => OpenApiDescriptionForModelExtension.Parse(i));
         settings.ExtensionParsers.TryAdd(OpenApiPrivacyPolicyUrlExtension.Name, static (i, _) => OpenApiPrivacyPolicyUrlExtension.Parse(i));
@@ -27,6 +31,7 @@ public static class OpenApiSettingsExtensions
     {
         ArgumentNullException.ThrowIfNull(settings);
         settings.AddMicrosoftExtensionParsers();
+        settings.ExtensionParsers ??= new Dictionary<string, Func<JsonNode, OpenApiSpecVersion, IOpenApiExtension>>(StringComparer.OrdinalIgnoreCase);
         settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
     }
 
@@ -36,7 +41,7 @@ public static class OpenApiSettingsExtensions
         dummySettings.AddGenerationExtensions();
         dummySettings.AddPluginsExtensions();
 
-        var supportedExtensions = dummySettings.ExtensionParsers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var supportedExtensions = dummySettings.ExtensionParsers?.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
 
         supportedExtensions.Add("x-openai-isConsequential");// add extension we don't parse to the list 
 

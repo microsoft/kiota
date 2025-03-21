@@ -25,7 +25,7 @@ using Microsoft.OpenApi.Services;
 using Moq;
 
 using Xunit;
-using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
+using NetHttpMethod = System.Net.Http.HttpMethod;
 
 namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests : IDisposable
@@ -43,7 +43,7 @@ public sealed partial class KiotaBuilderTests : IDisposable
     {
         var tempFilePathReferee = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePathReferee,
-"""
+    """
 openapi: 3.1.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -70,7 +70,7 @@ components:
 """);
         var tempFilePathReferrer = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePathReferrer,
-$$$"""
+    $$$"""
 openapi: 3.1.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -456,7 +456,7 @@ components:
         var nestedItemRequestBuilder = nestedItemBuilderNs.FindChildByName<CodeClass>("ItemItemRequestBuilder", false);
         Assert.NotNull(nestedItemRequestBuilder);
         Assert.NotNull(nestedItemRequestBuilder.Methods.FirstOrDefault(m =>
-            m.HttpMethod == HttpMethod.Get &&
+            m.HttpMethod == Builder.CodeDOM.HttpMethod.Get &&
             m.IsAsync &&
             m.Name.Equals("Get", StringComparison.OrdinalIgnoreCase)));
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
@@ -1413,7 +1413,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -1445,9 +1445,9 @@ paths:
         var rootNamespace = codeModel.GetChildElements(true).Single();
         var rootBuilder = rootNamespace.GetChildElements(true).OfType<CodeClass>().Single(e => e.Name == "Graph");
         var tasksProperty = rootBuilder.Properties.Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
-        var tasksRequestBuilder = tasksProperty.Type as CodeType;
-        Assert.NotNull(tasksRequestBuilder);
-        var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
+        var tasksRequestBuilder = Assert.IsType<CodeType>(tasksProperty.Type);
+        var classTypeDefinition = Assert.IsType<CodeClass>(tasksRequestBuilder.TypeDefinition);
+        var getMethod = classTypeDefinition.Methods.Single(e => e.Name == "Get");
         var returnType = getMethod.ReturnType;
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
@@ -1458,7 +1458,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -1510,7 +1510,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -1562,7 +1562,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -1634,7 +1634,7 @@ paths:
                 ["foos/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -1690,7 +1690,7 @@ paths:
                 ["users/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -1751,7 +1751,7 @@ paths:
                 ["users/$count"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -1844,7 +1844,7 @@ paths:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -1980,7 +1980,7 @@ paths:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -2075,7 +2075,7 @@ paths:
                         },
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -2142,7 +2142,7 @@ paths:
                 ["resource/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -2231,7 +2231,7 @@ paths:
                 ["resource/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -2276,7 +2276,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -2318,7 +2318,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -2360,7 +2360,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -2402,7 +2402,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -2572,7 +2572,7 @@ paths:
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation
+                [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
@@ -2659,7 +2659,7 @@ paths:
                 ["tasks"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -2747,7 +2747,7 @@ paths:
                 ["tasks"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -2842,7 +2842,7 @@ paths:
                 ["weatherforecast"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -2895,7 +2895,7 @@ paths:
                 ["createUploadSession"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -2966,7 +2966,7 @@ paths:
                 ["createUploadSession"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3042,7 +3042,7 @@ paths:
                 ["createUploadSession"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3111,7 +3111,7 @@ paths:
                 ["createUploadSession"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3219,7 +3219,7 @@ paths:
                 ["objects"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3343,7 +3343,7 @@ paths:
                 ["objects"] = new OpenApiPathItem()
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [NetHttpMethod.Get] = new OpenApiOperation() {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
@@ -3441,7 +3441,7 @@ paths:
                 ["objects"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3567,7 +3567,7 @@ paths:
                 ["objects"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3719,7 +3719,7 @@ paths:
                 ["objects"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3780,7 +3780,7 @@ paths:
                 ["unionType"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3886,7 +3886,7 @@ components:
                 ["unionType"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -3957,7 +3957,7 @@ components:
                 ["unionType"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4021,7 +4021,7 @@ components:
                 ["unionType"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4151,7 +4151,7 @@ components:
                 ["derivedType"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4260,7 +4260,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4353,7 +4353,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter() {
@@ -4395,7 +4395,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4437,7 +4437,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter() {
@@ -4485,7 +4485,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter() {
@@ -4617,7 +4617,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter {
@@ -4657,7 +4657,7 @@ components:
                 ["primitive"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter {
@@ -4706,7 +4706,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4757,7 +4757,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4808,7 +4808,7 @@ components:
                 ["answers/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4889,7 +4889,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -4963,7 +4963,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5023,7 +5023,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5077,7 +5077,7 @@ components:
                     Description = "some path item description",
                     Summary = "some path item summary",
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Description = "some operation description",
                             Summary = "some operation summary",
@@ -5131,7 +5131,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5185,7 +5185,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5230,7 +5230,7 @@ components:
                     Description = "some path item description",
                     Summary = "some path item summary",
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Description = "some operation description",
                             Summary = "some operation summary",
@@ -5324,7 +5324,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5392,7 +5392,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5442,7 +5442,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5501,7 +5501,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5561,7 +5561,7 @@ components:
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5616,7 +5616,7 @@ components:
             document.Paths.Add($"answer{componentName}", new OpenApiPathItem
             {
                 Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5659,7 +5659,7 @@ components:
                 ["answer(ids={ids}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter {
@@ -5734,7 +5734,7 @@ components:
                 ["users"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Extensions = new Dictionary<string, IOpenApiExtension> {
                                 { OpenApiPagingExtension.Name, new OpenApiPagingExtension { NextLinkName = "@odata.nextLink" } }
@@ -5792,7 +5792,7 @@ components:
                 ["users"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5843,7 +5843,7 @@ components:
                 ["/"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5896,7 +5896,7 @@ components:
                 ["users"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5914,7 +5914,7 @@ components:
                 ["groups"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5969,7 +5969,7 @@ components:
                 ["users"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -5987,7 +5987,7 @@ components:
                 ["groups"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -6042,7 +6042,7 @@ components:
                 ["users/{id}/messages"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -6055,7 +6055,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -6075,7 +6075,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Put] = new OpenApiOperation
+                        [NetHttpMethod.Put] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -6100,7 +6100,7 @@ components:
                 ["groups"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -6118,7 +6118,7 @@ components:
                 ["students"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -6185,7 +6185,7 @@ components:
                 ["users({userId})/manager"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
                                 new OpenApiParameter {
@@ -6664,7 +6664,7 @@ paths:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -6735,7 +6735,7 @@ paths:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses {
                                 ["200"] = new OpenApiResponse
@@ -7937,7 +7937,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating oneOf if the containing schema has type: object"
@@ -8025,7 +8025,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating oneOf if the containing schema has type: object"
@@ -8143,7 +8143,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating oneOf if the containing schema has type: object"
@@ -8280,7 +8280,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating anyOf if the containing schema has type: object"
@@ -8368,7 +8368,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating oneOf if the containing schema has type: object"
@@ -8486,7 +8486,7 @@ components:
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await using var fs = await GetDocumentStreamAsync(
-"""
+    """
 openapi: 3.0.0
 info:
   title: "Generator not generating oneOf if the containing schema has type: object"
@@ -9363,7 +9363,7 @@ components:
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9376,7 +9376,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9401,7 +9401,7 @@ components:
                 ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9414,7 +9414,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Patch] = new OpenApiOperation
+                        [NetHttpMethod.Patch] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9428,7 +9428,7 @@ components:
                                 ["204"] = new OpenApiResponse()
                             }
                         },
-                        [OperationType.Delete] = new OpenApiOperation
+                        [NetHttpMethod.Delete] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9496,7 +9496,7 @@ components:
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9509,7 +9509,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9534,7 +9534,7 @@ components:
                 ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9547,7 +9547,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Patch] = new OpenApiOperation
+                        [NetHttpMethod.Patch] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9561,7 +9561,7 @@ components:
                                 ["204"] = new OpenApiResponse()
                             }
                         },
-                        [OperationType.Delete] = new OpenApiOperation
+                        [NetHttpMethod.Delete] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9629,7 +9629,7 @@ components:
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9642,7 +9642,7 @@ components:
                                 },
                             }
                         },
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9719,7 +9719,7 @@ components:
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -9733,7 +9733,7 @@ components:
                             },
                             OperationId = "GetAdministrativeUnits" // Nothing wrong with this operationId
                         },
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -9759,7 +9759,7 @@ components:
                 ["directory/adminstativeUnits/{unit-id}"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {

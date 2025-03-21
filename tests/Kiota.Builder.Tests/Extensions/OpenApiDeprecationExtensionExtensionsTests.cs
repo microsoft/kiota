@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 using Xunit;
+using NetHttpMethod = System.Net.Http.HttpMethod;
 
 namespace Kiota.Builder.Tests.Extensions;
 public class OpenApiDeprecationExtensionExtensions
@@ -492,9 +493,9 @@ public class OpenApiDeprecationExtensionExtensions
         var rootNode = OpenApiUrlTreeNode.Create();
         var treeNode = rootNode.Attach("foo", new OpenApiPathItem()
         {
-            Operations = new Dictionary<OperationType, OpenApiOperation>()
+            Operations = new Dictionary<NetHttpMethod, OpenApiOperation>()
             {
-                {OperationType.Get, new OpenApiOperation{
+                {NetHttpMethod.Get, new OpenApiOperation{
                     Deprecated = true,
                     Extensions = new Dictionary<string, IOpenApiExtension>
                     {
@@ -519,7 +520,7 @@ public class OpenApiDeprecationExtensionExtensions
         var rootNode = OpenApiUrlTreeNode.Create();
         var treeNode = rootNode.Attach("foo", new OpenApiPathItem()
         {
-            Operations = new Dictionary<OperationType, OpenApiOperation>()
+            Operations = new Dictionary<NetHttpMethod, OpenApiOperation>()
             {
             }
         }, Constants.DefaultOpenApiLabel);
@@ -534,9 +535,9 @@ public class OpenApiDeprecationExtensionExtensions
         var rootNode = OpenApiUrlTreeNode.Create();
         var treeNode = rootNode.Attach("foo", new OpenApiPathItem()
         {
-            Operations = new Dictionary<OperationType, OpenApiOperation>()
+            Operations = new Dictionary<NetHttpMethod, OpenApiOperation>()
             {
-                {OperationType.Get, new OpenApiOperation{
+                {NetHttpMethod.Get, new OpenApiOperation{
                     Deprecated = true,
                     Extensions = new Dictionary<string, IOpenApiExtension>
                     {
@@ -548,7 +549,7 @@ public class OpenApiDeprecationExtensionExtensions
                         } }
                     }
                 } },
-                {OperationType.Post, new OpenApiOperation{
+                {NetHttpMethod.Post, new OpenApiOperation{
                     Deprecated = false,
                 }}
             }

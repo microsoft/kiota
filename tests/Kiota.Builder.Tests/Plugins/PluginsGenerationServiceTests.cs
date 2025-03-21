@@ -269,17 +269,17 @@ components:
         var originalDocument = originalResult.Document;
         Assert.Empty(originalResult.Diagnostic.Errors);
 
-        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
-        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
-        Assert.NotNull(originalDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // existing external docs
+        Assert.Equal(originalDocument.Paths["/test"].Operations[HttpMethod.Get].Description, resultingManifest.Document.Functions[0].Description);// pulls from description
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Summary, resultingManifest.Document.Functions[1].Description);// pulls from summary
+        Assert.NotNull(originalDocument.Paths["/test"].Operations[HttpMethod.Get].ExternalDocs); // existing external docs
         Assert.Equal(2, originalDocument.Components.Schemas.Count);// one schema originally
         Assert.Single(originalDocument.Extensions); // single unsupported extension at root
         Assert.Equal(2, originalDocument.Paths.Count); // document has only two paths
-        Assert.Equal(2, originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // 1 UNsupported extension
-        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // 2 responses originally
-        Assert.Single(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension
-        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
+        Assert.Equal(2, originalDocument.Paths["/test"].Operations[HttpMethod.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test"].Operations[HttpMethod.Get].Extensions); // 1 UNsupported extension
+        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count); // 2 responses originally
+        Assert.Single(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Extensions); // 1 supported extension
+        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
@@ -291,17 +291,17 @@ components:
         Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
         Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
-        Assert.Equal(originalDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[OperationType.Get].Responses.Count); // We removed the error response
-        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[OperationType.Get].Responses["200"].Description); // response description string is not empty
-        Assert.Null(resultDocument.Paths["/test"].Operations[OperationType.Get].ExternalDocs); // external docs are removed
-        Assert.Empty(resultDocument.Paths["/test"].Operations[OperationType.Get].Extensions); // NO UNsupported extension
-        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Count); // Responses are still intact.
-        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Description);// response description string is not empty
-        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Extensions); // 1 supported extension still present in operation
-        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
-        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
-        Assert.Equal(JsonSchemaType.String, resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type.Value);
-        Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[OperationType.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
+        Assert.Equal(originalDocument.Paths["/test"].Operations[HttpMethod.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[HttpMethod.Get].Responses.Count); // We removed the error response
+        Assert.NotEmpty(resultDocument.Paths["/test"].Operations[HttpMethod.Get].Responses["200"].Description); // response description string is not empty
+        Assert.Null(resultDocument.Paths["/test"].Operations[HttpMethod.Get].ExternalDocs); // external docs are removed
+        Assert.Empty(resultDocument.Paths["/test"].Operations[HttpMethod.Get].Extensions); // NO UNsupported extension
+        Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count); // Responses are still intact.
+        Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Description);// response description string is not empty
+        Assert.Single(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Extensions); // 1 supported extension still present in operation
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
+        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
+        Assert.Equal(JsonSchemaType.String, resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type.Value);
+        Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
     }
 
     [Fact]
@@ -756,7 +756,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.String, schema.Type.Value);
                     Assert.Equal(5, schema.MaxLength);
@@ -776,7 +776,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(3, schema.Properties.Count);
@@ -796,7 +796,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
@@ -816,7 +816,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Equal(2, schema.Properties.Count);
@@ -836,7 +836,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
@@ -852,7 +852,7 @@ components:
                 {
                     Assert.NotNull(slicedDocument);
                     Assert.NotEmpty(slicedDocument.Paths);
-                    var schema = slicedDocument.Paths["/test"].Operations[OperationType.Post].RequestBody
+                    var schema = slicedDocument.Paths["/test"].Operations[HttpMethod.Post].RequestBody
                         .Content["application/json"].Schema;
                     Assert.Equal(JsonSchemaType.Object, schema.Type.Value);
                     Assert.Single(schema.Properties);
