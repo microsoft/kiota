@@ -590,11 +590,11 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
-              inputs:
-                - ${{ each distribution in parameters.distributions }}:
-                    - input: pipelineArtifact
-                      artifactName: Binaries_${{ distribution.jobPrefix }}
-                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+              # inputs:
+              #   - ${{ each distribution in parameters.distributions }}:
+              #       - input: pipelineArtifact
+              #         artifactName: Binaries_${{ distribution.jobPrefix }}
+              #         targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
               - checkout: self
                 clean: true
