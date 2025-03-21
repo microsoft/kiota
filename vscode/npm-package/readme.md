@@ -1,4 +1,4 @@
-# Kiota Interop Library
+# @microsoft/kiota Library
 
 This library provides various functions to interact with Kiota, a client generator for HTTP REST APIs described by OpenAPI.
 
@@ -6,7 +6,7 @@ This library provides various functions to interact with Kiota, a client generat
 Provide instructions on how to install the project.
 
 ```bash
-npm install kiota-Interop
+npm install @microsoft/kiota
 ```
 
 ## Usage
