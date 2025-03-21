@@ -579,7 +579,15 @@ extends:
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
-            dependsOn: [update_appsettings]
+            dependsOn:
+              [
+                win_x64_build_binaries,
+                win_x86_build_binaries,
+                linux_x64_build_binaries,
+                linux_arm64_build_binaries,
+                osx_x64_build_binaries,
+                osx_arm64_build_binaries,
+              ]            
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -590,11 +598,11 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
-              # inputs:
-              #   - ${{ each distribution in parameters.distributions }}:
-              #       - input: pipelineArtifact
-              #         artifactName: Binaries_${{ distribution.jobPrefix }}
-              #         targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
               - checkout: self
                 clean: true
@@ -608,27 +616,22 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
-             
               - script: npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
-
               - script: |
                   npm install
                   npm list
                 displayName: "Install vscode dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
-
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'true')
-
               - script: vsce package
                 displayName: "Package VSCode extension as release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'false')
-                
               - pwsh: |
                   $extensionFiles = Get-ChildItem -Filter *.vsix -Recurse
                   if ($extensionFiles.Count -ne 1) {
@@ -728,15 +731,12 @@ extends:
               - script: |
                   npm i -g rimraf
                 displayName: "Install Global dependencies"
-
               - script: npm install
                 displayName: "Install package dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
-              
               - script: npm run package:package
                 displayName: "Package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
-
               - task: CopyFiles@2
                 displayName: Prepare staging folder for upload
                 inputs:
