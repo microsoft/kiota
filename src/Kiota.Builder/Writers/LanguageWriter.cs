@@ -184,7 +184,8 @@ public abstract class LanguageWriter
     {
         return language switch
         {
-            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, false),
+            GenerationLanguage.CSharp13 => new CSharpWriter(outputPath, clientNamespaceName, true),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
