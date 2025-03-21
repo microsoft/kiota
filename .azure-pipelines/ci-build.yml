@@ -587,7 +587,7 @@ extends:
                 linux_arm64_build_binaries,
                 osx_x64_build_binaries,
                 osx_arm64_build_binaries,
-              ]            
+              ]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
