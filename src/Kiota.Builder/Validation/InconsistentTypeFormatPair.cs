@@ -52,8 +52,9 @@ public class InconsistentTypeFormatPair : ValidationRule<IOpenApiSchema>
     {
         if (schema is null || !schema.Type.HasValue || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type.Value))
             return;
-        if (!validPairs.TryGetValue(schema.Type.Value, out var validFormats) || !validFormats.Contains(schema.Format))
-            context.CreateWarning(nameof(InconsistentTypeFormatPair), $"The format {schema.Format} is not supported by Kiota for the type {schema.Type} and the string type will be used.");
+        var sanitizedType = schema.Type.Value & ~JsonSchemaType.Null;
+        if (!validPairs.TryGetValue(sanitizedType, out var validFormats) || !validFormats.Contains(schema.Format))
+            context.CreateWarning(nameof(InconsistentTypeFormatPair), $"The format {schema.Format} is not supported by Kiota for the type {sanitizedType} and the string type will be used.");
     })
     {
     }
