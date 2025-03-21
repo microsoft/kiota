@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed pet store description source.
+
 ## [1.24.1] - 2025-03-13
 
 ### Changed
