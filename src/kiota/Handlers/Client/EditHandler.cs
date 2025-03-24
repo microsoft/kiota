@@ -233,7 +233,10 @@ internal class EditHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(10) : null;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(11)
+        {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
+        } : null;
         if (language is { } l) tags?.Add(new KeyValuePair<string, object?>(TelemetryLabels.TagGeneratorLanguage, l.ToString("G")));
         if (backingStore is { } bs) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.backing_store", bs));
         if (excludeBackwardCompatible is { } ebc) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", ebc));

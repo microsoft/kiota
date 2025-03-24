@@ -39,7 +39,7 @@ internal static class KiotaHostExtensions
                         if (OsName() is { } osName)
                         {
                             r.AddAttributes([
-                                new KeyValuePair<string, object>("os.name", osName),
+                                new KeyValuePair<string, object>("os.type", osName),
                                 new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
                             ]);
                         }

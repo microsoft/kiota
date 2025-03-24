@@ -92,6 +92,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         // set up telemetry tags
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(3)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.clean_output", cleanOutput),
         } : null;
         if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));

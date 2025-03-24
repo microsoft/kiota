@@ -222,6 +222,7 @@ internal class
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(6)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
         } : null;
         if (searchTerm is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.search_term", redacted));

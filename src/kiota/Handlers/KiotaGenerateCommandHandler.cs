@@ -247,6 +247,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         // set up telemetry tags
         tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(12)
             {
+                new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
                 new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
                 new($"{TelemetryLabels.TagCommandParams}.backing_store", backingStore),
                 new($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", excludeBackwardCompatible),
