@@ -217,9 +217,9 @@ extends:
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
 
-              - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
-                condition: eq(variables['isPrerelease'], 'false')
-                displayName: "Get release notes from CHANGELOG.md"
+              # - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
+              #   condition: eq(variables['isPrerelease'], 'false')
+              #   displayName: "Get release notes from CHANGELOG.md"
 
               - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
                 condition: eq(variables['isPrerelease'], 'true')
@@ -749,9 +749,7 @@ extends:
 
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
-        dependsOn: 
-          - build
-          - build_npm_package
+        dependsOn: build
         jobs:
           - job: vs_marketplace
             condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
