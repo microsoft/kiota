@@ -1,0 +1,35 @@
+﻿openapi: 3.0.0
+info:
+  title: Repair Service
+  version: 1.0.0
+servers:
+  - url: https://sample.server/api
+components:
+  securitySchemes:
+    oAuth2AuthCode:
+      type: oauth2
+      description: OAuth configuration for the repair service
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          scopes:
+            api://sample/repairs_read: Read repair records
+            api://sample/repairs_write: Write repair records
+paths:
+  /repairs:
+    get:
+      operationId: listRepairs
+      summary: List all repairs with oauth
+      description: Returns a list of repairs with their details and images
+      servers:
+        - url: https://sample.server.overriden/api
+      security:
+        - oAuth2AuthCode: ["api://sample/repairs_read"]
+      responses:
+        "200":
+          description: A list of repairs
+          content:
+            application/json:
+              schema:
+                type: object

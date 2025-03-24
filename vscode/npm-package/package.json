@@ -39,7 +39,7 @@
   ],
   "scripts": {
     "lint": "eslint",
-    "test": "jest --runInBand",
+    "test": "jest",
     "test:unit": "jest --config=jest.config.unit.cjs",
     "test:integration": "jest --config=jest.config.integration.cjs --runInBand",
     "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
@@ -47,7 +47,7 @@
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
     "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest --coverage --config=jest.config.unit.cjs",
     "prepack": "npm run build",
     "package": "npm pack"
   },

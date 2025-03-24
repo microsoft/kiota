@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -8,8 +10,11 @@ using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi.Writers;
+using DeclarativeAgentsManifest = Microsoft.DeclarativeAgents.Manifest;
 
 namespace kiota.Rpc;
 internal partial class Server : IServer
@@ -120,7 +125,12 @@ internal partial class Server : IServer
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
-        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title);
+        var document = builder.OpenApiDocument;
+        var servers = document?.Servers?.Select(s => s.Url).ToArray();
+        var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
+        var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
+
+        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, securityRequirements: securityRequirements, securitySchemes: securitySchemes);
     }
     private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
     {
@@ -273,6 +283,7 @@ internal partial class Server : IServer
         if (result is not null) return result;
         return Configuration.Languages;
     }
+
     private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node, HashSet<string> filteredPaths)
     {
         var children = node.Children
@@ -284,7 +295,9 @@ internal partial class Server : IServer
                                             Array.Empty<PathItem>(),
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
-                                            x.Value.ExternalDocs?.Url)) :
+                                            x.Value.ExternalDocs?.Url,
+                                            securityRequirements: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
+                                            servers: x.Value?.Servers?.Select(s => s.Url).ToArray())) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
@@ -292,7 +305,8 @@ internal partial class Server : IServer
         bool isSelected = filteredPaths.Count == 0 || // There are no filtered paths
                           Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected) || // All operations have been selected
                           !Array.Exists(children, static x => x.isOperation) && Array.TrueForAll(children, static x => x.selected); // All paths selected but no operations present
-        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected);
+
+        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected, servers: []);
     }
     private static string GetAbsolutePath(string source)
     {
@@ -333,4 +347,14 @@ internal partial class Server : IServer
 
     public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
     => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
+
+    public async Task<ShowPluginResult> ShowPluginAsync(string descriptionPath, CancellationToken cancellationToken)
+    {
+        var manifestContent = await File.ReadAllTextAsync(descriptionPath);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = DeclarativeAgentsManifest.PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        var response = PluginResultMapper.FromPluginManifesValidationResult(resultingManifest);
+        return response;
+    }
 }
