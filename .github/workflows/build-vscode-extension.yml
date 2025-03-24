@@ -157,7 +157,6 @@ jobs:
   
         - name: Publish kiota as executable
           run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
-          if: ${{ env.isPrerelease == 'false' }}
           shell: pwsh
    
         - name: Remove unnecessary files
