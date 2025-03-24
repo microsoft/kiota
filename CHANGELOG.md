@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug following OpenAPI 3.1 support that lead to false warnings about unknown type/format pairs. [#6270](https://github.com/microsoft/kiota/issues/6270)
 - Fixed a bug where security scheme would be missing from plugins OpenAPI descriptions. [#6279](https://github.com/microsoft/kiota/issues/6279)
+- Fixed pet store description source.
 
 ## [1.24.1] - 2025-03-13
 
