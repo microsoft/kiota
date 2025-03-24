@@ -155,16 +155,12 @@ jobs:
               Write-Error "Binaries do not exist"
             }
           shell: pwsh
-
-        - name: Zip binaries
-          run: Compress-Archive -Path binaries/${{ matrix.binaries.architecture }}/* -DestinationPath binaries/${{ matrix.binaries.architecture }}.zip
-          shell: pwsh
   
         - name: Upload artifact
           uses: actions/upload-artifact@v4
           with:
             name: Binaries_${{ matrix.binaries.jobPrefix }}
-            path: binaries/${{ matrix.binaries.architecture }}.zip
+            path: binaries/${{ matrix.binaries.architecture }}
 
     
 
