@@ -46,7 +46,7 @@ describe("GeneratePlugin", () => {
       descriptionPath: descriptionUrl,
       outputPath: outputPath,
       clearCache: false,
-      pluginTypes: [pluginType],
+      pluginType: pluginType,
       pluginName: 'withsecurity',
       operation: ConsumerOperation.Generate,
       workingDirectory: ''
