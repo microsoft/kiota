@@ -145,6 +145,7 @@ jobs:
           with:
             name: ${{ matrix.binaries.architecture }}
             path: binaries/${{ matrix.binaries.architecture }}
+            retention-days: 3
 
     
 
