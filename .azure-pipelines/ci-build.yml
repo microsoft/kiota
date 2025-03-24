@@ -749,7 +749,9 @@ extends:
 
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
-        dependsOn: build_npm_package
+        dependsOn: 
+          - build
+          - build_npm_package
         jobs:
           - job: vs_marketplace
             condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
@@ -1057,8 +1059,6 @@ extends:
                 - input: pipelineArtifact
                   artifactName: scripts
                   targetPath: "$(Pipeline.Workspace)/scripts"
-            dependsOn:
-              - build_npm_package
             steps:
               - task: NodeTool@0
                 inputs:
