@@ -376,6 +376,7 @@ extends:
           - ${{ each distribution in parameters.distributions }}:
               - job: ${{ distribution.jobPrefix }}_build_binaries
                 dependsOn: [update_appsettings]
+                condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
                 pool:
                   name: ${{ distribution.pool }}
                   os: ${{ distribution.os }}
@@ -588,6 +589,7 @@ extends:
                 osx_x64_build_binaries,
                 osx_arm64_build_binaries,
               ]
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -693,12 +695,7 @@ extends:
           - job: build_npm_package
             dependsOn:
               [
-                win_x64_build_binaries,
-                win_x86_build_binaries,
-                linux_x64_build_binaries,
-                linux_arm64_build_binaries,
-                osx_x64_build_binaries,
-                osx_arm64_build_binaries,
+                update_appsettings,
               ]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
@@ -710,11 +707,11 @@ extends:
                   baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
-              inputs:
-                - ${{ each distribution in parameters.distributions }}:
-                    - input: pipelineArtifact
-                      artifactName: Binaries_${{ distribution.jobPrefix }}
-                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+              # inputs:
+              #   - ${{ each distribution in parameters.distributions }}:
+              #       - input: pipelineArtifact
+              #         artifactName: Binaries_${{ distribution.jobPrefix }}
+              #         targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
               - checkout: self
                 clean: true
@@ -755,6 +752,7 @@ extends:
         dependsOn: build
         jobs:
           - job: vs_marketplace
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -832,6 +830,7 @@ extends:
                     - input: pipelineArtifact
                       artifactName: Binaries_${{ distribution.jobPrefix }}
             dependsOn: []
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             environment: kiota-github-releases
             strategy:
               runOnce:
@@ -894,6 +893,7 @@ extends:
               os: linux
               image: ubuntu-latest
             dependsOn: []
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             environment: nuget-org
             strategy:
               runOnce:
@@ -923,6 +923,7 @@ extends:
               os: linux
               image: ubuntu-latest
             dependsOn: []
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             environment: nuget-org
             strategy:
               runOnce:
