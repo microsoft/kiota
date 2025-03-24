@@ -75,7 +75,7 @@ export class RegenerateService {
         {
           descriptionPath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
           outputPath: pluginObjectItem.outputPath,
-          pluginTypes,
+          pluginType: pluginTypes[0],
           includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
           excludePatterns: [],
           pluginName: this._clientKey,
