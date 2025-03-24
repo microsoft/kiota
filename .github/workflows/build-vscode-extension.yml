@@ -141,26 +141,22 @@ jobs:
           uses: actions/setup-dotnet@v3
           with:
             dotnet-version: '9.x'
-  
-        # - name: Copy the appsettings.json
-        #   run: |
-        #     Copy-Item AppSettings/appsettings.json src/kiota/appsettings.json -Force -Verbose
-        #   shell: pwsh
-  
-        # - name: Set version suffix
-        #   run: scripts/get-prerelease-version.ps1 -currentBranch ${{ github.ref_name }} -previewBranch ${{ github.event.inputs.previewBranch }} -excludeHeadingDash
-        #   shell: pwsh
-  
-        # - name: Set version suffix in csproj for generators
-        #   run: scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "${{ steps.set_version_suffix.outputs.versionSuffix }}"
-        #   shell: pwsh
-  
-        - name: Publish kiota as executable
+
+        - name: Publish kiota for ${{ matrix.binaries.architecture }}
           run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
           shell: pwsh
-   
-        - name: Remove unnecessary files
-          run: Remove-Item binaries/${{ matrix.binaries.architecture }}/*.md -Verbose -Force -ErrorAction SilentlyContinue
+
+        - name: Check if binaries exist
+          run: |
+            if (Test-Path -Path binaries/${{ matrix.binaries.architecture }}) {
+              Write-Output "Binaries exist"
+            } else {
+              Write-Error "Binaries do not exist"
+            }
+          shell: pwsh
+
+        - name: Zip binaries
+          run: Compress-Archive -Path binaries/${{ matrix.binaries.architecture }}/* -DestinationPath binaries/${{ matrix.binaries.architecture }}.zip
           shell: pwsh
   
         - name: Archive binaries
