@@ -10,10 +10,10 @@ using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Writers;
-using Microsoft.OpenApi.Extensions;
 using DeclarativeAgentsManifest = Microsoft.DeclarativeAgents.Manifest;
 
 namespace kiota.Rpc;
@@ -296,7 +296,7 @@ internal partial class Server : IServer
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
                                             x.Value.ExternalDocs?.Url,
-                                            securityRequirements: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security), 
+                                            securityRequirements: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
                                             servers: x.Value?.Servers?.Select(s => s.Url).ToArray())) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)

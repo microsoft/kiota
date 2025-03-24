@@ -8,7 +8,7 @@ namespace kiota.Rpc
         public static Dictionary<string, SecuritySchemeInfo> FromComponents(OpenApiComponents? components)
         {
             var securitySchemes = new Dictionary<string, SecuritySchemeInfo>();
-            var componentSchemes =components?.SecuritySchemes;
+            var componentSchemes = components?.SecuritySchemes;
             if (componentSchemes is not null)
             {
                 foreach (var (key, value) in componentSchemes)
