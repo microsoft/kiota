@@ -150,6 +150,7 @@ jobs:
           run: |
             if (Test-Path -Path binaries/${{ matrix.binaries.architecture }}) {
               Write-Output "Binaries exist"
+              Get-ChildItem -Path binaries/${{ matrix.binaries.architecture }} | Format-Table -Property Name,Length
             } else {
               Write-Error "Binaries do not exist"
             }
