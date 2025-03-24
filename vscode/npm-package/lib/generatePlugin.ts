@@ -80,7 +80,7 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
     const outputPath = pluginGenerationOptions.outputPath;
     const pluginName = pluginGenerationOptions.pluginName;
     const pathOfSpec = path.join(outputPath, `${pluginName.toLowerCase()}-openapi.yml`);
-    const plugingTypeName = pluginType.toString();
+    const plugingTypeName = KiotaPluginType[pluginType];
     const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-${plugingTypeName.toLowerCase()}.json`);
     return {
       aiPlugin: pathPluginManifest,
