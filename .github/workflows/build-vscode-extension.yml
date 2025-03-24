@@ -146,20 +146,10 @@ jobs:
           run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
           shell: pwsh
 
-        - name: Check if binaries exist
-          run: |
-            if (Test-Path -Path binaries/${{ matrix.binaries.architecture }}) {
-              Write-Output "Binaries exist"
-              Get-ChildItem -Path binaries/${{ matrix.binaries.architecture }} | Format-Table -Property Name,Length
-            } else {
-              Write-Error "Binaries do not exist"
-            }
-          shell: pwsh
-  
         - name: Upload artifact
           uses: actions/upload-artifact@v4
           with:
-            name: Binaries_${{ matrix.binaries.jobPrefix }}
+            name: ${{ matrix.binaries.jobPrefix }}
             path: binaries/${{ matrix.binaries.architecture }}
 
     
