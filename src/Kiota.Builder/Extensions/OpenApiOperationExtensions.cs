@@ -35,13 +35,13 @@ public static class OpenApiOperationExtensions
         // Return Schema that represents all the possible success responses!
         return operation.Responses.Where(r => successCodesToUse.Contains(r.Key))
                             .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                            .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
+                            .SelectMany(re => re.Value.Content?.GetValidSchemas(structuredMimeTypes) ?? []);
     }
     internal static IOpenApiSchema? GetRequestSchema(this OpenApiOperation operation, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
         return operation.RequestBody?.Content
-                            .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
+                            ?.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
     private static readonly StructuredMimeTypesCollection multipartMimeTypes = new(["multipart/form-data"]);
     internal static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, StructuredMimeTypesCollection structuredMimeTypes)
@@ -74,6 +74,6 @@ public static class OpenApiOperationExtensions
     internal static IOpenApiSchema? GetResponseSchema(this IOpenApiResponse response, StructuredMimeTypesCollection structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(response);
-        return response.Content.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
+        return response.Content?.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
 }
