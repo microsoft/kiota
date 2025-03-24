@@ -25,12 +25,13 @@ export async function getKiotaTree({ descriptionPath, includeFilters, excludeFil
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType<KiotaShowConfiguration, KiotaTreeResult, void>('Show');
 
-    return await connection.sendRequest(request, {
+    const result = await connection.sendRequest(request, {
       includeFilters: includeFilters ?? [],
       excludeFilters: excludeFilters ?? [],
       descriptionPath,
       clearCache: clearCache ?? false,
     });
+    return result;
   });
 
   if (result instanceof Error) {

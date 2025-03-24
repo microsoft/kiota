@@ -43,6 +43,11 @@ export enum OpenApiAuthType {
   OpenIdConnect = 4,
 }
 
+// key is the security scheme name, value is array of scopes
+export interface SecurityRequirementObject {
+  [name: string]: string[];
+}
+
 export interface KiotaOpenApiNode {
   segment: string,
   path: string,
@@ -53,6 +58,8 @@ export interface KiotaOpenApiNode {
   clientNameOrPluginName?: string;
   authType?: OpenApiAuthType;
   logs?: KiotaLogEntry[];
+  servers?: string[];
+  security?: SecurityRequirementObject[];
 }
 
 interface CacheClearableConfiguration {
@@ -75,6 +82,9 @@ interface KiotaLoggedResult {
 export interface KiotaTreeResult extends KiotaLoggedResult {
   rootNode?: KiotaOpenApiNode;
   apiTitle?: string;
+  servers?: string[];
+  security?: SecurityRequirementObject[];
+  securitySchemes?: { [key: string]: SecuritySchemeObject };
 }
 
 export interface KiotaManifestResult extends KiotaLoggedResult {
@@ -297,4 +307,77 @@ export interface GeneratePluginResult extends KiotaResult {
   apis: APIInfo[];
   serverMapping: ServerMapping[];
   authMapping: AuthMapping[];
+}
+
+export interface PluginManifestResult extends KiotaResult {
+  isValid: boolean;
+  schema_version: string;
+  name_for_human: string;
+  functions: PluginFunction[];
+  runtime: PluginRuntime[];
+}
+
+export interface PluginFunction {
+  name: string;
+  description: string;
+}
+
+export interface PluginRuntime {
+  type: string;
+  auth: string; // None, OAuthPluginVault, ApiKeyPluginVault
+  run_for_functions: string[];
+}
+
+export type SecuritySchemeObject =
+  | HttpSecurityScheme
+  | ApiKeySecurityScheme
+  | OAuth2SecurityScheme
+  | OpenIdSecurityScheme;
+
+export interface HttpSecurityScheme {
+  type: 'http';
+  description?: string;
+  scheme: string;
+  bearerFormat?: string;
+}
+
+export interface ApiKeySecurityScheme {
+  type: 'apiKey';
+  description?: string;
+  name: string;
+  in: string;
+}
+
+export interface OAuth2SecurityScheme {
+  type: 'oauth2';
+  description?: string;
+  flows: {
+    implicit?: {
+      authorizationUrl: string;
+      refreshUrl?: string;
+      scopes: { [scope: string]: string };
+    };
+    password?: {
+      tokenUrl: string;
+      refreshUrl?: string;
+      scopes: { [scope: string]: string };
+    };
+    clientCredentials?: {
+      tokenUrl: string;
+      refreshUrl?: string;
+      scopes: { [scope: string]: string };
+    };
+    authorizationCode?: {
+      authorizationUrl: string;
+      tokenUrl: string;
+      refreshUrl?: string;
+      scopes: { [scope: string]: string };
+    };
+  };
+}
+
+export interface OpenIdSecurityScheme {
+  type: 'openIdConnect';
+  description?: string;
+  openIdConnectUrl: string;
 }
