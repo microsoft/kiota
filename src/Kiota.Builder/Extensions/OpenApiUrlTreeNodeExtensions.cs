@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
@@ -70,8 +72,10 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     private static IEnumerable<IOpenApiParameter> GetParametersForPathItem(IOpenApiPathItem pathItem, string nodeSegment)
     {
+        if (pathItem.Parameters is null)
+            return [];
         return pathItem.Parameters
-                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()))
+                    .Union(pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [])
                     .Where(static x => x.In == ParameterLocation.Path)
                     .Where(x => nodeSegment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
     }
@@ -195,38 +199,38 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (!currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
             return false;
 
-        var operationQueryParameters = pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>());
-        return operationQueryParameters.Union(pathItem.Parameters).Where(static x => x.In == ParameterLocation.Query)
+        var operationQueryParameters = pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [];
+        return operationQueryParameters.Union(pathItem.Parameters ?? []).Where(static x => x.In == ParameterLocation.Query)
             .Any(static x => x.Required);
     }
 
-    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, OperationType? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true)
+    public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, HttpMethod? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
         var queryStringParameters = string.Empty;
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-            var operationQueryParameters = (operationType, pathItem.Operations.Any()) switch
+            var operationQueryParameters = (operationType, pathItem.Operations is not null && pathItem.Operations.Any()) switch
             {
-                (OperationType ot, _) when pathItem.Operations.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
-                (null, true) => pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
+                (HttpMethod ot, _) when pathItem.Operations!.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
+                (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
                 _ => [],
             };
-            var parameters = pathItem.Parameters
+            var parameters = pathItem.Parameters?
                                     .Union(operationQueryParameters)
                                     .Where(static x => x.In == ParameterLocation.Query)
                                     .DistinctBy(static x => x.Name, StringComparer.Ordinal)
                                     .OrderBy(static x => x.Name, StringComparer.Ordinal)
-                                    .ToArray();
+                                    .ToArray() ?? [];
             if (parameters.Length != 0)
             {
                 var requiredParameters = string.Join("&", parameters.Where(static x => x.Required)
                                                 .Select(static x =>
-                                                            $"{x.Name}={{{x.Name.SanitizeParameterNameForUrlTemplate()}}}"));
+                                                            $"{x.Name}={{{x.Name?.SanitizeParameterNameForUrlTemplate()}}}"));
                 var optionalParameters = string.Join(",", parameters.Where(static x => !x.Required)
                                                 .Select(static x =>
-                                                            x.Name.SanitizeParameterNameForUrlTemplate() +
+                                                            x.Name?.SanitizeParameterNameForUrlTemplate() +
                                                             (x.Explode ?
                                                                 "*" : string.Empty)));
                 var hasRequiredParameters = !string.IsNullOrEmpty(requiredParameters);
@@ -235,11 +239,12 @@ public static partial class OpenApiUrlTreeNodeExtensions
             }
         }
         var pathReservedPathParametersIds = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pItem) ?
-                                                pItem.Parameters
-                                                        .Union(pItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()))
-                                                        .Where(static x => x.In == ParameterLocation.Path && x.Extensions.TryGetValue(OpenApiReservedParameterExtension.Name, out var ext) && ext is OpenApiReservedParameterExtension reserved && reserved.IsReserved.HasValue && reserved.IsReserved.Value)
+                                                pItem.Parameters?
+                                                        .Union(pItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [])
+                                                        .Where(static x => x.In == ParameterLocation.Path && x.Extensions is not null && x.Extensions.TryGetValue(OpenApiReservedParameterExtension.Name, out var ext) && ext is OpenApiReservedParameterExtension reserved && reserved.IsReserved.HasValue && reserved.IsReserved.Value)
                                                         .Select(static x => x.Name)
-                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase) :
+                                                        .OfType<string>()
+                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [] :
                                                 [];
         return (includeBaseUrl ? "{+baseurl}" : string.Empty) +
                 SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
@@ -257,7 +262,8 @@ public static partial class OpenApiUrlTreeNodeExtensions
             yield return childInfo;
         }
         if (currentNode.PathItems
-                            .SelectMany(static x => x.Value.Operations)
+                            .Where(static x => x.Value.Operations is not null)
+                            .SelectMany(static x => x.Value.Operations!)
                             .ToArray() is { Length: > 0 } operations)
         {
             yield return new KeyValuePair<string, HashSet<string>>(currentNode.GetUrlTemplate(null, false, false).TrimStart('/'), operations.Select(static x => x.Key.ToString().ToUpperInvariant()).ToHashSet(StringComparer.OrdinalIgnoreCase));
@@ -355,10 +361,10 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 var oldName = splatPath[parameterIndex];
                 splatPath[parameterIndex] = newParameterName;
                 child.Path = "\\" + string.Join('\\', splatPath);
-                if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) && pathItem.Parameters is not null)
                 {
                     foreach (var pathParameter in pathItem.Parameters
-                                                    .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()))
+                                                    .Union(pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [])
                                                     .Where(x => x.In == ParameterLocation.Path && oldName.Equals(x.Name, StringComparison.Ordinal)))
                     {
                         switch (pathParameter)
@@ -366,8 +372,8 @@ public static partial class OpenApiUrlTreeNodeExtensions
                             case OpenApiParameter openApiParameter:
                                 openApiParameter.Name = newParameterName;
                                 break;
-                            case OpenApiParameterReference openApiReference:
-                                openApiReference.Target.Name = newParameterName;
+                            case OpenApiParameterReference openApiReference when openApiReference.RecursiveTarget is { } openApiReferenceRecursiveTarget:
+                                openApiReferenceRecursiveTarget.Name = newParameterName;
                                 break;
                             default:
                                 throw new InvalidOperationException("Unexpected parameter type");
@@ -390,45 +396,60 @@ public static partial class OpenApiUrlTreeNodeExtensions
         pathParameterNameReplacement = pathParameterNameReplacement.Trim('{', '}');
         foreach (var pathItem in source.PathItems)
         {
-            foreach (var pathParameter in pathItem
-                                        .Value
-                                        .Parameters
-                                        .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        .Union(
-                                            pathItem
-                                                .Value
-                                                .Operations
-                                                .SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
-                                                .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
-                                        ))
+            if (pathItem.Value.Parameters is not null && pathItem.Value.Operations is not null)
             {
-                switch (pathParameter)
+                foreach (var pathParameter in pathItem
+                                            .Value
+                                            .Parameters
+                                            .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
+                                            .Union(
+                                                pathItem
+                                                    .Value
+                                                    .Operations
+                                                    .SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
+                                                    .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
+                                            ))
                 {
-                    case OpenApiParameter openApiParameter:
-                        openApiParameter.Name = pathParameterNameReplacement;
-                        break;
-                    case OpenApiParameterReference openApiReference:
-                        openApiReference.Target.Name = pathParameterNameReplacement;
-                        break;
-                    default:
-                        throw new InvalidOperationException("Unexpected parameter type");
+                    switch (pathParameter)
+                    {
+                        case OpenApiParameter openApiParameter:
+                            openApiParameter.Name = pathParameterNameReplacement;
+                            break;
+                        case OpenApiParameterReference openApiReference when openApiReference.RecursiveTarget is { } openApiReferenceTarget:
+                            openApiReferenceTarget.Name = pathParameterNameReplacement;
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unexpected parameter type");
+                    }
                 }
-            }
-            if (source != destination && !destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
-            {
-                var destinationPathItem = destination.PathItems[pathItem.Key];
-                foreach (var operation in pathItem.Value.Operations)
-                    if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
+                if (source != destination && !destination.PathItems.TryAdd(pathItem.Key, pathItem.Value) &&
+                    destination.PathItems.TryGetValue(pathItem.Key, out var dpi) && dpi is OpenApiPathItem destinationPathItem)
+                {
+                    destinationPathItem.Operations ??= new Dictionary<HttpMethod, OpenApiOperation>();
+                    foreach (var operation in pathItem.Value.Operations)
                     {
-                        logger.LogWarning("Duplicate operation {Operation} in path {Path}", operation.Key, pathItem.Key);
+                        if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
+                        {
+                            logger.LogWarning("Duplicate operation {Operation} in path {Path}", operation.Key, pathItem.Key);
+                        }
                     }
-                foreach (var pathParameter in pathItem.Value.Parameters)
-                    destinationPathItem.Parameters.Add(pathParameter);
-                foreach (var extension in pathItem.Value.Extensions)
-                    if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
+                    destinationPathItem.Parameters ??= new List<IOpenApiParameter>();
+                    foreach (var pathParameter in pathItem.Value.Parameters)
                     {
-                        logger.LogWarning("Duplicate extension {Extension} in path {Path}", extension.Key, pathItem.Key);
+                        destinationPathItem.Parameters.Add(pathParameter);
                     }
+                    if (pathItem.Value.Extensions is not null)
+                    {
+                        destinationPathItem.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+                        foreach (var extension in pathItem.Value.Extensions)
+                        {
+                            if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
+                            {
+                                logger.LogWarning("Duplicate extension {Extension} in path {Path}", extension.Key, pathItem.Key);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
