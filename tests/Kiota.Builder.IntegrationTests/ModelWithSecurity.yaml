@@ -33,3 +33,15 @@ paths:
             application/json:
               schema:
                 type: object
+    post:
+      summary: Create new repair with oauth
+      description: Returns the create repair
+      security:
+        - oAuth2AuthCode: ["api://sample/repairs_write"]
+      responses:
+        "200":
+          description: A new repair
+          content:
+            application/json:
+              schema:
+                type: object
