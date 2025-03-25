@@ -5,6 +5,26 @@ namespace kiota.Rpc
 {
     internal class PluginResultMapper
     {
+        private static string? GetReferenceId(Auth? auth)
+        {
+            if (auth == null)
+            {
+                return null;
+            }
+            else if (auth is OAuthPluginVault)
+            {
+                return (auth as OAuthPluginVault)?.ReferenceId;
+            }
+            else if (auth is ApiKeyPluginVault)
+            {
+                return (auth as ApiKeyPluginVault)?.ReferenceId;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public static ShowPluginResult FromPluginManifesValidationResult(DocumentValidationResults<PluginManifestDocument> manifest)
         {
             var functions = new List<PluginFunction>();
@@ -25,10 +45,14 @@ namespace kiota.Rpc
             {
                 foreach (var runtime in manifest.Document.Runtimes)
                 {
+                    var referenceId = GetReferenceId(runtime.Auth);
+                    var pluginAuth = new PluginAuth(
+                        type: runtime.Auth?.Type ?? AuthType.None,
+                        reference_id: referenceId);
                     var runForFunctions = runtime.RunForFunctions?.ToArray() ?? Array.Empty<string>();
                     var pluginRuntime = new PluginRuntime(
                         type: runtime.Type?.GetDisplayName() ?? String.Empty,
-                        auth: runtime.Auth?.Type ?? AuthType.None,
+                        auth: pluginAuth,
                         run_for_functions: runForFunctions);
                     runtimes.Add(pluginRuntime);
                 }

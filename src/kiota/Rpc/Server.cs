@@ -130,7 +130,7 @@ internal partial class Server : IServer
         var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
         var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
 
-        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, securityRequirements: securityRequirements, securitySchemes: securitySchemes);
+        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, security: securityRequirements, securitySchemes: securitySchemes);
     }
     private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
     {
@@ -296,7 +296,7 @@ internal partial class Server : IServer
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
                                             x.Value.ExternalDocs?.Url,
-                                            securityRequirements: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
+                                            security: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
                                             servers: ServersMapper.FromServerList(x.Value?.Servers))) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)

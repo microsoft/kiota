@@ -4,7 +4,7 @@ import { getPluginManifest } from '../lib/getPluginManifest';
 import { ConsumerOperation, KiotaPluginType } from '../types';
 
 describe("GeneratePlugin", () => {
-  test('should create plugin manifest', async () => {
+  test('generatePlugin_Simple', async () => {
     const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
 
@@ -37,7 +37,7 @@ describe("GeneratePlugin", () => {
     expect(actualApiManifest).toBeDefined();
   });
 
-  test('should create plugin manifest', async () => {
+  test('generatePlugin_withSecurity', async () => {
     const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
     const outputPath = './.tests_output';
 

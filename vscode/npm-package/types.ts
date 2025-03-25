@@ -79,6 +79,7 @@ export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConf
 interface KiotaLoggedResult {
   logs: KiotaLogEntry[];
 }
+
 export interface KiotaTreeResult extends KiotaLoggedResult {
   rootNode?: KiotaOpenApiNode;
   apiTitle?: string;
@@ -288,12 +289,12 @@ interface APIInfo {
   adaptiveCardMockData: object;
 }
 
-interface ServerMapping {
+export interface ServerMapping {
   serverUrl: string;
   operationIds: string[];
 }
 
-interface AuthMapping {
+export interface AuthMapping {
   registrationIdEnvName: string;
   auth: {
     [key: string]: object;
@@ -322,9 +323,14 @@ export interface PluginFunction {
   description: string;
 }
 
+export interface PluginAuth {
+  type: string;  // None, OAuthPluginVault, ApiKeyPluginVault
+  reference_id?: string;
+}
+
 export interface PluginRuntime {
   type: string;
-  auth: string; // None, OAuthPluginVault, ApiKeyPluginVault
+  auth: PluginAuth;
   run_for_functions: string[];
 }
 
