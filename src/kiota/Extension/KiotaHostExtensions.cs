@@ -101,6 +101,12 @@ internal static class KiotaHostExtensions
         {
             if (path != null && !string.IsNullOrWhiteSpace(path))
             {
+                // Docker
+                if (Environment.GetEnvironmentVariable("KIOTA_CONTAINER") == "true")
+                {
+                    return "docker";
+                }
+
                 var absolutePath = Path.GetFullPath(path);
                 var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 // Dotnet tool
@@ -113,7 +119,12 @@ internal static class KiotaHostExtensions
                 {
                     return "asdf";
                 }
-                
+                // Extension
+                if (absolutePath.Contains(".vscode"))
+                {
+                    return "extension";
+                }
+
 #if MACOS
                 // Homebrew
                 if (absolutePath.StartsWith("/usr/local/Cellar/kiota"))
