@@ -1073,8 +1073,8 @@ extends:
                   contentsource: 'Folder'
                   folderlocation: '$(Pipeline.Workspace)/npm-package/'
                   waitforreleasecompletion: true
-                  owners: 'chwahome@microsoft.com'
-                  approvers: 'chwahome@microsoft.com'
+                  owners: 'chwahome@microsoft.com,evansaboge@microsoft.com'
+                  approvers: 'chwahome@microsoft.com,evansaboge@microsoft.com'
                   serviceendpointurl: 'https://api.esrp.microsoft.com'
                   mainpublisher: 'ESRPRELPACMAN'
                   domaintenantid: 'cdc5aeea-15c5-4db6-b079-fcadd2505dc2'
