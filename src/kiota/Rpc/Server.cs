@@ -126,7 +126,7 @@ internal partial class Server : IServer
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
         var document = builder.OpenApiDocument;
-        var servers = document?.Servers?.Select(s => s.Url).ToArray();
+        var servers = ServersMapper.FromServerList(document?.Servers);
         var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
         var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
 
@@ -297,7 +297,7 @@ internal partial class Server : IServer
                                             true,
                                             x.Value.ExternalDocs?.Url,
                                             securityRequirements: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
-                                            servers: x.Value?.Servers?.Select(s => s.Url).ToArray())) :
+                                            servers: ServersMapper.FromServerList(x.Value?.Servers))) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
