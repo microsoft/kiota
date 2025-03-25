@@ -1734,6 +1734,7 @@ paths:
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
         var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersGetResponse", false);
+        Assert.Equal("UsersGetResponse", userResponseClass.Name, StringComparer.Ordinal); //checking for casing
         Assert.NotNull(userResponseClass);
         var valueProp = userResponseClass.FindChildByName<CodeProperty>("value", false);
         Assert.NotNull(valueProp);
