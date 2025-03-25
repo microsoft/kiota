@@ -40,7 +40,14 @@ internal static class KiotaHostExtensions
                         {
                             r.AddAttributes([
                                 new KeyValuePair<string, object>("os.name", osName),
-                                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
+                                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString()),
+#if ACQUISITION_CHANNEL_DOTNET_TOOL
+                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "dotnet_tool"),
+#elif ACQUISITION_CHANNEL_BINARIES
+                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "binaries"),
+#elif ACQUISITION_CHANNEL_HOMEBREW
+                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "homebrew"),
+#endif
                             ]);
                         }
                     });

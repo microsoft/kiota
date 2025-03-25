@@ -34,6 +34,7 @@
   <PropertyGroup>
     <!-- the source generators emit warnings -->
     <NoWarn>$(NoWarn);CS8785;NU5048;NU5104</NoWarn>
+    <DefineConstants>ACQUISITION_CHANNEL_BINARIES</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kiota.Builder\Kiota.Builder.csproj" />

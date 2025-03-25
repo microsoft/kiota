@@ -13,6 +13,7 @@ public static class TelemetryLabels
     public const string InstrumentPluginGenerationCount = "kiota.plugin.generations";
 
     // Tags/Attributes
+    public const string TagAcquisitionChannel = "kiota.acquisition_channel";
     public const string TagCommandName = "kiota.command.name";
     public const string TagCommandRevision = "kiota.command.revision";
     public const string TagCommandParams = "kiota.command.parameters";
