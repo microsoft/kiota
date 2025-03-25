@@ -260,7 +260,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 parentFile.FindChildByName<CodeConstant>(
                         $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}",
                         false) is
-                    { } reqConstant
+                { } reqConstant
                     ? reqConstant.Name.ToFirstCharacterUpperCase()
                     : "undefined";
             writer.WriteLine(
