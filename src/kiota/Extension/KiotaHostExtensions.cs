@@ -41,13 +41,9 @@ internal static class KiotaHostExtensions
                             r.AddAttributes([
                                 new KeyValuePair<string, object>("os.type", osName),
                                 new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString()),
-#if ACQUISITION_CHANNEL_DOTNET_TOOL
-                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "dotnet_tool"),
-#elif ACQUISITION_CHANNEL_BINARIES
-                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "binaries"),
-#elif ACQUISITION_CHANNEL_HOMEBREW
-                                new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "homebrew"),
-#endif
+                            ]);
+                            r.AddAttributes([
+                                new KeyValuePair<string, object>(TelemetryLabels.TagAcquisitionChannel, AcquisitionChannel(Environment.ProcessPath)),
                             ]);
                         }
                     });
@@ -99,6 +95,34 @@ internal static class KiotaHostExtensions
             if (OperatingSystem.IsMacOS()) return "macos";
 
             return OperatingSystem.IsFreeBSD() ? "freebsd" : null;
+        }
+
+        static string AcquisitionChannel(string? path)
+        {
+            if (path != null && !string.IsNullOrWhiteSpace(path))
+            {
+                var absolutePath = Path.GetFullPath(path);
+                var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                // Dotnet tool
+                if (absolutePath.StartsWith(Path.Join(homeDir, ".dotnet", "tools")))
+                {
+                    return "dotnet_tool";
+                }
+                // ASDF
+                if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
+                {
+                    return "asdf";
+                }
+                
+#if MACOS
+                // Homebrew
+                if (absolutePath.StartsWith("/usr/local/Cellar/kiota"))
+                {
+                    return "homebrew";
+                }
+#endif
+            }
+            return "unknown";
         }
     }
 }
