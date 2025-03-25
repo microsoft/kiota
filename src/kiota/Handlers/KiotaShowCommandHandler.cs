@@ -203,7 +203,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         // set up telemetry tags
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(8)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(9)
         {
             new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.openapi", redacted),

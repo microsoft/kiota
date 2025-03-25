@@ -214,7 +214,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(10)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(11)
             {
                 new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
                 new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
