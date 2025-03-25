@@ -1278,7 +1278,7 @@ public partial class KiotaBuilder
     {
         if (schema != null)
         {
-            var suffix = $"{operationType.Method.ToLowerInvariant()}Response";
+            var suffix = $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}Response";
             var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
             if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
             { //TODO remove for v2
