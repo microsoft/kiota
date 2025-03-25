@@ -151,8 +151,9 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(4)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
             {
+                new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
                 new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
                 new($"{TelemetryLabels.TagCommandParams}.clean_output", cleanOutput),
             } : null;
