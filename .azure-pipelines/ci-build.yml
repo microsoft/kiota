@@ -1044,8 +1044,8 @@ extends:
           - job: deploy_npm
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
-              os: linux
-              image: ubuntu-latest
+              os: windows
+              image: windows-2022
             templateContext:
               type: releaseJob
               isProduction: true
@@ -1062,8 +1062,6 @@ extends:
               - task: NodeTool@0
                 inputs:
                   versionSpec: "18.x"
-              - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
-                displayName: "Set version suffix"
               - task: EsrpRelease@7
                 inputs:
                   connectedservicename: 'Federated DevX ESRP Managed Identity Connection'
