@@ -126,7 +126,7 @@ internal partial class Server : IServer
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
         var document = builder.OpenApiDocument;
-        var servers = document?.Servers?.Select(s => s.Url).ToArray();
+        var servers = ServersMapper.FromServerList(document?.Servers);
         var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
         var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
 
@@ -134,16 +134,16 @@ internal partial class Server : IServer
     }
     private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
     {
-        return (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItems) ?
+        return (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItems) && pathItems.Operations is not null ?
                                     pathItems.Operations.Select(x => NormalizeOperationNodePath(node, x.Key, true)) :
-                                    Enumerable.Empty<string>())
+                                    [])
                                     .Union(node.Children.SelectMany(static x => GetOperationsFromTreeNode(x.Value)));
     }
     [GeneratedRegex(@"{\w+}", RegexOptions.Singleline, 500)]
     private static partial Regex indexingNormalizationRegex();
-    private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, OperationType operationType, bool forIndexing = false)
+    private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, HttpMethod operationType, bool forIndexing = false)
     {
-        var name = $"{node.Path}#{operationType.ToString().ToUpperInvariant()}";
+        var name = $"{node.Path}#{operationType.Method.ToUpperInvariant()}";
         if (forIndexing)
             return indexingNormalizationRegex().Replace(name, "{}");
         return name;
@@ -288,16 +288,16 @@ internal partial class Server : IServer
     {
         var children = node.Children
                             .Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value, filteredPaths))
-                            .Union(node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var openApiPathItems) ?
+                            .Union(node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var openApiPathItems) && openApiPathItems.Operations is not null ?
                                         openApiPathItems.Operations.Select(x => new PathItem(
                                             NormalizeOperationNodePath(node, x.Key),
                                             x.Key.ToString().ToUpperInvariant(),
-                                            Array.Empty<PathItem>(),
+                                            [],
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
                                             x.Value.ExternalDocs?.Url,
                                             security: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
-                                            servers: x.Value?.Servers?.Select(s => s.Url).ToArray())) :
+                                            servers: ServersMapper.FromServerList(x.Value?.Servers))) :
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)

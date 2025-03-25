@@ -15,6 +15,10 @@ namespace kiota.Rpc
 
                 foreach (var securityRequirementItem in securityRequirement)
                 {
+                    if (securityRequirementItem.Key.Reference is null) continue;
+                    if (securityRequirementItem.Value is null) continue;
+                    if (securityRequirementItem.Key.Reference.Id is null) continue;
+
                     string name = securityRequirementItem.Key.Reference.Id;
                     var scopes = new List<string>();
                     foreach (var scope in securityRequirementItem.Value)
