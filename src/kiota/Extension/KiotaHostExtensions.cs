@@ -39,7 +39,7 @@ internal static class KiotaHostExtensions
                         if (OsName() is { } osName)
                         {
                             r.AddAttributes([
-                                new KeyValuePair<string, object>("os.name", osName),
+                                new KeyValuePair<string, object>("os.type", osName),
                                 new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString()),
 #if ACQUISITION_CHANNEL_DOTNET_TOOL
                                 new KeyValuePair<string, object>(kiota.Telemetry.TelemetryLabels.TagAcquisitionChannel, "dotnet_tool"),

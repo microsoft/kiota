@@ -6,6 +6,9 @@ public static class TelemetryLabels
 
     public const string RedactedValuePlaceholder = "REDACTED";
 
+    public const string CommandSourceCliValue = "CLI";
+    public const string CommandSourceExtensionValue = "Extension";
+
     // Meter instruments
     public const string InstrumentCommandDurationName = "kiota.command.duration";
     public const string InstrumentCommandExecutionsCount = "kiota.command.executions";
@@ -14,6 +17,7 @@ public static class TelemetryLabels
 
     // Tags/Attributes
     public const string TagAcquisitionChannel = "kiota.acquisition_channel";
+    public const string TagCommandSource = "kiota.command.source";
     public const string TagCommandName = "kiota.command.name";
     public const string TagCommandRevision = "kiota.command.revision";
     public const string TagCommandParams = "kiota.command.parameters";
