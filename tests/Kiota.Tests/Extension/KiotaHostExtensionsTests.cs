@@ -52,12 +52,10 @@ public class KiotaHostExtensionsTests
             Assert.Equal("extension", KiotaHostExtensions.AcquisitionChannel(Path.Join(homeDir, ".vscode", "bin", "kiota")));
         }
 
-#if MACOS
         [Fact]
         public void ReturnsHomebrewForMacOSPath()
         {
             Assert.Equal("homebrew", KiotaHostExtensions.AcquisitionChannel("/usr/local/Cellar/kiota/bin/kiota"));
         }
-#endif
     }
 }

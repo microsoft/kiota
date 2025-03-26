@@ -115,24 +115,23 @@ internal static class KiotaHostExtensions
             {
                 return "dotnet_tool";
             }
-            // ASDF
-            if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
-            {
-                return "asdf";
-            }
             // Extension
             if (absolutePath.Contains(".vscode"))
             {
                 return "extension";
             }
 
-#if MACOS
-                // Homebrew
-                if (absolutePath.StartsWith("/usr/local/Cellar/kiota"))
-                {
-                    return "homebrew";
-                }
-#endif
+            // ASDF
+            if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
+            {
+                return "asdf";
+            }
+
+            // Homebrew
+            if (absolutePath.StartsWith("/usr/local/Cellar/kiota"))
+            {
+                return "homebrew";
+            }
         }
         return "unknown";
     }
