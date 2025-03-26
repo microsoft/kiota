@@ -80,7 +80,10 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(1) : null;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(2)
+        {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
+        } : null;
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

@@ -37,10 +37,10 @@ public class SettingsFileManagementService : ISettingsManagementService
     private static SettingsFile GenerateSettingsFile(OpenApiDocument openApiDocument)
     {
         var settings = new SettingsFile();
-        if (openApiDocument.Servers?.Count > 0)
+        if (openApiDocument.Servers is { Count: > 0 } && openApiDocument.Servers[0] is { Url: { } url })
         {
-            settings.EnvironmentVariables.Development.HostAddress = openApiDocument.Servers[0].Url;
-            settings.EnvironmentVariables.Remote.HostAddress = openApiDocument.Servers[0].Url;
+            settings.EnvironmentVariables.Development.HostAddress = url;
+            settings.EnvironmentVariables.Remote.HostAddress = url;
         }
         return settings;
     }

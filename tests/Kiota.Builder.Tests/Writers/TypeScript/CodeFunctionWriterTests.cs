@@ -671,8 +671,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
         writer.Write(function);
         var result = tw.ToString();
-        Assert.Contains("registerDefaultSerializer", result);
-        Assert.Contains("registerDefaultDeserializer", result);
+        Assert.Contains(
+            "serializationWriterFactory = requestAdapter.getSerializationWriterFactory() as SerializationWriterFactoryRegistry",
+            result);
+        Assert.Contains("parseNodeFactoryRegistry = requestAdapter.getParseNodeFactory() as ParseNodeFactoryRegistry",
+            result);
+        Assert.Contains("const backingStoreFactory = requestAdapter.getBackingStoreFactory();", result);
+        Assert.Contains("serializationWriterFactory.registerDefaultSerializer", result);
+        Assert.Contains("parseNodeFactoryRegistry.registerDefaultDeserializer", result);
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
         Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
         Assert.Contains($"apiClientProxifier<", result);

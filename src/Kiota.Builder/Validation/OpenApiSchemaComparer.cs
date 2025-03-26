@@ -42,28 +42,36 @@ internal class OpenApiSchemaComparer : IEqualityComparer<IOpenApiSchema>
         if (obj is null) return;
         if (!visitedSchemas.Add(obj)) return;
         hash.Add(obj.Deprecated);
-        hash.Add(obj.Discriminator, discriminatorComparer);
-        GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas, ref hash);
+        if (obj.Discriminator is not null)
+            hash.Add(obj.Discriminator, discriminatorComparer);
+        if (obj.AdditionalProperties is not null)
+            GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas, ref hash);
         hash.Add(obj.AdditionalPropertiesAllowed);
-        foreach (var prop in obj.Properties)
-        {
-            hash.Add(prop.Key, StringComparer.Ordinal);
-            GetHashCodeInternal(prop.Value, visitedSchemas, ref hash);
-        }
-        hash.Add(obj.Default, jsonNodeComparer);
-        GetHashCodeInternal(obj.Items, visitedSchemas, ref hash);
-        foreach (var schema in obj.OneOf)
-        {
-            GetHashCodeInternal(schema, visitedSchemas, ref hash);
-        }
-        foreach (var schema in obj.AnyOf)
-        {
-            GetHashCodeInternal(schema, visitedSchemas, ref hash);
-        }
-        foreach (var schema in obj.AllOf)
-        {
-            GetHashCodeInternal(schema, visitedSchemas, ref hash);
-        }
+        if (obj.Properties is not null)
+            foreach (var prop in obj.Properties)
+            {
+                hash.Add(prop.Key, StringComparer.Ordinal);
+                GetHashCodeInternal(prop.Value, visitedSchemas, ref hash);
+            }
+        if (obj.Default is not null)
+            hash.Add(obj.Default, jsonNodeComparer);
+        if (obj.Items is not null)
+            GetHashCodeInternal(obj.Items, visitedSchemas, ref hash);
+        if (obj.OneOf is not null)
+            foreach (var schema in obj.OneOf)
+            {
+                GetHashCodeInternal(schema, visitedSchemas, ref hash);
+            }
+        if (obj.AnyOf is not null)
+            foreach (var schema in obj.AnyOf)
+            {
+                GetHashCodeInternal(schema, visitedSchemas, ref hash);
+            }
+        if (obj.AllOf is not null)
+            foreach (var schema in obj.AllOf)
+            {
+                GetHashCodeInternal(schema, visitedSchemas, ref hash);
+            }
         hash.Add(obj.Format, StringComparer.OrdinalIgnoreCase);
         hash.Add(obj.Type);
         hash.Add(obj.Title, StringComparer.Ordinal);
@@ -125,8 +133,9 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
         if (x is null || y is null) return object.Equals(x, y);
         return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && GetOrderedRequests(x.Mapping).SequenceEqual(GetOrderedRequests(y.Mapping), mappingComparer);
     }
-    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string> mappings) =>
-    mappings.OrderBy(x => x.Key, StringComparer.Ordinal);
+    private static readonly IOrderedEnumerable<KeyValuePair<string, string>> defaultOrderedDictionary = new Dictionary<string, string>(0).OrderBy(x => x.Key, StringComparer.Ordinal);
+    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string>? mappings) =>
+    mappings?.OrderBy(x => x.Key, StringComparer.Ordinal) ?? defaultOrderedDictionary;
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {

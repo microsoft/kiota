@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Models.References;
 using Moq;
 using Xunit;
+using NetHttpMethod = System.Net.Http.HttpMethod;
 
 namespace Kiota.Builder.Tests;
 
@@ -90,7 +91,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -179,7 +180,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
@@ -254,7 +255,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
@@ -327,7 +328,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody
                             {

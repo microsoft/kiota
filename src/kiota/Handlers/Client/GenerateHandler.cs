@@ -139,8 +139,9 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(3)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(4)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
         } : null;
         if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));

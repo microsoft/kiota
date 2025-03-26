@@ -38,17 +38,6 @@ export function logFromLogLevel(entry: KiotaLogEntry, kiotaOutputChannel: LogOut
   }
 }
 
-export async function checkForSuccess(results: KiotaLogEntry[]) {
-  for (const result of results) {
-    if (result && result.message) {
-      if (result.message.includes("Generation completed successfully")) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 export function showLogs(kiotaOutputChannel: LogOutputChannel): void {
   kiotaOutputChannel.show();
 }

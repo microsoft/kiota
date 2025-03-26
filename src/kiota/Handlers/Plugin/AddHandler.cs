@@ -169,8 +169,9 @@ internal class AddHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(8)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(9)
             {
+                new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
                 new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
             } : null;
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;

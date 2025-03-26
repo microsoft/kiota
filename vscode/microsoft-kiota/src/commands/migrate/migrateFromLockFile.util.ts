@@ -1,22 +1,8 @@
 import * as vscode from "vscode";
-import * as rpc from "vscode-jsonrpc/node";
 
 import { KIOTA_LOCK_FILE } from "../../constants";
-import { connectToKiota, KiotaLogEntry, LogLevel } from "../../kiotaInterop";
-import { getWorkspaceJsonPath, handleMigration } from "../../util";
-
-export function migrateFromLockFile(context: vscode.ExtensionContext, lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
-    return connectToKiota(context, async (connection) => {
-        const request = new rpc.RequestType1<string, KiotaLogEntry[], void>(
-            "MigrateFromLockFile"
-        );
-        const result = await connection.sendRequest(
-            request,
-            lockFileDirectory
-        );
-        return result;
-    });
-};
+import { KiotaLogEntry, LogLevel, migrateFromLockFile } from "../../kiotaInterop";
+import { getWorkspaceJsonPath } from "../../util";
 
 export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -32,7 +18,7 @@ export async function checkForLockFileAndPrompt(context: vscode.ExtensionContext
             );
 
             if (result === vscode.l10n.t("OK")) {
-                await handleMigration(context, workspaceFolders![0]);
+                await handleMigration(workspaceFolders![0]);
                 await vscode.commands.executeCommand('kiota.workspace.refresh');
             }
         }
@@ -66,4 +52,29 @@ export function displayMigrationMessages(logEntries: KiotaLogEntry[]) {
             }
         });
     }
+}
+
+
+export async function handleMigration(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
+    vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: vscode.l10n.t("Migrating your API clients..."),
+        cancellable: false
+    }, async (progress) => {
+        progress.report({ increment: 0 });
+
+        try {
+            const migrationResult = await migrateFromLockFile(workspaceFolder.uri.fsPath);
+
+            progress.report({ increment: 100 });
+
+            if ((migrationResult?.length ?? 0) > 0) {
+                displayMigrationMessages(migrationResult!);
+            } else {
+                vscode.window.showWarningMessage(vscode.l10n.t("Migration completed, but no changes were detected."));
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(vscode.l10n.t(`Migration failed: ${error}`));
+        }
+    });
 }

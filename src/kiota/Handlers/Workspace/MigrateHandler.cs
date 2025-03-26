@@ -92,7 +92,10 @@ internal class MigrateHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(3) : null;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(4)
+        {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
+        } : null;
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
         if (lockDirectory is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.lock_directory", redacted));
         if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", redacted));

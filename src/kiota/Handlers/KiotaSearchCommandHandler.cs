@@ -137,8 +137,9 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
     {
         // set up telemetry tags
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(4)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(5)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             // Search term is required
             new($"{TelemetryLabels.TagCommandParams}.search_term", redacted),
             new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),

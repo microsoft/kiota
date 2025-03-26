@@ -43,7 +43,7 @@ public record LanguageInformation : IOpenApiSerializable
         writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, static (w, x) => x.SerializeAsV3(w));
         writer.WriteProperty(nameof(ClientClassName).ToFirstCharacterLowerCase(), ClientClassName);
         writer.WriteProperty(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), ClientNamespaceName);
-        writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, static (w, x) => w.WriteValue(x));
+        writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, static (w, x) => { if (!string.IsNullOrEmpty(x)) { w.WriteValue(x); } });
         writer.WriteEndObject();
     }
     public static LanguageInformation Parse(JsonNode source)
