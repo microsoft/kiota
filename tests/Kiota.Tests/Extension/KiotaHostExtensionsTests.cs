@@ -47,6 +47,17 @@ public class KiotaHostExtensionsTests
                 Assert.Equal("asdf", KiotaHostExtensions.AcquisitionChannel(Path.Join(homeDir, ".asdf", "bin", "kiota")));
             }
         }
+        [Fact]
+        public void ReturnsAsdfWhenPathIsAsdfConfigured()
+        {
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                Environment.SetEnvironmentVariable("ASDF_DATA_DIR", Path.Join(homeDir, "custom", ".asdf"));
+                Assert.Equal("asdf", KiotaHostExtensions.AcquisitionChannel(Path.Join(homeDir, "custom", ".asdf", "bin", "kiota")));
+                Environment.SetEnvironmentVariable("ASDF_DATA_DIR", null);
+            }
+        }
 
         [Fact]
         public void ReturnsExtensionWhenPathIsExtensionDefault()
@@ -56,7 +67,7 @@ public class KiotaHostExtensionsTests
         }
 
         [Fact]
-        public void ReturnsHomebrewForMacOSPath()
+        public void ReturnsHomebrewForMacOsPath()
         {
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
