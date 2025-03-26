@@ -305,9 +305,6 @@ export interface AuthMapping {
 export interface GeneratePluginResult extends KiotaResult {
   aiPlugin: string;
   openAPISpec: string;
-  apis: APIInfo[];
-  serverMapping: ServerMapping[];
-  authMapping: AuthMapping[];
 }
 
 export interface PluginManifestResult extends KiotaResult {
@@ -340,21 +337,25 @@ export type SecuritySchemeObject =
   | OAuth2SecurityScheme
   | OpenIdSecurityScheme;
 
-export interface HttpSecurityScheme {
+export interface AuthReferenceId {
+  referenceId: string;
+}
+
+export interface HttpSecurityScheme extends AuthReferenceId {
   type: 'http';
   description?: string;
   scheme: string;
   bearerFormat?: string;
 }
 
-export interface ApiKeySecurityScheme {
+export interface ApiKeySecurityScheme extends AuthReferenceId {
   type: 'apiKey';
   description?: string;
   name: string;
   in: string;
 }
 
-export interface OAuth2SecurityScheme {
+export interface OAuth2SecurityScheme extends AuthReferenceId {
   type: 'oauth2';
   description?: string;
   flows: {
@@ -382,7 +383,7 @@ export interface OAuth2SecurityScheme {
   };
 }
 
-export interface OpenIdSecurityScheme {
+export interface OpenIdSecurityScheme extends AuthReferenceId {
   type: 'openIdConnect';
   description?: string;
   openIdConnectUrl: string;

@@ -16,6 +16,8 @@ components:
           scopes:
             api://sample/repairs_read: Read repair records
             api://sample/repairs_write: Write repair records
+      x-ai-auth-reference-id: otherValue123
+
 paths:
   /repairs:
     get:

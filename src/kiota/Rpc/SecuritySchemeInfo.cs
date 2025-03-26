@@ -8,7 +8,8 @@ public record SecuritySchemeInfo(
     string? scheme = null,
     string? bearerFormat = null,
     string? openIdConnectUrl = null,
-    OAuthFlows? flows = null);
+    OAuthFlows? flows = null,
+    string? referenceId = null);
 
 public record OAuthFlows(
     OAuthFlow? implicitFlow = null,

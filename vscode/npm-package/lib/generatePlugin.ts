@@ -85,9 +85,6 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
     return {
       aiPlugin: pathPluginManifest,
       openAPISpec: pathOfSpec, 
-      apis: [],
-      serverMapping: [],
-      authMapping: [],
       isSuccess: checkForSuccess(result as KiotaLogEntry[]),
       logs: result
     };

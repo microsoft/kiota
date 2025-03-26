@@ -116,6 +116,11 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
+
+        // This is needed to add plugin extensions parsers
+        configuration.PluginTypes.Add(PluginType.APIPlugin);
+        configuration.SkipGeneration = true;
+
         var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
