@@ -6,8 +6,8 @@ namespace kiota.Rpc
     {
         public static IDictionary<string, SecurityRequirement>? FromSecurityRequirementList(IList<OpenApiSecurityRequirement>? securityRequirementList)
         {
-            var requirements = new Dictionary<string, SecurityRequirement>();
             if (securityRequirementList is null) return null;
+            var requirements = new Dictionary<string, SecurityRequirement>();
 
             foreach (var securityRequirement in securityRequirementList)
             {
@@ -20,11 +20,7 @@ namespace kiota.Rpc
                     if (securityRequirementItem.Key.Reference.Id is null) continue;
 
                     string name = securityRequirementItem.Key.Reference.Id;
-                    var scopes = new List<string>();
-                    foreach (var scope in securityRequirementItem.Value)
-                    {
-                        scopes.Add(scope);
-                    }
+                    var scopes = securityRequirementItem.Value.ToList();
                     var requirementItem = new SecurityRequirement(scopes);
 
                     requirements.Add(name, requirementItem);
