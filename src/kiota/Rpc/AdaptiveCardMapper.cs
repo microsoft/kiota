@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using System.Text.Json;
-using Kiota.Builder.OpenApiExtensions;
+﻿using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Interfaces;
 
 namespace kiota.Rpc
