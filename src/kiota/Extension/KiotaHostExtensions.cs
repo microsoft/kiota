@@ -125,7 +125,9 @@ internal static class KiotaHostExtensions
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
                 // ASDF
-                if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
+                // https://asdf-vm.com/manage/configuration.html#asdf-data-dir
+                var asdfDataDir = Environment.GetEnvironmentVariable("ASDF_DATA_DIR") ?? Path.Join(homeDir, ".asdf");
+                if (absolutePath.StartsWith(asdfDataDir))
                 {
                     return "asdf";
                 }
