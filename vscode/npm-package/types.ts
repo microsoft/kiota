@@ -52,6 +52,9 @@ export interface KiotaOpenApiNode {
   segment: string,
   path: string,
   children: KiotaOpenApiNode[],
+  operationId?: string,
+  summary?: string,
+  description?: string,
   selected?: boolean,
   isOperation?: boolean;
   documentationUrl?: string;
