@@ -113,36 +113,32 @@ public partial class PluginsGenerationService
         }
     }
 
+    private static string? GetExistingReferenceId(IOpenApiSecurityScheme schema)
+    {
+        if (schema.Extensions is not null
+            && schema.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension)
+            && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
+            return authReferenceId.AuthenticationReferenceId;
+        return null;
+    }
+
     private static void EnsureSecuritySchemeExtensions(OpenApiDocument document)
     {
         var securitySchemes = document?.Components?.SecuritySchemes;
-        if (securitySchemes != null)
+        if (securitySchemes is null)
+            return;
+        foreach (var securitySchemeItem in securitySchemes)
         {
-            foreach (var securitySchemeItem in securitySchemes)
+            if (securitySchemeItem.Value is not { Extensions: not null } securityScheme)
+                continue;
+            if (GetExistingReferenceId(securityScheme) is null 
+                && TryGetAuthFromSecurityScheme(securitySchemeItem.Key, securityScheme) is Auth auth)
             {
-                string? authenticationReferenceId = null;
-                var securityScheme = securitySchemeItem.Value;
-                var securitySchemeName = securitySchemeItem.Key;
-                if (securityScheme != null)
+                var authReferenceExtension = new OpenApiAiAuthReferenceIdExtension
                 {
-                    if (securityScheme.Extensions is not null && securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
-                        authenticationReferenceId = authReferenceId.AuthenticationReferenceId;
-                    if (authenticationReferenceId == null)
-                    {
-                        var auth = TryGetAuthFromSecurityScheme(securitySchemeName, securityScheme);
-                        if (auth is not null)
-                        {
-                            if (securityScheme.Extensions != null)
-                            {
-                                var authReferenceExtension = new OpenApiAiAuthReferenceIdExtension
-                                {
-                                    AuthenticationReferenceId = auth.GetReferenceId()
-                                };
-                                securityScheme.Extensions.Add(OpenApiAiAuthReferenceIdExtension.Name, authReferenceExtension);
-                            }
-                        }
-                    }
-                }
+                    AuthenticationReferenceId = auth.GetReferenceId()
+                };
+                securityScheme.Extensions[OpenApiAiAuthReferenceIdExtension.Name] = authReferenceExtension;
             }
         }
     }
