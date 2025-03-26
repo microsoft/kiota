@@ -121,16 +121,23 @@ internal static class KiotaHostExtensions
                 return "extension";
             }
 
-            // ASDF
-            if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
+            // No reliable way to check this at compile time (especially for dotnet tool)
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
-                return "asdf";
-            }
+                // ASDF
+                if (absolutePath.StartsWith(Path.Join(homeDir, ".asdf")))
+                {
+                    return "asdf";
+                }
 
-            // Homebrew
-            if (absolutePath.StartsWith("/usr/local/Cellar/kiota"))
-            {
-                return "homebrew";
+                // https://docs.brew.sh/Formula-Cookbook#variables-for-directory-locations
+                var homebrewRoot = Environment.GetEnvironmentVariable("HOMEBREW_PREFIX") ?? "/opt/homebrew";
+                var dir = Path.Join(homebrewRoot, "Cellar/kiota");
+                // Homebrew
+                if (absolutePath.StartsWith(dir))
+                {
+                    return "homebrew";
+                }
             }
         }
         return "unknown";
