@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Fixed a with reading adaptive card OpenAPI extension and writing to plugin manifest. [#6351](https://github.com/microsoft/kiota/issues/6351)
 
 ## [1.24.2] - 2025-03-25
 
