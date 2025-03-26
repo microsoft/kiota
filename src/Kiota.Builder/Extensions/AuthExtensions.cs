@@ -6,22 +6,15 @@ namespace Kiota.Builder.Extensions
     {
         public static string? GetReferenceId(this Auth? auth)
         {
-            if (auth == null)
+            if (auth is OAuthPluginVault oauth)
             {
-                return null;
+                return oauth.ReferenceId;
             }
-            else if (auth is OAuthPluginVault)
+            else if (auth is ApiKeyPluginVault apiKey)
             {
-                return (auth as OAuthPluginVault)?.ReferenceId;
+                return apiKey.ReferenceId;
             }
-            else if (auth is ApiKeyPluginVault)
-            {
-                return (auth as ApiKeyPluginVault)?.ReferenceId;
-            }
-            else
-            {
-                return null;
-            }
+            return null;
         }
     }
 }
