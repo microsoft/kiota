@@ -22,7 +22,7 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     {
         if (source is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiAiAdaptiveCardExtension();
-        if (rawObject.TryGetPropertyValue(nameof(DataPath).ToFirstCharacterLowerCase(), out var dataPath) && dataPath is JsonValue dataPathValue && dataPathValue.GetValueKind() is JsonValueKind.String && dataPathValue.TryGetValue<string>(out var dataPathStrValue))
+        if (rawObject.TryGetPropertyValue(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase(), out var dataPath) && dataPath is JsonValue dataPathValue && dataPathValue.GetValueKind() is JsonValueKind.String && dataPathValue.TryGetValue<string>(out var dataPathStrValue))
         {
             extension.DataPath = dataPathStrValue;
         }
@@ -41,7 +41,7 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File))
         {
             writer.WriteStartObject();
-            writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase());
+            writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
             writer.WriteValue(DataPath);
             writer.WritePropertyName(nameof(File).ToFirstCharacterLowerCase());
             writer.WriteValue(File);
