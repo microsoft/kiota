@@ -298,7 +298,8 @@ internal partial class Server : IServer
                                             true,
                                             x.Value.ExternalDocs?.Url,
                                             security: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
-                                            servers: ServersMapper.FromServerList(x.Value?.Servers))) :
+                                            servers: ServersMapper.FromServerList(x.Value?.Servers),
+                                            adaptiveCard: AdaptiveCardMapper.FromExtensions(x.Value?.Extensions))):
                                         Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)

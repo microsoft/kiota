@@ -8,4 +8,7 @@ public record PathItem(
     bool isOperation = false,
     Uri? documentationUrl = null,
     IEnumerable<string>? servers = null,
-    IDictionary<string, SecurityRequirement>? security = null);
+    IDictionary<string,
+    SecurityRequirement>? security = null,
+    AdaptiveCardInfo? adaptiveCard = null
+);
