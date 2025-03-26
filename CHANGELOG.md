@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
+## [1.24.3] - 2025-03-26
+
+### Changed
+
 - Fixed a bug with reading adaptive card OpenAPI extension and writing to plugin manifest. [#6351](https://github.com/microsoft/kiota/issues/6351)
+- Fixed a critical bug with the vscode integration and the JSON RPC server.
 
 ## [1.24.2] - 2025-03-25
 
