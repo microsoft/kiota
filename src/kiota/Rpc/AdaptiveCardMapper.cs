@@ -12,14 +12,9 @@ namespace kiota.Rpc
             if (extensions is not null &&
                 extensions.TryGetValue(OpenApiAiAdaptiveCardExtension.Name, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
             {
-                JsonNode node = new JsonObject();
-                node["file"] = JsonValue.Create(adaptiveCard.File);
-                using JsonDocument doc = JsonDocument.Parse(node.ToJsonString());
-                JsonElement staticTemplate = doc.RootElement.Clone();
-                return new AdaptiveCardInfo(adaptiveCard.DataPath!, staticTemplate);
+                return new AdaptiveCardInfo(adaptiveCard.DataPath!, adaptiveCard.File!);
             }
             return null;
-
         }
     }
 }

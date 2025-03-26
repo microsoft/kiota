@@ -2,5 +2,5 @@
 
 namespace kiota.Rpc
 {
-    public record AdaptiveCardInfo(string dataPath, JsonElement card);
+    public record AdaptiveCardInfo(string dataPath, string card);
 }

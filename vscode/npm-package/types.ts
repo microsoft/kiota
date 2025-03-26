@@ -64,8 +64,8 @@ export interface KiotaOpenApiNode {
 }
 
 export interface AdaptiveCardInfo {
-  card: object;
-  dataPath: string;
+  file: string;
+  card: string;
 }
 
 interface CacheClearableConfiguration {
