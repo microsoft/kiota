@@ -131,7 +131,7 @@ public partial class PluginsGenerationService
         {
             if (securitySchemeItem.Value is not { Extensions: not null } securityScheme)
                 continue;
-            if (GetExistingReferenceId(securityScheme) is null 
+            if (GetExistingReferenceId(securityScheme) is null
                 && TryGetAuthFromSecurityScheme(securitySchemeItem.Key, securityScheme) is Auth auth)
             {
                 var authReferenceExtension = new OpenApiAiAuthReferenceIdExtension
