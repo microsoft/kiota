@@ -414,11 +414,11 @@
       "args": [
         "generate",
         "--openapi",
-        "C:/Users/evansaboge/Documents/kiota/src/openapi.json",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
         "--language",
         "http",
         "--output",
-        "${workspaceFolder}/HTTP",
+        "${workspaceFolder}/samples/msgraph-mail/http",
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "stopAtEntry": false,
