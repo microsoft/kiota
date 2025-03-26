@@ -72,7 +72,7 @@ public class KiotaHostExtensionsTests
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
                 Assert.Equal("homebrew",
-                    KiotaHostExtensions.AcquisitionChannel("/opt/homebrew/Cellar/foo/1.24/bin/kiota"));
+                    KiotaHostExtensions.AcquisitionChannel("/opt/homebrew/Cellar/kiota/1.24/bin/kiota"));
             }
         }
     }
