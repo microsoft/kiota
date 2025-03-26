@@ -27,7 +27,7 @@ public sealed class OpenApiAiAdaptiveCardExtensionTest : IDisposable
         var oaiValueRepresentation =
         """
         {
-            "dataPath": "$.items",
+            "data_path": "$.items",
             "file": "path_to_file"
         }
         """;
@@ -65,7 +65,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
       x-ai-adaptive-card:
-        dataPath: $.users
+        data_path: $.users
         file: path_to_file
   /users/{id}:
     get:
@@ -85,7 +85,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
       x-ai-adaptive-card:
-        dataPath: $.user
+        data_path: $.user
         file: path_to_file
 components:
   schemas:
@@ -128,6 +128,6 @@ components:
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
-        Assert.Equal("{\"dataPath\":\"$.items\",\"file\":\"path_to_file\"}", result);
+        Assert.Equal("{\"data_path\":\"$.items\",\"file\":\"path_to_file\"}", result);
     }
 }

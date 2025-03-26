@@ -322,7 +322,7 @@ paths:
         description: external docs for test path
         url: http://localhost/test
       x-ai-adaptive-card:
-        dataPath: $.test
+        data_path: $.test
         file: path_to_file
       responses:
         '200':
