@@ -64,11 +64,25 @@ jobs:
         working-directory: vscode
 
       - name: Publish kiota for testing
-        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output src/kiota/vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION  }}/linux-x64 -f net9.0
+        run: |
+          dotnet publish src/kiota/kiota.csproj -c Release \
+          --runtime linux-x64 \
+          -p:PublishSingleFile=true \
+          --self-contained \
+          --output src/kiota/vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/linux-x64 \
+          -f net9.0 \
+          --verbosity detailed
         shell: pwsh
 
-      - name: List all folder contents
+      - name: Verify Publish Output Directory
         run: |
+          echo "Contents of the output directory:"
+          ls src/kiota/vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/linux-x64
+        shell: bash
+
+      - name: Log Find Output for Debugging
+        run: |
+          echo "Finding all non-node_modules files and directories:"
           find . -type d -name "node_modules" -prune -o -print
         shell: bash
         working-directory: vscode
