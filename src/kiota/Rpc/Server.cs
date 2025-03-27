@@ -296,7 +296,10 @@ internal partial class Server : IServer
                                             [],
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
-                                            x.Value.ExternalDocs?.Url,
+                                            operationId: x.Value.OperationId,
+                                            summary: x.Value.Summary,
+                                            description: x.Value.Description,
+                                            documentationUrl: x.Value.ExternalDocs?.Url,
                                             security: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
                                             servers: ServersMapper.FromServerList(x.Value?.Servers),
                                             adaptiveCard: AdaptiveCardMapper.FromExtensions(x.Value?.Extensions))) :
