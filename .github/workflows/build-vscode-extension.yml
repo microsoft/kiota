@@ -69,13 +69,6 @@ jobs:
           dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/$releaseVersion/linux-x64 -f net9.0
         shell: pwsh
 
-      - name: Log Find Output for Debugging
-        run: |
-          echo "Finding all non-node_modules files and directories:"
-          find . -type d -name "node_modules" -prune -o -print
-        shell: bash
-        working-directory: vscode
-
       - name: Lint
         run: npm run lint
         working-directory: vscode

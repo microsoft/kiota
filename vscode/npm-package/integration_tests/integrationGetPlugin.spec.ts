@@ -1,7 +1,4 @@
-import { generatePlugin } from '../lib/generatePlugin';
-import { getKiotaTree } from '../lib/getKiotaTree';
 import { getPluginManifest } from '../lib/getPluginManifest';
-import { ConsumerOperation, KiotaPluginType } from '../types';
 
 describe("getPlugin", () => {
   test('getPlugin_Valid', async () => {
