@@ -452,7 +452,6 @@ components:
                 }
             },
             // security requirement in root object
-            // TODO: Revisit when https://github.com/microsoft/OpenAPI.NET/issues/1797 is fixed
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
                 "security: [apiKey0: []]", string.Empty, null, resultingManifest =>
