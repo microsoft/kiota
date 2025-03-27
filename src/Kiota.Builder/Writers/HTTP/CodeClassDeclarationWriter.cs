@@ -52,6 +52,10 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             // Write all query parameter variables
             WriteQueryParameters(queryParameters, writer);
+
+            // Write path parameters
+            WritePathParameters(pathParameters, writer);
+
             foreach (var method in httpMethods)
             {
                 foreach (var queryParameter in queryParameters)
@@ -73,9 +77,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             {
                 var methodName = methodQueryAndParameter.Key;
                 var queryParams = methodQueryAndParameter.Value.ToArray();
-                // Write path parameters
-                WritePathParameters(pathParameters, writer);
-
                 // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
                 WriteHttpMethods(requestBuilderClass, writer, queryParams, pathParameters, urlTemplateProperty, methodName, baseUrl);
             }
