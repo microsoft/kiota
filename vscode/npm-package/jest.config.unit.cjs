@@ -4,6 +4,6 @@ const common = require('./jest.common.config.cjs')
 module.exports = {
   ...common,
   testMatch: [
-    '**/tests/?(*.)+(spec).ts?(x)'
+    '**/tests/unit/?(*.)+(spec).ts?(x)'
   ]
 };

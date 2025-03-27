@@ -1,5 +1,5 @@
-import { KiotaLogEntry, KiotaResult } from '../types';
-import { removeClient, removePlugin } from '../lib/removeItem';
+import { KiotaLogEntry, KiotaResult } from '../../types';
+import { removeClient, removePlugin } from '../../lib/removeItem';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("remove Client", () => {

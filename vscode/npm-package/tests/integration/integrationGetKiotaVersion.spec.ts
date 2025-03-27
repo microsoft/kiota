@@ -1,4 +1,4 @@
-import { getKiotaVersion } from '../lib/getKiotaVersion';
+import { getKiotaVersion } from "../../lib/getKiotaVersion";
 
 describe("getKiotaVersionIntegration", () => {
   test('should return version when successful', async () => {

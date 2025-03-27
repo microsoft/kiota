@@ -1,4 +1,4 @@
-import { getKiotaTree } from '../lib/getKiotaTree';
+import { getKiotaTree } from "../../lib/getKiotaTree";
 
 describe("getKiotaTree", () => {
   test('testGetKiotaTree_from_valid_File', async () => {

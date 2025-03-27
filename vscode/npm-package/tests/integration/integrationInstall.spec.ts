@@ -1,5 +1,5 @@
-import { ensureKiotaIsPresentInPath } from '../install';
 import * as fs from 'fs';
+import { ensureKiotaIsPresentInPath } from '../../install';
 
 describe("getKiotaVersionIntegration", () => {
 

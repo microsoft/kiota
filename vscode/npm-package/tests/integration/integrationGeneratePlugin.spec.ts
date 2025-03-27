@@ -1,8 +1,8 @@
 import path from 'path';
-import { generatePlugin } from '../lib/generatePlugin';
-import { getKiotaTree } from '../lib/getKiotaTree';
-import { getPluginManifest } from '../lib/getPluginManifest';
-import { ConsumerOperation, KiotaPluginType } from '../types';
+import { generatePlugin } from '../../lib/generatePlugin';
+import { getKiotaTree } from '../../lib/getKiotaTree';
+import { getPluginManifest } from '../../lib/getPluginManifest';
+import { KiotaPluginType, ConsumerOperation } from '../../types';
 
 describe("GeneratePlugin", () => {
   test('generatePlugin_Simple', async () => {

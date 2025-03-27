@@ -1,4 +1,4 @@
-import { getPluginManifest } from '../lib/getPluginManifest';
+import { getPluginManifest } from '../../lib/getPluginManifest';
 
 describe("getPlugin", () => {
   test('getPlugin_Valid', async () => {
