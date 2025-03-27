@@ -71,6 +71,7 @@ jobs:
         run: |
           find . -type d -name "node_modules" -prune -o -print
         shell: bash
+        working-directory: vscode
 
       - name: Lint
         run: npm run lint
