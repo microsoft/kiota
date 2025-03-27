@@ -41,7 +41,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withAdaptiveCard', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithAdaptiveCardExtension.yaml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
     expect(actual?.rootNode?.children[0].children[0].adaptiveCard?.card).toBeTruthy();
     expect(actual).toBeDefined();
