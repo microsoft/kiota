@@ -60,6 +60,12 @@ export interface KiotaOpenApiNode {
   logs?: KiotaLogEntry[];
   servers?: string[];
   security?: SecurityRequirementObject[];
+  adaptiveCard?: AdaptiveCardInfo;
+}
+
+export interface AdaptiveCardInfo {
+  file: string;
+  card: string;
 }
 
 interface CacheClearableConfiguration {
