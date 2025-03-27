@@ -64,7 +64,7 @@ jobs:
         working-directory: vscode
 
       - name: Publish kiota for testing
-        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output src/kiota/vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/linux-x64 -f net9.0 --verbosity detailed
+        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/linux-x64 -f net9.0
         shell: pwsh
 
       - name: Verify Publish Output Directory
