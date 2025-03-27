@@ -47,14 +47,39 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             var baseUrl = GetBaseUrl(requestBuilderClass);
 
-            // Write path parameters
-            WritePathParameters(pathParameters, writer);
+            var httpMethods = GetHttpMethods(requestBuilderClass);
+            var methodQueriesAndParameters = new Dictionary<CodeMethod, List<CodeProperty>>();
 
             // Write all query parameter variables
             WriteQueryParameters(queryParameters, writer);
+            foreach (var method in httpMethods)
+            {
+                foreach (var queryParameter in queryParameters)
+                {
+                    if (queryParameter.Parent!.Name.Contains(method.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!methodQueriesAndParameters.TryGetValue(method, out var value))
+                        {
+                            value = [];
+                            methodQueriesAndParameters[method] = value;
+                        }
 
-            // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
-            WriteHttpMethods(requestBuilderClass, writer, queryParameters, pathParameters, urlTemplateProperty, baseUrl);
+                        value.Add(queryParameter);
+                    }
+                }
+            }
+
+            foreach (KeyValuePair<CodeMethod, List<CodeProperty>> methodQueryAndParameter in methodQueriesAndParameters)
+            {
+                var methodName = methodQueryAndParameter.Key;
+                var queryParams = methodQueryAndParameter.Value.ToArray();
+                // Write path parameters
+                WritePathParameters(pathParameters, writer);
+
+                // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
+                WriteHttpMethods(requestBuilderClass, writer, queryParams, pathParameters, urlTemplateProperty, methodName, baseUrl);
+            }
+
         }
     }
 
@@ -72,8 +97,6 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
             .Where(static element => element.IsOfKind(CodeClassKind.QueryParameters))
             .SelectMany(paramCodeClass => paramCodeClass.Properties)
             .Where(static property => property.IsOfKind(CodePropertyKind.QueryParameter))
-            .GroupBy(property => property.Name)
-            .Select(group => group.First())
             .ToArray();
     }
 
@@ -184,53 +207,42 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         CodeProperty[] queryParameters,
         CodeProperty[] pathParameters,
         CodeProperty urlTemplateProperty,
+        CodeMethod method,
         string? baseUrl)
     {
-        // Retrieve all the HTTP methods of kind RequestExecutor
-        var httpMethods = GetHttpMethods(requestBuilderClass);
 
-        var methodCount = httpMethods.Length;
-        var currentIndex = 0;
+        // Write the method documentation as a comment
+        writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
 
-        foreach (var method in httpMethods)
+        // Build the actual URL string and replace all required fields (path and query) with placeholder variables
+        var url = BuildUrlStringFromTemplate(
+            urlTemplateProperty.DefaultValue,
+            queryParameters,
+            pathParameters,
+            baseUrl
+        );
+
+        // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
+        writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} {Constants.HttpVersion}");
+
+        var authenticationMethod = requestBuilderClass
+            .Properties
+            .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
+
+        if (authenticationMethod != null
+            && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var schemeTypeObj)
+            && schemeTypeObj is SecuritySchemeType schemeType
+            && Constants.SchemeTypeMapping.TryGetValue(schemeType.ToString().ToLowerInvariant(), out var mappedSchemeType))
         {
-            // Write the method documentation as a comment
-            writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
-
-            // Build the actual URL string and replace all required fields (path and query) with placeholder variables
-            var url = BuildUrlStringFromTemplate(
-                urlTemplateProperty.DefaultValue,
-                queryParameters,
-                pathParameters,
-                baseUrl
-            );
-
-            // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
-            writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} {Constants.HttpVersion}");
-
-            var authenticationMethod = requestBuilderClass
-                .Properties
-                .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
-
-            if (authenticationMethod != null
-                && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var schemeTypeObj)
-                && schemeTypeObj is SecuritySchemeType schemeType
-                && Constants.SchemeTypeMapping.TryGetValue(schemeType.ToString().ToLowerInvariant(), out var mappedSchemeType))
-            {
-                writer.WriteLine($"Authorization: {{{{{mappedSchemeType}}}}}");
-            }
-
-            // Write the request body if present
-            WriteRequestBody(method, writer);
-
-            // Write a separator if there are more items that follow
-            if (++currentIndex < methodCount)
-            {
-                writer.WriteLine();
-                writer.WriteLine("###");
-                writer.WriteLine();
-            }
+            writer.WriteLine($"Authorization: {{{{{mappedSchemeType}}}}}");
         }
+
+        // Write the request body if present
+        WriteRequestBody(method, writer);
+
+        writer.WriteLine();
+        writer.WriteLine("###");
+        writer.WriteLine();
     }
 
     /// <summary>
