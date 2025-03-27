@@ -12,7 +12,7 @@ paths:
       summary: List all repairs with oauth
       description: Returns a list of repairs with their details and images
       x-ai-adaptive-card:
-        dataPath: $.test
+        data_path: $.test
         file: path_to_adaptive_card_file
       servers:
         - url: https://sample.server.overriden/api
