@@ -19,10 +19,11 @@ export default async function connectToKiota<T>(callback: (connection: rpc.Messa
   const connection = rpc.createMessageConnection(inputReader, outputWriter);
   connection.listen();
   try {
-    return await callback(connection);
+      return await callback(connection);
   } catch (error) {
-    const errorMessage = (error as { data?: { message: string; }; })?.data?.message
-      || 'An unknown error occurred';
+      console.warn(error);
+      const errorMessage = (error as { data?: { message: string } })?.data?.message
+          || 'An unknown error occurred';
     return new Error(errorMessage);
   } finally {
     inputReader.dispose();
