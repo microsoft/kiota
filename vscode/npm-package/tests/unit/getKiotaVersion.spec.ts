@@ -1,4 +1,4 @@
-import { getKiotaVersion } from '../lib/getKiotaVersion';
+import { getKiotaVersion } from '../../lib/getKiotaVersion';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("getKiotaVersion", () => {

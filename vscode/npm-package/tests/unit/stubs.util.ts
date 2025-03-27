@@ -1,5 +1,5 @@
 import * as rpc from 'vscode-jsonrpc';
-import * as connectToKiota from '../connect';
+import * as connectToKiota from '../../connect';
 
 export function setupKiotaStubs() {
   const connectionStub = jest.fn();

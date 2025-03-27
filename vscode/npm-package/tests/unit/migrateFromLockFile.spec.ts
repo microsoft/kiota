@@ -1,8 +1,8 @@
-import { KiotaLogEntry } from '../types';
-import { updateClients } from '../lib/updateClients';
+import { KiotaLogEntry } from '../../types';
+import { migrateFromLockFile } from '../../lib/migrateFromLockFile';
 import { setupKiotaStubs } from './stubs.util';
 
-describe("update Clients", () => {
+describe("migrate from lock file", () => {
   let connectionStub: jest.Mock;
 
   beforeEach(() => {
@@ -14,19 +14,17 @@ describe("update Clients", () => {
     jest.restoreAllMocks();
   });
 
-
-  test('should return results when successful', async () => {
+  test('should return success when successful', async () => {
     const mockResults: KiotaLogEntry[] = [
       {
         level: 0,
-        message: 'updated successfully'
+        message: 'migrated successfully'
       }
     ];
 
     connectionStub.mockResolvedValue(mockResults);
-    const results = await updateClients({ clearCache: false, cleanOutput: false, workspacePath: 'test' });
+    const results = await migrateFromLockFile('lockfile');
     expect(results).toBeDefined();
   });
 
 });
-

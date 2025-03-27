@@ -1,4 +1,4 @@
-import { getLanguageInformationForDescription, getLanguageInformationInternal } from '../lib/languageInformation';
+import { getLanguageInformationForDescription, getLanguageInformationInternal } from '../../lib/languageInformation';
 
 describe("Language Information", () => {
   test('should return language information for a description when successful', async () => {

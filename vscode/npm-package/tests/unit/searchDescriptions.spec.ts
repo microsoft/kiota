@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { KiotaSearchResultItem } from '../types';
-import { searchDescription } from '../lib/searchDescription';
+import { KiotaSearchResultItem } from '../../types';
+import { searchDescription } from '../../lib/searchDescription';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("search description", () => {
