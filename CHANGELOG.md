@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Fixed a bug with creating the correct runtime with auth using http bearer security scheme or when root auth is set. [#6357](https://github.com/microsoft/kiota/issues/6357)   
 
 ## [1.24.3] - 2025-03-26
 
