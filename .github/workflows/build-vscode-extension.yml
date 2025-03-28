@@ -25,9 +25,20 @@ jobs:
     needs: [checksecret]
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macOS-latest]
-        architecture: [win-x86, win-x64, linux-x64, linux-arm64, osx-x64, osx-arm64]
-    runs-on: ${{ matrix.os }}
+        binaries:
+          - architecture: win-x86
+            os: windows-latest
+          - architecture: win-x64
+            os: windows-latest
+          - architecture: linux-x64
+            os: ubuntu-latest
+          - architecture: linux-arm64
+            os: ubuntu-latest
+          - architecture: osx-x64
+            os: macOS-latest
+          - architecture: osx-arm64
+            os: macOS-latest    
+    runs-on: ${{ matrix.binaries.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,10 +68,10 @@ jobs:
           npm list
         working-directory: vscode
 
-      - name: Publish kiota for testing - ${{ matrix.os }} - ${{ matrix.architecture }}
+      - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
           $releaseVersion = "${{ steps.last_release.outputs.RELEASE_VERSION }}" -replace '^v', ''
-          dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/$releaseVersion/${{ matrix.architecture }} -f net9.0
+          dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/$releaseVersion/${{ matrix.binaries.architecture }} -f net9.0
         shell: pwsh
 
       - name: Lint
@@ -69,7 +80,7 @@ jobs:
 
       - name: Run tests - package
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.binaries.os }}" == "ubuntu-latest" ]]; then
             xvfb-run -a npm run test:package:coverage
           else
             npm run test:package:coverage
@@ -79,7 +90,7 @@ jobs:
 
       - name: Run tests - vscode
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.binaries.os }}" == "ubuntu-latest" ]]; then
             xvfb-run -a npm run test:vscode:coverage
           else
             npm run test:vscode:coverage
@@ -97,9 +108,16 @@ jobs:
           args: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
-      - name: Generate binaries for ${{ matrix.architecture }}
-        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.architecture }} -f net9.0
+      - name: Generate binaries for ${{ matrix.binaries.architecture }}
+        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
         shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binaries.architecture }}
+          path: binaries/${{ matrix.binaries.architecture }}
+          retention-days: 3
 
   build:
     needs: [test_and_generate_binaries]
