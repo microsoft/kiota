@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for generating function capabilities in plugin manifest from x-ai-capabilities OpenApi extension. [#6369](https://github.com/microsoft/kiota/issues/6369)   
 
 ### Changed
 - Fixed a bug with creating the correct runtime with auth using http bearer security scheme or when root auth is set. [#6357](https://github.com/microsoft/kiota/issues/6357)   
