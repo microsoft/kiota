@@ -122,6 +122,23 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("using1", result);
     }
     [Fact]
+    public void WritesGenerateCodeComment()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
+            },
+            Name = "generated1",
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains(Environment.NewLine, result);
+        var firstline = result[0..^result.IndexOf(Environment.NewLine)];
+        Assert.Contains("DO NOT EDIT", firstline);
+    }
+    [Fact]
     public void WritesEnumOptionDescription()
     {
         var option = new CodeEnumOption

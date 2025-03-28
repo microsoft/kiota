@@ -42,6 +42,7 @@ public sealed class CodeInterfaceDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentInterface.StartBlock, writer);
         var result = tw.ToString();
+        Assert.Contains("DO NOT EDIT", result);
         Assert.Contains("type", result);
         Assert.Contains("interface", result);
         Assert.DoesNotContain("struct", result);

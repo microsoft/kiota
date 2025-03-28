@@ -11,8 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a comment on top of every golang file to indicate the file is machine generated so it can be excluded from various tools. [#6363](https://github.com/microsoft/kiota/issues/6363)
+
 ### Changed
-- Fixed a bug with creating the correct runtime with auth using http bearer security scheme or when root auth is set. [#6357](https://github.com/microsoft/kiota/issues/6357)   
+
+- Fixed a bug with creating the correct runtime with auth using http bearer security scheme or when root auth is set. [#6357](https://github.com/microsoft/kiota/issues/6357)
 
 ## [1.24.3] - 2025-03-26
 
