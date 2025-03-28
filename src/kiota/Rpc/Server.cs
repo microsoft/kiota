@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -8,8 +9,8 @@ using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+using DeclarativeAgentsManifest = Microsoft.DeclarativeAgents.Manifest;
 
 namespace kiota.Rpc;
 internal partial class Server : IServer
@@ -111,6 +112,11 @@ internal partial class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ClearCache = clearCache;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
+
+        // This is needed to add plugin extensions parsers
+        configuration.PluginTypes.Add(PluginType.APIPlugin);
+        configuration.SkipGeneration = true;
+
         var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
@@ -120,7 +126,12 @@ internal partial class Server : IServer
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
         var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
-        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title);
+        var document = builder.OpenApiDocument;
+        var servers = ServersMapper.FromServerList(document?.Servers);
+        var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
+        var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
+
+        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, security: securityRequirements, securitySchemes: securitySchemes);
     }
     private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
     {
@@ -273,6 +284,7 @@ internal partial class Server : IServer
         if (result is not null) return result;
         return Configuration.Languages;
     }
+
     private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node, HashSet<string> filteredPaths)
     {
         var children = node.Children
@@ -284,15 +296,22 @@ internal partial class Server : IServer
                                             [],
                                             filteredPaths.Count == 0 || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
                                             true,
-                                            x.Value.ExternalDocs?.Url)) :
-                                        [])
+                                            operationId: x.Value.OperationId,
+                                            summary: x.Value.Summary,
+                                            description: x.Value.Description,
+                                            documentationUrl: x.Value.ExternalDocs?.Url,
+                                            security: SecurityRequirementMapper.FromSecurityRequirementList(x.Value?.Security),
+                                            servers: ServersMapper.FromServerList(x.Value?.Servers),
+                                            adaptiveCard: AdaptiveCardMapper.FromExtensions(x.Value?.Extensions))) :
+                                        Enumerable.Empty<PathItem>())
                             .OrderByDescending(static x => x.isOperation)
                             .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
                             .ToArray();
         bool isSelected = filteredPaths.Count == 0 || // There are no filtered paths
                           Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected) || // All operations have been selected
                           !Array.Exists(children, static x => x.isOperation) && Array.TrueForAll(children, static x => x.selected); // All paths selected but no operations present
-        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected);
+
+        return new PathItem(node.Path, node.DeduplicatedSegment(), children, isSelected, servers: []);
     }
     private static string GetAbsolutePath(string source)
     {
@@ -333,4 +352,14 @@ internal partial class Server : IServer
 
     public async Task<List<LogEntry>> RemovePluginAsync(string pluginName, bool cleanOutput, CancellationToken cancellationToken)
     => await RemoveClientOrPluginAsync(pluginName, cleanOutput, "Plugin", (workspaceManagementService, pluginName, cleanOutput, cancellationToken) => workspaceManagementService.RemovePluginAsync(pluginName, cleanOutput, cancellationToken), cancellationToken);
+
+    public async Task<ShowPluginResult> ShowPluginAsync(string descriptionPath, CancellationToken cancellationToken)
+    {
+        var manifestContent = await File.ReadAllTextAsync(descriptionPath);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = DeclarativeAgentsManifest.PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        var response = PluginResultMapper.FromPluginManifesValidationResult(resultingManifest);
+        return response;
+    }
 }

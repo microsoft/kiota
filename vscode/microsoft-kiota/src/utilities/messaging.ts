@@ -1,6 +1,7 @@
+import { getKiotaVersion } from "@microsoft/kiota";
 import * as vscode from "vscode";
+
 import { MANIFEST_KIOTA_VERSION_KEY } from "../constants";
-import { getKiotaVersion } from "../kiotaInterop";
 
 type ApiDependencyPartial = { extensions: { [MANIFEST_KIOTA_VERSION_KEY]: string | undefined } | undefined };
 type ManifestFilePartial = { apiDependencies: { [name: string]: ApiDependencyPartial | undefined } | undefined };

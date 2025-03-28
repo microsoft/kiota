@@ -1,0 +1,17 @@
+﻿namespace kiota.Rpc;
+
+public record PathItem(
+    string path,
+    string segment,
+    PathItem[] children,
+    bool selected,
+    bool isOperation = false,
+    string? operationId = null,
+    string? summary = null,
+    string? description = null,
+    Uri? documentationUrl = null,
+    IEnumerable<string>? servers = null,
+    IDictionary<string,
+    SecurityRequirement>? security = null,
+    AdaptiveCardInfo? adaptiveCard = null
+);

@@ -1,11 +1,10 @@
+import { getLanguageInformationInternal, LanguagesInformation } from "@microsoft/kiota";
 import * as fs from 'fs';
 import * as vscode from "vscode";
 
 import { KIOTA_WORKSPACE_FILE, treeViewId } from "../../constants";
-import { getLanguageInformationInternal, LanguagesInformation } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getWorkspaceJsonPath, updateTreeViewIcons } from "../../util";
-
 let _languageInformation: LanguagesInformation | undefined; // doesn't change over the lifecycle of the extension
 
 export async function displayGenerationResults(openApiTreeProvider: OpenApiTreeProvider, config: any) {

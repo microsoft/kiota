@@ -68,11 +68,12 @@ public partial class PluginsGenerationService
         // trimming a second time to remove any components that are no longer used after the inlining
         trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
         trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // removing the second ` - Subset` suffix from the title
+        // Ensure reference_id extension value is written according to the plugin auth
+        EnsureSecuritySchemeExtensions(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
 
         // 3. write the plugins
-
         foreach (var pluginType in Configuration.PluginTypes)
         {
             var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
@@ -109,6 +110,36 @@ public partial class PluginsGenerationService
             }
 
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static string? GetExistingReferenceId(IOpenApiSecurityScheme schema)
+    {
+        if (schema.Extensions is not null
+            && schema.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension)
+            && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
+            return authReferenceId.AuthenticationReferenceId;
+        return null;
+    }
+
+    private static void EnsureSecuritySchemeExtensions(OpenApiDocument document)
+    {
+        var securitySchemes = document?.Components?.SecuritySchemes;
+        if (securitySchemes is null)
+            return;
+        foreach (var securitySchemeItem in securitySchemes)
+        {
+            if (securitySchemeItem.Value is not { Extensions: not null } securityScheme)
+                continue;
+            if (GetExistingReferenceId(securityScheme) is null
+                && TryGetAuthFromSecurityScheme(securitySchemeItem.Key, securityScheme) is Auth auth)
+            {
+                var authReferenceExtension = new OpenApiAiAuthReferenceIdExtension
+                {
+                    AuthenticationReferenceId = auth.GetReferenceId()
+                };
+                securityScheme.Extensions[OpenApiAiAuthReferenceIdExtension.Name] = authReferenceExtension;
+            }
         }
     }
 
@@ -543,12 +574,22 @@ public partial class PluginsGenerationService
         }
         var security = securityRequirements.FirstOrDefault();
         var opSecurity = security?.Keys.FirstOrDefault();
-        return (opSecurity is null || opSecurity.UnresolvedReference) ? new AnonymousAuth() : GetAuthFromSecurityScheme(opSecurity);
+        return (opSecurity is null || opSecurity.UnresolvedReference) ? new AnonymousAuth() : GetAuthFromSecuritySchemeReference(opSecurity);
     }
 
-    private static Auth GetAuthFromSecurityScheme(OpenApiSecuritySchemeReference securityScheme)
+    private static Auth GetAuthFromSecuritySchemeReference(OpenApiSecuritySchemeReference securityScheme)
     {
         var name = securityScheme.Reference.Id;
+        var auth = TryGetAuthFromSecurityScheme(name, securityScheme);
+        if (auth != null)
+            return auth;
+
+        throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
+                $"Unsupported security scheme type '{securityScheme.Type}'.");
+    }
+
+    private static Auth? TryGetAuthFromSecurityScheme(string? name, IOpenApiSecurityScheme securityScheme)
+    {
         string? authenticationReferenceId = null;
 
         if (securityScheme.Extensions is not null && securityScheme.Extensions.TryGetValue(OpenApiAiAuthReferenceIdExtension.Name, out var authReferenceIdExtension) && authReferenceIdExtension is OpenApiAiAuthReferenceIdExtension authReferenceId)
@@ -574,8 +615,7 @@ public partial class PluginsGenerationService
             {
                 ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_CONFIGURATION_ID}}" : authenticationReferenceId
             },
-            _ => throw new UnsupportedSecuritySchemeException(["Bearer Token", "Api Key", "OpenId Connect", "OAuth"],
-                $"Unsupported security scheme type '{securityScheme.Type}'.")
+            _ => null
         };
     }
 

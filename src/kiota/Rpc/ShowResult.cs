@@ -1,5 +1,10 @@
 ﻿namespace kiota.Rpc;
 
-public record PathItem(string path, string segment, PathItem[] children, bool selected, bool isOperation = false, Uri? documentationUrl = null);
+public record ShowResult(
+    List<LogEntry> logs,
+    PathItem? rootNode,
+    string? apiTitle,
+    IEnumerable<string>? servers = null,
+    IDictionary<string, SecurityRequirement>? security = null,
+    IDictionary<string, SecuritySchemeInfo>? securitySchemes = null);
 
-public record ShowResult(List<LogEntry> logs, PathItem? rootNode, string? apiTitle);

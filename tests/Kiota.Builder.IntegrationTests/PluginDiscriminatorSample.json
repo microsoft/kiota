@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "Discriminator API",
+  "description_for_human": "Description for Discriminator API",
+  "description_for_model": "Description for Discriminator API",
+  "contact_email": "publisher-email@example.com",
+  "namespace": "test3",
+  "capabilities": {
+    "conversation_starters": [
+      {
+        "text": "Return something"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "name": "discriminateme_post",
+      "description": "Return something"
+    }
+  ],
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "None"
+      },
+      "spec": {
+        "url": "test3-openapi.yml"
+      },
+      "run_for_functions": [
+        "discriminateme_post"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,8 @@
+import {
+    DependencyType, dependencyTypeToString, generationLanguageToString, KiotaGenerationLanguage,
+    LanguageInformation, LanguagesInformation
+} from '@microsoft/kiota';
 import * as vscode from 'vscode';
-
-import { DependencyType, dependencyTypeToString, generationLanguageToString, KiotaGenerationLanguage, LanguageInformation, LanguagesInformation } from '../kiotaInterop';
 
 export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
