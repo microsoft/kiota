@@ -26,16 +26,10 @@ jobs:
     strategy:
       matrix:
         binaries:
-          - architecture: win-x86
-            os: windows-latest
           - architecture: win-x64
             os: windows-latest
           - architecture: linux-x64
             os: ubuntu-latest
-          # - architecture: linux-arm64
-          #   os: ubuntu-latest
-          # - architecture: osx-x64
-          #   os: macOS-latest
           - architecture: osx-arm64
             os: macOS-latest    
     runs-on: ${{ matrix.binaries.os }}
@@ -114,15 +108,11 @@ jobs:
           args: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
-      - name: Generate binaries for ${{ matrix.binaries.architecture }}
-        run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
-        shell: pwsh
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binaries.architecture }}
-          path: binaries/${{ matrix.binaries.architecture }}
+          path: vscode/npm-package/.kiotabin/$releaseVersion/${{ matrix.binaries.architecture }}
           retention-days: 3
 
   build:

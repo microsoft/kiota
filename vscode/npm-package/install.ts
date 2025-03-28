@@ -143,6 +143,5 @@ function getRuntimeDependenciesPackages(): Package[] {
 
 export function getCurrentPlatform(): string {
   const binPathSegmentOS = process.platform === 'win32' ? windowsPlatform : process.platform === 'darwin' ? osxPlatform : linuxPlatform;
-  console.log('getCurrentPlatform', binPathSegmentOS, process.arch);
   return `${binPathSegmentOS}-${process.arch}`;
 }
