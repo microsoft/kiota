@@ -452,20 +452,19 @@ components:
                 }
             },
             // security requirement in root object
-            // TODO: Revisit when https://github.com/microsoft/OpenAPI.NET/issues/1797 is fixed
-            // {
-            //     "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
-            //     "security: [apiKey0: []]", string.Empty, null, resultingManifest =>
-            //     {
-            //         Assert.NotNull(resultingManifest.Document);
-            //         Assert.Empty(resultingManifest.Problems);
-            //         Assert.NotEmpty(resultingManifest.Document.Runtimes);
-            //         var auth0 = resultingManifest.Document.Runtimes[0].Auth;
-            //         Assert.IsType<ApiKeyPluginVault>(auth0);
-            //         Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
-            //         Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
-            //     }
-            // },
+            {
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header }}}",
+                "security: [apiKey0: []]", string.Empty, null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<ApiKeyPluginVault>(auth0);
+                    Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
+                    Assert.Equal("{apiKey0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                }
+            },
             // auth provided in config overrides openapi file auth
             {
                 "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header, x-ai-auth-reference-id: auth1234 }}}",
@@ -498,7 +497,7 @@ components:
             },
             // http bearer auth
             {
-                "{securitySchemes: {httpBearer0: {type: http, scheme: bearer}}}",
+                "{securitySchemes: {httpBearer0: {type: http, scheme: bearer, x-ai-auth-reference-id: bearer-1234}}}",
                 string.Empty, "security: [httpBearer0: []]", null, resultingManifest =>
                 {
                     Assert.NotNull(resultingManifest.Document);
@@ -507,7 +506,7 @@ components:
                     var auth0 = resultingManifest.Document.Runtimes[0].Auth;
                     Assert.IsType<ApiKeyPluginVault>(auth0);
                     Assert.Equal(AuthType.ApiKeyPluginVault, auth0?.Type);
-                    Assert.Equal("{httpBearer0_REGISTRATION_ID}", ((ApiKeyPluginVault)auth0!).ReferenceId);
+                    Assert.Equal("bearer-1234", ((ApiKeyPluginVault)auth0!).ReferenceId);
                 }
             },
             // openid connect auth
