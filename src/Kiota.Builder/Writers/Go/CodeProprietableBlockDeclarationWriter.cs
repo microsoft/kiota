@@ -16,6 +16,8 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
+            // always add a comment to the top of the file to indicate it's generated
+            conventions.WriteGeneratorComment(writer);
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
             var importSegments = codeElement
                                 .Usings
