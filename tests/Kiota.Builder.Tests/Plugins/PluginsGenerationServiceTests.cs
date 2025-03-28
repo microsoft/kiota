@@ -733,6 +733,255 @@ components:
 
     #endregion
 
+    #region Function capabilities
+
+    [Fact]
+    public async Task GeneratesManifestWithAiCapabilitiesExtensionAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          static_template:
+            type: AdaptiveCard
+            version: 1.5
+            body:
+              - type: TextBlock
+                text: Hello World
+          properties:
+            title: Card Title
+            sub_title: Card Subtitle
+            thumbnail_url: https://example.com/image.png
+            url: https://example.com
+            information_protection_label: general
+            template_selector: defaultTemplate
+        confirmation:
+          type: text
+          title: Confirmation Title
+          body: Are you sure you want to proceed?
+        security_info:
+          data_handling:
+            - sensitiveData
+            - personalData
+      responses:
+        '200':
+          description: test
+  /test/{id}:
+    get:
+      summary: description for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: success
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.Equal(2, resultingManifest.Document.Functions.Count);
+
+        // Validate x-ai-capabilities data is correctly parsed
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities);
+
+        // Validate ResponseSemantics
+        Assert.Equal("$.test", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate);
+        Assert.Contains("AdaptiveCard", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
+
+        // Validate ResponseSemantics.Properties
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties);
+        Assert.Equal("Card Title", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.Title);
+        Assert.Equal("Card Subtitle", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.Subtitle);
+        Assert.Equal("https://example.com/image.png", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.ThumbnailUrl);
+        Assert.Equal("https://example.com", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.Url);
+        Assert.Equal("general", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.InformationProtectionLabel);
+        Assert.Equal("defaultTemplate", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.Properties.TemplateSelector);
+
+        // Validate Confirmation
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.Confirmation);
+        Assert.Equal("text", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Type);
+        Assert.Equal("Confirmation Title", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Title);
+        Assert.Equal("Are you sure you want to proceed?", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Body);
+
+        // Validate SecurityInfo
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.SecurityInfo);
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
+        Assert.Equal(2, resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling.Count);
+        Assert.Contains("sensitiveData", resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
+        Assert.Contains("personalData", resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
+
+        // Second function has no capabilities
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);
+    }
+
+    [Fact]
+    public async Task PrefersCapabilitiesOverAdaptiveCardExtensionAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.capabilities
+          static_template:
+            type: AdaptiveCard
+            version: 1.5
+      x-ai-adaptive-card:
+        data_path: $.adaptiveCard
+        file: path_to_file
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        // Should use x-ai-capabilities over x-ai-adaptive-card
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities);
+        Assert.Equal("$.capabilities", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
+        Assert.NotEqual("$.adaptiveCard", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
+    }
+
+    [Fact]
+    public async Task ValidatesResponseSemanticsRequirementsAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+paths:
+  /missing-data-path:
+    get:
+      description: missing data path
+      x-ai-capabilities:
+        response_semantics:
+          static_template:
+            type: AdaptiveCard
+      responses:
+        '200':
+          description: test
+  /missing-template:
+    get:
+      description: missing template
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+      responses:
+        '200':
+          description: test
+  /valid-operation:
+    get:
+      description: valid operation
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          properties:
+            template_selector: defaultTemplate
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+
+        // Validation errors should be caught when generating manifest
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration));
+    }
+
+    #endregion
+
+
+
     #region Validation
 
     public static TheoryData<string, Action<OpenApiDocument, OpenApiDiagnostic>>
