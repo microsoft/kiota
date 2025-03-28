@@ -654,13 +654,168 @@ public partial class PluginsGenerationService
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
     {
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
-        if (responseSemantics is null)
-            return null;
-        return new FunctionCapabilities
+        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
+        if (capabilities != null)
         {
-            ResponseSemantics = responseSemantics,
-        };
+            return capabilities;
+        }
+
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        if (responseSemantics != null)
+        {
+            return new FunctionCapabilities
+            {
+                ResponseSemantics = responseSemantics
+            };
+        }
+        return null;
+    }
+
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
+    {
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var capabilitiesExtension) &&
+            capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities)
+        {
+            var functionCapabilities = new FunctionCapabilities();
+
+            // Set ResponseSemantics
+            if (capabilities.ResponseSemantics is JsonObject responseSemanticsObj)
+            {
+                var responseSemantics = new ResponseSemantics();
+
+                if (responseSemanticsObj.TryGetPropertyValue("data_path", out var dataPath) &&
+                    dataPath is JsonValue dataPathValue &&
+                    dataPathValue.TryGetValue<string>(out var dataPathString))
+                {
+                    responseSemantics.DataPath = dataPathString;
+                }
+
+                if (responseSemanticsObj.TryGetPropertyValue("static_template", out var staticTemplate) &&
+                    staticTemplate is JsonObject staticTemplateObj)
+                {
+                    using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
+                    responseSemantics.StaticTemplate = doc.RootElement.Clone();
+                }
+
+                if (responseSemanticsObj.TryGetPropertyValue("oauth_card_path", out var oauthCardPath) &&
+                    oauthCardPath is JsonValue oauthCardPathValue &&
+                    oauthCardPathValue.TryGetValue<string>(out var oauthCardPathString))
+                {
+                    responseSemantics.OAuthCardPath = oauthCardPathString;
+                }
+
+                if (responseSemanticsObj.TryGetPropertyValue("properties", out var properties) &&
+                    properties is JsonObject propertiesObj)
+                {
+                    var propertiesModel = new ResponseSemanticsProperties();
+
+                    if (propertiesObj.TryGetPropertyValue("title", out var title) &&
+                        title is JsonValue titleValue &&
+                        titleValue.TryGetValue<string>(out var titleString))
+                    {
+                        propertiesModel.Title = titleString;
+                    }
+
+                    if (propertiesObj.TryGetPropertyValue("sub_title", out var subTitle) &&
+                        subTitle is JsonValue subTitleValue &&
+                        subTitleValue.TryGetValue<string>(out var subTitleString))
+                    {
+                        propertiesModel.Subtitle = subTitleString;
+                    }
+
+                    if (propertiesObj.TryGetPropertyValue("url", out var url) &&
+                        url is JsonValue urlValue &&
+                        urlValue.TryGetValue<string>(out var urlString))
+                    {
+                        propertiesModel.Url = urlString;
+                    }
+
+                    if (propertiesObj.TryGetPropertyValue("thumbnail_url", out var thumbnailUrl) &&
+                        thumbnailUrl is JsonValue thumbnailUrlValue &&
+                        thumbnailUrlValue.TryGetValue<string>(out var thumbnailUrlString))
+                    {
+                        propertiesModel.ThumbnailUrl = thumbnailUrlString;
+                    }
+
+                    if (propertiesObj.TryGetPropertyValue("information_protection_label", out var ipl) &&
+                        ipl is JsonValue iplValue &&
+                        iplValue.TryGetValue<string>(out var iplString))
+                    {
+                        propertiesModel.InformationProtectionLabel = iplString;
+                    }
+
+                    if (propertiesObj.TryGetPropertyValue("template_selector", out var templateSelector) &&
+                        templateSelector is JsonValue templateSelectorValue &&
+                        templateSelectorValue.TryGetValue<string>(out var templateSelectorString))
+                    {
+                        propertiesModel.TemplateSelector = templateSelectorString;
+                    }
+
+                    responseSemantics.Properties = propertiesModel;
+                }
+
+                functionCapabilities.ResponseSemantics = responseSemantics;
+            }
+
+            // Set Confirmation
+            if (capabilities.Confirmation is JsonObject confirmationObj)
+            {
+                var confirmation = new Confirmation();
+
+                if (confirmationObj.TryGetPropertyValue("type", out var type) &&
+                    type is JsonValue typeValue &&
+                    typeValue.TryGetValue<string>(out var typeString))
+                {
+                    confirmation.Type = typeString;
+                }
+
+                if (confirmationObj.TryGetPropertyValue("title", out var title) &&
+                    title is JsonValue titleValue &&
+                    titleValue.TryGetValue<string>(out var titleString))
+                {
+                    confirmation.Title = titleString;
+                }
+
+                if (confirmationObj.TryGetPropertyValue("body", out var body) &&
+                    body is JsonValue bodyValue &&
+                    bodyValue.TryGetValue<string>(out var bodyString))
+                {
+                    confirmation.Body = bodyString;
+                }
+
+                functionCapabilities.Confirmation = confirmation;
+            }
+
+            // Set SecurityInfo
+            if (capabilities.SecurityInfo is JsonObject securityInfoObj)
+            {
+                var securityInfo = new SecurityInfo();
+
+                if (securityInfoObj.TryGetPropertyValue("data_handling", out var dataHandling) &&
+                    dataHandling is JsonArray dataHandlingArray)
+                {
+                    var dataHandlingList = new List<string>();
+
+                    foreach (var item in dataHandlingArray)
+                    {
+                        if (item is JsonValue itemValue &&
+                            itemValue.TryGetValue<string>(out var itemString))
+                        {
+                            dataHandlingList.Add(itemString);
+                        }
+                    }
+
+                    securityInfo.DataHandling = dataHandlingList;
+                }
+
+                functionCapabilities.SecurityInfo = securityInfo;
+            }
+
+            return functionCapabilities;
+        }
+
+        return null;
     }
 
     private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
