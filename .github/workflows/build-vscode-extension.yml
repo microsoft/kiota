@@ -1,4 +1,4 @@
-name: Build Frontend
+name: Build VSCode extension
 
 on:
   workflow_dispatch:
