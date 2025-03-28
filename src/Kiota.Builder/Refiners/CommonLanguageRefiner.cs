@@ -802,7 +802,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
 
             if (usingsToAdd.Length != 0)
-                (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
+                (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
@@ -892,7 +892,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (!string.IsNullOrEmpty(replacement.Item1))
                 type.Name = replacement.Item1;
             if (replacement.Item2 != null)
-                parentClass.AddUsing((CodeUsing)replacement.Item2.Clone());
+                (parentClass.Parent as CodeClass ?? parentClass).AddUsing((CodeUsing)replacement.Item2.Clone()); //lots of languages do not support imports on nested classes
         }
     }
     protected static void InlineParentClasses(CodeElement currentElement, CodeElement parent)
