@@ -20,8 +20,97 @@ jobs:
         id: checksecret_job
         run: |
           echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-  build:
+  
+  test_and_generate_binaries:
     needs: [checksecret]
+    strategy:
+      matrix:
+        binaries:
+          - architecture: win-x64
+            os: windows-latest
+          - architecture: linux-x64
+            os: ubuntu-latest
+          - architecture: osx-arm64
+            os: macOS-latest    
+    runs-on: ${{ matrix.binaries.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Use .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - id: last_release
+        run: |
+          $releaseVersion = gh release list --exclude-drafts --exclude-pre-releases --json tagName,isLatest | ConvertFrom-Json | ? {$_.isLatest -eq $true} | select -first 1 -ExpandProperty tagName
+          $releaseVersion = "$releaseVersion" -replace '^v', ''
+          Write-Output "RELEASE_VERSION=$releaseVersion" >> $Env:GITHUB_OUTPUT
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: scripts/update-vscode-releases.ps1 -version "v${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
+        shell: pwsh
+        
+      - name: Install dependencies
+        run: |
+          npm install
+          npm list
+        working-directory: vscode
+
+      - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
+        run: |
+          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }} -f net9.0
+        shell: pwsh
+
+      - name: Lint
+        run: npm run lint
+        working-directory: vscode
+
+      - name: Run tests - package
+        run: |
+          if [[ "${{ matrix.binaries.os }}" == "ubuntu-latest" ]]; then
+            xvfb-run -a npm run test:package:coverage
+          else
+            npm run test:package:coverage
+          fi
+        shell: bash
+        working-directory: vscode
+
+      - name: Run tests - vscode
+        run: |
+          if [[ "${{ matrix.binaries.os }}" == "ubuntu-latest" ]]; then
+            xvfb-run -a npm run test:vscode:coverage
+          else
+            npm run test:vscode:coverage
+          fi
+        shell: bash
+        working-directory: vscode
+
+      - name: Run sonar cloud analysis
+        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: vscode
+          args: >
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binaries.architecture }}
+          path: vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
+          retention-days: 3
+
+  build:
+    needs: [test_and_generate_binaries]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -41,11 +130,6 @@ jobs:
         with:
           node-version: 20.x
 
-      - name: Use .NET 9
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.x'
-
       - id: last_release
         run: |
           $releaseVersion = gh release list --exclude-drafts --exclude-pre-releases --json tagName,isLatest | ConvertFrom-Json | ? {$_.isLatest -eq $true} | select -first 1 -ExpandProperty tagName
@@ -63,36 +147,6 @@ jobs:
           npm list
         working-directory: vscode
 
-      - name: Publish kiota for testing
-        run: |
-          $releaseVersion = "${{ steps.last_release.outputs.RELEASE_VERSION }}" -replace '^v', ''
-          dotnet publish src/kiota/kiota.csproj -c Release --runtime linux-x64 -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/$releaseVersion/linux-x64 -f net9.0
-        shell: pwsh
-
-      - name: Lint
-        run: npm run lint
-        working-directory: vscode
-
-      - name: run tests(linux) - ${{ matrix.builds.id }}
-        if: runner.os == 'Linux' 
-        run: xvfb-run -a npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
-
-      - name: run tests - ${{ matrix.builds.id }}
-        if: runner.os != 'Linux' 
-        run: npm run test:${{ matrix.builds.id }}:coverage
-        working-directory: vscode
-
-      - name: Run sonar cloud analysis
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: vscode
-          args: >
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
-
       - run: npm run package:${{ matrix.builds.id }}
         if: matrix.builds.id == 'package'
         name: 'Package - ${{ matrix.builds.id }}'
@@ -105,56 +159,8 @@ jobs:
         name: 'Package - ${{ matrix.builds.id }}'
         if: matrix.builds.id == 'vscode'
 
-        # back to common operations
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}
-
-  generate_binaries:
-      needs: [checksecret]
-      strategy:
-        matrix:
-          binaries:
-            - architecture: win-x86
-              os: windows-latest
-            - architecture: win-x64
-              os: windows-latest
-            - architecture: linux-x64
-              os: ubuntu-latest
-            - architecture: linux-arm64
-              os: ubuntu-latest
-            - architecture: osx-x64
-              os: macOS-latest
-            - architecture: osx-arm64
-              os: macOS-latest
-      runs-on: ${{ matrix.binaries.os }}
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
-  
-        - name: Set up Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: 20.x
-  
-        - name: Use .NET 9
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: '9.x'
-
-        - name: Publish kiota for ${{ matrix.binaries.architecture }}
-          run: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output binaries/${{ matrix.binaries.architecture }} -f net9.0
-          shell: pwsh
-
-        - name: Upload artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: ${{ matrix.binaries.architecture }}
-            path: binaries/${{ matrix.binaries.architecture }}
-            retention-days: 3
-
-    
-
