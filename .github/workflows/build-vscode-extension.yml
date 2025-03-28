@@ -48,12 +48,13 @@ jobs:
       - id: last_release
         run: |
           $releaseVersion = gh release list --exclude-drafts --exclude-pre-releases --json tagName,isLatest | ConvertFrom-Json | ? {$_.isLatest -eq $true} | select -first 1 -ExpandProperty tagName
+          $releaseVersion = "$releaseVersion" -replace '^v', ''
           Write-Output "RELEASE_VERSION=$releaseVersion" >> $Env:GITHUB_OUTPUT
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
+      - run: scripts/update-vscode-releases.ps1 -version "v${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
         
       - name: Install dependencies
@@ -64,15 +65,8 @@ jobs:
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
-          $releaseVersion = "${{ steps.last_release.outputs.RELEASE_VERSION }}" -replace '^v', ''
-          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/$releaseVersion/${{ matrix.binaries.architecture }} -f net9.0
+          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }} -f net9.0
         shell: pwsh
-
-      - name: List all folder contents
-        run: |
-          find . -type d -name "node_modules" -prune -o -print
-        shell: bash
-        working-directory: vscode
 
       - name: Lint
         run: npm run lint
@@ -112,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binaries.architecture }}
-          path: vscode/npm-package/.kiotabin/$releaseVersion/${{ matrix.binaries.architecture }}
+          path: vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
           retention-days: 3
 
   build:
