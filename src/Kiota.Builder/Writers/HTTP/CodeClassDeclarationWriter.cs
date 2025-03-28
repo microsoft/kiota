@@ -63,7 +63,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 foreach (var queryParameter in queryParameters)
                 {
                     var parentClassName = queryParameter.Parent?.Name;
-                    if (parentClassName!.Contains(builderClassName + method.Name, StringComparison.OrdinalIgnoreCase))
+                    if (parentClassName is not null && parentClassName.Contains(builderClassName + method.Name, StringComparison.OrdinalIgnoreCase))
                     {
                         if (!methodQueriesAndParameters.TryGetValue(method, out var value))
                         {
@@ -76,7 +76,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 }
             }
 
-            if(methodQueriesAndParameters.Count > 0)
+            if (methodQueriesAndParameters.Count > 0)
             {
                 foreach (var (method, parameters) in methodQueriesAndParameters)
                 {
