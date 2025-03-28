@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Writers.Http;
@@ -58,9 +59,11 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             foreach (var method in httpMethods)
             {
+                var builderClassName = requestBuilderClass.Name;
                 foreach (var queryParameter in queryParameters)
                 {
-                    if (queryParameter.Parent!.Name.Contains(method.Name, StringComparison.OrdinalIgnoreCase))
+                    var parentClassName = queryParameter.Parent?.Name;
+                    if (parentClassName!.Contains(builderClassName + method.Name, StringComparison.OrdinalIgnoreCase))
                     {
                         if (!methodQueriesAndParameters.TryGetValue(method, out var value))
                         {
@@ -73,12 +76,21 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
                 }
             }
 
-            foreach (KeyValuePair<CodeMethod, List<CodeProperty>> methodQueryAndParameter in methodQueriesAndParameters)
+            if(methodQueriesAndParameters.Count > 0)
             {
-                var methodName = methodQueryAndParameter.Key;
-                var queryParams = methodQueryAndParameter.Value.ToArray();
-                // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
-                WriteHttpMethods(requestBuilderClass, writer, queryParams, pathParameters, urlTemplateProperty, methodName, baseUrl);
+                foreach (var (method, parameters) in methodQueriesAndParameters)
+                {
+                    // Write the HTTP methods
+                    WriteHttpMethods(requestBuilderClass, writer, [.. parameters], pathParameters, urlTemplateProperty, method, baseUrl);
+                }
+            }
+            else
+            {
+                // Write the HTTP methods without query parameters
+                foreach (var method in httpMethods)
+                {
+                    WriteHttpMethods(requestBuilderClass, writer, [], pathParameters, urlTemplateProperty, method, baseUrl);
+                }
             }
 
         }
@@ -152,8 +164,12 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the path parameters to.</param>
     private static void WritePathParameters(CodeProperty[] pathParameters, LanguageWriter writer)
     {
+        var uniquePathParameters = pathParameters
+            .GroupBy(static param => param.Name)
+            .Select(static group => group.First())
+            .ToArray();
         // Write each path parameter property
-        foreach (var pathParameter in pathParameters)
+        foreach (var pathParameter in uniquePathParameters)
         {
             WriteHttpParameterProperty(pathParameter, writer);
         }
@@ -166,8 +182,12 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the query parameters to.</param>
     private static void WriteQueryParameters(CodeProperty[] queryParameters, LanguageWriter writer)
     {
+        var uniqueQueryParameters = queryParameters
+            .GroupBy(static param => param.Name)
+            .Select(static group => group.First())
+            .ToArray();
         // Write each query parameter property
-        foreach (var queryParameter in queryParameters)
+        foreach (var queryParameter in uniqueQueryParameters)
         {
             WriteHttpParameterProperty(queryParameter, writer);
         }
