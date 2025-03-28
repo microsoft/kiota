@@ -32,12 +32,12 @@ jobs:
             os: windows-latest
           - architecture: linux-x64
             os: ubuntu-latest
-          - architecture: linux-arm64
-            os: ubuntu-latest
+          # - architecture: linux-arm64
+          #   os: ubuntu-latest
           - architecture: osx-x64
             os: macOS-latest
-          - architecture: osx-arm64
-            os: macOS-latest    
+          # - architecture: osx-arm64
+          #   os: macOS-latest    
     runs-on: ${{ matrix.binaries.os }}
     steps:
       - uses: actions/checkout@v4
