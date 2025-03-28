@@ -172,7 +172,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("\"userId\": 0", result);
     }
 
-     [Fact]
+    [Fact]
     public async Task WritesRequestExecutorsWithoutCrashing()
     {
         var codeClass = new CodeClass
