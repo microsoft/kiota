@@ -106,7 +106,7 @@ internal partial class Server : IServer
                             manifestResult?.Item1,
                             manifestResult?.Item2.ToArray());
     }
-    public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, bool clearCache, CancellationToken cancellationToken)
+    public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, bool clearCache, bool includeKiotaValidationRules, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -116,6 +116,7 @@ internal partial class Server : IServer
         // This is needed to add plugin extensions parsers
         configuration.PluginTypes.Add(PluginType.APIPlugin);
         configuration.SkipGeneration = true;
+        configuration.IncludeKiotaValidationRules = includeKiotaValidationRules;
 
         var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
         var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
