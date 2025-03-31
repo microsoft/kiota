@@ -14,7 +14,7 @@ public class FakeLogger<T> : ILogger<T>
 {
     public List<FakeLogEntry> LogEntries { get; } = new();
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull
     {
         return null;
     }
