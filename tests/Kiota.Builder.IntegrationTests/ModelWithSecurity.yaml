@@ -13,9 +13,41 @@ components:
         authorizationCode:
           authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
           tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          refreshUrl: https://login.microsoftonline.com/common/oauth2/v2.0/refresh
           scopes:
             api://sample/repairs_read: Read repair records
             api://sample/repairs_write: Write repair records
+        password:
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          refreshUrl: https://login.microsoftonline.com/common/oauth2/v2.0/refresh
+          scopes:
+            api://sample/repairs_read: Read repair records
+            api://sample/repairs_write: Write repair records
+        implicit:
+          authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+          refreshUrl: https://login.microsoftonline.com/common/oauth2/v2.0/refresh
+          scopes:
+            api://sample/repairs_read: Read repair records
+            api://sample/repairs_write: Write repair records
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          refreshUrl: https://login.microsoftonline.com/common/oauth2/v2.0/refresh
+          scopes:
+            api://sample/repairs_read: Read repair records
+            api://sample/repairs_write: Write repair records
+    httpAuth:
+      type: http
+      scheme: basic
+      description: HTTP basic authentication
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key authentication
+    openIdConnectAuth:
+      type: openIdConnect
+      description: OpenID Connect authentication
+      openIdConnectUrl: https://login.microsoftonline.com/common/.well-known/openid-configuration
 paths:
   /repairs:
     get:
@@ -23,7 +55,7 @@ paths:
       summary: List all repairs with oauth
       description: Returns a list of repairs with their details and images
       servers:
-        - url: https://sample.server.overriden/api
+        - url: https://sample.server.overridden/api
       security:
         - oAuth2AuthCode: ["api://sample/repairs_read"]
       responses:
