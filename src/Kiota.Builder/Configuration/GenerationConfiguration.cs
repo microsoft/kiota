@@ -130,6 +130,10 @@ public class GenerationConfiguration : ICloneable
         get; set;
     }
     public HashSet<string> DisabledValidationRules { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    public bool? IncludeKiotaValidationRules
+    {
+        get; set;
+    }
     public int MaxDegreeOfParallelism { get; set; } = -1;
     public object Clone()
     {
@@ -153,6 +157,7 @@ public class GenerationConfiguration : ICloneable
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            IncludeKiotaValidationRules = IncludeKiotaValidationRules,
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
             Operation = Operation,

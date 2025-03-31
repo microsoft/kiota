@@ -8,6 +8,7 @@ interface KiotaResultOptions {
   includeFilters?: string[];
   excludeFilters?: string[];
   clearCache?: boolean;
+  includeKiotaValidationRules?: boolean;
 }
 
 /**
@@ -18,10 +19,11 @@ interface KiotaResultOptions {
  * @param {string[]} [options.includeFilters] - Filters to include in the result.
  * @param {string[]} [options.excludeFilters] - Filters to exclude from the result.
  * @param {boolean} [options.clearCache] - Whether to clear the cache before showing the result.
+ * @param {boolean} [options.includeKiotaValidationRules] - Whether to evaluate built-in kiota rules when parsing the description file.
  * @returns {Promise<KiotaTreeResult | undefined>} A promise that resolves to the Kiota show result or undefined if an error occurs.
  * @throws {Error} Throws an error if the result is an instance of Error.
  */
-export async function getKiotaTree({ descriptionPath, includeFilters, excludeFilters, clearCache }: KiotaResultOptions): Promise<KiotaTreeResult | undefined> {
+export async function getKiotaTree({ descriptionPath, includeFilters, excludeFilters, clearCache, includeKiotaValidationRules }: KiotaResultOptions): Promise<KiotaTreeResult | undefined> {
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType<KiotaShowConfiguration, KiotaTreeResult, void>('Show');
 
@@ -30,6 +32,7 @@ export async function getKiotaTree({ descriptionPath, includeFilters, excludeFil
       excludeFilters: excludeFilters ?? [],
       descriptionPath,
       clearCache: clearCache ?? false,
+      includeKiotaValidationRules: includeKiotaValidationRules ?? false,
     });
     return result;
   });

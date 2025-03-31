@@ -104,7 +104,8 @@ internal class OpenApiDocumentDownloadService
         var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
                     ValidationRuleSet.GetEmptyRuleSet() :
                     ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
-        if (generating)
+        bool generatingMode = generating || config.IncludeKiotaValidationRules == true;
+        if (generatingMode)
             ruleSet.AddKiotaValidationRules(config);
         var settings = new OpenApiReaderSettings
         {
@@ -136,7 +137,7 @@ internal class OpenApiDocumentDownloadService
         }
         var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
-        if (generating && readResult.Diagnostic?.Warnings is { Count: > 0 })
+        if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)
                 Logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
         if (readResult.Diagnostic?.Errors is { Count: > 0 })

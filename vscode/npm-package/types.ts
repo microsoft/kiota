@@ -79,7 +79,9 @@ export interface KiotaShowConfiguration extends CacheClearableConfiguration {
   includeFilters: string[];
   excludeFilters: string[];
   descriptionPath: string;
+  includeKiotaValidationRules: boolean;
 }
+
 export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConfiguration {
   manifestPath: string;
   apiIdentifier: string;
