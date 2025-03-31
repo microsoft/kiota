@@ -511,9 +511,14 @@ public partial class PluginsGenerationService
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
             {
                 var auth = configAuth;
+
                 try
                 {
-                    auth = configAuth ?? GetAuth(operation.Security ?? document.Security ?? []);
+                    // Priority order: operation security > document security > empty list
+                    var securityToUse = operation.Security?.Count > 0 ? operation.Security :
+                                    document.Security?.Count > 0 ? document.Security :
+                                    new List<OpenApiSecurityRequirement>();
+                    auth = configAuth ?? GetAuth(securityToUse);
                 }
                 catch (UnsupportedSecuritySchemeException e)
                 {
@@ -598,7 +603,10 @@ public partial class PluginsGenerationService
             },
             // Only Http bearer is supported
             SecuritySchemeType.Http when "bearer".Equals(securityScheme.Scheme, StringComparison.OrdinalIgnoreCase) =>
-                new ApiKeyPluginVault { ReferenceId = $"{{{name}_REGISTRATION_ID}}" },
+                new ApiKeyPluginVault
+                {
+                    ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
+                },
             SecuritySchemeType.OpenIdConnect => new ApiKeyPluginVault
             {
                 ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
