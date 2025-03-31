@@ -11,6 +11,9 @@ paths:
       operationId: listRepairs
       summary: List all repairs with oauth
       description: Returns a list of repairs with their details and images
+      externalDocs:
+        description: Find more info here
+        url: https://sample.server/api/docs
       responses:
         "200":
           description: A list of repairs

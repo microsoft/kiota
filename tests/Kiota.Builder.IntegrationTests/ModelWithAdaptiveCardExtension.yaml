@@ -1,4 +1,3 @@
-
 openapi: 3.0.0
 info:
   title: Repair Service
@@ -15,7 +14,7 @@ paths:
         data_path: $.test
         file: path_to_adaptive_card_file
       servers:
-        - url: https://sample.server.overriden/api
+        - url: https://sample.server.overridden/api
       responses:
         "200":
           description: A list of repairs

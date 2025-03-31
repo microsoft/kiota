@@ -2,7 +2,7 @@
 
 public record SecuritySchemeInfo(
     string type,
-    string name,
+    string? name,
     string? description = null,
     string? @in = null,
     string? scheme = null,
@@ -12,10 +12,10 @@ public record SecuritySchemeInfo(
     string? referenceId = null);
 
 public record OAuthFlows(
-    OAuthFlow? implicitFlow = null,
-    OAuthFlow? passwordFlow = null,
-    OAuthFlow? clientCredentialsFlow = null,
-    OAuthFlow? authorizationCodeFlow = null);
+    OAuthFlow? @implicit = null,
+    OAuthFlow? password = null,
+    OAuthFlow? clientCredentials = null,
+    OAuthFlow? authorizationCode = null);
 
 public record OAuthFlow(
     string? authorizationUrl = null,

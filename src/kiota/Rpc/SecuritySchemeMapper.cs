@@ -17,7 +17,7 @@ namespace kiota.Rpc
                 {
                     if (key != null && value != null)
                     {
-                        var securitySchemeInfo = BuildSchemeInfoFromSecurityScheme(key, value);
+                        var securitySchemeInfo = BuildSchemeInfoFromSecurityScheme(value);
                         securitySchemes[key] = securitySchemeInfo;
                     }
                 }
@@ -26,11 +26,12 @@ namespace kiota.Rpc
             return securitySchemes;
         }
 
-        private static SecuritySchemeInfo BuildSchemeInfoFromSecurityScheme(string schemeName, IOpenApiSecurityScheme value)
+        private static SecuritySchemeInfo BuildSchemeInfoFromSecurityScheme(IOpenApiSecurityScheme value)
         {
             string? description = value?.Description;
             string? @in = value?.In?.GetDisplayName() ?? "testvalue";
             string? scheme = value?.Scheme;
+            string? name = value?.Name;
             string? bearerFormat = value?.BearerFormat;
             string? openIdConnectUrl = value?.OpenIdConnectUrl?.AbsoluteUri;
             var flows = BuildFlowsFromSecurityScheme(value);
@@ -47,7 +48,7 @@ namespace kiota.Rpc
             }
             var schemeType = value?.Type?.GetDisplayName() ?? "none";
             var securitySchemeInfo = new SecuritySchemeInfo(
-                name: schemeName,
+                name: name,
                 type: schemeType,
                 description: description,
                 @in: @in,
@@ -62,22 +63,22 @@ namespace kiota.Rpc
         private static OAuthFlows? BuildFlowsFromSecurityScheme(IOpenApiSecurityScheme? value)
         {
             return value?.Flows is null ? null : new OAuthFlows(
-                implicitFlow: value.Flows.Implicit is null ? null : new OAuthFlow(
+                @implicit: value.Flows.Implicit is null ? null : new OAuthFlow(
                     authorizationUrl: value.Flows.Implicit.AuthorizationUrl?.AbsoluteUri,
                     tokenUrl: value.Flows.Implicit.TokenUrl?.AbsoluteUri,
                     refreshUrl: value.Flows.Implicit.RefreshUrl?.AbsoluteUri,
                     scopes: value.Flows.Implicit.Scopes),
-                passwordFlow: value.Flows.Password is null ? null : new OAuthFlow(
+                password: value.Flows.Password is null ? null : new OAuthFlow(
                     authorizationUrl: value.Flows.Password.AuthorizationUrl?.AbsoluteUri,
                     tokenUrl: value.Flows.Password.TokenUrl?.AbsoluteUri,
                     refreshUrl: value.Flows.Password.RefreshUrl?.AbsoluteUri,
                     scopes: value.Flows.Password.Scopes),
-                clientCredentialsFlow: value.Flows.ClientCredentials is null ? null : new OAuthFlow(
+                clientCredentials: value.Flows.ClientCredentials is null ? null : new OAuthFlow(
                     authorizationUrl: value.Flows.ClientCredentials.AuthorizationUrl?.AbsoluteUri,
                     tokenUrl: value.Flows.ClientCredentials.TokenUrl?.AbsoluteUri,
                     refreshUrl: value.Flows.ClientCredentials.RefreshUrl?.AbsoluteUri,
                     scopes: value.Flows.ClientCredentials.Scopes),
-                authorizationCodeFlow: value.Flows.AuthorizationCode is null ? null : new OAuthFlow(
+                authorizationCode: value.Flows.AuthorizationCode is null ? null : new OAuthFlow(
                     authorizationUrl: value.Flows.AuthorizationCode.AuthorizationUrl?.AbsoluteUri,
                     tokenUrl: value.Flows.AuthorizationCode.TokenUrl?.AbsoluteUri,
                     refreshUrl: value.Flows.AuthorizationCode.RefreshUrl?.AbsoluteUri,
