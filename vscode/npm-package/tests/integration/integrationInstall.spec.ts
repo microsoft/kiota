@@ -18,7 +18,7 @@ describe("integration install", () => {
     fs.rmSync(installLocation, { recursive: true });
   }, 30000);
 
-  test.only('should install specific version', async () => {
+  test('should install specific version', async () => {
     const unique_id = Math.random().toString(36).substring(7);
     const installLocation = `.kiotabin/test_install/${unique_id}`;
     const binaryVersion = '1.22.2';
