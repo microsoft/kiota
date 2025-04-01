@@ -292,19 +292,6 @@ export interface KiotaResult extends KiotaLoggedResult {
 export interface ValidateOpenApiResult extends KiotaLoggedResult {
 }
 
-export interface ServerMapping {
-  serverUrl: string;
-  operationIds: string[];
-}
-
-export interface AuthMapping {
-  registrationIdEnvName: string;
-  auth: {
-    [key: string]: object;
-  };
-  operationIds: string[];
-}
-
 export interface GeneratePluginResult extends KiotaResult {
   aiPlugin: string;
   openAPISpec: string;
