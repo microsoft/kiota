@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where security scheme would be missing from plugins OpenAPI descriptions. [#6279](https://github.com/microsoft/kiota/issues/6279)
 - Fixed pet store description source.
 
+- Fixes generation of usings/imports in where Date Types are placed in a nested class. [#6286](https://github.com/microsoft/kiota/issues/6286)
+
 ## [1.24.1] - 2025-03-13
 
 ### Changed
