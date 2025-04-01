@@ -1,4 +1,5 @@
-﻿using Azure.Monitor.OpenTelemetry.Exporter;
+﻿using System.Runtime.CompilerServices;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using kiota.Telemetry;
 using kiota.Telemetry.Config;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,8 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
+[assembly: InternalsVisibleTo("Kiota.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100957cb48387b2a5f54f5ce39255f18f26d32a39990db27cf48737afc6bc62759ba996b8a2bfb675d4e39f3d06ecb55a178b1b4031dcb2a767e29977d88cce864a0d16bfc1b3bebb0edf9fe285f10fffc0a85f93d664fa05af07faa3aad2e545182dbf787e3fd32b56aca95df1a3c4e75dec164a3f1a4c653d971b01ffc39eb3c4")]
 
 namespace kiota.Extension;
 
@@ -40,7 +43,10 @@ internal static class KiotaHostExtensions
                         {
                             r.AddAttributes([
                                 new KeyValuePair<string, object>("os.type", osName),
-                                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString())
+                                new KeyValuePair<string, object>("os.version", Environment.OSVersion.Version.ToString()),
+                            ]);
+                            r.AddAttributes([
+                                new KeyValuePair<string, object>(TelemetryLabels.TagAcquisitionChannel, AcquisitionChannel(Environment.ProcessPath)),
                             ]);
                         }
                     });
@@ -93,5 +99,49 @@ internal static class KiotaHostExtensions
 
             return OperatingSystem.IsFreeBSD() ? "freebsd" : null;
         }
+    }
+
+    internal static string AcquisitionChannel(string? path)
+    {
+        // Docker
+        if (Environment.GetEnvironmentVariable("KIOTA_CONTAINER") == "true") return "docker";
+        if (path != null && !string.IsNullOrWhiteSpace(path))
+        {
+
+            var absolutePath = Path.GetFullPath(path);
+            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            // Dotnet tool
+            if (absolutePath.StartsWith(Path.Join(homeDir, ".dotnet", "tools")))
+            {
+                return "dotnet_tool";
+            }
+            // Extension
+            if (absolutePath.Contains(".vscode"))
+            {
+                return "extension";
+            }
+
+            // No reliable way to check this at compile time (especially for dotnet tool)
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                // ASDF
+                // https://asdf-vm.com/manage/configuration.html#asdf-data-dir
+                var asdfDataDir = Environment.GetEnvironmentVariable("ASDF_DATA_DIR") ?? Path.Join(homeDir, ".asdf");
+                if (absolutePath.StartsWith(asdfDataDir))
+                {
+                    return "asdf";
+                }
+
+                // https://docs.brew.sh/Formula-Cookbook#variables-for-directory-locations
+                var homebrewRoot = Environment.GetEnvironmentVariable("HOMEBREW_PREFIX") ?? "/opt/homebrew";
+                var dir = Path.Join(homebrewRoot, "Cellar/kiota");
+                // Homebrew
+                if (absolutePath.StartsWith(dir))
+                {
+                    return "homebrew";
+                }
+            }
+        }
+        return "unknown";
     }
 }
