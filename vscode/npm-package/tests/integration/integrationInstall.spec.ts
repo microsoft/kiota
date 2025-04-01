@@ -37,8 +37,11 @@ describe("integration install", () => {
 
 describe("sideloading install", () => {
   beforeAll(async () => {
-    const unique_id = Math.random().toString(36).substring(7);
-    const installLocation = `.kiotabin/test_install/${unique_id}`;
+    const binaryVersion = '1.22.2';
+    setKiotaConfig({
+      binaryVersion
+    })
+    const installLocation = getKiotaPath();
     await ensureKiotaIsPresentInPath(installLocation);
     const zipFilePath = `${installLocation}.zip`;
 
