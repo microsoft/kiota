@@ -91,15 +91,20 @@ function getBaseDir(): string {
   return getKiotaConfig().binaryLocation || path.resolve(__dirname);
 }
 
+function getRuntimeVersion(): string {
+  return getKiotaConfig().binaryVersion || runtimeJson.kiotaVersion;
+}
+
 function getKiotaPathInternal(withFileName = true): string | undefined {
   const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
   const baseDir = getBaseDir();
+  const runtimeVersion = getRuntimeVersion();
   if (packageToInstall) {
     const installPath = path.join(baseDir, binariesRootDirectory);
-    const directoryPath = path.join(installPath, runtimeJson.kiotaVersion, currentPlatform);
+    const directoryPath = path.join(installPath, runtimeVersion, currentPlatform);
     if (withFileName) {
       return path.join(directoryPath, fileName);
     }
@@ -131,7 +136,7 @@ function downloadFileFromUrl(url: string, destinationPath: string): Promise<void
 }
 
 function getDownloadUrl(platform: string): string {
-  return `${baseDownloadUrl}/v${runtimeJson.kiotaVersion}/${platform}.zip`;
+  return `${baseDownloadUrl}/v${getRuntimeVersion()}/${platform}.zip`;
 }
 
 function getRuntimeDependenciesPackages(): Package[] {
