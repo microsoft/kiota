@@ -20,9 +20,9 @@
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@stylistic/eslint-plugin-ts": "^4.2.0",
-    "@types/node": "^22.13.14",
-    "@typescript-eslint/eslint-plugin": "^8.27.0",
-    "@typescript-eslint/parser": "^8.27.0",
+    "@types/node": "^22.13.16",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
     "esbuild": "^0.25.2",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
@@ -39,7 +39,7 @@
     "@microsoft/kiota-serialization-json": "^1.0.0-preview.92",
     "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.92",
     "@microsoft/kiota-serialization-text": "^1.0.0-preview.92",
-    "express": "^5.0.1",
+    "express": "^5.1.0",
     "node-fetch": "^2.7.0"
   }
 }
