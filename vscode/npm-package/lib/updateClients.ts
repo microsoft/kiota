@@ -3,7 +3,7 @@ import * as rpc from "vscode-jsonrpc/node";
 import { KiotaLogEntry } from "..";
 import connectToKiota from "../connect";
 
-interface UpdateClientsConfiguration {
+export interface UpdateClientsConfiguration {
   cleanOutput: boolean;
   clearCache: boolean;
   workspacePath: string;

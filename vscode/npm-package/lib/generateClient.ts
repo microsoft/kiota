@@ -4,7 +4,7 @@ import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEn
 import connectToKiota from "../connect";
 import { KiotaGenerationLanguage, KiotaResult } from "../types";
 
-interface ClientGenerationOptions {
+export interface ClientGenerationOptions {
   openAPIFilePath: string;
   clientClassName: string;
   clientNamespaceName: string;

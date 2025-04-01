@@ -3,7 +3,7 @@ import * as rpc from "vscode-jsonrpc/node";
 import { ValidateOpenApiResult as ValidateOpenApiResult } from "..";
 import connectToKiota from '../connect';
 
-interface ValidateOpenApiRequest {
+export interface ValidateOpenApiRequest {
   descriptionPath: string;
 }
 

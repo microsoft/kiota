@@ -5,7 +5,7 @@ import connectToKiota from "../connect";
 import { KiotaPluginType, GeneratePluginResult } from "../types";
 import * as path from "path";
 
-interface PluginGenerationOptions {
+export interface PluginGenerationOptions {
   descriptionPath: string;
   outputPath: string;
   pluginName: string;

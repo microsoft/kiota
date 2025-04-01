@@ -3,7 +3,7 @@ import * as rpc from "vscode-jsonrpc/node";
 import { KiotaGetManifestDetailsConfiguration, KiotaManifestResult } from "..";
 import connectToKiota from "../connect";
 
-interface ManifestOptions {
+export interface ManifestOptions {
   manifestPath: string;
   clearCache?: boolean;
   apiIdentifier?: string;
