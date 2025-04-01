@@ -55,9 +55,15 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
       title: vscode.l10n.t("Searching...")
-    }, (progress, _) => {
+    }, async (progress, _) => {
       const settings = getExtensionSettings(extensionId);
-      return searchDescription({ searchTerm: x, clearCache: settings.clearCache });
+      try {
+        return await searchDescription({ searchTerm: x, clearCache: settings.clearCache });
+      } catch (err) {
+        const error = err as Error;
+        vscode.window.showErrorMessage(error.message);
+        return undefined;
+      }
     }));
 
     if (config.descriptionPath) {
