@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Writers.Http;
@@ -47,14 +48,51 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
 
             var baseUrl = GetBaseUrl(requestBuilderClass);
 
-            // Write path parameters
-            WritePathParameters(pathParameters, writer);
+            var httpMethods = GetHttpMethods(requestBuilderClass);
+            var methodQueriesAndParameters = new Dictionary<CodeMethod, List<CodeProperty>>();
 
             // Write all query parameter variables
             WriteQueryParameters(queryParameters, writer);
 
-            // Write all HTTP methods GET, POST, PUT, DELETE e.t.c
-            WriteHttpMethods(requestBuilderClass, writer, queryParameters, pathParameters, urlTemplateProperty, baseUrl);
+            // Write path parameters
+            WritePathParameters(pathParameters, writer);
+
+            foreach (var method in httpMethods)
+            {
+                var builderClassName = requestBuilderClass.Name;
+                foreach (var queryParameter in queryParameters)
+                {
+                    var parentClassName = queryParameter.Parent?.Name;
+                    if (parentClassName is not null && parentClassName.Contains(builderClassName + method.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!methodQueriesAndParameters.TryGetValue(method, out var value))
+                        {
+                            value = [];
+                            methodQueriesAndParameters[method] = value;
+                        }
+
+                        value.Add(queryParameter);
+                    }
+                }
+            }
+
+            if (methodQueriesAndParameters.Count > 0)
+            {
+                foreach (var (method, parameters) in methodQueriesAndParameters)
+                {
+                    // Write the HTTP methods
+                    WriteHttpMethods(requestBuilderClass, writer, [.. parameters], pathParameters, urlTemplateProperty, method, baseUrl);
+                }
+            }
+            else
+            {
+                // Write the HTTP methods without query parameters
+                foreach (var method in httpMethods)
+                {
+                    WriteHttpMethods(requestBuilderClass, writer, [], pathParameters, urlTemplateProperty, method, baseUrl);
+                }
+            }
+
         }
     }
 
@@ -126,8 +164,12 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the path parameters to.</param>
     private static void WritePathParameters(CodeProperty[] pathParameters, LanguageWriter writer)
     {
+        var uniquePathParameters = pathParameters
+            .GroupBy(static param => param.Name)
+            .Select(static group => group.First())
+            .ToArray();
         // Write each path parameter property
-        foreach (var pathParameter in pathParameters)
+        foreach (var pathParameter in uniquePathParameters)
         {
             WriteHttpParameterProperty(pathParameter, writer);
         }
@@ -140,8 +182,12 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     /// <param name="writer">The language writer to write the query parameters to.</param>
     private static void WriteQueryParameters(CodeProperty[] queryParameters, LanguageWriter writer)
     {
+        var uniqueQueryParameters = queryParameters
+            .GroupBy(static param => param.Name)
+            .Select(static group => group.First())
+            .ToArray();
         // Write each query parameter property
-        foreach (var queryParameter in queryParameters)
+        foreach (var queryParameter in uniqueQueryParameters)
         {
             WriteHttpParameterProperty(queryParameter, writer);
         }
@@ -182,53 +228,42 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         CodeProperty[] queryParameters,
         CodeProperty[] pathParameters,
         CodeProperty urlTemplateProperty,
+        CodeMethod method,
         string? baseUrl)
     {
-        // Retrieve all the HTTP methods of kind RequestExecutor
-        var httpMethods = GetHttpMethods(requestBuilderClass);
 
-        var methodCount = httpMethods.Length;
-        var currentIndex = 0;
+        // Write the method documentation as a comment
+        writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
 
-        foreach (var method in httpMethods)
+        // Build the actual URL string and replace all required fields (path and query) with placeholder variables
+        var url = BuildUrlStringFromTemplate(
+            urlTemplateProperty.DefaultValue,
+            queryParameters,
+            pathParameters,
+            baseUrl
+        );
+
+        // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
+        writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} {Constants.HttpVersion}");
+
+        var authenticationMethod = requestBuilderClass
+            .Properties
+            .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
+
+        if (authenticationMethod != null
+            && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var schemeTypeObj)
+            && schemeTypeObj is SecuritySchemeType schemeType
+            && Constants.SchemeTypeMapping.TryGetValue(schemeType.ToString().ToLowerInvariant(), out var mappedSchemeType))
         {
-            // Write the method documentation as a comment
-            writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
-
-            // Build the actual URL string and replace all required fields (path and query) with placeholder variables
-            var url = BuildUrlStringFromTemplate(
-                urlTemplateProperty.DefaultValue,
-                queryParameters,
-                pathParameters,
-                baseUrl
-            );
-
-            // Write the HTTP operation (e.g., GET, POST, PATCH, etc.)
-            writer.WriteLine($"{method.Name.ToUpperInvariant()} {url} {Constants.HttpVersion}");
-
-            var authenticationMethod = requestBuilderClass
-                .Properties
-                .FirstOrDefault(static prop => prop.IsOfKind(CodePropertyKind.Headers));
-
-            if (authenticationMethod != null
-                && Enum.TryParse(typeof(SecuritySchemeType), authenticationMethod.Type.Name, true, out var schemeTypeObj)
-                && schemeTypeObj is SecuritySchemeType schemeType
-                && Constants.SchemeTypeMapping.TryGetValue(schemeType.ToString().ToLowerInvariant(), out var mappedSchemeType))
-            {
-                writer.WriteLine($"Authorization: {{{{{mappedSchemeType}}}}}");
-            }
-
-            // Write the request body if present
-            WriteRequestBody(method, writer);
-
-            // Write a separator if there are more items that follow
-            if (++currentIndex < methodCount)
-            {
-                writer.WriteLine();
-                writer.WriteLine("###");
-                writer.WriteLine();
-            }
+            writer.WriteLine($"Authorization: {{{{{mappedSchemeType}}}}}");
         }
+
+        // Write the request body if present
+        WriteRequestBody(method, writer);
+
+        writer.WriteLine();
+        writer.WriteLine("###");
+        writer.WriteLine();
     }
 
     /// <summary>
