@@ -3,16 +3,16 @@ import * as rpc from "vscode-jsonrpc/node";
 import { KiotaLogEntry, KiotaResult } from "..";
 import connectToKiota from "../connect";
 
-interface RemoveItemConfiguration {
+export interface RemoveItemConfiguration {
   cleanOutput: boolean;
   workingDirectory: string;
 }
 
-interface RemovePluginConfiguration extends RemoveItemConfiguration {
+export interface RemovePluginConfiguration extends RemoveItemConfiguration {
   pluginName: string;
 }
 
-interface RemoveClientConfiguration extends RemoveItemConfiguration {
+export interface RemoveClientConfiguration extends RemoveItemConfiguration {
   clientName: string;
 }
 

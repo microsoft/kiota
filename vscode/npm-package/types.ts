@@ -71,7 +71,7 @@ export interface AdaptiveCardInfo {
   file: string;
 }
 
-interface CacheClearableConfiguration {
+export interface CacheClearableConfiguration {
   clearCache: boolean;
 }
 
@@ -87,7 +87,7 @@ export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConf
   apiIdentifier: string;
 }
 
-interface KiotaLoggedResult {
+export interface KiotaLoggedResult {
   logs: KiotaLogEntry[];
 }
 
@@ -256,7 +256,7 @@ export enum PluginAuthType {
   apiKeyPluginVault = "ApiKeyPluginVault"
 }
 
-interface WorkspaceObjectProperties {
+export interface WorkspaceObjectProperties {
   descriptionLocation: string;
   includePatterns: string[];
   excludePatterns: string[];
@@ -290,14 +290,6 @@ export interface KiotaResult extends KiotaLoggedResult {
 }
 
 export interface ValidateOpenApiResult extends KiotaLoggedResult {
-}
-
-interface APIInfo {
-  operationId: string;
-  description: string;
-  summary: string;
-  adaptiveCard: object;
-  adaptiveCardMockData: object;
 }
 
 export interface ServerMapping {
