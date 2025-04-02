@@ -2,12 +2,12 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
+using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Interfaces;
-namespace Kiota.Builder.OpenApiExtensions;
-
-using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.OpenApi.Writers;
+
+namespace Kiota.Builder.OpenApiExtensions;
 
 public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
 {
@@ -65,9 +65,10 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteStartObject();
         if (ResponseSemantics != null || Confirmation != null || SecurityInfo != null)
         {
-            writer.WriteStartObject();
+            
             if (ResponseSemantics is JsonObject responseSemanticsObj)
             {
                 writer.WritePropertyName(nameof(ResponseSemantics).ToFirstCharacterLowerCase().ToSnakeCase());
@@ -83,7 +84,7 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
                 writer.WritePropertyName(nameof(SecurityInfo).ToFirstCharacterLowerCase().ToSnakeCase());
                 writer.WriteValue(securityInfoObj.ToString());
             }
-            writer.WriteEndObject();
         }
+        writer.WriteEndObject();
     }
 }

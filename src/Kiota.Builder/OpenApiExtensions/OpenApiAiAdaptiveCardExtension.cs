@@ -38,14 +38,14 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteStartObject();
         if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File))
         {
-            writer.WriteStartObject();
             writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
             writer.WriteValue(DataPath);
             writer.WritePropertyName(nameof(File).ToFirstCharacterLowerCase());
             writer.WriteValue(File);
-            writer.WriteEndObject();
         }
+        writer.WriteEndObject();
     }
 }

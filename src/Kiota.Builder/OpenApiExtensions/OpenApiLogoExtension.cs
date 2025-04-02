@@ -31,12 +31,12 @@ public class OpenApiLogoExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteStartObject();
         if (!string.IsNullOrEmpty(Url))
-        {
-            writer.WriteStartObject();
+        {   
             writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
             writer.WriteValue(Url);
-            writer.WriteEndObject();
         }
+        writer.WriteEndObject();
     }
 }
