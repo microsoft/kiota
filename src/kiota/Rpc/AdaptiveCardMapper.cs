@@ -10,7 +10,10 @@ namespace kiota.Rpc
             if (extensions is not null &&
                 extensions.TryGetValue(OpenApiAiAdaptiveCardExtension.Name, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
             {
-                return new AdaptiveCardInfo(adaptiveCard.DataPath!, adaptiveCard.File!);
+                if (adaptiveCard.DataPath is not null && adaptiveCard.File is not null)
+                {
+                    return new AdaptiveCardInfo(adaptiveCard.DataPath, adaptiveCard.File);
+                }
             }
             return null;
         }
