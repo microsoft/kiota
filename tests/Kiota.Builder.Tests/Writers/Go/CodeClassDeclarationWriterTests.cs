@@ -41,6 +41,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
+        Assert.Contains("DO NOT EDIT", result);
         Assert.Contains("type", result);
         Assert.Contains("struct", result);
         Assert.Contains("package", result);
