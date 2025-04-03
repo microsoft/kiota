@@ -9,10 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+## [1.25.1] - 2025-04-03
+
 ### Changed
 - Fixed a bug with http client generation where query parameters were being processed incorrectly. [#6268](https://github.com/microsoft/kiota/issues/6268)
 
 ### Added
+- Extracted and created an npm package from the VS Code - Kiota interop module. [#6172](https://github.com/microsoft/kiota/pull/6172)
+
 - Added support for generating function capabilities in plugin manifest from x-ai-capabilities OpenApi extension. [#6369](https://github.com/microsoft/kiota/issues/6369)   
 
 - Added a comment on top of every golang file to indicate the file is machine generated so it can be excluded from various tools. [#6363](https://github.com/microsoft/kiota/issues/6363)
@@ -1613,4 +1621,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
