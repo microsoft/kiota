@@ -680,138 +680,54 @@ public partial class PluginsGenerationService
             var functionCapabilities = new FunctionCapabilities();
 
             // Set ResponseSemantics
-            if (capabilities.ResponseSemantics is JsonObject responseSemanticsObj)
+            if (capabilities.ResponseSemantics is not null)
             {
                 var responseSemantics = new ResponseSemantics();
 
-                if (responseSemanticsObj.TryGetPropertyValue("data_path", out var dataPath) &&
-                    dataPath is JsonValue dataPathValue &&
-                    dataPathValue.TryGetValue<string>(out var dataPathString))
-                {
-                    responseSemantics.DataPath = dataPathString;
-                }
-
-                if (responseSemanticsObj.TryGetPropertyValue("static_template", out var staticTemplate) &&
-                    staticTemplate is JsonObject staticTemplateObj)
+                responseSemantics.DataPath = capabilities.ResponseSemantics.DataPath;
+                if (capabilities.ResponseSemantics.StaticTemplate is not null && capabilities.ResponseSemantics.StaticTemplate is JsonObject staticTemplateObj)
                 {
                     using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
-                    responseSemantics.StaticTemplate = doc.RootElement.Clone();
+                    JsonElement staticTemplate = doc.RootElement.Clone();
+                    responseSemantics.StaticTemplate = staticTemplate;
                 }
-
-                if (responseSemanticsObj.TryGetPropertyValue("oauth_card_path", out var oauthCardPath) &&
-                    oauthCardPath is JsonValue oauthCardPathValue &&
-                    oauthCardPathValue.TryGetValue<string>(out var oauthCardPathString))
+                if (capabilities.ResponseSemantics.Properties is not null)
                 {
-                    responseSemantics.OAuthCardPath = oauthCardPathString;
+                    responseSemantics.Properties = new ResponseSemanticsProperties
+                    {
+                        Title = capabilities.ResponseSemantics.Properties.Title,
+                        Subtitle = capabilities.ResponseSemantics.Properties.Subtitle,
+                        Url = capabilities.ResponseSemantics.Properties.Url,
+                        ThumbnailUrl = capabilities.ResponseSemantics.Properties.ThumbnailUrl,
+                        InformationProtectionLabel = capabilities.ResponseSemantics.Properties.InformationProtectionLabel,
+                        TemplateSelector = capabilities.ResponseSemantics.Properties.TemplateSelector
+                    };
                 }
-
-                if (responseSemanticsObj.TryGetPropertyValue("properties", out var properties) &&
-                    properties is JsonObject propertiesObj)
-                {
-                    var propertiesModel = new ResponseSemanticsProperties();
-
-                    if (propertiesObj.TryGetPropertyValue("title", out var title) &&
-                        title is JsonValue titleValue &&
-                        titleValue.TryGetValue<string>(out var titleString))
-                    {
-                        propertiesModel.Title = titleString;
-                    }
-
-                    if (propertiesObj.TryGetPropertyValue("sub_title", out var subTitle) &&
-                        subTitle is JsonValue subTitleValue &&
-                        subTitleValue.TryGetValue<string>(out var subTitleString))
-                    {
-                        propertiesModel.Subtitle = subTitleString;
-                    }
-
-                    if (propertiesObj.TryGetPropertyValue("url", out var url) &&
-                        url is JsonValue urlValue &&
-                        urlValue.TryGetValue<string>(out var urlString))
-                    {
-                        propertiesModel.Url = urlString;
-                    }
-
-                    if (propertiesObj.TryGetPropertyValue("thumbnail_url", out var thumbnailUrl) &&
-                        thumbnailUrl is JsonValue thumbnailUrlValue &&
-                        thumbnailUrlValue.TryGetValue<string>(out var thumbnailUrlString))
-                    {
-                        propertiesModel.ThumbnailUrl = thumbnailUrlString;
-                    }
-
-                    if (propertiesObj.TryGetPropertyValue("information_protection_label", out var ipl) &&
-                        ipl is JsonValue iplValue &&
-                        iplValue.TryGetValue<string>(out var iplString))
-                    {
-                        propertiesModel.InformationProtectionLabel = iplString;
-                    }
-
-                    if (propertiesObj.TryGetPropertyValue("template_selector", out var templateSelector) &&
-                        templateSelector is JsonValue templateSelectorValue &&
-                        templateSelectorValue.TryGetValue<string>(out var templateSelectorString))
-                    {
-                        propertiesModel.TemplateSelector = templateSelectorString;
-                    }
-
-                    responseSemantics.Properties = propertiesModel;
-                }
-
+                responseSemantics.OAuthCardPath = capabilities.ResponseSemantics.OauthCardPath;
                 functionCapabilities.ResponseSemantics = responseSemantics;
             }
 
             // Set Confirmation
-            if (capabilities.Confirmation is JsonObject confirmationObj)
+            if (capabilities.Confirmation is not null)
             {
-                var confirmation = new Confirmation();
-
-                if (confirmationObj.TryGetPropertyValue("type", out var type) &&
-                    type is JsonValue typeValue &&
-                    typeValue.TryGetValue<string>(out var typeString))
+                var confirmation = new Confirmation
                 {
-                    confirmation.Type = typeString;
-                }
-
-                if (confirmationObj.TryGetPropertyValue("title", out var title) &&
-                    title is JsonValue titleValue &&
-                    titleValue.TryGetValue<string>(out var titleString))
-                {
-                    confirmation.Title = titleString;
-                }
-
-                if (confirmationObj.TryGetPropertyValue("body", out var body) &&
-                    body is JsonValue bodyValue &&
-                    bodyValue.TryGetValue<string>(out var bodyString))
-                {
-                    confirmation.Body = bodyString;
-                }
-
+                    Type = capabilities.Confirmation.Type,
+                    Title = capabilities.Confirmation.Title,
+                    Body = capabilities.Confirmation.Body,
+                };
                 functionCapabilities.Confirmation = confirmation;
             }
 
             // Set SecurityInfo
-            if (capabilities.SecurityInfo is JsonObject securityInfoObj)
+            if (capabilities.SecurityInfo is not null)
             {
-                var securityInfo = new SecurityInfo();
-
-                if (securityInfoObj.TryGetPropertyValue("data_handling", out var dataHandling) &&
-                    dataHandling is JsonArray dataHandlingArray)
+                var securityInfo = new SecurityInfo
                 {
-                    var dataHandlingList = new List<string>();
-
-                    foreach (var item in dataHandlingArray)
-                    {
-                        if (item is JsonValue itemValue &&
-                            itemValue.TryGetValue<string>(out var itemString))
-                        {
-                            dataHandlingList.Add(itemString);
-                        }
-                    }
-
-                    securityInfo.DataHandling = dataHandlingList;
-                }
-
+                    DataHandling = capabilities.SecurityInfo.DataHandling,
+                };
                 functionCapabilities.SecurityInfo = securityInfo;
             }
-
             return functionCapabilities;
         }
 

@@ -63,86 +63,34 @@ public sealed class OpenApiAiCapabilitiesExtensionTest : IDisposable
         var value = OpenApiAiCapabilitiesExtension.Parse(oaiValue);
 
         Assert.NotNull(value);
-        Assert.NotNull(value.ResponseSemantics);
-        Assert.NotNull(value.Confirmation);
-        Assert.NotNull(value.SecurityInfo);
 
-        var responseSemantics = value.ResponseSemantics as JsonObject;
-        var confirmation = value.Confirmation as JsonObject;
-        var securityInfo = value.SecurityInfo as JsonObject;
-
+        var responseSemantics = value.ResponseSemantics;
+        var confirmation = value.Confirmation;
+        var securityInfo = value.SecurityInfo;
         Assert.NotNull(responseSemantics);
         Assert.NotNull(confirmation);
         Assert.NotNull(securityInfo);
 
-        Assert.Equal("$.items", responseSemantics["data_path"]?.ToString());
-        Assert.Equal("Search for items", responseSemantics["static_template"]?["title"]?.ToString());
-        Assert.Equal("Here are the items I found for you.", responseSemantics["static_template"]?["body"]?.ToString());
-        Assert.Equal("Some title", responseSemantics["properties"]?["title"]?.ToString());
-        Assert.Equal("Some subtitle", responseSemantics["properties"]?["subtitle"]?.ToString());
-        Assert.Equal("https://example.com", responseSemantics["properties"]?["url"]?.ToString());
-        Assert.Equal("https://example.com/thumbnail.jpg", responseSemantics["properties"]?["thumbnail_url"]?.ToString());
-        Assert.Equal("confidential", responseSemantics["properties"]?["information_protection_label"]?.ToString());
-        Assert.Equal("modal", confirmation["type"]?.ToString());
-        Assert.Equal("Confirm action", confirmation["title"]?.ToString());
-        Assert.Equal("Do you want to proceed?", confirmation["body"]?.ToString());
-        Assert.Equal("oauthCard.json", responseSemantics["oauth_card_path"]?.ToString());
-        Assert.Equal("some data handling", securityInfo["data_handling"]?[0]?.ToString());
-    }
+        Assert.Equal("$.items", responseSemantics.DataPath);
+        Assert.Equal("oauthCard.json", responseSemantics.OauthCardPath);
+        var staticTemplate = responseSemantics.StaticTemplate as JsonObject;
+        Assert.NotNull(staticTemplate);
+        Assert.Equal("Search for items", staticTemplate["title"]?.ToString());
+        Assert.Equal("Here are the items I found for you.", staticTemplate["body"]?.ToString());
 
-    [Fact]
+        var properties = responseSemantics.Properties;
+        Assert.NotNull(properties);
+        Assert.Equal("Some title", properties.Title);
+        Assert.Equal("Some subtitle", properties.Subtitle);
+        Assert.Equal("https://example.com", properties.Url);
+        Assert.Equal("https://example.com/thumbnail.jpg", properties.ThumbnailUrl);
+        Assert.Equal("confidential", properties.InformationProtectionLabel);
 
-    public async Task ParseFailsIfDataPathNotSetInResponseSemantics()
-    {
-        var oaiValueRepresentation =
-        """
-        {
-            "response_semantics": {
-                "static_template": {
-                    "title": "Search for items",
-                    "body": "Here are the items I found for you."
-                },
-                "properties": {
-                    "title": "Some title",
-                    "subtitle": "Some subtitle",
-                    "url": "https://example.com",
-                    "thumbnail_url": "https://example.com/thumbnail.jpg",
-                    "information_protection_label": "confidential"
-                },
-                "oauth_card_path": "oauthCard.json"
-            }
-        }
-        """;
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(oaiValueRepresentation));
-        var oaiValue = JsonNode.Parse(stream);
+        Assert.Equal("modal", confirmation.Type);
+        Assert.Equal("Confirm action", confirmation.Title);
+        Assert.Equal("Do you want to proceed?", confirmation.Body);
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => Task.FromResult(OpenApiAiCapabilitiesExtension.Parse(oaiValue)));
-    }
-
-    [Fact]
-    public async Task ParseFailsIfStaticTemplateAndTemplateSelectorNotSetInResponseSemantics()
-    {
-        var oaiValueRepresentation =
-        """
-        {
-            "response_semantics": {
-                "data_path": "$.items",
-                "properties": {
-                    "title": "Some title",
-                    "subtitle": "Some subtitle",
-                    "url": "https://example.com",
-                    "thumbnail_url": "https://example.com/thumbnail.jpg",
-                    "information_protection_label": "confidential"
-                }
-            }
-        }
-        """;
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(oaiValueRepresentation));
-        var oaiValue = JsonNode.Parse(stream);
-
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => Task.FromResult(OpenApiAiCapabilitiesExtension.Parse(oaiValue)));
+        Assert.Equal("some data handling", securityInfo.DataHandling[0]);
     }
 
     [Fact]
@@ -220,33 +168,33 @@ components:
     {
         var value = new OpenApiAiCapabilitiesExtension
         {
-            ResponseSemantics = new JsonObject
+            ResponseSemantics = new ExtensionResponseSemantics
             {
-                ["data_path"] = "$.items",
-                ["static_template"] = new JsonObject
+                DataPath = "$.items",
+                StaticTemplate = new JsonObject
                 {
                     ["title"] = "Search for items",
                     ["body"] = "Here are the items I found for you."
                 },
-                ["properties"] = new JsonObject
+                Properties = new ExtensionResponseSemanticsProperties
                 {
-                    ["title"] = "Some title",
-                    ["subtitle"] = "Some subtitle",
-                    ["url"] = "https://example.com",
-                    ["thumbnail_url"] = "https://example.com/thumbnail.jpg",
-                    ["information_protection_label"] = "confidential"
+                    Title = "Some title",
+                    Subtitle = "Some subtitle",
+                    Url = "https://example.com",
+                    ThumbnailUrl = "https://example.com/thumbnail.jpg",
+                    InformationProtectionLabel = "confidential"
                 },
-                ["oauth_card_path"] = "oauthCard.json"
+                OauthCardPath = "oauthCard.json"
             },
-            Confirmation = new JsonObject
+            Confirmation = new ExtensionConfirmation
             {
-                ["type"] = "modal",
-                ["title"] = "Confirm action",
-                ["body"] = "Do you want to proceed?"
+                Type = "modal",
+                Title = "Confirm action",
+                Body = "Do you want to proceed?"
             },
-            SecurityInfo = new JsonObject
+            SecurityInfo = new ExtensionSecurityInfo
             {
-                ["data_handling"] = new JsonArray { "some data handling" }
+                DataHandling = ["some data handling"]
             }
         };
         using var sWriter = new StringWriter();

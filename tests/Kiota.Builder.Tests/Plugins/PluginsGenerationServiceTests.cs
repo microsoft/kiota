@@ -760,7 +760,7 @@ paths:
                 text: Hello World
           properties:
             title: Card Title
-            sub_title: Card Subtitle
+            subtitle: Card Subtitle
             thumbnail_url: https://example.com/image.png
             url: https://example.com
             information_protection_label: general
@@ -918,69 +918,7 @@ paths:
         Assert.NotEqual("$.adaptiveCard", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
     }
 
-    [Fact]
-    public async Task ValidatesResponseSemanticsRequirementsAsync()
-    {
-        var simpleDescriptionContent = @"openapi: 3.0.0
-info:
-  title: test
-  version: 1.0
-paths:
-  /missing-data-path:
-    get:
-      description: missing data path
-      x-ai-capabilities:
-        response_semantics:
-          static_template:
-            type: AdaptiveCard
-      responses:
-        '200':
-          description: test
-  /missing-template:
-    get:
-      description: missing template
-      x-ai-capabilities:
-        response_semantics:
-          data_path: $.test
-      responses:
-        '200':
-          description: test
-  /valid-operation:
-    get:
-      description: valid operation
-      x-ai-capabilities:
-        response_semantics:
-          data_path: $.test
-          properties:
-            template_selector: defaultTemplate
-      responses:
-        '200':
-          description: test
-";
-
-        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
-        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
-        var outputDirectory = Path.Combine(workingDirectory, "output");
-        var generationConfiguration = new GenerationConfiguration
-        {
-            OutputPath = outputDirectory,
-            OpenAPIFilePath = simpleDescriptionPath,
-            PluginTypes = [PluginType.APIPlugin],
-            ClientClassName = "client",
-            ApiRootUrl = "http://localhost/",
-        };
-
-        // Validation errors should be caught when generating manifest
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration));
-    }
-
     #endregion
-
-
 
     #region Validation
 
