@@ -1,6 +1,6 @@
+import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 import { LogOutputChannel } from 'vscode';
-import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from '../kiotaInterop';
 
 export async function exportLogsAndShowErrors(result: KiotaLogEntry[], kiotaOutputChannel: LogOutputChannel): Promise<void> {
   const errorMessages = result

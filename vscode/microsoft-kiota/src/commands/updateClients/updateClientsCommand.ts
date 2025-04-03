@@ -1,7 +1,7 @@
+import { KiotaLogEntry, updateClients } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 
 import { API_MANIFEST_FILE, extensionId } from "../../constants";
-import { updateClients } from '../../kiotaInterop';
 import { getExtensionSettings } from '../../types/extensionSettings';
 import { exportLogsAndShowErrors } from '../../utilities/logging';
 import { showUpgradeWarningMessage } from '../../utilities/messaging';
@@ -49,13 +49,14 @@ export class UpdateClientsCommand extends Command {
         location: vscode.ProgressLocation.Notification,
         cancellable: false,
         title: vscode.l10n.t("Updating clients...")
-      }, (progress, _) => {
+      }, async (progress, _) => {
         const settings = getExtensionSettings(extensionId);
-        return updateClients({
+        const updateResult = await updateClients({
           cleanOutput: settings.cleanOutput,
           clearCache: settings.clearCache,
           workspacePath: vscode.workspace.workspaceFolders![0].uri.fsPath
-        });
+        }) as KiotaLogEntry[];
+        return updateResult;
       });
       if (res) {
         await exportLogsAndShowErrors(res, this.kiotaOutputChannel);

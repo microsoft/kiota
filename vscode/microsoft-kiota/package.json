@@ -511,39 +511,24 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
-    "test": "npm run test:unit && vscode-test",
-    "test:coverage": "npm run pretest && test --coverage",
-    "test:unit": "jest --detectOpenHandles"
+    "test": "vscode-test",
+    "test:coverage": "npm run pretest && test --coverage"
+  },
+  "dependencies": {
+    "@microsoft/kiota": "^1.0.0",
+    "@vscode/extension-telemetry": "^0.9.8",
+    "@vscode/l10n": "^0.0.18"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^4.2.0",
-    "@types/adm-zip": "^0.5.7",
-    "@types/follow-redirects": "^1.14.4",
-    "@types/jest": "^29.5.14",
-    "@types/node": "22.x",
+    "@types/chai": "^5.0.1",
+    "@types/mocha": "^10.0.10",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
-    "@typescript-eslint/parser": "^8.29.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.2.0",
-    "eslint": "^9.23.0",
-    "glob": "^11.0.1",
-    "ts-jest": "^29.3.1",
-    "ts-loader": "^9.5.2",
-    "typemoq": "^2.1.0",
-    "typescript": "^5.8.2",
+    "mocha": "^11.1.0",
+    "sinon": "^19.0.2",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
-  },
-  "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.8",
-    "@vscode/l10n": "^0.0.18",
-    "adm-zip": "^0.5.16",
-    "is-online": "^11.0.0",
-    "jest": "^29.7.0",
-    "original-fs": "^1.2.0",
-    "vscode-jsonrpc": "^8.2.1"
   }
 }

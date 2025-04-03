@@ -1,0 +1,31 @@
+﻿openapi: 3.0.0
+info:
+  title: Repair Service
+  version: 1.0.0
+servers:
+  - url: https://sample.server/api
+
+paths:
+  /repairs:
+    get:
+      operationId: listRepairs
+      summary: List all repairs with oauth
+      description: Returns a list of repairs with their details and images
+      externalDocs:
+        description: Find more info here
+        url: https://sample.server/api/docs
+      responses:
+        "200":
+          description: A list of repairs
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      responses:
+        "200":
+          description: A new repair
+          content:
+            application/json:
+              schema:
+                type: object

@@ -58,6 +58,15 @@ $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $updatedPa
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $runtimeJson.runtimeDependencies
 
+# Update the version in the package.json located in the same directory as runtimeJson
+$runtimeJsonDirectory = Split-Path -Path $runtimeFilePath -Parent
+$runtimePackageJsonFilePath = Join-Path -Path $runtimeJsonDirectory -ChildPath "package.json"
+if (Test-Path $runtimePackageJsonFilePath) {
+  $runtimePackageJson = Get-Content $runtimePackageJsonFilePath | ConvertFrom-Json
+  $runtimePackageJson.version = $version
+  Set-Content $runtimePackageJsonFilePath ($runtimePackageJson | ConvertTo-Json -Depth 10)
+}
+
 if ($online) {
   Write-Warning "Downloading binaries from GitHub."
   $binaryFolderPath = Join-Path ($Env:TEMP ?? $PWD) ".kiota-vscode-$version" # $Env:TEMP is not available on GitHub Actions

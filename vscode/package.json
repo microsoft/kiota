@@ -1,0 +1,41 @@
+{
+  "name": "kiota-vscode-extension",
+  "version": "1.0.0",
+  "description": "main package exposing Kiota CLI functionality to Typescript via npm and vscode extension",
+  "repository": {
+    "url": "https://github.com/microsoft/kiota.git",
+    "type": "git"
+  },
+  "scripts": {
+    "lint": "lerna run lint",
+    "build": "npm run build -w npm-package",
+    "test:vscode": "lerna run build && lerna run test --scope=kiota",
+    "test:vscode:coverage": "lerna run build && lerna run test:coverage --scope=kiota",
+    "test:package": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test --scope=\"@microsoft/kiota\"",
+    "test:package:coverage": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test:coverage --scope=\"@microsoft/kiota\"",
+    "test": "npm run test:package && npm run test:vscode",
+    "test:coverage": "npm run test:package:coverage && npm run test:vscode:coverage",
+    "package:vscode": "lerna run package --scope=kiota",
+    "package:package": "lerna run package --scope=@microsoft/kiota"
+  },
+  "keywords": [
+    "Kiota"
+  ],
+  "author": "Microsoft",
+  "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "^4.0.1",
+    "@types/node": "^22.13.4",
+    "@types/vscode": "^1.98.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "eslint": "^9.20.1",
+    "glob": "^11.0.1",
+    "lerna": "^8.2.0",
+    "typemoq": "^2.1.0",
+    "typescript": "^5.7.3"
+  },
+  "workspaces": [
+    "microsoft-kiota",
+    "npm-package"
+  ]
+}
