@@ -6,20 +6,19 @@ toolchain go1.24.1
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
-	github.com/microsoft/kiota-abstractions-go v1.9.1
-	github.com/microsoft/kiota-authentication-azure-go v1.2.1
-	github.com/microsoft/kiota-http-go v1.5.1
-	github.com/microsoft/kiota-serialization-form-go v1.1.1
-	github.com/microsoft/kiota-serialization-json-go v1.1.1
-	github.com/microsoft/kiota-serialization-multipart-go v1.1.1
-	github.com/microsoft/kiota-serialization-text-go v1.1.1
+	github.com/microsoft/kiota-abstractions-go v1.9.2
+	github.com/microsoft/kiota-authentication-azure-go v1.3.0
+	github.com/microsoft/kiota-http-go v1.5.2
+	github.com/microsoft/kiota-serialization-form-go v1.1.2
+	github.com/microsoft/kiota-serialization-json-go v1.1.2
+	github.com/microsoft/kiota-serialization-multipart-go v1.1.2
+	github.com/microsoft/kiota-serialization-text-go v1.1.2
 )
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.1 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.1 // indirect
-	github.com/cjlapao/common-go v0.0.48 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.0 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -35,7 +34,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
