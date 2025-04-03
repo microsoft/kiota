@@ -46,7 +46,7 @@
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
-    "copy-files": "cpx runtime.json dist/esm && cpx runtime.json dist/cjs",
+    "copy-files": "node scripts/copy-files.js",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
     "package": "npm pack"
@@ -65,7 +65,6 @@
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
     "@types/jest": "^29.5.14",
-    "cpx": "^1.5.0",
     "glob": "^11.0.1",
     "jest": "^29.7.0",
     "rimraf": "^6.0.1",
