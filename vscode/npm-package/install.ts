@@ -59,7 +59,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string) {
           fs.mkdirSync(installPath, { recursive: true });
           const zipFilePath = `${installPath}.zip`;
           // If env variable that points to kiota binary zip exists, use it to copy the file instead of downloading it
-          const kiotaBinaryZip = process.env.SIDELOADING_KIOTA_BINARY_ZIP_PATH;
+          const kiotaBinaryZip = process.env.KIOTA_SIDELOADING_BINARY_ZIP_PATH;
           if (kiotaBinaryZip && fs.existsSync(kiotaBinaryZip)) {
             fs.copyFileSync(kiotaBinaryZip, zipFilePath);
           } else {
