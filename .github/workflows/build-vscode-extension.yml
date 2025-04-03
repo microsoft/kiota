@@ -160,3 +160,15 @@ jobs:
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}
+
+  build_extension:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    steps:
+      - name: All build matrix options are successful
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: exit 0
+      - name: One or more build matrix options failed
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
