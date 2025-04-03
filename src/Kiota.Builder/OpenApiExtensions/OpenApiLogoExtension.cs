@@ -33,7 +33,7 @@ public class OpenApiLogoExtension : IOpenApiExtension
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         if (!string.IsNullOrEmpty(Url))
-        {   
+        {
             writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
             writer.WriteValue(Url);
         }
