@@ -654,13 +654,84 @@ public partial class PluginsGenerationService
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
     {
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
-        if (responseSemantics is null)
-            return null;
-        return new FunctionCapabilities
+        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
+        if (capabilities != null)
         {
-            ResponseSemantics = responseSemantics,
-        };
+            return capabilities;
+        }
+
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        if (responseSemantics != null)
+        {
+            return new FunctionCapabilities
+            {
+                ResponseSemantics = responseSemantics
+            };
+        }
+        return null;
+    }
+
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
+    {
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(extensionName, out var capabilitiesExtension) &&
+            capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities)
+        {
+            var functionCapabilities = new FunctionCapabilities();
+
+            // Set ResponseSemantics
+            if (capabilities.ResponseSemantics is not null)
+            {
+                var responseSemantics = new ResponseSemantics();
+
+                responseSemantics.DataPath = capabilities.ResponseSemantics.DataPath;
+                if (capabilities.ResponseSemantics.StaticTemplate is not null && capabilities.ResponseSemantics.StaticTemplate is JsonObject staticTemplateObj)
+                {
+                    using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
+                    JsonElement staticTemplate = doc.RootElement.Clone();
+                    responseSemantics.StaticTemplate = staticTemplate;
+                }
+                if (capabilities.ResponseSemantics.Properties is not null)
+                {
+                    responseSemantics.Properties = new ResponseSemanticsProperties
+                    {
+                        Title = capabilities.ResponseSemantics.Properties.Title,
+                        Subtitle = capabilities.ResponseSemantics.Properties.Subtitle,
+                        Url = capabilities.ResponseSemantics.Properties.Url,
+                        ThumbnailUrl = capabilities.ResponseSemantics.Properties.ThumbnailUrl,
+                        InformationProtectionLabel = capabilities.ResponseSemantics.Properties.InformationProtectionLabel,
+                        TemplateSelector = capabilities.ResponseSemantics.Properties.TemplateSelector
+                    };
+                }
+                responseSemantics.OAuthCardPath = capabilities.ResponseSemantics.OauthCardPath;
+                functionCapabilities.ResponseSemantics = responseSemantics;
+            }
+
+            // Set Confirmation
+            if (capabilities.Confirmation is not null)
+            {
+                var confirmation = new Confirmation
+                {
+                    Type = capabilities.Confirmation.Type,
+                    Title = capabilities.Confirmation.Title,
+                    Body = capabilities.Confirmation.Body,
+                };
+                functionCapabilities.Confirmation = confirmation;
+            }
+
+            // Set SecurityInfo
+            if (capabilities.SecurityInfo is not null)
+            {
+                var securityInfo = new SecurityInfo
+                {
+                    DataHandling = capabilities.SecurityInfo.DataHandling,
+                };
+                functionCapabilities.SecurityInfo = securityInfo;
+            }
+            return functionCapabilities;
+        }
+
+        return null;
     }
 
     private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
