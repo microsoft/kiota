@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where Dart properties casing would change for serialization.
+
 ## [1.25.1] - 2025-04-03
 
 ### Changed
