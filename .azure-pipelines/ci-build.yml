@@ -616,6 +616,9 @@ extends:
                   npm list
                 displayName: "Install vscode dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run build
+                displayName: "build npm package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
