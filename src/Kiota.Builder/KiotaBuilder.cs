@@ -1233,6 +1233,7 @@ public partial class KiotaBuilder
     }
     private const string RequestBodyPlainTextContentType = "text/plain";
     private const string RequestBodyOctetStreamContentType = "application/octet-stream";
+    private const string DefaultResponseIndicator = "default";
     private static readonly HashSet<string> redirectStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "301", "302", "303", "307" };
     private static readonly HashSet<string> noContentStatusCodes = new(redirectStatusCodes, StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
@@ -1247,7 +1248,7 @@ public partial class KiotaBuilder
                 AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, schema, response.Value, response.Key.ToUpperInvariant());
             }
         }
-        if (operation.Responses.TryGetValue("default", out var defaultResponse) && defaultResponse.GetResponseSchema(config.StructuredMimeTypes) is { } errorSchema)
+        if (operation.Responses.TryGetValue(DefaultResponseIndicator, out var defaultResponse) && defaultResponse.GetResponseSchema(config.StructuredMimeTypes) is { } errorSchema)
         {
             if (!executorMethod.HasErrorMappingCode(CodeMethod.ErrorMappingClientRange))
                 AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, CodeMethod.ErrorMappingClientRange);
@@ -1447,12 +1448,12 @@ public partial class KiotaBuilder
             {
                 (_, true) => [],
                 (null, _) => operation.Responses!
-                                .Where(static x => !errorStatusCodes.Contains(x.Key) && x.Value.Content is not null)
+                                .Where(static x => !errorStatusCodes.Contains(x.Key) && x.Key != DefaultResponseIndicator && x.Value.Content is not null)
                                 .SelectMany(static x => x.Value.Content!)
                                 .Select(static x => x.Key) //get the successful non structured media types first, with a default 1 priority
                                 .Union(config.StructuredMimeTypes.GetAcceptedTypes(
                                                             operation.Responses!
-                                                            .Where(static x => errorStatusCodes.Contains(x.Key) && x.Value.Content is not null) // get any structured error ones, with the priority from the configuration
+                                                            .Where(static x => errorStatusCodes.Contains(x.Key) && x.Key != DefaultResponseIndicator && x.Value.Content is not null) // get any structured error ones, with the priority from the configuration
                                                             .SelectMany(static x => x.Value.Content!) // we can safely ignore unstructured ones as they won't be used in error mappings anyway and the body won't be read
                                                             .Select(static x => x.Key)))
                         .Distinct(StringComparer.OrdinalIgnoreCase),
