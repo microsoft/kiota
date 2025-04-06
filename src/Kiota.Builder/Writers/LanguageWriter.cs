@@ -43,19 +43,19 @@ public abstract class LanguageWriter
     }
 
     private readonly Stack<int> factorStack = new();
-    public void IncreaseIndent(int factor = 1)
+    public virtual void IncreaseIndent(int factor = 1)
     {
         factorStack.Push(factor);
         currentIndent += IndentSize * factor;
     }
 
-    public void DecreaseIndent()
+    public virtual void DecreaseIndent()
     {
         var popped = factorStack.TryPop(out var factor);
         currentIndent -= IndentSize * (popped ? factor : 1);
     }
 
-    public string GetIndent()
+    public virtual string GetIndent()
     {
         return indentString[..Math.Max(0, currentIndent)];
     }
