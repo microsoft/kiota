@@ -469,11 +469,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.ErrorMessageOverride) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
-        if (!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
-            finalReturnType += ", ";
         var openingBracket = writePrototypeOnly ? string.Empty : " {";
         var funcPrefix = writePrototypeOnly ? string.Empty : "func ";
-        writer.WriteLine($"{funcPrefix}{associatedTypePrefix}{methodName}({parameters})({finalReturnType}{errorDeclaration}){openingBracket}");
+        var returnTypeString = (finalReturnType, errorDeclaration) switch
+        {
+            _ when !string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => $"({finalReturnType}, {errorDeclaration})",
+            _ when string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => errorDeclaration,
+            _ when !string.IsNullOrEmpty(finalReturnType) && string.IsNullOrEmpty(errorDeclaration) => finalReturnType,
+            _ => string.Empty
+        };
+        writer.WriteLine($"{funcPrefix}{associatedTypePrefix}{methodName}({parameters}) {returnTypeString}{openingBracket}");
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
