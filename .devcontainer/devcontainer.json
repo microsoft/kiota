@@ -41,13 +41,12 @@
         "kosunix.guid",
         "wix.vscode-import-cost",
         "ms-vsliveshare.vsliveshare",
-        "eg2.vscode-npm-script",
         "fknop.vscode-npm",
         "ms-vscode.powershell",
-        "rebornix.ruby",
+        "Shopify.ruby-lsp",
         "visualstudioexptteam.vscodeintellicode",
         "streetsidesoftware.code-spell-checker",
-        "sswg.swift-lang",
+        "swiftlang.swift-vscode",
         "ms-dotnettools.blazorwasm-companion"
       ]
     }
