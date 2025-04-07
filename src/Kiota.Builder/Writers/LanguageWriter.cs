@@ -19,11 +19,11 @@ using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers;
 
-public abstract class LanguageWriter
+public abstract class LanguageWriter(string indentationChar = " ", int indentSize = 4)
 {
     private TextWriter? writer;
-    private const int IndentSize = 4;
-    private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate(static (x, y) => x + y);
+    private readonly int indentSize = indentSize;
+    private readonly string indentString = Enumerable.Repeat(indentationChar, 1000).Aggregate(static (x, y) => x + y);
     private int currentIndent;
 
     /// <summary>
@@ -43,19 +43,19 @@ public abstract class LanguageWriter
     }
 
     private readonly Stack<int> factorStack = new();
-    public virtual void IncreaseIndent(int factor = 1)
+    public void IncreaseIndent(int factor = 1)
     {
         factorStack.Push(factor);
-        currentIndent += IndentSize * factor;
+        currentIndent += indentSize * factor;
     }
 
-    public virtual void DecreaseIndent()
+    public void DecreaseIndent()
     {
         var popped = factorStack.TryPop(out var factor);
-        currentIndent -= IndentSize * (popped ? factor : 1);
+        currentIndent -= indentSize * (popped ? factor : 1);
     }
 
-    public virtual string GetIndent()
+    public string GetIndent()
     {
         return indentString[..Math.Max(0, currentIndent)];
     }
