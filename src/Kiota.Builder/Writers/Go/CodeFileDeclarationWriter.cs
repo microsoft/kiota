@@ -33,7 +33,6 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                                     .Select(static x => new Tuple<string, string>(x.Name.StartsWith('*') ? x.Name[1..] : x.Declaration!.Name.GetNamespaceImportSymbol(), x.Declaration!.Name))
                                     .Distinct())
                                 .OrderBy(static x => x.Item2) // Item1: import alias, Item2: import path
-                                .ThenBy(static x => x.Item2.Count(static y => y == '/'))
                                 .ToList();
             if (importSegments.Count != 0)
             {

@@ -19,7 +19,7 @@ public static class GoNamespaceExtensions
     {
         if (ns == null) return string.Empty;
         var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
-        return (ns.Name[..urlPrefixIndex] + string.Join("/", ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries)));
+        return ns.Name[..urlPrefixIndex] + string.Join("/", ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries));
     }
     public static string GetNamespaceImportSymbol(this CodeElement ns)
     {
