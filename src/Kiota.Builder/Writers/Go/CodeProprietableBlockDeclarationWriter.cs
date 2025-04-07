@@ -32,14 +32,13 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
                                     .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
                                     .Select(static x => new Tuple<string, string>(x.Name.StartsWith('*') ? x.Name[1..] : x.Declaration!.Name.GetNamespaceImportSymbol(), x.Declaration!.Name))
                                     .Distinct())
-                                .OrderBy(static x => x.Item2.Count(static y => y == '/'))
-                                .ThenBy(static x => x)
+                                .OrderBy(static x => x.Item2) // Item1: import alias, Item2: import path
                                 .ToList();
             if (importSegments.Count != 0)
             {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();
-                importSegments.ForEach(x => writer.WriteLine(x.Item1.Equals(x.Item2, StringComparison.Ordinal) ? $"\"{x.Item2}\"" : $"{x.Item1} \"{x.Item2}\""));
+                importSegments.ForEach(x => writer.WriteLine(string.IsNullOrEmpty(x.Item1) ? $"\"{x.Item2}\"" : $"{x.Item1} \"{x.Item2}\""));
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }
