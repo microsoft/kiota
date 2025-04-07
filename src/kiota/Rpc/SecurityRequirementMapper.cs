@@ -4,14 +4,15 @@ namespace kiota.Rpc
 {
     internal class SecurityRequirementMapper
     {
-        public static IDictionary<string, IList<string>>? FromSecurityRequirementList(IList<OpenApiSecurityRequirement>? securityRequirementList)
+        public static IList<IDictionary<string, IList<string>?>>? FromSecurityRequirementList(IList<OpenApiSecurityRequirement>? securityRequirementList)
         {
             if (securityRequirementList is null) return null;
-            var requirements = new Dictionary<string, IList<string>>();
+            var requirementsList = new List<IDictionary<string, IList<string>?>>();
 
             foreach (var securityRequirement in securityRequirementList)
             {
                 if (securityRequirement is null) continue;
+                var requirements = new Dictionary<string, IList<string>?>();
 
                 foreach (var securityRequirementItem in securityRequirement)
                 {
@@ -25,9 +26,10 @@ namespace kiota.Rpc
 
                     requirements.Add(name, scopes);
                 }
-            }
+                requirementsList.Add(requirements);
 
-            return requirements;
+            }
+            return requirementsList;
         }
     }
 }

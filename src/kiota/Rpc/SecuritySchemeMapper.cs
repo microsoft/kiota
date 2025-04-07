@@ -29,7 +29,7 @@ namespace kiota.Rpc
         private static SecuritySchemeInfo BuildSchemeInfoFromSecurityScheme(IOpenApiSecurityScheme value)
         {
             string? description = value?.Description;
-            string? @in = value?.In?.GetDisplayName() ?? "testvalue";
+            string? @in = value?.In?.GetDisplayName();
             string? scheme = value?.Scheme;
             string? name = value?.Name;
             string? bearerFormat = value?.BearerFormat;

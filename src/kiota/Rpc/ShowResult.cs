@@ -5,6 +5,6 @@ public record ShowResult(
     PathItem? rootNode,
     string? apiTitle,
     IEnumerable<string>? servers = null,
-    IDictionary<string, IList<string>>? security = null,
+    IList<IDictionary<string, IList<string>?>>? security = null,
     IDictionary<string, SecuritySchemeInfo>? securitySchemes = null);
 

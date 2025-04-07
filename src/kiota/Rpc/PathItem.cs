@@ -11,6 +11,6 @@ public record PathItem(
     string? description = null,
     Uri? documentationUrl = null,
     IEnumerable<string>? servers = null,
-    IDictionary<string, IList<string>>? security = null, // key is the security scheme name, value is the list of scopes
+    IList<IDictionary<string, IList<string>?>>? security = null, // key is the security scheme name, value is the list of scopes
     AdaptiveCardInfo? adaptiveCard = null
 );
