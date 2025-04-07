@@ -437,9 +437,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
     private void WriteMethodPrototype(CodeMethod code, CodeElement parentBlock, LanguageWriter writer, string returnType, bool writePrototypeOnly)
     {
-        var returnTypeAsyncSuffix = code.IsAsync ? "error" : string.Empty;
-        if (!string.IsNullOrEmpty(returnType) && code.IsAsync)
-            returnTypeAsyncSuffix = $", {returnTypeAsyncSuffix}";
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
         var methodName = code.Kind switch
         {
@@ -454,7 +451,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, ParameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
         var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
         var associatedTypePrefix = isConstructor || code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
-        var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";
+        var finalReturnType = isConstructor ? classType : returnType;
         var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor,
                                             CodeMethodKind.Constructor,
                                             CodeMethodKind.Getter,
@@ -471,8 +468,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                                 "error";
         var openingBracket = writePrototypeOnly ? string.Empty : " {";
         var funcPrefix = writePrototypeOnly ? string.Empty : "func ";
-        var returnTypeString = (finalReturnType, errorDeclaration) switch
+        var returnTypeString = (code, finalReturnType, errorDeclaration) switch
         {
+            _ when code.IsAsync && !string.IsNullOrEmpty(finalReturnType) => $"({finalReturnType}, error)",
             _ when !string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => $"({finalReturnType}, {errorDeclaration})",
             _ when string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => errorDeclaration,
             _ when !string.IsNullOrEmpty(finalReturnType) && string.IsNullOrEmpty(errorDeclaration) => finalReturnType,
