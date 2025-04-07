@@ -48,7 +48,8 @@
         "streetsidesoftware.code-spell-checker",
         "swiftlang.swift-vscode",
         "ms-dotnettools.blazorwasm-companion",
-        "ms-dotnettools.csdevkit"
+        "ms-dotnettools.csdevkit",
+        "github.vscode-github-actions"
       ]
     }
   },
