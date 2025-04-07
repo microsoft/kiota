@@ -105,7 +105,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine($"var result {typeName}");
             writer.WriteLine("values := strings.Split(v, \",\")");
             writer.StartBlock("for _, str := range values {");
-            writer.StartBlock("switch str {");
+            writer.WriteLine("switch str {");
             foreach (var item in enumOptions)
             {
                 writer.WriteLine($"case \"{item.WireName}\":");
@@ -113,11 +113,17 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 writer.WriteLine($"result |= {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
+            writer.WriteLine("default:");
+            writer.IncreaseIndent();
+            writer.WriteLine($"return nil, nil");
+            writer.DecreaseIndent();
+            writer.WriteLine("}"); // close the switch statement
+            writer.CloseBlock(); // close the for loop
         }
         else
         {
             writer.WriteLine($"result := {enumOptions[0].Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
-            writer.StartBlock("switch v {");
+            writer.WriteLine("switch v {");
             foreach (var item in enumOptions)
             {
                 writer.WriteLine($"case \"{item.WireName}\":");
@@ -125,13 +131,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
+            writer.StartBlock("default:");
+            writer.WriteLine($"return nil, nil");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
-
-        writer.StartBlock("default:");
-        writer.WriteLine($"return nil, nil");
-        writer.DecreaseIndent();
-        writer.CloseBlock();
-        if (isMultiValue) writer.CloseBlock();
         writer.WriteLine("return &result, nil");
         writer.CloseBlock();
     }

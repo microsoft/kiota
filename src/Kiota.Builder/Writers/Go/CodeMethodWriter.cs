@@ -162,7 +162,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
     {
-        writer.StartBlock($"switch *{DiscriminatorMappingVarName} {{");
+        writer.WriteLine($"switch *{DiscriminatorMappingVarName} {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
             writer.WriteLine($"case \"{mappedType.Key}\":");
@@ -170,7 +170,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, parentClass)}(), nil");
             writer.DecreaseIndent();
         }
-        writer.CloseBlock();
+        writer.WriteLine("}");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {

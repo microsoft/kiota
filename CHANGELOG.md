@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: if there is only one return argument, omit the parentheses
 - golang: remove trailing spaces on comments
 - golang: fix import ordering
+- golang: correctly indent case statements inside a switch
 - Fixed a bug where default response definitions were being considered for Media Type selection [#6413](https://github.com/microsoft/kiota/issues/6413)
 
 ## [1.25.1] - 2025-04-03
