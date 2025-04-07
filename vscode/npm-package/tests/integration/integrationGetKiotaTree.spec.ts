@@ -1,6 +1,5 @@
 import { KiotaLogEntry, KiotaTreeResult, KiotaOpenApiNode, LogLevel, SecurityRequirementObject, OAuth2SecurityScheme, HttpSecurityScheme, ApiKeySecurityScheme, OpenIdSecurityScheme } from "../../types";
 import { getKiotaTree } from "../../lib/getKiotaTree";
-import { LogLevel } from "../../types";
 
 function existsGreaterThanLevelLogs(logs: KiotaLogEntry[] | undefined, level: LogLevel): boolean {
   if (!logs) return false;
@@ -20,12 +19,6 @@ function flattenKiotaTree(tree: KiotaOpenApiNode): KiotaOpenApiNode[] {
     result.push(...flattenKiotaTree(child));
   }
   return result;
-}
-
-function findSecurityRequirementByName(node: KiotaOpenApiNode | undefined, security_requirement_name: string): SecurityRequirementObject | undefined {
-  if (!node) return undefined;
-  if (!node.security) return undefined;
-  return node.security[security_requirement_name];
 }
 
 describe("getKiotaTree", () => {
@@ -51,22 +44,33 @@ describe("getKiotaTree", () => {
     expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
     expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
+    // Check if the security requirements are defined correctly for get operation
+    // It should have one security requirement: oAuth2AuthCode
     const actualListOperationNode = findOperationByPath(actual, '\\repairs#GET');
     expect(actualListOperationNode).toBeDefined();
     expect(actualListOperationNode?.operationId).toEqual('listRepairs');
     expect(actualListOperationNode?.security).toBeDefined();
-    const actualListSecurityRequirement = findSecurityRequirementByName(actualListOperationNode, 'oAuth2AuthCode');
-    expect(actualListSecurityRequirement).toBeDefined();
-    expect(actualListSecurityRequirement?.[0]).toEqual('api://sample/repairs_read');
+    expect(actualListOperationNode?.security?.length).toEqual(1);
+    const firstSecurityRequirementInGet = actualListOperationNode?.security?.[0];
+    const oAuth2AuthCodeSecurityRequirementInGet = firstSecurityRequirementInGet?.['oAuth2AuthCode'];
+    expect(oAuth2AuthCodeSecurityRequirementInGet).toBeDefined();
+    expect(oAuth2AuthCodeSecurityRequirementInGet?.length).toEqual(1);
+    expect(oAuth2AuthCodeSecurityRequirementInGet?.[0]).toEqual('api://sample/repairs_read');
 
+    // Check if the security requirements are defined correctly for post operation
+    // It should have two security requirements: oAuth2AuthCode and httpAuth
     const actualPostOperationNode = findOperationByPath(actual, '\\repairs#POST');
     expect(actualPostOperationNode).toBeDefined();
     expect(actualPostOperationNode?.operationId).toEqual('repairs_post');
     expect(actualPostOperationNode?.security).toBeDefined();
-    const actualPostSecurityRequirement = findSecurityRequirementByName(actualPostOperationNode, 'oAuth2AuthCode');
-    expect(actualPostSecurityRequirement).toBeDefined();
-    expect(actualPostSecurityRequirement?.[0]).toEqual('api://sample/repairs_write');
+    expect(actualPostOperationNode?.security?.length).toEqual(1);
+    const firstSecurityRequirementInPost = actualPostOperationNode?.security?.[0];
+    const oAuth2AuthCodeSecurityRequirementInPost = firstSecurityRequirementInPost?.['oAuth2AuthCode'];
+    expect(oAuth2AuthCodeSecurityRequirementInPost).toBeDefined();
+    expect(oAuth2AuthCodeSecurityRequirementInPost?.length).toEqual(1);
+    expect(oAuth2AuthCodeSecurityRequirementInPost?.[0]).toEqual('api://sample/repairs_write');
 
+    // Check if the security schemes are defined correctly for post operation
     const actualOAuthSecuritySchema = actual?.securitySchemes?.["oAuth2AuthCode"] as OAuth2SecurityScheme;
     expect(actualOAuthSecuritySchema).toBeDefined();
     expect(actualOAuthSecuritySchema.flows).toBeDefined();
@@ -119,6 +123,116 @@ describe("getKiotaTree", () => {
     expect(actualOpenIdConnectSecuritySchema.description).toEqual('OpenID Connect authentication');
     expect(actualOpenIdConnectSecuritySchema.openIdConnectUrl).toEqual('https://login.microsoftonline.com/common/.well-known/openid-configuration');
 
+  });
+
+  test('testGetKiotaTree_withMultipleSecurity', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithMultipleSecurity.yaml';
+
+    const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
+
+    expect(actual).toBeDefined();
+    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+
+    // Check if the security requirements are defined correctly for get operation
+    // It should have one security requirement: oAuth2AuthCode
+    const actualListOperationNode = findOperationByPath(actual, '\\repairs#GET');
+    expect(actualListOperationNode).toBeDefined();
+    expect(actualListOperationNode?.operationId).toEqual('listRepairs');
+    expect(actualListOperationNode?.security).toBeDefined();
+    expect(actualListOperationNode?.security?.length).toEqual(1);
+    const firstSecurityRequirementInGet = actualListOperationNode?.security?.[0];
+    const oAuth2AuthCodeSecurityRequirementInGet = firstSecurityRequirementInGet?.['oAuth2AuthCode'];
+    expect(oAuth2AuthCodeSecurityRequirementInGet).toBeDefined();
+    expect(oAuth2AuthCodeSecurityRequirementInGet?.length).toEqual(1);
+    expect(oAuth2AuthCodeSecurityRequirementInGet?.[0]).toEqual('api://sample/repairs_read');
+
+    // Check if the security requirements are defined correctly for post operation
+    // It should have two security requirements: oAuth2AuthCode and httpAuth
+    const actualPostOperationNode = findOperationByPath(actual, '\\repairs#POST');
+    expect(actualPostOperationNode).toBeDefined();
+    expect(actualPostOperationNode?.operationId).toEqual('repairs_post');
+    expect(actualPostOperationNode?.security).toBeDefined();
+    expect(actualPostOperationNode?.security?.length).toEqual(2);
+    const firstSecurityRequirementInPost = actualPostOperationNode?.security?.[0];
+    const oAuth2AuthCodeSecurityRequirementInPost = firstSecurityRequirementInPost?.['oAuth2AuthCode'];
+    expect(oAuth2AuthCodeSecurityRequirementInPost).toBeDefined();
+    expect(oAuth2AuthCodeSecurityRequirementInPost?.length).toEqual(1);
+    expect(oAuth2AuthCodeSecurityRequirementInPost?.[0]).toEqual('api://sample/repairs_write');
+    const secondSecurityRequirementInPost = actualPostOperationNode?.security?.[1];
+    expect(secondSecurityRequirementInPost).toBeDefined();
+    const httpAuthSecurityRequirementInPost = secondSecurityRequirementInPost?.['httpAuth'];
+    expect(httpAuthSecurityRequirementInPost).toBeDefined();
+    expect(httpAuthSecurityRequirementInPost?.length).toEqual(0);
+
+    // Check if the security requirements are defined correctly for post operation
+    // It should have two security requirements: oAuth2AuthCode and httpAuth
+    const actualPutOperationNode = findOperationByPath(actual, '\\repairs#PUT');
+    expect(actualPutOperationNode).toBeDefined();
+    expect(actualPutOperationNode?.operationId).toEqual('repairs_put');
+    expect(actualPutOperationNode?.security).toBeDefined();
+    expect(actualPutOperationNode?.security?.length).toEqual(1);
+    const firstSecurityRequirementInPut = actualPutOperationNode?.security?.[0];
+    const oAuth2AuthCodeSecurityRequirementInPut = firstSecurityRequirementInPut?.['oAuth2AuthCode'];
+    expect(oAuth2AuthCodeSecurityRequirementInPut).toBeDefined();
+    expect(oAuth2AuthCodeSecurityRequirementInPut?.length).toEqual(1);
+    expect(oAuth2AuthCodeSecurityRequirementInPut?.[0]).toEqual('api://sample/repairs_write');
+    const httpAuthSecurityRequirementInPut = firstSecurityRequirementInPut?.['httpAuth'];
+    expect(httpAuthSecurityRequirementInPut).toBeDefined();
+    expect(httpAuthSecurityRequirementInPut?.length).toEqual(0);
+
+    // Check if the security schemes are defined correctly for post operation
+    const actualOAuthSecuritySchema = actual?.securitySchemes?.["oAuth2AuthCode"] as OAuth2SecurityScheme;
+    expect(actualOAuthSecuritySchema).toBeDefined();
+    expect(actualOAuthSecuritySchema.flows).toBeDefined();
+    const actualAuthorizationCodeFlow = actualOAuthSecuritySchema.flows.authorizationCode;
+    expect(actualAuthorizationCodeFlow).toBeDefined();
+    expect(actualAuthorizationCodeFlow?.authorizationUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+    expect(actualAuthorizationCodeFlow?.tokenUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/token');
+    expect(actualAuthorizationCodeFlow?.refreshUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/refresh');
+    expect(actualAuthorizationCodeFlow?.scopes).toBeDefined();
+    expect(actualAuthorizationCodeFlow?.scopes['api://sample/repairs_read']).toEqual('Read repair records');
+    expect(actualAuthorizationCodeFlow?.scopes['api://sample/repairs_write']).toEqual('Write repair records');
+    const actualImplicitFlow = actualOAuthSecuritySchema.flows.implicit;
+    expect(actualImplicitFlow).toBeDefined();
+    expect(actualImplicitFlow?.authorizationUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+    expect(actualImplicitFlow?.refreshUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/refresh');
+    expect(actualImplicitFlow?.scopes).toBeDefined();
+    expect(actualImplicitFlow?.scopes['api://sample/repairs_read']).toEqual('Read repair records');
+    expect(actualImplicitFlow?.scopes['api://sample/repairs_write']).toEqual('Write repair records');
+    const actualClientCredentialsFlow = actualOAuthSecuritySchema.flows.clientCredentials;
+    expect(actualClientCredentialsFlow).toBeDefined();
+    expect(actualClientCredentialsFlow?.tokenUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/token');
+    expect(actualClientCredentialsFlow?.refreshUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/refresh');
+    expect(actualClientCredentialsFlow?.scopes).toBeDefined();
+    expect(actualClientCredentialsFlow?.scopes['api://sample/repairs_read']).toEqual('Read repair records');
+    expect(actualClientCredentialsFlow?.scopes['api://sample/repairs_write']).toEqual('Write repair records');
+    const actualPasswordFlow = actualOAuthSecuritySchema.flows.password;
+    expect(actualPasswordFlow).toBeDefined();
+    expect(actualPasswordFlow?.tokenUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/token');
+    expect(actualPasswordFlow?.refreshUrl).toEqual('https://login.microsoftonline.com/common/oauth2/v2.0/refresh');
+    expect(actualPasswordFlow?.scopes).toBeDefined();
+    expect(actualPasswordFlow?.scopes['api://sample/repairs_read']).toEqual('Read repair records');
+    expect(actualPasswordFlow?.scopes['api://sample/repairs_write']).toEqual('Write repair records');
+
+    const actualHttpSecuritySchema = actual?.securitySchemes?.["httpAuth"] as HttpSecurityScheme;
+    expect(actualHttpSecuritySchema).toBeDefined();
+    expect(actualHttpSecuritySchema.type).toEqual('http');
+    expect(actualHttpSecuritySchema.scheme).toEqual('basic');
+    expect(actualHttpSecuritySchema.description).toEqual('HTTP basic authentication');
+
+    const actualApiKeySecuritySchema = actual?.securitySchemes?.["apiKeyAuth"] as ApiKeySecurityScheme;
+    expect(actualApiKeySecuritySchema).toBeDefined();
+    expect(actualApiKeySecuritySchema.type).toEqual('apiKey');
+    expect(actualApiKeySecuritySchema.name).toEqual('X-API-Key');
+    expect(actualApiKeySecuritySchema.in).toEqual('header');
+    expect(actualApiKeySecuritySchema.description).toEqual('API key authentication');
+
+    const actualOpenIdConnectSecuritySchema = actual?.securitySchemes?.["openIdConnectAuth"] as OpenIdSecurityScheme;
+    expect(actualOpenIdConnectSecuritySchema).toBeDefined();
+    expect(actualOpenIdConnectSecuritySchema.type).toEqual('openIdConnect');
+    expect(actualOpenIdConnectSecuritySchema.description).toEqual('OpenID Connect authentication');
+    expect(actualOpenIdConnectSecuritySchema.openIdConnectUrl).toEqual('https://login.microsoftonline.com/common/.well-known/openid-configuration');
   });
 
   test('testGetKiotaTree_withReferenceIdExtension', async () => {
