@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: indent with tabs instead of spaces
 - golang: if there is only one return argument, omit the parentheses
 - golang: remove trailing spaces on comments
+- golang: fix import ordering
 
 ## [1.25.1] - 2025-04-03
 
