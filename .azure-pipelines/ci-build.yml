@@ -579,15 +579,7 @@ extends:
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
-            dependsOn:
-              [
-                win_x64_build_binaries,
-                win_x86_build_binaries,
-                linux_x64_build_binaries,
-                linux_arm64_build_binaries,
-                osx_x64_build_binaries,
-                osx_arm64_build_binaries,
-              ]
+            dependsOn: [build_npm_package]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -623,6 +615,9 @@ extends:
                   npm install
                   npm list
                 displayName: "Install vscode dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run build
+                displayName: "build npm package"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
