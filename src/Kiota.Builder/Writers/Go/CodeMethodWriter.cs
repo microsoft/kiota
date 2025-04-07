@@ -92,6 +92,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 break;
         }
         writer.CloseBlock();
+        writer.WriteLine(); // empty line after each func
     }
     private static void WriteErrorMethodOverride(CodeClass parentClass, LanguageWriter writer)
     {
