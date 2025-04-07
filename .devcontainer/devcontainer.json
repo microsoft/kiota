@@ -47,7 +47,8 @@
         "visualstudioexptteam.vscodeintellicode",
         "streetsidesoftware.code-spell-checker",
         "swiftlang.swift-vscode",
-        "ms-dotnettools.blazorwasm-companion"
+        "ms-dotnettools.blazorwasm-companion",
+        "ms-dotnettools.csdevkit"
       ]
     }
   },
