@@ -466,7 +466,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.ErrorMessageOverride) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
-        var openingBracket = writePrototypeOnly ? string.Empty : " {";
         var funcPrefix = writePrototypeOnly ? string.Empty : "func ";
         var returnTypeString = (code, finalReturnType, errorDeclaration) switch
         {
@@ -475,6 +474,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             _ when string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => errorDeclaration,
             _ when !string.IsNullOrEmpty(finalReturnType) && string.IsNullOrEmpty(errorDeclaration) => finalReturnType,
             _ => string.Empty
+        };
+        var openingBracket = (writePrototypeOnly, returnTypeString) switch
+        {
+            _ when writePrototypeOnly => string.Empty,
+            _ when string.IsNullOrEmpty(returnTypeString) => "{", // no leading space in this case
+            _ => " {",
         };
         writer.WriteLine($"{funcPrefix}{associatedTypePrefix}{methodName}({parameters}) {returnTypeString}{openingBracket}");
     }
