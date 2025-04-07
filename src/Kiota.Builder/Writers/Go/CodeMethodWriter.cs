@@ -109,7 +109,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, m.BaseRequestBuilder.{requestAdapterProperty.Name.ToFirstCharacterUpperCase()});");
+        writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, m.BaseRequestBuilder.{requestAdapterProperty.Name.ToFirstCharacterUpperCase()})");
     }
     private void WriteComposedTypeMarkerBody(LanguageWriter writer)
     {
