@@ -1448,12 +1448,12 @@ public partial class KiotaBuilder
             {
                 (_, true) => [],
                 (null, _) => operation.Responses!
-                                .Where(static x => !errorStatusCodes.Contains(x.Key) && x.Key != DefaultResponseIndicator && x.Value.Content is not null)
+                                .WhereValidForMediaTypeSelection()
                                 .SelectMany(static x => x.Value.Content!)
                                 .Select(static x => x.Key) //get the successful non structured media types first, with a default 1 priority
                                 .Union(config.StructuredMimeTypes.GetAcceptedTypes(
                                                             operation.Responses!
-                                                            .Where(static x => errorStatusCodes.Contains(x.Key) && x.Key != DefaultResponseIndicator && x.Value.Content is not null) // get any structured error ones, with the priority from the configuration
+                                                            .WhereValidForMediaTypeSelection()
                                                             .SelectMany(static x => x.Value.Content!) // we can safely ignore unstructured ones as they won't be used in error mappings anyway and the body won't be read
                                                             .Select(static x => x.Key)))
                         .Distinct(StringComparer.OrdinalIgnoreCase),
