@@ -717,7 +717,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol)
     {
         if (property.Setter is null) return;
-        writer.StartBlock($"res[\"{property.WireName}\"] = func (n {parsableImportSymbol}) error {{");
+        writer.StartBlock($"res[\"{property.WireName}\"] = func(n {parsableImportSymbol}) error {{");
         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
         var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
         writer.WriteLine($"val, err := n.{deserializationMethodName}");
@@ -803,7 +803,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (codeElement.ErrorMappings.Any())
         {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings {{");
+            writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings{{");
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
