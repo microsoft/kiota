@@ -108,7 +108,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock("switch str {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName}\":");
+                writer.WriteLine($"case \"{item.WireName}\":");
+                writer.IncreaseIndent();
                 writer.WriteLine($"result |= {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
@@ -119,7 +120,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock("switch v {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName}\":");
+                writer.WriteLine($"case \"{item.WireName}\":");
+                writer.IncreaseIndent();
                 writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
