@@ -542,14 +542,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             {
                 var moduleImportSymbol = conventions.GetTypeString(new CodeType { Name = module, IsExternal = true }, parentClass, false, false);
                 moduleImportSymbol = moduleImportSymbol.Split('.').First();
-                writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
+                writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return {moduleImportSymbol}.New{module}()");
+                writer.DecreaseIndent();
+                writer.WriteLine("})");
             }
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
         if (inherits || parentClass.IsErrorDefinition)
         {
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
             writer.IncreaseIndent();
             var parentClassName = parentClass.StartBlock.Inherits!.Name.ToFirstCharacterUpperCase();
             var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
@@ -565,8 +569,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             else
                 writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
             writer.DecreaseIndent();
+            writer.CloseBlock(decreaseIndent: false);
         }
-        writer.CloseBlock(decreaseIndent: false);
+        else
+        {
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{}}");
+        }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
