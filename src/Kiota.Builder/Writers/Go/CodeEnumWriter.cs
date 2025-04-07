@@ -20,12 +20,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
         }
 
-        var usings = codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
-        if (usings.Length > 0)
+        var usings = codeElement.Usings.Select(static x => x.Name).OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        if (usings.Count > 0)
         {
             writer.StartBlock("import (");
-            foreach (var cUsing in usings)
-                writer.WriteLine($"\"{cUsing.Name}\"");
+            usings.ForEach(x => writer.WriteLine($"\"{x}\""));
             writer.CloseBlock(")");
         }
 
