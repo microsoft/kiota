@@ -43,7 +43,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         foreach (var item in enumOptions)
         {
             if (item.Documentation.DescriptionAvailable)
-                writer.WriteLine($"// {item.Documentation.DescriptionTemplate}");
+                conventions.WriteDescriptionItem(item.Documentation.DescriptionTemplate, writer);
 
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
