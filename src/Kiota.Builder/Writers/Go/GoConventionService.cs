@@ -6,7 +6,6 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Microsoft.VisualBasic;
 
 namespace Kiota.Builder.Writers.Go;
 public class GoConventionService : CommonLanguageConventionService
