@@ -499,8 +499,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
             writer.WriteBlock("if err != nil {", "}", "panic(err)");
             writer.WriteBlock("if val == nil {", "}",
-                $"var value = {codeElement.AccessedProperty.DefaultValue};",
-                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
+                $"var value = {codeElement.AccessedProperty.DefaultValue}",
+                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value)");
 
             writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
         }
@@ -532,7 +532,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine($"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
         }
         if (backingStoreParameter != null)
-            writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
+            writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name})");
     }
     private void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName)
     {
@@ -581,7 +581,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue}");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -876,7 +876,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix)
     {
         WriteMethodCall(codeElement, requestParams, parentClass, writer, CodeMethodKind.RequestGenerator, (name, paramsCall) =>
-            $"{prefix}m.{name}({paramsCall});"
+            $"{prefix}m.{name}({paramsCall})"
         );
     }
     private const string RequestInfoVarName = "requestInfo";
