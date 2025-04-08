@@ -76,7 +76,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock($"for p := 0; p < {enumOptions.Count}; p++ {{");
             writer.WriteLine($"mantis := {typeName}(int(math.Pow(2, float64(p))))");
             writer.StartBlock($"if i&mantis == mantis {{");
-            writer.WriteLine($"values = append(values, options[p])");
+            writer.WriteLine("values = append(values, options[p])");
             writer.CloseBlock();
             writer.CloseBlock();
             writer.WriteLine("return strings.Join(values, \",\")");
@@ -115,7 +115,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             }
             writer.WriteLine("default:");
             writer.IncreaseIndent();
-            writer.WriteLine($"return nil, nil");
+            writer.WriteLine("return nil, nil");
             writer.DecreaseIndent();
             writer.WriteLine("}"); // close the switch statement
             writer.CloseBlock(); // close the for loop
@@ -132,7 +132,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 writer.DecreaseIndent();
             }
             writer.StartBlock("default:");
-            writer.WriteLine($"return nil, nil");
+            writer.WriteLine("return nil, nil");
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
