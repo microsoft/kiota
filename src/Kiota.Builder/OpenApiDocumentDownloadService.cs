@@ -115,7 +115,9 @@ internal class OpenApiDocumentDownloadService
         // Add all extensions for generation
         settings.AddGenerationExtensions();
         settings.AddYamlReader();
-        if (config.IsPluginConfiguration)
+        // Add plugins extensions to parse from the OpenAPI file
+        bool addPluginsExtensions = config.IsPluginConfiguration || config.IncludePluginExtensions == true;
+        if (addPluginsExtensions)
             settings.AddPluginsExtensions();// Add all extensions for plugins
 
         try
