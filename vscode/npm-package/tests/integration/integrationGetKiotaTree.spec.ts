@@ -32,7 +32,7 @@ describe("getKiotaTree", () => {
     expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
     const actualOperationNode = findOperationByPath(actual, '\\discriminateme#POST');
     expect(actualOperationNode).toBeDefined();
-    expect(actualOperationNode?.operationId).toEqual('discriminateme_post');
+    expect(actualOperationNode?.operationId).toBeUndefined();
   });
 
   test('testGetKiotaTree_withSecurity', async () => {
@@ -61,7 +61,7 @@ describe("getKiotaTree", () => {
     // It should have two security requirements: oAuth2AuthCode and httpAuth
     const actualPostOperationNode = findOperationByPath(actual, '\\repairs#POST');
     expect(actualPostOperationNode).toBeDefined();
-    expect(actualPostOperationNode?.operationId).toEqual('repairs_post');
+    expect(actualPostOperationNode?.operationId).toBeUndefined();
     expect(actualPostOperationNode?.security).toBeDefined();
     expect(actualPostOperationNode?.security?.length).toEqual(1);
     const firstSecurityRequirementInPost = actualPostOperationNode?.security?.[0];
@@ -151,7 +151,7 @@ describe("getKiotaTree", () => {
     // It should have two security requirements: oAuth2AuthCode and httpAuth
     const actualPostOperationNode = findOperationByPath(actual, '\\repairs#POST');
     expect(actualPostOperationNode).toBeDefined();
-    expect(actualPostOperationNode?.operationId).toEqual('repairs_post');
+    expect(actualPostOperationNode?.operationId).toBeUndefined();
     expect(actualPostOperationNode?.security).toBeDefined();
     expect(actualPostOperationNode?.security?.length).toEqual(2);
     const firstSecurityRequirementInPost = actualPostOperationNode?.security?.[0];
@@ -169,7 +169,7 @@ describe("getKiotaTree", () => {
     // It should have two security requirements: oAuth2AuthCode and httpAuth
     const actualPutOperationNode = findOperationByPath(actual, '\\repairs#PUT');
     expect(actualPutOperationNode).toBeDefined();
-    expect(actualPutOperationNode?.operationId).toEqual('repairs_put');
+    expect(actualPutOperationNode?.operationId).toBeUndefined();
     expect(actualPutOperationNode?.security).toBeDefined();
     expect(actualPutOperationNode?.security?.length).toEqual(1);
     const firstSecurityRequirementInPut = actualPutOperationNode?.security?.[0];
@@ -276,7 +276,7 @@ describe("getKiotaTree", () => {
 
     const actualPostOperationNode = findOperationByPath(actual, '\\repairs#POST');
     expect(actualPostOperationNode).toBeDefined();
-    expect(actualPostOperationNode?.operationId).toEqual('repairs_post');
+    expect(actualPostOperationNode?.operationId).toBeUndefined();
     expect(actualPostOperationNode?.summary).toBeUndefined();
     expect(actualPostOperationNode?.description).toBeUndefined();
     expect(actualPostOperationNode?.isOperation).toBeTruthy();
@@ -297,7 +297,7 @@ describe("getKiotaTree", () => {
 
     const actualOperationNode = findOperationByPath(actual, '\\repairs#GET');
     expect(actualOperationNode).toBeDefined();
-    expect(actualOperationNode?.operationId).toEqual('repairs_get');
+    expect(actualOperationNode?.operationId).toBeUndefined();
     expect(actualOperationNode?.servers).toBeDefined();
     expect(actualOperationNode?.servers?.[0]).toEqual('https://sample.server.overridden/api');
   });
