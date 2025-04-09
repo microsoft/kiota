@@ -137,7 +137,7 @@ public class GenerationConfiguration : ICloneable
 
     // If set to true, this allows to parse extensions from manifest
     // to use in query operations for RPC requests
-    public bool? EnsurePluginExtensions
+    public bool? IncludePluginExtensions
     {
         get; set;
     }
@@ -166,7 +166,7 @@ public class GenerationConfiguration : ICloneable
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             IncludeKiotaValidationRules = IncludeKiotaValidationRules,
-            EnsurePluginExtensions = EnsurePluginExtensions,
+            IncludePluginExtensions = IncludePluginExtensions,
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
             Operation = Operation,

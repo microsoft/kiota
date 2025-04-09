@@ -114,7 +114,7 @@ internal partial class Server : IServer
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
 
         // This is needed to add plugin extensions parsers
-        configuration.EnsurePluginExtensions = true;
+        configuration.IncludePluginExtensions = true;
         configuration.SkipGeneration = true;
         configuration.IncludeKiotaValidationRules = includeKiotaValidationRules;
 
