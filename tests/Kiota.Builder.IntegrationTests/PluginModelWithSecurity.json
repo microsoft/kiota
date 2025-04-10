@@ -24,7 +24,7 @@
       "type": "OpenApi",
       "auth": {
         "type": "OAuthPluginVault",
-        "reference_id": "{oAuth2AuthCode_CONFIGURATION_ID}"
+        "reference_id": "{oAuth2AuthCode_REGISTRATION_ID}"
       },
       "spec": {
         "url": "withsecurity-openapi.yml"

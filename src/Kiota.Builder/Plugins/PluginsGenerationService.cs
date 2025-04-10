@@ -613,7 +613,7 @@ public partial class PluginsGenerationService
             },
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
-                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_CONFIGURATION_ID}}" : authenticationReferenceId
+                ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
             _ => null
         };
