@@ -22,7 +22,7 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
         foreach (var implement in codeElement.Implements)
         {
             var parentTypeName = conventions.GetTypeString(implement, inter, true, false);
-            writer.WriteLine($"{parentTypeName}");
+            writer.WriteLine(parentTypeName);
         }
     }
 }
