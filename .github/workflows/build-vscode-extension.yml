@@ -20,7 +20,7 @@ jobs:
         id: checksecret_job
         run: |
           echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-  
+
   test_and_generate_binaries:
     needs: [checksecret]
     strategy:
@@ -31,7 +31,7 @@ jobs:
           - architecture: linux-x64
             os: ubuntu-latest
           - architecture: osx-arm64
-            os: macOS-latest    
+            os: macOS-latest
     runs-on: ${{ matrix.binaries.os }}
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
       - name: Use .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: "9.x"
 
       - id: last_release
         run: |
@@ -56,10 +56,12 @@ jobs:
 
       - run: scripts/update-vscode-releases.ps1 -version "v${{ steps.last_release.outputs.RELEASE_VERSION }}" -packageJsonFilePath "./vscode/microsoft-kiota/package.json" -runtimeFilePath "./vscode/npm-package/runtime.json" -online
         shell: pwsh
-        
+
       - name: Install dependencies
         run: npm install
         working-directory: vscode
+        env:
+          SKIP_POSTINSTALL: "true"
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
@@ -145,14 +147,14 @@ jobs:
 
       - run: npm run package:${{ matrix.builds.id }}
         if: matrix.builds.id == 'package'
-        name: 'Package - ${{ matrix.builds.id }}'
+        name: "Package - ${{ matrix.builds.id }}"
         working-directory: vscode
 
       - run: |
           npm i -g @vscode/vsce
           vsce package
         working-directory: vscode/${{ matrix.builds.path }}
-        name: 'Package - ${{ matrix.builds.id }}'
+        name: "Package - ${{ matrix.builds.id }}"
         if: matrix.builds.id == 'vscode'
 
       - name: Upload artifact
