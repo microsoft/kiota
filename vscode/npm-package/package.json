@@ -22,6 +22,9 @@
       "default": "./dist/cjs/index.js"
     }
   },
+  "bin": {
+    "kiota": "./scripts/cli.js"
+  },
   "types": "dist/esm/types/index.d.ts",
   "typesVersions": {
     "*": {
@@ -35,7 +38,8 @@
   },
   "files": [
     "dist",
-    "runtime.json"
+    "runtime.json",
+    "scripts"
   ],
   "scripts": {
     "lint": "eslint",
@@ -49,7 +53,8 @@
     "copy-files": "node scripts/copy-files.js",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
-    "package": "npm pack"
+    "package": "npm pack",
+    "postinstall": "node scripts/bootstrap.js"
   },
   "keywords": [
     "Kiota"
