@@ -1,3 +1,7 @@
+if (process.env.SKIP_POSTINSTALL) {
+    process.exit(0); // Successfully exits the script
+}
+
 const { getKiotaVersion } = require('../dist/cjs/lib/getKiotaVersion.js');
 
 (async () => {
