@@ -1,14 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading;
-using System.Threading.Tasks;
-using Castle.Core.Logging;
-using Moq;
-using Moq.Protected;
 using Xunit;
 using Xunit.Abstractions;
 
