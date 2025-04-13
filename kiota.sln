@@ -25,6 +25,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NPMProjects", "NPMProjects"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "npm-package", "vscode\npm-package\npm-package.esproj", "{C6BFB632-723D-238A-EA11-44E78644612E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{099BEFDC-D101-4DB6-B028-E24376B6DC50}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\auto-merge-dependabot.yml = .github\workflows\auto-merge-dependabot.yml
+		.github\workflows\build-vscode-extension.yml = .github\workflows\build-vscode-extension.yml
+		.github\workflows\check-translations.yml = .github\workflows\check-translations.yml
+		.github\workflows\codeql-analysis.yml = .github\workflows\codeql-analysis.yml
+		.github\workflows\codeql-required-workaround.yml = .github\workflows\codeql-required-workaround.yml
+		.github\workflows\dotnet-required-workaround.yml = .github\workflows\dotnet-required-workaround.yml
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
+		.github\workflows\idempotency-tests.yml = .github\workflows\idempotency-tests.yml
+		.github\workflows\integration-tests.yml = .github\workflows\integration-tests.yml
+		.github\workflows\load-tests.yml = .github\workflows\load-tests.yml
+		.github\workflows\project-auto-add.yml = .github\workflows\project-auto-add.yml
+		.github\workflows\sonarcloud.yml = .github\workflows\sonarcloud.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

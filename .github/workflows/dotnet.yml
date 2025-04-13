@@ -21,6 +21,8 @@ jobs:
       - name: Check formatting
         run: dotnet format --verify-no-changes
       - name: Build
+        env:
+          SKIP_POSTINSTALL: "true"
         run: dotnet build kiota.sln --no-restore
       - name: Test
         run: dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"

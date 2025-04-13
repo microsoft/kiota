@@ -58,10 +58,10 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
-        run: npm install
-        working-directory: vscode
         env:
           SKIP_POSTINSTALL: "true"
+        run: npm install
+        working-directory: vscode
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
@@ -142,6 +142,8 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
+        env:
+          SKIP_POSTINSTALL: "true"
         run: npm install
         working-directory: vscode
 
