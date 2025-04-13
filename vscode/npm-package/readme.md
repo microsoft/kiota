@@ -3,13 +3,14 @@
 This library provides various functions to interact with Kiota, a client generator for HTTP REST APIs described by OpenAPI.
 
 ## Installation
-Provide instructions on how to install the project.
+Use `npm install` to install the package.
 
 ```bash
 npm install @microsoft/kiota
 ```
 
 ## Usage
+The following JS/TS functions are made available.
 
 ### [`getKiotaTree`](./lib/getKiotaTree.ts )
 Returns a tree of the open api description.
