@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30804.86
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota", "src\kiota\kiota.csproj", "{944FCE5E-0CFA-4018-B353-E14FA1395007}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KiotaGenerated", "src\Kiota.Generated\KiotaGenerated.csproj", "{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiota.NPM.IntegrationTests", "tests\Kiota.NPM.IntegrationTests\Kiota.NPM.IntegrationTests.csproj", "{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,15 +51,24 @@ Global
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {85C3AE3B-2D83-4457-B2F9-E56D64F4E443}
-	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{944FCE5E-0CFA-4018-B353-E14FA1395007} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
+		{1F5FC53F-061A-4CED-8B53-FC5C63DBEBFF} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
+		{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A} = {2DF34BB8-B19F-4623-9E3D-9F59A14C0660}
+		{019E5612-7663-40A2-A2EA-46E39D31F0A2} = {2DF34BB8-B19F-4623-9E3D-9F59A14C0660}
 		{E4C108A5-A13F-4C3F-B32A-86210A4EC52A} = {2DF34BB8-B19F-4623-9E3D-9F59A14C0660}
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
+		{51296EA6-7A4A-2A93-5060-1FBD4CB31CC5} = {2DF34BB8-B19F-4623-9E3D-9F59A14C0660}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85C3AE3B-2D83-4457-B2F9-E56D64F4E443}
 	EndGlobalSection
 EndGlobal
